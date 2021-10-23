@@ -12,7 +12,7 @@ module.exports = {
 	useTabs: true,
 	overrides: [
 		{
-			files: ['*.json', '*.yaml'],
+			files: ['*.json', '*.yaml', '*.yml'],
 			options: {
 				useTabs: false,
 			},

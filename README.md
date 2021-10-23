@@ -31,23 +31,23 @@ version, project locations, and more.
 ```yaml
 # The Node.js version to install and configure within the toolchain.
 node:
-	version: "14.18.1"
-	packageManager: "yarn"
-	shasums:
-		windows: "86737cd4544c4f8cda2abd8e60709a87dbf46119062c5f1d4ec297f71a9e204b"
-		macos: "78731152378577decf681167f4c6be6c31134dfef07403c1cebfbd3289d3886f"
-		linux: "3fcd1c6c008c2dfddea60ede3c735696982fb038288e45c2d35ef6b2098c8220"
+  version: '14.18.1'
+  packageManager: 'yarn'
+  shasums:
+    windows: '86737cd4544c4f8cda2abd8e60709a87dbf46119062c5f1d4ec297f71a9e204b'
+    macos: '78731152378577decf681167f4c6be6c31134dfef07403c1cebfbd3289d3886f'
+    linux: '3fcd1c6c008c2dfddea60ede3c735696982fb038288e45c2d35ef6b2098c8220'
 
 # Yarn version to install and configure within the toolchain.
 # Only used when `packageManager` is yarn. Other fields `npm` and `pnpm` also exist.
 yarn:
-	version: "3.1.0" # or source
+  version: '3.1.0' # or source
 
 # File system patterns to locate `project.yml` files.
 # These patterns help to enforce a specific file system structure.
 projects:
-	- "apps/*/project.yml"
-	- "packages/*/project.yml"
+  - 'apps/*/project.yml'
+  - 'packages/*/project.yml'
 ```
 
 ### `.monolith/projects.yml`
@@ -101,47 +101,47 @@ This files denotes a project, and must be located at the root of a project as de
 
 ```yaml
 # Unique name of the project.
-name: "Example"
+name: 'Example'
 
 # The team or organization that owns and maintains the project.
 # Can be a title, LDAP name, GitHub team, etc.
-owner: "infra"
+owner: 'infra'
 
 # The Slack/Teams/Discord/etc channel to discuss the project.
-channel: "#infra"
+channel: '#infra'
 
 # File system patterns relative to the project root for grouping
 # files based on their use case. These groups are then used by
 # tasks to calculate functionality like cache hit/miss, affected
 # files since last change, hot reloading, deterministic builds, etc.
 fileGroups:
-	# List of non-test JS/TS source files.
-	# This may include runtime, published, or distributable files.
-	sources:
-		- "src/**/*.{ts,tsx}"
+  # List of non-test JS/TS source files.
+  # This may include runtime, published, or distributable files.
+  sources:
+    - 'src/**/*.{ts,tsx}'
 
-	# List of non-source JS/TS test files.
-	# This may include unit tests, E2E tests, stories, etc.
-	tests:
-		- "tests/**/*.test.{ts,tsx}"
-		- "**/__tests__/**/*"
+  # List of non-source JS/TS test files.
+  # This may include unit tests, E2E tests, stories, etc.
+  tests:
+    - 'tests/**/*.test.{ts,tsx}'
+    - '**/__tests__/**/*'
 
-	# Static assets within the project.
-	# This may include styles, images, videos, etc.
-	assets:
-		- "assets/**/*"
-		- "src/**/*.css"
-		- "**/*.md"
+  # Static assets within the project.
+  # This may include styles, images, videos, etc.
+  assets:
+    - 'assets/**/*'
+    - 'src/**/*.css'
+    - '**/*.md'
 
-	# Runtime required resources, that are not JS/TS.
-	# This may include i18n translations, binaries, etc.
-	resources:
-		- "messages/**/*.json"
+  # Runtime required resources, that are not JS/TS.
+  # This may include i18n translations, binaries, etc.
+  resources:
+    - 'messages/**/*.json'
 
-	# Configuration files for project-level tooling.
-	configs:
-		- "*.config.js"
-		- "*.json"
+  # Configuration files for project-level tooling.
+  configs:
+    - '*.config.js'
+    - '*.json'
 ```
 
 ## Commands

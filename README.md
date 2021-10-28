@@ -2,15 +2,67 @@
 
 Monolith is a Rust program for managing JavaScript based monorepo's.
 
-## Terminology
+> Inspired heavily from Bazel.
 
-- _Workspace_ - A repository that contains one or many projects. Is typically configured in the
-  repository root.
-- _Project_ - A library, application, package, etc, that contains source files, test files, assets,
-  and more. Is declared with a `project.yml` file in the project root.
-- _Toolchain_ - All technologies and languages that are required for running tasks within the
-  workspace.
-- _Task_ - A build, test, or action that can be ran within the context of a project.
+## Concepts
+
+### Workspace
+
+A workspace is a VCS repository that contains one or many [projects](#project). Although monolith
+has been designed for monorepos, it can be used for polyrepos.
+
+The root of a workspace is defined by a `.monolith` folder. A repository may contain multiple
+workspaces as long as they are configured in separate and distinct folder trees.
+
+### Toolchain
+
+All technologies, languages, libraries, etc that are required for running [tasks](#task) within a
+[workspace](#workspace). The toolchain _must_ be unaffected by external sources and _must_ be
+deterministic between machines.
+
+### Project
+
+A project is a library, application, package, binary, etc, that contains source files, test files,
+assets, resources, and more. A project is denoted with a [`project.yml`](#projectyml) file, and must
+exist within a [workspace](#workspace).
+
+#### PID
+
+A PID, or project identifier, is a unique resource for locating and referencing a project. The PID
+is explicitly derived from the workspace file system structure, and is composed by the folder path
+from the workspace root to the project root. Let's demonstrate this with the an example structure.
+
+```
+.monolith/
+apps/
+  client/
+    project.yml
+  server/
+    project.yml
+packages/
+  design/
+    system/
+      project.yml
+  data/
+    project.yml
+```
+
+In the example above, the following would be valid PIDs: `/apps/client`, `/apps/server`,
+`/packages/design/system`, `/packages/data`. The leading forward slash (`/`) is used as a
+designation for "starting from the workspace root".
+
+Because of this, PIDs _may be relative_ from the current working folder. For example, if you're in
+the `packages/design` folder, you may run a task with `bazel test system:lint` instead of the
+fully-qualified `bazel test /packages/design/system:lint`.
+
+### Tasks
+
+An action that can be ran within the context of a [project](#project), and are configured through a
+[`tasks.ts`](#tasksts) file. Is separated into the following types:
+
+- **Build** - Generates an output from an input. Example: babel, rollup, webpack.
+- **Test** - Validates criteria on a set of inputs. Example: jest, eslint, typescript.
+- **Run** - Runs a one-off or long-lived process. Example: (watch mode), prettier, ts-node.
 
 ## Configuration
 
@@ -50,49 +102,20 @@ projects:
   - 'packages/*/project.yml'
 ```
 
-### `.monolith/projects.yml`
+### `.monolith/project.yml`
 
 Located at the workspace root, this file configures settings that are inherited by _all_ projects,
-enabling easy reuse. These settings can be overriden at the project-level with their
-`<project>/project.yml` file.
+enabling reuse and enforcing patterns. However, these settings can be overriden at the project-level
+with their [`<pid>/project.yml`](#projectyml) file.
 
 The following settings can be configured in this file:
 
 - `fileGroups`
 
-View the [`project.yml`](#projectyml) section for more information on this file structure.
-
 ### `.monolith/tasks.ts`
 
 Located at the workspace root, this file configures tasks that are available to _all_ projects.
-Workspace tasks can be overridden at the project-level with a `<project>/tasks.ts` file.
-
-Tasks are declared by importing and executing a function, and then exporting the result. The name of
-the export becomes the label in which to run the task on the command line.
-
-```ts
-import { setupBabel } from '@monolith/babel';
-import { setupESLint } from '@monolith/eslint';
-import { setupJest } from '@monolith/jest';
-
-const extensions = ['.ts', '.tsx'];
-
-// Run task with `mono build <project>:build`
-// Will transpile `sources` to output directory
-export const build = setupBabel({
-	copyFiles: true,
-	extensions,
-	outputDir: 'lib',
-});
-
-// Run task with `mono test <project>:lint`
-// Will lint `sources` and `tests` file groups
-export const lint = setupESLint({ extensions });
-
-// Run task with `mono test <project>:test`
-// Will map `tests` file group to `--testMatch`
-export const test = setupJest();
-```
+Workspace tasks can be overridden at the project-level with a [`<pid>/tasks.ts`](#tasksts) file.
 
 ### `project.yml`
 
@@ -102,6 +125,9 @@ This files denotes a project, and must be located at the root of a project as de
 ```yaml
 # Unique name of the project.
 name: 'Example'
+
+# Description of the project.
+description: 'A description of what the example project does.'
 
 # The team or organization that owns and maintains the project.
 # Can be a title, LDAP name, GitHub team, etc.
@@ -144,8 +170,39 @@ fileGroups:
     - '*.json'
 ```
 
+### `tasks.ts`
+
+Tasks are declared by importing and executing a function, and then exporting the result. The name of
+the export becomes the label in which to run the task on the command line.
+
+```ts
+import { setupBabel } from '@monolith/babel';
+import { setupESLint } from '@monolith/eslint';
+import { setupJest } from '@monolith/jest';
+
+const extensions = ['.ts', '.tsx'];
+
+// Run task with `mono build <pid>:build`
+// Will transpile `sources` to output directory
+export const build = setupBabel({
+	copyFiles: true,
+	extensions,
+	outputDir: 'lib',
+});
+
+// Run task with `mono test <pid>:lint`
+// Will lint `sources` and `tests` file groups
+export const lint = setupESLint({ extensions });
+
+// Run task with `mono test <pid>:test`
+// Will map `tests` file group to `--testMatch`
+export const test = setupJest();
+```
+
 ## Commands
 
 ### `mono build`
 
 ### `mono test`
+
+### `mono run`

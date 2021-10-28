@@ -4,6 +4,12 @@ Monolith is a Rust program for managing JavaScript based monorepo's.
 
 > Inspired heavily from Bazel.
 
+## Features
+
+- **Hermetic environments** - Ensure the same environment and expectations across every machine.
+- **Concurrent tasks** - Run tasks in parallel using a worker farm.
+- **Efficient tasks** -
+
 ## Concepts
 
 ### Workspace
@@ -55,14 +61,39 @@ Because of this, PIDs _may be relative_ from the current working folder. For exa
 the `packages/design` folder, you may run a task with `bazel test system:lint` instead of the
 fully-qualified `bazel test /packages/design/system:lint`.
 
-### Tasks
+### Task
 
 An action that can be ran within the context of a [project](#project), and are configured through a
-[`tasks.ts`](#tasksts) file. Is separated into the following types:
+[`tasks.ts`](#tasksts) file. Tasks are separated into the following types:
 
 - **Build** - Generates an output from an input. Example: babel, rollup, webpack.
 - **Test** - Validates criteria on a set of inputs. Example: jest, eslint, typescript.
 - **Run** - Runs a one-off or long-lived process. Example: (watch mode), prettier, ts-node.
+
+#### Target
+
+A target is a label composed of a [project ID](#pid) and task name, separated by a colon (`:`).
+Targets are used by terminal commands and task configurations for declaring cross-project or
+cross-task dependencies.
+
+For example, if project `/apps/client` contained a task named `lint`, then the target would be
+`/apps/client:lint`.
+
+#### Tokens
+
+- File groups
+  - `@glob` - Returns the file group as a glob (typically as-is).
+  - `@root` - Returns the file group, reduced down to the lowest possible directory.
+  - `@dirs` - Returns the file group, reduced down to all possible directories.
+  - `@files` - Returns the file group as a list of all possible files.
+- Inputs & outputs
+  - `@in` - Points to an index within a task's `inputs` list. This will be expanded to the
+    underyling file path(s).
+  - `@out` - Points to an index within a task's `outputs` list. This will be expanded to the
+    underyling file path(s).
+- Other
+  - `@cache` - Returns an absolute file path to a location within the cache folder.
+  - `@dep` - Reference the output of a `dependsOn` dependency.
 
 ## Configuration
 
@@ -112,7 +143,7 @@ The following settings can be configured in this file:
 
 - `fileGroups`
 
-### `.monolith/tasks.ts`
+### `.monolith/projectTasks.ts`
 
 Located at the workspace root, this file configures tasks that are available to _all_ projects.
 Workspace tasks can be overridden at the project-level with a [`<pid>/tasks.ts`](#tasksts) file.
@@ -135,6 +166,11 @@ owner: 'infra'
 
 # The Slack/Teams/Discord/etc channel to discuss the project.
 channel: '#infra'
+
+# Other projects in the workspace that this project depends upon.
+dependsOn:
+  - '/some/other/project'
+  - '/another/project'
 
 # File system patterns relative to the project root for grouping
 # files based on their use case. These groups are then used by
@@ -163,11 +199,6 @@ fileGroups:
   # This may include i18n translations, binaries, etc.
   resources:
     - 'messages/**/*.json'
-
-  # Configuration files for project-level tooling.
-  configs:
-    - '*.config.js'
-    - '*.json'
 ```
 
 ### `tasks.ts`
@@ -176,27 +207,41 @@ Tasks are declared by importing and executing a function, and then exporting the
 the export becomes the label in which to run the task on the command line.
 
 ```ts
-import { setupBabel } from '@monolith/babel';
-import { setupESLint } from '@monolith/eslint';
-import { setupJest } from '@monolith/jest';
+import babel from '@monolith/babel';
+import eslint from '@monolith/eslint';
+import jest from '@monolith/jest';
+import typescript from '@monolith/typescript';
 
 const extensions = ['.ts', '.tsx'];
 
 // Run task with `mono build <pid>:build`
-// Will transpile `sources` to output directory
-export const build = setupBabel({
-	copyFiles: true,
-	extensions,
-	outputDir: 'lib',
-});
+// Will transpile `sources` file group to output directory
+export const build = babel.build(
+	{},
+	{
+		copyFiles: true,
+		extensions,
+		outputDir: 'lib',
+	},
+);
 
 // Run task with `mono test <pid>:lint`
 // Will lint `sources` and `tests` file groups
-export const lint = setupESLint({ extensions });
+export const lint = eslint.test(
+	{
+		// Requires `typeCheck` task to be ran first
+		dependsOn: [':typeCheck'],
+	},
+	{ extensions },
+);
 
 // Run task with `mono test <pid>:test`
 // Will map `tests` file group to `--testMatch`
-export const test = setupJest();
+export const test = jest.test();
+
+// Run task with `mono build <pid>:typeCheck`
+// Will lint `sources` and `tests` file groups to include/exclude
+export const typeCheck = typescript.build();
 ```
 
 ## Commands

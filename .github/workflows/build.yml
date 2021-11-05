@@ -1,0 +1,48 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.56.1
+          profile: minimal
+          components: rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all --verbose -- --check
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.56.1
+          profile: minimal
+          components: clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --all-targets --verbose -- --deny warnings
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.56.1
+          profile: minimal
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose

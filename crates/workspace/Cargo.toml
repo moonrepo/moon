@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 figment = { version = "0.10", features = ["yaml"] }
+thiserror = "1.0.30"
 serde = { version = "1.0", features = ["derive"] }

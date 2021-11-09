@@ -9,7 +9,10 @@ use figment::{
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Debug, Deserialize, Serialize)]
+const NODE_VERSION: &str = "16.13.0";
+const NPM_VERSION: &str = "8.1.0";
+
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[allow(non_camel_case_types)]
 pub enum PackageManager {
     npm,
@@ -17,7 +20,7 @@ pub enum PackageManager {
     yarn,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct NodeConfigShasums {
     pub linux: Option<Vec<String>>,
     pub macos: Option<Vec<String>>,
@@ -48,7 +51,8 @@ impl Default for NodeConfigShasums {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
     pub version: String,
     pub package_manager: Option<PackageManager>,
@@ -58,14 +62,14 @@ pub struct NodeConfig {
 impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
-            version: String::from("16.13.0"),
+            version: String::from(NODE_VERSION),
             package_manager: Some(PackageManager::npm),
             shasums: NodeConfigShasums::default(),
         }
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct PackageManagerConfig {
     pub version: String,
 }
@@ -78,10 +82,11 @@ impl Default for PackageManagerConfig {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct WorkspaceConfig {
+    #[serde(default)]
     pub node: NodeConfig,
-    pub packages: Vec<String>,
+    pub projects: Vec<String>,
     // Package managers
     pub npm: Option<PackageManagerConfig>,
     pub pnpm: Option<PackageManagerConfig>,
@@ -92,7 +97,7 @@ impl Default for WorkspaceConfig {
     fn default() -> Self {
         WorkspaceConfig {
             node: NodeConfig::default(),
-            packages: vec![],
+            projects: vec![],
             npm: None,
             pnpm: None,
             yarn: None,
@@ -116,7 +121,15 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, Error> {
-        let config: WorkspaceConfig = Figment::new().merge(Yaml::file(path)).extract()?;
+        let mut config: WorkspaceConfig = Figment::new().merge(Yaml::file(path)).extract()?;
+
+        // We should always require an npm version,
+        // as it's also required for installing Yarn and pnpm!
+        if config.npm.is_none() {
+            config.npm = Some(PackageManagerConfig {
+                version: String::from(NPM_VERSION),
+            });
+        }
 
         Ok(config)
     }
@@ -124,19 +137,107 @@ impl WorkspaceConfig {
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
-    // use figment;
+    use super::*;
+    use figment;
+
+    fn load_jailed_config() -> Result<WorkspaceConfig, Error> {
+        WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME))
+    }
 
     #[test]
+    #[should_panic(expected = "missing field `projects`")]
     fn empty_file() {
-        //     figment::Jail::expect_with(|jail| {
-        //         jail.create_file(
-        //             constants::CONFIG_WORKSPACE_FILENAME,
-        //             r#"
-        //     name = "Just a TOML App!"
-        //     count = 100
-        // "#,
-        //         )?;
-        //     })
+        figment::Jail::expect_with(|jail| {
+            // Needs a fake yaml value, otherwise the file reading panics
+            jail.create_file(constants::CONFIG_WORKSPACE_FILENAME, "fake: value")?;
+
+            load_jailed_config()?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn loads_defaults() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(constants::CONFIG_WORKSPACE_FILENAME, "projects: []")?;
+
+            let config = load_jailed_config()?;
+
+            assert_eq!(
+                config,
+                WorkspaceConfig {
+                    node: NodeConfig {
+                        version: String::from(NODE_VERSION),
+                        package_manager: Some(PackageManager::npm),
+                        shasums: NodeConfigShasums::default(),
+                    },
+                    projects: vec![],
+                    npm: Some(PackageManagerConfig {
+                        version: String::from(NPM_VERSION),
+                    }),
+                    pnpm: None,
+                    yarn: None
+                }
+            );
+
+            Ok(())
+        });
+    }
+
+    mod node {
+        #[test]
+        #[should_panic(
+            expected = "invalid type: found unsigned int `123`, expected struct NodeConfig for key \"default.node\""
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_WORKSPACE_FILENAME, "node: 123")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+    }
+
+    mod projects {
+        #[test]
+        #[should_panic(
+            expected = "invalid type: found string \"apps/*\", expected a sequence for key \"default.projects\""
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "projects: apps/*",
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn list_of_strings() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"projects:
+                    - 'apps/*'
+                    - 'packages/*'"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config.projects,
+                    vec![String::from("apps/*"), String::from("packages/*")],
+                );
+
+                Ok(())
+            });
+        }
     }
 }

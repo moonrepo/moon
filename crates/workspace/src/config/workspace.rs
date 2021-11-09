@@ -18,7 +18,7 @@ pub enum PackageManager {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct NodeConfigShasums {
+pub struct NodeConfigShasums {
     pub linux: Option<Vec<String>>,
     pub macos: Option<Vec<String>>,
     pub windows: Option<Vec<String>>,
@@ -49,9 +49,9 @@ impl Default for NodeConfigShasums {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct NodeConfig {
+pub struct NodeConfig {
     pub version: String,
-    pub package_manager: PackageManager,
+    pub package_manager: Option<PackageManager>,
     pub shasums: NodeConfigShasums,
 }
 
@@ -59,14 +59,14 @@ impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
             version: String::from("16.13.0"),
-            package_manager: PackageManager::npm,
+            package_manager: Some(PackageManager::npm),
             shasums: NodeConfigShasums::default(),
         }
     }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct PackageManagerConfig {
+pub struct PackageManagerConfig {
     pub version: String,
 }
 

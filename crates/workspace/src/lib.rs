@@ -8,8 +8,8 @@ use std::path::PathBuf;
 
 /// Recursively attempt to find the workspace root by locating the ".monolith"
 /// configuration folder, starting from the current working directory.
-fn find_workspace_root(current_dir: &PathBuf) -> Option<PathBuf> {
-    let mut config_dir = PathBuf::from(current_dir);
+fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
+    let mut config_dir = current_dir.clone();
     config_dir.push(constants::CONFIG_DIRNAME);
 
     if config_dir.exists() {
@@ -19,7 +19,7 @@ fn find_workspace_root(current_dir: &PathBuf) -> Option<PathBuf> {
     let parent_dir = current_dir.parent();
 
     match parent_dir {
-        Some(dir) => find_workspace_root(&PathBuf::from(dir)),
+        Some(dir) => find_workspace_root(PathBuf::from(dir)),
         None => None,
     }
 }
@@ -41,17 +41,12 @@ impl Workspace {
         let working_dir = env::current_dir().unwrap();
 
         // Find root dir
-        let root_dir = match find_workspace_root(&working_dir) {
-            Some(dir) => dir,
-            None => {
-                return Err(errors::WorkspaceError::MissingConfigDir(String::from(
-                    constants::CONFIG_DIRNAME,
-                )));
-            }
-        };
+        let root_dir = find_workspace_root(working_dir.clone()).ok_or(
+            errors::WorkspaceError::MissingConfigDir(String::from(constants::CONFIG_DIRNAME)),
+        )?;
 
         // Load "workspace.yml"
-        let config_path = PathBuf::from(root_dir).join(constants::CONFIG_WORKSPACE_FILENAME);
+        let config_path = root_dir.clone().join(constants::CONFIG_WORKSPACE_FILENAME);
         let config = match WorkspaceConfig::load(config_path) {
             Ok(cfg) => cfg,
             Err(_) => {
@@ -59,7 +54,7 @@ impl Workspace {
                     "{}/{}",
                     constants::CONFIG_DIRNAME,
                     constants::CONFIG_WORKSPACE_FILENAME
-                )));
+                )))
             }
         };
 

@@ -47,16 +47,7 @@ impl Workspace {
 
         // Load "workspace.yml"
         let config_path = root_dir.clone().join(constants::CONFIG_WORKSPACE_FILENAME);
-        let config = match WorkspaceConfig::load(config_path) {
-            Ok(cfg) => cfg,
-            Err(_) => {
-                return Err(errors::WorkspaceError::MissingWorkspaceConfigFile(format!(
-                    "{}/{}",
-                    constants::CONFIG_DIRNAME,
-                    constants::CONFIG_WORKSPACE_FILENAME
-                )))
-            }
-        };
+        let config = WorkspaceConfig::load(config_path)?;
 
         Ok(Workspace {
             config,

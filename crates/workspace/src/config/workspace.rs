@@ -1,16 +1,44 @@
 // .monolith/workspace.yml
 
 use crate::constants;
+use crate::errors::WorkspaceError;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
-    Error, Figment, Metadata, Profile, Provider,
+    Figment, Metadata, Profile, Provider,
 };
+use semver::Version;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use validator::{Validate, ValidationError};
 
 const NODE_VERSION: &str = "16.13.0";
 const NPM_VERSION: &str = "8.1.0";
+
+// Validate the `projects` field is a list of valid file system globs,
+// that are relative from the workspace root. Will fail on absolute
+// globs ("/"), and parent relative globs ("../").
+fn validate_projects_list(projects: &Vec<String>) -> Result<(), ValidationError> {
+    for path_glob in projects {
+        let path = Path::new(path_glob);
+
+        if path.has_root() {
+            return Err(ValidationError::new("projects_no_root"));
+        } else if path.starts_with("..") {
+            return Err(ValidationError::new("projects_no_parent"));
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_version(value: &str) -> Result<(), ValidationError> {
+    if let Err(_) = Version::parse(value) {
+        return Err(ValidationError::new("version_invalid_semver"));
+    }
+
+    Ok(())
+}
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[allow(non_camel_case_types)]
@@ -20,10 +48,15 @@ pub enum PackageManager {
     yarn,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct NodeConfigShasums {
+    #[validate(length(min = 1))]
     pub linux: Option<Vec<String>>,
+
+    #[validate(length(min = 1))]
     pub macos: Option<Vec<String>>,
+
+    #[validate(length(min = 1))]
     pub windows: Option<Vec<String>>,
 }
 
@@ -51,11 +84,15 @@ impl Default for NodeConfigShasums {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct NodeConfig {
+    #[validate(custom = "validate_version")]
     pub version: String,
+
+    #[serde(rename = "packageManager")]
     pub package_manager: Option<PackageManager>,
+
+    #[serde(default)]
     pub shasums: NodeConfigShasums,
 }
 
@@ -69,24 +106,20 @@ impl Default for NodeConfig {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct PackageManagerConfig {
+    #[validate(custom = "validate_version")]
     pub version: String,
 }
 
-impl Default for PackageManagerConfig {
-    fn default() -> Self {
-        PackageManagerConfig {
-            version: String::from("unknown"),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]
     pub node: NodeConfig,
+
+    #[validate(custom = "validate_projects_list")]
     pub projects: Vec<String>,
+
     // Package managers
     pub npm: Option<PackageManagerConfig>,
     pub pnpm: Option<PackageManagerConfig>,
@@ -110,7 +143,7 @@ impl Provider for WorkspaceConfig {
         Metadata::named(constants::CONFIG_WORKSPACE_FILENAME)
     }
 
-    fn data(&self) -> Result<Map<Profile, Dict>, Error> {
+    fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
         figment::providers::Serialized::defaults(WorkspaceConfig::default()).data()
     }
 
@@ -120,8 +153,17 @@ impl Provider for WorkspaceConfig {
 }
 
 impl WorkspaceConfig {
-    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, Error> {
-        let mut config: WorkspaceConfig = Figment::new().merge(Yaml::file(path)).extract()?;
+    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, WorkspaceError> {
+        let mut config: WorkspaceConfig = match Figment::new().merge(Yaml::file(path)).extract() {
+            Ok(cfg) => cfg,
+            Err(_) => {
+                return Err(WorkspaceError::MissingWorkspaceConfigFile(format!(
+                    "{}/{}",
+                    constants::CONFIG_DIRNAME,
+                    constants::CONFIG_WORKSPACE_FILENAME
+                )))
+            }
+        };
 
         // We should always require an npm version,
         // as it's also required for installing Yarn and pnpm!
@@ -129,6 +171,11 @@ impl WorkspaceConfig {
             config.npm = Some(PackageManagerConfig {
                 version: String::from(NPM_VERSION),
             });
+        }
+
+        // Validate the fields before continuing
+        if let Err(errors) = config.validate() {
+            return Err(WorkspaceError::InvalidWorkspaceConfigFile(errors));
         }
 
         Ok(config)
@@ -140,8 +187,15 @@ mod tests {
     use super::*;
     use figment;
 
-    fn load_jailed_config() -> Result<WorkspaceConfig, Error> {
-        WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME))
+    fn load_jailed_config() -> Result<WorkspaceConfig, figment::Error> {
+        match WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME)) {
+            Ok(cfg) => return Ok(cfg),
+            Err(_) => {
+                return Err(figment::Error::from(figment::error::Kind::Message(
+                    String::from("Whoops"),
+                )))
+            }
+        }
     }
 
     #[test]

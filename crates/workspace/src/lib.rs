@@ -3,23 +3,23 @@ mod constants;
 mod errors;
 
 use config::workspace::WorkspaceConfig;
+use errors::WorkspaceError;
 use std::env;
 use std::path::PathBuf;
 
 /// Recursively attempt to find the workspace root by locating the ".monolith"
 /// configuration folder, starting from the current working directory.
 fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
-    let mut config_dir = current_dir.clone();
-    config_dir.push(constants::CONFIG_DIRNAME);
+    let config_dir = current_dir.clone().join(constants::CONFIG_DIRNAME);
 
     if config_dir.exists() {
-        return Some(config_dir);
+        return Some(current_dir);
     }
 
     let parent_dir = current_dir.parent();
 
     match parent_dir {
-        Some(dir) => find_workspace_root(PathBuf::from(dir)),
+        Some(dir) => find_workspace_root(dir.to_path_buf()),
         None => None,
     }
 }
@@ -37,16 +37,23 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub fn new() -> Result<Workspace, errors::WorkspaceError> {
+    pub fn new() -> Result<Workspace, WorkspaceError> {
         let working_dir = env::current_dir().unwrap();
 
         // Find root dir
-        let root_dir = find_workspace_root(working_dir.clone()).ok_or(
-            errors::WorkspaceError::MissingConfigDir(String::from(constants::CONFIG_DIRNAME)),
-        )?;
+        let root_dir =
+            find_workspace_root(working_dir.clone()).ok_or(WorkspaceError::MissingConfigDir)?;
 
         // Load "workspace.yml"
-        let config_path = root_dir.clone().join(constants::CONFIG_WORKSPACE_FILENAME);
+        let config_path = root_dir
+            .clone()
+            .join(constants::CONFIG_DIRNAME)
+            .join(constants::CONFIG_WORKSPACE_FILENAME);
+
+        if !config_path.exists() {
+            return Err(WorkspaceError::MissingWorkspaceConfigFile);
+        }
+
         let config = WorkspaceConfig::load(config_path)?;
 
         Ok(Workspace {

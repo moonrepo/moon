@@ -1,6 +1,7 @@
 // .monolith/workspace.yml
 
 use crate::constants;
+use crate::errors;
 use crate::errors::WorkspaceError;
 use figment::value::{Dict, Map};
 use figment::{
@@ -154,18 +155,19 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, WorkspaceError> {
+        // Load and parse the yaml config file using Figment and handle accordingly.
+        // Unfortunately this does some "validation", so instead of having 2 validation paths,
+        // let's remap to a `validator` error type, so that downstream can handle easily.
         let mut config: WorkspaceConfig = match Figment::new().merge(Yaml::file(path)).extract() {
             Ok(cfg) => cfg,
-            Err(_) => {
-                return Err(WorkspaceError::MissingWorkspaceConfigFile(format!(
-                    "{}/{}",
-                    constants::CONFIG_DIRNAME,
-                    constants::CONFIG_WORKSPACE_FILENAME
-                )))
+            Err(error) => {
+                return Err(WorkspaceError::InvalidWorkspaceConfigFile(
+                    errors::map_figment_error_to_validation_errors(&error),
+                ));
             }
         };
 
-        // We should always require an npm version,
+        // We should always have an npm version,
         // as it's also required for installing Yarn and pnpm!
         if config.npm.is_none() {
             config.npm = Some(PackageManagerConfig {

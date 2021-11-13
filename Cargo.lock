@@ -225,6 +225,7 @@ dependencies = [
  "figment",
  "semver",
  "serde",
+ "serde_yaml",
  "thiserror",
  "validator",
 ]

@@ -1,9 +1,7 @@
-mod config;
-mod constants;
 mod errors;
 
-use config::workspace::WorkspaceConfig;
 use errors::WorkspaceError;
+use monolith_config::{constants, WorkspaceConfig};
 use std::env;
 use std::path::PathBuf;
 
@@ -41,8 +39,10 @@ impl Workspace {
         let working_dir = env::current_dir().unwrap();
 
         // Find root dir
-        let root_dir =
-            find_workspace_root(working_dir.clone()).ok_or(WorkspaceError::MissingConfigDir)?;
+        let root_dir = match find_workspace_root(working_dir.clone()) {
+            Some(dir) => dir,
+            None => return Err(WorkspaceError::MissingConfigDir),
+        };
 
         // Load "workspace.yml"
         let config_path = root_dir
@@ -54,7 +54,10 @@ impl Workspace {
             return Err(WorkspaceError::MissingWorkspaceConfigFile);
         }
 
-        let config = WorkspaceConfig::load(config_path)?;
+        let config = match WorkspaceConfig::load(config_path) {
+            Ok(cfg) => cfg,
+            Err(errors) => return Err(WorkspaceError::InvalidWorkspaceConfigFile(errors)),
+        };
 
         Ok(Workspace {
             config,

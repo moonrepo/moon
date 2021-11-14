@@ -1,17 +1,16 @@
 // .monolith/workspace.yml
 
 use crate::constants;
-use crate::errors;
-use crate::errors::WorkspaceError;
+use crate::errors::map_figment_error_to_validation_errors;
+use crate::validators::validate_version;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
     Figment, Metadata, Profile, Provider,
 };
-use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use validator::{Validate, ValidationError};
+use validator::{Validate, ValidationError, ValidationErrors};
 
 const NODE_VERSION: &str = "16.13.0";
 const NPM_VERSION: &str = "8.1.0";
@@ -28,14 +27,6 @@ fn validate_projects_list(projects: &Vec<String>) -> Result<(), ValidationError>
         } else if path.starts_with("..") {
             return Err(ValidationError::new("projects_no_parent"));
         }
-    }
-
-    Ok(())
-}
-
-fn validate_version(value: &str) -> Result<(), ValidationError> {
-    if let Err(_) = Version::parse(value) {
-        return Err(ValidationError::new("version_invalid_semver"));
     }
 
     Ok(())
@@ -154,17 +145,13 @@ impl Provider for WorkspaceConfig {
 }
 
 impl WorkspaceConfig {
-    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, WorkspaceError> {
+    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
         // Load and parse the yaml config file using Figment and handle accordingly.
         // Unfortunately this does some "validation", so instead of having 2 validation paths,
         // let's remap to a `validator` error type, so that downstream can handle easily.
         let mut config: WorkspaceConfig = match Figment::new().merge(Yaml::file(path)).extract() {
             Ok(cfg) => cfg,
-            Err(error) => {
-                return Err(WorkspaceError::InvalidWorkspaceConfigFile(
-                    errors::map_figment_error_to_validation_errors(&error),
-                ));
-            }
+            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
         };
 
         // We should always have an npm version,
@@ -177,7 +164,7 @@ impl WorkspaceConfig {
 
         // Validate the fields before continuing
         if let Err(errors) = config.validate() {
-            return Err(WorkspaceError::InvalidWorkspaceConfigFile(errors));
+            return Err(errors);
         }
 
         Ok(config)

@@ -8,7 +8,7 @@ use std::path::PathBuf;
 /// Recursively attempt to find the workspace root by locating the ".monolith"
 /// configuration folder, starting from the current working directory.
 fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
-    let config_dir = current_dir.clone().join(constants::CONFIG_DIRNAME);
+    let config_dir = current_dir.join(constants::CONFIG_DIRNAME);
 
     if config_dir.exists() {
         return Some(current_dir);
@@ -46,7 +46,6 @@ impl Workspace {
 
         // Load "workspace.yml"
         let config_path = root_dir
-            .clone()
             .join(constants::CONFIG_DIRNAME)
             .join(constants::CONFIG_WORKSPACE_FILENAME);
 

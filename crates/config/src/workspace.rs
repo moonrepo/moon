@@ -1,7 +1,7 @@
 // .monolith/workspace.yml
 
 use crate::constants;
-use crate::errors::{format_validation_error, map_figment_error_to_validation_errors};
+use crate::errors::map_figment_error_to_validation_errors;
 use crate::validators::validate_version;
 use figment::value::{Dict, Map};
 use figment::{
@@ -18,7 +18,7 @@ const NPM_VERSION: &str = "8.1.0";
 // Validate the `projects` field is a list of valid file system globs,
 // that are relative from the workspace root. Will fail on absolute
 // globs ("/"), and parent relative globs ("../").
-fn validate_projects_list(projects: &Vec<String>) -> Result<(), ValidationError> {
+fn validate_projects_list(projects: &[String]) -> Result<(), ValidationError> {
     for path_glob in projects {
         let path = Path::new(path_glob);
 
@@ -174,6 +174,7 @@ impl WorkspaceConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::errors::format_validation_error;
     use figment;
 
     fn load_jailed_config() -> Result<WorkspaceConfig, figment::Error> {

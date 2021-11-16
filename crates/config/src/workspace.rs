@@ -1,7 +1,7 @@
 // .monolith/workspace.yml
 
 use crate::constants;
-use crate::errors::map_figment_error_to_validation_errors;
+use crate::errors::{format_validation_error, map_figment_error_to_validation_errors};
 use crate::validators::validate_version;
 use figment::value::{Dict, Map};
 use figment::{
@@ -179,16 +179,19 @@ mod tests {
     fn load_jailed_config() -> Result<WorkspaceConfig, figment::Error> {
         match WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME)) {
             Ok(cfg) => return Ok(cfg),
-            Err(_) => {
+            Err(errors) => {
+                let field_errors = errors.field_errors();
+                let error_list = field_errors.values().next().unwrap();
+
                 return Err(figment::Error::from(figment::error::Kind::Message(
-                    String::from("Whoops"),
-                )))
+                    format_validation_error(error_list.first().unwrap()),
+                )));
             }
         }
     }
 
     #[test]
-    #[should_panic(expected = "missing field `projects`")]
+    #[should_panic(expected = "Missing field `projects`.")]
     fn empty_file() {
         figment::Jail::expect_with(|jail| {
             // Needs a fake yaml value, otherwise the file reading panics
@@ -231,7 +234,7 @@ mod tests {
     mod node {
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected struct NodeConfig for key \"default.node\""
+            expected = "Invalid type for field `node`. Expected struct NodeConfig, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -247,7 +250,7 @@ mod tests {
     mod projects {
         #[test]
         #[should_panic(
-            expected = "invalid type: found string \"apps/*\", expected a sequence for key \"default.projects\""
+            expected = "Invalid type for field `projects`. Expected a sequence, received string \"apps/*\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {

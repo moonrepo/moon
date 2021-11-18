@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+monolith_workspace = { path = "../workspace" }
 clap = "2.33.3"

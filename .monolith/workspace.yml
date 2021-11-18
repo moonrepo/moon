@@ -1,0 +1,6 @@
+projects:
+  - '/apps/*'
+  - 'projects/*'
+
+npm:
+  version: 'foo'

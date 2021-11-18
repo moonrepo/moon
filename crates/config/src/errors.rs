@@ -4,7 +4,14 @@ use serde_yaml::{to_value, Value};
 use std::borrow::Cow;
 use validator::{ValidationError, ValidationErrors};
 
-fn format_yaml_value(value: Value) -> String {
+pub fn create_validation_error(code: &'static str, path: &str, message: String) -> ValidationError {
+    let mut error = ValidationError::new(code);
+    error.message = Some(Cow::from(message));
+    error.add_param(Cow::from("path"), &path.to_owned());
+    error
+}
+
+pub fn format_yaml_value(value: Value) -> String {
     match value {
         Value::Null => String::from("null"),
         Value::Bool(_) => String::from("boolean"),
@@ -16,127 +23,107 @@ fn format_yaml_value(value: Value) -> String {
 }
 
 pub fn format_validation_error(error: &ValidationError) -> String {
-    let param_value = |name| format_yaml_value(to_value(error.params.get(name).unwrap()).unwrap());
+    let mut message = "".to_owned();
 
-    match error.code.as_ref() {
-        "duplicate_field" => format!("Duplicate field `{}`.", param_value("field")),
-        "invalid_length" => format!(
-            "Invalid length for field `{}`. Expected {}, received {}.",
-            param_value("path"),
-            param_value("expected"),
-            param_value("actual")
-        ),
-        "invalid_type" => format!(
-            "Invalid type for field `{}`. Expected {}, received {}.",
-            param_value("path"),
-            param_value("expected"),
-            param_value("actual")
-        ),
-        "invalid_value" => format!(
-            "Invalid value for field `{}`. Expected {}, received {}.",
-            param_value("path"),
-            param_value("expected"),
-            param_value("actual")
-        ),
-        "missing_field" => format!("Missing field `{}`.", param_value("field")),
-        "out_of_range" => format!(
-            "Integer out of range for field `{}`. Received {}.",
-            param_value("path"),
-            param_value("range")
-        ),
-        "unknown_field" => format!("Unknown field `{}`.", param_value("field")),
-        "unknown_field_variant" => format!("Unknown field variant `{}`.", param_value("field")),
-        "unsupported_key" => format!("Unsupported key `{}`.", param_value("key")),
-        "unsupported" => format!("Unsupported `{}`.", param_value("actual")),
-        "message" => param_value("message"),
-        code => format!(
-            "Unknown failure for field `{}` [{}].",
-            param_value("path"),
-            code
-        ),
+    match error.params.get("path") {
+        Some(path) => {
+            let msg = format!(
+                "Invalid field `{}`. ",
+                format_yaml_value(to_value(&path).unwrap())
+            );
+            message.push_str(msg.as_str());
+        }
+        None => {}
     }
+
+    if error.message.is_some() {
+        let msg = format!("{}", error.message.as_ref().unwrap());
+        message.push_str(msg.as_str());
+    } else {
+        let msg = format!("Unknown failure [{}].", error.code);
+        message.push_str(msg.as_str());
+    }
+
+    message
 }
 
 pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> ValidationErrors {
-    let mut valid_error = match &figment_error.kind {
+    let path = String::from(figment_error.path.join("."));
+
+    let valid_error = match &figment_error.kind {
         // Fields
-        Kind::DuplicateField(field) => {
-            let mut error = ValidationError::new("duplicate_field");
-            error.add_param(Cow::from("field"), field);
-            error
-        }
-        Kind::MissingField(field) => {
-            let mut error = ValidationError::new("missing_field");
-            error.add_param(Cow::from("field"), field);
-            error
-        }
-        Kind::UnknownField(field, _) => {
-            let mut error = ValidationError::new("unknown_field");
-            error.add_param(Cow::from("field"), field);
-            error
-        }
-        Kind::UnknownVariant(field, _) => {
-            let mut error = ValidationError::new("unknown_field_variant");
-            error.add_param(Cow::from("field"), field);
-            error
-        }
+        Kind::DuplicateField(field) => create_validation_error(
+            "duplicate_field",
+            path.as_str(),
+            format!("Duplicate field `{}`.", field),
+        ),
+        Kind::MissingField(field) => create_validation_error(
+            "missing_field",
+            path.as_str(),
+            format!("Missing field `{}`.", field),
+        ),
+        Kind::UnknownField(field, _) => create_validation_error(
+            "unknown_field",
+            path.as_str(),
+            format!("Unknown field `{}`.", field),
+        ),
+        Kind::UnknownVariant(field, _) => create_validation_error(
+            "unknown_field_variant",
+            path.as_str(),
+            format!("Unknown field variant `{}`.", field),
+        ),
 
         // Values
-        Kind::InvalidType(a, e) => {
-            let mut error = ValidationError::new("invalid_type");
-            error.add_param(Cow::from("actual"), &format!("{}", a));
-            error.add_param(Cow::from("expected"), &to_value(e).unwrap());
-            error
-        }
-        Kind::InvalidLength(a, e) => {
-            let mut error = ValidationError::new("invalid_length");
-            error.add_param(Cow::from("actual"), &format!("{}", a));
-            error.add_param(Cow::from("expected"), &to_value(e).unwrap());
-            error
-        }
-        Kind::InvalidValue(a, e) => {
-            let mut error = ValidationError::new("invalid_value");
-            error.add_param(Cow::from("actual"), &format!("{}", a));
-            error.add_param(Cow::from("expected"), &to_value(e).unwrap());
-            error
-        }
-        Kind::ISizeOutOfRange(range) => {
-            let mut error = ValidationError::new("out_of_range");
-            error.add_param(Cow::from("range"), &to_value(range).unwrap());
-            error
-        }
-        Kind::USizeOutOfRange(range) => {
-            let mut error = ValidationError::new("out_of_range");
-            error.add_param(Cow::from("range"), &to_value(range).unwrap());
-            error
-        }
+        Kind::InvalidType(a, e) => create_validation_error(
+            "invalid_type",
+            path.as_str(),
+            format!("Expected {} type, received {}.", e, a),
+        ),
+        Kind::InvalidLength(a, e) => create_validation_error(
+            "invalid_length",
+            path.as_str(),
+            format!("Expected length of {}, received {}.", e, a),
+        ),
+        Kind::InvalidValue(a, e) => create_validation_error(
+            "invalid_value",
+            path.as_str(),
+            format!("Expected {} value, received {}.", e, a),
+        ),
+        Kind::ISizeOutOfRange(range) => create_validation_error(
+            "out_of_range",
+            path.as_str(),
+            format!("Integer out of range, received {}.", range),
+        ),
+        Kind::USizeOutOfRange(range) => create_validation_error(
+            "out_of_range",
+            path.as_str(),
+            format!("Unsigned integer out of range, received {}.", range),
+        ),
 
         // Other
         Kind::Message(message) => {
-            let mut error = ValidationError::new("message");
-            error.add_param(Cow::from("message"), message);
-            error
+            create_validation_error("message", path.as_str(), String::from(message))
         }
-        Kind::Unsupported(a) => {
-            let mut error = ValidationError::new("unsupported");
-            error.add_param(Cow::from("actual"), &format!("{}", a));
-            error
-        }
-        Kind::UnsupportedKey(key, _) => {
-            let mut error = ValidationError::new("unsupported_key");
-            error.add_param(Cow::from("key"), &format!("{}", key));
-            error
-        }
+        Kind::Unsupported(a) => create_validation_error(
+            "unsupported",
+            path.as_str(),
+            format!("Unsupported type/value `{}`.", a),
+        ),
+        Kind::UnsupportedKey(key, _) => create_validation_error(
+            "unsupported_key",
+            path.as_str(),
+            format!("Unsupported key `{}`.", key),
+        ),
     };
-
-    let path = figment_error.path.join(".");
-    valid_error.add_param(Cow::from("path"), &to_value(&path).unwrap());
 
     let mut errors = ValidationErrors::new();
 
     // We basically need a string literal here, but the path is dynamically provided...
     // https://stackoverflow.com/a/52367953
-    errors.add(Box::leak(path.into_boxed_str()), valid_error);
+    errors.add(
+        Box::leak(figment_error.path.join(".").into_boxed_str()),
+        valid_error,
+    );
 
     errors
 }

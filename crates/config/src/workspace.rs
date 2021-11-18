@@ -1,19 +1,31 @@
 // .monolith/workspace.yml
 
 use crate::constants;
-use crate::errors::map_figment_error_to_validation_errors;
-use crate::validators::validate_version;
+use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
     Figment, Metadata, Profile, Provider,
 };
+use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use validator::{Validate, ValidationError, ValidationErrors};
 
 const NODE_VERSION: &str = "16.13.0";
 const NPM_VERSION: &str = "8.1.0";
+
+pub fn validate_version(value: &str) -> Result<(), ValidationError> {
+    if Version::parse(value).is_err() {
+        return Err(create_validation_error(
+            "invalid_semver",
+            "version",
+            String::from("Must be valid semver."),
+        ));
+    }
+
+    Ok(())
+}
 
 // Validate the `projects` field is a list of valid file system globs,
 // that are relative from the workspace root. Will fail on absolute
@@ -22,10 +34,18 @@ fn validate_projects_list(projects: &[String]) -> Result<(), ValidationError> {
     for path_glob in projects {
         let path = Path::new(path_glob);
 
-        if path.has_root() {
-            return Err(ValidationError::new("projects_no_root"));
+        if path.has_root() || path.is_absolute() {
+            return Err(create_validation_error(
+                "no_root",
+                "projects",
+                String::from("Absolute paths are not supported."),
+            ));
         } else if path.starts_with("..") {
-            return Err(ValidationError::new("projects_no_parent"));
+            return Err(create_validation_error(
+                "no_parent",
+                "projects",
+                String::from("Parent relative paths are not supported."),
+            ));
         }
     }
 
@@ -184,9 +204,11 @@ mod tests {
                 let field_errors = errors.field_errors();
                 let error_list = field_errors.values().next().unwrap();
 
-                return Err(figment::Error::from(figment::error::Kind::Message(
-                    format_validation_error(error_list.first().unwrap()),
-                )));
+                panic!("{}", format_validation_error(error_list.first().unwrap()));
+
+                // return Err(figment::Error::from(figment::error::Kind::Message(
+                //     format_validation_error(error_list.first().unwrap()),
+                // )));
             }
         }
     }
@@ -235,7 +257,7 @@ mod tests {
     mod node {
         #[test]
         #[should_panic(
-            expected = "Invalid type for field `node`. Expected struct NodeConfig, received unsigned int `123`."
+            expected = "Invalid field `node`. Expected struct NodeConfig type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -248,10 +270,49 @@ mod tests {
         }
     }
 
+    mod npm {
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `npm`. Expected struct PackageManagerConfig type, received string \"foo\"."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_WORKSPACE_FILENAME, "npm: foo")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        // #[should_panic(
+        //     expected = "Invalid type for field `projects`. Expected a sequence, received string \"apps/*\"."
+        // )]
+        fn invalid_version() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+npm:
+  version: 'foo bar'
+projects:
+  - 'packages/*'"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                println!("{:?}", config);
+
+                Ok(())
+            });
+        }
+    }
+
     mod projects {
         #[test]
         #[should_panic(
-            expected = "Invalid type for field `projects`. Expected a sequence, received string \"apps/*\"."
+            expected = "Invalid field `projects`. Expected a sequence type, received string \"apps/*\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -267,20 +328,59 @@ mod tests {
         }
 
         #[test]
-        fn list_of_strings() {
+        #[should_panic(expected = "Invalid field `projects`. Absolute paths are not supported.")]
+        fn no_abs_paths() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
                     super::constants::CONFIG_WORKSPACE_FILENAME,
-                    r#"projects:
-                    - 'apps/*'
-                    - 'packages/*'"#,
+                    r#"
+projects:
+  - '/apps/*'
+  - 'packages/*'"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `projects`. Parent relative paths are not supported."
+        )]
+        fn no_parent_paths() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects:
+  - '../apps/*'
+  - 'packages/*'"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn valid_list() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects:
+  - 'apps/*'
+  - './packages/*'"#,
                 )?;
 
                 let config = super::load_jailed_config()?;
 
                 assert_eq!(
                     config.projects,
-                    vec![String::from("apps/*"), String::from("packages/*")],
+                    vec![String::from("apps/*"), String::from("./packages/*")],
                 );
 
                 Ok(())

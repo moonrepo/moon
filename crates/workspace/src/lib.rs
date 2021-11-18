@@ -22,6 +22,7 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
     }
 }
 
+#[derive(Debug)]
 pub struct Workspace {
     pub config: WorkspaceConfig,
 
@@ -35,7 +36,7 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub fn new() -> Result<Workspace, WorkspaceError> {
+    pub fn load() -> Result<Workspace, WorkspaceError> {
         let working_dir = env::current_dir().unwrap();
 
         // Find root dir
@@ -63,14 +64,5 @@ impl Workspace {
             root_dir,
             working_dir,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
     }
 }

@@ -1,6 +1,7 @@
 extern crate clap;
 
 use clap::{crate_version, App, AppSettings, Arg, SubCommand};
+use monolith_workspace::Workspace;
 
 fn main() {
     // Build the app
@@ -25,6 +26,9 @@ fn main() {
 
     // Parse argv and return matches
     let matches = app.get_matches();
+    let workspace = Workspace::load();
+
+    println!("{:?}", workspace);
 
     // Match on a subcommand and branch logic
     match matches.subcommand_name() {

@@ -9,6 +9,7 @@ use figment::{
 };
 use semver::Version;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use validator::{Validate, ValidationError, ValidationErrors};
 
@@ -27,12 +28,12 @@ pub fn validate_version(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-// Validate the `projects` field is a list of valid file system globs,
+// Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
-// globs ("/"), and parent relative globs ("../").
-fn validate_projects_list(projects: &[String]) -> Result<(), ValidationError> {
-    for path_glob in projects {
-        let path = Path::new(path_glob);
+// paths ("/"), and parent relative paths ("../").
+fn validate_projects_map(projects: &HashMap<String, String>) -> Result<(), ValidationError> {
+    for value in projects.values() {
+        let path = Path::new(value);
 
         if path.has_root() || path.is_absolute() {
             return Err(create_validation_error(
@@ -129,8 +130,8 @@ pub struct WorkspaceConfig {
     #[serde(default)]
     pub node: NodeConfig,
 
-    #[validate(custom = "validate_projects_list")]
-    pub projects: Vec<String>,
+    #[validate(custom = "validate_projects_map")]
+    pub projects: HashMap<String, String>,
 
     // Package managers
     pub npm: Option<PackageManagerConfig>,
@@ -142,7 +143,7 @@ impl Default for WorkspaceConfig {
     fn default() -> Self {
         WorkspaceConfig {
             node: NodeConfig::default(),
-            projects: vec![],
+            projects: HashMap::new(),
             npm: None,
             pnpm: None,
             yarn: None,
@@ -229,7 +230,7 @@ mod tests {
     #[test]
     fn loads_defaults() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(constants::CONFIG_WORKSPACE_FILENAME, "projects: []")?;
+            jail.create_file(constants::CONFIG_WORKSPACE_FILENAME, "projects: {}")?;
 
             let config = load_jailed_config()?;
 
@@ -241,7 +242,7 @@ mod tests {
                         package_manager: Some(PackageManager::npm),
                         shasums: NodeConfigShasums::default(),
                     },
-                    projects: vec![],
+                    projects: HashMap::new(),
                     npm: Some(PackageManagerConfig {
                         version: String::from(NPM_VERSION),
                     }),
@@ -297,7 +298,7 @@ mod tests {
 npm:
   version: 'foo bar'
 projects:
-  - 'packages/*'"#,
+  foo: packages/foo"#,
                 )?;
 
                 let config = super::load_jailed_config()?;
@@ -310,9 +311,11 @@ projects:
     }
 
     mod projects {
+        use std::collections::HashMap;
+
         #[test]
         #[should_panic(
-            expected = "Invalid field `projects`. Expected a sequence type, received string \"apps/*\"."
+            expected = "Invalid field `projects`. Expected a map type, received string \"apps/*\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -335,8 +338,8 @@ projects:
                     super::constants::CONFIG_WORKSPACE_FILENAME,
                     r#"
 projects:
-  - '/apps/*'
-  - 'packages/*'"#,
+  app: /apps/app
+  foo: packages/foo"#,
                 )?;
 
                 super::load_jailed_config()?;
@@ -355,8 +358,8 @@ projects:
                     super::constants::CONFIG_WORKSPACE_FILENAME,
                     r#"
 projects:
-  - '../apps/*'
-  - 'packages/*'"#,
+  app: ../apps/app
+  foo: packages/foo"#,
                 )?;
 
                 super::load_jailed_config()?;
@@ -372,15 +375,18 @@ projects:
                     super::constants::CONFIG_WORKSPACE_FILENAME,
                     r#"
 projects:
-  - 'apps/*'
-  - './packages/*'"#,
+  app: apps/app
+  foo: ./packages/foo"#,
                 )?;
 
                 let config = super::load_jailed_config()?;
 
                 assert_eq!(
                     config.projects,
-                    vec![String::from("apps/*"), String::from("./packages/*")],
+                    HashMap::from([
+                        (String::from("app"), String::from("apps/app")),
+                        (String::from("foo"), String::from("./packages/foo"))
+                    ]),
                 );
 
                 Ok(())

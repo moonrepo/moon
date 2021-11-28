@@ -1,31 +1,23 @@
 // .monolith/workspace.yml
 
 use crate::constants;
-use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
+use crate::errors::map_figment_error_to_validation_errors;
+use crate::validators::{validate_child_relative_path, validate_semver_version};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
     Figment, Metadata, Profile, Provider,
 };
-use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 const NODE_VERSION: &str = "16.13.0";
 const NPM_VERSION: &str = "8.1.0";
 
-pub fn validate_version(value: &str) -> Result<(), ValidationError> {
-    if Version::parse(value).is_err() {
-        return Err(create_validation_error(
-            "invalid_semver",
-            "version",
-            String::from("Must be valid semver."),
-        ));
-    }
-
-    Ok(())
+fn validate_version(value: &str) -> Result<(), ValidationError> {
+    validate_semver_version("version", value)
 }
 
 // Validate the `projects` field is a map of valid file system paths
@@ -33,20 +25,9 @@ pub fn validate_version(value: &str) -> Result<(), ValidationError> {
 // paths ("/"), and parent relative paths ("../").
 fn validate_projects_map(projects: &HashMap<String, String>) -> Result<(), ValidationError> {
     for value in projects.values() {
-        let path = Path::new(value);
-
-        if path.has_root() || path.is_absolute() {
-            return Err(create_validation_error(
-                "no_root",
-                "projects",
-                String::from("Absolute paths are not supported."),
-            ));
-        } else if path.starts_with("..") {
-            return Err(create_validation_error(
-                "no_parent",
-                "projects",
-                String::from("Parent relative paths are not supported."),
-            ));
+        match validate_child_relative_path("projects", value) {
+            Ok(_) => {}
+            Err(e) => return Err(e),
         }
     }
 

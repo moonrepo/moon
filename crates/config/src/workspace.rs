@@ -62,51 +62,12 @@ pub enum PackageManager {
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
-pub struct NodeConfigShasums {
-    #[validate(length(min = 1))]
-    pub linux: Option<Vec<String>>,
-
-    #[validate(length(min = 1))]
-    pub macos: Option<Vec<String>>,
-
-    #[validate(length(min = 1))]
-    pub windows: Option<Vec<String>>,
-}
-
-impl Default for NodeConfigShasums {
-    fn default() -> Self {
-        // https://nodejs.org/dist/v16.13.0/SHASUMS256.txt.asc
-        NodeConfigShasums {
-            linux: Some(vec![
-                // linux-arm64
-                String::from("46e3857f5552abd36d9548380d795b043a3ceec2504e69fe1a754fa76012daaf"),
-                // linux-x64
-                String::from("589b7e7eb22f8358797a2c14a0bd865459d0b44458b8f05d2721294dacc7f734"),
-            ]),
-            macos: Some(vec![
-                // darwin-arm64
-                String::from("46d83fc0bd971db5050ef1b15afc44a6665dee40bd6c1cbaec23e1b40fa49e6d"),
-                // darwin-x64
-                String::from("37e09a8cf2352f340d1204c6154058d81362fef4ec488b0197b2ce36b3f0367a"),
-            ]),
-            windows: Some(vec![
-                // x64
-                String::from("bf55b68293b163423ea4856c1d330be23158e78aea18a8756cfdff6fb6ffcd88"),
-            ]),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct NodeConfig {
     #[validate(custom = "validate_version")]
     pub version: String,
 
     #[serde(rename = "packageManager")]
     pub package_manager: Option<PackageManager>,
-
-    #[serde(default)]
-    pub shasums: NodeConfigShasums,
 }
 
 impl Default for NodeConfig {
@@ -114,7 +75,6 @@ impl Default for NodeConfig {
         NodeConfig {
             version: String::from(NODE_VERSION),
             package_manager: Some(PackageManager::npm),
-            shasums: NodeConfigShasums::default(),
         }
     }
 }
@@ -240,7 +200,6 @@ mod tests {
                     node: NodeConfig {
                         version: String::from(NODE_VERSION),
                         package_manager: Some(PackageManager::npm),
-                        shasums: NodeConfigShasums::default(),
                     },
                     projects: HashMap::new(),
                     npm: Some(PackageManagerConfig {

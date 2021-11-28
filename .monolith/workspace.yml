@@ -1,6 +1,6 @@
 projects:
-  - '/apps/*'
-  - 'projects/*'
+  app: /apps/foo
+  lib: libs/bar
 
 npm:
   version: 'foo'

@@ -1,6 +1,5 @@
 use figment::error::Kind;
 use figment::Error as FigmentError;
-use serde_yaml::{to_value, Value};
 use std::borrow::Cow;
 use validator::{ValidationError, ValidationErrors};
 
@@ -11,44 +10,8 @@ pub fn create_validation_error(code: &'static str, path: &str, message: String) 
     error
 }
 
-pub fn format_yaml_value(value: Value) -> String {
-    match value {
-        Value::Null => String::from("null"),
-        Value::Bool(_) => String::from("boolean"),
-        Value::Number(_) => String::from("number"),
-        Value::String(msg) => msg,
-        Value::Sequence(array) => format!("array of {:?}", array),
-        Value::Mapping(object) => format!("object of {:?}", object),
-    }
-}
-
-pub fn format_validation_error(error: &ValidationError) -> String {
-    let mut message = "".to_owned();
-
-    match error.params.get("path") {
-        Some(path) => {
-            let msg = format!(
-                "Invalid field `{}`. ",
-                format_yaml_value(to_value(&path).unwrap())
-            );
-            message.push_str(msg.as_str());
-        }
-        None => {}
-    }
-
-    if error.message.is_some() {
-        let msg = format!("{}", error.message.as_ref().unwrap());
-        message.push_str(msg.as_str());
-    } else {
-        let msg = format!("Unknown failure [{}].", error.code);
-        message.push_str(msg.as_str());
-    }
-
-    message
-}
-
 pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> ValidationErrors {
-    let path = String::from(figment_error.path.join("."));
+    let path = figment_error.path.join(".");
 
     let valid_error = match &figment_error.kind {
         // Fields
@@ -126,4 +89,83 @@ pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> V
     );
 
     errors
+}
+
+#[cfg(test)]
+pub mod tests {
+    use figment::error::Kind;
+    use figment::Error;
+    use serde_yaml::{to_value, Value};
+    use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
+
+    fn format_yaml_value(value: Value) -> String {
+        match value {
+            Value::Null => String::from("null"),
+            Value::Bool(_) => String::from("boolean"),
+            Value::Number(_) => String::from("number"),
+            Value::String(msg) => msg,
+            Value::Sequence(array) => format!("array of {:?}", array),
+            Value::Mapping(object) => format!("object of {:?}", object),
+        }
+    }
+
+    fn format_validation_error(error: &ValidationError) -> String {
+        let mut message = "".to_owned();
+
+        match error.params.get("path") {
+            Some(path) => {
+                let value = format_yaml_value(to_value(&path).unwrap());
+
+                if value != "" {
+                    let msg = format!("Invalid field `{}`. ", value);
+                    message.push_str(msg.as_str());
+                }
+            }
+            None => {}
+        }
+
+        if error.message.is_some() {
+            let msg = format!("{}", error.message.as_ref().unwrap());
+            message.push_str(msg.as_str());
+        } else {
+            let msg = format!("Unknown failure [{}].", error.code);
+            message.push_str(msg.as_str());
+        }
+
+        message
+    }
+
+    fn extract_first_error(errors: &ValidationErrors) -> String {
+        for val in errors.errors().values() {
+            match val {
+                ValidationErrorsKind::Struct(obj) => {
+                    let result = extract_first_error(obj);
+
+                    if result != "" {
+                        return result;
+                    }
+                }
+                ValidationErrorsKind::List(list) => {
+                    if list.len() != 0 {
+                        let item = extract_first_error(list.values().next().unwrap());
+
+                        if item != "" {
+                            return item;
+                        }
+                    }
+                }
+                ValidationErrorsKind::Field(field) => {
+                    if field.len() != 0 {
+                        return format_validation_error(&field[0]);
+                    }
+                }
+            }
+        }
+
+        String::from("")
+    }
+
+    pub fn handled_jailed_error(errors: &ValidationErrors) -> Error {
+        return Error::from(Kind::Message(extract_first_error(errors)));
+    }
 }

@@ -16,8 +16,20 @@ use validator::{Validate, ValidationError, ValidationErrors};
 const NODE_VERSION: &str = "16.13.0";
 const NPM_VERSION: &str = "8.1.0";
 
-fn validate_version(value: &str) -> Result<(), ValidationError> {
-    validate_semver_version("version", value)
+fn validate_node_version(value: &str) -> Result<(), ValidationError> {
+    validate_semver_version("node.version", value)
+}
+
+fn validate_npm_version(value: &str) -> Result<(), ValidationError> {
+    validate_semver_version("npm.version", value)
+}
+
+fn validate_pnpm_version(value: &str) -> Result<(), ValidationError> {
+    validate_semver_version("pnpm.version", value)
+}
+
+fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
+    validate_semver_version("yarn.version", value)
 }
 
 // Validate the `projects` field is a map of valid file system paths
@@ -43,8 +55,26 @@ pub enum PackageManager {
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+pub struct NpmConfig {
+    #[validate(custom = "validate_npm_version")]
+    pub version: String,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+pub struct PnpmConfig {
+    #[validate(custom = "validate_pnpm_version")]
+    pub version: String,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+pub struct YarnConfig {
+    #[validate(custom = "validate_yarn_version")]
+    pub version: String,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct NodeConfig {
-    #[validate(custom = "validate_version")]
+    #[validate(custom = "validate_node_version")]
     pub version: String,
 
     #[serde(rename = "packageManager")]
@@ -61,23 +91,23 @@ impl Default for NodeConfig {
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
-pub struct PackageManagerConfig {
-    #[validate(custom = "validate_version")]
-    pub version: String,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]
+    #[validate]
     pub node: NodeConfig,
 
     #[validate(custom = "validate_projects_map")]
     pub projects: HashMap<String, String>,
 
     // Package managers
-    pub npm: Option<PackageManagerConfig>,
-    pub pnpm: Option<PackageManagerConfig>,
-    pub yarn: Option<PackageManagerConfig>,
+    #[validate]
+    pub npm: Option<NpmConfig>,
+
+    #[validate]
+    pub pnpm: Option<PnpmConfig>,
+
+    #[validate]
+    pub yarn: Option<YarnConfig>,
 }
 
 impl Default for WorkspaceConfig {
@@ -119,7 +149,7 @@ impl WorkspaceConfig {
         // We should always have an npm version,
         // as it's also required for installing Yarn and pnpm!
         if config.npm.is_none() {
-            config.npm = Some(PackageManagerConfig {
+            config.npm = Some(NpmConfig {
                 version: String::from(NPM_VERSION),
             });
         }
@@ -136,21 +166,16 @@ impl WorkspaceConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::errors::format_validation_error;
+    use crate::errors::tests::handled_jailed_error;
     use figment;
 
     fn load_jailed_config() -> Result<WorkspaceConfig, figment::Error> {
         match WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME)) {
-            Ok(cfg) => return Ok(cfg),
+            Ok(cfg) => {
+                return Ok(cfg);
+            }
             Err(errors) => {
-                let field_errors = errors.field_errors();
-                let error_list = field_errors.values().next().unwrap();
-
-                panic!("{}", format_validation_error(error_list.first().unwrap()));
-
-                // return Err(figment::Error::from(figment::error::Kind::Message(
-                //     format_validation_error(error_list.first().unwrap()),
-                // )));
+                return Err(handled_jailed_error(&errors));
             }
         }
     }
@@ -183,7 +208,7 @@ mod tests {
                         package_manager: Some(PackageManager::npm),
                     },
                     projects: HashMap::new(),
-                    npm: Some(PackageManagerConfig {
+                    npm: Some(NpmConfig {
                         version: String::from(NPM_VERSION),
                     }),
                     pnpm: None,
@@ -214,7 +239,7 @@ mod tests {
     mod npm {
         #[test]
         #[should_panic(
-            expected = "Invalid field `npm`. Expected struct PackageManagerConfig type, received string \"foo\"."
+            expected = "Invalid field `npm`. Expected struct NpmConfig type, received string \"foo\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -227,15 +252,91 @@ mod tests {
         }
 
         #[test]
-        // #[should_panic(
-        //     expected = "Invalid type for field `projects`. Expected a sequence, received string \"apps/*\"."
-        // )]
+        #[should_panic(expected = "Invalid field `npm.version`. Must be a valid semantic version.")]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
                     super::constants::CONFIG_WORKSPACE_FILENAME,
                     r#"
 npm:
+  version: 'foo bar'
+projects:
+  foo: packages/foo"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                println!("{:?}", config);
+
+                Ok(())
+            });
+        }
+    }
+
+    mod pnpm {
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `pnpm`. Expected struct PnpmConfig type, received string \"foo\"."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_WORKSPACE_FILENAME, "pnpm: foo")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `pnpm.version`. Must be a valid semantic version."
+        )]
+        fn invalid_version() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+pnpm:
+  version: 'foo bar'
+projects:
+  foo: packages/foo"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                println!("{:?}", config);
+
+                Ok(())
+            });
+        }
+    }
+
+    mod yarn {
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `yarn`. Expected struct YarnConfig type, received string \"foo\"."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_WORKSPACE_FILENAME, "yarn: foo")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `yarn.version`. Must be a valid semantic version."
+        )]
+        fn invalid_version() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+yarn:
   version: 'foo bar'
 projects:
   foo: packages/foo"#,

@@ -18,7 +18,7 @@ pub fn validate_semver_version(key: &str, value: &str) -> Result<(), ValidationE
 
 // Validate the value is a valid child relative file system path.
 // Will fail on absolute paths ("/"), and parent relative paths ("../").
-pub fn validate_child_relative_path(key: &str, value: &String) -> Result<(), ValidationError> {
+pub fn validate_child_relative_path(key: &str, value: &str) -> Result<(), ValidationError> {
     let path = Path::new(value);
 
     if path.has_root() || path.is_absolute() {

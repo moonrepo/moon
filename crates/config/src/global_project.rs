@@ -64,12 +64,8 @@ mod tests {
 
     fn load_jailed_config() -> Result<GlobalProjectConfig, figment::Error> {
         match GlobalProjectConfig::load(PathBuf::from(constants::CONFIG_PROJECT_FILENAME)) {
-            Ok(cfg) => {
-                return Ok(cfg);
-            }
-            Err(errors) => {
-                return Err(handled_jailed_error(&errors));
-            }
+            Ok(cfg) => Ok(cfg),
+            Err(errors) => Err(handled_jailed_error(&errors)),
         }
     }
 

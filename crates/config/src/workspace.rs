@@ -158,12 +158,8 @@ mod tests {
 
     fn load_jailed_config() -> Result<WorkspaceConfig, figment::Error> {
         match WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME)) {
-            Ok(cfg) => {
-                return Ok(cfg);
-            }
-            Err(errors) => {
-                return Err(handled_jailed_error(&errors));
-            }
+            Ok(cfg) => Ok(cfg),
+            Err(errors) => Err(handled_jailed_error(&errors)),
         }
     }
 

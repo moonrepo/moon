@@ -1,7 +1,9 @@
-# Settings
+# Configures Node.js within the toolchain. Monolith manages its own version of Node.js
+# instead of relying on a version found on the host machine. This ensures deterministic
+# and reproducible builds across any machine.
 node:
-  # The version of Node.js to use. Must be a semantic version that includes major, minor,
-  # and patch identifiers.
+  # The version to use. Must be a semantic version that includes major, minor, and patch.
+  # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases/
   version: '16.13.0'
 
   # The package manager to use when managing dependencies. Accepts "npm", "pnpm", or "yarn".

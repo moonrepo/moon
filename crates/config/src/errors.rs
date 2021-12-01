@@ -113,16 +113,13 @@ pub mod tests {
     fn format_validation_error(error: &ValidationError) -> String {
         let mut message = "".to_owned();
 
-        match error.params.get("path") {
-            Some(path) => {
-                let value = format_yaml_value(to_value(&path).unwrap());
+        if let Some(path) = error.params.get("path") {
+            let value = format_yaml_value(to_value(&path).unwrap());
 
-                if value != "" {
-                    let msg = format!("Invalid field `{}`. ", value);
-                    message.push_str(msg.as_str());
-                }
+            if !value.is_empty() {
+                let msg = format!("Invalid field `{}`. ", value);
+                message.push_str(msg.as_str());
             }
-            None => {}
         }
 
         if error.message.is_some() {
@@ -142,21 +139,21 @@ pub mod tests {
                 ValidationErrorsKind::Struct(obj) => {
                     let result = extract_first_error(obj);
 
-                    if result != "" {
+                    if !result.is_empty() {
                         return result;
                     }
                 }
                 ValidationErrorsKind::List(list) => {
-                    if list.len() != 0 {
+                    if !list.is_empty() {
                         let item = extract_first_error(list.values().next().unwrap());
 
-                        if item != "" {
+                        if !item.is_empty() {
                             return item;
                         }
                     }
                 }
                 ValidationErrorsKind::Field(field) => {
-                    if field.len() != 0 {
+                    if !field.is_empty() {
                         return format_validation_error(&field[0]);
                     }
                 }
@@ -167,6 +164,6 @@ pub mod tests {
     }
 
     pub fn handled_jailed_error(errors: &ValidationErrors) -> Error {
-        return Error::from(Kind::Message(extract_first_error(errors)));
+        Error::from(Kind::Message(extract_first_error(errors)))
     }
 }

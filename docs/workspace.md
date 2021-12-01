@@ -1,21 +1,32 @@
 # Workspace
 
-A workspace is a directory that contains [projects](./project.md) and manages a
+- [Configuration](#configuration)
+  - [workspace.yml](#workspaceyml)
+    - [projects](#projects)
+    - [node](#node)
+      - [packageManager](#packagemanager)
+      - [version](#version)
+    - [npm, pnpm, yarn](#npm-pnpm-yarn)
+      - [version](#version-1)
+  - [project.yml](#projectyml)
+    - [fileGroups](#filegroups)
+
+A workspace is a directory that contains [projects](./project.md), manages a
 [toolchain](./toolchain.md), and is typically coupled with a VCS repository. The root of a workspace
 is denoted by a `.monolith` folder and a `package.json`.
 
-By default Monolith has been designed for monorepos, but it can also be used for polyrepos.
+By default Monolith has been designed for monorepos, but can also be used for polyrepos.
 
 ## Configuration
 
 Configurations that apply to the entire workspace are located within a `.monolith` folder at the
-root of the workspace.
+workspace root.
 
-> This folder _must_ be relative to the root `package.json` and package manager lock file.
+> This folder _must_ be relative to the root `package.json` and it's associated lock file.
 
 ### workspace.yml
 
-The `.monolith/workspace.yml` file configures settings for projects and the toolchain.
+The `.monolith/workspace.yml` file configures projects and the toolchain.
 
 #### projects
 
@@ -27,17 +38,15 @@ within the workspace boundary.
 
 ```yaml
 projects:
-	admin: apps/admin
-	web: apps/web
-	dsl: packages/design-system
+  admin: apps/admin
+  web: apps/web
+  dsl: packages/design-system
 ```
 
 Unlike packages in the JavaScript ecosystem, a Monolith project _does not_ require a `package.json`.
 
-> **Why doesn't Monolith auto-detect projects?**
->
-> Monolith _does not_ automatically detect projects using file system globs for the following
-> reasons:
+> **Why doesn't Monolith auto-detect projects?** Monolith _does not_ automatically detect projects
+> using file system globs for the following reasons:
 >
 > - Depth-first scans are expensive, especially when the workspace continues to grow.
 > - CI and other machines may inadvertently detect more projects because of left over artifacts.
@@ -51,7 +60,7 @@ within the toolchain ensures a deterministic environment across any machine (whe
 CI, or production machine).
 
 > This setting is optional, and will default Node.js to the latest
-> [current LTS version](https://nodejs.org/en/about/releases/) when not defined.
+> [active LTS version](https://nodejs.org/en/about/releases/) when not defined.
 
 ##### version
 
@@ -61,7 +70,7 @@ machine.
 
 ```yaml
 node:
-	version: '16.13.0'
+  version: '16.13.0'
 ```
 
 ##### packageManager
@@ -71,7 +80,7 @@ This setting defines which package manager to utilize within the workspace. Supp
 
 ```yaml
 node:
-	packageManager: yarn
+  packageManager: yarn
 ```
 
 #### npm, pnpm, yarn
@@ -88,7 +97,7 @@ major, minor, and patch version, to ensure the same environment is used across e
 
 ```yaml
 yarn:
-	version: '3.1.0'
+  version: '3.1.0'
 ```
 
 ### project.yml
@@ -108,20 +117,20 @@ of organizational patterns across all projects in the workspace.
 
 ```yaml
 fileGroups:
-	configs:
-		- '*.{js,json}'
-	sources:
-		- 'src/**/*'
-		- 'types/**/*'
-	tests:
-		- 'tests/**/*.test.*'
-		- '**/__tests__/**/*'
-	assets:
-		- 'assets/**/*'
-		- 'images/**/*'
-		- 'static/**/*'
-		- '**/*.s?css'
-		- '**/*.mdx?'
+  configs:
+    - '*.{js,json}'
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*.test.*'
+    - '**/__tests__/**/*'
+  assets:
+    - 'assets/**/*'
+    - 'images/**/*'
+    - 'static/**/*'
+    - '**/*.s?css'
+    - '**/*.mdx?'
 ```
 
 > The code snippet above is merely an example of file groups. Feel free to use those groups as-is,

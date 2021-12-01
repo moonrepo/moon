@@ -11,3 +11,15 @@ pub use global_project::GlobalProjectConfig;
 pub use project::ProjectConfig;
 pub use validator::ValidationErrors;
 pub use workspace::WorkspaceConfig;
+
+pub fn load_workspace_config_template() -> &'static str {
+    include_str!("../templates/workspace.yml")
+}
+
+pub fn load_global_project_config_template() -> &'static str {
+    include_str!("../templates/global_project.yml")
+}
+
+pub fn load_project_config_template() -> &'static str {
+    include_str!("../templates/project.yml")
+}

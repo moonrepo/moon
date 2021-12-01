@@ -14,7 +14,6 @@ use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 const NODE_VERSION: &str = "16.13.0";
-const NPM_VERSION: &str = "8.1.0";
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.version", value)
@@ -138,23 +137,11 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
-        // Load and parse the yaml config file using Figment and handle accordingly.
-        // Unfortunately this does some "validation", so instead of having 2 validation paths,
-        // let's remap to a `validator` error type, so that downstream can handle easily.
-        let mut config: WorkspaceConfig = match Figment::new().merge(Yaml::file(path)).extract() {
+        let config: WorkspaceConfig = match Figment::new().merge(Yaml::file(path)).extract() {
             Ok(cfg) => cfg,
             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
         };
 
-        // We should always have an npm version,
-        // as it's also required for installing Yarn and pnpm!
-        if config.npm.is_none() {
-            config.npm = Some(NpmConfig {
-                version: String::from(NPM_VERSION),
-            });
-        }
-
-        // Validate the fields before continuing
         if let Err(errors) = config.validate() {
             return Err(errors);
         }
@@ -208,9 +195,7 @@ mod tests {
                         package_manager: Some(PackageManager::npm),
                     },
                     projects: HashMap::new(),
-                    npm: Some(NpmConfig {
-                        version: String::from(NPM_VERSION),
-                    }),
+                    npm: None,
                     pnpm: None,
                     yarn: None
                 }
@@ -228,6 +213,108 @@ mod tests {
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(super::constants::CONFIG_WORKSPACE_FILENAME, "node: 123")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `node.version`. Must be a valid semantic version."
+        )]
+        fn invalid_version() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+  version: 'foo bar'
+projects:
+  foo: packages/foo"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `node.version`. Must be a valid semantic version."
+        )]
+        fn no_patch_version() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+  version: '16.13'
+projects:
+  foo: packages/foo"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `node.version`. Must be a valid semantic version."
+        )]
+        fn no_minor_version() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+  version: '16'
+projects:
+  foo: packages/foo"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field `node.packageManager`. Unknown option `what`.")]
+        fn invalid_package_manager() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+  version: '16.13.0'
+  packageManager: what
+projects:
+  foo: packages/foo"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn valid_package_manager() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+  version: '16.13.0'
+  packageManager: yarn
+projects:
+  foo: packages/foo"#,
+                )?;
 
                 super::load_jailed_config()?;
 
@@ -264,9 +351,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
-
-                println!("{:?}", config);
+                super::load_jailed_config()?;
 
                 Ok(())
             });
@@ -303,9 +388,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
-
-                println!("{:?}", config);
+                super::load_jailed_config()?;
 
                 Ok(())
             });
@@ -342,9 +425,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
-
-                println!("{:?}", config);
+                super::load_jailed_config()?;
 
                 Ok(())
             });

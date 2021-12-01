@@ -49,7 +49,7 @@ pub struct ProjectConfig {
     file_groups: Option<HashMap<String, Vec<String>>>,
 
     #[validate]
-    project: ProjectMetadataConfig,
+    project: Option<ProjectMetadataConfig>,
 }
 
 impl Default for ProjectConfig {
@@ -57,13 +57,7 @@ impl Default for ProjectConfig {
         ProjectConfig {
             depends_on: None,
             file_groups: None,
-            project: ProjectMetadataConfig {
-                name: String::from(""),
-                description: String::from(""),
-                owner: String::from(""),
-                maintainers: vec![String::from("")],
-                channel: String::from(""),
-            },
+            project: None,
         }
     }
 }
@@ -84,15 +78,11 @@ impl Provider for ProjectConfig {
 
 impl ProjectConfig {
     pub fn load(path: PathBuf) -> Result<ProjectConfig, ValidationErrors> {
-        // Load and parse the yaml config file using Figment and handle accordingly.
-        // Unfortunately this does some "validation", so instead of having 2 validation paths,
-        // let's remap to a `validator` error type, so that downstream can handle easily.
         let config: ProjectConfig = match Figment::new().merge(Yaml::file(path)).extract() {
             Ok(cfg) => cfg,
             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
         };
 
-        // Validate the fields before continuing
         if let Err(errors) = config.validate() {
             return Err(errors);
         }
@@ -119,7 +109,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Missing field `project`.")]
     fn empty_file() {
         figment::Jail::expect_with(|jail| {
             // Needs a fake yaml value, otherwise the file reading panics
@@ -138,17 +127,7 @@ mod tests {
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
-                jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
-                    r#"
-dependsOn: 123
-project:
-    name: ''
-    description: ''
-    owner: ''
-    maintainers: []
-    channel: ''"#,
-                )?;
+                jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "dependsOn: 123")?;
 
                 super::load_jailed_config()?;
 
@@ -164,16 +143,25 @@ project:
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "fileGroups: 123")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `fileGroups.sources`. Expected a sequence type, received unsigned int `123`."
+        )]
+        fn invalid_value_type() {
+            figment::Jail::expect_with(|jail| {
                 jail.create_file(
                     super::constants::CONFIG_PROJECT_FILENAME,
                     r#"
-fileGroups: 123
-project:
-    name: ''
-    description: ''
-    owner: ''
-    maintainers: []
-    channel: ''"#,
+fileGroups:
+    sources: 123"#,
                 )?;
 
                 super::load_jailed_config()?;

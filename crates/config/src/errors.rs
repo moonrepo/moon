@@ -6,6 +6,7 @@ use validator::{ValidationError, ValidationErrors};
 pub fn create_validation_error(code: &'static str, path: &str, message: String) -> ValidationError {
     let mut error = ValidationError::new(code);
     error.message = Some(Cow::from(message));
+    // Is there a better way to do this?
     error.add_param(Cow::from("path"), &path.to_owned());
     error
 }
@@ -33,7 +34,7 @@ pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> V
         Kind::UnknownVariant(field, _) => create_validation_error(
             "unknown_field_variant",
             path.as_str(),
-            format!("Unknown field variant `{}`.", field),
+            format!("Unknown option `{}`.", field),
         ),
 
         // Values

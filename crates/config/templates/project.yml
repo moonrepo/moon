@@ -1,0 +1,23 @@
+# TODO
+project:
+  # Unique name and description of the project. Will appear in the project graph.
+  name: 'Example'
+  description: 'A description of what the example project does.'
+
+  # The channel (with leading #) to discuss the project.
+  # Can be a Slack, Discord, Teams, etc, channel name.
+  channel: '#example'
+
+  # The team or organization that owns the project.
+  # Can be a title, LDAP name, GitHub team, etc.
+  owner: ''
+
+  # A list of developers that maintain the project and review code changes.
+  # Can be a name, email, LDAP/GitHub username, etc.
+  maintainers: []
+
+# TODO
+dependsOn: []
+
+# TODO
+fileGroups: {}

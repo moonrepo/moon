@@ -1,0 +1,17 @@
+# Configures Node.js within the toolchain. Monolith manages its own version of Node.js
+# instead of relying on a version found on the host machine. This ensures deterministic
+# and reproducible builds across any machine.
+node:
+  # The version to use. Must be a semantic version that includes major, minor, and patch.
+  # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases/
+  version: '16.13.0'
+
+  # The package manager to use when managing dependencies. Accepts "npm", "pnpm", or "yarn".
+  packageManager: npm
+
+# A map of all projects found within the workspace. Each entry requires a unique project ID
+# as the map key, and a file system path to the project folder as the map value. File paths
+# are relative from the workspace root, and cannot reference projects located outside the
+# workspace boundary.
+projects:
+  example: packages/example

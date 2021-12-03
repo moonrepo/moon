@@ -1,11 +1,15 @@
 use crate::errors::ToolchainError;
 use crate::traits::Tool;
+use async_trait::async_trait;
 use monolith_config::workspace::NodeConfig;
+use reqwest;
 use std::env::consts;
+use std::fs;
+use std::io;
 use std::path::PathBuf;
 
 #[allow(unused_assignments)]
-fn determine_download_url(version: &String) -> Result<String, ToolchainError> {
+fn get_download_file_name(version: &String) -> Result<String, ToolchainError> {
 	let mut platform = "";
 	let mut ext = "tar.xz";
 
@@ -39,7 +43,7 @@ fn determine_download_url(version: &String) -> Result<String, ToolchainError> {
 	}
 
 	Ok(format!(
-		"https://nodejs.org/dist/v{version}/node-v{version}-{platform}-{arch}.{ext}",
+		"node-v{version}-{platform}-{arch}.{ext}",
 		version = version,
 		platform = platform,
 		arch = arch,
@@ -82,22 +86,37 @@ impl NodeTool {
 	}
 }
 
+#[async_trait]
 impl Tool for NodeTool {
 	fn is_downloaded(&self) -> bool {
 		self.install_dir.exists()
 	}
 
-	fn download(&self) -> Result<(), ToolchainError> {
-		determine_download_url(&self.version)?;
+	async fn download(&self, temp_dir: &PathBuf) -> Result<PathBuf, ToolchainError> {
+		let file_name = get_download_file_name(&self.version)?;
+		let file_path = temp_dir.join(file_name);
+		let mut file = fs::File::create(file_path)?;
 
-		Ok(())
+		let response = reqwest::get(format!(
+			"https://nodejs.org/dist/v{version}/{file_name}",
+			version = self.version,
+			file_name = file_name,
+		))
+		.await?;
+
+		let mut content = io::Cursor::new(response.bytes().await?);
+
+		io::copy(&mut content, &mut file)?;
+
+		Ok(file_path)
 	}
 
 	fn is_installed(&self) -> bool {
 		self.bin_path.exists()
 	}
 
-	fn install(&self) -> Result<(), ToolchainError> {
+	async fn install(&self) -> Result<(), ToolchainError> {
+		// TODO, unzip temp file
 		Ok(())
 	}
 

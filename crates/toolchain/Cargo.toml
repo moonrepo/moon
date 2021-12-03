@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 monolith_config = { path = "../config" }
+async-trait = "0.1.51"
 dirs = "4.0"
 reqwest = "0.11"
 thiserror = "1.0"

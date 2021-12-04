@@ -1,12 +1,15 @@
 use crate::errors::ToolchainError;
-use crate::traits::Tool;
+use crate::tool::{Tool, ToolRuntime};
+use crate::Toolchain;
 use async_trait::async_trait;
+use flate2::read::GzDecoder;
 use monolith_config::workspace::NodeConfig;
 use reqwest;
 use std::env::consts;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
+use tar::Archive;
 
 #[allow(unused_assignments)]
 fn get_download_file_name(version: &String) -> Result<String, ToolchainError> {
@@ -51,23 +54,18 @@ fn get_download_file_name(version: &String) -> Result<String, ToolchainError> {
 	))
 }
 
-#[derive(Debug)]
-pub struct NodeTool {
-	/// Path to the executable binary.
-	bin_path: PathBuf,
-
-	/// Path to the installation directory.
-	install_dir: PathBuf,
-
-	/// Version of the tool.
-	version: String,
-}
+pub type NodeTool = Tool;
 
 impl NodeTool {
-	pub fn load(cache_dir: &PathBuf, config: &NodeConfig) -> Self {
-		let mut install_dir = cache_dir.clone();
+	pub fn load(toolchain: &Toolchain, config: &NodeConfig) -> Result<Self, ToolchainError> {
+		let mut download_path = toolchain.get_temp_dir()?;
 
-		install_dir.push("tools/node");
+		download_path.push("node");
+		download_path.push(get_download_file_name(&config.version)?);
+
+		let mut install_dir = toolchain.get_tools_dir()?;
+
+		install_dir.push("node");
 		install_dir.push(&config.version);
 
 		let mut bin_path = install_dir.clone();
@@ -78,50 +76,74 @@ impl NodeTool {
 			bin_path.push("bin/node");
 		}
 
-		NodeTool {
+		Ok(NodeTool {
 			bin_path,
+			download_path,
 			install_dir,
 			version: String::from(&config.version),
-		}
+		})
 	}
 }
 
 #[async_trait]
-impl Tool for NodeTool {
+impl ToolRuntime for NodeTool {
 	fn is_downloaded(&self) -> bool {
-		self.install_dir.exists()
+		self.download_path.exists()
 	}
 
-	async fn download(&self, temp_dir: &PathBuf) -> Result<PathBuf, ToolchainError> {
-		let file_name = get_download_file_name(&self.version)?;
-		let file_path = temp_dir.join(file_name);
-		let mut file = fs::File::create(file_path)?;
+	async fn download(&self) -> Result<(), ToolchainError> {
+		let mut file =
+			fs::File::create(&self.download_path).map_err(|_| ToolchainError::FailedToDownload)?;
 
+		// Fetch the archive from the HTTP distro
 		let response = reqwest::get(format!(
 			"https://nodejs.org/dist/v{version}/{file_name}",
 			version = self.version,
-			file_name = file_name,
+			file_name = get_download_file_name(&self.version)?,
 		))
-		.await?;
+		.await
+		.map_err(|_| ToolchainError::FailedToDownload)?;
 
-		let mut content = io::Cursor::new(response.bytes().await?);
+		// Write the bytes to our temp dir
+		let mut contents = io::Cursor::new(
+			response
+				.bytes()
+				.await
+				.map_err(|_| ToolchainError::FailedToDownload)?,
+		);
 
-		io::copy(&mut content, &mut file)?;
+		io::copy(&mut contents, &mut file).map_err(|_| ToolchainError::FailedToDownload)?;
 
-		Ok(file_path)
+		Ok(())
 	}
 
 	fn is_installed(&self) -> bool {
-		self.bin_path.exists()
+		self.install_dir.exists()
 	}
 
 	async fn install(&self) -> Result<(), ToolchainError> {
-		// TODO, unzip temp file
+		// Open .tar.gz file
+		let tar_gz = fs::File::open(self.download_path).map_err(|_| ToolchainError::FailedToInstall)?;
+
+		// Decompress to .tar
+		let tar = GzDecoder::new(tar_gz);
+
+		// Unpack the archive into the install dir
+		let mut archive = Archive::new(tar);
+
+		archive
+			.unpack(self.install_dir)
+			.map_err(|_| ToolchainError::FailedToInstall)?;
+
 		Ok(())
 	}
 
 	fn get_bin_path(&self) -> &PathBuf {
 		&self.bin_path
+	}
+
+	fn get_download_path(&self) -> &PathBuf {
+		&self.download_path
 	}
 
 	fn get_install_dir(&self) -> &PathBuf {

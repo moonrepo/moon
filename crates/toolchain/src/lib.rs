@@ -1,14 +1,12 @@
 mod errors;
+mod tool;
 mod tools;
-mod traits;
 
 use dirs::home_dir as get_home_dir;
 use errors::ToolchainError;
 use monolith_config::constants;
-use monolith_config::WorkspaceConfig;
 use std::fs;
 use std::path::PathBuf;
-use tools::node::NodeTool;
 
 fn create_dir(dir: &PathBuf) -> Result<(), ToolchainError> {
     // If path exists but is not a directory, delete it
@@ -54,28 +52,63 @@ fn find_or_create_temp_dir(cache_dir: &PathBuf) -> Result<PathBuf, ToolchainErro
 
 #[derive(Debug)]
 pub struct Toolchain {
-    /// The directory where tools are downloaded and installed.
-    /// This is typically ~/.monolith.
-    pub cache_dir: PathBuf,
+    dir: Option<PathBuf>,
 
-    /// The directory where temporary files are stored.
-    /// This is typically ~/.monolith/temp.
-    pub temp_dir: PathBuf,
+    temp_dir: Option<PathBuf>,
 
-    /// The Node.js tool instance. Will always exist.
-    pub node: NodeTool,
+    tools_dir: Option<PathBuf>,
 }
 
 impl Toolchain {
-    pub fn load(config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
-        let cache_dir = find_or_create_cache_dir()?;
-        let temp_dir = find_or_create_temp_dir(&cache_dir)?;
-        let node = NodeTool::load(&cache_dir, &config.node);
+    /// Returns the directory where toolchain artifacts are stored.
+    /// This is typically ~/.monolith.
+    fn get_dir(&self) -> Result<PathBuf, ToolchainError> {
+        match self.dir {
+            Some(dir) => Ok(dir),
+            None => {
+                let home_dir = get_home_dir().ok_or(ToolchainError::MissingHomeDir)?;
+                let cache_dir = home_dir.join(constants::CONFIG_DIRNAME);
 
-        Ok(Toolchain {
-            cache_dir,
-            temp_dir,
-            node,
-        })
+                create_dir(&cache_dir)?;
+
+                self.dir = Some(cache_dir);
+
+                return Ok(cache_dir);
+            }
+        }
+    }
+
+    /// Returns the directory where temporary files are stored.
+    /// This is typically ~/.monolith/temp.
+    fn get_temp_dir(&self) -> Result<PathBuf, ToolchainError> {
+        match self.temp_dir {
+            Some(dir) => Ok(dir),
+            None => {
+                let temp_dir = self.get_dir()?.join("temp");
+
+                create_dir(&temp_dir)?;
+
+                self.temp_dir = Some(temp_dir);
+
+                return Ok(temp_dir);
+            }
+        }
+    }
+
+    /// Returns the directory where tools are installed by version.
+    /// This is typically ~/.monolith/tools.
+    fn get_tools_dir(&self) -> Result<PathBuf, ToolchainError> {
+        match self.temp_dir {
+            Some(dir) => Ok(dir),
+            None => {
+                let tools_dir = self.get_dir()?.join("tools");
+
+                create_dir(&tools_dir)?;
+
+                self.tools_dir = Some(tools_dir);
+
+                return Ok(tools_dir);
+            }
+        }
     }
 }

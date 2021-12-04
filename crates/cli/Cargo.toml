@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 monolith_workspace = { path = "../workspace" }
-clap = "2.33.3"
+clap = "2.33"
+tokio =  { version = "1.14", features = ["full"] }

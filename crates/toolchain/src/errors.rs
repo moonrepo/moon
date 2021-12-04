@@ -8,6 +8,12 @@ pub enum ToolchainError {
     #[error("Failed to create a directory.")]
     FailedToCreateDir,
 
+    #[error("Failed to download tool.")]
+    FailedToDownload,
+
+    #[error("Failed to install tool.")]
+    FailedToInstall,
+
     #[error("Unsupported architecture.")]
     UnsupportedArchitecture(String),
 

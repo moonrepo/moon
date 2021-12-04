@@ -3,7 +3,8 @@ extern crate clap;
 use clap::{crate_version, App, AppSettings, Arg, SubCommand};
 use monolith_workspace::Workspace;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // Build the app
     let app = App::new("Monolith")
         .bin_name("mono")

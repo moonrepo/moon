@@ -6,24 +6,20 @@ use dirs::home_dir as get_home_dir;
 use errors::ToolchainError;
 use monolith_config::constants;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-fn create_dir(dir: &PathBuf) -> Result<(), ToolchainError> {
+fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     // If path exists but is not a directory, delete it
     if dir.exists() {
-        if dir.is_file() {
-            if let Err(_) = fs::remove_file(dir.as_path()) {
-                return Err(ToolchainError::FailedToCreateDir);
-            }
+        if dir.is_file() && fs::remove_file(dir).is_err() {
+            return Err(ToolchainError::FailedToCreateDir);
         }
 
         // TODO symlink
 
         // Otherwise attempt to create the directory
-    } else {
-        if let Err(_) = fs::create_dir(dir.as_path()) {
-            return Err(ToolchainError::FailedToCreateDir);
-        }
+    } else if fs::create_dir(dir).is_err() {
+        return Err(ToolchainError::FailedToCreateDir);
     }
 
     Ok(())
@@ -42,10 +38,10 @@ fn find_or_create_cache_dir() -> Result<PathBuf, ToolchainError> {
     Ok(cache_dir)
 }
 
-fn find_or_create_temp_dir(cache_dir: &PathBuf) -> Result<PathBuf, ToolchainError> {
+fn find_or_create_temp_dir(cache_dir: &Path) -> Result<PathBuf, ToolchainError> {
     let temp_dir = cache_dir.join("temp");
 
-    create_dir(&cache_dir)?;
+    create_dir(cache_dir)?;
 
     Ok(temp_dir)
 }
@@ -62,52 +58,52 @@ pub struct Toolchain {
 impl Toolchain {
     /// Returns the directory where toolchain artifacts are stored.
     /// This is typically ~/.monolith.
-    fn get_dir(&self) -> Result<PathBuf, ToolchainError> {
-        match self.dir {
-            Some(dir) => Ok(dir),
+    fn get_dir(&mut self) -> Result<PathBuf, ToolchainError> {
+        match &self.dir {
+            Some(dir) => Ok(dir.clone()),
             None => {
                 let home_dir = get_home_dir().ok_or(ToolchainError::MissingHomeDir)?;
                 let cache_dir = home_dir.join(constants::CONFIG_DIRNAME);
 
                 create_dir(&cache_dir)?;
 
-                self.dir = Some(cache_dir);
+                self.dir = Some(cache_dir.clone());
 
-                return Ok(cache_dir);
+                Ok(cache_dir)
             }
         }
     }
 
     /// Returns the directory where temporary files are stored.
     /// This is typically ~/.monolith/temp.
-    fn get_temp_dir(&self) -> Result<PathBuf, ToolchainError> {
-        match self.temp_dir {
-            Some(dir) => Ok(dir),
+    fn get_temp_dir(&mut self) -> Result<PathBuf, ToolchainError> {
+        match &self.temp_dir {
+            Some(dir) => Ok(dir.clone()),
             None => {
                 let temp_dir = self.get_dir()?.join("temp");
 
                 create_dir(&temp_dir)?;
 
-                self.temp_dir = Some(temp_dir);
+                self.temp_dir = Some(temp_dir.clone());
 
-                return Ok(temp_dir);
+                Ok(temp_dir)
             }
         }
     }
 
     /// Returns the directory where tools are installed by version.
     /// This is typically ~/.monolith/tools.
-    fn get_tools_dir(&self) -> Result<PathBuf, ToolchainError> {
-        match self.temp_dir {
-            Some(dir) => Ok(dir),
+    fn get_tools_dir(&mut self) -> Result<PathBuf, ToolchainError> {
+        match &self.temp_dir {
+            Some(dir) => Ok(dir.clone()),
             None => {
                 let tools_dir = self.get_dir()?.join("tools");
 
                 create_dir(&tools_dir)?;
 
-                self.tools_dir = Some(tools_dir);
+                self.tools_dir = Some(tools_dir.clone());
 
-                return Ok(tools_dir);
+                Ok(tools_dir)
             }
         }
     }

@@ -14,6 +14,9 @@ pub enum ToolchainError {
     #[error("Failed to install tool.")]
     FailedToInstall,
 
+    #[error("Failed to unload tool from toolchain.")]
+    FailedToUnload,
+
     #[error("Unsupported architecture.")]
     UnsupportedArchitecture(String),
 

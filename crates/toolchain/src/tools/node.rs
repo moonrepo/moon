@@ -12,9 +12,9 @@ use std::path::PathBuf;
 use tar::Archive;
 
 #[allow(unused_assignments)]
-fn get_download_file_name(version: &String) -> Result<String, ToolchainError> {
+fn get_download_file_name(version: &str) -> Result<String, ToolchainError> {
 	let mut platform = "";
-	let mut ext = "tar.xz";
+	let mut ext = "tar.gz";
 
 	if consts::OS == "linux" {
 		platform = "linux"
@@ -57,7 +57,7 @@ fn get_download_file_name(version: &String) -> Result<String, ToolchainError> {
 pub type NodeTool = Tool;
 
 impl NodeTool {
-	pub fn load(toolchain: &Toolchain, config: &NodeConfig) -> Result<Self, ToolchainError> {
+	pub fn load(toolchain: &mut Toolchain, config: &NodeConfig) -> Result<Self, ToolchainError> {
 		let mut download_path = toolchain.get_temp_dir()?;
 
 		download_path.push("node");
@@ -78,7 +78,7 @@ impl NodeTool {
 
 		Ok(NodeTool {
 			bin_path,
-			download_path,
+			download_path: Some(download_path),
 			install_dir,
 			version: String::from(&config.version),
 		})
@@ -88,12 +88,12 @@ impl NodeTool {
 #[async_trait]
 impl ToolRuntime for NodeTool {
 	fn is_downloaded(&self) -> bool {
-		self.download_path.exists()
+		self.download_path.is_some() && self.download_path.as_ref().unwrap().exists()
 	}
 
 	async fn download(&self) -> Result<(), ToolchainError> {
-		let mut file =
-			fs::File::create(&self.download_path).map_err(|_| ToolchainError::FailedToDownload)?;
+		let mut file = fs::File::create(&self.download_path.as_ref().unwrap())
+			.map_err(|_| ToolchainError::FailedToDownload)?;
 
 		// Fetch the archive from the HTTP distro
 		let response = reqwest::get(format!(
@@ -123,7 +123,8 @@ impl ToolRuntime for NodeTool {
 
 	async fn install(&self) -> Result<(), ToolchainError> {
 		// Open .tar.gz file
-		let tar_gz = fs::File::open(self.download_path).map_err(|_| ToolchainError::FailedToInstall)?;
+		let tar_gz = fs::File::open(self.download_path.as_ref().unwrap())
+			.map_err(|_| ToolchainError::FailedToInstall)?;
 
 		// Decompress to .tar
 		let tar = GzDecoder::new(tar_gz);
@@ -132,7 +133,7 @@ impl ToolRuntime for NodeTool {
 		let mut archive = Archive::new(tar);
 
 		archive
-			.unpack(self.install_dir)
+			.unpack(&self.install_dir)
 			.map_err(|_| ToolchainError::FailedToInstall)?;
 
 		Ok(())
@@ -142,8 +143,12 @@ impl ToolRuntime for NodeTool {
 		&self.bin_path
 	}
 
-	fn get_download_path(&self) -> &PathBuf {
-		&self.download_path
+	fn get_download_path(&self) -> Option<&PathBuf> {
+		if self.download_path.is_some() {
+			return Some(self.download_path.as_ref().unwrap());
+		}
+
+		None
 	}
 
 	fn get_install_dir(&self) -> &PathBuf {

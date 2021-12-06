@@ -11,7 +11,7 @@ pub struct Tool {
 
 	/// Path to the downloaded file name.
 	/// This _may not exist_, as the path is composed ahead of time.
-	pub download_path: PathBuf,
+	pub download_path: Option<PathBuf>,
 
 	/// Path to the installation directory.
 	/// This _may not exist_, as the path is composed ahead of time.
@@ -35,7 +35,7 @@ pub trait ToolRuntime {
 
 	/// Returns an absolute file path to the temporary downloaded file.
 	/// This is typically ~/.monolith/temp/<file>.
-	fn get_download_path(&self) -> &PathBuf;
+	fn get_download_path(&self) -> Option<&PathBuf>;
 
 	/// Determine whether the tool has already been installed.
 	fn is_installed(&self) -> bool;
@@ -63,12 +63,14 @@ pub trait ToolRuntime {
 	/// Unload the tool by removing any downloaded/installed artifacts.
 	/// This can be ran manually, or automatically during a failed load.
 	async fn unload(&self) -> Result<(), ToolchainError> {
-		if self.is_downloaded() {
-			fs::remove_file(self.get_download_path())?;
+		let download_path = self.get_download_path();
+
+		if self.is_downloaded() && download_path.is_some() {
+			fs::remove_file(download_path.unwrap()).map_err(|_| ToolchainError::FailedToUnload)?;
 		}
 
 		if self.is_installed() {
-			fs::remove_dir_all(self.get_install_dir())?;
+			fs::remove_dir_all(self.get_install_dir()).map_err(|_| ToolchainError::FailedToUnload)?;
 		}
 
 		Ok(())

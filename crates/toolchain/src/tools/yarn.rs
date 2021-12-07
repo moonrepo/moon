@@ -1,5 +1,6 @@
 use crate::errors::ToolchainError;
-use crate::tool::Tool;
+use crate::helpers::exec_command;
+use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use monolith_config::workspace::YarnConfig;
@@ -85,5 +86,12 @@ impl Tool for YarnTool {
 
     fn get_install_dir(&self) -> &PathBuf {
         &self.install_dir
+    }
+}
+
+#[async_trait]
+impl PackageManager for YarnTool {
+    async fn install_deps(&self, root_dir: &PathBuf) -> Result<(), ToolchainError> {
+        Ok(exec_command(self.get_bin_path(), vec!["install"], root_dir).await?)
     }
 }

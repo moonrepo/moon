@@ -1,11 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::tool::Tool;
+use crate::helpers::exec_command;
+use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use monolith_config::workspace::NpmConfig;
 use std::env::consts;
 use std::path::PathBuf;
-use tokio::process::Command;
 
 #[derive(Debug)]
 pub struct NpmTool {
@@ -50,15 +50,12 @@ impl NpmTool {
     ) -> Result<(), ToolchainError> {
         let package = format!("{}@{}", name, version);
 
-        let mut child = Command::new(self.get_bin_path())
-            .args(["install", "-g", package.as_str()])
-            .spawn()
-            .map_err(|_| ToolchainError::FailedToInstall)?;
-
-        child
-            .wait()
-            .await
-            .map_err(|_| ToolchainError::FailedToInstall)?;
+        exec_command(
+            self.get_bin_path(),
+            vec!["install", "-g", package.as_str()],
+            &self.install_dir,
+        )
+        .await?;
 
         Ok(())
     }
@@ -94,5 +91,12 @@ impl Tool for NpmTool {
 
     fn get_install_dir(&self) -> &PathBuf {
         &self.install_dir
+    }
+}
+
+#[async_trait]
+impl PackageManager for NpmTool {
+    async fn install_deps(&self, root_dir: &PathBuf) -> Result<(), ToolchainError> {
+        Ok(exec_command(self.get_bin_path(), vec!["install"], root_dir).await?)
     }
 }

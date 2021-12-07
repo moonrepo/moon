@@ -1,13 +1,15 @@
 mod errors;
+mod helpers;
 mod tool;
 mod tools;
 
 use dirs::home_dir as get_home_dir;
 use errors::ToolchainError;
 use monolith_config::constants;
-use monolith_config::WorkspaceConfig;
+use monolith_config::workspace::{PackageManager as PM, WorkspaceConfig};
 use std::fs;
 use std::path::{Path, PathBuf};
+use tool::PackageManager;
 use tools::node::NodeTool;
 use tools::npm::NpmTool;
 use tools::pnpm::PnpmTool;
@@ -75,11 +77,22 @@ impl Toolchain {
 
         // Then set the private fields with the tool instances.
         // Order is IMPORTANT here, as some tools rely on others already
-        // being instantiated. For example, node MUST be first!
+        // being instantiated. For example, npm requires node,
+        // and pnpm/yarn require npm!
         toolchain.node = Some(NodeTool::load(&toolchain, &config.node)?);
         toolchain.npm = Some(NpmTool::load(&toolchain, &config.npm)?);
-        toolchain.pnpm = Some(PnpmTool::load(&toolchain, &config.pnpm)?);
-        toolchain.yarn = Some(YarnTool::load(&toolchain, &config.yarn)?);
+
+        if config.node.package_manager.is_some() {
+            match config.node.package_manager.as_ref().unwrap() {
+                PM::npm => {}
+                PM::pnpm => {
+                    toolchain.pnpm = Some(PnpmTool::load(&toolchain, &config.pnpm)?);
+                }
+                PM::yarn => {
+                    toolchain.yarn = Some(YarnTool::load(&toolchain, &config.yarn)?);
+                }
+            }
+        }
 
         Ok(toolchain)
     }
@@ -92,11 +105,15 @@ impl Toolchain {
         self.npm.as_ref().unwrap()
     }
 
-    pub fn get_pnpm_tool(&self) -> &PnpmTool {
-        self.pnpm.as_ref().unwrap()
-    }
+    pub fn get_package_manager<T: PackageManager>(&self) -> Box<&dyn PackageManager> {
+        if self.pnpm.is_some() {
+            return Box::new(self.pnpm.as_ref().unwrap());
+        }
 
-    pub fn get_yarn_tool(&self) -> &YarnTool {
-        self.yarn.as_ref().unwrap()
+        if self.yarn.is_some() {
+            return Box::new(self.yarn.as_ref().unwrap());
+        }
+
+        Box::new(self.npm.as_ref().unwrap())
     }
 }

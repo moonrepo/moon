@@ -2,6 +2,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolchainError {
+    #[error("Command failed to run.")]
+    CommandFailed(String),
+
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,
 

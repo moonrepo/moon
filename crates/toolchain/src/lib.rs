@@ -5,8 +5,13 @@ mod tools;
 use dirs::home_dir as get_home_dir;
 use errors::ToolchainError;
 use monolith_config::constants;
+use monolith_config::WorkspaceConfig;
 use std::fs;
 use std::path::{Path, PathBuf};
+use tools::node::NodeTool;
+use tools::npm::NpmTool;
+use tools::pnpm::PnpmTool;
+use tools::yarn::YarnTool;
 
 fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     // If path exists but is not a directory, delete it
@@ -25,86 +30,73 @@ fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     Ok(())
 }
 
-fn find_or_create_cache_dir() -> Result<PathBuf, ToolchainError> {
-    let home_dir = match get_home_dir() {
-        Some(dir) => dir,
-        None => return Err(ToolchainError::MissingHomeDir),
-    };
-
-    let cache_dir = home_dir.join(constants::CONFIG_DIRNAME);
-
-    create_dir(&cache_dir)?;
-
-    Ok(cache_dir)
-}
-
-fn find_or_create_temp_dir(cache_dir: &Path) -> Result<PathBuf, ToolchainError> {
-    let temp_dir = cache_dir.join("temp");
-
-    create_dir(cache_dir)?;
-
-    Ok(temp_dir)
-}
-
 #[derive(Debug)]
 pub struct Toolchain {
-    dir: Option<PathBuf>,
+    /// The directory where toolchain artifacts are stored.
+    /// This is typically ~/.monolith.
+    pub root_dir: PathBuf,
 
-    temp_dir: Option<PathBuf>,
+    /// The directory where temporary files are stored.
+    /// This is typically ~/.monolith/temp.
+    pub temp_dir: PathBuf,
 
-    tools_dir: Option<PathBuf>,
+    /// The directory where tools are installed by version.
+    /// This is typically ~/.monolith/tools.
+    pub tools_dir: PathBuf,
+
+    // Tool instances are private, as we want to lazy load them.
+    node: Option<NodeTool>,
+    npm: Option<NpmTool>,
+    pnpm: Option<PnpmTool>,
+    yarn: Option<YarnTool>,
 }
 
 impl Toolchain {
-    /// Returns the directory where toolchain artifacts are stored.
-    /// This is typically ~/.monolith.
-    fn get_dir(&mut self) -> Result<PathBuf, ToolchainError> {
-        match &self.dir {
-            Some(dir) => Ok(dir.clone()),
-            None => {
-                let home_dir = get_home_dir().ok_or(ToolchainError::MissingHomeDir)?;
-                let cache_dir = home_dir.join(constants::CONFIG_DIRNAME);
+    pub fn load(config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
+        let home_dir = get_home_dir().ok_or(ToolchainError::MissingHomeDir)?;
+        let root_dir = home_dir.join(constants::CONFIG_DIRNAME);
+        let temp_dir = root_dir.join("temp");
+        let tools_dir = root_dir.join("tools");
 
-                create_dir(&cache_dir)?;
+        create_dir(&root_dir)?;
+        create_dir(&temp_dir)?;
+        create_dir(&tools_dir)?;
 
-                self.dir = Some(cache_dir.clone());
+        // Create the instance first, so we can pass to each tool initializer
+        let mut toolchain = Toolchain {
+            root_dir,
+            temp_dir,
+            tools_dir,
+            node: None,
+            npm: None,
+            pnpm: None,
+            yarn: None,
+        };
 
-                Ok(cache_dir)
-            }
-        }
+        // Then set the private fields with the tool instances.
+        // Order is IMPORTANT here, as some tools rely on others already
+        // being instantiated. For example, node MUST be first!
+        toolchain.node = Some(NodeTool::load(&toolchain, &config.node)?);
+        toolchain.npm = Some(NpmTool::load(&toolchain, &config.npm)?);
+        toolchain.pnpm = Some(PnpmTool::load(&toolchain, &config.pnpm)?);
+        toolchain.yarn = Some(YarnTool::load(&toolchain, &config.yarn)?);
+
+        Ok(toolchain)
     }
 
-    /// Returns the directory where temporary files are stored.
-    /// This is typically ~/.monolith/temp.
-    fn get_temp_dir(&mut self) -> Result<PathBuf, ToolchainError> {
-        match &self.temp_dir {
-            Some(dir) => Ok(dir.clone()),
-            None => {
-                let temp_dir = self.get_dir()?.join("temp");
-
-                create_dir(&temp_dir)?;
-
-                self.temp_dir = Some(temp_dir.clone());
-
-                Ok(temp_dir)
-            }
-        }
+    pub fn get_node_tool(&self) -> &NodeTool {
+        self.node.as_ref().unwrap()
     }
 
-    /// Returns the directory where tools are installed by version.
-    /// This is typically ~/.monolith/tools.
-    fn get_tools_dir(&mut self) -> Result<PathBuf, ToolchainError> {
-        match &self.temp_dir {
-            Some(dir) => Ok(dir.clone()),
-            None => {
-                let tools_dir = self.get_dir()?.join("tools");
+    pub fn get_npm_tool(&self) -> &NpmTool {
+        self.npm.as_ref().unwrap()
+    }
 
-                create_dir(&tools_dir)?;
+    pub fn get_pnpm_tool(&self) -> &PnpmTool {
+        self.pnpm.as_ref().unwrap()
+    }
 
-                self.tools_dir = Some(tools_dir.clone());
-
-                Ok(tools_dir)
-            }
-        }
+    pub fn get_yarn_tool(&self) -> &YarnTool {
+        self.yarn.as_ref().unwrap()
     }
 }

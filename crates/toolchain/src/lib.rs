@@ -8,7 +8,7 @@ use monolith_config::constants;
 use monolith_config::workspace::{PackageManager as PM, WorkspaceConfig};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tool::PackageManager;
+use tool::{PackageManager, Tool};
 use tools::node::NodeTool;
 use tools::npm::NpmTool;
 use tools::npx::NpxTool;
@@ -57,7 +57,7 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub fn load(config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
+    pub fn new(config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
         let home_dir = get_home_dir().ok_or(ToolchainError::MissingHomeDir)?;
         let root_dir = home_dir.join(constants::CONFIG_DIRNAME);
         let temp_dir = root_dir.join("temp");
@@ -83,23 +83,54 @@ impl Toolchain {
         // Order is IMPORTANT here, as some tools rely on others already
         // being instantiated. For example, npm requires node,
         // and pnpm/yarn require npm!
-        toolchain.node = Some(NodeTool::load(&toolchain, &config.node)?);
-        toolchain.npm = Some(NpmTool::load(&toolchain, &config.npm)?);
-        toolchain.npx = Some(NpxTool::load(&toolchain));
+        toolchain.node = Some(NodeTool::new(&toolchain, &config.node)?);
+        toolchain.npm = Some(NpmTool::new(&toolchain, &config.npm)?);
+        toolchain.npx = Some(NpxTool::new(&toolchain));
 
         if config.node.package_manager.is_some() {
             match config.node.package_manager.as_ref().unwrap() {
                 PM::npm => {}
                 PM::pnpm => {
-                    toolchain.pnpm = Some(PnpmTool::load(&toolchain, &config.pnpm)?);
+                    toolchain.pnpm = Some(PnpmTool::new(&toolchain, &config.pnpm)?);
                 }
                 PM::yarn => {
-                    toolchain.yarn = Some(YarnTool::load(&toolchain, &config.yarn)?);
+                    toolchain.yarn = Some(YarnTool::new(&toolchain, &config.yarn)?);
                 }
             }
         }
 
         Ok(toolchain)
+    }
+
+    /// Load a tool into the toolchain by downloading an artifact/binary
+    /// into the temp folder, then installing it into the tools folder.
+    pub async fn load_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
+        if !tool.is_downloaded() {
+            tool.download().await?;
+        }
+
+        if !tool.is_installed() {
+            tool.install(self).await?;
+        }
+
+        Ok(())
+    }
+
+    /// Unload the tool by removing any downloaded/installed artifacts.
+    /// This can be ran manually, or automatically during a failed load.
+    pub async fn unload_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
+        let download_path = tool.get_download_path();
+
+        if tool.is_downloaded() && download_path.is_some() {
+            fs::remove_file(download_path.unwrap()).map_err(|_| ToolchainError::FailedToUnload)?;
+        }
+
+        if tool.is_installed() {
+            fs::remove_dir_all(tool.get_install_dir())
+                .map_err(|_| ToolchainError::FailedToUnload)?;
+        }
+
+        Ok(())
     }
 
     pub fn get_node(&self) -> &NodeTool {

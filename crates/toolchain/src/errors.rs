@@ -12,7 +12,7 @@ pub enum ToolchainError {
     FailedToCreateDir,
 
     #[error("Failed to download tool.")]
-    FailedToDownload,
+    FailedToDownload(String),
 
     #[error("Failed to install tool.")]
     FailedToInstall,

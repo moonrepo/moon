@@ -27,13 +27,29 @@ async fn main() {
 
     // Parse argv and return matches
     let matches = app.get_matches();
-    let workspace = Workspace::load();
+    let workspace = Workspace::load().unwrap();
 
-    println!("{:?}", workspace);
+    println!("{:#?}", workspace);
 
     // Match on a subcommand and branch logic
     match matches.subcommand_name() {
-        Some("run") => println!("'mono run' was used"),
+        Some("run") => {
+            println!("LOADING NODE");
+
+            workspace
+                .toolchain
+                .load_tool(workspace.toolchain.get_node())
+                .await
+                .expect("NODE FAIL");
+
+            println!("LOADING NPM");
+
+            workspace
+                .toolchain
+                .load_tool(workspace.toolchain.get_npm())
+                .await
+                .expect("NPM FAIL");
+        }
         None => println!("Please select a command."),
         _ => unreachable!(),
     }

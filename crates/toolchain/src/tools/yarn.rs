@@ -17,7 +17,7 @@ pub struct YarnTool {
 }
 
 impl YarnTool {
-    pub fn load(
+    pub fn new(
         toolchain: &Toolchain,
         config: &Option<YarnConfig>,
     ) -> Result<YarnTool, ToolchainError> {

@@ -12,16 +12,22 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use tar::Archive;
 
+fn get_download_file_ext() -> &'static str {
+    if consts::OS == "windows" {
+        "zip"
+    } else {
+        "tar.gz"
+    }
+}
+
 #[allow(unused_assignments)]
 fn get_download_file_name(version: &str) -> Result<String, ToolchainError> {
     let mut platform = "";
-    let mut ext = "tar.gz";
 
     if consts::OS == "linux" {
         platform = "linux"
     } else if consts::OS == "windows" {
         platform = "win";
-        ext = "zip";
     } else if consts::OS == "macos" {
         platform = "darwin"
     } else {
@@ -47,11 +53,18 @@ fn get_download_file_name(version: &str) -> Result<String, ToolchainError> {
     }
 
     Ok(format!(
-        "node-v{version}-{platform}-{arch}.{ext}",
+        "node-v{version}-{platform}-{arch}",
         version = version,
         platform = platform,
         arch = arch,
-        ext = ext,
+    ))
+}
+
+fn get_download_file(version: &str) -> Result<String, ToolchainError> {
+    Ok(format!(
+        "{}.{}",
+        get_download_file_name(&version)?,
+        get_download_file_ext()
     ))
 }
 
@@ -60,7 +73,11 @@ async fn download_file(
     version: &str,
     file_name: &str,
 ) -> Result<(), ToolchainError> {
-    let mut file = fs::File::create(download_path).map_err(|_| ToolchainError::FailedToDownload)?;
+    fs::create_dir_all(download_path.parent().unwrap())
+        .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?;
+
+    let mut file = fs::File::create(download_path)
+        .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?;
 
     // Fetch the file from the HTTP distro
     let response = reqwest::get(format!(
@@ -69,17 +86,18 @@ async fn download_file(
         file_name = file_name,
     ))
     .await
-    .map_err(|_| ToolchainError::FailedToDownload)?;
+    .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?;
 
     // Write the bytes to our temp dir
     let mut contents = io::Cursor::new(
         response
             .bytes()
             .await
-            .map_err(|_| ToolchainError::FailedToDownload)?,
+            .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?,
     );
 
-    io::copy(&mut contents, &mut file).map_err(|_| ToolchainError::FailedToDownload)?;
+    io::copy(&mut contents, &mut file)
+        .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?;
 
     Ok(())
 }
@@ -116,11 +134,11 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn load(toolchain: &Toolchain, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
+    pub fn new(toolchain: &Toolchain, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
         let mut download_path = toolchain.temp_dir.clone();
 
         download_path.push("node");
-        download_path.push(get_download_file_name(&config.version)?);
+        download_path.push(get_download_file(&config.version)?);
 
         let mut install_dir = toolchain.tools_dir.clone();
 
@@ -155,7 +173,7 @@ impl Tool for NodeTool {
         download_file(
             &self.download_path,
             &self.version,
-            get_download_file_name(&self.version)?.as_str(),
+            get_download_file(&self.version)?.as_str(),
         )
         .await?;
 
@@ -188,9 +206,21 @@ impl Tool for NodeTool {
         // Unpack the archive into the install dir
         let mut archive = Archive::new(tar);
 
-        archive
-            .unpack(&self.install_dir)
-            .map_err(|_| ToolchainError::FailedToInstall)?;
+        // Remove the download folder prefix from all files
+        let prefix = get_download_file_name(&self.version)?;
+
+        archive.entries().unwrap().for_each(|entry_result| {
+            let mut entry = entry_result.unwrap();
+
+            let path = entry
+                .path()
+                .unwrap()
+                .strip_prefix(&prefix)
+                .unwrap()
+                .to_owned();
+
+            entry.unpack(&self.install_dir.join(path)).unwrap();
+        });
 
         Ok(())
     }

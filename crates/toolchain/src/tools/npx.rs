@@ -11,7 +11,7 @@ pub struct NpxTool {
 }
 
 impl NpxTool {
-    pub fn load(toolchain: &Toolchain) -> NpxTool {
+    pub fn new(toolchain: &Toolchain) -> NpxTool {
         let mut bin_path = toolchain.get_node().get_install_dir().clone();
 
         if consts::OS == "windows" {

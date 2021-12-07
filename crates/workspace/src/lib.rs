@@ -90,7 +90,7 @@ impl Workspace {
         let project_config = Workspace::load_global_project_config(&root_dir)?;
 
         // Setup toolchain
-        let toolchain = Toolchain::load(&config)?;
+        let toolchain = Toolchain::new(&config)?;
 
         Ok(Workspace {
             config,

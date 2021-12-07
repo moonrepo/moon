@@ -9,6 +9,8 @@ pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(),
 		args.join(" ")
 	);
 
+	println!("Running command `{}` in {}", command_line, cwd.display());
+
 	let mut child = Command::new(bin)
 		.args(args)
 		.current_dir(cwd)

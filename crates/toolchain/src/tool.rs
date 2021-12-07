@@ -1,7 +1,6 @@
 use crate::errors::ToolchainError;
 use crate::Toolchain;
 use async_trait::async_trait;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 #[async_trait]
@@ -33,37 +32,6 @@ pub trait Tool {
     /// This _may not exist_, as the path is composed ahead of time.
     /// This is typically ~/.monolith/tools/<tool>/<version>.
     fn get_install_dir(&self) -> &PathBuf;
-
-    /// Load a tool into the toolchain by downloading an artifact/binary
-    /// into the temp folder, then installing it into the tools folder.
-    async fn load(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        if !self.is_downloaded() {
-            self.download().await?;
-        }
-
-        if !self.is_installed() {
-            self.install(toolchain).await?;
-        }
-
-        Ok(())
-    }
-
-    /// Unload the tool by removing any downloaded/installed artifacts.
-    /// This can be ran manually, or automatically during a failed load.
-    async fn unload(&self) -> Result<(), ToolchainError> {
-        let download_path = self.get_download_path();
-
-        if self.is_downloaded() && download_path.is_some() {
-            fs::remove_file(download_path.unwrap()).map_err(|_| ToolchainError::FailedToUnload)?;
-        }
-
-        if self.is_installed() {
-            fs::remove_dir_all(self.get_install_dir())
-                .map_err(|_| ToolchainError::FailedToUnload)?;
-        }
-
-        Ok(())
-    }
 }
 
 #[async_trait]

@@ -17,7 +17,7 @@ pub struct NpmTool {
 }
 
 impl NpmTool {
-    pub fn load(
+    pub fn new(
         toolchain: &Toolchain,
         config: &Option<NpmConfig>,
     ) -> Result<NpmTool, ToolchainError> {

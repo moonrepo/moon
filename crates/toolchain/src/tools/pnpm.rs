@@ -17,7 +17,7 @@ pub struct PnpmTool {
 }
 
 impl PnpmTool {
-    pub fn load(
+    pub fn new(
         toolchain: &Toolchain,
         config: &Option<PnpmConfig>,
     ) -> Result<PnpmTool, ToolchainError> {

@@ -2,7 +2,7 @@ use crate::errors::ToolchainError;
 use crate::Toolchain;
 use async_trait::async_trait;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[async_trait]
 pub trait Tool {
@@ -69,5 +69,5 @@ pub trait Tool {
 #[async_trait]
 pub trait PackageManager {
     /// Install dependencies at the root where a `package.json` exists.
-    async fn install_deps(&self, root_dir: &PathBuf) -> Result<(), ToolchainError>;
+    async fn install_deps(&self, root_dir: &Path) -> Result<(), ToolchainError>;
 }

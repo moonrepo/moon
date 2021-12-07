@@ -20,6 +20,9 @@ pub enum ToolchainError {
     #[error("Failed to unload tool from toolchain.")]
     FailedToUnload,
 
+    #[error("SHASUMS256 verification has faild.")]
+    InvalidShasum,
+
     #[error("Unsupported architecture.")]
     UnsupportedArchitecture(String),
 

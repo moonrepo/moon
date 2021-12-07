@@ -114,15 +114,15 @@ impl Toolchain {
         self.npx.as_ref().unwrap()
     }
 
-    pub fn get_package_manager<T: PackageManager>(&self) -> Box<&dyn PackageManager> {
+    pub fn get_package_manager<T: PackageManager>(&self) -> &dyn PackageManager {
         if self.pnpm.is_some() {
-            return Box::new(self.pnpm.as_ref().unwrap());
+            return self.pnpm.as_ref().unwrap();
         }
 
         if self.yarn.is_some() {
-            return Box::new(self.yarn.as_ref().unwrap());
+            return self.yarn.as_ref().unwrap();
         }
 
-        Box::new(self.npm.as_ref().unwrap())
+        self.npm.as_ref().unwrap()
     }
 }

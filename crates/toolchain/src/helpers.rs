@@ -9,7 +9,7 @@ pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(),
 		args.join(" ")
 	);
 
-	let mut child = Command::new(bin.clone())
+	let mut child = Command::new(bin)
 		.args(args)
 		.current_dir(cwd)
 		.spawn()

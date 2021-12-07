@@ -8,7 +8,8 @@ use reqwest;
 use std::env::consts;
 use std::fs;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use tar::Archive;
 
 #[allow(unused_assignments)]
@@ -52,6 +53,55 @@ fn get_download_file_name(version: &str) -> Result<String, ToolchainError> {
         arch = arch,
         ext = ext,
     ))
+}
+
+async fn download_file(
+    download_path: &Path,
+    version: &str,
+    file_name: &str,
+) -> Result<(), ToolchainError> {
+    let mut file = fs::File::create(download_path).map_err(|_| ToolchainError::FailedToDownload)?;
+
+    // Fetch the file from the HTTP distro
+    let response = reqwest::get(format!(
+        "https://nodejs.org/dist/v{version}/{file_name}",
+        version = version,
+        file_name = file_name,
+    ))
+    .await
+    .map_err(|_| ToolchainError::FailedToDownload)?;
+
+    // Write the bytes to our temp dir
+    let mut contents = io::Cursor::new(
+        response
+            .bytes()
+            .await
+            .map_err(|_| ToolchainError::FailedToDownload)?,
+    );
+
+    io::copy(&mut contents, &mut file).map_err(|_| ToolchainError::FailedToDownload)?;
+
+    Ok(())
+}
+
+// https://github.com/nodejs/node#verifying-binaries
+fn verify_shasum(download_path: &Path, shasum_path: &Path) -> Result<(), ToolchainError> {
+    let grep = Command::new("grep")
+        .arg(download_path)
+        .arg(shasum_path)
+        .stdout(Stdio::piped())
+        .spawn()
+        .map_err(|_| ToolchainError::InvalidShasum)?;
+
+    Command::new("sha256sum")
+        .arg("-c")
+        .arg("-")
+        .stdin(grep.stdout.unwrap())
+        .stdout(Stdio::piped())
+        .spawn()
+        .map_err(|_| ToolchainError::InvalidShasum)?;
+
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -101,27 +151,24 @@ impl Tool for NodeTool {
     }
 
     async fn download(&self) -> Result<(), ToolchainError> {
-        let mut file =
-            fs::File::create(&self.download_path).map_err(|_| ToolchainError::FailedToDownload)?;
+        // Download the node.tar.gz archive
+        download_file(
+            &self.download_path,
+            &self.version,
+            get_download_file_name(&self.version)?.as_str(),
+        )
+        .await?;
 
-        // Fetch the archive from the HTTP distro
-        let response = reqwest::get(format!(
-            "https://nodejs.org/dist/v{version}/{file_name}",
+        // Download the SHASUMS256.txt file
+        let shasum_path = self.download_path.parent().unwrap().join(format!(
+            "node-v{version}-SHASUMS256.txt",
             version = self.version,
-            file_name = get_download_file_name(&self.version)?,
-        ))
-        .await
-        .map_err(|_| ToolchainError::FailedToDownload)?;
+        ));
 
-        // Write the bytes to our temp dir
-        let mut contents = io::Cursor::new(
-            response
-                .bytes()
-                .await
-                .map_err(|_| ToolchainError::FailedToDownload)?,
-        );
+        download_file(&shasum_path, &self.version, "SHASUMS256.txt").await?;
 
-        io::copy(&mut contents, &mut file).map_err(|_| ToolchainError::FailedToDownload)?;
+        // Verify the binary
+        verify_shasum(&self.download_path, &shasum_path)?;
 
         Ok(())
     }

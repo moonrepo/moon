@@ -5,7 +5,7 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use monolith_config::workspace::NpmConfig;
 use std::env::consts;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct NpmTool {
@@ -96,7 +96,7 @@ impl Tool for NpmTool {
 
 #[async_trait]
 impl PackageManager for NpmTool {
-    async fn install_deps(&self, root_dir: &PathBuf) -> Result<(), ToolchainError> {
+    async fn install_deps(&self, root_dir: &Path) -> Result<(), ToolchainError> {
         Ok(exec_command(self.get_bin_path(), vec!["install"], root_dir).await?)
     }
 }

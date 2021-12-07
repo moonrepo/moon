@@ -4,7 +4,6 @@ mod tool;
 mod tools;
 
 use dirs::home_dir as get_home_dir;
-use errors::ToolchainError;
 use monolith_config::constants;
 use monolith_config::workspace::{PackageManager as PM, WorkspaceConfig};
 use std::fs;
@@ -15,6 +14,8 @@ use tools::npm::NpmTool;
 use tools::npx::NpxTool;
 use tools::pnpm::PnpmTool;
 use tools::yarn::YarnTool;
+
+pub use errors::ToolchainError;
 
 fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     // If path exists but is not a directory, delete it

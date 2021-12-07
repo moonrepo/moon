@@ -41,6 +41,10 @@ impl YarnTool {
             version,
         })
     }
+
+    fn is_v1(&self) -> bool {
+        self.version.starts_with('1')
+    }
 }
 
 #[async_trait]
@@ -63,7 +67,7 @@ impl Tool for YarnTool {
         // Yarn >= 2 work differently than normal packages, as their runtime code
         // is stored *within* the repository, and the v1 package detects it.
         // Because of this, we need to always install the v1 package!
-        let version = if self.version.starts_with('1') {
+        let version = if self.is_v1() {
             self.version.as_str()
         } else {
             "latest"

@@ -1,9 +1,10 @@
 mod errors;
 
 use errors::WorkspaceError;
-use monolith_config::{constants, WorkspaceConfig};
+use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
+use monolith_toolchain::Toolchain;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Recursively attempt to find the workspace root by locating the ".monolith"
 /// configuration folder, starting from the current working directory.
@@ -24,16 +25,55 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
 
 #[derive(Debug)]
 pub struct Workspace {
+    /// Workspace configuration loaded from ".monolith/workspace.yml".
     pub config: WorkspaceConfig,
+
+    /// Global project configuration loaded from ".monolith/project.yml".
+    pub project_config: GlobalProjectConfig,
 
     /// The root of the workspace that contains the ".monolith" config folder.
     pub root_dir: PathBuf,
+
+    /// The toolchain instances that houses all runtime tools/languages.
+    pub toolchain: Toolchain,
 
     /// The current working directory.
     pub working_dir: PathBuf,
 }
 
 impl Workspace {
+    // project.yml
+    fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, WorkspaceError> {
+        let config_path = root_dir
+            .join(constants::CONFIG_DIRNAME)
+            .join(constants::CONFIG_PROJECT_FILENAME);
+
+        if !config_path.exists() {
+            return Err(WorkspaceError::MissingGlobalProjectConfigFile);
+        }
+
+        match GlobalProjectConfig::load(config_path) {
+            Ok(cfg) => Ok(cfg),
+            Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(errors)),
+        }
+    }
+
+    // workspace.yml
+    fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceError> {
+        let config_path = root_dir
+            .join(constants::CONFIG_DIRNAME)
+            .join(constants::CONFIG_WORKSPACE_FILENAME);
+
+        if !config_path.exists() {
+            return Err(WorkspaceError::MissingWorkspaceConfigFile);
+        }
+
+        match WorkspaceConfig::load(config_path) {
+            Ok(cfg) => Ok(cfg),
+            Err(errors) => Err(WorkspaceError::InvalidWorkspaceConfigFile(errors)),
+        }
+    }
+
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
     pub fn load() -> Result<Workspace, WorkspaceError> {
@@ -45,23 +85,18 @@ impl Workspace {
             None => return Err(WorkspaceError::MissingConfigDir),
         };
 
-        // Load "workspace.yml"
-        let config_path = root_dir
-            .join(constants::CONFIG_DIRNAME)
-            .join(constants::CONFIG_WORKSPACE_FILENAME);
+        // Load configs
+        let config = Workspace::load_workspace_config(&root_dir)?;
+        let project_config = Workspace::load_global_project_config(&root_dir)?;
 
-        if !config_path.exists() {
-            return Err(WorkspaceError::MissingWorkspaceConfigFile);
-        }
-
-        let config = match WorkspaceConfig::load(config_path) {
-            Ok(cfg) => cfg,
-            Err(errors) => return Err(WorkspaceError::InvalidWorkspaceConfigFile(errors)),
-        };
+        // Setup toolchain
+        let toolchain = Toolchain::load(&config)?;
 
         Ok(Workspace {
             config,
+            project_config,
             root_dir,
+            toolchain,
             working_dir,
         })
     }

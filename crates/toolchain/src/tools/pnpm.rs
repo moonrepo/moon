@@ -21,8 +21,7 @@ impl PnpmTool {
         toolchain: &Toolchain,
         config: &Option<PnpmConfig>,
     ) -> Result<PnpmTool, ToolchainError> {
-        let node_tool = toolchain.get_node_tool();
-        let install_dir = node_tool.get_install_dir().clone();
+        let install_dir = toolchain.get_node().get_install_dir().clone();
         let mut bin_path = install_dir.clone();
 
         if consts::OS == "windows" {
@@ -60,7 +59,7 @@ impl Tool for PnpmTool {
 
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(toolchain
-            .get_npm_tool()
+            .get_npm()
             .install_global_dep("pnpm", self.version.as_str())
             .await?)
     }

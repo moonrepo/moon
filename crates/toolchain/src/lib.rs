@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 use tool::PackageManager;
 use tools::node::NodeTool;
 use tools::npm::NpmTool;
+use tools::npx::NpxTool;
 use tools::pnpm::PnpmTool;
 use tools::yarn::YarnTool;
 
@@ -49,6 +50,7 @@ pub struct Toolchain {
     // Tool instances are private, as we want to lazy load them.
     node: Option<NodeTool>,
     npm: Option<NpmTool>,
+    npx: Option<NpxTool>,
     pnpm: Option<PnpmTool>,
     yarn: Option<YarnTool>,
 }
@@ -71,6 +73,7 @@ impl Toolchain {
             tools_dir,
             node: None,
             npm: None,
+            npx: None,
             pnpm: None,
             yarn: None,
         };
@@ -81,6 +84,7 @@ impl Toolchain {
         // and pnpm/yarn require npm!
         toolchain.node = Some(NodeTool::load(&toolchain, &config.node)?);
         toolchain.npm = Some(NpmTool::load(&toolchain, &config.npm)?);
+        toolchain.npx = Some(NpxTool::load(&toolchain));
 
         if config.node.package_manager.is_some() {
             match config.node.package_manager.as_ref().unwrap() {
@@ -97,12 +101,16 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub fn get_node_tool(&self) -> &NodeTool {
+    pub fn get_node(&self) -> &NodeTool {
         self.node.as_ref().unwrap()
     }
 
-    pub fn get_npm_tool(&self) -> &NpmTool {
+    pub fn get_npm(&self) -> &NpmTool {
         self.npm.as_ref().unwrap()
+    }
+
+    pub fn get_npx(&self) -> &NpxTool {
+        self.npx.as_ref().unwrap()
     }
 
     pub fn get_package_manager<T: PackageManager>(&self) -> Box<&dyn PackageManager> {

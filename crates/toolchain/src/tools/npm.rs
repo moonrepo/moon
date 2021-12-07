@@ -21,7 +21,7 @@ impl NpmTool {
         toolchain: &Toolchain,
         config: &Option<NpmConfig>,
     ) -> Result<NpmTool, ToolchainError> {
-        let node_tool = toolchain.get_node_tool();
+        let node_tool = toolchain.get_node();
         let install_dir = node_tool.get_install_dir().clone();
         let mut bin_path = install_dir.clone();
 

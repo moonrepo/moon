@@ -21,8 +21,7 @@ impl YarnTool {
         toolchain: &Toolchain,
         config: &Option<YarnConfig>,
     ) -> Result<YarnTool, ToolchainError> {
-        let node_tool = toolchain.get_node_tool();
-        let install_dir = node_tool.get_install_dir().clone();
+        let install_dir = toolchain.get_node().get_install_dir().clone();
         let mut bin_path = install_dir.clone();
 
         if consts::OS == "windows" {
@@ -71,7 +70,7 @@ impl Tool for YarnTool {
         };
 
         Ok(toolchain
-            .get_npm_tool()
+            .get_npm()
             .install_global_dep("yarn", version)
             .await?)
     }

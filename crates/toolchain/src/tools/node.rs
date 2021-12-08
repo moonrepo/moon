@@ -112,7 +112,7 @@ pub struct NodeTool {
 
     install_dir: PathBuf,
 
-    pub version: String,
+    pub config: NodeConfig,
 }
 
 impl NodeTool {
@@ -137,9 +137,9 @@ impl NodeTool {
 
         Ok(NodeTool {
             bin_path,
+            config: config.to_owned(),
             download_path,
             install_dir,
-            version: String::from(&config.version),
         })
     }
 }
@@ -151,17 +151,20 @@ impl Tool for NodeTool {
     }
 
     async fn download(&self) -> Result<(), ToolchainError> {
+        let version = &self.config.version;
+
         // Download the node.tar.gz archive
-        let download_url = get_nodejs_url(&self.version, &get_download_file(&self.version)?);
+        let download_url = get_nodejs_url(&version, &get_download_file(&version)?);
 
         download_file_from_url(&download_url, &self.download_path).await?;
 
         // Download the SHASUMS256.txt file
-        let shasums_url = get_nodejs_url(&self.version, "SHASUMS256.txt");
-        let shasums_path = self.download_path.parent().unwrap().join(format!(
-            "node-v{version}-SHASUMS256.txt",
-            version = self.version,
-        ));
+        let shasums_url = get_nodejs_url(&version, "SHASUMS256.txt");
+        let shasums_path = self
+            .download_path
+            .parent()
+            .unwrap()
+            .join(format!("node-v{version}-SHASUMS256.txt", version = version,));
 
         download_file_from_url(&shasums_url, &shasums_path).await?;
 
@@ -188,7 +191,7 @@ impl Tool for NodeTool {
 
         // Unpack the archive into the install dir
         let mut archive = Archive::new(tar);
-        let prefix = get_download_file_name(&self.version)?;
+        let prefix = get_download_file_name(&self.config.version)?;
 
         archive.entries().unwrap().for_each(|entry_result| {
             let mut entry = entry_result.unwrap();

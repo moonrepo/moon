@@ -5,7 +5,9 @@ mod tools;
 
 use dirs::home_dir as get_home_dir;
 use monolith_config::constants;
-use monolith_config::workspace::{PackageManager as PM, WorkspaceConfig};
+use monolith_config::workspace::{
+    NpmConfig, PackageManager as PM, PnpmConfig, WorkspaceConfig, YarnConfig,
+};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tool::{PackageManager, Tool};
@@ -79,17 +81,28 @@ impl Toolchain {
         // being instantiated. For example, npm requires node,
         // and pnpm/yarn require npm!
         toolchain.node = Some(NodeTool::new(&toolchain, &config.node)?);
-        toolchain.npm = Some(NpmTool::new(&toolchain, &config.npm)?);
+
+        toolchain.npm = Some(NpmTool::new(
+            &toolchain,
+            config.npm.as_ref().unwrap_or(&NpmConfig::default()), // TODO: Better way?
+        )?);
+
         toolchain.npx = Some(NpxTool::new(&toolchain));
 
         if config.node.package_manager.is_some() {
             match config.node.package_manager.as_ref().unwrap() {
                 PM::npm => {}
                 PM::pnpm => {
-                    toolchain.pnpm = Some(PnpmTool::new(&toolchain, &config.pnpm)?);
+                    toolchain.pnpm = Some(PnpmTool::new(
+                        &toolchain,
+                        config.pnpm.as_ref().unwrap_or(&PnpmConfig::default()),
+                    )?);
                 }
                 PM::yarn => {
-                    toolchain.yarn = Some(YarnTool::new(&toolchain, &config.yarn)?);
+                    toolchain.yarn = Some(YarnTool::new(
+                        &toolchain,
+                        config.yarn.as_ref().unwrap_or(&YarnConfig::default()),
+                    )?);
                 }
             }
         }

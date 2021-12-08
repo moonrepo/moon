@@ -13,14 +13,11 @@ pub struct YarnTool {
 
     install_dir: PathBuf,
 
-    pub version: String,
+    pub config: YarnConfig,
 }
 
 impl YarnTool {
-    pub fn new(
-        toolchain: &Toolchain,
-        config: &Option<YarnConfig>,
-    ) -> Result<YarnTool, ToolchainError> {
+    pub fn new(toolchain: &Toolchain, config: &YarnConfig) -> Result<YarnTool, ToolchainError> {
         let install_dir = toolchain.get_node().get_install_dir().clone();
         let mut bin_path = install_dir.clone();
 
@@ -30,20 +27,15 @@ impl YarnTool {
             bin_path.push("bin/yarn");
         }
 
-        let version = match config {
-            Some(cfg) => cfg.version.clone(),
-            None => "latest".to_owned(),
-        };
-
         Ok(YarnTool {
             bin_path,
+            config: config.to_owned(),
             install_dir,
-            version,
         })
     }
 
     fn is_v1(&self) -> bool {
-        self.version.starts_with('1')
+        self.config.version.starts_with('1')
     }
 }
 
@@ -68,7 +60,7 @@ impl Tool for YarnTool {
         // is stored *within* the repository, and the v1 package detects it.
         // Because of this, we need to always install the v1 package!
         let version = if self.is_v1() {
-            self.version.as_str()
+            self.config.version.as_str()
         } else {
             "latest"
         };

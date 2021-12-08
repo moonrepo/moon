@@ -45,7 +45,7 @@ fn validate_projects_map(projects: &HashMap<String, String>) -> Result<(), Valid
     Ok(())
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[allow(non_camel_case_types)]
 pub enum PackageManager {
     npm,
@@ -53,25 +53,49 @@ pub enum PackageManager {
     yarn,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct NpmConfig {
     #[validate(custom = "validate_npm_version")]
     pub version: String,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+impl Default for NpmConfig {
+    fn default() -> Self {
+        NpmConfig {
+            version: String::from("latest"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct PnpmConfig {
     #[validate(custom = "validate_pnpm_version")]
     pub version: String,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+impl Default for PnpmConfig {
+    fn default() -> Self {
+        PnpmConfig {
+            version: String::from("latest"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct YarnConfig {
     #[validate(custom = "validate_yarn_version")]
     pub version: String,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+impl Default for YarnConfig {
+    fn default() -> Self {
+        YarnConfig {
+            version: String::from("latest"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct NodeConfig {
     #[validate(custom = "validate_node_version")]
     pub version: String,

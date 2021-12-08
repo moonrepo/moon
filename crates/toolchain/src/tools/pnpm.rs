@@ -13,14 +13,11 @@ pub struct PnpmTool {
 
     install_dir: PathBuf,
 
-    pub version: String,
+    pub config: PnpmConfig,
 }
 
 impl PnpmTool {
-    pub fn new(
-        toolchain: &Toolchain,
-        config: &Option<PnpmConfig>,
-    ) -> Result<PnpmTool, ToolchainError> {
+    pub fn new(toolchain: &Toolchain, config: &PnpmConfig) -> Result<PnpmTool, ToolchainError> {
         let install_dir = toolchain.get_node().get_install_dir().clone();
         let mut bin_path = install_dir.clone();
 
@@ -30,15 +27,10 @@ impl PnpmTool {
             bin_path.push("bin/pnpm");
         }
 
-        let version = match config {
-            Some(cfg) => cfg.version.clone(),
-            None => "latest".to_owned(),
-        };
-
         Ok(PnpmTool {
             bin_path,
+            config: config.to_owned(),
             install_dir,
-            version,
         })
     }
 }
@@ -60,7 +52,7 @@ impl Tool for PnpmTool {
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(toolchain
             .get_npm()
-            .add_global_dep("pnpm", self.version.as_str())
+            .add_global_dep("pnpm", self.config.version.as_str())
             .await?)
     }
 

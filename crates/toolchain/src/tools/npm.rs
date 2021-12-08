@@ -13,14 +13,11 @@ pub struct NpmTool {
 
     install_dir: PathBuf,
 
-    pub version: String,
+    pub config: NpmConfig,
 }
 
 impl NpmTool {
-    pub fn new(
-        toolchain: &Toolchain,
-        config: &Option<NpmConfig>,
-    ) -> Result<NpmTool, ToolchainError> {
+    pub fn new(toolchain: &Toolchain, config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
         let node_tool = toolchain.get_node();
         let install_dir = node_tool.get_install_dir().clone();
         let mut bin_path = install_dir.clone();
@@ -31,15 +28,10 @@ impl NpmTool {
             bin_path.push("bin/npm");
         }
 
-        let version = match config {
-            Some(cfg) => cfg.version.clone(),
-            None => "latest".to_owned(),
-        };
-
         Ok(NpmTool {
             bin_path,
+            config: config.to_owned(),
             install_dir,
-            version,
         })
     }
 
@@ -72,7 +64,9 @@ impl Tool for NpmTool {
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        Ok(self.add_global_dep("npm", self.version.as_str()).await?)
+        Ok(self
+            .add_global_dep("npm", self.config.version.as_str())
+            .await?)
     }
 
     fn get_bin_path(&self) -> &PathBuf {

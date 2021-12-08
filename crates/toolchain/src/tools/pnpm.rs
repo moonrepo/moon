@@ -60,7 +60,7 @@ impl Tool for PnpmTool {
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(toolchain
             .get_npm()
-            .install_global_dep("pnpm", self.version.as_str())
+            .add_global_dep("pnpm", self.version.as_str())
             .await?)
     }
 

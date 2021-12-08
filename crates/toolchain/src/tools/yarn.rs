@@ -73,10 +73,7 @@ impl Tool for YarnTool {
             "latest"
         };
 
-        Ok(toolchain
-            .get_npm()
-            .install_global_dep("yarn", version)
-            .await?)
+        Ok(toolchain.get_npm().add_global_dep("yarn", version).await?)
     }
 
     fn get_bin_path(&self) -> &PathBuf {

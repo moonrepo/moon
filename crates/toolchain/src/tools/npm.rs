@@ -43,11 +43,7 @@ impl NpmTool {
         })
     }
 
-    pub async fn install_global_dep(
-        &self,
-        name: &str,
-        version: &str,
-    ) -> Result<(), ToolchainError> {
+    pub async fn add_global_dep(&self, name: &str, version: &str) -> Result<(), ToolchainError> {
         let package = format!("{}@{}", name, version);
 
         exec_command(
@@ -76,9 +72,7 @@ impl Tool for NpmTool {
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        Ok(self
-            .install_global_dep("npm", self.version.as_str())
-            .await?)
+        Ok(self.add_global_dep("npm", self.version.as_str()).await?)
     }
 
     fn get_bin_path(&self) -> &PathBuf {

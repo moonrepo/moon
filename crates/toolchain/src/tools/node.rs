@@ -188,13 +188,12 @@ impl Tool for NodeTool {
 
         // Unpack the archive into the install dir
         let mut archive = Archive::new(tar);
-
-        // Remove the download folder prefix from all files
         let prefix = get_download_file_name(&self.version)?;
 
         archive.entries().unwrap().for_each(|entry_result| {
             let mut entry = entry_result.unwrap();
 
+            // Remove the download folder prefix from all files
             let path = entry
                 .path()
                 .unwrap()

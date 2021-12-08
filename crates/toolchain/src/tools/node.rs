@@ -154,17 +154,17 @@ impl Tool for NodeTool {
         let version = &self.config.version;
 
         // Download the node.tar.gz archive
-        let download_url = get_nodejs_url(&version, &get_download_file(&version)?);
+        let download_url = get_nodejs_url(version, &get_download_file(version)?);
 
         download_file_from_url(&download_url, &self.download_path).await?;
 
         // Download the SHASUMS256.txt file
-        let shasums_url = get_nodejs_url(&version, "SHASUMS256.txt");
+        let shasums_url = get_nodejs_url(version, "SHASUMS256.txt");
         let shasums_path = self
             .download_path
             .parent()
             .unwrap()
-            .join(format!("node-v{version}-SHASUMS256.txt", version = version,));
+            .join(format!("node-v{version}-SHASUMS256.txt", version = version));
 
         download_file_from_url(&shasums_url, &shasums_path).await?;
 

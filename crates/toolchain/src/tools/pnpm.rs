@@ -50,10 +50,13 @@ impl Tool for PnpmTool {
     }
 
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        Ok(toolchain
+        // npm install -g pnpm
+        toolchain
             .get_npm()
             .add_global_dep("pnpm", self.config.version.as_str())
-            .await?)
+            .await?;
+
+        Ok(())
     }
 
     fn get_bin_path(&self) -> &PathBuf {

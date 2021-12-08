@@ -14,6 +14,9 @@ use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 const NODE_VERSION: &str = "16.13.0";
+const NPM_VERSION: &str = "8.1.0";
+const PNPM_VERSION: &str = "16.13.0"; // TODO
+const YARN_VERSION: &str = "3.1.0";
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.version", value)
@@ -62,7 +65,7 @@ pub struct NpmConfig {
 impl Default for NpmConfig {
     fn default() -> Self {
         NpmConfig {
-            version: String::from("latest"),
+            version: String::from(NPM_VERSION),
         }
     }
 }
@@ -76,7 +79,7 @@ pub struct PnpmConfig {
 impl Default for PnpmConfig {
     fn default() -> Self {
         PnpmConfig {
-            version: String::from("latest"),
+            version: String::from(PNPM_VERSION),
         }
     }
 }
@@ -90,7 +93,7 @@ pub struct YarnConfig {
 impl Default for YarnConfig {
     fn default() -> Self {
         YarnConfig {
-            version: String::from("latest"),
+            version: String::from(YARN_VERSION),
         }
     }
 }

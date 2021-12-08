@@ -23,7 +23,7 @@ impl NpxTool {
         NpxTool { bin_path }
     }
 
-    pub async fn exec_bin(
+    pub async fn exec(
         &self,
         package: &str,
         args: Vec<&str>,

@@ -53,19 +53,31 @@ impl Tool for YarnTool {
         self.bin_path.exists()
     }
 
+    // Yarn is installed through npm, but only v1 exists in the npm registry,
+    // even if a consumer is using Yarn 2/3. https://www.npmjs.com/package/yarn
+    // Yarn >= 2 work differently than normal packages, as their runtime code
+    // is stored *within* the repository, and the v1 package detects it.
+    // Because of this, we need to always install the v1 package!
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        // Yarn is installed through npm, but only v1 exists in the npm registry,
-        // even if a consumer is using Yarn 2/3. https://www.npmjs.com/package/yarn
-        // Yarn >= 2 work differently than normal packages, as their runtime code
-        // is stored *within* the repository, and the v1 package detects it.
-        // Because of this, we need to always install the v1 package!
-        let version = if self.is_v1() {
-            self.config.version.as_str()
-        } else {
-            "latest"
-        };
+        let npm = toolchain.get_npm();
 
-        Ok(toolchain.get_npm().add_global_dep("yarn", version).await?)
+        if self.is_v1() {
+            // npm install -g yarn@1.x.x
+            npm.add_global_dep("yarn", &self.config.version).await?;
+        } else {
+            // npm install -g yarn@latest
+            npm.add_global_dep("yarn", "latest").await?;
+
+            // yarn set version 3.x.x
+            exec_command(
+                self.get_bin_path(),
+                vec!["set", "version", &self.config.version],
+                &toolchain.root_dir,
+            )
+            .await?
+        }
+
+        Ok(())
     }
 
     fn get_bin_path(&self) -> &PathBuf {

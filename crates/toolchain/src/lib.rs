@@ -35,6 +35,9 @@ fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
 pub struct Toolchain {
     /// The directory where toolchain artifacts are stored.
     /// This is typically ~/.monolith.
+    pub home_dir: PathBuf,
+
+    /// The workspace root directory.
     pub root_dir: PathBuf,
 
     /// The directory where temporary files are stored.
@@ -54,19 +57,20 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub fn new(config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
-        let home_dir = get_home_dir().ok_or(ToolchainError::MissingHomeDir)?;
-        let root_dir = home_dir.join(constants::CONFIG_DIRNAME);
-        let temp_dir = root_dir.join("temp");
-        let tools_dir = root_dir.join("tools");
+    pub fn new(config: &WorkspaceConfig, root_dir: &Path) -> Result<Toolchain, ToolchainError> {
+        let user_home_dir = get_home_dir().ok_or(ToolchainError::MissingHomeDir)?;
+        let home_dir = user_home_dir.join(constants::CONFIG_DIRNAME);
+        let temp_dir = home_dir.join("temp");
+        let tools_dir = home_dir.join("tools");
 
-        create_dir(&root_dir)?;
+        create_dir(&home_dir)?;
         create_dir(&temp_dir)?;
         create_dir(&tools_dir)?;
 
         // Create the instance first, so we can pass to each tool initializer
         let mut toolchain = Toolchain {
-            root_dir,
+            home_dir,
+            root_dir: root_dir.to_path_buf(),
             temp_dir,
             tools_dir,
             node: None,

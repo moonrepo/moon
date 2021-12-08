@@ -64,9 +64,11 @@ impl Tool for NpmTool {
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        Ok(self
-            .add_global_dep("npm", self.config.version.as_str())
-            .await?)
+        // npm install -g npm
+        self.add_global_dep("npm", self.config.version.as_str())
+            .await?;
+
+        Ok(())
     }
 
     fn get_bin_path(&self) -> &PathBuf {

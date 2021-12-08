@@ -22,7 +22,7 @@ pub trait Tool {
     fn get_download_path(&self) -> Option<&PathBuf>;
 
     /// Determine whether the tool has already been installed.
-    fn is_installed(&self) -> bool;
+    async fn is_installed(&self) -> Result<bool, ToolchainError>;
 
     /// Runs any installation steps after downloading.
     /// This is typically unzipping an archive, and running any installers/binaries.
@@ -32,10 +32,14 @@ pub trait Tool {
     /// This _may not exist_, as the path is composed ahead of time.
     /// This is typically ~/.monolith/tools/<tool>/<version>.
     fn get_install_dir(&self) -> &PathBuf;
+
+    /// Returns a semver version for the currently installed binary.
+    /// This is typically acquired by executing the binary with a --version argument.
+    async fn get_installed_version(&self) -> Result<String, ToolchainError>;
 }
 
 #[async_trait]
-pub trait PackageManager: Tool {
+pub trait PackageManager {
     /// Install dependencies at the root where a `package.json` exists.
     async fn install_deps(&self, root_dir: &Path) -> Result<(), ToolchainError>;
 }

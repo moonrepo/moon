@@ -37,6 +37,25 @@ pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(),
     Ok(())
 }
 
+pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
+    let output = Command::new(bin)
+        .args(["--version"])
+        .spawn()?
+        .wait_with_output()
+        .await?;
+
+    let mut version = String::from_utf8(output.stdout)
+        .unwrap_or_else(|_| String::from("0.0.0"))
+        .trim()
+        .to_owned();
+
+    if version.starts_with('v') {
+        version = version.replace('v', "");
+    }
+
+    Ok(version)
+}
+
 pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
     let mut file = fs::File::open(path)?;
     let mut sha = Sha256::new();

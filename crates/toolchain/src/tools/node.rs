@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{download_file_from_url, get_file_sha256_hash};
+use crate::helpers::{download_file_from_url, get_bin_version, get_file_sha256_hash};
 use crate::tool::Tool;
 use crate::Toolchain;
 use async_trait::async_trait;
@@ -178,8 +178,8 @@ impl Tool for NodeTool {
         Ok(())
     }
 
-    fn is_installed(&self) -> bool {
-        self.install_dir.exists()
+    async fn is_installed(&self) -> Result<bool, ToolchainError> {
+        Ok(self.install_dir.exists() && self.get_installed_version().await? == self.config.version)
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
@@ -220,5 +220,9 @@ impl Tool for NodeTool {
 
     fn get_install_dir(&self) -> &PathBuf {
         &self.install_dir
+    }
+
+    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
+        Ok(get_bin_version(self.get_bin_path()).await?)
     }
 }

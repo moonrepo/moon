@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::exec_command;
+use crate::helpers::{exec_command, get_bin_version};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
@@ -59,8 +59,8 @@ impl Tool for NpmTool {
         Ok(()) // This is handled by node
     }
 
-    fn is_installed(&self) -> bool {
-        self.bin_path.exists()
+    async fn is_installed(&self) -> Result<bool, ToolchainError> {
+        Ok(self.bin_path.exists() && self.get_installed_version().await? == self.config.version)
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
@@ -81,6 +81,10 @@ impl Tool for NpmTool {
 
     fn get_install_dir(&self) -> &PathBuf {
         &self.install_dir
+    }
+
+    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
+        Ok(get_bin_version(self.get_bin_path()).await?)
     }
 }
 

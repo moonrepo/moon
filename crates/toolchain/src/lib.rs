@@ -121,7 +121,7 @@ impl Toolchain {
             tool.download().await?;
         }
 
-        if !tool.is_installed() {
+        if !tool.is_installed().await? {
             tool.install(self).await?;
         }
 
@@ -133,11 +133,11 @@ impl Toolchain {
     pub async fn unload_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
         let download_path = tool.get_download_path();
 
-        if tool.is_downloaded() && download_path.is_some() {
+        if download_path.is_some() && tool.is_downloaded() {
             fs::remove_file(download_path.unwrap())?;
         }
 
-        if tool.is_installed() {
+        if tool.is_installed().await? {
             fs::remove_dir_all(tool.get_install_dir())?;
         }
 

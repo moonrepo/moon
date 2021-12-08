@@ -4,6 +4,7 @@ use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
+// use std::process::Stdio;
 use tokio::process::Command;
 
 pub fn is_ci() -> bool {
@@ -45,6 +46,7 @@ pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(),
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let output = Command::new(bin)
         .args(["--version"])
+        // .stdout(Stdio::null()) // TODO dont log to console
         .spawn()?
         .wait_with_output()
         .await?;
@@ -53,6 +55,8 @@ pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
         .unwrap_or_else(|_| String::from("0.0.0"))
         .trim()
         .to_owned();
+
+    println!("V {}", version);
 
     if version.starts_with('v') {
         version = version.replace('v', "");

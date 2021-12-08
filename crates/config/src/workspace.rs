@@ -13,8 +13,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
 
-const NODE_VERSION: &str = "16.13.0";
-const NPM_VERSION: &str = "8.1.0";
+const NODE_VERSION: &str = "16.13.1";
+const NPM_VERSION: &str = "8.1.2";
 const PNPM_VERSION: &str = "16.13.0"; // TODO
 const YARN_VERSION: &str = "3.1.0";
 

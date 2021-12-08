@@ -35,7 +35,7 @@ pub trait Tool {
 }
 
 #[async_trait]
-pub trait PackageManager {
+pub trait PackageManager: Tool {
     /// Install dependencies at the root where a `package.json` exists.
     async fn install_deps(&self, root_dir: &Path) -> Result<(), ToolchainError>;
 }

@@ -1,15 +1,14 @@
 use crate::errors::ToolchainError;
+use crate::helpers::{download_file_from_url, get_file_sha256_hash};
 use crate::tool::Tool;
 use crate::Toolchain;
 use async_trait::async_trait;
 use flate2::read::GzDecoder;
 use monolith_config::workspace::NodeConfig;
-use reqwest;
 use std::env::consts;
 use std::fs;
-use std::io;
+use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 use tar::Archive;
 
 fn get_download_file_ext() -> &'static str {
@@ -31,7 +30,10 @@ fn get_download_file_name(version: &str) -> Result<String, ToolchainError> {
     } else if consts::OS == "macos" {
         platform = "darwin"
     } else {
-        return Err(ToolchainError::UnsupportedPlatform(consts::OS.to_string()));
+        return Err(ToolchainError::UnsupportedPlatform(
+            consts::OS.to_string(),
+            String::from("Node.js"),
+        ));
     }
 
     let mut arch = "";
@@ -49,6 +51,7 @@ fn get_download_file_name(version: &str) -> Result<String, ToolchainError> {
     } else {
         return Err(ToolchainError::UnsupportedArchitecture(
             consts::ARCH.to_string(),
+            String::from("Node.js"),
         ));
     }
 
@@ -63,63 +66,42 @@ fn get_download_file_name(version: &str) -> Result<String, ToolchainError> {
 fn get_download_file(version: &str) -> Result<String, ToolchainError> {
     Ok(format!(
         "{}.{}",
-        get_download_file_name(&version)?,
+        get_download_file_name(version)?,
         get_download_file_ext()
     ))
 }
 
-async fn download_file(
-    download_path: &Path,
-    version: &str,
-    file_name: &str,
-) -> Result<(), ToolchainError> {
-    fs::create_dir_all(download_path.parent().unwrap())
-        .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?;
-
-    let mut file = fs::File::create(download_path)
-        .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?;
-
-    // Fetch the file from the HTTP distro
-    let response = reqwest::get(format!(
-        "https://nodejs.org/dist/v{version}/{file_name}",
+fn get_nodejs_url(version: &str, path: &str) -> String {
+    format!(
+        "https://nodejs.org/dist/v{version}/{path}",
         version = version,
-        file_name = file_name,
-    ))
-    .await
-    .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?;
-
-    // Write the bytes to our temp dir
-    let mut contents = io::Cursor::new(
-        response
-            .bytes()
-            .await
-            .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?,
-    );
-
-    io::copy(&mut contents, &mut file)
-        .map_err(|error| ToolchainError::FailedToDownload(error.to_string()))?;
-
-    Ok(())
+        path = path,
+    )
 }
 
 // https://github.com/nodejs/node#verifying-binaries
-fn verify_shasum(download_path: &Path, shasum_path: &Path) -> Result<(), ToolchainError> {
-    let grep = Command::new("grep")
-        .arg(download_path)
-        .arg(shasum_path)
-        .stdout(Stdio::piped())
-        .spawn()
-        .map_err(|_| ToolchainError::InvalidShasum)?;
+fn verify_shasum(
+    download_url: &str,
+    download_path: &Path,
+    shasums_path: &Path,
+) -> Result<(), ToolchainError> {
+    let file_name = download_path.file_name().unwrap().to_str().unwrap();
+    let sha_hash = get_file_sha256_hash(download_path)?;
 
-    Command::new("sha256sum")
-        .arg("-c")
-        .arg("-")
-        .stdin(grep.stdout.unwrap())
-        .stdout(Stdio::piped())
-        .spawn()
-        .map_err(|_| ToolchainError::InvalidShasum)?;
+    for line in BufReader::new(fs::File::open(shasums_path)?)
+        .lines()
+        .flatten()
+    {
+        // HashANSU102nASKBSAsdinSJd1  node-vx.x.x-darwin-arm64.tar.gz
+        if line.starts_with(sha_hash.as_str()) && line.ends_with(file_name) {
+            return Ok(());
+        }
+    }
 
-    Ok(())
+    Err(ToolchainError::InvalidShasum(
+        String::from(download_path.to_string_lossy()),
+        String::from(download_url),
+    ))
 }
 
 #[derive(Debug)]
@@ -170,23 +152,25 @@ impl Tool for NodeTool {
 
     async fn download(&self) -> Result<(), ToolchainError> {
         // Download the node.tar.gz archive
-        download_file(
-            &self.download_path,
-            &self.version,
-            get_download_file(&self.version)?.as_str(),
-        )
-        .await?;
+        let download_url = get_nodejs_url(&self.version, &get_download_file(&self.version)?);
+
+        download_file_from_url(&download_url, &self.download_path).await?;
 
         // Download the SHASUMS256.txt file
-        let shasum_path = self.download_path.parent().unwrap().join(format!(
+        let shasums_url = get_nodejs_url(&self.version, "SHASUMS256.txt");
+        let shasums_path = self.download_path.parent().unwrap().join(format!(
             "node-v{version}-SHASUMS256.txt",
             version = self.version,
         ));
 
-        download_file(&shasum_path, &self.version, "SHASUMS256.txt").await?;
+        download_file_from_url(&shasums_url, &shasums_path).await?;
 
         // Verify the binary
-        verify_shasum(&self.download_path, &shasum_path)?;
+        if let Err(error) = verify_shasum(&download_url, &self.download_path, &shasums_path) {
+            fs::remove_file(&self.download_path)?;
+
+            return Err(error);
+        }
 
         Ok(())
     }
@@ -197,8 +181,7 @@ impl Tool for NodeTool {
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
         // Open .tar.gz file
-        let tar_gz =
-            fs::File::open(&self.download_path).map_err(|_| ToolchainError::FailedToInstall)?;
+        let tar_gz = fs::File::open(&self.download_path)?;
 
         // Decompress to .tar
         let tar = GzDecoder::new(tar_gz);

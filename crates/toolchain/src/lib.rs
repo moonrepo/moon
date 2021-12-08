@@ -18,17 +18,12 @@ use tools::yarn::YarnTool;
 pub use errors::ToolchainError;
 
 fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
-    // If path exists but is not a directory, delete it
     if dir.exists() {
-        if dir.is_file() && fs::remove_file(dir).is_err() {
-            return Err(ToolchainError::FailedToCreateDir);
+        if dir.is_file() {
+            fs::remove_file(dir)?;
         }
-
-        // TODO symlink
-
-        // Otherwise attempt to create the directory
-    } else if fs::create_dir(dir).is_err() {
-        return Err(ToolchainError::FailedToCreateDir);
+    } else {
+        fs::create_dir(dir)?;
     }
 
     Ok(())
@@ -122,12 +117,11 @@ impl Toolchain {
         let download_path = tool.get_download_path();
 
         if tool.is_downloaded() && download_path.is_some() {
-            fs::remove_file(download_path.unwrap()).map_err(|_| ToolchainError::FailedToUnload)?;
+            fs::remove_file(download_path.unwrap())?;
         }
 
         if tool.is_installed() {
-            fs::remove_dir_all(tool.get_install_dir())
-                .map_err(|_| ToolchainError::FailedToUnload)?;
+            fs::remove_dir_all(tool.get_install_dir())?;
         }
 
         Ok(())
@@ -145,7 +139,7 @@ impl Toolchain {
         self.npx.as_ref().unwrap()
     }
 
-    pub fn get_package_manager<T: PackageManager>(&self) -> &dyn PackageManager {
+    pub fn get_package_manager(&self) -> &dyn PackageManager {
         if self.pnpm.is_some() {
             return self.pnpm.as_ref().unwrap();
         }

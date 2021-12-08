@@ -1,34 +1,47 @@
+use std::io;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolchainError {
-    #[error("Command failed to run.")]
-    CommandFailed(String),
+    #[error("Unknown monolith toolchain error.")]
+    Unknown,
+
+    // TODO
+    #[error("Command `{0}` failed to run.")]
+    FailedCommandExec(
+        String, // Command line
+    ),
+
+    #[error("Shashum check has failed for {0}. Archive was downloaded from {1}. Downloaded file has been deleted, please try again.")]
+    InvalidShasum(
+        String, // Download path
+        String, // URL
+    ),
 
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,
 
-    #[error("Failed to create a directory.")]
-    FailedToCreateDir,
+    #[error("Unsupported architecture `{0}`. Unable to install {1}.")]
+    UnsupportedArchitecture(
+        String, // Arch
+        String, // Tool name
+    ),
 
-    #[error("Failed to download tool.")]
-    FailedToDownload(String),
+    #[error("Unsupported platform `{0}`. Unable to install {1}.")]
+    UnsupportedPlatform(
+        String, // Platform
+        String, // Tool name
+    ),
 
-    #[error("Failed to install tool.")]
-    FailedToInstall,
+    #[error("I/O")]
+    IO {
+        #[from]
+        source: io::Error,
+    },
 
-    #[error("Failed to unload tool from toolchain.")]
-    FailedToUnload,
-
-    #[error("SHASUMS256 verification has faild.")]
-    InvalidShasum,
-
-    #[error("Unsupported architecture.")]
-    UnsupportedArchitecture(String),
-
-    #[error("Unsupported platform.")]
-    UnsupportedPlatform(String),
-
-    #[error("Unknown monolith toolchain error.")]
-    Unknown,
+    #[error("HTTP")]
+    HTTP {
+        #[from]
+        source: reqwest::Error,
+    },
 }

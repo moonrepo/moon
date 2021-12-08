@@ -49,6 +49,14 @@ async fn main() {
                 .load_tool(workspace.toolchain.get_npm())
                 .await
                 .expect("NPM FAIL");
+
+            // println!("LOADING PACKAGE MANAGER");
+
+            // workspace
+            //     .toolchain
+            //     .load_tool(workspace.toolchain.get_package_manager())
+            //     .await
+            //     .expect("PM FAIL");
         }
         None => println!("Please select a command."),
         _ => unreachable!(),

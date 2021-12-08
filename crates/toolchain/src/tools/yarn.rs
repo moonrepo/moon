@@ -1,11 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{exec_command, get_bin_version};
+use crate::helpers::{exec_command, get_bin_version, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use monolith_config::workspace::YarnConfig;
 use std::env::consts;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct YarnTool {
@@ -42,7 +42,7 @@ impl YarnTool {
 #[async_trait]
 impl Tool for YarnTool {
     fn is_downloaded(&self) -> bool {
-        false
+        true
     }
 
     async fn download(&self) -> Result<(), ToolchainError> {
@@ -99,7 +99,24 @@ impl Tool for YarnTool {
 
 #[async_trait]
 impl PackageManager for YarnTool {
-    async fn install_deps(&self, root_dir: &Path) -> Result<(), ToolchainError> {
-        Ok(exec_command(self.get_bin_path(), vec!["install"], root_dir).await?)
+    async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        let mut args = vec!["install"];
+
+        if self.is_v1() {
+            args.push("--frozen-lockfile");
+            args.push("--non-interactive");
+
+            if is_ci() {
+                args.push("--check-files");
+            }
+        } else {
+            args.push("--immutable");
+
+            if is_ci() {
+                args.push("--check-cache");
+            }
+        }
+
+        Ok(exec_command(self.get_bin_path(), args, &toolchain.root_dir).await?)
     }
 }

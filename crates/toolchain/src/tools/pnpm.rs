@@ -5,7 +5,7 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use monolith_config::workspace::PnpmConfig;
 use std::env::consts;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct PnpmTool {
@@ -38,7 +38,7 @@ impl PnpmTool {
 #[async_trait]
 impl Tool for PnpmTool {
     fn is_downloaded(&self) -> bool {
-        false
+        true
     }
 
     async fn download(&self) -> Result<(), ToolchainError> {
@@ -78,7 +78,7 @@ impl Tool for PnpmTool {
 
 #[async_trait]
 impl PackageManager for PnpmTool {
-    async fn install_deps(&self, root_dir: &Path) -> Result<(), ToolchainError> {
-        Ok(exec_command(self.get_bin_path(), vec!["install"], root_dir).await?)
+    async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        Ok(exec_command(self.get_bin_path(), vec!["install"], &toolchain.root_dir).await?)
     }
 }

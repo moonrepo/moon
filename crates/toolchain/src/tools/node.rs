@@ -164,7 +164,7 @@ impl Tool for NodeTool {
             .download_path
             .parent()
             .unwrap()
-            .join(format!("node-v{version}-SHASUMS256.txt", version = version));
+            .join(format!("node-v{}-SHASUMS256.txt", version));
 
         download_file_from_url(&shasums_url, &shasums_path).await?;
 

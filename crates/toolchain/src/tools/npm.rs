@@ -1,11 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{exec_command, get_bin_version};
+use crate::helpers::{exec_command, get_bin_version, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use monolith_config::workspace::NpmConfig;
 use std::env::consts;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct NpmTool {
@@ -52,7 +52,7 @@ impl NpmTool {
 #[async_trait]
 impl Tool for NpmTool {
     fn is_downloaded(&self) -> bool {
-        false
+        true
     }
 
     async fn download(&self) -> Result<(), ToolchainError> {
@@ -90,7 +90,12 @@ impl Tool for NpmTool {
 
 #[async_trait]
 impl PackageManager for NpmTool {
-    async fn install_deps(&self, root_dir: &Path) -> Result<(), ToolchainError> {
-        Ok(exec_command(self.get_bin_path(), vec!["install"], root_dir).await?)
+    async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        Ok(exec_command(
+            self.get_bin_path(),
+            vec![if is_ci() { "ci" } else { "install " }],
+            &toolchain.root_dir,
+        )
+        .await?)
     }
 }

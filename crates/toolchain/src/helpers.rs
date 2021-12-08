@@ -1,9 +1,14 @@
 use crate::errors::ToolchainError;
 use sha2::{Digest, Sha256};
+use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
 use tokio::process::Command;
+
+pub fn is_ci() -> bool {
+    env::var("CI").is_ok()
+}
 
 pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(), ToolchainError> {
     let command_line = format!(

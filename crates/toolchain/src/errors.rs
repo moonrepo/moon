@@ -12,7 +12,7 @@ pub enum ToolchainError {
         String, // Command line
     ),
 
-    #[error("Shashum check has failed for {0}. Archive was downloaded from {1}. Downloaded file has been deleted, please try again.")]
+    #[error("Shashum check has failed for {0}, which was downloaded from {1}. The downloaded file has been deleted, please try again.")]
     InvalidShasum(
         String, // Download path
         String, // URL

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+monolith_toolchain= { path = "../toolchain" }
 monolith_workspace = { path = "../workspace" }
 clap = "2.33"
 tokio =  { version = "1.14", features = ["full"] }

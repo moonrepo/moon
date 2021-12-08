@@ -10,7 +10,7 @@ use monolith_config::workspace::{
 };
 use std::fs;
 use std::path::{Path, PathBuf};
-use tool::{PackageManager, Tool};
+use tool::PackageManager;
 use tools::node::NodeTool;
 use tools::npm::NpmTool;
 use tools::npx::NpxTool;
@@ -18,6 +18,7 @@ use tools::pnpm::PnpmTool;
 use tools::yarn::YarnTool;
 
 pub use errors::ToolchainError;
+pub use tool::Tool;
 
 fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     if dir.exists() {
@@ -156,15 +157,29 @@ impl Toolchain {
         self.npx.as_ref().unwrap()
     }
 
+    pub fn get_pnpm(&self) -> Option<&PnpmTool> {
+        match &self.pnpm {
+            Some(tool) => Some(tool),
+            None => None,
+        }
+    }
+
+    pub fn get_yarn(&self) -> Option<&YarnTool> {
+        match &self.yarn {
+            Some(tool) => Some(tool),
+            None => None,
+        }
+    }
+
     pub fn get_package_manager(&self) -> &dyn PackageManager {
         if self.pnpm.is_some() {
-            return self.pnpm.as_ref().unwrap();
+            return self.get_pnpm().unwrap();
         }
 
         if self.yarn.is_some() {
-            return self.yarn.as_ref().unwrap();
+            return self.get_yarn().unwrap();
         }
 
-        self.npm.as_ref().unwrap()
+        self.get_npm()
     }
 }

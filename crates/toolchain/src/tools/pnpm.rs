@@ -79,6 +79,11 @@ impl Tool for PnpmTool {
 #[async_trait]
 impl PackageManager for PnpmTool {
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        Ok(exec_command(self.get_bin_path(), vec!["install"], &toolchain.root_dir).await?)
+        Ok(exec_command(
+            self.get_bin_path(),
+            vec!["install", "--frozen-lockfile"],
+            &toolchain.root_dir,
+        )
+        .await?)
     }
 }

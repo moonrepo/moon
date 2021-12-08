@@ -33,8 +33,12 @@ impl NpxTool {
 
         exec_args.extend(args);
 
-        exec_command(&self.bin_path, exec_args, cwd).await?;
+        exec_command(self.get_bin_path(), exec_args, cwd).await?;
 
         Ok(())
+    }
+
+    pub fn get_bin_path(&self) -> &PathBuf {
+        &self.bin_path
     }
 }

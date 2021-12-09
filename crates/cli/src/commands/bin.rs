@@ -1,27 +1,36 @@
+use clap::ArgEnum;
 use monolith_toolchain::Tool;
 use monolith_workspace::Workspace;
 
-pub struct BinOptions {}
+#[derive(ArgEnum, Clone, Debug)]
+pub enum BinTools {
+    Node,
+    Npm,
+    Pnpm,
+    Yarn,
+}
 
-pub async fn bin(
-    workspace: &Workspace,
-    _options: BinOptions,
-    tool: &str,
-) -> Result<(), std::io::Error> {
+pub async fn bin(workspace: &Workspace, tool: &BinTools) -> Result<(), std::io::Error> {
     let toolchain = &workspace.toolchain;
 
-    let bin_path = match tool {
-        "node" => Some(toolchain.get_node().get_bin_path()),
-        "npm" => Some(toolchain.get_npm().get_bin_path()),
-        "npx" => Some(toolchain.get_npx().get_bin_path()),
-        "pnpm" => toolchain.get_pnpm().map(|tool| tool.get_bin_path()),
-        "yarn" => toolchain.get_yarn().map(|tool| tool.get_bin_path()),
-        _ => None,
+    match tool {
+        BinTools::Node => {
+            println!("{}", toolchain.get_node().get_bin_path().display());
+        }
+        BinTools::Npm => {
+            println!("{}", toolchain.get_npm().get_bin_path().display());
+        }
+        BinTools::Pnpm => {
+            if let Some(tool) = toolchain.get_pnpm() {
+                println!("{}", tool.get_bin_path().display());
+            }
+        }
+        BinTools::Yarn => {
+            if let Some(tool) = toolchain.get_yarn() {
+                println!("{}", tool.get_bin_path().display());
+            }
+        }
     };
-
-    if let Some(path) = bin_path {
-        println!("{}", path.display());
-    }
 
     Ok(())
 }

@@ -1,59 +1,26 @@
 mod app;
 mod commands;
 
-use app::create_app;
-use commands::bin::{bin, BinOptions};
+use app::{App, Commands};
+use clap::Parser;
+use commands::bin::bin;
 use monolith_workspace::Workspace;
 
 #[tokio::main]
 async fn main() {
     // Create app and parse arguments
-    let app = create_app();
-    let matches = app.get_matches();
+    let args = App::parse();
 
     // Load the workspace
     let workspace = Workspace::load().unwrap();
 
     println!("{:#?}", workspace);
-    println!("{:#?}", matches);
+    println!("{:#?}", args);
 
-    // Match on a subcommand and branch logic
-    match matches.subcommand() {
-        ("run", Some(_run_matches)) => {
-            println!("LOADING NODE");
-
-            workspace
-                .toolchain
-                .load_tool(workspace.toolchain.get_node())
-                .await
-                .expect("NODE FAIL");
-
-            println!("LOADING NPM");
-
-            workspace
-                .toolchain
-                .load_tool(workspace.toolchain.get_npm())
-                .await
-                .expect("NPM FAIL");
-
-            // println!("LOADING PACKAGE MANAGER");
-
-            // workspace
-            //     .toolchain
-            //     .load_tool(workspace.toolchain.get_package_manager())
-            //     .await
-            //     .expect("PM FAIL");
+    // Match and run subcommand
+    match &args.command {
+        Commands::Bin { tool } => {
+            bin(&workspace, tool).await.expect("BIN FAIL");
         }
-        ("bin", Some(bin_matches)) => {
-            bin(
-                &workspace,
-                BinOptions {},
-                bin_matches.value_of("tool").unwrap(),
-            )
-            .await
-            .expect("BIN FAIL");
-        }
-        ("", None) => println!("Please select a command."),
-        _ => unreachable!(),
     }
 }

@@ -1,35 +1,41 @@
-use clap::{crate_version, App, AppSettings, Arg, SubCommand};
+// https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
-pub fn create_app<'a, 'b>() -> App<'a, 'b> {
-    App::new("Monolith")
-        .bin_name("mono")
-        .version(crate_version!())
-        .about("First-class monorepo management.")
-        .help_short("h")
-        .version_short("v")
-        .setting(AppSettings::DisableHelpSubcommand)
-        .setting(AppSettings::GlobalVersion)
-        // bin
-        .subcommand(
-            SubCommand::with_name("bin")
-                .about("Return an absolute path to a toolchain binary.")
-                .arg(
-                    Arg::with_name("tool")
-                        .help("The tool to query.")
-                        .index(1)
-                        .required(true)
-                        .possible_values(&["node", "npm", "npx", "pnpm", "yarn"]),
-                ),
-        )
-        // run
-        .subcommand(
-            SubCommand::with_name("run")
-                .about("Run a task within a project.")
-                .arg(
-                    Arg::with_name("target")
-                        .help("The task target to run.")
-                        .index(1)
-                        .required(true),
-                ),
-        )
+use crate::commands::bin::BinTools;
+use clap::{AppSettings, Parser, Subcommand};
+
+#[derive(Debug, Subcommand)]
+pub enum Commands {
+    // mono bin <tool>
+    #[clap(
+        name = "bin",
+        about = "Return an absolute path to a toolchain binary.",
+        long_about = "Return an absolute path to a toolchain binary. If a tool has not been configured or installed, this will return an empty value."
+    )]
+    Bin {
+        #[clap(arg_enum, help = "The tool to query.")]
+        tool: BinTools,
+    },
 }
+
+#[derive(Debug, Parser)]
+#[clap(
+    bin_name = "mono",
+    name = "Monolith",
+    about = "First-class monorepo management.",
+    version
+)]
+#[clap(global_setting(AppSettings::DisableHelpSubcommand))]
+#[clap(global_setting(AppSettings::PropagateVersion))]
+pub struct App {
+    #[clap(subcommand)]
+    pub command: Commands,
+}
+
+//         SubCommand::with_name("run")
+//             .about("Run a task within a project.")
+//             .arg(
+//                 Arg::with_name("target")
+//                     .help("The task target to run.")
+//                     .index(1)
+//                     .required(true),
+//             ),

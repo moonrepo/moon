@@ -1,5 +1,6 @@
 mod app;
 mod commands;
+mod helpers;
 
 use app::{App, Commands};
 use clap::Parser;
@@ -12,7 +13,7 @@ async fn main() {
     let args = App::parse();
 
     // Load the workspace
-    let workspace = Workspace::load().unwrap();
+    let workspace = Workspace::load().unwrap(); // TODO error
 
     println!("{:#?}", workspace);
     println!("{:#?}", args);

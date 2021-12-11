@@ -1,3 +1,4 @@
+use crate::helpers::safe_exit;
 use clap::ArgEnum;
 use monolith_toolchain::Tool;
 use monolith_workspace::Workspace;
@@ -10,27 +11,36 @@ pub enum BinTools {
     Yarn,
 }
 
-pub async fn bin(workspace: &Workspace, tool: &BinTools) -> Result<(), std::io::Error> {
+enum BinExitCodes {
+    NotConfigured = 1,
+    NotInstalled = 2,
+}
+
+pub async fn bin(workspace: &Workspace, tool_type: &BinTools) -> Result<(), clap::Error> {
     let toolchain = &workspace.toolchain;
 
-    match tool {
-        BinTools::Node => {
-            println!("{}", toolchain.get_node().get_bin_path().display());
-        }
-        BinTools::Npm => {
-            println!("{}", toolchain.get_npm().get_bin_path().display());
-        }
-        BinTools::Pnpm => {
-            if let Some(tool) = toolchain.get_pnpm() {
-                println!("{}", tool.get_bin_path().display());
+    let tool: &dyn Tool = match tool_type {
+        BinTools::Node => toolchain.get_node(),
+        BinTools::Npm => toolchain.get_npm(),
+        BinTools::Pnpm => match toolchain.get_pnpm() {
+            Some(t) => t,
+            None => {
+                safe_exit(BinExitCodes::NotConfigured as i32);
             }
-        }
-        BinTools::Yarn => {
-            if let Some(tool) = toolchain.get_yarn() {
-                println!("{}", tool.get_bin_path().display());
+        },
+        BinTools::Yarn => match toolchain.get_yarn() {
+            Some(t) => t,
+            None => {
+                safe_exit(BinExitCodes::NotConfigured as i32);
             }
-        }
+        },
     };
+
+    if tool.is_installed().await.is_err() {
+        safe_exit(BinExitCodes::NotInstalled as i32);
+    }
+
+    println!("{}", tool.get_bin_path().display());
 
     Ok(())
 }

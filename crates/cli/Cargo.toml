@@ -7,4 +7,4 @@ edition = "2021"
 monolith_toolchain= { path = "../toolchain" }
 monolith_workspace = { path = "../workspace" }
 clap = { version = "3.0.0-beta.1", features = ["derive"] }
-tokio =  { version = "1.14", features = ["full"] }
+tokio = { version = "1.14", features = ["full"] }

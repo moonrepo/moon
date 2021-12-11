@@ -4,10 +4,10 @@
   - [workspace.yml](#workspaceyml)
     - [projects](#projects)
     - [node](#node)
-      - [packageManager](#packagemanager)
       - [version](#version)
-    - [npm, pnpm, yarn](#npm-pnpm-yarn)
-      - [version](#version-1)
+      - [packageManager](#packagemanager)
+      - [npm, pnpm, yarn](#npm-pnpm-yarn)
+        - [version](#version-1)
   - [project.yml](#projectyml)
     - [fileGroups](#filegroups)
 
@@ -83,14 +83,14 @@ node:
   packageManager: yarn
 ```
 
-#### npm, pnpm, yarn
+##### npm, pnpm, yarn
 
 The `npm`, `pnpm`, and `yarn` settings are _optional_ fields for defining package manager specific
 configuration. The chosen setting is dependent on the value of `node.packageManager`. If these
 settings _are not defined_, the latest version of the active package manager will be used (when
 applicable).
 
-##### version
+###### version
 
 The `version` setting defines the explicit package manager version to use. We require an explicit
 major, minor, and patch version, to ensure the same environment is used across every machine.

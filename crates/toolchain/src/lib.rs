@@ -89,7 +89,7 @@ impl Toolchain {
 
         toolchain.npm = Some(NpmTool::new(
             &toolchain,
-            config.npm.as_ref().unwrap_or(&NpmConfig::default()), // TODO: Better way?
+            config.node.npm.as_ref().unwrap_or(&NpmConfig::default()), // TODO: Better way?
         )?);
 
         toolchain.npx = Some(NpxTool::new(&toolchain));
@@ -100,13 +100,13 @@ impl Toolchain {
                 PM::pnpm => {
                     toolchain.pnpm = Some(PnpmTool::new(
                         &toolchain,
-                        config.pnpm.as_ref().unwrap_or(&PnpmConfig::default()),
+                        config.node.pnpm.as_ref().unwrap_or(&PnpmConfig::default()),
                     )?);
                 }
                 PM::yarn => {
                     toolchain.yarn = Some(YarnTool::new(
                         &toolchain,
-                        config.yarn.as_ref().unwrap_or(&YarnConfig::default()),
+                        config.node.yarn.as_ref().unwrap_or(&YarnConfig::default()),
                     )?);
                 }
             }

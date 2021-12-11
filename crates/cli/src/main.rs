@@ -21,7 +21,7 @@ async fn main() {
     // Match and run subcommand
     match &args.command {
         Commands::Bin { tool } => {
-            bin(&workspace, tool).await.expect("BIN FAIL");
+            bin(&workspace, tool).await.unwrap(); // TODO error
         }
     }
 }

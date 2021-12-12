@@ -21,7 +21,7 @@ pub enum Commands {
 #[clap(
     bin_name = "mono",
     name = "Monolith",
-    about = "First-class monorepo management.",
+    about = "Take your monorepo to the moon!",
     version
 )]
 #[clap(global_setting(AppSettings::DisableHelpSubcommand))]

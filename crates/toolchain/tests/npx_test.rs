@@ -1,6 +1,6 @@
 use monolith_config::WorkspaceConfig;
 use monolith_toolchain::tools::npx::NpxTool;
-use monolith_toolchain::Toolchain;
+use monolith_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
 use std::env;
 
@@ -19,6 +19,9 @@ pub fn create_npx_tool() -> (NpxTool, assert_fs::TempDir) {
 #[test]
 fn generates_paths() {
     let (npx, temp_dir) = create_npx_tool();
+
+    assert!(predicates::str::ends_with(".monolith/tools/node/1.0.0")
+        .eval(npx.get_install_dir().to_str().unwrap()));
 
     assert!(
         predicates::str::ends_with(".monolith/tools/node/1.0.0/bin/npx")

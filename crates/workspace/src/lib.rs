@@ -70,14 +70,14 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".monolith/workspace.yml".
     pub config: WorkspaceConfig,
 
+    /// The root of the workspace that contains the ".monolith" config folder.
+    pub dir: PathBuf,
+
     /// Path to the root `package.json` file.
     pub package_json_path: PathBuf,
 
     /// Global project configuration loaded from ".monolith/project.yml".
     pub project_config: GlobalProjectConfig,
-
-    /// The root of the workspace that contains the ".monolith" config folder.
-    pub root_dir: PathBuf,
 
     /// The toolchain instances that houses all runtime tools/languages.
     pub toolchain: Toolchain,
@@ -108,9 +108,9 @@ impl Workspace {
 
         Ok(Workspace {
             config,
+            dir: root_dir,
             package_json_path,
             project_config,
-            root_dir,
             toolchain,
             working_dir,
         })

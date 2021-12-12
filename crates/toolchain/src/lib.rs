@@ -36,10 +36,7 @@ fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
 pub struct Toolchain {
     /// The directory where toolchain artifacts are stored.
     /// This is typically ~/.monolith.
-    pub home_dir: PathBuf,
-
-    /// The workspace root directory.
-    pub root_dir: PathBuf,
+    pub dir: PathBuf,
 
     /// The directory where temporary files are stored.
     /// This is typically ~/.monolith/temp.
@@ -48,6 +45,9 @@ pub struct Toolchain {
     /// The directory where tools are installed by version.
     /// This is typically ~/.monolith/tools.
     pub tools_dir: PathBuf,
+
+    /// The workspace root directory.
+    pub workspace_dir: PathBuf,
 
     // Tool instances are private, as we want to lazy load them.
     node: Option<NodeTool>,
@@ -63,20 +63,20 @@ impl Toolchain {
         base_dir: &Path,
         root_dir: &Path,
     ) -> Result<Toolchain, ToolchainError> {
-        let home_dir = base_dir.join(constants::CONFIG_DIRNAME);
-        let temp_dir = home_dir.join("temp");
-        let tools_dir = home_dir.join("tools");
+        let dir = base_dir.join(constants::CONFIG_DIRNAME);
+        let temp_dir = dir.join("temp");
+        let tools_dir = dir.join("tools");
 
-        create_dir(&home_dir)?;
+        create_dir(&dir)?;
         create_dir(&temp_dir)?;
         create_dir(&tools_dir)?;
 
         // Create the instance first, so we can pass to each tool initializer
         let mut toolchain = Toolchain {
-            home_dir,
-            root_dir: root_dir.to_path_buf(),
+            dir,
             temp_dir,
             tools_dir,
+            workspace_dir: root_dir.to_path_buf(),
             node: None,
             npm: None,
             npx: None,

@@ -72,7 +72,7 @@ impl Tool for YarnTool {
             exec_command(
                 self.get_bin_path(),
                 vec!["set", "version", &self.config.version],
-                &toolchain.root_dir,
+                &toolchain.workspace_dir,
             )
             .await?
         }
@@ -117,6 +117,6 @@ impl PackageManager for YarnTool {
             }
         }
 
-        Ok(exec_command(self.get_bin_path(), args, &toolchain.root_dir).await?)
+        Ok(exec_command(self.get_bin_path(), args, &toolchain.workspace_dir).await?)
     }
 }

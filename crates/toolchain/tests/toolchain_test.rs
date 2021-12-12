@@ -17,7 +17,7 @@ fn generates_paths() {
     let base_dir = assert_fs::TempDir::new().unwrap();
     let toolchain = create_toolchain(&base_dir);
 
-    assert!(predicates::str::ends_with(".monolith").eval(toolchain.home_dir.to_str().unwrap()));
+    assert!(predicates::str::ends_with(".monolith").eval(toolchain.dir.to_str().unwrap()));
     assert!(predicates::str::ends_with(".monolith/temp").eval(toolchain.temp_dir.to_str().unwrap()));
     assert!(
         predicates::str::ends_with(".monolith/tools").eval(toolchain.tools_dir.to_str().unwrap())

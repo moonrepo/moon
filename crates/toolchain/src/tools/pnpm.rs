@@ -82,7 +82,7 @@ impl PackageManager for PnpmTool {
         Ok(exec_command(
             self.get_bin_path(),
             vec!["install", "--frozen-lockfile"],
-            &toolchain.root_dir,
+            &toolchain.workspace_dir,
         )
         .await?)
     }

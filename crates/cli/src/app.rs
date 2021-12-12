@@ -19,7 +19,7 @@ pub enum Commands {
     // mono setup
     #[clap(
         name = "setup",
-        about = "Setup the environment by installing all necessary tools."
+        about = "Setup the environment by installing all tools."
     )]
     Setup,
 

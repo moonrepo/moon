@@ -10,15 +10,30 @@
 
 The toolchain is an internal layer for downloading, installing, and managing tools (languages,
 libraries, and binaries) that are required at runtime. We embrace this approach over relying on
-these tools "existing", as it ensures the following across all environments and machines:
+these tools "existing" in the current environment, as it ensures the following across any
+environment or machine:
 
-- Avoids a developer or pipeline having to pre-install all the necessary tools.
 - The version and enabled features of a tool are identical.
-- And lastly, builds are consistent, reproducible, and hopefully deterministic.
+- Tools are isolated and unaffected by external sources.
+- Builds are consistent, reproducible, and _hopefully_ deterministic.
+
+Furthermore, this avoids a developer, pipeline, machine, etc, having to pre-install all the
+necessary tools, _and_ to keep them in sync as time passes.
 
 ## How it works
 
-TODO
+The toolchain is a `.monolith` directory within the current user's home directory, e.g.,
+`~/.monolith`.
+
+The first step in a tool's life-cycle is being downloaded to `~/.monolith/temp`. Downloads are
+typically an archive that can be unpacked into a target directory.
+
+Once downloaded, we verify the downloaded file by running a sha256 checksum. If this check fails for
+_any reason_, the toolchain is unusable, and the process is aborted.
+
+After a successful verification, the last step in the tool's life-cycle can begin, installation.
+Depending on the type of download, the installation process may differ. For archives, we unpack the
+tool to `~/.monolith/tools/<name>/<version>`.
 
 ## Configuration
 
@@ -35,7 +50,7 @@ The following tools will be managed by the toolchain.
 ### Node.js
 
 Since Monolith was designed for JavaScript based monorepo's, we intentionally support Node.js as a
-first-class citizen within the toolchain.
+first-class citizen within the toolchain. Because of this, Node.js is _always enabled_.
 
 - Configured with: `node`
 - Installed to: `~/.monolith/tools/node/x.x.x`
@@ -50,20 +65,20 @@ the `node.packageManager` setting.
 
 ### pnpm
 
-The [`pnpm`](https://pnpm.io) library can be used as an alternative package manager to `npm`, and
-will be enabled when `node.packageManager` is set to "pnpm". The binary will be installed as a
-global toolchain npm dependency.
+The [`pnpm`](https://pnpm.io) library can be used as an alternative package manager to npm, and will
+be enabled when `node.packageManager` is set to "pnpm". The binary will be installed as a toolchain
+global npm dependency.
 
 - Configured with: `node.pnpm`
 - Installed to: `~/.monolith/tools/node/x.x.x/bin/pnpm`
 
 ### Yarn
 
-The [`yarn`](https://yarnpkg.com) library can be used as an alternative package manager to `npm`,
-and will be enabled when `node.packageManager` is set to "yarn". The binary will be installed as a
-global toolchain npm dependency.
+The [`yarn`](https://yarnpkg.com) library can be used as an alternative package manager to npm, and
+will be enabled when `node.packageManager` is set to "yarn". The binary will be installed as a
+toolchain global npm dependency.
 
 - Configured with: `node.yarn`
 - Installed to: `~/.monolith/tools/node/x.x.x/bin/yarn`
 
-> Supports both Yarn v1 and Yarn v2/v3 in `node-modules` and `pnp` linker mode.
+> Supports v1 and v2/v3 in `node-modules` or `pnp` linker mode.

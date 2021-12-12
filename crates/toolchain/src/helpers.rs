@@ -56,8 +56,6 @@ pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
         .trim()
         .to_owned();
 
-    println!("V {}", version);
-
     if version.starts_with('v') {
         version = version.replace('v', "");
     }

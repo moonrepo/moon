@@ -7,7 +7,7 @@ use monolith_config::workspace::NpmConfig;
 use std::env::consts;
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NpmTool {
     bin_path: PathBuf,
 

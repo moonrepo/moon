@@ -5,7 +5,7 @@ use crate::Toolchain;
 use std::env::consts;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NpxTool {
     bin_path: PathBuf,
 }

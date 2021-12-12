@@ -7,7 +7,7 @@ use monolith_config::workspace::YarnConfig;
 use std::env::consts;
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct YarnTool {
     bin_path: PathBuf,
 

@@ -7,7 +7,7 @@ use monolith_config::workspace::PnpmConfig;
 use std::env::consts;
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PnpmTool {
     bin_path: PathBuf,
 

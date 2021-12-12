@@ -1,39 +1,51 @@
-extern crate clap;
+mod app;
+mod commands;
+mod helpers;
 
-use clap::{crate_version, App, AppSettings, Arg, SubCommand};
+use app::{App, Commands};
+use clap::Parser;
+use commands::bin::bin;
+use commands::setup::setup;
+use commands::teardown::teardown;
 use monolith_workspace::Workspace;
 
-fn main() {
-    // Build the app
-    let app = App::new("Monolith")
-        .bin_name("mono")
-        .version(crate_version!())
-        .about("First-class monorepo management.")
-        .help_short("h")
-        .version_short("v")
-        .setting(AppSettings::DisableHelpSubcommand)
-        .setting(AppSettings::GlobalVersion)
-        .subcommand(
-            SubCommand::with_name("run")
-                .about("Run a task within a project.")
-                .arg(
-                    Arg::with_name("target")
-                        .help("The task target to run.")
-                        .index(1)
-                        .required(true),
-                ),
-        );
+#[tokio::main]
+async fn main() {
+    // Create app and parse arguments
+    let args = App::parse();
 
-    // Parse argv and return matches
-    let matches = app.get_matches();
-    let workspace = Workspace::load();
+    // Load the workspace
+    let workspace = Workspace::load().unwrap(); // TODO error
 
-    println!("{:?}", workspace);
+    // println!("{:#?}", workspace);
+    // println!("{:#?}", args);
 
-    // Match on a subcommand and branch logic
-    match matches.subcommand_name() {
-        Some("run") => println!("'mono run' was used"),
-        None => println!("Please select a command."),
-        _ => unreachable!(),
+    // Match and run subcommand
+    match &args.command {
+        Commands::Bin { tool } => {
+            bin(&workspace, tool).await.unwrap(); // TODO error
+        }
+        Commands::Setup => {
+            setup(&workspace).await.unwrap(); // TODO error
+        }
+        Commands::Teardown => {
+            teardown(&workspace).await.unwrap(); // TODO error
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use assert_cmd::Command;
+    use std::env;
+
+    pub fn create_test_command(fixture: &str) -> Command {
+        let mut path = env::current_dir().unwrap();
+        path.push("../../tests/fixtures");
+        path.push(fixture);
+
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+        cmd.current_dir(path.canonicalize().unwrap());
+        cmd
     }
 }

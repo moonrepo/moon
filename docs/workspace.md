@@ -1,14 +1,14 @@
 # Workspace
 
 - [Configuration](#configuration)
-  - [workspace.yml](#workspaceyml)
+  - [`workspace.yml`](#workspaceyml)
     - [projects](#projects)
     - [node](#node)
-      - [packageManager](#packagemanager)
       - [version](#version)
-    - [npm, pnpm, yarn](#npm-pnpm-yarn)
-      - [version](#version-1)
-  - [project.yml](#projectyml)
+      - [packageManager](#packagemanager)
+      - [npm, pnpm, yarn](#npm-pnpm-yarn)
+        - [version](#version-1)
+  - [`project.yml`](#projectyml)
     - [fileGroups](#filegroups)
 
 A workspace is a directory that contains [projects](./project.md), manages a
@@ -24,7 +24,7 @@ workspace root.
 
 > This folder _must_ be relative to the root `package.json` and it's associated lock file.
 
-### workspace.yml
+### `workspace.yml`
 
 The `.monolith/workspace.yml` file configures projects and the toolchain.
 
@@ -83,24 +83,25 @@ node:
   packageManager: yarn
 ```
 
-#### npm, pnpm, yarn
+##### npm, pnpm, yarn
 
 The `npm`, `pnpm`, and `yarn` settings are _optional_ fields for defining package manager specific
 configuration. The chosen setting is dependent on the value of `node.packageManager`. If these
 settings _are not defined_, the latest version of the active package manager will be used (when
 applicable).
 
-##### version
+###### version
 
 The `version` setting defines the explicit package manager version to use. We require an explicit
 major, minor, and patch version, to ensure the same environment is used across every machine.
 
 ```yaml
-yarn:
-  version: '3.1.0'
+node:
+  yarn:
+    version: '3.1.0'
 ```
 
-### project.yml
+### `project.yml`
 
 The `.monolith/project.yml` file configures settings that are inherited by _every_ project in the
 workspace. Projects can override these settings within their `<project path>/project.yml`.

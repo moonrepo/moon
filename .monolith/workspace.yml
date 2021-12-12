@@ -3,3 +3,7 @@ projects:
   lib: libs/bar
 # npm:
 #   version: 'foo'
+
+node:
+  version: 16.13.1
+  packageManager: yarn

@@ -1,4 +1,5 @@
 use monolith_config::{constants, ValidationErrors};
+use monolith_toolchain::ToolchainError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -10,11 +11,24 @@ pub enum WorkspaceError {
     MissingConfigDir,
 
     #[error(
+        "Unable to locate a root `package.json`. Please create one alongside the `{}` configuration folder.",
+        constants::CONFIG_DIRNAME
+    )]
+    MissingPackageJson,
+
+    #[error(
         "Unable to locate `{}/{}` configuration file.",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     MissingWorkspaceConfigFile,
+
+    #[error(
+        "Unable to locate `{}/{}` configuration file.",
+        constants::CONFIG_DIRNAME,
+        constants::CONFIG_PROJECT_FILENAME
+    )]
+    MissingGlobalProjectConfigFile,
 
     #[error(
         "Failed to validate `{}/{}` configuration file.",
@@ -23,6 +37,20 @@ pub enum WorkspaceError {
     )]
     InvalidWorkspaceConfigFile(ValidationErrors),
 
+    #[error(
+        "Failed to validate `{}/{}` configuration file.",
+        constants::CONFIG_DIRNAME,
+        constants::CONFIG_PROJECT_FILENAME
+    )]
+    InvalidGlobalProjectConfigFile(ValidationErrors),
+
     #[error("Unknown monolith workspace error.")]
     Unknown,
+
+    #[error("Toolchain error.")]
+    Toolchain {
+        #[from]
+        source: ToolchainError,
+        // backtrace: Backtrace,
+    },
 }

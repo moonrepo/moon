@@ -4,7 +4,7 @@ use monolith_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
 use std::env;
 
-pub fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
+fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
     let mut config = WorkspaceConfig::default();
@@ -14,6 +14,16 @@ pub fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
     let toolchain = Toolchain::from(&config, base_dir.path(), &env::temp_dir()).unwrap();
 
     (toolchain.get_node().to_owned(), base_dir)
+}
+
+fn get_node_platform() -> &'static str {
+    if env::consts::OS == "windows" {
+        "win"
+    } else if env::consts::OS == "macos" {
+        "darwin"
+    } else {
+        "linux"
+    }
 }
 
 #[test]
@@ -28,10 +38,11 @@ fn generates_paths() {
             .eval(node.get_bin_path().to_str().unwrap())
     );
 
-    assert!(
-        predicates::str::ends_with(".monolith/temp/node/node-v1.0.0-darwin-x64.tar.gz")
-            .eval(node.get_download_path().unwrap().to_str().unwrap())
-    );
+    assert!(predicates::str::ends_with(format!(
+        ".monolith/temp/node/node-v1.0.0-{}-x64.tar.gz",
+        get_node_platform()
+    ))
+    .eval(node.get_download_path().unwrap().to_str().unwrap()));
 
     temp_dir.close().unwrap();
 }
@@ -64,12 +75,19 @@ mod download {
 
         assert!(!node.get_download_path().unwrap().exists());
 
-        let archive = mock("GET", "/dist/v1.0.0/node-v1.0.0-darwin-x64.tar.gz")
-            .with_body("binary")
-            .create();
+        let archive = mock(
+            "GET",
+            format!(
+                "/dist/v1.0.0/node-v1.0.0-{}-x64.tar.gz",
+                get_node_platform()
+            )
+            .as_str(),
+        )
+        .with_body("binary")
+        .create();
 
         let shasums = mock("GET", "/dist/v1.0.0/SHASUMS256.txt")
-            .with_body("9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-darwin-x64.tar.gz\n")
+            .with_body("9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-darwin-x64.tar.gz\n9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-linux-x64.tar.gz\n")
             .create();
 
         node.download(Some(&mockito::server_url())).await.unwrap();
@@ -87,12 +105,21 @@ mod download {
     async fn fails_on_invalid_shasum() {
         let (node, temp_dir) = create_node_tool();
 
-        let archive = mock("GET", "/dist/v1.0.0/node-v1.0.0-darwin-x64.tar.gz")
-            .with_body("binary")
-            .create();
+        let archive = mock(
+            "GET",
+            format!(
+                "/dist/v1.0.0/node-v1.0.0-{}-x64.tar.gz",
+                get_node_platform()
+            )
+            .as_str(),
+        )
+        .with_body("binary")
+        .create();
 
         let shasums = mock("GET", "/dist/v1.0.0/SHASUMS256.txt")
-            .with_body("fakehash  node-v1.0.0-darwin-x64.tar.gz\n")
+            .with_body(
+                "fakehash  node-v1.0.0-darwin-x64.tar.gz\nfakehash  node-v1.0.0-linux-x64.tar.gz\n",
+            )
             .create();
 
         node.download(Some(&mockito::server_url())).await.unwrap();

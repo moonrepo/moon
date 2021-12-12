@@ -18,7 +18,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all --verbose -- --check
+          args: --all -- --check
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -32,7 +32,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace --all-targets --verbose -- --deny warnings
+          args: --workspace --all-targets -- --deny warnings
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -48,4 +48,3 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --verbose

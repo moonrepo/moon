@@ -45,7 +45,7 @@ impl Tool for YarnTool {
         true
     }
 
-    async fn download(&self) -> Result<(), ToolchainError> {
+    async fn download(&self, _host: Option<&str>) -> Result<(), ToolchainError> {
         Ok(()) // This is handled by node
     }
 

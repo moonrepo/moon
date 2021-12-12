@@ -1,7 +1,7 @@
 mod errors;
 mod helpers;
 mod tool;
-mod tools;
+pub mod tools;
 
 use dirs::home_dir as get_home_dir;
 use monolith_config::constants;
@@ -58,9 +58,12 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub fn new(config: &WorkspaceConfig, root_dir: &Path) -> Result<Toolchain, ToolchainError> {
-        let user_home_dir = get_home_dir().ok_or(ToolchainError::MissingHomeDir)?;
-        let home_dir = user_home_dir.join(constants::CONFIG_DIRNAME);
+    pub fn from(
+        config: &WorkspaceConfig,
+        base_dir: &Path,
+        root_dir: &Path,
+    ) -> Result<Toolchain, ToolchainError> {
+        let home_dir = base_dir.join(constants::CONFIG_DIRNAME);
         let temp_dir = home_dir.join("temp");
         let tools_dir = home_dir.join("tools");
 
@@ -115,11 +118,19 @@ impl Toolchain {
         Ok(toolchain)
     }
 
+    pub fn new(config: &WorkspaceConfig, root_dir: &Path) -> Result<Toolchain, ToolchainError> {
+        Toolchain::from(
+            config,
+            &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
+            root_dir,
+        )
+    }
+
     /// Load a tool into the toolchain by downloading an artifact/binary
     /// into the temp folder, then installing it into the tools folder.
     pub async fn load_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
         if !tool.is_downloaded() {
-            tool.download().await?;
+            tool.download(None).await?;
         }
 
         if !tool.is_installed().await? {

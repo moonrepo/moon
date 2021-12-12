@@ -69,7 +69,7 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
 
     io::copy(&mut file, &mut sha)?;
 
-    Ok(format!("{:?}", sha.finalize()))
+    Ok(format!("{:x}", sha.finalize()))
 }
 
 pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), ToolchainError> {

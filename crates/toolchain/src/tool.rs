@@ -14,7 +14,7 @@ pub trait Tool {
 
     /// Downloads the tool into the ~/.monolith/temp folder,
     /// and returns a file path to the downloaded binary.
-    async fn download(&self) -> Result<(), ToolchainError>;
+    async fn download(&self, host: Option<&str>) -> Result<(), ToolchainError>;
 
     /// Returns an absolute file path to the temporary downloaded file.
     /// This _may not exist_, as the path is composed ahead of time.

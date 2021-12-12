@@ -1,30 +1,62 @@
-use dirs::home_dir;
 use monolith_config::WorkspaceConfig;
 use monolith_toolchain::Toolchain;
+use predicates::prelude::*;
 use std::env;
+use std::path::Path;
 
-fn create_toolchain() -> Toolchain {
+pub fn create_toolchain(base_dir: &Path) -> Toolchain {
     let mut config = WorkspaceConfig::default();
 
     config.node.version = String::from("1.0.0");
 
-    Toolchain::new(&config, &env::temp_dir()).unwrap()
+    Toolchain::from(&config, base_dir, &env::temp_dir()).unwrap()
 }
 
 #[test]
-fn correct_paths() {
-    let toolchain = create_toolchain();
+fn generates_paths() {
+    let base_dir = assert_fs::TempDir::new().unwrap();
+    let toolchain = create_toolchain(&base_dir);
 
-    let mut home = home_dir().unwrap();
-    home.push(".monolith");
+    assert!(predicates::str::ends_with(".monolith").eval(toolchain.home_dir.to_str().unwrap()));
+    assert!(predicates::str::ends_with(".monolith/temp").eval(toolchain.temp_dir.to_str().unwrap()));
+    assert!(
+        predicates::str::ends_with(".monolith/tools").eval(toolchain.tools_dir.to_str().unwrap())
+    );
 
-    let mut temp = home.clone();
-    temp.push("temp");
-
-    let mut tools = home.clone();
-    tools.push("tools");
-
-    assert_eq!(toolchain.home_dir, home);
-    assert_eq!(toolchain.temp_dir, temp);
-    assert_eq!(toolchain.tools_dir, tools);
+    base_dir.close().unwrap();
 }
+
+#[test]
+fn creates_dirs() {
+    let base_dir = assert_fs::TempDir::new().unwrap();
+    let home_dir = base_dir.join(".monolith");
+    let temp_dir = base_dir.join(".monolith/temp");
+    let tools_dir = base_dir.join(".monolith/tools");
+
+    assert!(!home_dir.exists());
+    assert!(!temp_dir.exists());
+    assert!(!tools_dir.exists());
+
+    create_toolchain(&base_dir);
+
+    assert!(home_dir.exists());
+    assert!(temp_dir.exists());
+    assert!(tools_dir.exists());
+
+    base_dir.close().unwrap();
+}
+
+// #[test]
+// fn loads_node_npm() {
+//     let base_dir = assert_fs::TempDir::new().unwrap();
+//     let toolchain = create_toolchain(&base_dir);
+
+//     assert_ne!(toolchain.get_node(), None);
+//     assert_ne!(toolchain.get_npm(), None);
+//     assert_ne!(toolchain.get_npx(), None);
+//     assert_eq!(toolchain.get_pnpm(), None);
+//     assert_eq!(toolchain.get_yarn(), None);
+//
+
+//      base_dir.close().unwrap();
+// }

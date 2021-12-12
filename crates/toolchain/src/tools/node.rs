@@ -71,9 +71,10 @@ fn get_download_file(version: &str) -> Result<String, ToolchainError> {
     ))
 }
 
-fn get_nodejs_url(version: &str, path: &str) -> String {
+fn get_nodejs_url(version: &str, host: &str, path: &str) -> String {
     format!(
-        "https://nodejs.org/dist/v{version}/{path}",
+        "{host}/dist/v{version}/{path}",
+        host = host,
         version = version,
         path = path,
     )
@@ -88,11 +89,13 @@ fn verify_shasum(
     let file_name = download_path.file_name().unwrap().to_str().unwrap();
     let sha_hash = get_file_sha256_hash(download_path)?;
 
+    println!("{}  {}", sha_hash, file_name);
+
     for line in BufReader::new(fs::File::open(shasums_path)?)
         .lines()
         .flatten()
     {
-        // HashANSU102nASKBSAsdinSJd1  node-vx.x.x-darwin-arm64.tar.gz
+        // hash1923hnsdouahsd91houn79h1beyasdpaksdm  node-vx.x.x-darwin-arm64.tar.gz
         if line.starts_with(sha_hash.as_str()) && line.ends_with(file_name) {
             return Ok(());
         }
@@ -104,7 +107,7 @@ fn verify_shasum(
     ))
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NodeTool {
     bin_path: PathBuf,
 
@@ -150,16 +153,17 @@ impl Tool for NodeTool {
         self.download_path.exists()
     }
 
-    async fn download(&self) -> Result<(), ToolchainError> {
+    async fn download(&self, base_host: Option<&str>) -> Result<(), ToolchainError> {
         let version = &self.config.version;
+        let host = base_host.unwrap_or("https://nodejs.org");
 
         // Download the node.tar.gz archive
-        let download_url = get_nodejs_url(version, &get_download_file(version)?);
+        let download_url = get_nodejs_url(version, host, &get_download_file(version)?);
 
         download_file_from_url(&download_url, &self.download_path).await?;
 
         // Download the SHASUMS256.txt file
-        let shasums_url = get_nodejs_url(version, "SHASUMS256.txt");
+        let shasums_url = get_nodejs_url(version, host, "SHASUMS256.txt");
         let shasums_path = self
             .download_path
             .parent()

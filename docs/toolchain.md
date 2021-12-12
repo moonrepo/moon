@@ -1,5 +1,13 @@
 # Toolchain
 
+- [How it works](#how-it-works)
+- [Configuration](#configuration)
+- [Supported tools](#supported-tools)
+  - [Node.js](#nodejs)
+  - [npm, npx](#npm-npx)
+  - [pnpm](#pnpm)
+  - [Yarn](#yarn)
+
 The toolchain is an internal layer for downloading, installing, and managing tools (languages,
 libraries, and binaries) that are required at runtime. We embrace this approach over relying on
 these tools "existing", as it ensures the following across all environments and machines:
@@ -7,9 +15,6 @@ these tools "existing", as it ensures the following across all environments and 
 - Avoids a developer or pipeline having to pre-install all the necessary tools.
 - The version and enabled features of a tool are identical.
 - And lastly, builds are consistent, reproducible, and hopefully deterministic.
-
-> Although the toolchain was designed for JavaScript projects, mainly powered by Node.js, we may
-> support other languages in the future when deemed necessary, like Ruby or Python.
 
 ## How it works
 
@@ -23,6 +28,9 @@ The tools that are managed by the toolchain are configured through the
 ## Supported tools
 
 The following tools will be managed by the toolchain.
+
+> Although the toolchain was designed for JavaScript projects, mainly powered by Node.js tooling, we
+> may support other languages in the future when deemed necessary, like Ruby or Python.
 
 ### Node.js
 

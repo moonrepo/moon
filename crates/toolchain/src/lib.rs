@@ -126,9 +126,45 @@ impl Toolchain {
         )
     }
 
+    /// Download and install all tools into the toolchain.
+    pub async fn setup(&self) -> Result<(), ToolchainError> {
+        self.load_tool(self.get_node()).await?;
+        self.load_tool(self.get_npm()).await?;
+        self.load_tool(self.get_npx()).await?;
+
+        if self.pnpm.is_some() {
+            self.load_tool(self.get_pnpm().unwrap()).await?;
+        }
+
+        if self.yarn.is_some() {
+            self.load_tool(self.get_yarn().unwrap()).await?;
+        }
+
+        Ok(())
+    }
+
+    // Uninstall all tools from the toolchain, and delete any temporary files.
+    pub async fn teardown(&self) -> Result<(), ToolchainError> {
+        if self.yarn.is_some() {
+            self.unload_tool(self.get_yarn().unwrap()).await?;
+        }
+
+        if self.pnpm.is_some() {
+            self.unload_tool(self.get_pnpm().unwrap()).await?;
+        }
+
+        self.unload_tool(self.get_npx()).await?;
+        self.unload_tool(self.get_npm()).await?;
+        self.unload_tool(self.get_node()).await?;
+
+        fs::remove_dir_all(&self.dir)?;
+
+        Ok(())
+    }
+
     /// Load a tool into the toolchain by downloading an artifact/binary
     /// into the temp folder, then installing it into the tools folder.
-    pub async fn load_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
+    async fn load_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
         if !tool.is_downloaded() {
             tool.download(None).await?;
         }
@@ -142,7 +178,7 @@ impl Toolchain {
 
     /// Unload the tool by removing any downloaded/installed artifacts.
     /// This can be ran manually, or automatically during a failed load.
-    pub async fn unload_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
+    async fn unload_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
         let download_path = tool.get_download_path();
 
         if download_path.is_some() && tool.is_downloaded() {

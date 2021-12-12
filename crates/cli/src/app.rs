@@ -8,13 +8,27 @@ pub enum Commands {
     // mono bin <tool>
     #[clap(
         name = "bin",
-        about = "Return an absolute path to a toolchain binary.",
-        long_about = "Return an absolute path to a toolchain binary. If a tool has not been configured or installed, this will return an empty value with a non-zero exit code."
+        about = "Return an absolute path to a tool's binary within the toolchain.",
+        long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value."
     )]
     Bin {
         #[clap(arg_enum, help = "The tool to query.")]
         tool: BinTools,
     },
+
+    // mono setup
+    #[clap(
+        name = "setup",
+        about = "Setup the environment by installing all necessary tools."
+    )]
+    Setup,
+
+    // mono teardown
+    #[clap(
+        name = "teardown",
+        about = "Teardown the environment by uninstalling all tools and deleting temporary files."
+    )]
+    Teardown,
 }
 
 #[derive(Debug, Parser)]

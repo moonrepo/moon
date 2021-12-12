@@ -5,6 +5,8 @@ mod helpers;
 use app::{App, Commands};
 use clap::Parser;
 use commands::bin::bin;
+use commands::setup::setup;
+use commands::teardown::teardown;
 use monolith_workspace::Workspace;
 
 #[tokio::main]
@@ -22,6 +24,12 @@ async fn main() {
     match &args.command {
         Commands::Bin { tool } => {
             bin(&workspace, tool).await.unwrap(); // TODO error
+        }
+        Commands::Setup => {
+            setup(&workspace).await.unwrap(); // TODO error
+        }
+        Commands::Teardown => {
+            teardown(&workspace).await.unwrap(); // TODO error
         }
     }
 }

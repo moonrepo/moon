@@ -6,11 +6,14 @@ use json::JsonValue;
 use std::fs;
 use std::path::Path;
 
+pub use json::object::Object as PackageJsonValue;
+
 // We can't use serde_json here because:
 //  - Additional or unknown fields are entirely lost,
 //      which is problematic when we need to write back to the file.
 //  - Field values are non-deterministic and can be _anything_,
 //      which would result in parsing failures.
+#[derive(Debug)]
 pub struct PackageJson;
 
 impl PackageJson {

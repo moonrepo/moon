@@ -1,0 +1,8 @@
+[package]
+name = "monolith_project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+monolith_config = { path = "../config" }
+thiserror = "1.0"

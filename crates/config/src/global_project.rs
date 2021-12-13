@@ -2,6 +2,7 @@
 
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
+use crate::project::FileGroups;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -15,13 +16,13 @@ use validator::{Validate, ValidationErrors};
 #[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct GlobalProjectConfig {
     #[serde(rename = "fileGroups")]
-    file_groups: HashMap<String, Vec<String>>,
+    pub file_groups: FileGroups,
 }
 
 impl Default for GlobalProjectConfig {
     fn default() -> Self {
         GlobalProjectConfig {
-            file_groups: HashMap::new(),
+            file_groups: FileGroups(HashMap::new()),
         }
     }
 }

@@ -143,7 +143,7 @@ impl Toolchain {
         Ok(())
     }
 
-    // Uninstall all tools from the toolchain, and delete any temporary files.
+    /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&self) -> Result<(), ToolchainError> {
         if self.yarn.is_some() {
             self.unload_tool(self.get_yarn().unwrap()).await?;

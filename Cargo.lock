@@ -809,6 +809,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "monolith_project"
+version = "0.1.0"
+dependencies = [
+ "monolith_config",
+ "thiserror",
+]
+
+[[package]]
 name = "monolith_toolchain"
 version = "0.1.0"
 dependencies = [

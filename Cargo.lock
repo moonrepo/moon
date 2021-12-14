@@ -908,6 +908,8 @@ dependencies = [
  "dep-graph",
  "monolith_config",
  "petgraph",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 

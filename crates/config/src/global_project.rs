@@ -22,7 +22,7 @@ pub struct GlobalProjectConfig {
 impl Default for GlobalProjectConfig {
     fn default() -> Self {
         GlobalProjectConfig {
-            file_groups: FileGroups(HashMap::new()),
+            file_groups: HashMap::new(),
         }
     }
 }

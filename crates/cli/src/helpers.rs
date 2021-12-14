@@ -7,3 +7,9 @@ pub fn safe_exit(code: i32) -> ! {
 
     std::process::exit(code)
 }
+
+pub fn print_list(list: &[String]) {
+    for item in list {
+        println!("- {}", item);
+    }
+}

@@ -12,9 +12,29 @@ pub enum Commands {
         long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value."
     )]
     Bin {
-        #[clap(arg_enum, help = "The tool to query.")]
+        #[clap(arg_enum, help = "The tool to query")]
         tool: BinTools,
     },
+
+    // mono project <id>
+    #[clap(
+        name = "project",
+        about = "Display information about a single project."
+    )]
+    Project {
+        #[clap()]
+        id: String,
+
+        #[clap(long, help = "Print in JSON format")]
+        json: bool,
+    },
+
+    // mono project-graph
+    #[clap(
+        name = "project-graph",
+        about = "Display a graph of all projects, in multiple formats."
+    )]
+    ProjectGraph,
 
     // mono setup
     #[clap(
@@ -26,7 +46,7 @@ pub enum Commands {
     // mono teardown
     #[clap(
         name = "teardown",
-        about = "Teardown the environment by uninstalling all tools and deleting temporary files."
+        about = "Teardown the environment by uninstalling all tools and deleting temp files."
     )]
     Teardown,
 }
@@ -44,12 +64,3 @@ pub struct App {
     #[clap(subcommand)]
     pub command: Commands,
 }
-
-//         SubCommand::with_name("run")
-//             .about("Run a task within a project.")
-//             .arg(
-//                 Arg::with_name("target")
-//                     .help("The task target to run.")
-//                     .index(1)
-//                     .required(true),
-//             ),

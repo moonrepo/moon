@@ -4,14 +4,15 @@ use petgraph::prelude::*;
 use petgraph::{Graph, Undirected};
 use std::collections::HashMap;
 
-pub struct ProjectGraph<'i> {
-    graph: Graph<&'i str, (), Undirected>,
+#[derive(Debug)]
+pub struct ProjectGraph<'a> {
+    graph: Graph<&'a str, (), Undirected>,
 
-    indices: HashMap<&'i str, NodeIndex>,
+    indices: HashMap<&'a str, NodeIndex>,
 }
 
-impl<'i> ProjectGraph<'i> {
-    pub fn new(projects: &'i ProjectsMap) -> Result<ProjectGraph<'i>, ProjectError> {
+impl<'a> ProjectGraph<'a> {
+    pub fn new(projects: &'a ProjectsMap) -> Result<ProjectGraph<'a>, ProjectError> {
         let mut graph = ProjectGraph {
             graph: Graph::new_undirected(),
             indices: HashMap::new(),
@@ -45,6 +46,6 @@ impl<'i> ProjectGraph<'i> {
     }
 
     fn get_project_index(&self, id: &str) -> NodeIndex {
-        self.indices.get(id).unwrap()
+        *self.indices.get(id).unwrap()
     }
 }

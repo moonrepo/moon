@@ -5,6 +5,7 @@ mod helpers;
 use app::{App, Commands};
 use clap::Parser;
 use commands::bin::bin;
+use commands::project::project;
 use commands::setup::setup;
 use commands::teardown::teardown;
 use monolith_workspace::Workspace;
@@ -25,6 +26,10 @@ async fn main() {
         Commands::Bin { tool } => {
             bin(&workspace, tool).await.unwrap(); // TODO error
         }
+        Commands::Project { id, json } => {
+            project(&workspace, id, json).await.unwrap(); // TODO error
+        }
+        Commands::ProjectGraph => {}
         Commands::Setup => {
             setup(&workspace).await.unwrap(); // TODO error
         }

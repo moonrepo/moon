@@ -3,6 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProjectError {
+    #[error("No project exists at path `{0}`.")]
+    DoesNotExist(String),
+
     #[error(
         "Failed to validate `{0}/{}` configuration file.",
         constants::CONFIG_PROJECT_FILENAME

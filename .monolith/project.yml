@@ -1,1 +1,6 @@
-fileGroups: {}
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*'

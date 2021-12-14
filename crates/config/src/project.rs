@@ -24,8 +24,7 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct FileGroups(pub HashMap<String, Vec<String>>);
+pub type FileGroups = HashMap<String, Vec<String>>;
 
 pub type ProjectID = String;
 

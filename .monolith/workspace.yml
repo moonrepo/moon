@@ -1,8 +1,5 @@
 projects:
-  #  app: /apps/foo
-  lib: libs/bar
-# npm:
-#   version: 'foo'
+  root: '.'
 
 node:
   version: 16.13.1

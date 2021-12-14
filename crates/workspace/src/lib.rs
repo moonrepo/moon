@@ -2,7 +2,7 @@ mod errors;
 
 use errors::WorkspaceError;
 use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
-use monolith_project::{Project, ProjectGraph, ProjectsMap};
+use monolith_project::{Project, ProjectsMap};
 use monolith_toolchain::Toolchain;
 use std::collections::HashMap;
 use std::env;
@@ -98,7 +98,7 @@ pub struct Workspace {
     pub project_config: GlobalProjectConfig,
 
     /// Graph of all projects within the workspace.
-    pub project_graph: ProjectGraph,
+    // pub project_graph: ProjectGraph<'a>,
 
     /// The toolchain instances that houses all runtime tools/languages.
     pub toolchain: Toolchain,
@@ -127,7 +127,7 @@ impl Workspace {
         // Setup components
         let toolchain = Toolchain::new(&config, &root_dir)?;
         let projects = load_projects(&root_dir, &config.projects, &project_config)?;
-        let project_graph = ProjectGraph::new(&projects)?;
+        // let project_graph = ProjectGraph::new(&projects)?;
 
         Ok(Workspace {
             config,
@@ -135,7 +135,7 @@ impl Workspace {
             package_json_path,
             projects,
             project_config,
-            project_graph,
+            // project_graph,
             toolchain,
             working_dir,
         })

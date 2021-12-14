@@ -1,4 +1,5 @@
 use monolith_config::{constants, ValidationErrors};
+use monolith_project::ProjectError;
 use monolith_toolchain::ToolchainError;
 use thiserror::Error;
 
@@ -46,6 +47,13 @@ pub enum WorkspaceError {
 
     #[error("Unknown monolith workspace error.")]
     Unknown,
+
+    #[error("Project error.")]
+    Project {
+        #[from]
+        source: ProjectError,
+        // backtrace: Backtrace,
+    },
 
     #[error("Toolchain error.")]
     Toolchain {

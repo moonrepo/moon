@@ -2,7 +2,9 @@ mod errors;
 
 use errors::WorkspaceError;
 use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
+use monolith_project::{Project, ProjectGraph, ProjectsMap};
 use monolith_toolchain::Toolchain;
+use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -31,6 +33,20 @@ fn find_package_json(root_dir: &Path) -> Result<PathBuf, WorkspaceError> {
     }
 
     Ok(package_json_path)
+}
+
+fn load_projects(
+    root_dir: &Path,
+    projects_config: &HashMap<String, String>,
+    global_config: &GlobalProjectConfig,
+) -> Result<ProjectsMap, WorkspaceError> {
+    let mut map = HashMap::new();
+
+    for (id, path) in projects_config {
+        map.insert(id.clone(), Project::new(id, path, root_dir, global_config)?);
+    }
+
+    Ok(map)
 }
 
 // project.yml
@@ -76,8 +92,13 @@ pub struct Workspace {
     /// Path to the root `package.json` file.
     pub package_json_path: PathBuf,
 
+    pub projects: ProjectsMap,
+
     /// Global project configuration loaded from ".monolith/project.yml".
     pub project_config: GlobalProjectConfig,
+
+    /// Graph of all projects within the workspace.
+    pub project_graph: ProjectGraph,
 
     /// The toolchain instances that houses all runtime tools/languages.
     pub toolchain: Toolchain,
@@ -103,14 +124,18 @@ impl Workspace {
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
 
-        // Setup toolchain
+        // Setup components
         let toolchain = Toolchain::new(&config, &root_dir)?;
+        let projects = load_projects(&root_dir, &config.projects, &project_config)?;
+        let project_graph = ProjectGraph::new(&projects)?;
 
         Ok(Workspace {
             config,
             dir: root_dir,
             package_json_path,
+            projects,
             project_config,
+            project_graph,
             toolchain,
             working_dir,
         })

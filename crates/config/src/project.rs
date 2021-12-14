@@ -27,8 +27,7 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct FileGroups(pub HashMap<String, Vec<String>>);
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct ProjectID(pub String);
+pub type ProjectID = String;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {

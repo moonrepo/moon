@@ -5,4 +5,6 @@ edition = "2021"
 
 [dependencies]
 monolith_config = { path = "../config" }
+dep-graph = "0.2"
+petgraph = "0.6"
 thiserror = "1.0"

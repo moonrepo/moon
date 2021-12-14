@@ -1,5 +1,3 @@
-# An example project used for testing the CLI.
-
 project:
   name: 'Moon'
   description: 'Take your monorepo to the moon!'

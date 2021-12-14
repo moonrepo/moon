@@ -45,15 +45,15 @@ pub async fn project(workspace: &Workspace, id: &str, json: &bool) -> Result<(),
         }
     }
 
-    if !project.file_groups.is_empty() {
-        println!();
-        println!("File groups");
+    // if !project.file_groups.is_empty() {
+    //     println!();
+    //     println!("File groups");
 
-        for (group, globs) in &project.file_groups {
-            println!("{}:", group);
-            print_list(globs);
-        }
-    }
+    //     for (group, globs) in &project.file_groups {
+    //         println!("{}:", group);
+    //         print_list(globs);
+    //     }
+    // }
 
     Ok(())
 }

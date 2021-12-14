@@ -11,4 +11,5 @@ tokio = { version = "1.14", features = ["full"] }
 
 [dev-dependencies]
 assert_cmd = "2.0"
+insta = "1.8"
 predicates = "2.0"

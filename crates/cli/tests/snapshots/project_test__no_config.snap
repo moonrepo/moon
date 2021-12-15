@@ -7,3 +7,10 @@ About
 ID: noConfig
 Path: no-config
 
+File groups
+sources:
+- src/**/*
+- types/**/*
+tests:
+- tests/**/*
+

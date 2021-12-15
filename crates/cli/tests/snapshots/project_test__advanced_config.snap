@@ -4,8 +4,14 @@ expression: "String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()"
 
 ---
 About
-ID: emptyConfig
-Path: empty-config
+ID: advanced
+Path: advanced
+Name: Advanced
+Description: Advanced example.
+Owner: Batman
+Maintainers:
+- Bruce Wayne
+Channel: #batcave
 
 File groups
 sources:

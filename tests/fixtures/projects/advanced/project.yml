@@ -1,10 +1,6 @@
 project:
-  name: 'Moon'
-  description: 'Take your monorepo to the moon!'
-  channel: '#moon'
-  owner: 'moon.dev'
-  maintainers: ['Miles Johnson']
-
-fileGroups:
-  tests:
-    - '**/*_test.rs'
+  name: 'Advanced'
+  description: 'Advanced example.'
+  channel: '#batcave'
+  owner: 'Batman'
+  maintainers: ['Bruce Wayne']

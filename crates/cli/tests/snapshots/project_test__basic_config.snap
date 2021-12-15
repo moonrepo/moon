@@ -4,13 +4,16 @@ expression: "String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()"
 
 ---
 About
-ID: emptyConfig
-Path: empty-config
+ID: basic
+Path: basic
+
+Depends on
+- other
 
 File groups
 sources:
 - src/**/*
 - types/**/*
 tests:
-- tests/**/*
+- **/*_test.rs
 

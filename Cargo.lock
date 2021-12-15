@@ -917,6 +917,7 @@ dependencies = [
  "assert_cmd",
  "clap",
  "insta",
+ "itertools",
  "monolith_toolchain",
  "monolith_workspace",
  "predicates",

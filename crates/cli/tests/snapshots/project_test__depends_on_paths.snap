@@ -4,8 +4,12 @@ expression: "String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()"
 
 ---
 About
-ID: emptyConfig
-Path: empty-config
+ID: foo
+Path: deps/foo
+
+Depends on
+- bar (deps/bar)
+- baz (deps/baz)
 
 File groups
 sources:

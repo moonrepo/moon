@@ -1,4 +1,5 @@
 use crate::helpers::{print_list, safe_exit};
+use itertools::Itertools;
 use monolith_workspace::Workspace;
 
 enum ProjectExitCodes {
@@ -41,19 +42,29 @@ pub async fn project(workspace: &Workspace, id: &str, json: &bool) -> Result<(),
         if config.depends_on.is_some() {
             println!();
             println!("Depends on");
-            print_list(config.depends_on.as_ref().unwrap());
+
+            for dep_id in config.depends_on.as_ref().unwrap() {
+                match workspace.projects.get(dep_id) {
+                    Some(dep) => {
+                        println!("- {} ({})", dep_id, dep.location);
+                    }
+                    None => {
+                        println!("- {}", dep_id);
+                    }
+                }
+            }
         }
     }
 
-    // if !project.file_groups.is_empty() {
-    //     println!();
-    //     println!("File groups");
+    if !project.file_groups.is_empty() {
+        println!();
+        println!("File groups");
 
-    //     for (group, globs) in &project.file_groups {
-    //         println!("{}:", group);
-    //         print_list(globs);
-    //     }
-    // }
+        for group in project.file_groups.keys().sorted() {
+            println!("{}:", group);
+            print_list(project.file_groups.get(group).unwrap());
+        }
+    }
 
     Ok(())
 }

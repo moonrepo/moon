@@ -1,0 +1,6 @@
+dependsOn:
+  - other
+
+fileGroups:
+  tests:
+    - '**/*_test.rs'

@@ -1,7 +1,6 @@
 mod helpers;
 
 use crate::helpers::create_test_command;
-use predicates;
 use predicates::prelude::*;
 
 #[test]

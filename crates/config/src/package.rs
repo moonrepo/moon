@@ -17,13 +17,17 @@ pub use json::object::Object as PackageJsonValue;
 pub struct PackageJson;
 
 impl PackageJson {
-    pub fn load(path: &Path) -> Result<Object, json::Error> {
-        match json::parse(fs::read_to_string(path).unwrap().as_str())? {
+    pub fn from(contents: &str) -> Result<Object, json::Error> {
+        match json::parse(contents)? {
             JsonValue::Object(data) => Ok(data),
             _ => Err(json::Error::WrongType(String::from(
                 "Invalid `package.json`, must be an object.",
             ))),
         }
+    }
+
+    pub fn load(path: &Path) -> Result<Object, json::Error> {
+        PackageJson::from(fs::read_to_string(path).unwrap().as_str())
     }
 
     pub fn save(path: &Path, data: JsonValue) -> Result<(), json::Error> {

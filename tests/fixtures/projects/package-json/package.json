@@ -1,0 +1,7 @@
+{
+  "name": "npm-example",
+  "version": "1.2.3",
+  "scripts": {
+    "build": "babel"
+  }
+}

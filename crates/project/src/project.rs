@@ -45,9 +45,9 @@ fn load_package_json(
     Ok(None)
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Project {
-    /// Unique identifier for the project. Is the LHS of the `projects` setting.
+    /// Unique ID for the project. Is the LHS of the `projects` setting.
     pub id: ProjectID,
 
     /// Project configuration loaded from "project.yml", if it exists.
@@ -75,7 +75,7 @@ impl Project {
         root_dir: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let dir = root_dir.join(&project_path).canonicalize().unwrap();
+        let dir = root_dir.join(&project_path);
 
         if !dir.exists() {
             return Err(ProjectError::DoesNotExist(String::from(project_path)));
@@ -97,7 +97,7 @@ impl Project {
         Ok(Project {
             id: String::from(project_id),
             config,
-            dir,
+            dir: dir.canonicalize().unwrap(),
             file_groups,
             location: String::from(project_path),
             package_json,

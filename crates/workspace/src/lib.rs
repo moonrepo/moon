@@ -92,6 +92,7 @@ pub struct Workspace {
     /// Path to the root `package.json` file.
     pub package_json_path: PathBuf,
 
+    /// Map of projects to their unique ID.
     pub projects: ProjectsMap,
 
     /// Global project configuration loaded from ".monolith/project.yml".
@@ -100,7 +101,7 @@ pub struct Workspace {
     /// Graph of all projects within the workspace.
     // pub project_graph: ProjectGraph<'a>,
 
-    /// The toolchain instances that houses all runtime tools/languages.
+    /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
 
     /// The current working directory.

@@ -34,7 +34,13 @@ pub enum Commands {
         name = "project-graph",
         about = "Display a graph of all projects, in multiple formats."
     )]
-    ProjectGraph,
+    ProjectGraph {
+        #[clap(long, help = "Print in DOT format")]
+        dot: bool,
+
+        #[clap(long, help = "Print in JSON format")]
+        json: bool,
+    },
 
     // mono setup
     #[clap(

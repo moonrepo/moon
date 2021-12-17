@@ -29,7 +29,7 @@ async fn main() {
         Commands::Project { id, json } => {
             project(&workspace, id, json).await.unwrap(); // TODO error
         }
-        Commands::ProjectGraph => {}
+        Commands::ProjectGraph { dot, json } => {}
         Commands::Setup => {
             setup(&workspace).await.unwrap(); // TODO error
         }

@@ -2,7 +2,7 @@ mod errors;
 
 use errors::WorkspaceError;
 use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
-use monolith_project::{Project, ProjectGraph, ProjectsMap};
+use monolith_project::{Project, ProjectError, ProjectGraph, ProjectsMap};
 use monolith_toolchain::Toolchain;
 use std::collections::HashMap;
 use std::env;
@@ -118,9 +118,20 @@ impl Workspace {
         })
     }
 
-    /// Load all `projects` defined in the `workspace.yml` config. This method
+    /// Load a single project by ID and return a `Project` struct.
+    /// If a project does not exist with the provided ID, return an error.
+    pub fn load_project(&self, id: &str) -> Result<Project, WorkspaceError> {
+        match self.config.projects.get(id) {
+            Some(path) => Ok(Project::new(id, path, &self.dir, &self.project_config)?),
+            None => Err(WorkspaceError::Project(ProjectError::UnconfiguredID(
+                String::from(id),
+            ))),
+        }
+    }
+
+    /// Load all projects defined in the `workspace.yml` config. This method
     /// will iterate over each entry, instantiate a `Project` struct,
-    /// load local config's, and return a `HashMap` keyed by project ID.
+    /// and return a `HashMap` keyed by project ID.
     pub fn load_projects(&self) -> Result<ProjectsMap, WorkspaceError> {
         let mut map = HashMap::new();
 

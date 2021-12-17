@@ -15,6 +15,9 @@ pub enum ProjectError {
     #[error("Failed to parse and open `{0}/package.json`: {1}")]
     InvalidPackageJson(String, String),
 
+    #[error("No project has been configured with the ID `{0}`.")]
+    UnconfiguredID(String),
+
     #[error("Unknown monolith project error.")]
     Unknown,
 }

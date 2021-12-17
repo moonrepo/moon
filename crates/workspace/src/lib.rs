@@ -2,7 +2,7 @@ mod errors;
 
 use errors::WorkspaceError;
 use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
-use monolith_project::{Project, ProjectsMap};
+use monolith_project::{Project, ProjectGraph, ProjectsMap};
 use monolith_toolchain::Toolchain;
 use std::collections::HashMap;
 use std::env;
@@ -33,20 +33,6 @@ fn find_package_json(root_dir: &Path) -> Result<PathBuf, WorkspaceError> {
     }
 
     Ok(package_json_path)
-}
-
-fn load_projects(
-    root_dir: &Path,
-    projects_config: &HashMap<String, String>,
-    global_config: &GlobalProjectConfig,
-) -> Result<ProjectsMap, WorkspaceError> {
-    let mut map = HashMap::new();
-
-    for (id, path) in projects_config {
-        map.insert(id.clone(), Project::new(id, path, root_dir, global_config)?);
-    }
-
-    Ok(map)
 }
 
 // project.yml
@@ -92,14 +78,8 @@ pub struct Workspace {
     /// Path to the root `package.json` file.
     pub package_json_path: PathBuf,
 
-    /// Map of projects to their unique ID.
-    pub projects: ProjectsMap,
-
     /// Global project configuration loaded from ".monolith/project.yml".
     pub project_config: GlobalProjectConfig,
-
-    /// Graph of all projects within the workspace.
-    // pub project_graph: ProjectGraph<'a>,
 
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
@@ -116,7 +96,7 @@ impl Workspace {
 
         // Find root dir
         let root_dir = match find_workspace_root(working_dir.clone()) {
-            Some(dir) => dir,
+            Some(dir) => dir.canonicalize().unwrap(),
             None => return Err(WorkspaceError::MissingConfigDir),
         };
         let package_json_path = find_package_json(&root_dir)?;
@@ -127,18 +107,35 @@ impl Workspace {
 
         // Setup components
         let toolchain = Toolchain::new(&config, &root_dir)?;
-        let projects = load_projects(&root_dir, &config.projects, &project_config)?;
-        // let project_graph = ProjectGraph::new(&projects)?;
 
         Ok(Workspace {
             config,
             dir: root_dir,
             package_json_path,
-            projects,
             project_config,
-            // project_graph,
             toolchain,
             working_dir,
         })
+    }
+
+    /// Load all `projects` defined in the `workspace.yml` config. This method
+    /// will iterate over each entry, instantiate a `Project` struct,
+    /// load local config's, and return a `HashMap` keyed by project ID.
+    pub fn load_projects(&self) -> Result<ProjectsMap, WorkspaceError> {
+        let mut map = HashMap::new();
+
+        for (id, path) in &self.config.projects {
+            map.insert(
+                id.clone(),
+                Project::new(id, path, &self.dir, &self.project_config)?,
+            );
+        }
+
+        Ok(map)
+    }
+
+    /// Create an undirected graph using the map of projects.
+    pub fn create_project_graph(projects: &ProjectsMap) -> ProjectGraph {
+        Project::create_graph(projects)
     }
 }

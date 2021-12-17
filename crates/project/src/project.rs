@@ -2,8 +2,13 @@ use crate::errors::ProjectError;
 use monolith_config::constants::CONFIG_PROJECT_FILENAME;
 use monolith_config::project::{FileGroups, ProjectID};
 use monolith_config::{GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig};
+use petgraph::{Graph, Undirected};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+
+pub type ProjectsMap = HashMap<ProjectID, Project>;
+pub type ProjectGraph<'g> = Graph<&'g str, (), Undirected>;
 
 // project.yml
 fn load_project_config(
@@ -47,9 +52,6 @@ fn load_package_json(
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Project {
-    /// Unique ID for the project. Is the LHS of the `projects` setting.
-    pub id: ProjectID,
-
     /// Project configuration loaded from "project.yml", if it exists.
     pub config: Option<ProjectConfig>,
 
@@ -59,6 +61,9 @@ pub struct Project {
     /// File groups specific to the project. Inherits all file groups from the global config.
     #[serde(rename = "fileGroups")]
     pub file_groups: FileGroups,
+
+    /// Unique ID for the project. Is the LHS of the `projects` setting.
+    pub id: ProjectID,
 
     /// Relative path of the project from the workspace root. Is the RHS of the `projects` setting.
     pub location: String,
@@ -95,13 +100,40 @@ impl Project {
         }
 
         Ok(Project {
-            id: String::from(project_id),
             config,
             dir: dir.canonicalize().unwrap(),
             file_groups,
+            id: String::from(project_id),
             location: String::from(project_path),
             package_json,
         })
+    }
+
+    pub fn create_graph<'g>(projects: &'g ProjectsMap) -> ProjectGraph<'g> {
+        let mut graph: ProjectGraph<'g> = Graph::new_undirected();
+        let mut indices = HashMap::new(); // project.id -> node indices
+
+        // Map every project to a node
+        for id in projects.keys() {
+            indices.insert(id, graph.add_node(id.as_str()));
+        }
+
+        // Link dependencies between project nodes with an edge
+        let get_node_index = |id: &String| *indices.get(id).unwrap();
+
+        for project in projects.values() {
+            if project.config.is_some() {
+                let config = project.config.as_ref().unwrap();
+
+                if config.depends_on.is_some() {
+                    for dep in config.depends_on.as_ref().unwrap() {
+                        graph.add_edge(get_node_index(&project.id), get_node_index(dep), ());
+                    }
+                }
+            }
+        }
+
+        graph
     }
 
     pub fn to_json(&self) -> String {

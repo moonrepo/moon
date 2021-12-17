@@ -1,10 +1,6 @@
 mod errors;
-// mod graph;
 mod project;
 
 pub use errors::ProjectError;
-// pub use graph::ProjectGraph;
 pub use monolith_config::project::{FileGroups, ProjectID};
-pub use project::Project;
-
-pub type ProjectsMap = std::collections::HashMap<ProjectID, Project>;
+pub use project::{Project, ProjectGraph, ProjectsMap};

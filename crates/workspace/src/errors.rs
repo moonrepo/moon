@@ -49,16 +49,8 @@ pub enum WorkspaceError {
     Unknown,
 
     #[error("Project error.")]
-    Project {
-        #[from]
-        source: ProjectError,
-        // backtrace: Backtrace,
-    },
+    Project(#[from] ProjectError),
 
     #[error("Toolchain error.")]
-    Toolchain {
-        #[from]
-        source: ToolchainError,
-        // backtrace: Backtrace,
-    },
+    Toolchain(#[from] ToolchainError),
 }

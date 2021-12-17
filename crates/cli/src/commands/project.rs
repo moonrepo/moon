@@ -7,7 +7,9 @@ enum ProjectExitCodes {
 }
 
 pub async fn project(workspace: &Workspace, id: &str, json: &bool) -> Result<(), clap::Error> {
-    let project = match workspace.projects.get(id) {
+    let projects = workspace.load_projects().unwrap(); // TODO error
+
+    let project = match projects.get(id) {
         Some(data) => data,
         None => {
             eprintln!("Project \"{}\" not found.", id);
@@ -44,7 +46,7 @@ pub async fn project(workspace: &Workspace, id: &str, json: &bool) -> Result<(),
             println!("Depends on");
 
             for dep_id in config.depends_on.as_ref().unwrap() {
-                match workspace.projects.get(dep_id) {
+                match projects.get(dep_id) {
                     Some(dep) => {
                         println!("- {} ({})", dep_id, dep.location);
                     }

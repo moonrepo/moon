@@ -2,9 +2,8 @@ mod errors;
 
 use errors::WorkspaceError;
 use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
-use monolith_project::{Project, ProjectError, ProjectGraph, ProjectsMap};
+use monolith_project::ProjectGraph;
 use monolith_toolchain::Toolchain;
-use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -78,8 +77,8 @@ pub struct Workspace {
     /// Path to the root `package.json` file.
     pub package_json_path: PathBuf,
 
-    /// Global project configuration loaded from ".monolith/project.yml".
-    pub project_config: GlobalProjectConfig,
+    /// The project graph, where each project is lazy loaded in.
+    pub projects: ProjectGraph,
 
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
@@ -107,46 +106,15 @@ impl Workspace {
 
         // Setup components
         let toolchain = Toolchain::new(&config, &root_dir)?;
+        let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
 
         Ok(Workspace {
             config,
             dir: root_dir,
             package_json_path,
-            project_config,
+            projects,
             toolchain,
             working_dir,
         })
-    }
-
-    /// Load a single project by ID and return a `Project` struct.
-    /// If a project does not exist with the provided ID, return an error.
-    pub fn load_project(&self, id: &str) -> Result<Project, WorkspaceError> {
-        match self.config.projects.get(id) {
-            Some(path) => Ok(Project::new(id, path, &self.dir, &self.project_config)?),
-            None => Err(WorkspaceError::Project(ProjectError::UnconfiguredID(
-                String::from(id),
-            ))),
-        }
-    }
-
-    /// Load all projects defined in the `workspace.yml` config. This method
-    /// will iterate over each entry, instantiate a `Project` struct,
-    /// and return a `HashMap` keyed by project ID.
-    pub fn load_projects(&self) -> Result<ProjectsMap, WorkspaceError> {
-        let mut map = HashMap::new();
-
-        for (id, path) in &self.config.projects {
-            map.insert(
-                id.clone(),
-                Project::new(id, path, &self.dir, &self.project_config)?,
-            );
-        }
-
-        Ok(map)
-    }
-
-    /// Create an undirected graph using the map of projects.
-    pub fn create_project_graph(projects: &ProjectsMap) -> ProjectGraph {
-        Project::create_graph(projects)
     }
 }

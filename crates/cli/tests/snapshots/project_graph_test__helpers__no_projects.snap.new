@@ -1,0 +1,25 @@
+---
+source: crates/cli/tests/helpers.rs
+expression: "String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()"
+
+---
+ProjectGraph {
+    global_config: GlobalProjectConfig {
+        file_groups: {},
+    },
+    graph: RefCell {
+        value: DepGraph {
+            nodes: [
+                "(root)",
+            ],
+            dependencies: {},
+            satisfied: {},
+        },
+    },
+    projects: RefCell {
+        value: {},
+    },
+    projects_config: {},
+    workspace_dir: "/Users/milesj/Projects/monolith/tests/fixtures/base",
+}
+

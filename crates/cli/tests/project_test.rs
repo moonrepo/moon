@@ -1,12 +1,6 @@
 mod helpers;
 
-use crate::helpers::create_test_command;
-use insta::assert_snapshot;
-use std::env;
-
-fn snap(assert: &assert_cmd::assert::Assert) {
-    assert_snapshot!(String::from_utf8(assert.get_output().stdout.to_owned()).unwrap());
-}
+use crate::helpers::{create_test_command, snap};
 
 #[test]
 fn empty_config() {

@@ -2,13 +2,11 @@ use crate::errors::ProjectError;
 use monolith_config::constants::CONFIG_PROJECT_FILENAME;
 use monolith_config::project::{FileGroups, ProjectID};
 use monolith_config::{GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig};
-use petgraph::{Graph, Undirected};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 pub type ProjectsMap = HashMap<ProjectID, Project>;
-pub type ProjectGraph<'g> = Graph<&'g str, (), Undirected>;
 
 // project.yml
 fn load_project_config(
@@ -75,19 +73,19 @@ pub struct Project {
 
 impl Project {
     pub fn new(
-        project_id: &str,
-        project_path: &str,
+        id: &str,
+        location: &str,
         root_dir: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let dir = root_dir.join(&project_path);
+        let dir = root_dir.join(&location);
 
         if !dir.exists() {
-            return Err(ProjectError::DoesNotExist(String::from(project_path)));
+            return Err(ProjectError::DoesNotExist(String::from(location)));
         }
 
-        let config = load_project_config(root_dir, project_path)?;
-        let package_json = load_package_json(root_dir, project_path)?;
+        let config = load_project_config(root_dir, location)?;
+        let package_json = load_package_json(root_dir, location)?;
         let mut file_groups = global_config.file_groups.clone();
 
         // Override global configs with local
@@ -103,37 +101,10 @@ impl Project {
             config,
             dir: dir.canonicalize().unwrap(),
             file_groups,
-            id: String::from(project_id),
-            location: String::from(project_path),
+            id: String::from(id),
+            location: String::from(location),
             package_json,
         })
-    }
-
-    pub fn create_graph<'g>(projects: &'g ProjectsMap) -> ProjectGraph<'g> {
-        let mut graph: ProjectGraph<'g> = Graph::new_undirected();
-        let mut indices = HashMap::new(); // project.id -> node indices
-
-        // Map every project to a node
-        for id in projects.keys() {
-            indices.insert(id, graph.add_node(id.as_str()));
-        }
-
-        // Link dependencies between project nodes with an edge
-        let get_node_index = |id: &String| *indices.get(id).unwrap();
-
-        for project in projects.values() {
-            if project.config.is_some() {
-                let config = project.config.as_ref().unwrap();
-
-                if config.depends_on.is_some() {
-                    for dep in config.depends_on.as_ref().unwrap() {
-                        graph.add_edge(get_node_index(&project.id), get_node_index(dep), ());
-                    }
-                }
-            }
-        }
-
-        graph
     }
 
     pub fn to_json(&self) -> String {

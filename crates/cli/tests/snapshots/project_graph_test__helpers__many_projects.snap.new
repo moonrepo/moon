@@ -1,0 +1,76 @@
+---
+source: crates/cli/tests/helpers.rs
+expression: "String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()"
+
+---
+advanced advanced Project {
+    config: Some(
+        ProjectConfig {
+            depends_on: None,
+            file_groups: None,
+            project: Some(
+                ProjectMetadataConfig {
+                    name: "Advanced",
+                    description: "Advanced example.",
+                    owner: "Batman",
+                    maintainers: [
+                        "Bruce Wayne",
+                    ],
+                    channel: "#batcave",
+                },
+            ),
+        },
+    ),
+    dir: "/Users/milesj/Projects/monolith/tests/fixtures/projects/advanced",
+    file_groups: {
+        "tests": [
+            "tests/**/*",
+        ],
+        "sources": [
+            "src/**/*",
+            "types/**/*",
+        ],
+    },
+    id: "advanced",
+    location: "advanced",
+    package_json: None,
+}
+depends on ["(root)"]
+1
+2
+3
+advanced advanced Project {
+    config: Some(
+        ProjectConfig {
+            depends_on: None,
+            file_groups: None,
+            project: Some(
+                ProjectMetadataConfig {
+                    name: "Advanced",
+                    description: "Advanced example.",
+                    owner: "Batman",
+                    maintainers: [
+                        "Bruce Wayne",
+                    ],
+                    channel: "#batcave",
+                },
+            ),
+        },
+    ),
+    dir: "/Users/milesj/Projects/monolith/tests/fixtures/projects/advanced",
+    file_groups: {
+        "tests": [
+            "tests/**/*",
+        ],
+        "sources": [
+            "src/**/*",
+            "types/**/*",
+        ],
+    },
+    id: "advanced",
+    location: "advanced",
+    package_json: None,
+}
+depends on ["(root)"]
+1
+

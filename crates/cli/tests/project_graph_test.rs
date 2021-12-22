@@ -17,3 +17,23 @@ fn many_projects() {
 
     snap(&assert);
 }
+
+#[test]
+fn single_project_with_deps() {
+    let assert = create_test_command("projects")
+        .arg("project-graph")
+        .arg("foo")
+        .assert();
+
+    snap(&assert);
+}
+
+#[test]
+fn single_project_no_deps() {
+    let assert = create_test_command("projects")
+        .arg("project-graph")
+        .arg("baz")
+        .assert();
+
+    snap(&assert);
+}

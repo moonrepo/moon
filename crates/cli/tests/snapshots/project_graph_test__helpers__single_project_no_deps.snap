@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/helpers.rs
+expression: "String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()"
+
+---
+digraph {
+  WORKSPACE [style="filled", shape=circle, fillcolor=black, fontcolor=white];
+  baz [style="filled", shape=circle, fillcolor=palegreen, fontcolor=black];
+  WORKSPACE -> baz [arrowhead=none];
+}
+
+

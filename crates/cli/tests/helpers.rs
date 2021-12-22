@@ -12,6 +12,7 @@ pub fn create_test_command(fixture: &str) -> Command {
     cmd
 }
 
+#[allow(dead_code)]
 pub fn snap(assert: &assert_cmd::assert::Assert) {
     assert_snapshot!(String::from_utf8(assert.get_output().stdout.to_owned()).unwrap());
 }

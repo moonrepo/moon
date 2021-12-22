@@ -30,8 +30,8 @@ async fn main() {
         Commands::Project { id, json } => {
             project(&workspace, id, json).await.unwrap(); // TODO error
         }
-        Commands::ProjectGraph => {
-            project_graph(&workspace).await.unwrap(); // TODO error
+        Commands::ProjectGraph { id } => {
+            project_graph(&workspace, id).await.unwrap(); // TODO error
         }
         Commands::Setup => {
             setup(&workspace).await.unwrap(); // TODO error

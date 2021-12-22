@@ -305,6 +305,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
 
 [[package]]
+name = "dot-writer"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1defb949b123415131ecae40ab5dca70e9f39eedda3de2cebb03a8a98fdf5894"
+
+[[package]]
 name = "dtoa"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -829,8 +835,10 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "clap",
+ "dot-writer",
  "insta",
  "itertools",
+ "monolith_project",
  "monolith_toolchain",
  "monolith_workspace",
  "predicates",

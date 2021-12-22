@@ -16,7 +16,7 @@ pub struct ProjectGraph {
 
     /// A lightweight dependency graph, where each node is a project ID,
     /// and can depend on other project IDs.
-    graph: RefCell<DepGraph<String>>,
+    pub graph: RefCell<DepGraph<String>>,
 
     /// Projects that have been loaded into the graph.
     projects: RefCell<HashMap<ProjectID, Project>>,
@@ -47,13 +47,12 @@ impl ProjectGraph {
         }
     }
 
-    /// Returns a list of all project IDs that have been configured,
-    /// in ascending sorted order.
+    /// Return a list of all configured project IDs in ascending order.
     pub fn ids(&self) -> std::vec::IntoIter<&String> {
         self.projects_config.keys().sorted()
     }
 
-    /// Returns a project with the associated ID. If the project
+    /// Return a project with the associated ID. If the project
     /// has not been loaded, it will be loaded and inserted into the
     /// project graph. If the project does not exist or has been
     /// misconfigured, an error will be returned.

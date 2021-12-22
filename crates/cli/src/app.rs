@@ -34,7 +34,10 @@ pub enum Commands {
         name = "project-graph",
         about = "Display a graph of all projects in DOT format."
     )]
-    ProjectGraph,
+    ProjectGraph {
+        #[clap()]
+        id: Option<String>,
+    },
 
     // mono setup
     #[clap(

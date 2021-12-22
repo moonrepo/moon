@@ -82,7 +82,7 @@ impl Project {
         let dir = root_dir.join(&location);
 
         if !dir.exists() {
-            return Err(ProjectError::DoesNotExist(String::from(location)));
+            return Err(ProjectError::MissingFilePath(String::from(location)));
         }
 
         let config = load_project_config(root_dir, location)?;
@@ -106,6 +106,8 @@ impl Project {
         })
     }
 
+    /// Return a list of projects this project depends on.
+    /// Will always depend on the special root project.
     pub fn get_dependencies(&self) -> Vec<String> {
         let mut depends_on = vec![ROOT_NODE_ID.to_owned()];
 
@@ -118,6 +120,7 @@ impl Project {
         depends_on
     }
 
+    /// Return the project as a JSON string.
     pub fn to_json(&self) -> String {
         serde_json::to_string_pretty(self).unwrap()
     }

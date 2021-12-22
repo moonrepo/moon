@@ -128,7 +128,7 @@ impl Default for NodeConfig {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]
     #[validate]
@@ -136,15 +136,6 @@ pub struct WorkspaceConfig {
 
     #[validate(custom = "validate_projects_map")]
     pub projects: HashMap<String, String>,
-}
-
-impl Default for WorkspaceConfig {
-    fn default() -> Self {
-        WorkspaceConfig {
-            node: NodeConfig::default(),
-            projects: HashMap::new(),
-        }
-    }
 }
 
 impl Provider for WorkspaceConfig {

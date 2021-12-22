@@ -9,22 +9,13 @@ use figment::{
     Figment, Metadata, Profile, Provider,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationErrors};
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct GlobalProjectConfig {
     #[serde(rename = "fileGroups")]
     pub file_groups: FileGroups,
-}
-
-impl Default for GlobalProjectConfig {
-    fn default() -> Self {
-        GlobalProjectConfig {
-            file_groups: HashMap::new(),
-        }
-    }
 }
 
 impl Provider for GlobalProjectConfig {

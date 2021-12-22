@@ -53,7 +53,7 @@ pub struct ProjectMetadataConfig {
     pub channel: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectConfig {
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<ProjectID>>,
@@ -63,16 +63,6 @@ pub struct ProjectConfig {
 
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
-}
-
-impl Default for ProjectConfig {
-    fn default() -> Self {
-        ProjectConfig {
-            depends_on: None,
-            file_groups: None,
-            project: None,
-        }
-    }
 }
 
 impl Provider for ProjectConfig {

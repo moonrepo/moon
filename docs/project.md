@@ -1,12 +1,33 @@
 # Project
 
+- [ID](#id)
 - [Configuration](#configuration)
   - [`project.yml`](#projectyml)
     - [project](#project)
+      - [type](#type)
+      - [name](#name)
+      - [description](#description)
+      - [channel](#channel)
+      - [owner](#owner)
+      - [maintainers](#maintainers)
     - [dependsOn](#dependson)
     - [fileGroups](#filegroups)
   - [`package.json`](#packagejson)
   - [`tsconfig.json`](#tsconfigjson)
+
+A project is a library, application, package, binary, tool, etc, that contains source files, test
+files, assets, resources, and more. A project must exist and be configured within a
+[workspace](./workspace.md).
+
+## ID
+
+A project identifier, also knows an a PID, or simply ID, is a unique resource for locating a
+project. The PID is explicitly configured within
+[`.monolith/workspace.yml`](./workspace.md#projects), as a key within the `projects` setting.
+
+PIDs are used heavily by configuration and the command line to link and reference everything.
+They're also a much easier concept for remembering projects than file system paths, and they
+typically can be written with less key strokes.
 
 ## Configuration
 
@@ -19,7 +40,53 @@ project in the graph.
 
 #### project
 
-TODO
+The optional `project` setting defines metadata about the project itself. Although this setting is
+optional, when defined, all fields within it _must_ be defined as well.
+
+```yaml
+project:
+  type: 'library'
+  name: 'Moon'
+  description: 'A monorepo management tool.'
+  channel: '#moon'
+  owner: 'infra'
+  maintainers: ['miles.johnson']
+```
+
+The information listed within `project` is purely informational and primarily displayed within the
+CLI. However, this setting exists for you, your team, and your company, as a means to identify and
+organize all projects. Feel free to build your own tooling around these settings!
+
+##### type
+
+The type of project. Supports the following values:
+
+- `application` - A backend or frontend application that communicates over HTTP, TCP, RPC, etc.
+- `library` - A self-contained, shareable, and publishable set of code.
+- `tool` - An internal tool, command line program, one-off script, etc.
+
+##### name
+
+A human readable name of the project. This is _different_ from the unique project ID.
+
+##### description
+
+A description of what the project does and aims to achieve. Be as descriptive as possible, as this
+is the kind of information search engines would index on.
+
+##### channel
+
+The Slack, Discord, Teams, IRC, etc channel name (with leading #) in which to discuss the project.
+
+##### owner
+
+The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
+suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
+
+##### maintainers
+
+A list of people/developers that maintain the project, review code changes, and can provide support.
+Can be a name, email, LDAP/GitHub username, etc, the choice is yours.
 
 #### dependsOn
 

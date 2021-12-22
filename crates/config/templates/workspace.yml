@@ -3,10 +3,11 @@
 # and reproducible builds across any machine.
 node:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
-  # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases/
+  # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
   version: '16.13.0'
 
-  # The package manager to use when managing dependencies. Accepts "npm", "pnpm", or "yarn".
+  # OPTIONAL: The package manager to use when managing dependencies.
+  # Accepts "npm", "pnpm", or "yarn".
   packageManager: npm
 
 # A map of all projects found within the workspace. Each entry requires a unique project ID

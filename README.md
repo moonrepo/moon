@@ -12,41 +12,6 @@ Monolith is a Rust program for managing JavaScript based monorepo's.
 
 ## Concepts
 
-### Project
-
-A project is a library, application, package, binary, etc, that contains source files, test files,
-assets, resources, and more. A project is denoted with a [`project.yml`](#projectyml) file, and must
-exist within a [workspace](#workspace).
-
-#### PID
-
-A PID, or project identifier, is a unique resource for locating and referencing a project. The PID
-is explicitly derived from the workspace file system structure, and is composed by the folder path
-from the workspace root to the project root. Let's demonstrate this with the an example structure.
-
-```
-.monolith/
-apps/
-  client/
-    project.yml
-  server/
-    project.yml
-packages/
-  design/
-    system/
-      project.yml
-  data/
-    project.yml
-```
-
-In the example above, the following would be valid PIDs: `/apps/client`, `/apps/server`,
-`/packages/design/system`, `/packages/data`. The leading forward slash (`/`) is used as a
-designation for "starting from the workspace root".
-
-Because of this, PIDs _may be relative_ from the current working folder. For example, if you're in
-the `packages/design` folder, you may run a task with `bazel test system:lint` instead of the
-fully-qualified `bazel test /packages/design/system:lint`.
-
 ### Task
 
 An action that can be ran within the context of a [project](#project), and are configured through a

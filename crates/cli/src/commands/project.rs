@@ -25,12 +25,8 @@ pub async fn project(workspace: &Workspace, id: &str, json: &bool) -> Result<(),
     println!("ID: {}", project.id);
     println!("Path: {}", project.location);
 
-    if project.config.is_some() {
-        let config = project.config.as_ref().unwrap();
-
-        if config.project.is_some() {
-            let meta = config.project.as_ref().unwrap();
-
+    if let Some(config) = project.config {
+        if let Some(meta) = config.project {
             println!("Name: {}", meta.name);
             println!("Description: {}", meta.description);
             println!("Owner: {}", meta.owner);
@@ -39,12 +35,12 @@ pub async fn project(workspace: &Workspace, id: &str, json: &bool) -> Result<(),
             println!("Channel: {}", meta.channel);
         }
 
-        if config.depends_on.is_some() {
+        if let Some(depends_on) = config.depends_on {
             println!();
             println!("Depends on");
 
-            for dep_id in config.depends_on.as_ref().unwrap() {
-                match workspace.projects.get(dep_id) {
+            for dep_id in depends_on {
+                match workspace.projects.get(&dep_id) {
                     Ok(dep) => {
                         println!("- {} ({})", dep_id, dep.location);
                     }

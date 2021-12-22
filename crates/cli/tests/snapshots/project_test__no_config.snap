@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/project_test.rs
-expression: "String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()"
+expression: get_assert_output(&assert)
 
 ---
 About

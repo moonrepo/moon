@@ -1,4 +1,3 @@
-use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use monolith_config::constants::CONFIG_PROJECT_FILENAME;
 use monolith_config::project::{FileGroups, ProjectID};
@@ -90,8 +89,8 @@ impl Project {
         let mut file_groups = global_config.file_groups.clone();
 
         // Override global configs with local
-        if let Some(borrowed_config) = &config {
-            if let Some(local_file_groups) = &borrowed_config.file_groups {
+        if let Some(local_config) = &config {
+            if let Some(local_file_groups) = &local_config.file_groups {
                 file_groups.extend(local_file_groups.clone());
             }
         }
@@ -107,15 +106,16 @@ impl Project {
     }
 
     /// Return a list of projects this project depends on.
-    /// Will always depend on the special root project.
     pub fn get_dependencies(&self) -> Vec<String> {
-        let mut depends_on = vec![ROOT_NODE_ID.to_owned()];
+        let mut depends_on = vec![];
 
         if let Some(config) = &self.config {
             if let Some(config_depends) = &config.depends_on {
                 depends_on.extend_from_slice(config_depends);
             }
         }
+
+        depends_on.sort();
 
         depends_on
     }

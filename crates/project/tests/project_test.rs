@@ -23,7 +23,7 @@ fn mock_global_project_config() -> GlobalProjectConfig {
 }
 
 #[test]
-#[should_panic(expected = "DoesNotExist(\"projects/missing\")")]
+#[should_panic(expected = "MissingFilePath(\"projects/missing\")")]
 fn doesnt_exist() {
     Project::new(
         "missing",
@@ -109,7 +109,7 @@ fn basic_config() {
         Project {
             id: String::from("basic"),
             config: Some(ProjectConfig {
-                depends_on: Some(vec![String::from("other")]),
+                depends_on: Some(vec![String::from("noConfig")]),
                 file_groups: Some(HashMap::from([(
                     String::from("tests"),
                     vec![String::from("**/*_test.rs")]
@@ -176,7 +176,7 @@ fn overrides_global_file_groups() {
         Project {
             id: String::from("basic"),
             config: Some(ProjectConfig {
-                depends_on: Some(vec![String::from("other")]),
+                depends_on: Some(vec![String::from("noConfig")]),
                 file_groups: Some(HashMap::from([(
                     String::from("tests"),
                     vec![String::from("**/*_test.rs")]

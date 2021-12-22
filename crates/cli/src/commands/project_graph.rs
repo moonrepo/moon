@@ -1,5 +1,5 @@
 use dot_writer::{ArrowType, Attributes, Color, DotWriter, Scope, Shape, Style};
-use monolith_project::ROOT_NODE_ID;
+use monolith_project::{ProjectError, ROOT_NODE_ID};
 use monolith_workspace::Workspace;
 
 fn create_edge(dot_graph: &mut Scope, from: &str, to: &str) {
@@ -36,35 +36,33 @@ fn graph_for_all_projects(workspace: &Workspace, dot_graph: &mut Scope) {
         // Add node to the graph
         create_node(dot_graph, id, false);
 
-        // Map edges to node
+        // Load project and map deps as edges
         for dep in projects.get(id).unwrap().get_dependencies() {
-            if dep != ROOT_NODE_ID {
-                create_edge(dot_graph, &dep, id);
-            }
+            create_edge(dot_graph, &dep, id);
         }
     }
 }
 
-fn graph_for_single_project(workspace: &Workspace, dot_graph: &mut Scope, id: &str) {
+fn graph_for_single_project(
+    workspace: &Workspace,
+    dot_graph: &mut Scope,
+    id: &str,
+) -> Result<(), ProjectError> {
+    // Load project
     workspace.projects.get(id).unwrap();
 
     // Add node to the graph
     create_node(dot_graph, id, true);
 
-    for dep in workspace
-        .projects
-        .graph
-        .borrow()
-        .dependencies_of(&id.to_owned())
-        .unwrap()
-    {
-        let dep_id = dep.unwrap();
-
-        if dep_id != ROOT_NODE_ID && dep_id != id {
-            create_node(dot_graph, dep_id, false);
-            create_edge(dot_graph, id, dep_id);
+    // Map deps as edges
+    for dep_id in workspace.projects.get_sorted_deps_of(id)? {
+        if dep_id != id {
+            create_node(dot_graph, &dep_id, false);
+            create_edge(dot_graph, id, &dep_id);
         }
     }
+
+    Ok(())
 }
 
 pub async fn project_graph(workspace: &Workspace, id: &Option<String>) -> Result<(), clap::Error> {
@@ -85,7 +83,8 @@ pub async fn project_graph(workspace: &Workspace, id: &Option<String>) -> Result
             .set_font_color(Color::White);
 
         if let Some(project_id) = id {
-            graph_for_single_project(workspace, &mut dot_graph, project_id);
+            graph_for_single_project(workspace, &mut dot_graph, project_id).unwrap();
+        // TODO error
         } else {
             graph_for_all_projects(workspace, &mut dot_graph);
         }

@@ -1,5 +1,4 @@
 use assert_cmd::Command;
-use insta::assert_snapshot;
 use std::env;
 
 pub fn create_test_command(fixture: &str) -> Command {
@@ -13,6 +12,6 @@ pub fn create_test_command(fixture: &str) -> Command {
 }
 
 #[allow(dead_code)]
-pub fn snap(assert: &assert_cmd::assert::Assert) {
-    assert_snapshot!(String::from_utf8(assert.get_output().stdout.to_owned()).unwrap());
+pub fn get_assert_output(assert: &assert_cmd::assert::Assert) -> String {
+    String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()
 }

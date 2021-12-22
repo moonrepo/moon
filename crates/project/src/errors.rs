@@ -3,6 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProjectError {
+    #[error("A dependency cycle has been detected between projects.")]
+    DependencyCycleDetected,
+
     #[error(
         "Failed to validate `{0}/{}` configuration file.",
         constants::CONFIG_PROJECT_FILENAME

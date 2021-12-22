@@ -1,12 +1,13 @@
 mod helpers;
+use insta::assert_snapshot;
 
-use crate::helpers::{create_test_command, snap};
+use crate::helpers::{create_test_command, get_assert_output};
 
 #[test]
 fn no_projects() {
     let assert = create_test_command("base").arg("project-graph").assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
@@ -15,7 +16,7 @@ fn many_projects() {
         .arg("project-graph")
         .assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
@@ -25,7 +26,7 @@ fn single_project_with_deps() {
         .arg("foo")
         .assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
@@ -35,5 +36,5 @@ fn single_project_no_deps() {
         .arg("baz")
         .assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }

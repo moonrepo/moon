@@ -1,6 +1,20 @@
 mod helpers;
+use insta::assert_snapshot;
 
-use crate::helpers::{create_test_command, snap};
+use crate::helpers::{create_test_command, get_assert_output};
+
+#[test]
+fn unknown_project() {
+    let assert = create_test_command("projects")
+        .arg("project")
+        .arg("unknown")
+        .assert();
+
+    assert
+        .failure()
+        .code(1)
+        .stderr("Project \"unknown\" not found.\n");
+}
 
 #[test]
 fn empty_config() {
@@ -9,7 +23,7 @@ fn empty_config() {
         .arg("emptyConfig")
         .assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
@@ -19,7 +33,7 @@ fn no_config() {
         .arg("noConfig")
         .assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
@@ -30,7 +44,7 @@ fn basic_config() {
         .arg("basic")
         .assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
@@ -41,7 +55,7 @@ fn advanced_config() {
         .arg("advanced")
         .assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
@@ -52,5 +66,5 @@ fn depends_on_paths() {
         .arg("foo")
         .assert();
 
-    snap(&assert);
+    assert_snapshot!(get_assert_output(&assert));
 }

@@ -22,20 +22,20 @@ pub enum Commands {
         about = "Display information about a single project."
     )]
     Project {
-        #[clap()]
+        #[clap(help = "ID of project to display")]
         id: String,
 
         #[clap(long, help = "Print in JSON format")]
         json: bool,
     },
 
-    // mono project-graph
+    // mono project-graph [id]
     #[clap(
         name = "project-graph",
-        about = "Display a graph of all projects in DOT format."
+        about = "Display a graph of projects in DOT format."
     )]
     ProjectGraph {
-        #[clap()]
+        #[clap(help = "ID of project to *only* graph")]
         id: Option<String>,
     },
 

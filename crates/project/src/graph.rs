@@ -3,7 +3,7 @@ use crate::errors::ProjectError;
 use crate::project::Project;
 use itertools::Itertools;
 use monolith_config::{GlobalProjectConfig, ProjectID};
-use solvent::DepGraph;
+use solvent::{DepGraph, SolventError};
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -16,7 +16,7 @@ pub struct ProjectGraph {
 
     /// A lightweight dependency graph, where each node is a project ID,
     /// and can depend on other project IDs.
-    pub graph: RefCell<DepGraph<String>>,
+    graph: RefCell<DepGraph<String>>,
 
     /// Projects that have been loaded into the graph.
     projects: RefCell<HashMap<ProjectID, Project>>,
@@ -65,6 +65,36 @@ impl ProjectGraph {
 
         // TODO: Is it possible to not clone here???
         Ok(projects.get(id).unwrap().clone())
+    }
+
+    /// Return a list of project IDs that a project depends on,
+    /// in the priority order in which they are depended on.
+    pub fn get_deps_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
+        let project_id = id.to_owned();
+        let mut deps = vec![];
+
+        for dep in self.graph.borrow().dependencies_of(&project_id).unwrap() {
+            match dep {
+                Ok(dep_id) => deps.push(dep_id.to_owned()),
+                Err(err) => {
+                    return Err(match err {
+                        SolventError::CycleDetected => ProjectError::DependencyCycleDetected,
+                        SolventError::NoSuchNode => ProjectError::UnconfiguredID(project_id),
+                    })
+                }
+            }
+        }
+
+        Ok(deps)
+    }
+
+    /// Return a list of project IDs that a project depends on,
+    /// in ascending order.
+    pub fn get_sorted_deps_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
+        let mut deps = self.get_deps_of(id)?;
+        deps.sort();
+
+        Ok(deps)
     }
 
     /// Internal method for lazily loading a project and its

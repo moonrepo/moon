@@ -1,6 +1,6 @@
 ---
-source: crates/cli/tests/helpers.rs
-expression: "String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()"
+source: crates/cli/tests/project_graph_test.rs
+expression: get_assert_output(&assert)
 
 ---
 digraph {

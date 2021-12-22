@@ -4,6 +4,9 @@
   - [`bin`](#bin)
   - [`setup`](#setup)
   - [`teardown`](#teardown)
+- [Projects](#projects)
+  - [`project`](#project)
+  - [`project-graph`](#project-graph)
 
 ## Environment
 
@@ -47,3 +50,30 @@ opposite the [`setup`](#setup) command. It achieves this by doing the following:
 ```shell
 $ mono teardown
 ```
+
+## Projects
+
+### `project`
+
+The `project <id>` command will display all available information about a project that has been
+configured and exists within the graph. If a project does not exist, the program will return with a
+1 exit code.
+
+```shell
+$ mono project web
+```
+
+### `project-graph`
+
+The `project-graph` command will generate a graph of all configured projects, with edges between
+dependencies, and will output the graph in
+[Graphviz DOT format](https://graphviz.org/doc/info/lang.html). This output can then be used by any
+tool or program that supports DOT, for example, this
+[live preview visualizer](https://dreampuf.github.io/GraphvizOnline).
+
+```shell
+$ mono project-graph > graph.dot
+```
+
+> A project ID can be passed to focus the graph to only that project and it's dependencies. For
+> example, `mono project-graph web`.

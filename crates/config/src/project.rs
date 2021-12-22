@@ -9,7 +9,7 @@ use figment::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::Path;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 fn validate_channel(value: &str) -> Result<(), ValidationError> {
@@ -24,42 +24,45 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-pub struct FileGroups(HashMap<String, Vec<String>>);
+pub type FileGroups = HashMap<String, Vec<String>>;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+pub type ProjectID = String;
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProjectType {
+    Application,
+    Library,
+    Tool,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
-    name: String,
+    #[serde(rename = "type")]
+    pub type_of: ProjectType,
 
-    description: String,
+    pub name: String,
 
-    owner: String,
+    pub description: String,
 
-    maintainers: Vec<String>,
+    pub owner: String,
+
+    pub maintainers: Vec<String>,
 
     #[validate(custom = "validate_channel")]
-    channel: String,
+    pub channel: String,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectConfig {
     #[serde(rename = "dependsOn")]
-    depends_on: Option<Vec<String>>,
+    pub depends_on: Option<Vec<ProjectID>>,
 
     #[serde(rename = "fileGroups")]
-    file_groups: Option<HashMap<String, Vec<String>>>,
+    pub file_groups: Option<FileGroups>,
 
     #[validate]
-    project: Option<ProjectMetadataConfig>,
-}
-
-impl Default for ProjectConfig {
-    fn default() -> Self {
-        ProjectConfig {
-            depends_on: None,
-            file_groups: None,
-            project: None,
-        }
-    }
+    pub project: Option<ProjectMetadataConfig>,
 }
 
 impl Provider for ProjectConfig {
@@ -77,7 +80,7 @@ impl Provider for ProjectConfig {
 }
 
 impl ProjectConfig {
-    pub fn load(path: PathBuf) -> Result<ProjectConfig, ValidationErrors> {
+    pub fn load(path: &Path) -> Result<ProjectConfig, ValidationErrors> {
         let config: ProjectConfig = match Figment::new().merge(Yaml::file(path)).extract() {
             Ok(cfg) => cfg,
             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
@@ -96,9 +99,10 @@ mod tests {
     use super::*;
     use crate::errors::tests::handled_jailed_error;
     use figment;
+    use std::path::PathBuf;
 
     fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {
-        match ProjectConfig::load(PathBuf::from(constants::CONFIG_PROJECT_FILENAME)) {
+        match ProjectConfig::load(&PathBuf::from(constants::CONFIG_PROJECT_FILENAME)) {
             Ok(cfg) => Ok(cfg),
             Err(errors) => Err(handled_jailed_error(&errors)),
         }
@@ -305,6 +309,7 @@ project:
                     super::constants::CONFIG_PROJECT_FILENAME,
                     r#"
 project:
+    type: 'library'
     name: ''
     description: ''
     owner: ''

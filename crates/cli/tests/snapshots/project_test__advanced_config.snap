@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: get_assert_output(&assert)
+
+---
+About
+ID: advanced
+Path: advanced
+Type: Library
+Name: Advanced
+Description: Advanced example.
+Owner: Batman
+Maintainers:
+- Bruce Wayne
+Channel: #batcave
+
+File groups
+sources:
+- src/**/*
+- types/**/*
+tests:
+- tests/**/*
+

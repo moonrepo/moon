@@ -9,8 +9,8 @@ pub mod workspace;
 
 // Re-exports structs for convenience
 pub use global_project::GlobalProjectConfig;
-pub use package::PackageJson;
-pub use project::ProjectConfig;
+pub use package::{PackageJson, PackageJsonValue};
+pub use project::{FileGroups, ProjectConfig, ProjectID, ProjectType};
 pub use validator::ValidationErrors;
 pub use workspace::WorkspaceConfig;
 

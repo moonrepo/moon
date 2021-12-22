@@ -1,0 +1,27 @@
+---
+source: crates/cli/tests/project_graph_test.rs
+expression: get_assert_output(&assert)
+
+---
+digraph {
+  WORKSPACE [style="filled", shape=circle, fillcolor=black, fontcolor=white];
+  advanced [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
+  WORKSPACE -> advanced [arrowhead=none];
+  bar [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
+  WORKSPACE -> bar [arrowhead=none];
+  basic [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
+  WORKSPACE -> basic [arrowhead=none];
+  noConfig -> basic [arrowhead=box, arrowtail=box];
+  baz [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
+  WORKSPACE -> baz [arrowhead=none];
+  emptyConfig [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
+  WORKSPACE -> emptyConfig [arrowhead=none];
+  foo [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
+  WORKSPACE -> foo [arrowhead=none];
+  bar -> foo [arrowhead=box, arrowtail=box];
+  baz -> foo [arrowhead=box, arrowtail=box];
+  noConfig [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
+  WORKSPACE -> noConfig [arrowhead=none];
+}
+
+

@@ -1,5 +1,4 @@
 node:
   # We use an invalid version to avoid conflicts within ~/.monolith
   version: '0.0.0'
-projects:
-  test: example
+projects: {}

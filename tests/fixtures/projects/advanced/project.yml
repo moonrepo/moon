@@ -1,0 +1,7 @@
+project:
+  type: 'library'
+  name: 'Advanced'
+  description: 'Advanced example.'
+  channel: '#batcave'
+  owner: 'Batman'
+  maintainers: ['Bruce Wayne']

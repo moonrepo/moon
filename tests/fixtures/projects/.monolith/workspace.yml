@@ -1,0 +1,10 @@
+projects:
+  advanced: advanced
+  basic: basic
+  emptyConfig: empty-config
+  noConfig: no-config
+
+  # Deps
+  foo: deps/foo
+  bar: deps/bar
+  baz: deps/baz

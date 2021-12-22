@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: get_assert_output(&assert)
+
+---
+About
+ID: emptyConfig
+Path: empty-config
+
+File groups
+sources:
+- src/**/*
+- types/**/*
+tests:
+- tests/**/*
+

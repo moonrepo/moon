@@ -11,7 +11,7 @@ pub fn create_pnpm_tool() -> (PnpmTool, assert_fs::TempDir) {
     let mut config = WorkspaceConfig::default();
 
     config.node.version = String::from("1.0.0");
-    config.node.package_manager = Some(PackageManager::pnpm);
+    config.node.package_manager = Some(PackageManager::Pnpm);
     config.node.pnpm = Some(PnpmConfig {
         version: String::from("6.0.0"),
     });

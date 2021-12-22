@@ -1,0 +1,6 @@
+dependsOn:
+  - noConfig
+
+fileGroups:
+  tests:
+    - '**/*_test.rs'

@@ -49,11 +49,11 @@ fn validate_projects_map(projects: &HashMap<String, String>) -> Result<(), Valid
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[allow(non_camel_case_types)]
+#[serde(rename_all = "lowercase")]
 pub enum PackageManager {
-    npm,
-    pnpm,
-    yarn,
+    Npm,
+    Pnpm,
+    Yarn,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
@@ -120,7 +120,7 @@ impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
             version: String::from(NODE_VERSION),
-            package_manager: Some(PackageManager::npm),
+            package_manager: Some(PackageManager::Npm),
             npm: None,
             pnpm: None,
             yarn: None,
@@ -128,7 +128,7 @@ impl Default for NodeConfig {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]
     #[validate]
@@ -136,15 +136,6 @@ pub struct WorkspaceConfig {
 
     #[validate(custom = "validate_projects_map")]
     pub projects: HashMap<String, String>,
-}
-
-impl Default for WorkspaceConfig {
-    fn default() -> Self {
-        WorkspaceConfig {
-            node: NodeConfig::default(),
-            projects: HashMap::new(),
-        }
-    }
 }
 
 impl Provider for WorkspaceConfig {
@@ -214,7 +205,7 @@ mod tests {
                 WorkspaceConfig {
                     node: NodeConfig {
                         version: String::from(NODE_VERSION),
-                        package_manager: Some(PackageManager::npm),
+                        package_manager: Some(PackageManager::Npm),
                         npm: None,
                         pnpm: None,
                         yarn: None

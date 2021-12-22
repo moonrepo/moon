@@ -1,23 +1,31 @@
-# TODO
+# OPTIONAL: This setting defines metadata about the project itself. Although this
+# setting is optional, when defined, all fields within it must be defined as well.
 project:
-  # Unique name and description of the project. Will appear in the project graph.
+  # The type of project. Accepts "library", "application", or "tool".
+  type: 'library'
+
+  # A human readable name of the project.
   name: 'Example'
+
+  # A description of what the project does and aims to achieve.
   description: 'A description of what the example project does.'
 
-  # The channel (with leading #) to discuss the project.
-  # Can be a Slack, Discord, Teams, etc, channel name.
+  # The Slack, Discord, Teams, IRC, etc channel name (with leading #) in which to
+  # discuss the project.
   channel: '#example'
 
-  # The team or organization that owns the project.
+  # The team or organization (not people/developers) that owns the project.
   # Can be a title, LDAP name, GitHub team, etc.
-  owner: ''
+  owner: 'infra'
 
-  # A list of developers that maintain the project and review code changes.
-  # Can be a name, email, LDAP/GitHub username, etc.
-  maintainers: []
+  # A list of people/developers that maintain the project, review code changes,
+  # and can provide support. Can be a name, email, LDAP/GitHub username, etc.
+  maintainers: ['user.name']
 
-# TODO
+# OPTIONAL: A list of other projects that this project depends on. Each value
+# must be a unique project ID, and NOT a file path or project name.
 dependsOn: []
 
-# TODO
+# OPTIONAL: File groups are a mechanism for grouping similar types of files within
+# a project using file glob patterns. View `.monolith/project.yml` for more info.
 fileGroups: {}

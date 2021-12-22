@@ -2,28 +2,20 @@
 
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
+use crate::project::FileGroups;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
     Figment, Metadata, Profile, Provider,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationErrors};
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct GlobalProjectConfig {
     #[serde(rename = "fileGroups")]
-    file_groups: HashMap<String, Vec<String>>,
-}
-
-impl Default for GlobalProjectConfig {
-    fn default() -> Self {
-        GlobalProjectConfig {
-            file_groups: HashMap::new(),
-        }
-    }
+    pub file_groups: FileGroups,
 }
 
 impl Provider for GlobalProjectConfig {

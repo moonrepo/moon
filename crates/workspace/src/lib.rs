@@ -2,6 +2,7 @@ mod errors;
 
 use errors::WorkspaceError;
 use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
+use monolith_project::ProjectGraph;
 use monolith_toolchain::Toolchain;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -76,10 +77,10 @@ pub struct Workspace {
     /// Path to the root `package.json` file.
     pub package_json_path: PathBuf,
 
-    /// Global project configuration loaded from ".monolith/project.yml".
-    pub project_config: GlobalProjectConfig,
+    /// The project graph, where each project is lazy loaded in.
+    pub projects: ProjectGraph,
 
-    /// The toolchain instances that houses all runtime tools/languages.
+    /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
 
     /// The current working directory.
@@ -94,7 +95,7 @@ impl Workspace {
 
         // Find root dir
         let root_dir = match find_workspace_root(working_dir.clone()) {
-            Some(dir) => dir,
+            Some(dir) => dir.canonicalize().unwrap(),
             None => return Err(WorkspaceError::MissingConfigDir),
         };
         let package_json_path = find_package_json(&root_dir)?;
@@ -103,14 +104,15 @@ impl Workspace {
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
 
-        // Setup toolchain
+        // Setup components
         let toolchain = Toolchain::new(&config, &root_dir)?;
+        let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
 
         Ok(Workspace {
             config,
             dir: root_dir,
             package_json_path,
-            project_config,
+            projects,
             toolchain,
             working_dir,
         })

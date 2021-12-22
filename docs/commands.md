@@ -60,7 +60,7 @@ configured and exists within the graph. If a project does not exist, the program
 1 exit code.
 
 ```shell
-$ mono project app
+$ mono project web
 ```
 
 ### `project-graph`
@@ -76,4 +76,4 @@ $ mono project-graph > graph.dot
 ```
 
 > A project ID can be passed to focus the graph to only that project and it's dependencies. For
-> example, `mono project-graph app`.
+> example, `mono project-graph web`.

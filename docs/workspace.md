@@ -41,6 +41,7 @@ projects:
   admin: apps/admin
   web: apps/web
   dsl: packages/design-system
+  hooks: packages/react-hooks
 ```
 
 Unlike packages in the JavaScript ecosystem, a Monolith project _does not_ require a `package.json`.

@@ -27,6 +27,7 @@ pub async fn project(workspace: &Workspace, id: &str, json: &bool) -> Result<(),
 
     if let Some(config) = project.config {
         if let Some(meta) = config.project {
+            println!("Type: {:?}", meta.type_of);
             println!("Name: {}", meta.name);
             println!("Description: {}", meta.description);
             println!("Owner: {}", meta.owner);

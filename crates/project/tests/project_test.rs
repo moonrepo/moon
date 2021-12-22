@@ -1,5 +1,5 @@
 use monolith_config::project::ProjectMetadataConfig;
-use monolith_config::{FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig};
+use monolith_config::{FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectType};
 use monolith_project::Project;
 use std::collections::HashMap;
 use std::env;
@@ -143,6 +143,7 @@ fn advanced_config() {
                 depends_on: None,
                 file_groups: None,
                 project: Some(ProjectMetadataConfig {
+                    type_of: ProjectType::Library,
                     name: String::from("Advanced"),
                     description: String::from("Advanced example."),
                     owner: String::from("Batman"),

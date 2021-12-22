@@ -99,14 +99,14 @@ impl Toolchain {
 
         if config.node.package_manager.is_some() {
             match config.node.package_manager.as_ref().unwrap() {
-                PM::npm => {}
-                PM::pnpm => {
+                PM::Npm => {}
+                PM::Pnpm => {
                     toolchain.pnpm = Some(PnpmTool::new(
                         &toolchain,
                         config.node.pnpm.as_ref().unwrap_or(&PnpmConfig::default()),
                     )?);
                 }
-                PM::yarn => {
+                PM::Yarn => {
                     toolchain.yarn = Some(YarnTool::new(
                         &toolchain,
                         config.node.yarn.as_ref().unwrap_or(&YarnConfig::default()),

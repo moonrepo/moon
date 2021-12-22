@@ -49,11 +49,11 @@ fn validate_projects_map(projects: &HashMap<String, String>) -> Result<(), Valid
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[allow(non_camel_case_types)]
+#[serde(rename_all = "lowercase")]
 pub enum PackageManager {
-    npm,
-    pnpm,
-    yarn,
+    Npm,
+    Pnpm,
+    Yarn,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
@@ -120,7 +120,7 @@ impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
             version: String::from(NODE_VERSION),
-            package_manager: Some(PackageManager::npm),
+            package_manager: Some(PackageManager::Npm),
             npm: None,
             pnpm: None,
             yarn: None,
@@ -214,7 +214,7 @@ mod tests {
                 WorkspaceConfig {
                     node: NodeConfig {
                         version: String::from(NODE_VERSION),
-                        package_manager: Some(PackageManager::npm),
+                        package_manager: Some(PackageManager::Npm),
                         npm: None,
                         pnpm: None,
                         yarn: None

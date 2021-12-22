@@ -1,4 +1,5 @@
 project:
+  type: 'library'
   name: 'Advanced'
   description: 'Advanced example.'
   channel: '#batcave'

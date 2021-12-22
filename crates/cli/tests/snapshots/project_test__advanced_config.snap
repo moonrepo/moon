@@ -6,6 +6,7 @@ expression: get_assert_output(&assert)
 About
 ID: advanced
 Path: advanced
+Type: Library
 Name: Advanced
 Description: Advanced example.
 Owner: Batman

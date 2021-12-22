@@ -28,8 +28,19 @@ pub type FileGroups = HashMap<String, Vec<String>>;
 
 pub type ProjectID = String;
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProjectType {
+    Application,
+    Library,
+    Tool,
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
+    #[serde(rename = "type")]
+    pub type_of: ProjectType,
+
     pub name: String,
 
     pub description: String,
@@ -308,6 +319,7 @@ project:
                     super::constants::CONFIG_PROJECT_FILENAME,
                     r#"
 project:
+    type: 'library'
     name: ''
     description: ''
     owner: ''

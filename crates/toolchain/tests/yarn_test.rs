@@ -11,7 +11,7 @@ pub fn create_yarn_tool() -> (YarnTool, assert_fs::TempDir) {
     let mut config = WorkspaceConfig::default();
 
     config.node.version = String::from("1.0.0");
-    config.node.package_manager = Some(PackageManager::yarn);
+    config.node.package_manager = Some(PackageManager::Yarn);
     config.node.yarn = Some(YarnConfig {
         version: String::from("6.0.0"),
     });

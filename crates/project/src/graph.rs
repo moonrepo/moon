@@ -1,9 +1,10 @@
+use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::project::Project;
 use itertools::Itertools;
 use monolith_config::{GlobalProjectConfig, ProjectID};
 use solvent::DepGraph;
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -14,7 +15,7 @@ pub struct ProjectGraph {
     global_config: GlobalProjectConfig,
 
     /// A lightweight dependency graph, where each node is a project ID,
-    /// which can depend on other project IDs.
+    /// and can depend on other project IDs.
     graph: RefCell<DepGraph<String>>,
 
     /// Projects that have been loaded into the graph.
@@ -35,7 +36,7 @@ impl ProjectGraph {
         projects_config: &HashMap<ProjectID, String>,
     ) -> ProjectGraph {
         let mut graph = DepGraph::new();
-        graph.register_node("(root)".to_owned());
+        graph.register_node(ROOT_NODE_ID.to_owned());
 
         ProjectGraph {
             global_config,
@@ -46,179 +47,61 @@ impl ProjectGraph {
         }
     }
 
+    /// Returns a list of all project IDs that have been configured,
+    /// in ascending sorted order.
     pub fn ids(&self) -> std::vec::IntoIter<&String> {
         self.projects_config.keys().sorted()
     }
 
-    pub fn get(&self, id: &str) -> Result<Ref<Project>, ProjectError> {
-        // Return project early if already loaded, and place
-        // in a block so the borrow scope is dropped early
-        {
-            let projects = self.projects.borrow();
+    /// Returns a project with the associated ID. If the project
+    /// has not been loaded, it will be loaded and inserted into the
+    /// project graph. If the project does not exist or has been
+    /// misconfigured, an error will be returned.
+    pub fn get(&self, id: &str) -> Result<Project, ProjectError> {
+        let mut projects = self.projects.borrow_mut();
+        let mut graph = self.graph.borrow_mut();
 
-            if projects.contains_key(id) {
-                return Ok(Ref::map(projects, |p| p.get(id).unwrap()));
-            }
-        }
+        // Lazy load the project if it has not been
+        self.load(&mut projects, &mut graph, id)?;
 
-        // Create and store project based on ID and location.
-        // We also do this in a block to drop borrow mut scope.
-        {
-            let location = match self.projects_config.get(id) {
-                Some(path) => path,
-                None => return Err(ProjectError::UnconfiguredID(String::from(id))),
-            };
-
-            self.projects.borrow_mut().insert(
-                id.to_owned(),
-                Project::new(id, location, &self.workspace_dir, &self.global_config)?,
-            );
-        }
-
-        self.get(id)
+        // TODO: Is it possible to not clone here???
+        Ok(projects.get(id).unwrap().clone())
     }
 
-    // pub fn load(&self, id: &str) -> Result<Ref<Project>, ProjectError> {
-    //     // Return project early if already loaded, and place
-    //     // in a block so the borrow scope is dropped early
-    //     {
-    //         let projects = self.projects.borrow();
+    /// Internal method for lazily loading a project and its
+    /// dependencies into the graph.
+    fn load(
+        &self,
+        projects: &mut RefMut<HashMap<ProjectID, Project>>,
+        graph: &mut RefMut<DepGraph<String>>,
+        id: &str,
+    ) -> Result<(), ProjectError> {
+        // Already loaded, abort early
+        if projects.contains_key(id) || id == ROOT_NODE_ID {
+            return Ok(());
+        }
 
-    //         if projects.contains_key(id) {
-    //             return Ok(Ref::map(projects, |p| p.get(id).unwrap()));
-    //         }
-    //     }
+        // Create project based on ID and location
+        let location = match self.projects_config.get(id) {
+            Some(path) => path,
+            None => return Err(ProjectError::UnconfiguredID(String::from(id))),
+        };
 
-    //     // Create project based on ID and location
-    //     let location = match self.projects_config.get(id) {
-    //         Some(path) => path,
-    //         None => return Err(ProjectError::UnconfiguredID(String::from(id))),
-    //     };
-
-    //     let project = Project::new(id, location, &self.workspace_dir, &self.global_config)?;
-
-    //     println!("{} {} {:#?}", id, location, project);
-
-    //     // Determine dependency list
-    //     let mut depends_on = vec!["(root)".to_owned()];
-
-    //     if project.config.is_some() {
-    //         let config = project.config.as_ref().unwrap();
-
-    //         depends_on.extend_from_slice(config.depends_on.as_ref().unwrap_or(&vec![]));
-    //     }
-
-    //     println!("depends on {:?}", depends_on);
-
-    //     // Insert the project into the graph
-    //     {
-    //         self.save_to_graph(id, project, depends_on);
-    //     }
-
-    //     self.get(id)
-    // }
-
-    fn save_to_graph(&self, id: &str, project: Project, depends_on: Vec<String>) {
-        let mut projects = self.projects.borrow_mut();
+        let project = Project::new(id, location, &self.workspace_dir, &self.global_config)?;
+        let depends_on = project.get_dependencies();
 
         projects.insert(id.to_owned(), project);
 
-        println!("1");
-
-        let mut graph = self.graph.borrow_mut();
-
-        println!("2");
-
+        // Insert the project into the graph
         graph.register_node(id.to_owned());
-        graph.register_dependencies(id.to_owned(), depends_on);
 
-        println!("3");
+        for dep in depends_on {
+            // Ensure the dependent project is also loaded
+            self.load(projects, graph, dep.as_str())?;
+
+            graph.register_dependency(id.to_owned(), dep);
+        }
+
+        Ok(())
     }
-
-    // pub fn get(&self, id: String) -> Result<Ref<Project>, ProjectError> {
-    //     let key = id.as_str();
-    //     let projects = self.projects.borrow();
-
-    //     // Return project early if already loaded
-    //     if projects.contains_key(key) {
-    //         return Ok(Ref::map(projects, |p| p.get(key).unwrap()));
-    //     }
-
-    //     // Create project based on ID and location
-    //     let location = match self.projects_config.get(key) {
-    //         Some(path) => path,
-    //         None => return Err(ProjectError::UnconfiguredID(id)),
-    //     };
-
-    //     let project = Project::new(
-    //         id.as_str(),
-    //         location,
-    //         &self.workspace_dir,
-    //         &self.global_config,
-    //     )?;
-
-    //     println!("{} {} {:#?}", id, location, project);
-
-    //     // Determine dependency list
-    //     let mut depends_on = vec!["(root)".to_owned()];
-
-    //     if project.config.is_some() {
-    //         let config = project.config.as_ref().unwrap();
-
-    //         depends_on.extend_from_slice(config.depends_on.as_ref().unwrap_or(&vec![]));
-    //     }
-
-    //     println!("depends on {:?}", depends_on);
-
-    //     // Insert the project into the graph
-    //     // self.projects.borrow_mut().insert(id.to_owned(), project);
-
-    //     println!("1");
-
-    //     let mut graph = self.graph.borrow_mut();
-
-    //     println!("2");
-
-    //     graph.register_node(id.clone());
-    //     graph.register_dependencies(id.clone(), depends_on);
-
-    //     println!("3");
-
-    //     self.get(id)
-    // }
-
-    // pub fn get(&mut self, id: String) -> Result<&Project, ProjectError> {
-    //     let key = id.as_str();
-
-    //     // Avoid loading again
-    //     if self.projects.contains_key(key) {
-    //         return Ok(self.projects.get(key).unwrap());
-    //     }
-
-    //     let location = match self.projects_config.get(key) {
-    //         Some(path) => path,
-    //         None => return Err(ProjectError::UnconfiguredID(id)),
-    //     };
-
-    //     let project = Project::new(
-    //         id.as_str(),
-    //         location,
-    //         &self.workspace_dir,
-    //         &self.global_config,
-    //     )?;
-
-    //     let mut depends_on = vec!["(root)".to_owned()];
-
-    //     if project.config.is_some() {
-    //         let config = project.config.as_ref().unwrap();
-
-    //         depends_on.extend_from_slice(config.depends_on.as_ref().unwrap_or(&vec![]));
-    //     }
-
-    //     self.projects.insert(id.to_owned(), project);
-    //     self.graph.register_node(id.clone());
-    //     self.graph.register_dependencies(id.clone(), depends_on);
-
-    //     Ok(self.projects.get(key).unwrap())
-    // }
 }

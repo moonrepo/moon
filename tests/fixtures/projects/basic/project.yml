@@ -1,5 +1,5 @@
 dependsOn:
-  - other
+  - noConfig
 
 fileGroups:
   tests:

@@ -1,3 +1,4 @@
+use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use monolith_config::constants::CONFIG_PROJECT_FILENAME;
 use monolith_config::project::{FileGroups, ProjectID};
@@ -48,7 +49,7 @@ fn load_package_json(
     Ok(None)
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
     pub config: Option<ProjectConfig>,
@@ -89,9 +90,7 @@ impl Project {
         let mut file_groups = global_config.file_groups.clone();
 
         // Override global configs with local
-        if config.is_some() {
-            let borrowed_config = config.as_ref().unwrap();
-
+        if let Some(borrowed_config) = &config {
             if let Some(local_file_groups) = &borrowed_config.file_groups {
                 file_groups.extend(local_file_groups.clone());
             }
@@ -105,6 +104,18 @@ impl Project {
             location: String::from(location),
             package_json,
         })
+    }
+
+    pub fn get_dependencies(&self) -> Vec<String> {
+        let mut depends_on = vec![ROOT_NODE_ID.to_owned()];
+
+        if let Some(config) = &self.config {
+            if let Some(config_depends) = &config.depends_on {
+                depends_on.extend_from_slice(config_depends);
+            }
+        }
+
+        depends_on
     }
 
     pub fn to_json(&self) -> String {

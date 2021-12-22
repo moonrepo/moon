@@ -28,7 +28,7 @@ pub type FileGroups = HashMap<String, Vec<String>>;
 
 pub type ProjectID = String;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
     pub name: String,
 
@@ -42,7 +42,7 @@ pub struct ProjectMetadataConfig {
     pub channel: String,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectConfig {
     #[serde(rename = "dependsOn")]
     pub depends_on: Option<Vec<ProjectID>>,

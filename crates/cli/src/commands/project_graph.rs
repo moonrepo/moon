@@ -49,13 +49,13 @@ fn graph_for_single_project(
     id: &str,
 ) -> Result<(), ProjectError> {
     // Load project
-    workspace.projects.get(id).unwrap();
+    let project = workspace.projects.get(id).unwrap();
 
     // Add node to the graph
     create_node(dot_graph, id, true);
 
     // Map deps as edges
-    for dep_id in workspace.projects.get_sorted_deps_of(id)? {
+    for dep_id in workspace.projects.get_sorted_dependencies_of(&project)? {
         if dep_id != id {
             create_node(dot_graph, &dep_id, false);
             create_edge(dot_graph, id, &dep_id);

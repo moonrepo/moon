@@ -69,17 +69,18 @@ impl ProjectGraph {
 
     /// Return a list of project IDs that a project depends on,
     /// in the priority order in which they are depended on.
-    pub fn get_deps_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
-        let project_id = id.to_owned();
+    pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
         let mut deps = vec![];
 
-        for dep in self.graph.borrow().dependencies_of(&project_id).unwrap() {
+        for dep in self.graph.borrow().dependencies_of(&project.id).unwrap() {
             match dep {
                 Ok(dep_id) => deps.push(dep_id.to_owned()),
                 Err(err) => {
                     return Err(match err {
                         SolventError::CycleDetected => ProjectError::DependencyCycleDetected,
-                        SolventError::NoSuchNode => ProjectError::UnconfiguredID(project_id),
+                        SolventError::NoSuchNode => {
+                            ProjectError::UnconfiguredID(project.id.clone())
+                        }
                     })
                 }
             }
@@ -90,8 +91,11 @@ impl ProjectGraph {
 
     /// Return a list of project IDs that a project depends on,
     /// in ascending order.
-    pub fn get_sorted_deps_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
-        let mut deps = self.get_deps_of(id)?;
+    pub fn get_sorted_dependencies_of(
+        &self,
+        project: &Project,
+    ) -> Result<Vec<ProjectID>, ProjectError> {
+        let mut deps = self.get_dependencies_of(project)?;
         deps.sort();
 
         Ok(deps)

@@ -105,7 +105,7 @@ impl Project {
         })
     }
 
-    /// Return a list of projects this project depends on.
+    /// Return a list of project IDs this project depends on.
     pub fn get_dependencies(&self) -> Vec<String> {
         let mut depends_on = vec![];
 

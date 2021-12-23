@@ -62,6 +62,11 @@ async fn generates_paths() {
     )
     .eval(node.get_bin_path().to_str().unwrap()));
 
+    println!(
+        "dl = {}",
+        node.get_download_path().unwrap().to_str().unwrap()
+    );
+
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")
             .join("temp")
@@ -111,7 +116,7 @@ mod download {
         .create();
 
         let shasums = mock("GET", "/dist/v1.0.0/SHASUMS256.txt")
-            .with_body("9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-darwin-x64.tar.gz\n9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-linux-x64.tar.gz\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  node-v1.0.0-win-x64.zip\n")
+            .with_body("9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-darwin-x64.tar.gz\n9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-linux-x64.tar.gz\n9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-win-x64.zip\n")
             .create();
 
         node.download(Some(&mockito::server_url())).await.unwrap();

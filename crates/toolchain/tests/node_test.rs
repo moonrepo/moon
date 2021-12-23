@@ -46,21 +46,19 @@ async fn generates_paths() {
     )
     .eval(node.get_install_dir().to_str().unwrap()));
 
-    assert!(predicates::str::ends_with(
-        PathBuf::from(".moon")
-            .join("tools")
-            .join("node")
-            .join("1.0.0")
-            .join("bin")
-            .join(if env::consts::OS == "windows" {
-                "node.exe"
-            } else {
-                "node"
-            })
-            .to_str()
-            .unwrap()
-    )
-    .eval(node.get_bin_path().to_str().unwrap()));
+    let mut bin_path = PathBuf::from(".moon")
+        .join("tools")
+        .join("node")
+        .join("1.0.0");
+
+    if env::consts::OS == "windows" {
+        bin_path = bin_path.join("node.exe");
+    } else {
+        bin_path = bin_path.join("bin").join("node");
+    }
+
+    assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
+        .eval(node.get_bin_path().to_str().unwrap()));
 
     println!(
         "dl = {}",

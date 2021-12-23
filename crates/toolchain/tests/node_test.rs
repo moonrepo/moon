@@ -46,6 +46,8 @@ async fn generates_paths() {
     )
     .eval(node.get_install_dir().to_str().unwrap()));
 
+    println!("install = {}", node.get_install_dir().to_str().unwrap());
+
     let mut bin_path = PathBuf::from(".moon")
         .join("tools")
         .join("node")
@@ -57,11 +59,13 @@ async fn generates_paths() {
         bin_path = bin_path.join("bin").join("node");
     }
 
+    println!("bin = {}", node.get_bin_path().to_str().unwrap());
+
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(node.get_bin_path().to_str().unwrap()));
 
     println!(
-        "dl = {}",
+        "download = {}",
         node.get_download_path().unwrap().to_str().unwrap()
     );
 

@@ -51,4 +51,5 @@ jobs:
           command: build
       - uses: actions-rs/cargo@v1
         with:
-          command: test generates_paths
+          command: test
+          args: generates_paths

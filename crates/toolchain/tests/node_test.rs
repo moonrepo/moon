@@ -35,20 +35,38 @@ fn get_download_file() -> &'static str {
 async fn generates_paths() {
     let (node, temp_dir) = create_node_tool().await;
 
-    assert!(
-        predicates::str::ends_with(PathBuf::from(".moon/tools/node/1.0.0").to_str().unwrap())
-            .eval(node.get_install_dir().to_str().unwrap())
-    );
+    // We have to use join a lot to test on windows
+    assert!(predicates::str::ends_with(
+        PathBuf::from(".moon")
+            .join("tools")
+            .join("node")
+            .join("1.0.0")
+            .to_str()
+            .unwrap()
+    )
+    .eval(node.get_install_dir().to_str().unwrap()));
 
     assert!(predicates::str::ends_with(
-        PathBuf::from(".moon/tools/node/1.0.0/bin/node")
+        PathBuf::from(".moon")
+            .join("tools")
+            .join("node")
+            .join("1.0.0")
+            .join("bin")
+            .join(if env::consts::OS == "windows" {
+                "node.exe"
+            } else {
+                "node"
+            })
             .to_str()
             .unwrap()
     )
     .eval(node.get_bin_path().to_str().unwrap()));
 
     assert!(predicates::str::ends_with(
-        PathBuf::from(format!(".moon/temp/node/{}", get_download_file()))
+        PathBuf::from(".moon")
+            .join("temp")
+            .join("node")
+            .join(get_download_file())
             .to_str()
             .unwrap()
     )

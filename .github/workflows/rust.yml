@@ -52,4 +52,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: generates_paths
+          args: -- generates_paths

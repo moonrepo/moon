@@ -21,13 +21,13 @@ async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
     (toolchain.get_node().to_owned(), base_dir)
 }
 
-fn get_node_platform() -> &'static str {
+fn get_download_file() -> &'static str {
     if env::consts::OS == "windows" {
-        "win"
+        "node-v1.0.0-win-x64.zip"
     } else if env::consts::OS == "macos" {
-        "darwin"
+        "node-v1.0.0-darwin-x64.tar.gz"
     } else {
-        "linux"
+        "node-v1.0.0-linux-x64.tar.gz"
     }
 }
 
@@ -48,12 +48,9 @@ async fn generates_paths() {
     .eval(node.get_bin_path().to_str().unwrap()));
 
     assert!(predicates::str::ends_with(
-        PathBuf::from(format!(
-            ".moon/temp/node/node-v1.0.0-{}-x64.tar.gz",
-            get_node_platform()
-        ))
-        .to_str()
-        .unwrap()
+        PathBuf::from(format!(".moon/temp/node/{}", get_download_file()))
+            .to_str()
+            .unwrap()
     )
     .eval(node.get_download_path().unwrap().to_str().unwrap()));
 
@@ -90,11 +87,7 @@ mod download {
 
         let archive = mock(
             "GET",
-            format!(
-                "/dist/v1.0.0/node-v1.0.0-{}-x64.tar.gz",
-                get_node_platform()
-            )
-            .as_str(),
+            format!("/dist/v1.0.0/{}", get_download_file()).as_str(),
         )
         .with_body("binary")
         .create();
@@ -120,18 +113,14 @@ mod download {
 
         let archive = mock(
             "GET",
-            format!(
-                "/dist/v1.0.0/node-v1.0.0-{}-x64.tar.gz",
-                get_node_platform()
-            )
-            .as_str(),
+            format!("/dist/v1.0.0/{}", get_download_file()).as_str(),
         )
         .with_body("binary")
         .create();
 
         let shasums = mock("GET", "/dist/v1.0.0/SHASUMS256.txt")
             .with_body(
-                "fakehash  node-v1.0.0-darwin-x64.tar.gz\nfakehash  node-v1.0.0-linux-x64.tar.gz\nfakehash  node-v1.0.0-win-x64.tar.gz\n",
+                "fakehash  node-v1.0.0-darwin-x64.tar.gz\nfakehash  node-v1.0.0-linux-x64.tar.gz\nfakehash  node-v1.0.0-win-x64.zip\n",
             )
             .create();
 

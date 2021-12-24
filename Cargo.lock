@@ -932,6 +932,7 @@ name = "monolith_workspace"
 version = "0.1.0"
 dependencies = [
  "monolith_config",
+ "monolith_logger",
  "monolith_project",
  "monolith_toolchain",
  "thiserror",

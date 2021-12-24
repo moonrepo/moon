@@ -11,7 +11,7 @@ use monolith_config::constants::CONFIG_DIRNAME;
 use monolith_config::workspace::{
     NpmConfig, PackageManager as PM, PnpmConfig, WorkspaceConfig, YarnConfig,
 };
-use monolith_logger::{color, debug, info, trace};
+use monolith_logger::{color, debug, trace};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -131,7 +131,7 @@ impl Toolchain {
 
     /// Download and install all tools into the toolchain.
     pub async fn setup(&self) -> Result<(), ToolchainError> {
-        info!(
+        debug!(
             target: "toolchain",
             "Setting up toolchain, downloading and installing tools",
         );
@@ -153,7 +153,7 @@ impl Toolchain {
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&self) -> Result<(), ToolchainError> {
-        info!(
+        debug!(
             target: "toolchain",
             "Tearing down toolchain, uninstalling tools",
         );

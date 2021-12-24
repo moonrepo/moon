@@ -2,6 +2,7 @@
 // https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
 
 use ansi_term::Color::Fixed;
+use log::Level;
 use std::path::Path;
 
 pub fn file_path(path: &Path) -> String {
@@ -39,9 +40,23 @@ pub fn target(value: &str) -> String {
 
     // Lot of casting going on here...
     let index = i32::abs(hash as i32) as usize % COLOR_LIST.len();
-    let rgb = COLOR_LIST[index];
+    let color = COLOR_LIST[index];
 
-    Fixed(rgb).paint(value).to_string()
+    Fixed(color).bold().paint(value).to_string()
+}
+
+pub fn log_level(level: Level) -> String {
+    let color = match level {
+        Level::Error => 161, // Red
+        Level::Warn => 185,  // Yellow
+        Level::Info => 15,   // White
+        Level::Debug => 45,  // Blue
+        Level::Trace => 112, // Lime
+    };
+
+    Fixed(color)
+        .paint(level.as_str().to_lowercase())
+        .to_string()
 }
 
 pub const COLOR_LIST: [u8; 76] = [

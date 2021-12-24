@@ -65,7 +65,7 @@ fn graph_for_single_project(
     Ok(())
 }
 
-pub async fn project_graph(workspace: &Workspace, id: &Option<String>) -> Result<(), clap::Error> {
+pub async fn project_graph(workspace: Workspace, id: &Option<String>) -> Result<(), clap::Error> {
     let mut output_bytes = Vec::new();
 
     {
@@ -83,10 +83,10 @@ pub async fn project_graph(workspace: &Workspace, id: &Option<String>) -> Result
             .set_font_color(Color::White);
 
         if let Some(project_id) = id {
-            graph_for_single_project(workspace, &mut dot_graph, project_id).unwrap();
+            graph_for_single_project(&workspace, &mut dot_graph, project_id).unwrap();
         // TODO error
         } else {
-            graph_for_all_projects(workspace, &mut dot_graph);
+            graph_for_all_projects(&workspace, &mut dot_graph);
         }
     }
 

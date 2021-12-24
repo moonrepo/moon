@@ -863,6 +863,8 @@ dependencies = [
  "dot-writer",
  "insta",
  "itertools",
+ "log",
+ "monolith_logger",
  "monolith_project",
  "monolith_toolchain",
  "monolith_workspace",

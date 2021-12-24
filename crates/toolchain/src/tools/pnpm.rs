@@ -4,7 +4,7 @@ use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use monolith_config::workspace::PnpmConfig;
-use monolith_logger::{color, debug};
+use monolith_logger::{color, debug, trace};
 use std::env::consts;
 use std::path::PathBuf;
 
@@ -29,7 +29,7 @@ impl PnpmTool {
         }
 
         debug!(
-            target: "toolchain:pnpm",
+            target: "moon:toolchain:pnpm",
             "Creating tool at {}",
             color::file_path(&bin_path)
         );
@@ -45,40 +45,44 @@ impl PnpmTool {
 #[async_trait]
 impl Tool for PnpmTool {
     fn is_downloaded(&self) -> bool {
-        debug!(
-            target: "toolchain:pnpm",
-            "No download required as it comes bundled with Node.js"
-        );
-
         true
     }
 
     async fn download(&self, _host: Option<&str>) -> Result<(), ToolchainError> {
+        trace!(
+            target: "moon:toolchain:pnpm",
+            "No download required as it comes bundled with Node.js"
+        );
+
         Ok(()) // This is handled by node
     }
 
     async fn is_installed(&self) -> Result<bool, ToolchainError> {
-        let installed = self.bin_path.exists();
-        let correct_version = self.get_installed_version().await? == self.config.version;
+        if self.bin_path.exists() {
+            let version = self.get_installed_version().await?;
 
-        if correct_version {
+            if version == self.config.version {
+                debug!(
+                    target: "moon:toolchain:pnpm",
+                    "Package has been installed and is on the correct version",
+                );
+
+                return Ok(true);
+            }
+
             debug!(
-                target: "toolchain:pnpm",
-                "Package has been installed and is on the correct version",
-            );
-        } else {
-            debug!(
-                target: "toolchain:pnpm",
-                "Package is on the wrong version, attempting to reinstall",
+                target: "moon:toolchain:pnpm",
+                "Package is on the wrong version ({}), attempting to reinstall",
+                version
             );
         }
 
-        Ok(installed && correct_version)
+        Ok(false)
     }
 
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         debug!(
-            target: "toolchain:pnpm",
+            target: "moon:toolchain:pnpm",
             "Installing package with {}",
             color::shell(&format!("npm install -g pnpm@{}", self.config.version))
         );

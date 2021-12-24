@@ -138,7 +138,7 @@ impl NodeTool {
         }
 
         debug!(
-            target: "toolchain:node",
+            target: "moon:toolchain:node",
             "Creating tool at {}",
             color::file_path(&bin_path)
         );
@@ -159,12 +159,12 @@ impl Tool for NodeTool {
 
         if exists {
             debug!(
-                target: "toolchain:node",
+                target: "moon:toolchain:node",
                 "Binary has already been downloaded, continuing"
             );
         } else {
             debug!(
-                target: "toolchain:node",
+                target: "moon:toolchain:node",
                 "Binary does not exist, attempting to download"
             );
         }
@@ -182,7 +182,7 @@ impl Tool for NodeTool {
         download_file_from_url(&download_url, &self.download_path).await?;
 
         debug!(
-            target: "toolchain:node",
+            target: "moon:toolchain:node",
             "Downloading binary from {} to {}",
             color::url(&download_url),
             color::file_path(&self.download_path)
@@ -199,7 +199,7 @@ impl Tool for NodeTool {
         download_file_from_url(&shasums_url, &shasums_path).await?;
 
         debug!(
-            target: "toolchain:node",
+            target: "moon:toolchain:node",
             "Verifying shasum against {}",
             color::url(&shasums_url),
         );
@@ -207,7 +207,7 @@ impl Tool for NodeTool {
         // Verify the binary
         if let Err(error) = verify_shasum(&download_url, &self.download_path, &shasums_path) {
             error!(
-                target: "toolchain:node",
+                target: "moon:toolchain:node",
                 "Shasum verification has failed. The downloaded file has been deleted, please try again."
             );
 
@@ -220,27 +220,27 @@ impl Tool for NodeTool {
     }
 
     async fn is_installed(&self) -> Result<bool, ToolchainError> {
-        let installed = self.install_dir.exists();
-        let correct_version = self.get_installed_version().await? == self.config.version;
+        if self.install_dir.exists() {
+            let version = self.get_installed_version().await?;
 
-        if installed && correct_version {
+            if version == self.config.version {
+                debug!(
+                    target: "moon:toolchain:node",
+                    "Download has already been installed and is on the correct version",
+                );
+
+                return Ok(true);
+            }
+
             debug!(
-                target: "toolchain:node",
-                "Download has already been installed and is on the correct version",
+                target: "moon:toolchain:node",
+                "Download has been installed, but is on the wrong version ({}), attempting to reinstall",
+                version,
             );
-
-            return Ok(true);
-        }
-
-        if !installed {
+        } else {
             debug!(
-                target: "toolchain:node",
+                target: "moon:toolchain:node",
                 "Download has not been installed, attempting to install",
-            );
-        } else if !correct_version {
-            debug!(
-                target: "toolchain:node",
-                "Download has been installed, but is on the wrong version, attempting to reinstall",
             );
         }
 
@@ -248,12 +248,6 @@ impl Tool for NodeTool {
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        debug!(
-            target: "toolchain:node",
-            "Unpacking download and installing to {}",
-            color::file_path(&self.install_dir)
-        );
-
         // Open .tar.gz file
         let tar_gz = fs::File::open(&self.download_path)?;
 
@@ -277,6 +271,12 @@ impl Tool for NodeTool {
 
             entry.unpack(&self.install_dir.join(path)).unwrap();
         });
+
+        debug!(
+            target: "moon:toolchain:node",
+            "Unpacked and installed to {}",
+            color::file_path(&self.install_dir)
+        );
 
         Ok(())
     }

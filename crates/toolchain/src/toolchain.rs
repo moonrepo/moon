@@ -24,7 +24,7 @@ fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
         fs::create_dir(dir)?;
     }
 
-    trace!(target: "toolchain", "Created directory {}", color::file_path(dir));
+    trace!(target: "moon:toolchain", "Created directory {}", color::file_path(dir));
 
     Ok(())
 }
@@ -65,7 +65,7 @@ impl Toolchain {
         let tools_dir = dir.join("tools");
 
         debug!(
-            target: "toolchain",
+            target: "moon:toolchain",
             "Creating toolchain at {}",
             color::file_path(&dir)
         );
@@ -132,7 +132,7 @@ impl Toolchain {
     /// Download and install all tools into the toolchain.
     pub async fn setup(&self) -> Result<(), ToolchainError> {
         debug!(
-            target: "toolchain",
+            target: "moon:toolchain",
             "Setting up toolchain, downloading and installing tools",
         );
 
@@ -154,7 +154,7 @@ impl Toolchain {
     /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&self) -> Result<(), ToolchainError> {
         debug!(
-            target: "toolchain",
+            target: "moon:toolchain",
             "Tearing down toolchain, uninstalling tools",
         );
 
@@ -196,7 +196,7 @@ impl Toolchain {
             if let Some(download_path) = tool.get_download_path() {
                 fs::remove_file(download_path)?;
 
-                trace!(target: "toolchain", "Deleted download {}", color::file_path(download_path));
+                trace!(target: "moon:toolchain", "Deleted download {}", color::file_path(download_path));
             }
         }
 
@@ -204,7 +204,7 @@ impl Toolchain {
             fs::remove_dir_all(tool.get_install_dir())?;
 
             trace!(
-                target: "toolchain",
+                target: "moon:toolchain",
                 "Deleted installation {}",
                 color::file_path(tool.get_install_dir())
             );

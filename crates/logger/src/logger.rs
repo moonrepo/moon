@@ -17,6 +17,7 @@ impl Logger {
         }
 
         let mut dispatch = Dispatch::new()
+            .filter(|metadata| metadata.target().starts_with("moon"))
             .format(|out, message, record| {
                 let mut date_format = "[%Y-%m-%d %H:%M:%S]";
                 let current_timestamp = Local::now();
@@ -36,23 +37,12 @@ impl Logger {
                     }
                 }
 
-                // We dont need the label when level is "info"
-                if record.level() == log::Level::Info {
-                    out.finish(format_args!(
-                        "{} {} {}",
-                        color::muted(&current_timestamp.format(date_format).to_string()),
-                        color::target(record.target()),
-                        message
-                    ));
-                } else {
-                    out.finish(format_args!(
-                        "{} {} {} {}",
-                        color::muted(&current_timestamp.format(date_format).to_string()),
-                        color::target(record.target()),
-                        color::log_level(record.level()),
-                        message
-                    ));
-                }
+                out.finish(format_args!(
+                    "{} {} {}",
+                    color::muted(&current_timestamp.format(date_format).to_string()),
+                    color::target(record.target()),
+                    message
+                ));
             })
             // Pipe errors to stderr
             .chain(

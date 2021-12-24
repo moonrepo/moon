@@ -40,7 +40,7 @@ impl ProjectGraph {
         graph.register_node(ROOT_NODE_ID.to_owned());
 
         debug!(
-            target: "project-graph",
+            target: "moon:project-graph",
             "Creating project graph with {} projects",
             projects_config.len(),
         );
@@ -119,7 +119,7 @@ impl ProjectGraph {
         // Already loaded, abort early
         if projects.contains_key(id) || id == ROOT_NODE_ID {
             trace!(
-                target: "project-graph",
+                target: "moon:project-graph",
                 "Project {} already exists in the project graph",
                 color::symbol(id),
             );
@@ -128,7 +128,7 @@ impl ProjectGraph {
         }
 
         trace!(
-            target: "project-graph",
+            target: "moon:project-graph",
             "Project {} does not exist in the project graph, attempting to load",
             color::symbol(id),
         );
@@ -147,18 +147,20 @@ impl ProjectGraph {
         // Insert the project into the graph
         graph.register_node(id.to_owned());
 
-        trace!(
-            target: "project-graph",
-            "Adding dependencies `{}` to project {}",
-            depends_on.join(", "),
-            color::symbol(id),
-        );
+        if !depends_on.is_empty() {
+            trace!(
+                target: "moon:project-graph",
+                "Adding dependencies {} to project {}",
+                depends_on.clone().into_iter().map(|d| color::symbol(&d)).join(", "),
+                color::symbol(id),
+            );
 
-        for dep in depends_on {
-            // Ensure the dependent project is also loaded
-            self.load(projects, graph, dep.as_str())?;
+            for dep in depends_on {
+                // Ensure the dependent project is also loaded
+                self.load(projects, graph, dep.as_str())?;
 
-            graph.register_dependency(id.to_owned(), dep);
+                graph.register_dependency(id.to_owned(), dep);
+            }
         }
 
         Ok(())

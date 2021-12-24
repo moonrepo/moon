@@ -14,7 +14,7 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
     let config_dir = current_dir.join(constants::CONFIG_DIRNAME);
 
     trace!(
-        target: "workspace",
+        target: "moon:workspace",
         "Attempting to find workspace root at {}",
         color::file_path(&current_dir),
     );
@@ -35,9 +35,10 @@ fn find_package_json(root_dir: &Path) -> Result<PathBuf, WorkspaceError> {
     let package_json_path = root_dir.join("package.json");
 
     trace!(
-        target: "workspace",
-        "Attempting to find `package.json` at {}",
-        color::file_path(&package_json_path),
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::path("package.json"),
+        color::file_path(root_dir),
     );
 
     if !package_json_path.exists() {
@@ -54,11 +55,15 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
         .join(constants::CONFIG_PROJECT_FILENAME);
 
     trace!(
-        target: "workspace",
-        "Attempting to find `{}/{}` at {}",
-        constants::CONFIG_DIRNAME,
-        constants::CONFIG_PROJECT_FILENAME,
-        color::file_path(&config_path)
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::path(
+            &format!("{}/{}",
+                constants::CONFIG_DIRNAME,
+                constants::CONFIG_PROJECT_FILENAME,
+            )
+        ),
+        color::file_path(root_dir)
     );
 
     if !config_path.exists() {
@@ -78,11 +83,15 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
         .join(constants::CONFIG_WORKSPACE_FILENAME);
 
     trace!(
-        target: "workspace",
-        "Attempting to find `{}/{}` at {}",
-        constants::CONFIG_DIRNAME,
-        constants::CONFIG_WORKSPACE_FILENAME,
-        color::file_path(&config_path)
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::path(
+            &format!("{}/{}",
+                constants::CONFIG_DIRNAME,
+                constants::CONFIG_WORKSPACE_FILENAME,
+            )
+        ),
+        color::file_path(root_dir)
     );
 
     if !config_path.exists() {
@@ -127,7 +136,7 @@ impl Workspace {
         };
 
         debug!(
-            target: "workspace",
+            target: "moon:workspace",
             "Creating workspace at {} (from working directory {})",
             color::file_path(&root_dir),
             color::file_path(&working_dir)

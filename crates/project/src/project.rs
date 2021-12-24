@@ -17,8 +17,9 @@ fn load_project_config(
     let config_path = root_dir.join(&project_path).join(CONFIG_PROJECT_FILENAME);
 
     trace!(
-        target: "project",
-        "Attempting to find `project.yml` at {}",
+        target: "moon:project",
+        "Attempting to find {} at {}",
+        color::path("project.yml"),
         color::file_path(&config_path),
     );
 
@@ -43,8 +44,9 @@ fn load_package_json(
     let package_path = root_dir.join(&project_path).join("package.json");
 
     trace!(
-        target: "project",
-        "Attempting to find `package.json` at {}",
+        target: "moon:project",
+        "Attempting to find {} at {}",
+        color::path("package.json"),
         color::file_path(&package_path),
     );
 
@@ -93,6 +95,14 @@ impl Project {
     ) -> Result<Project, ProjectError> {
         let dir = root_dir.join(&location);
 
+        debug!(
+            target: "moon:project",
+            "Loading project from {} (id = {}, path = {})",
+            color::file_path(&dir),
+            color::symbol(id),
+            color::path(location),
+        );
+
         if !dir.exists() {
             return Err(ProjectError::MissingFilePath(String::from(location)));
         }
@@ -107,14 +117,6 @@ impl Project {
                 file_groups.extend(local_file_groups.clone());
             }
         }
-
-        debug!(
-            target: "project",
-            "Loaded project from {} (id = {}, path = {})",
-            color::file_path(&dir),
-            color::symbol(id),
-            location,
-        );
 
         Ok(Project {
             config,

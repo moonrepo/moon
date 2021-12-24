@@ -5,6 +5,11 @@ use ansi_term::Color::Fixed;
 use log::Level;
 use std::path::Path;
 
+pub fn path(path: &str) -> String {
+    // Teal
+    Fixed(37).paint(path).to_string()
+}
+
 pub fn file_path(path: &Path) -> String {
     // Teal
     Fixed(38).paint(path.to_string_lossy()).to_string()
@@ -34,8 +39,8 @@ pub fn muted(value: &str) -> String {
 pub fn target(value: &str) -> String {
     let mut hash: u32 = 0;
 
-    for c in value.chars() {
-        hash = ((hash << 5) - hash) + c.to_digit(10).unwrap();
+    for b in value.bytes() {
+        hash = (hash << 5).wrapping_sub(hash) + b as u32;
     }
 
     // Lot of casting going on here...

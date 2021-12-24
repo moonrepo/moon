@@ -902,6 +902,7 @@ version = "0.1.0"
 dependencies = [
  "itertools",
  "monolith_config",
+ "monolith_logger",
  "serde",
  "serde_json",
  "solvent",

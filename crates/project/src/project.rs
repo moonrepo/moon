@@ -18,9 +18,9 @@ fn load_project_config(
 
     trace!(
         target: "moon:project",
-        "Attempting to find {} at {}",
+        "Attempting to find {} in {}",
         color::path("project.yml"),
-        color::file_path(&config_path),
+        color::file_path(&root_dir.join(&project_path)),
     );
 
     if config_path.exists() {
@@ -45,9 +45,9 @@ fn load_package_json(
 
     trace!(
         target: "moon:project",
-        "Attempting to find {} at {}",
+        "Attempting to find {} in {}",
         color::path("package.json"),
-        color::file_path(&package_path),
+        color::file_path(&root_dir.join(&project_path)),
     );
 
     if package_path.exists() {

@@ -69,6 +69,11 @@ impl Tool for NpxTool {
     }
 
     async fn is_installed(&self) -> Result<bool, ToolchainError> {
+        debug!(
+            target: "moon:toolchain:npx",
+            "Package has already been installed and is on the correct version",
+        );
+
         Ok(self.bin_path.exists())
     }
 

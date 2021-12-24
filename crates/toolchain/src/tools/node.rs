@@ -240,7 +240,7 @@ impl Tool for NodeTool {
         } else {
             debug!(
                 target: "moon:toolchain:node",
-                "Download has not been installed, attempting to install",
+                "Download has not been installed",
             );
         }
 
@@ -248,6 +248,8 @@ impl Tool for NodeTool {
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        fs::create_dir_all(self.get_install_dir())?;
+
         // Open .tar.gz file
         let tar_gz = fs::File::open(&self.download_path)?;
 
@@ -269,13 +271,13 @@ impl Tool for NodeTool {
                 .unwrap()
                 .to_owned();
 
-            entry.unpack(&self.install_dir.join(path)).unwrap();
+            entry.unpack(&self.get_install_dir().join(path)).unwrap();
         });
 
         debug!(
             target: "moon:toolchain:node",
             "Unpacked and installed to {}",
-            color::file_path(&self.install_dir)
+            color::file_path(self.get_install_dir())
         );
 
         Ok(())

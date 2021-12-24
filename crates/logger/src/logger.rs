@@ -16,6 +16,11 @@ impl Logger {
             return;
         }
 
+        #[cfg(windows)]
+        if std::env::consts::OS == "windows" {
+            ansi_term::enable_ansi_support();
+        }
+
         let mut dispatch = Dispatch::new()
             .filter(|metadata| metadata.target().starts_with("moon"))
             .format(|out, message, record| {

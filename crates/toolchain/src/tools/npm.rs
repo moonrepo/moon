@@ -77,7 +77,7 @@ impl Tool for NpmTool {
             if version == self.config.version {
                 debug!(
                     target: "moon:toolchain:npm",
-                    "Package has been installed and is on the correct version",
+                    "Package has already been installed and is on the correct version",
                 );
 
                 return Ok(true);

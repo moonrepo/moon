@@ -4,7 +4,9 @@ use crate::tool::Tool;
 use crate::Toolchain;
 use async_trait::async_trait;
 use flate2::read::GzDecoder;
+use log::{debug, error};
 use monolith_config::workspace::NodeConfig;
+use monolith_logger::color;
 use std::env::consts;
 use std::fs;
 use std::io::{BufRead, BufReader};
@@ -89,8 +91,6 @@ fn verify_shasum(
     let file_name = download_path.file_name().unwrap().to_str().unwrap();
     let sha_hash = get_file_sha256_hash(download_path)?;
 
-    println!("{}  {}", sha_hash, file_name);
-
     for line in BufReader::new(fs::File::open(shasums_path)?)
         .lines()
         .flatten()
@@ -138,6 +138,12 @@ impl NodeTool {
             bin_path.push("bin/node");
         }
 
+        debug!(
+            target: "toolchain:node",
+            "Creating tool at {}",
+            color::file_path(&bin_path)
+        );
+
         Ok(NodeTool {
             bin_path,
             config: config.to_owned(),
@@ -150,7 +156,21 @@ impl NodeTool {
 #[async_trait]
 impl Tool for NodeTool {
     fn is_downloaded(&self) -> bool {
-        self.download_path.exists()
+        let exists = self.download_path.exists();
+
+        if exists {
+            debug!(
+                target: "toolchain:node",
+                "Binary has already been downloaded, continuing"
+            );
+        } else {
+            debug!(
+                target: "toolchain:node",
+                "Binary does not exist, attempting to download"
+            );
+        }
+
+        exists
     }
 
     async fn download(&self, base_host: Option<&str>) -> Result<(), ToolchainError> {
@@ -162,6 +182,13 @@ impl Tool for NodeTool {
 
         download_file_from_url(&download_url, &self.download_path).await?;
 
+        debug!(
+            target: "toolchain:node",
+            "Downloading binary from {} to {}",
+            color::url(&download_url),
+            color::file_path(&self.download_path)
+        );
+
         // Download the SHASUMS256.txt file
         let shasums_url = get_nodejs_url(version, host, "SHASUMS256.txt");
         let shasums_path = self
@@ -172,8 +199,19 @@ impl Tool for NodeTool {
 
         download_file_from_url(&shasums_url, &shasums_path).await?;
 
+        debug!(
+            target: "toolchain:node",
+            "Verifying shasum against {}",
+            color::url(&shasums_url),
+        );
+
         // Verify the binary
         if let Err(error) = verify_shasum(&download_url, &self.download_path, &shasums_path) {
+            error!(
+                target: "toolchain:node",
+                "Shasum verification has failed. The downloaded file has been deleted, please try again."
+            );
+
             fs::remove_file(&self.download_path)?;
 
             return Err(error);
@@ -183,10 +221,40 @@ impl Tool for NodeTool {
     }
 
     async fn is_installed(&self) -> Result<bool, ToolchainError> {
-        Ok(self.install_dir.exists() && self.get_installed_version().await? == self.config.version)
+        let installed = self.install_dir.exists();
+        let correct_version = self.get_installed_version().await? == self.config.version;
+
+        if installed && correct_version {
+            debug!(
+                target: "toolchain:node",
+                "Download has already been installed and is on the correct version",
+            );
+
+            return Ok(true);
+        }
+
+        if !installed {
+            debug!(
+                target: "toolchain:node",
+                "Download has not been installed, attempting to install",
+            );
+        } else if !correct_version {
+            debug!(
+                target: "toolchain:node",
+                "Download has been installed, but is on the wrong version, attempting to reinstall",
+            );
+        }
+
+        Ok(false)
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        debug!(
+            target: "toolchain:node",
+            "Unpacking download and installing to {}",
+            color::file_path(&self.install_dir)
+        );
+
         // Open .tar.gz file
         let tar_gz = fs::File::open(&self.download_path)?;
 

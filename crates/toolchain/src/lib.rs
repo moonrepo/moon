@@ -4,10 +4,12 @@ mod tool;
 pub mod tools;
 
 use dirs::home_dir as get_home_dir;
-use monolith_config::constants;
+use log::{debug, trace};
+use monolith_config::constants::CONFIG_DIRNAME;
 use monolith_config::workspace::{
     NpmConfig, PackageManager as PM, PnpmConfig, WorkspaceConfig, YarnConfig,
 };
+use monolith_logger::color;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tool::PackageManager;
@@ -28,6 +30,8 @@ fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     } else {
         fs::create_dir(dir)?;
     }
+
+    trace!(target: "toolchain", "Created directory {}", color::file_path(dir));
 
     Ok(())
 }
@@ -63,9 +67,15 @@ impl Toolchain {
         base_dir: &Path,
         root_dir: &Path,
     ) -> Result<Toolchain, ToolchainError> {
-        let dir = base_dir.join(constants::CONFIG_DIRNAME);
+        let dir = base_dir.join(CONFIG_DIRNAME);
         let temp_dir = dir.join("temp");
         let tools_dir = dir.join("tools");
+
+        debug!(
+            target: "toolchain",
+            "Creating toolchain at {}",
+            color::file_path(&dir)
+        );
 
         create_dir(&dir)?;
         create_dir(&temp_dir)?;
@@ -128,6 +138,11 @@ impl Toolchain {
 
     /// Download and install all tools into the toolchain.
     pub async fn setup(&self) -> Result<(), ToolchainError> {
+        debug!(
+            target: "toolchain",
+            "Setting up toolchain, downloading and installing tools",
+        );
+
         self.load_tool(self.get_node()).await?;
         self.load_tool(self.get_npm()).await?;
         self.load_tool(self.get_npx()).await?;
@@ -145,6 +160,11 @@ impl Toolchain {
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&self) -> Result<(), ToolchainError> {
+        debug!(
+            target: "toolchain",
+            "Tearing down toolchain, uninstalling tools",
+        );
+
         if self.yarn.is_some() {
             self.unload_tool(self.get_yarn().unwrap()).await?;
         }

@@ -5,6 +5,8 @@ use std::fs;
 use std::io;
 use std::path::Path;
 // use std::process::Stdio;
+use log::trace;
+use monolith_logger::color;
 use tokio::process::Command;
 
 pub fn is_ci() -> bool {
@@ -18,7 +20,12 @@ pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(),
         args.join(" ")
     );
 
-    println!("Running command `{}` in {}", command_line, cwd.display());
+    trace!(
+        target: "toolchain",
+        "Running command {} in {}",
+        color::shell(&command_line),
+        color::file_path(cwd),
+    );
 
     Command::new(bin)
         .args(args)
@@ -44,6 +51,12 @@ pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(),
 }
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
+    trace!(
+        target: "toolchain",
+        "Extracting binary version with {}",
+        color::shell(&format!("{} --version", bin.to_string_lossy())),
+    );
+
     let output = Command::new(bin)
         .args(["--version"])
         // .stdout(Stdio::null()) // TODO dont log to console
@@ -69,7 +82,16 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
 
     io::copy(&mut file, &mut sha)?;
 
-    Ok(format!("{:x}", sha.finalize()))
+    let hash = format!("{:x}", sha.finalize());
+
+    trace!(
+        target: "toolchain",
+        "Calculating sha256 for file {} -> {}",
+        color::file_path(path),
+        color::symbol(&hash)
+    );
+
+    Ok(hash)
 }
 
 pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), ToolchainError> {

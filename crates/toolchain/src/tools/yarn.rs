@@ -3,7 +3,9 @@ use crate::helpers::{exec_command, get_bin_version, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
+use log::debug;
 use monolith_config::workspace::YarnConfig;
+use monolith_logger::color;
 use std::env::consts;
 use std::path::PathBuf;
 
@@ -27,6 +29,12 @@ impl YarnTool {
             bin_path.push("bin/yarn");
         }
 
+        debug!(
+            target: "toolchain:yarn",
+            "Creating tool at {}",
+            color::file_path(&bin_path)
+        );
+
         Ok(YarnTool {
             bin_path,
             config: config.to_owned(),
@@ -42,6 +50,11 @@ impl YarnTool {
 #[async_trait]
 impl Tool for YarnTool {
     fn is_downloaded(&self) -> bool {
+        debug!(
+            target: "toolchain:yarn",
+            "No download required as it comes bundled with Node.js"
+        );
+
         true
     }
 
@@ -50,7 +63,22 @@ impl Tool for YarnTool {
     }
 
     async fn is_installed(&self) -> Result<bool, ToolchainError> {
-        Ok(self.bin_path.exists() && self.get_installed_version().await? == self.config.version)
+        let installed = self.bin_path.exists();
+        let correct_version = self.get_installed_version().await? == self.config.version;
+
+        if correct_version {
+            debug!(
+                target: "toolchain:yarn",
+                "Package has been installed and is on the correct version",
+            );
+        } else {
+            debug!(
+                target: "toolchain:yarn",
+                "Package is on the wrong version, attempting to reinstall",
+            );
+        }
+
+        Ok(installed && correct_version)
     }
 
     // Yarn is installed through npm, but only v1 exists in the npm registry,
@@ -62,13 +90,28 @@ impl Tool for YarnTool {
         let npm = toolchain.get_npm();
 
         if self.is_v1() {
-            // npm install -g yarn@1.x.x
+            debug!(
+                target: "toolchain:yarn",
+                "Installing package with {}",
+                color::shell(&format!("npm install -g yarn@{}", self.config.version))
+            );
+
             npm.add_global_dep("yarn", &self.config.version).await?;
         } else {
-            // npm install -g yarn@latest
+            debug!(
+                target: "toolchain:yarn",
+                "Installing legacy package with {}",
+                color::shell("npm install -g yarn@latest")
+            );
+
             npm.add_global_dep("yarn", "latest").await?;
 
-            // yarn set version 3.x.x
+            debug!(
+                target: "toolchain:yarn",
+                "Installing package with {}",
+                color::shell(&format!("yarn set version {}", self.config.version))
+            );
+
             exec_command(
                 self.get_bin_path(),
                 vec!["set", "version", &self.config.version],

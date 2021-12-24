@@ -3,7 +3,9 @@ use crate::helpers::{exec_command, get_bin_version, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
+use log::debug;
 use monolith_config::workspace::NpmConfig;
+use monolith_logger::color;
 use std::env::consts;
 use std::path::PathBuf;
 
@@ -26,6 +28,12 @@ impl NpmTool {
         } else {
             bin_path.push("bin/npm");
         }
+
+        debug!(
+            target: "toolchain:npm",
+            "Creating tool at {}",
+            color::file_path(&bin_path)
+        );
 
         Ok(NpmTool {
             bin_path,
@@ -51,6 +59,11 @@ impl NpmTool {
 #[async_trait]
 impl Tool for NpmTool {
     fn is_downloaded(&self) -> bool {
+        debug!(
+            target: "toolchain:npm",
+            "No download required as it comes bundled with Node.js"
+        );
+
         true
     }
 
@@ -59,11 +72,31 @@ impl Tool for NpmTool {
     }
 
     async fn is_installed(&self) -> Result<bool, ToolchainError> {
-        Ok(self.bin_path.exists() && self.get_installed_version().await? == self.config.version)
+        let installed = self.bin_path.exists();
+        let correct_version = self.get_installed_version().await? == self.config.version;
+
+        if correct_version {
+            debug!(
+                target: "toolchain:npm",
+                "Package has been installed and is on the correct version",
+            );
+        } else {
+            debug!(
+                target: "toolchain:npm",
+                "Package is on the wrong version, attempting to reinstall",
+            );
+        }
+
+        Ok(installed && correct_version)
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        // npm install -g npm
+        debug!(
+            target: "toolchain:npm",
+            "Installing package with {}",
+            color::shell(&format!("npm install -g npm@{}", self.config.version))
+        );
+
         self.add_global_dep("npm", self.config.version.as_str())
             .await?;
 

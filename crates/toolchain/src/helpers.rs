@@ -5,8 +5,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 // use std::process::Stdio;
-use log::trace;
-use monolith_logger::color;
+use monolith_logger::{color, trace};
 use tokio::process::Command;
 
 pub fn is_ci() -> bool {

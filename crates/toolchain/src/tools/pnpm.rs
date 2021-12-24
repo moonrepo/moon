@@ -3,9 +3,8 @@ use crate::helpers::{exec_command, get_bin_version};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
-use log::debug;
 use monolith_config::workspace::PnpmConfig;
-use monolith_logger::color;
+use monolith_logger::{color, debug};
 use std::env::consts;
 use std::path::PathBuf;
 

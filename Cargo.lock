@@ -916,7 +916,6 @@ dependencies = [
  "async-trait",
  "dirs",
  "flate2",
- "log",
  "mockito",
  "monolith_config",
  "monolith_logger",

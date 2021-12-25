@@ -4,6 +4,7 @@ use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use monolith_config::workspace::PnpmConfig;
+use monolith_logger::{color, debug, trace};
 use std::env::consts;
 use std::path::PathBuf;
 
@@ -27,6 +28,12 @@ impl PnpmTool {
             bin_path.push("bin/pnpm");
         }
 
+        debug!(
+            target: "moon:toolchain:pnpm",
+            "Creating tool at {}",
+            color::file_path(&bin_path)
+        );
+
         Ok(PnpmTool {
             bin_path,
             config: config.to_owned(),
@@ -42,15 +49,44 @@ impl Tool for PnpmTool {
     }
 
     async fn download(&self, _host: Option<&str>) -> Result<(), ToolchainError> {
+        trace!(
+            target: "moon:toolchain:pnpm",
+            "No download required as it comes bundled with Node.js"
+        );
+
         Ok(()) // This is handled by node
     }
 
     async fn is_installed(&self) -> Result<bool, ToolchainError> {
-        Ok(self.bin_path.exists() && self.get_installed_version().await? == self.config.version)
+        if self.bin_path.exists() {
+            let version = self.get_installed_version().await?;
+
+            if version == self.config.version {
+                debug!(
+                    target: "moon:toolchain:pnpm",
+                    "Package has already been installed and is on the correct version",
+                );
+
+                return Ok(true);
+            }
+
+            debug!(
+                target: "moon:toolchain:pnpm",
+                "Package is on the wrong version ({}), attempting to reinstall",
+                version
+            );
+        }
+
+        Ok(false)
     }
 
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        // npm install -g pnpm
+        debug!(
+            target: "moon:toolchain:pnpm",
+            "Installing package with {}",
+            color::shell(&format!("npm install -g pnpm@{}", self.config.version))
+        );
+
         toolchain
             .get_npm()
             .add_global_dep("pnpm", self.config.version.as_str())

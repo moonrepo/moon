@@ -2,6 +2,7 @@ mod errors;
 
 use errors::WorkspaceError;
 use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
+use monolith_logger::{color, debug, trace};
 use monolith_project::ProjectGraph;
 use monolith_toolchain::Toolchain;
 use std::env;
@@ -11,6 +12,12 @@ use std::path::{Path, PathBuf};
 /// configuration folder, starting from the current working directory.
 fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
     let config_dir = current_dir.join(constants::CONFIG_DIRNAME);
+
+    trace!(
+        target: "moon:workspace",
+        "Attempting to find workspace root at {}",
+        color::file_path(&current_dir),
+    );
 
     if config_dir.exists() {
         return Some(current_dir);
@@ -27,6 +34,13 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
 fn find_package_json(root_dir: &Path) -> Result<PathBuf, WorkspaceError> {
     let package_json_path = root_dir.join("package.json");
 
+    trace!(
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::path("package.json"),
+        color::file_path(root_dir),
+    );
+
     if !package_json_path.exists() {
         return Err(WorkspaceError::MissingPackageJson);
     }
@@ -39,6 +53,18 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_PROJECT_FILENAME);
+
+    trace!(
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::path(
+            &format!("{}/{}",
+                constants::CONFIG_DIRNAME,
+                constants::CONFIG_PROJECT_FILENAME,
+            )
+        ),
+        color::file_path(root_dir)
+    );
 
     if !config_path.exists() {
         return Err(WorkspaceError::MissingGlobalProjectConfigFile);
@@ -55,6 +81,18 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_WORKSPACE_FILENAME);
+
+    trace!(
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::path(
+            &format!("{}/{}",
+                constants::CONFIG_DIRNAME,
+                constants::CONFIG_WORKSPACE_FILENAME,
+            )
+        ),
+        color::file_path(root_dir)
+    );
 
     if !config_path.exists() {
         return Err(WorkspaceError::MissingWorkspaceConfigFile);
@@ -92,17 +130,22 @@ impl Workspace {
     /// Will locate the workspace root and load available configuration files.
     pub fn load() -> Result<Workspace, WorkspaceError> {
         let working_dir = env::current_dir().unwrap();
-
-        // Find root dir
         let root_dir = match find_workspace_root(working_dir.clone()) {
             Some(dir) => dir.canonicalize().unwrap(),
             None => return Err(WorkspaceError::MissingConfigDir),
         };
-        let package_json_path = find_package_json(&root_dir)?;
+
+        debug!(
+            target: "moon:workspace",
+            "Creating workspace at {} (from working directory {})",
+            color::file_path(&root_dir),
+            color::file_path(&working_dir)
+        );
 
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
+        let package_json_path = find_package_json(&root_dir)?;
 
         // Setup components
         let toolchain = Toolchain::new(&config, &root_dir)?;

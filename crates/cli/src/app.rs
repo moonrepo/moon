@@ -1,7 +1,24 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
 use crate::commands::bin::BinTools;
+use clap::ArgEnum;
 use clap::{AppSettings, Parser, Subcommand};
+
+#[derive(ArgEnum, Clone, Debug)]
+pub enum LogLevel {
+    Off,
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl Default for LogLevel {
+    fn default() -> Self {
+        LogLevel::Info
+    }
+}
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
@@ -61,9 +78,14 @@ pub enum Commands {
     about = "Take your monorepo to the moon!",
     version
 )]
+#[clap(global_setting(AppSettings::DisableColoredHelp))]
 #[clap(global_setting(AppSettings::DisableHelpSubcommand))]
+#[clap(global_setting(AppSettings::DontCollapseArgsInUsage))]
 #[clap(global_setting(AppSettings::PropagateVersion))]
 pub struct App {
+    #[clap(arg_enum, long, short = 'L', help = "Lowest log level to output")]
+    pub log_level: Option<LogLevel>,
+
     #[clap(subcommand)]
     pub command: Commands,
 }

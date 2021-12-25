@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 monolith_config = { path = "../config" }
+monolith_logger = { path = "../logger" }
 monolith_project = { path = "../project" }
 monolith_toolchain = { path = "../toolchain" }
 thiserror = "1.0"

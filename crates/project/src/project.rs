@@ -2,6 +2,7 @@ use crate::errors::ProjectError;
 use monolith_config::constants::CONFIG_PROJECT_FILENAME;
 use monolith_config::project::{FileGroups, ProjectID};
 use monolith_config::{GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig};
+use monolith_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -14,6 +15,13 @@ fn load_project_config(
     project_path: &str,
 ) -> Result<Option<ProjectConfig>, ProjectError> {
     let config_path = root_dir.join(&project_path).join(CONFIG_PROJECT_FILENAME);
+
+    trace!(
+        target: "moon:project",
+        "Attempting to find {} in {}",
+        color::path("project.yml"),
+        color::file_path(&root_dir.join(&project_path)),
+    );
 
     if config_path.exists() {
         return match ProjectConfig::load(&config_path) {
@@ -34,6 +42,13 @@ fn load_package_json(
     project_path: &str,
 ) -> Result<Option<PackageJsonValue>, ProjectError> {
     let package_path = root_dir.join(&project_path).join("package.json");
+
+    trace!(
+        target: "moon:project",
+        "Attempting to find {} in {}",
+        color::path("package.json"),
+        color::file_path(&root_dir.join(&project_path)),
+    );
 
     if package_path.exists() {
         return match PackageJson::load(&package_path) {
@@ -79,6 +94,14 @@ impl Project {
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
         let dir = root_dir.join(&location);
+
+        debug!(
+            target: "moon:project",
+            "Loading project from {} (id = {}, path = {})",
+            color::file_path(&dir),
+            color::symbol(id),
+            color::path(location),
+        );
 
         if !dir.exists() {
             return Err(ProjectError::MissingFilePath(String::from(location)));

@@ -1,10 +1,10 @@
 use crate::errors::ToolchainError;
+use monolith_logger::{color, trace};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
-// use std::process::Stdio;
 use tokio::process::Command;
 
 pub fn is_ci() -> bool {
@@ -18,38 +18,23 @@ pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(),
         args.join(" ")
     );
 
-    println!("Running command `{}` in {}", command_line, cwd.display());
+    trace!(
+        target: "moon:toolchain",
+        "Running command {} in {}",
+        color::shell(&command_line),
+        color::file_path(cwd),
+    );
 
-    Command::new(bin)
-        .args(args)
-        .current_dir(cwd)
-        .spawn()?
-        .wait()
-        .await?;
+    let output = Command::new(bin).args(args).current_dir(cwd).output();
 
-    // TODO: map these errors for a better response?
-
-    // let mut child = Command::new(bin)
-    // 	.args(args)
-    // 	.current_dir(cwd)
-    // 	.spawn()
-    // 	.map_err(|error| ToolchainError::CommandFailed(command_line.clone(), error.sds))?;
-
-    // child
-    // 	.wait()
-    // 	.await
-    // 	.map_err(|error| ToolchainError::CommandFailed(command_line.clone()))?;
+    output.await?;
 
     Ok(())
 }
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
-    let output = Command::new(bin)
-        .args(["--version"])
-        // .stdout(Stdio::null()) // TODO dont log to console
-        .spawn()?
-        .wait_with_output()
-        .await?;
+    let output = Command::new(bin).args(["--version"]).output();
+    let output = output.await?;
 
     let mut version = String::from_utf8(output.stdout)
         .unwrap_or_else(|_| String::from("0.0.0"))
@@ -69,7 +54,16 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
 
     io::copy(&mut file, &mut sha)?;
 
-    Ok(format!("{:x}", sha.finalize()))
+    let hash = format!("{:x}", sha.finalize());
+
+    trace!(
+        target: "moon:toolchain",
+        "Calculating sha256 for file {} -> {}",
+        color::file_path(path),
+        color::symbol(&hash)
+    );
+
+    Ok(hash)
 }
 
 pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), ToolchainError> {

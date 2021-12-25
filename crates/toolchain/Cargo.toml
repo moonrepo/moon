@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 monolith_config = { path = "../config" }
+monolith_logger = { path = "../logger" }
 async-trait = "0.1"
 dirs = "4.0"
 flate2 = "1.0"

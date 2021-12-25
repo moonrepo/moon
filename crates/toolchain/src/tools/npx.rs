@@ -3,6 +3,7 @@ use crate::helpers::{exec_command, get_bin_version};
 use crate::tool::Tool;
 use crate::Toolchain;
 use async_trait::async_trait;
+use monolith_logger::{color, debug, trace};
 use std::env::consts;
 use std::path::{Path, PathBuf};
 
@@ -23,6 +24,12 @@ impl NpxTool {
         } else {
             bin_path.push("bin/npx");
         }
+
+        debug!(
+            target: "moon:toolchain:npx",
+            "Creating tool at {}",
+            color::file_path(&bin_path)
+        );
 
         NpxTool {
             bin_path,
@@ -53,10 +60,20 @@ impl Tool for NpxTool {
     }
 
     async fn download(&self, _host: Option<&str>) -> Result<(), ToolchainError> {
+        trace!(
+            target: "moon:toolchain:npx",
+            "No download required as it comes bundled with Node.js"
+        );
+
         Ok(()) // This is handled by node
     }
 
     async fn is_installed(&self) -> Result<bool, ToolchainError> {
+        debug!(
+            target: "moon:toolchain:npx",
+            "Package has already been installed and is on the correct version",
+        );
+
         Ok(self.bin_path.exists())
     }
 

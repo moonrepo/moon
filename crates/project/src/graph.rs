@@ -3,6 +3,7 @@ use crate::errors::ProjectError;
 use crate::project::Project;
 use itertools::Itertools;
 use monolith_config::{GlobalProjectConfig, ProjectID};
+use monolith_logger::{color, debug, trace};
 use solvent::{DepGraph, SolventError};
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
@@ -37,6 +38,12 @@ impl ProjectGraph {
     ) -> ProjectGraph {
         let mut graph = DepGraph::new();
         graph.register_node(ROOT_NODE_ID.to_owned());
+
+        debug!(
+            target: "moon:project-graph",
+            "Creating project graph with {} projects",
+            projects_config.len(),
+        );
 
         ProjectGraph {
             global_config,
@@ -111,8 +118,20 @@ impl ProjectGraph {
     ) -> Result<(), ProjectError> {
         // Already loaded, abort early
         if projects.contains_key(id) || id == ROOT_NODE_ID {
+            trace!(
+                target: "moon:project-graph",
+                "Project {} already exists in the project graph",
+                color::symbol(id),
+            );
+
             return Ok(());
         }
+
+        trace!(
+            target: "moon:project-graph",
+            "Project {} does not exist in the project graph, attempting to load",
+            color::symbol(id),
+        );
 
         // Create project based on ID and location
         let location = match self.projects_config.get(id) {
@@ -128,11 +147,20 @@ impl ProjectGraph {
         // Insert the project into the graph
         graph.register_node(id.to_owned());
 
-        for dep in depends_on {
-            // Ensure the dependent project is also loaded
-            self.load(projects, graph, dep.as_str())?;
+        if !depends_on.is_empty() {
+            trace!(
+                target: "moon:project-graph",
+                "Adding dependencies {} to project {}",
+                depends_on.clone().into_iter().map(|d| color::symbol(&d)).join(", "),
+                color::symbol(id),
+            );
 
-            graph.register_dependency(id.to_owned(), dep);
+            for dep in depends_on {
+                // Ensure the dependent project is also loaded
+                self.load(projects, graph, dep.as_str())?;
+
+                graph.register_dependency(id.to_owned(), dep);
+            }
         }
 
         Ok(())

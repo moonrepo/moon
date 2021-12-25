@@ -2,6 +2,7 @@
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
+use crate::task::Tasks;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -63,6 +64,9 @@ pub struct ProjectConfig {
 
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
+
+    // TODO: validate???
+    pub tasks: Option<Tasks>,
 }
 
 impl Provider for ProjectConfig {

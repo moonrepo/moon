@@ -29,3 +29,6 @@ dependsOn: []
 # OPTIONAL: File groups are a mechanism for grouping similar types of files within
 # a project using file glob patterns. View `.monolith/project.yml` for more info.
 fileGroups: {}
+
+# TODO
+tasks: {}

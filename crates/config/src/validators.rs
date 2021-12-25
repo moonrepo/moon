@@ -37,3 +37,25 @@ pub fn validate_child_relative_path(key: &str, value: &str) -> Result<(), Valida
 
     Ok(())
 }
+
+// Validate the value is a valid child relative file system path or root path.
+// Will fail on parent relative paths ("../") and absolute paths.
+pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), ValidationError> {
+    let path = Path::new(value);
+
+    if (path.has_root() || path.is_absolute()) && !path.starts_with("/") {
+        return Err(create_validation_error(
+            "no_absolute",
+            key,
+            String::from("Absolute paths are not supported. Root paths must start with `/`."),
+        ));
+    } else if path.starts_with("..") {
+        return Err(create_validation_error(
+            "no_parent_relative",
+            key,
+            String::from("Parent relative paths are not supported."),
+        ));
+    }
+
+    Ok(())
+}

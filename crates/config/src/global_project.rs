@@ -3,6 +3,7 @@
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
 use crate::project::FileGroups;
+use crate::task::Tasks;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -16,6 +17,9 @@ use validator::{Validate, ValidationErrors};
 pub struct GlobalProjectConfig {
     #[serde(rename = "fileGroups")]
     pub file_groups: FileGroups,
+
+    // TODO: validate???
+    pub tasks: Option<Tasks>,
 }
 
 impl Provider for GlobalProjectConfig {

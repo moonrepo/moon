@@ -30,3 +30,6 @@ fileGroups:
     - 'static/**/*'
     - '**/*.s?css'
     - '**/*.mdx?'
+
+# TODO
+tasks: {}

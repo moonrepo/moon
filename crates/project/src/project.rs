@@ -3,11 +3,14 @@ use monolith_config::constants::CONFIG_PROJECT_FILENAME;
 use monolith_config::project::{FileGroups, ProjectID};
 use monolith_config::{GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig};
 use monolith_logger::{color, debug, trace};
+use monolith_task::Task;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 pub type ProjectsMap = HashMap<ProjectID, Project>;
+
+pub type TasksMap = HashMap<String, Task>;
 
 // project.yml
 fn load_project_config(
@@ -63,6 +66,53 @@ fn load_package_json(
     Ok(None)
 }
 
+fn create_file_groups_from_config(
+    config: &Option<ProjectConfig>,
+    global_config: &GlobalProjectConfig,
+) -> FileGroups {
+    let mut file_groups = global_config.file_groups.clone();
+
+    // Override global configs with local
+    if let Some(local_config) = config {
+        if let Some(local_file_groups) = &local_config.file_groups {
+            file_groups.extend(local_file_groups.clone());
+        }
+    }
+
+    file_groups
+}
+
+fn create_tasks_from_config(
+    config: &Option<ProjectConfig>,
+    global_config: &GlobalProjectConfig,
+) -> TasksMap {
+    let mut tasks = HashMap::<String, Task>::new();
+
+    // Add global tasks first
+    if let Some(global_tasks) = &global_config.tasks {
+        for (name, task_config) in global_tasks {
+            tasks.insert(name.clone(), Task::from_config(name, task_config));
+        }
+    }
+
+    // Add local tasks second
+    if let Some(local_config) = config {
+        if let Some(local_tasks) = &local_config.tasks {
+            for (name, task_config) in local_tasks {
+                if tasks.contains_key(name) {
+                    // Task already exists, so merge with it
+                    tasks.get_mut(name).unwrap().merge(task_config);
+                } else {
+                    // Insert a new task
+                    tasks.insert(name.clone(), Task::from_config(name, task_config));
+                }
+            }
+        }
+    }
+
+    tasks
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
@@ -84,6 +134,9 @@ pub struct Project {
     /// Loaded "package.json", if it exists.
     #[serde(skip)]
     pub package_json: Option<PackageJsonValue>,
+
+    /// Tasks specific to the project. Inherits all tasks from the global config.
+    pub tasks: TasksMap,
 }
 
 impl Project {
@@ -109,14 +162,8 @@ impl Project {
 
         let config = load_project_config(root_dir, location)?;
         let package_json = load_package_json(root_dir, location)?;
-        let mut file_groups = global_config.file_groups.clone();
-
-        // Override global configs with local
-        if let Some(local_config) = &config {
-            if let Some(local_file_groups) = &local_config.file_groups {
-                file_groups.extend(local_file_groups.clone());
-            }
-        }
+        let file_groups = create_file_groups_from_config(&config, global_config);
+        let tasks = create_tasks_from_config(&config, global_config);
 
         Ok(Project {
             config,
@@ -125,6 +172,7 @@ impl Project {
             id: String::from(id),
             location: String::from(location),
             package_json,
+            tasks,
         })
     }
 

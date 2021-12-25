@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 monolith_config = { path = "../config" }
 monolith_logger = { path = "../logger" }
+serde = { version = "1.0", features = ["derive"] }
 thiserror = "1.0"

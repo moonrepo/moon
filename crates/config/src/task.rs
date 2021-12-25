@@ -34,14 +34,25 @@ impl Default for TaskType {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TaskMergeStrategy {
+    Append,
+    Prepend,
+    Replace,
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct TaskOptionsConfig {
+    pub merge_strategy: Option<TaskMergeStrategy>,
+
     pub retry_count: Option<u8>,
 }
 
 impl Default for TaskOptionsConfig {
     fn default() -> Self {
         TaskOptionsConfig {
+            merge_strategy: Some(TaskMergeStrategy::Append),
             retry_count: Some(0),
         }
     }

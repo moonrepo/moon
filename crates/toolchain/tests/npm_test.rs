@@ -44,16 +44,10 @@ async fn generates_paths() {
         .join("1.0.0");
 
     if env::consts::OS == "windows" {
-        bin_path = bin_path.join("npm.exe");
+        bin_path = bin_path.join("npm");
     } else {
         bin_path = bin_path.join("bin").join("npm");
     }
-
-    println!(
-        "bin = {}, {}",
-        npm.get_bin_path().to_str().unwrap(),
-        bin_path.to_str().unwrap()
-    );
 
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(npm.get_bin_path().to_str().unwrap()));

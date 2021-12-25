@@ -68,15 +68,8 @@ async fn generates_paths() {
         bin_path = bin_path.join("bin").join("node");
     }
 
-    println!("bin = {}", node.get_bin_path().to_str().unwrap());
-
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(node.get_bin_path().to_str().unwrap()));
-
-    println!(
-        "download = {}",
-        node.get_download_path().unwrap().to_str().unwrap()
-    );
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")

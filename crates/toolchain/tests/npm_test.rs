@@ -3,6 +3,7 @@ use moon_toolchain::tools::npm::NpmTool;
 use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
 use std::env;
+use std::path::PathBuf;
 
 async fn create_npm_tool() -> (NpmTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
@@ -27,10 +28,28 @@ async fn create_npm_tool() -> (NpmTool, assert_fs::TempDir) {
 async fn generates_paths() {
     let (npm, temp_dir) = create_npm_tool().await;
 
-    assert!(predicates::str::ends_with(".moon/tools/node/1.0.0")
-        .eval(npm.get_install_dir().to_str().unwrap()));
+    assert!(predicates::str::ends_with(
+        PathBuf::from(".moon")
+            .join("tools")
+            .join("node")
+            .join("1.0.0")
+            .to_str()
+            .unwrap()
+    )
+    .eval(npm.get_install_dir().to_str().unwrap()));
 
-    assert!(predicates::str::ends_with(".moon/tools/node/1.0.0/bin/npm")
+    let mut bin_path = PathBuf::from(".moon")
+        .join("tools")
+        .join("node")
+        .join("1.0.0");
+
+    if env::consts::OS == "windows" {
+        bin_path = bin_path.join("npm.exe");
+    } else {
+        bin_path = bin_path.join("bin").join("npm");
+    }
+
+    assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(npm.get_bin_path().to_str().unwrap()));
 
     temp_dir.close().unwrap();

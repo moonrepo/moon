@@ -909,6 +909,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "monolith_task"
+version = "0.1.0"
+dependencies = [
+ "monolith_config",
+ "monolith_logger",
+ "thiserror",
+]
+
+[[package]]
 name = "monolith_toolchain"
 version = "0.1.0"
 dependencies = [

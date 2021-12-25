@@ -1,0 +1,9 @@
+[package]
+name = "monolith_task"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+monolith_config = { path = "../config" }
+monolith_logger = { path = "../logger" }
+thiserror = "1.0"

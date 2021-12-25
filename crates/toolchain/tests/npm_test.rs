@@ -49,6 +49,12 @@ async fn generates_paths() {
         bin_path = bin_path.join("bin").join("npm");
     }
 
+    println!(
+        "bin = {}, {}",
+        npm.get_bin_path().to_str().unwrap(),
+        bin_path.to_str().unwrap()
+    );
+
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(npm.get_bin_path().to_str().unwrap()));
 

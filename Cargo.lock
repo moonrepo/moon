@@ -893,7 +893,6 @@ dependencies = [
  "chrono",
  "fern",
  "log",
- "thiserror",
 ]
 
 [[package]]

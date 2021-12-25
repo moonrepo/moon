@@ -3,40 +3,59 @@
 
 use ansi_term::Color::Fixed;
 use log::Level;
+use std::env;
 use std::path::Path;
 
-pub fn path(path: &str) -> String {
-    // Teal
-    Fixed(37).paint(path).to_string()
-}
+fn paint(color: u8, value: &str) -> String {
+    if no_color() || supports_color() < 2 {
+        return value.to_owned();
+    }
 
-pub fn file_path(path: &Path) -> String {
-    // Teal
-    Fixed(38).paint(path.to_string_lossy()).to_string()
-}
-
-pub fn url(url: &str) -> String {
-    // Blue
-    Fixed(39).paint(url).to_string()
-}
-
-pub fn shell(url: &str) -> String {
-    // Pink
-    Fixed(183).paint(url).to_string()
-}
-
-pub fn symbol(url: &str) -> String {
-    // Purple
-    Fixed(111).paint(url).to_string()
+    Fixed(color).paint(value).to_string()
 }
 
 pub fn muted(value: &str) -> String {
-    // Gray
-    Fixed(238).paint(value).to_string()
+    paint(238, value) // Gray
+}
+
+pub fn success(value: &str) -> String {
+    paint(34, value) // Green
+}
+
+pub fn failure(value: &str) -> String {
+    paint(161, value) // Red
+}
+
+pub fn invalid(value: &str) -> String {
+    paint(185, value) // Yellow
+}
+
+pub fn path(path: &str) -> String {
+    paint(36, path) // Teal
+}
+
+pub fn file_path(path: &Path) -> String {
+    paint(38, &path.to_string_lossy()) // Turquoise
+}
+
+pub fn url(url: &str) -> String {
+    paint(39, url) // Blue
+}
+
+pub fn shell(cmd: &str) -> String {
+    paint(183, cmd) // Pink
+}
+
+pub fn symbol(value: &str) -> String {
+    paint(111, value) // Purple
 }
 
 // Based on https://github.com/debug-js/debug/blob/master/src/common.js#L41
 pub fn target(value: &str) -> String {
+    if no_color() {
+        return value.to_owned();
+    }
+
     let mut hash: u32 = 0;
 
     for b in value.bytes() {
@@ -44,10 +63,18 @@ pub fn target(value: &str) -> String {
     }
 
     // Lot of casting going on here...
-    let index = i32::abs(hash as i32) as usize % COLOR_LIST.len();
-    let color = COLOR_LIST[index];
+    if supports_color() >= 2 {
+        let index = i32::abs(hash as i32) as usize % COLOR_LIST.len();
 
-    Fixed(color).bold().paint(value).to_string()
+        return Fixed(COLOR_LIST[index]).bold().paint(value).to_string();
+    }
+
+    let index = i32::abs(hash as i32) as usize % COLOR_LIST_UNSUPPORTED.len();
+
+    Fixed(COLOR_LIST_UNSUPPORTED[index])
+        .bold()
+        .paint(value)
+        .to_string()
 }
 
 pub fn log_level(level: Level) -> String {
@@ -59,9 +86,45 @@ pub fn log_level(level: Level) -> String {
         Level::Trace => 112, // Lime
     };
 
-    Fixed(color)
-        .paint(level.as_str().to_lowercase())
-        .to_string()
+    paint(color, &level.as_str().to_lowercase())
+}
+
+pub fn no_color() -> bool {
+    env::var("NO_COLOR").is_ok()
+}
+
+// 0 = no
+// 1 = 8
+// 2 = 256
+// 3 = 16m
+pub fn supports_color() -> u8 {
+    if no_color() {
+        return 0;
+    }
+
+    if let Ok(var) = env::var("TERM") {
+        if var == "dumb" {
+            return 0;
+        } else if var.contains("truecolor") {
+            return 3;
+        } else if var.contains("256") {
+            return 2;
+        }
+    }
+
+    if let Ok(var) = env::var("COLORTERM") {
+        if var == "truecolor" || var == "24bit" {
+            return 3;
+        } else {
+            return 1;
+        }
+    }
+
+    if env::var("CI").is_ok() {
+        return 2;
+    }
+
+    0
 }
 
 pub const COLOR_LIST: [u8; 76] = [

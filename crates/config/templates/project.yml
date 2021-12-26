@@ -30,5 +30,6 @@ dependsOn: []
 # a project using file glob patterns. View `.monolith/project.yml` for more info.
 fileGroups: {}
 
-# TODO
+# OPTIONAL: A task is an action that is ran within the context of a project, and
+# wraps around an npm or shell command. View `.monolith/project.yml` for more info.
 tasks: {}

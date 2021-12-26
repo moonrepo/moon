@@ -31,5 +31,39 @@ fileGroups:
     - '**/*.s?css'
     - '**/*.mdx?'
 
-# TODO
-tasks: {}
+# OPTIONAL: A task is an action that is ran within the context of a project, and wraps
+# around an npm or shell command. Tasks that are defined here and inherited by all projects
+# within the workspace, but can be overridden per project.
+#
+# This setting requires a map, where the key is a unique name for the task, and the value is an
+# object of task parameters. Continue reading for an example "test" task.
+tasks:
+  test:
+    # The name of the binary command on your system.
+    command: 'jest'
+
+    # OPTIONAL: List of arguments to pass on the command line when executing the task.
+    args:
+      - '--cache'
+      - '--color'
+      - '--testMatch'
+      - '@glob(tests)'
+
+    # OPTIONAL: List of file paths/globs to calculate whether to execute the task based on files
+    # that have been modified since the last time the task has been ran. By default inputs are
+    # relative from the *project root*, and can reference file groups (above). To reference files
+    # from the workspace root (for example, config files), prefix the path with a "/".
+    inputs:
+      - '@root(sources)'
+      - '@root(tests)'
+      - 'jest.config.*'
+      - '/jest.config.*'
+
+    # OPTIONAL: List of files and folders that are generated as a result of executing this task,
+    # excluding cache related items. By default outputs are relative from the *project root*.
+    # To output files to the workspace root, prefix the path with a "/".
+    outputs: []
+
+    # OPTIONAL: The type of binary to run, and where to locate it.
+    # Accepts "npm" or "shell".
+    type: 'npm'

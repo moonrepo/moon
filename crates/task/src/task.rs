@@ -4,8 +4,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TaskOptions {
+    #[serde(rename = "mergeStrategy")]
     pub merge_strategy: TaskMergeStrategy,
 
+    #[serde(rename = "retryCount")]
     pub retry_count: u8,
 }
 
@@ -35,35 +37,28 @@ pub struct Task {
 
     pub outputs: Vec<String>,
 
+    #[serde(rename = "type")]
     pub type_of: TaskType,
 }
 
 impl Task {
     pub fn from_config(name: &str, config: &TaskConfig) -> Self {
-        let config_options = config
-            .options
-            .as_ref()
-            .map_or_else(TaskOptionsConfig::default, |v| v.clone());
-
-        let options = TaskOptions {
-            merge_strategy: config_options
-                .merge_strategy
-                .as_ref()
-                .map_or_else(|| TaskMergeStrategy::Append, |v| v.clone()),
-            retry_count: config_options.retry_count.unwrap_or_default(),
-        };
+        let cloned_config = config.clone();
+        let cloned_options = cloned_config.options.unwrap_or_default();
 
         Task {
-            args: config.args.as_ref().map_or_else(Vec::new, |v| v.clone()),
-            command: config.command.clone(),
-            inputs: config.inputs.as_ref().map_or_else(Vec::new, |v| v.clone()),
+            args: cloned_config.args.unwrap_or_else(Vec::new),
+            command: cloned_config.command,
+            inputs: cloned_config.inputs.unwrap_or_else(Vec::new),
             name: name.to_owned(),
-            options,
-            outputs: config.outputs.as_ref().map_or_else(Vec::new, |v| v.clone()),
-            type_of: config
-                .type_of
-                .as_ref()
-                .map_or_else(TaskType::default, |v| v.clone()),
+            options: TaskOptions {
+                merge_strategy: cloned_options
+                    .merge_strategy
+                    .unwrap_or(TaskMergeStrategy::Append),
+                retry_count: cloned_options.retry_count.unwrap_or_default(),
+            },
+            outputs: cloned_config.outputs.unwrap_or_else(Vec::new),
+            type_of: cloned_config.type_of.unwrap_or_default(),
         }
     }
 

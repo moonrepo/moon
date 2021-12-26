@@ -1,7 +1,35 @@
 use crate::errors::create_validation_error;
 use semver::Version;
+use std::collections::HashMap;
 use std::path::Path;
-use validator::ValidationError;
+use validator::{Validate, ValidationError, ValidationErrors};
+
+// Extend validator lib
+pub trait VecValidate {
+    fn validate(&self) -> Result<(), ValidationErrors>;
+}
+
+impl<T: Validate> VecValidate for Vec<T> {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        for i in self.iter() {
+            i.validate()?
+        }
+        Ok(())
+    }
+}
+
+pub trait HashMapValidate {
+    fn validate(&self) -> Result<(), ValidationErrors>;
+}
+
+impl<T: Validate> HashMapValidate for HashMap<String, T> {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        for (_, value) in self.iter() {
+            value.validate()?
+        }
+        Ok(())
+    }
+}
 
 // Validate the value is a valid semver version/range.
 pub fn validate_semver_version(key: &str, value: &str) -> Result<(), ValidationError> {

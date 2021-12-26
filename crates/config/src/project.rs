@@ -65,7 +65,6 @@ pub struct ProjectConfig {
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
-    // TODO: validate???
     pub tasks: Option<Tasks>,
 }
 
@@ -166,6 +165,82 @@ mod tests {
                     r#"
 fileGroups:
     sources: 123"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+    }
+
+    mod tasks {
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `tasks`. Expected a map type, received unsigned int `123`."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "tasks: 123")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `tasks.test`. Expected struct TaskConfig type, received unsigned int `123`."
+        )]
+        fn invalid_value_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+tasks:
+    test: 123"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `tasks.test.command`. Expected a string type, received unsigned int `123`."
+        )]
+        fn invalid_value_field() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+fileGroups: {}
+tasks:
+    test:
+        command: 123
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field `tasks.test`. Missing field `command`.")]
+        fn invalid_value_empty_field() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+fileGroups: {}
+tasks:
+    test: {}
+"#,
                 )?;
 
                 super::load_jailed_config()?;

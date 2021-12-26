@@ -19,6 +19,7 @@ fn mock_file_groups() -> FileGroups {
 fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
         file_groups: mock_file_groups(),
+        tasks: None,
     }
 }
 
@@ -54,6 +55,7 @@ fn no_config() {
             file_groups: mock_file_groups(),
             location: String::from("projects/no-config"),
             package_json: None,
+            tasks: HashMap::new(),
         }
     );
 }
@@ -77,6 +79,7 @@ fn empty_config() {
                 depends_on: None,
                 file_groups: None,
                 project: None,
+                tasks: None,
             }),
             dir: root_dir
                 .join("projects/empty-config")
@@ -85,6 +88,7 @@ fn empty_config() {
             file_groups: mock_file_groups(),
             location: String::from("projects/empty-config"),
             package_json: None,
+            tasks: HashMap::new(),
         }
     );
 }
@@ -115,11 +119,13 @@ fn basic_config() {
                     vec![String::from("**/*_test.rs")]
                 )])),
                 project: None,
+                tasks: None,
             }),
             dir: root_dir.join("projects/basic").canonicalize().unwrap(),
             file_groups,
             location: String::from("projects/basic"),
             package_json: None,
+            tasks: HashMap::new(),
         }
     );
 }
@@ -150,11 +156,13 @@ fn advanced_config() {
                     maintainers: vec![String::from("Bruce Wayne")],
                     channel: String::from("#batcave"),
                 }),
+                tasks: None,
             }),
             dir: root_dir.join("projects/advanced").canonicalize().unwrap(),
             file_groups: mock_file_groups(),
             location: String::from("projects/advanced"),
             package_json: None,
+            tasks: HashMap::new(),
         }
     );
 }
@@ -168,6 +176,7 @@ fn overrides_global_file_groups() {
         &root_dir,
         &GlobalProjectConfig {
             file_groups: HashMap::from([(String::from("tests"), vec![String::from("tests/**/*")])]),
+            tasks: None,
         },
     )
     .unwrap();
@@ -183,6 +192,7 @@ fn overrides_global_file_groups() {
                     vec![String::from("**/*_test.rs")]
                 )])),
                 project: None,
+                tasks: None,
             }),
             dir: root_dir.join("projects/basic").canonicalize().unwrap(),
             file_groups: HashMap::from([(
@@ -191,6 +201,7 @@ fn overrides_global_file_groups() {
             )]),
             location: String::from("projects/basic"),
             package_json: None,
+            tasks: HashMap::new(),
         }
     );
 }
@@ -228,6 +239,7 @@ fn has_package_json() {
             file_groups: mock_file_groups(),
             location: String::from("projects/package-json"),
             package_json: Some(PackageJson::from(json).unwrap()),
+            tasks: HashMap::new(),
         }
     );
 }

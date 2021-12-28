@@ -253,7 +253,7 @@ mod tasks {
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {
             args: None,
-            command: command.to_owned(),
+            command: Some(command.to_owned()),
             depends_on: None,
             inputs: None,
             outputs: None,
@@ -362,13 +362,15 @@ mod tasks {
                     String::from("standard"),
                     TaskConfig {
                         args: Some(vec!["--a".to_owned()]),
-                        command: String::from("standard"),
+                        command: Some(String::from("standard")),
                         depends_on: Some(vec!["a:standard".to_owned()]),
                         inputs: Some(vec!["a.*".to_owned()]),
                         outputs: Some(vec!["a".to_owned()]),
                         options: Some(TaskOptionsConfig {
                             merge_strategy: None,
                             retry_count: Some(1),
+                            run_in_ci: Some(true),
+                            run_from_workspace_root: None,
                         }),
                         type_of: None,
                     },
@@ -389,13 +391,15 @@ mod tasks {
                         String::from("standard"),
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
-                            command: String::from("newcmd"),
+                            command: Some(String::from("newcmd")),
                             depends_on: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
                             options: Some(TaskOptionsConfig {
                                 merge_strategy: Some(TaskMergeStrategy::Replace),
                                 retry_count: None,
+                                run_in_ci: None,
+                                run_from_workspace_root: None,
                             }),
                             type_of: Some(TaskType::Shell),
                         }
@@ -411,13 +415,15 @@ mod tasks {
                         "standard",
                         &TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
-                            command: String::from("newcmd"),
+                            command: Some(String::from("newcmd")),
                             depends_on: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
                             options: Some(TaskOptionsConfig {
                                 merge_strategy: Some(TaskMergeStrategy::Replace),
                                 retry_count: Some(1),
+                                run_in_ci: Some(true),
+                                run_from_workspace_root: None,
                             }),
                             type_of: Some(TaskType::Shell),
                         }
@@ -440,13 +446,15 @@ mod tasks {
                     String::from("standard"),
                     TaskConfig {
                         args: Some(vec!["--a".to_owned()]),
-                        command: String::from("standard"),
+                        command: Some(String::from("standard")),
                         depends_on: Some(vec!["a:standard".to_owned()]),
                         inputs: Some(vec!["a.*".to_owned()]),
                         outputs: Some(vec!["a".to_owned()]),
                         options: Some(TaskOptionsConfig {
                             merge_strategy: None,
                             retry_count: Some(1),
+                            run_in_ci: Some(true),
+                            run_from_workspace_root: None,
                         }),
                         type_of: None,
                     },
@@ -467,13 +475,15 @@ mod tasks {
                         String::from("standard"),
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
-                            command: String::from("newcmd"),
+                            command: None,
                             depends_on: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
                             options: Some(TaskOptionsConfig {
                                 merge_strategy: Some(TaskMergeStrategy::Append),
                                 retry_count: None,
+                                run_in_ci: None,
+                                run_from_workspace_root: None,
                             }),
                             type_of: Some(TaskType::Shell),
                         }
@@ -489,7 +499,7 @@ mod tasks {
                         "standard",
                         &TaskConfig {
                             args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
-                            command: String::from("newcmd"),
+                            command: Some(String::from("standard")),
                             depends_on: Some(vec![
                                 "a:standard".to_owned(),
                                 "b:standard".to_owned(),
@@ -499,6 +509,8 @@ mod tasks {
                             options: Some(TaskOptionsConfig {
                                 merge_strategy: Some(TaskMergeStrategy::Append),
                                 retry_count: Some(1),
+                                run_in_ci: Some(true),
+                                run_from_workspace_root: None,
                             }),
                             type_of: Some(TaskType::Shell),
                         }
@@ -521,13 +533,15 @@ mod tasks {
                     String::from("standard"),
                     TaskConfig {
                         args: Some(vec!["--a".to_owned()]),
-                        command: String::from("standard"),
+                        command: Some(String::from("standard")),
                         depends_on: Some(vec!["a:standard".to_owned()]),
                         inputs: Some(vec!["a.*".to_owned()]),
                         outputs: Some(vec!["a".to_owned()]),
                         options: Some(TaskOptionsConfig {
                             merge_strategy: None,
                             retry_count: Some(1),
+                            run_in_ci: Some(true),
+                            run_from_workspace_root: None,
                         }),
                         type_of: None,
                     },
@@ -548,13 +562,15 @@ mod tasks {
                         String::from("standard"),
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
-                            command: String::from("newcmd"),
+                            command: Some(String::from("newcmd")),
                             depends_on: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
                             options: Some(TaskOptionsConfig {
                                 merge_strategy: Some(TaskMergeStrategy::Prepend),
                                 retry_count: None,
+                                run_in_ci: None,
+                                run_from_workspace_root: None,
                             }),
                             type_of: Some(TaskType::Shell),
                         }
@@ -570,7 +586,7 @@ mod tasks {
                         "standard",
                         &TaskConfig {
                             args: Some(vec!["--b".to_owned(), "--a".to_owned()]),
-                            command: String::from("newcmd"),
+                            command: Some(String::from("newcmd")),
                             depends_on: Some(vec![
                                 "b:standard".to_owned(),
                                 "a:standard".to_owned()
@@ -580,6 +596,8 @@ mod tasks {
                             options: Some(TaskOptionsConfig {
                                 merge_strategy: Some(TaskMergeStrategy::Prepend),
                                 retry_count: Some(1),
+                                run_in_ci: Some(true),
+                                run_from_workspace_root: None,
                             }),
                             type_of: Some(TaskType::Shell),
                         }

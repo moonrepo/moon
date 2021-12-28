@@ -2,7 +2,8 @@
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
-use crate::task::Tasks;
+use crate::task::TaskConfig;
+use crate::validators::HashMapValidate;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -12,6 +13,23 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use validator::{Validate, ValidationError, ValidationErrors};
+
+fn validate_task_command(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
+    for (name, task) in map {
+        // Only fail for empty strings and not `None`
+        if let Some(command) = &task.command {
+            if command.is_empty() {
+                return Err(create_validation_error(
+                    "required_command",
+                    &format!("tasks.{}.command", name),
+                    String::from("An npm/shell command is required."),
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
 
 fn validate_channel(value: &str) -> Result<(), ValidationError> {
     if !value.is_empty() && !value.starts_with('#') {
@@ -65,7 +83,9 @@ pub struct ProjectConfig {
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
-    pub tasks: Option<Tasks>,
+    #[validate(custom = "validate_task_command")]
+    #[validate]
+    pub tasks: Option<HashMap<String, TaskConfig>>,
 }
 
 impl Provider for ProjectConfig {
@@ -231,7 +251,9 @@ tasks:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field `tasks.test`. Missing field `command`.")]
+        #[should_panic(
+            expected = "Invalid field `tasks.test.command`. An npm/shell command is required."
+        )]
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -239,7 +261,8 @@ tasks:
                     r#"
 fileGroups: {}
 tasks:
-    test: {}
+    test:
+        command: ''
 "#,
                 )?;
 

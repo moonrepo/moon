@@ -64,7 +64,7 @@ impl Task {
 
         Task {
             args: cloned_config.args.unwrap_or_else(Vec::new),
-            command: cloned_config.command,
+            command: cloned_config.command.unwrap_or_default(),
             depends_on: cloned_config.depends_on.unwrap_or_else(Vec::new),
             inputs: cloned_config.inputs.unwrap_or_else(Vec::new),
             name: name.to_owned(),
@@ -88,7 +88,9 @@ impl Task {
         }
 
         // Then merge the actual task fields
-        self.command = config.command.clone();
+        if let Some(command) = &config.command {
+            self.command = command.clone();
+        }
 
         if let Some(args) = &config.args {
             self.args = self.merge_string_vec(&self.args, args);

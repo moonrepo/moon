@@ -1,24 +1,46 @@
 // .monolith/project.yml
 
 use crate::constants;
-use crate::errors::map_figment_error_to_validation_errors;
+use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use crate::project::FileGroups;
-use crate::task::Tasks;
+use crate::task::TaskConfig;
+use crate::validators::HashMapValidate;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
     Figment, Metadata, Profile, Provider,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::PathBuf;
-use validator::{Validate, ValidationErrors};
+use validator::{Validate, ValidationError, ValidationErrors};
+
+// Task commands are required when defined globally, but not locally
+fn validate_task_command(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
+    for (name, task) in map {
+        // Fail for both `None` and empty strings
+        let command = task.command.clone().unwrap_or_default();
+
+        if command.is_empty() {
+            return Err(create_validation_error(
+                "required_command",
+                &format!("tasks.{}.command", name),
+                String::from("An npm/shell command is required."),
+            ));
+        }
+    }
+
+    Ok(())
+}
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct GlobalProjectConfig {
     #[serde(rename = "fileGroups")]
     pub file_groups: FileGroups,
 
-    pub tasks: Option<Tasks>,
+    #[validate(custom = "validate_task_command")]
+    #[validate]
+    pub tasks: Option<HashMap<String, TaskConfig>>,
 }
 
 impl Provider for GlobalProjectConfig {
@@ -177,7 +199,9 @@ tasks:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field `tasks.test`. Missing field `command`.")]
+        #[should_panic(
+            expected = "Invalid field `tasks.test.command`. An npm/shell command is required."
+        )]
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(

@@ -1,6 +1,5 @@
 use crate::validators::{validate_child_or_root_path, validate_target};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use validator::{Validate, ValidationError};
 
 fn validate_depends_on(list: &[String]) -> Result<(), ValidationError> {
@@ -29,8 +28,6 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
 // project_id:task_name
 pub type Target = String;
-
-pub type Tasks = HashMap<String, TaskConfig>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -83,7 +80,7 @@ impl Default for TaskOptionsConfig {
 pub struct TaskConfig {
     pub args: Option<Vec<String>>,
 
-    pub command: String,
+    pub command: Option<String>,
 
     #[serde(rename = "dependsOn")]
     #[validate(custom = "validate_depends_on")]
@@ -92,6 +89,7 @@ pub struct TaskConfig {
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<String>>,
 
+    #[validate]
     pub options: Option<TaskOptionsConfig>,
 
     #[validate(custom = "validate_outputs")]
@@ -132,18 +130,6 @@ mod tests {
     }
 
     mod command {
-        #[test]
-        #[should_panic(expected = "Missing field `command`.")]
-        fn missing_command() {
-            figment::Jail::expect_with(|jail| {
-                jail.create_file(super::CONFIG_FILENAME, "fake: value")?;
-
-                super::load_jailed_config()?;
-
-                Ok(())
-            });
-        }
-
         #[test]
         #[should_panic(
             expected = "Invalid field `command`. Expected a string type, received unsigned int `123`."

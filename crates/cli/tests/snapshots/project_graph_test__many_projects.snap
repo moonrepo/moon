@@ -22,6 +22,8 @@ digraph {
   baz -> foo [arrowhead=box, arrowtail=box];
   noConfig [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
   WORKSPACE -> noConfig [arrowhead=none];
+  tasks [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
+  WORKSPACE -> tasks [arrowhead=none];
 }
 
 

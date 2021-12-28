@@ -1,7 +1,35 @@
 use crate::errors::create_validation_error;
 use semver::Version;
+use std::collections::HashMap;
 use std::path::Path;
-use validator::ValidationError;
+use validator::{Validate, ValidationError, ValidationErrors};
+
+// Extend validator lib
+pub trait VecValidate {
+    fn validate(&self) -> Result<(), ValidationErrors>;
+}
+
+impl<T: Validate> VecValidate for Vec<T> {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        for i in self.iter() {
+            i.validate()?
+        }
+        Ok(())
+    }
+}
+
+pub trait HashMapValidate {
+    fn validate(&self) -> Result<(), ValidationErrors>;
+}
+
+impl<T: Validate> HashMapValidate for HashMap<String, T> {
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        for (_, value) in self.iter() {
+            value.validate()?
+        }
+        Ok(())
+    }
+}
 
 // Validate the value is a valid semver version/range.
 pub fn validate_semver_version(key: &str, value: &str) -> Result<(), ValidationError> {
@@ -26,6 +54,28 @@ pub fn validate_child_relative_path(key: &str, value: &str) -> Result<(), Valida
             "no_absolute",
             key,
             String::from("Absolute paths are not supported."),
+        ));
+    } else if path.starts_with("..") {
+        return Err(create_validation_error(
+            "no_parent_relative",
+            key,
+            String::from("Parent relative paths are not supported."),
+        ));
+    }
+
+    Ok(())
+}
+
+// Validate the value is a valid child relative file system path or root path.
+// Will fail on parent relative paths ("../") and absolute paths.
+pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), ValidationError> {
+    let path = Path::new(value);
+
+    if (path.has_root() || path.is_absolute()) && !path.starts_with("/") {
+        return Err(create_validation_error(
+            "no_absolute",
+            key,
+            String::from("Absolute paths are not supported. Root paths must start with `/`."),
         ));
     } else if path.starts_with("..") {
         return Err(create_validation_error(

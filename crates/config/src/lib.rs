@@ -1,4 +1,5 @@
 mod errors;
+mod task;
 mod validators;
 
 pub mod constants;
@@ -11,6 +12,7 @@ pub mod workspace;
 pub use global_project::GlobalProjectConfig;
 pub use package::{PackageJson, PackageJsonValue};
 pub use project::{FileGroups, ProjectConfig, ProjectID, ProjectType};
+pub use task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
 pub use validator::ValidationErrors;
 pub use workspace::WorkspaceConfig;
 

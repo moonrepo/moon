@@ -68,3 +68,13 @@ fn depends_on_paths() {
 
     assert_snapshot!(get_assert_output(&assert));
 }
+
+#[test]
+fn with_tasks() {
+    let assert = create_test_command("projects")
+        .arg("project")
+        .arg("tasks")
+        .assert();
+
+    assert_snapshot!(get_assert_output(&assert));
+}

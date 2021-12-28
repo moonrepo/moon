@@ -2,6 +2,8 @@ tasks:
   standard:
     type: shell
     command: newcmd
+    dependsOn:
+      - b:standard
     args:
       - --b
     inputs:

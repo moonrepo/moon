@@ -1,7 +1,15 @@
-use crate::validators::validate_child_or_root_path;
+use crate::validators::{validate_child_or_root_path, validate_target};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use validator::{Validate, ValidationError};
+
+fn validate_depends_on(list: &[String]) -> Result<(), ValidationError> {
+    for (index, item) in list.iter().enumerate() {
+        validate_target(&format!("dependsOn[{}]", index), item)?;
+    }
+
+    Ok(())
+}
 
 fn validate_inputs(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
@@ -18,6 +26,9 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
     Ok(())
 }
+
+// project_id:task_name
+pub type Target = String;
 
 pub type Tasks = HashMap<String, TaskConfig>;
 
@@ -65,6 +76,10 @@ pub struct TaskConfig {
     pub args: Option<Vec<String>>,
 
     pub command: String,
+
+    #[serde(rename = "dependsOn")]
+    #[validate(custom = "validate_depends_on")]
+    pub depends_on: Option<Vec<String>>,
 
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<String>>,
@@ -177,6 +192,70 @@ args:
                 Ok(())
             });
         }
+    }
+
+    mod depends_on {
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `dependsOn`. Expected a sequence type, received string \"abc\"."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+dependsOn: abc
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `dependsOn.0`. Expected a string type, received unsigned int `123`."
+        )]
+        fn invalid_value_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+dependsOn:
+    - 123
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        //         #[test]
+        //         #[should_panic(
+        //             expected = "Invalid field `dependsOn.0`. Expected a string type, received unsigned int `123`."
+        //         )]
+        //         fn invalid_format() {
+        //             figment::Jail::expect_with(|jail| {
+        //                 jail.create_file(
+        //                     super::CONFIG_FILENAME,
+        //                     r#"
+        // command: foo
+        // dependsOn:
+        //     - foo
+        // "#,
+        //                 )?;
+
+        //                 super::load_jailed_config()?;
+
+        //                 Ok(())
+        //             });
+        //         }
     }
 
     mod inputs {

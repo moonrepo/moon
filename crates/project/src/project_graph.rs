@@ -54,7 +54,7 @@ impl ProjectGraph {
     }
 
     /// Return a list of all configured project IDs in ascending order.
-    pub fn ids(&self) -> std::vec::IntoIter<&String> {
+    pub fn ids(&self) -> std::vec::IntoIter<&ProjectID> {
         self.projects_config.keys().sorted()
     }
 

@@ -1,4 +1,4 @@
-use monolith_config::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
+use monolith_config::{Target, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
 
 use serde::{Deserialize, Serialize};
 
@@ -29,6 +29,8 @@ pub struct Task {
 
     pub command: String,
 
+    pub depends_on: Vec<Target>,
+
     pub inputs: Vec<String>,
 
     pub name: String,
@@ -49,6 +51,7 @@ impl Task {
         Task {
             args: cloned_config.args.unwrap_or_else(Vec::new),
             command: cloned_config.command,
+            depends_on: cloned_config.depends_on.unwrap_or_else(Vec::new),
             inputs: cloned_config.inputs.unwrap_or_else(Vec::new),
             name: name.to_owned(),
             options: TaskOptions {
@@ -73,6 +76,10 @@ impl Task {
 
         if let Some(args) = &config.args {
             self.args = self.merge_string_vec(&self.args, args);
+        }
+
+        if let Some(depends_on) = &config.depends_on {
+            self.depends_on = self.merge_string_vec(&self.depends_on, depends_on);
         }
 
         if let Some(inputs) = &config.inputs {

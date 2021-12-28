@@ -53,6 +53,17 @@ pub async fn project(workspace: Workspace, id: &str, json: &bool) -> Result<(), 
         }
     }
 
+    if !project.tasks.is_empty() {
+        println!();
+        println!("Tasks");
+
+        for name in project.tasks.keys().sorted() {
+            let task = project.tasks.get(name).unwrap();
+
+            println!("{}: {} {}", name, task.command, task.args.join(" "));
+        }
+    }
+
     if !project.file_groups.is_empty() {
         println!();
         println!("File groups");

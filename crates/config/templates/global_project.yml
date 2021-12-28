@@ -39,7 +39,7 @@ fileGroups:
 # object of task parameters. Continue reading for an example "test" task.
 tasks:
   test:
-    # The name of the binary command on your system.
+    # The name of the binary/command on your system.
     command: 'jest'
 
     # OPTIONAL: List of arguments to pass on the command line when executing the task.
@@ -64,6 +64,6 @@ tasks:
     # To output files to the workspace root, prefix the path with a "/".
     outputs: []
 
-    # OPTIONAL: The type of binary to run, and where to locate it.
+    # OPTIONAL: The type of command to run, and where to locate it.
     # Accepts "npm" or "shell".
     type: 'npm'

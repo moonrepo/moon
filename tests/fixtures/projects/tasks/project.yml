@@ -1,0 +1,11 @@
+tasks:
+  test:
+    command: jest
+    args:
+      - --cache
+      - --color
+  lint:
+    command: eslint
+    args:
+      - --cache
+      - --report-unused-disable-directives

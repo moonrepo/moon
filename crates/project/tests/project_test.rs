@@ -1,6 +1,10 @@
 use monolith_config::project::ProjectMetadataConfig;
-use monolith_config::{FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectType};
+use monolith_config::{
+    FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectType, TaskConfig,
+    TaskMergeStrategy, TaskOptionsConfig, TaskType,
+};
 use monolith_project::Project;
+use monolith_task::Task;
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
@@ -242,4 +246,331 @@ fn has_package_json() {
             tasks: HashMap::new(),
         }
     );
+}
+
+mod tasks {
+    use super::*;
+
+    fn mock_task_config(command: &str) -> TaskConfig {
+        TaskConfig {
+            args: None,
+            command: command.to_owned(),
+            inputs: None,
+            outputs: None,
+            options: None,
+            type_of: None,
+        }
+    }
+
+    #[test]
+    fn inherits_global_tasks() {
+        let root_dir = get_fixture_root();
+        let project = Project::new(
+            "id",
+            "tasks/no-tasks",
+            &root_dir,
+            &GlobalProjectConfig {
+                file_groups: HashMap::new(),
+                tasks: Some(HashMap::from([(
+                    String::from("standard"),
+                    mock_task_config("cmd"),
+                )])),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            project,
+            Project {
+                id: String::from("id"),
+                config: Some(ProjectConfig {
+                    depends_on: None,
+                    file_groups: None,
+                    project: None,
+                    tasks: Some(HashMap::new()),
+                }),
+                dir: root_dir.join("tasks/no-tasks").canonicalize().unwrap(),
+                file_groups: HashMap::new(),
+                location: String::from("tasks/no-tasks"),
+                package_json: None,
+                tasks: HashMap::from([(
+                    String::from("standard"),
+                    Task::from_config("standard", &mock_task_config("cmd"))
+                ),]),
+            }
+        );
+    }
+
+    #[test]
+    fn merges_with_global_tasks() {
+        let root_dir = get_fixture_root();
+        let project = Project::new(
+            "id",
+            "tasks/basic",
+            &root_dir,
+            &GlobalProjectConfig {
+                file_groups: HashMap::new(),
+                tasks: Some(HashMap::from([(
+                    String::from("standard"),
+                    mock_task_config("cmd"),
+                )])),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            project,
+            Project {
+                id: String::from("id"),
+                config: Some(ProjectConfig {
+                    depends_on: None,
+                    file_groups: None,
+                    project: None,
+                    tasks: Some(HashMap::from([(
+                        String::from("lint"),
+                        mock_task_config("eslint"),
+                    )])),
+                }),
+                dir: root_dir.join("tasks/basic").canonicalize().unwrap(),
+                file_groups: HashMap::new(),
+                location: String::from("tasks/basic"),
+                package_json: None,
+                tasks: HashMap::from([
+                    (
+                        String::from("standard"),
+                        Task::from_config("standard", &mock_task_config("cmd"))
+                    ),
+                    (
+                        String::from("lint"),
+                        Task::from_config("lint", &mock_task_config("eslint"))
+                    )
+                ]),
+            }
+        );
+    }
+
+    #[test]
+    fn strategy_replace() {
+        let root_dir = get_fixture_root();
+        let project = Project::new(
+            "id",
+            "tasks/merge-replace",
+            &root_dir,
+            &GlobalProjectConfig {
+                file_groups: HashMap::new(),
+                tasks: Some(HashMap::from([(
+                    String::from("standard"),
+                    TaskConfig {
+                        args: Some(vec!["--a".to_owned()]),
+                        command: String::from("standard"),
+                        inputs: Some(vec!["a.*".to_owned()]),
+                        outputs: Some(vec!["a".to_owned()]),
+                        options: Some(TaskOptionsConfig {
+                            merge_strategy: None,
+                            retry_count: Some(1),
+                        }),
+                        type_of: None,
+                    },
+                )])),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            project,
+            Project {
+                id: String::from("id"),
+                config: Some(ProjectConfig {
+                    depends_on: None,
+                    file_groups: None,
+                    project: None,
+                    tasks: Some(HashMap::from([(
+                        String::from("standard"),
+                        TaskConfig {
+                            args: Some(vec!["--b".to_owned()]),
+                            command: String::from("newcmd"),
+                            inputs: Some(vec!["b.*".to_owned()]),
+                            outputs: Some(vec!["b".to_owned()]),
+                            options: Some(TaskOptionsConfig {
+                                merge_strategy: Some(TaskMergeStrategy::Replace),
+                                retry_count: None,
+                            }),
+                            type_of: Some(TaskType::Shell),
+                        }
+                    )])),
+                }),
+                dir: root_dir.join("tasks/merge-replace").canonicalize().unwrap(),
+                file_groups: HashMap::new(),
+                location: String::from("tasks/merge-replace"),
+                package_json: None,
+                tasks: HashMap::from([(
+                    String::from("standard"),
+                    Task::from_config(
+                        "standard",
+                        &TaskConfig {
+                            args: Some(vec!["--b".to_owned()]),
+                            command: String::from("newcmd"),
+                            inputs: Some(vec!["b.*".to_owned()]),
+                            outputs: Some(vec!["b".to_owned()]),
+                            options: Some(TaskOptionsConfig {
+                                merge_strategy: Some(TaskMergeStrategy::Replace),
+                                retry_count: Some(1),
+                            }),
+                            type_of: Some(TaskType::Shell),
+                        }
+                    )
+                ),]),
+            }
+        );
+    }
+
+    #[test]
+    fn strategy_append() {
+        let root_dir = get_fixture_root();
+        let project = Project::new(
+            "id",
+            "tasks/merge-append",
+            &root_dir,
+            &GlobalProjectConfig {
+                file_groups: HashMap::new(),
+                tasks: Some(HashMap::from([(
+                    String::from("standard"),
+                    TaskConfig {
+                        args: Some(vec!["--a".to_owned()]),
+                        command: String::from("standard"),
+                        inputs: Some(vec!["a.*".to_owned()]),
+                        outputs: Some(vec!["a".to_owned()]),
+                        options: Some(TaskOptionsConfig {
+                            merge_strategy: None,
+                            retry_count: Some(1),
+                        }),
+                        type_of: None,
+                    },
+                )])),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            project,
+            Project {
+                id: String::from("id"),
+                config: Some(ProjectConfig {
+                    depends_on: None,
+                    file_groups: None,
+                    project: None,
+                    tasks: Some(HashMap::from([(
+                        String::from("standard"),
+                        TaskConfig {
+                            args: Some(vec!["--b".to_owned()]),
+                            command: String::from("newcmd"),
+                            inputs: Some(vec!["b.*".to_owned()]),
+                            outputs: Some(vec!["b".to_owned()]),
+                            options: Some(TaskOptionsConfig {
+                                merge_strategy: Some(TaskMergeStrategy::Append),
+                                retry_count: None,
+                            }),
+                            type_of: Some(TaskType::Shell),
+                        }
+                    )])),
+                }),
+                dir: root_dir.join("tasks/merge-append").canonicalize().unwrap(),
+                file_groups: HashMap::new(),
+                location: String::from("tasks/merge-append"),
+                package_json: None,
+                tasks: HashMap::from([(
+                    String::from("standard"),
+                    Task::from_config(
+                        "standard",
+                        &TaskConfig {
+                            args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
+                            command: String::from("newcmd"),
+                            inputs: Some(vec!["a.*".to_owned(), "b.*".to_owned()]),
+                            outputs: Some(vec!["a".to_owned(), "b".to_owned()]),
+                            options: Some(TaskOptionsConfig {
+                                merge_strategy: Some(TaskMergeStrategy::Append),
+                                retry_count: Some(1),
+                            }),
+                            type_of: Some(TaskType::Shell),
+                        }
+                    )
+                ),]),
+            }
+        );
+    }
+
+    #[test]
+    fn strategy_prepend() {
+        let root_dir = get_fixture_root();
+        let project = Project::new(
+            "id",
+            "tasks/merge-prepend",
+            &root_dir,
+            &GlobalProjectConfig {
+                file_groups: HashMap::new(),
+                tasks: Some(HashMap::from([(
+                    String::from("standard"),
+                    TaskConfig {
+                        args: Some(vec!["--a".to_owned()]),
+                        command: String::from("standard"),
+                        inputs: Some(vec!["a.*".to_owned()]),
+                        outputs: Some(vec!["a".to_owned()]),
+                        options: Some(TaskOptionsConfig {
+                            merge_strategy: None,
+                            retry_count: Some(1),
+                        }),
+                        type_of: None,
+                    },
+                )])),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            project,
+            Project {
+                id: String::from("id"),
+                config: Some(ProjectConfig {
+                    depends_on: None,
+                    file_groups: None,
+                    project: None,
+                    tasks: Some(HashMap::from([(
+                        String::from("standard"),
+                        TaskConfig {
+                            args: Some(vec!["--b".to_owned()]),
+                            command: String::from("newcmd"),
+                            inputs: Some(vec!["b.*".to_owned()]),
+                            outputs: Some(vec!["b".to_owned()]),
+                            options: Some(TaskOptionsConfig {
+                                merge_strategy: Some(TaskMergeStrategy::Prepend),
+                                retry_count: None,
+                            }),
+                            type_of: Some(TaskType::Shell),
+                        }
+                    )])),
+                }),
+                dir: root_dir.join("tasks/merge-prepend").canonicalize().unwrap(),
+                file_groups: HashMap::new(),
+                location: String::from("tasks/merge-prepend"),
+                package_json: None,
+                tasks: HashMap::from([(
+                    String::from("standard"),
+                    Task::from_config(
+                        "standard",
+                        &TaskConfig {
+                            args: Some(vec!["--b".to_owned(), "--a".to_owned()]),
+                            command: String::from("newcmd"),
+                            inputs: Some(vec!["b.*".to_owned(), "a.*".to_owned()]),
+                            outputs: Some(vec!["b".to_owned(), "a".to_owned()]),
+                            options: Some(TaskOptionsConfig {
+                                merge_strategy: Some(TaskMergeStrategy::Prepend),
+                                retry_count: Some(1),
+                            }),
+                            type_of: Some(TaskType::Shell),
+                        }
+                    )
+                ),]),
+            }
+        );
+    }
 }

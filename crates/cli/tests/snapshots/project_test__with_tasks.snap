@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: get_assert_output(&assert)
+
+---
+About
+ID: tasks
+Path: tasks
+
+Tasks
+lint: eslint --cache --report-unused-disable-directives
+test: jest --cache --color
+
+File groups
+sources:
+- src/**/*
+- types/**/*
+tests:
+- tests/**/*
+

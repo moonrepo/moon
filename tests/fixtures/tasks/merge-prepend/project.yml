@@ -1,0 +1,12 @@
+tasks:
+  standard:
+    type: shell
+    command: newcmd
+    args:
+      - --b
+    inputs:
+      - b.*
+    outputs:
+      - b
+    options:
+      mergeStrategy: prepend

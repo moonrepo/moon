@@ -104,7 +104,6 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     }
 }
 
-#[derive(Debug)]
 pub struct Workspace {
     /// Workspace configuration loaded from ".monolith/workspace.yml".
     pub config: WorkspaceConfig,

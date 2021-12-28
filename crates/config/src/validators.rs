@@ -91,7 +91,7 @@ pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), Validat
 // Validate the value is a target in the format of "project_id:task_name".
 pub fn validate_target(key: &str, target: &str) -> Result<(), ValidationError> {
     // TODO regex
-    if !target.contains(":") {
+    if !target.contains(':') {
         return Err(create_validation_error(
             "invalid_target",
             key,

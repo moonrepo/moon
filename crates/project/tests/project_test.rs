@@ -390,7 +390,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: String::from("newcmd"),
-                            depends_on: Some(vec!["a:standard".to_owned()]),
+                            depends_on: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
                             options: Some(TaskOptionsConfig {
@@ -468,7 +468,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: String::from("newcmd"),
-                            depends_on: Some(vec!["a:standard".to_owned()]),
+                            depends_on: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
                             options: Some(TaskOptionsConfig {
@@ -549,7 +549,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: String::from("newcmd"),
-                            depends_on: Some(vec!["a:standard".to_owned()]),
+                            depends_on: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
                             options: Some(TaskOptionsConfig {

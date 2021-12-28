@@ -177,7 +177,7 @@ impl Project {
     }
 
     /// Return a list of project IDs this project depends on.
-    pub fn get_dependencies(&self) -> Vec<String> {
+    pub fn get_dependencies(&self) -> Vec<ProjectID> {
         let mut depends_on = vec![];
 
         if let Some(config) = &self.config {

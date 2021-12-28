@@ -49,6 +49,10 @@ tasks:
       - '--testMatch'
       - '@glob(tests)'
 
+    # OPTIONAL: List of targets that will be executed *before* this task. A target is
+    # defined in the format of "project_id:task_name".
+    dependsOn: []
+
     # OPTIONAL: List of file paths/globs to calculate whether to execute the task based on files
     # that have been modified since the last time the task has been ran. By default inputs are
     # relative from the *project root*, and can reference file groups (above). To reference files
@@ -59,7 +63,7 @@ tasks:
       - 'jest.config.*'
       - '/jest.config.*'
 
-    # OPTIONAL: List of files and folders that are generated as a result of executing this task,
+    # OPTIONAL: List of files and folders that are created as a result of executing this task,
     # excluding cache related items. By default outputs are relative from the *project root*.
     # To output files to the workspace root, prefix the path with a "/".
     outputs: []

@@ -60,6 +60,12 @@ pub struct TaskOptionsConfig {
 
     #[serde(rename = "retryCount")]
     pub retry_count: Option<u8>,
+
+    #[serde(rename = "runInCi")]
+    pub run_in_ci: Option<bool>,
+
+    #[serde(rename = "runFromWorkspaceRoot")]
+    pub run_from_workspace_root: Option<bool>,
 }
 
 impl Default for TaskOptionsConfig {
@@ -67,6 +73,8 @@ impl Default for TaskOptionsConfig {
         TaskOptionsConfig {
             merge_strategy: Some(TaskMergeStrategy::Append),
             retry_count: Some(0),
+            run_in_ci: Some(true),
+            run_from_workspace_root: Some(false),
         }
     }
 }

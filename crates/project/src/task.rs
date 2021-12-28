@@ -9,6 +9,12 @@ pub struct TaskOptions {
 
     #[serde(rename = "retryCount")]
     pub retry_count: u8,
+
+    #[serde(rename = "runInCi")]
+    pub run_in_ci: bool,
+
+    #[serde(rename = "runFromWorkspaceRoot")]
+    pub run_from_workspace_root: bool,
 }
 
 impl TaskOptions {
@@ -19,6 +25,14 @@ impl TaskOptions {
 
         if let Some(retry_count) = &config.retry_count {
             self.retry_count = *retry_count;
+        }
+
+        if let Some(run_in_ci) = &config.run_in_ci {
+            self.run_in_ci = *run_in_ci;
+        }
+
+        if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
+            self.run_from_workspace_root = *run_from_workspace_root;
         }
     }
 }
@@ -59,6 +73,8 @@ impl Task {
                     .merge_strategy
                     .unwrap_or(TaskMergeStrategy::Append),
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
+                run_in_ci: cloned_options.run_in_ci.unwrap_or_default(),
+                run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },
             outputs: cloned_config.outputs.unwrap_or_else(Vec::new),
             type_of: cloned_config.type_of.unwrap_or_default(),

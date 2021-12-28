@@ -3,8 +3,7 @@ use monolith_config::{
     FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectType, TaskConfig,
     TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use monolith_project::Project;
-use monolith_task::Task;
+use monolith_project::{Project, Task};
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;

@@ -1,9 +1,9 @@
 use crate::errors::ProjectError;
+use crate::task::Task;
 use monolith_config::constants::CONFIG_PROJECT_FILENAME;
 use monolith_config::project::{FileGroups, ProjectID};
 use monolith_config::{GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig};
 use monolith_logger::{color, debug, trace};
-use monolith_task::Task;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

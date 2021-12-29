@@ -1,7 +1,15 @@
-use crate::validators::validate_child_or_root_path;
+use crate::types::{FilePathOrGlob, TargetID};
+use crate::validators::{validate_child_or_root_path, validate_target};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use validator::{Validate, ValidationError};
+
+fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
+    for (index, item) in list.iter().enumerate() {
+        validate_target(&format!("deps[{}]", index), item)?;
+    }
+
+    Ok(())
+}
 
 fn validate_inputs(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
@@ -18,8 +26,6 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
     Ok(())
 }
-
-pub type Tasks = HashMap<String, TaskConfig>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -42,20 +48,40 @@ pub enum TaskMergeStrategy {
     Replace,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
-pub struct TaskOptionsConfig {
-    #[serde(rename = "mergeStrategy")]
-    pub merge_strategy: Option<TaskMergeStrategy>,
+impl Default for TaskMergeStrategy {
+    fn default() -> Self {
+        TaskMergeStrategy::Append
+    }
+}
 
-    #[serde(rename = "retryCount")]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskOptionsConfig {
+    pub merge_args: Option<TaskMergeStrategy>,
+
+    pub merge_deps: Option<TaskMergeStrategy>,
+
+    pub merge_inputs: Option<TaskMergeStrategy>,
+
+    pub merge_outputs: Option<TaskMergeStrategy>,
+
     pub retry_count: Option<u8>,
+
+    pub run_in_ci: Option<bool>,
+
+    pub run_from_workspace_root: Option<bool>,
 }
 
 impl Default for TaskOptionsConfig {
     fn default() -> Self {
         TaskOptionsConfig {
-            merge_strategy: Some(TaskMergeStrategy::Append),
+            merge_args: Some(TaskMergeStrategy::default()),
+            merge_deps: Some(TaskMergeStrategy::default()),
+            merge_inputs: Some(TaskMergeStrategy::default()),
+            merge_outputs: Some(TaskMergeStrategy::default()),
             retry_count: Some(0),
+            run_in_ci: Some(true),
+            run_from_workspace_root: Some(false),
         }
     }
 }
@@ -64,15 +90,19 @@ impl Default for TaskOptionsConfig {
 pub struct TaskConfig {
     pub args: Option<Vec<String>>,
 
-    pub command: String,
+    pub command: Option<String>,
+
+    #[validate(custom = "validate_deps")]
+    pub deps: Option<Vec<TargetID>>,
 
     #[validate(custom = "validate_inputs")]
-    pub inputs: Option<Vec<String>>,
+    pub inputs: Option<Vec<FilePathOrGlob>>,
 
+    #[validate]
     pub options: Option<TaskOptionsConfig>,
 
     #[validate(custom = "validate_outputs")]
-    pub outputs: Option<Vec<String>>,
+    pub outputs: Option<Vec<FilePathOrGlob>>,
 
     #[serde(rename = "type")]
     pub type_of: Option<TaskType>,
@@ -109,18 +139,6 @@ mod tests {
     }
 
     mod command {
-        #[test]
-        #[should_panic(expected = "Missing field `command`.")]
-        fn missing_command() {
-            figment::Jail::expect_with(|jail| {
-                jail.create_file(super::CONFIG_FILENAME, "fake: value")?;
-
-                super::load_jailed_config()?;
-
-                Ok(())
-            });
-        }
-
         #[test]
         #[should_panic(
             expected = "Invalid field `command`. Expected a string type, received unsigned int `123`."
@@ -177,6 +195,70 @@ args:
                 Ok(())
             });
         }
+    }
+
+    mod deps {
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `deps`. Expected a sequence type, received string \"abc\"."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+deps: abc
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `deps.0`. Expected a string type, received unsigned int `123`."
+        )]
+        fn invalid_value_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+deps:
+    - 123
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        //         #[test]
+        //         #[should_panic(
+        //             expected = "Invalid field `deps.0`. Expected a string type, received unsigned int `123`."
+        //         )]
+        //         fn invalid_format() {
+        //             figment::Jail::expect_with(|jail| {
+        //                 jail.create_file(
+        //                     super::CONFIG_FILENAME,
+        //                     r#"
+        // command: foo
+        // deps:
+        //     - foo
+        // "#,
+        //                 )?;
+
+        //                 super::load_jailed_config()?;
+
+        //                 Ok(())
+        //             });
+        //         }
     }
 
     mod inputs {
@@ -307,9 +389,7 @@ options: 123
         }
 
         #[test]
-        #[should_panic(
-            expected = "Invalid field `options.mergeStrategy`. Unknown option `bubble`."
-        )]
+        #[should_panic(expected = "Invalid field `options.mergeArgs`. Unknown option `bubble`.")]
         fn invalid_merge_strategy_type() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -317,7 +397,7 @@ options: 123
                     r#"
 command: foo
 options:
-    mergeStrategy: bubble
+    mergeArgs: bubble
 "#,
                 )?;
 

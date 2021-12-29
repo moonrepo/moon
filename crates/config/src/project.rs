@@ -2,7 +2,9 @@
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
-use crate::task::Tasks;
+use crate::task::TaskConfig;
+use crate::types::{FileGroups, ProjectID};
+use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -12,6 +14,33 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use validator::{Validate, ValidationError, ValidationErrors};
+
+fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
+    for key in map.keys() {
+        validate_id(&format!("fileGroups.{}", key), key)?;
+    }
+
+    Ok(())
+}
+
+fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
+    for (name, task) in map {
+        validate_id(&format!("tasks.{}", name), name)?;
+
+        // Only fail for empty strings and not `None`
+        if let Some(command) = &task.command {
+            if command.is_empty() {
+                return Err(create_validation_error(
+                    "required_command",
+                    &format!("tasks.{}.command", name),
+                    String::from("An npm/shell command is required."),
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
 
 fn validate_channel(value: &str) -> Result<(), ValidationError> {
     if !value.is_empty() && !value.starts_with('#') {
@@ -24,10 +53,6 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
 
     Ok(())
 }
-
-pub type FileGroups = HashMap<String, Vec<String>>;
-
-pub type ProjectID = String;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -60,12 +85,15 @@ pub struct ProjectConfig {
     pub depends_on: Option<Vec<ProjectID>>,
 
     #[serde(rename = "fileGroups")]
+    #[validate(custom = "validate_file_groups")]
     pub file_groups: Option<FileGroups>,
 
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
-    pub tasks: Option<Tasks>,
+    #[validate(custom = "validate_tasks")]
+    #[validate]
+    pub tasks: Option<HashMap<String, TaskConfig>>,
 }
 
 impl Provider for ProjectConfig {
@@ -231,7 +259,9 @@ tasks:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field `tasks.test`. Missing field `command`.")]
+        #[should_panic(
+            expected = "Invalid field `tasks.test.command`. An npm/shell command is required."
+        )]
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -239,7 +269,8 @@ tasks:
                     r#"
 fileGroups: {}
 tasks:
-    test: {}
+    test:
+        command: ''
 "#,
                 )?;
 

@@ -1,15 +1,14 @@
 use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::project::Project;
+use dep_graph::{DepGraph, Node};
 use itertools::Itertools;
 use monolith_config::{GlobalProjectConfig, ProjectID};
 use monolith_logger::{color, debug, trace};
-use solvent::{DepGraph, SolventError};
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
 pub struct ProjectGraph {
     /// The global project configuration that all projects inherit from.
     /// Is loaded from `.monolith/project.yml`.
@@ -17,7 +16,7 @@ pub struct ProjectGraph {
 
     /// A lightweight dependency graph, where each node is a project ID,
     /// and can depend on other project IDs.
-    graph: RefCell<DepGraph<String>>,
+    nodes: RefCell<HashMap<ProjectID, Node<ProjectID>>>,
 
     /// Projects that have been loaded into the graph.
     projects: RefCell<HashMap<ProjectID, Project>>,
@@ -36,9 +35,6 @@ impl ProjectGraph {
         global_config: GlobalProjectConfig,
         projects_config: &HashMap<ProjectID, String>,
     ) -> ProjectGraph {
-        let mut graph = DepGraph::new();
-        graph.register_node(ROOT_NODE_ID.to_owned());
-
         debug!(
             target: "moon:project-graph",
             "Creating project graph with {} projects",
@@ -47,7 +43,10 @@ impl ProjectGraph {
 
         ProjectGraph {
             global_config,
-            graph: RefCell::new(graph),
+            nodes: RefCell::new(HashMap::from([(
+                ROOT_NODE_ID.to_owned(),
+                Node::new(ROOT_NODE_ID.to_owned()),
+            )])),
             projects: RefCell::new(HashMap::new()),
             projects_config: projects_config.clone(),
             workspace_dir: workspace_dir.to_path_buf(),
@@ -55,7 +54,7 @@ impl ProjectGraph {
     }
 
     /// Return a list of all configured project IDs in ascending order.
-    pub fn ids(&self) -> std::vec::IntoIter<&String> {
+    pub fn ids(&self) -> std::vec::IntoIter<&ProjectID> {
         self.projects_config.keys().sorted()
     }
 
@@ -65,10 +64,10 @@ impl ProjectGraph {
     /// misconfigured, an error will be returned.
     pub fn get(&self, id: &str) -> Result<Project, ProjectError> {
         let mut projects = self.projects.borrow_mut();
-        let mut graph = self.graph.borrow_mut();
+        let mut nodes = self.nodes.borrow_mut();
 
         // Lazy load the project if it has not been
-        self.load(&mut projects, &mut graph, id)?;
+        self.load(&mut projects, &mut nodes, id)?;
 
         // TODO: Is it possible to not clone here???
         Ok(projects.get(id).unwrap().clone())
@@ -77,23 +76,11 @@ impl ProjectGraph {
     /// Return a list of project IDs that a project depends on,
     /// in the priority order in which they are depended on.
     pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
-        let mut deps = vec![];
+        let mut nodes = vec![];
 
-        for dep in self.graph.borrow().dependencies_of(&project.id).unwrap() {
-            match dep {
-                Ok(dep_id) => deps.push(dep_id.to_owned()),
-                Err(err) => {
-                    return Err(match err {
-                        SolventError::CycleDetected => ProjectError::DependencyCycleDetected,
-                        SolventError::NoSuchNode => {
-                            ProjectError::UnconfiguredID(project.id.clone())
-                        }
-                    })
-                }
-            }
-        }
+        self.extract_nodes(&mut nodes, &project.id)?;
 
-        Ok(deps)
+        Ok(DepGraph::new(&nodes).into_iter().collect())
     }
 
     /// Return a list of project IDs that a project depends on,
@@ -108,12 +95,32 @@ impl ProjectGraph {
         Ok(deps)
     }
 
+    /// Recursively extract a list of nodes based on its dependency chain.
+    fn extract_nodes(
+        &self,
+        nodes: &mut Vec<Node<ProjectID>>,
+        id: &str,
+    ) -> Result<(), ProjectError> {
+        match self.nodes.borrow().get(id) {
+            Some(node) => {
+                for dep in node.deps() {
+                    self.extract_nodes(nodes, dep)?;
+                }
+
+                nodes.push(node.clone());
+            }
+            None => return Err(ProjectError::UnconfiguredID(id.to_owned())),
+        }
+
+        Ok(())
+    }
+
     /// Internal method for lazily loading a project and its
     /// dependencies into the graph.
     fn load(
         &self,
         projects: &mut RefMut<HashMap<ProjectID, Project>>,
-        graph: &mut RefMut<DepGraph<String>>,
+        nodes: &mut RefMut<HashMap<ProjectID, Node<ProjectID>>>,
         id: &str,
     ) -> Result<(), ProjectError> {
         // Already loaded, abort early
@@ -145,7 +152,7 @@ impl ProjectGraph {
         projects.insert(id.to_owned(), project);
 
         // Insert the project into the graph
-        graph.register_node(id.to_owned());
+        let mut node = Node::new(id.to_owned());
 
         if !depends_on.is_empty() {
             trace!(
@@ -157,11 +164,13 @@ impl ProjectGraph {
 
             for dep in depends_on {
                 // Ensure the dependent project is also loaded
-                self.load(projects, graph, dep.as_str())?;
+                self.load(projects, nodes, dep.as_str())?;
 
-                graph.register_dependency(id.to_owned(), dep);
+                node.add_dep(dep);
             }
         }
+
+        nodes.insert(id.to_owned(), node);
 
         Ok(())
     }

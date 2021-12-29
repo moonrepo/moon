@@ -1,8 +1,10 @@
 use crate::errors::ProjectError;
 use crate::task::Task;
 use monolith_config::constants::CONFIG_PROJECT_FILENAME;
-use monolith_config::project::{FileGroups, ProjectID};
-use monolith_config::{GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig};
+use monolith_config::{
+    FileGroups, FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig,
+    ProjectID,
+};
 use monolith_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -129,7 +131,7 @@ pub struct Project {
     pub id: ProjectID,
 
     /// Relative path of the project from the workspace root. Is the RHS of the `projects` setting.
-    pub location: String,
+    pub location: FilePath,
 
     /// Loaded "package.json", if it exists.
     #[serde(skip)]
@@ -177,7 +179,7 @@ impl Project {
     }
 
     /// Return a list of project IDs this project depends on.
-    pub fn get_dependencies(&self) -> Vec<String> {
+    pub fn get_dependencies(&self) -> Vec<ProjectID> {
         let mut depends_on = vec![];
 
         if let Some(config) = &self.config {

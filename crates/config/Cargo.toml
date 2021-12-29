@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 figment = { version = "0.10", features = ["test", "yaml"] }
 json = "0.12"
+lazy_static = "1.4"
+regex = "1.5"
 semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"

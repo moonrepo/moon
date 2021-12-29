@@ -21,6 +21,9 @@ pub enum ProjectError {
     #[error("No project has been configured with the ID `{0}`.")]
     UnconfiguredID(String),
 
+    #[error("Task `{0}` has not been configured for project `{1}`.")]
+    UnconfiguredTask(String, String),
+
     #[error("Unknown monolith project error.")]
     Unknown,
 }

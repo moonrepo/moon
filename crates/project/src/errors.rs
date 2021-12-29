@@ -1,4 +1,4 @@
-use monolith_config::{constants, ValidationErrors};
+use moon_config::{constants, ValidationErrors};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -24,6 +24,6 @@ pub enum ProjectError {
     #[error("Task `{0}` has not been configured for project `{1}`.")]
     UnconfiguredTask(String, String),
 
-    #[error("Unknown monolith project error.")]
+    #[error("Unknown moon project error.")]
     Unknown,
 }

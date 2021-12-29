@@ -1,6 +1,6 @@
 use dot_writer::{ArrowType, Attributes, Color, DotWriter, Scope, Shape, Style};
-use monolith_project::{ProjectError, ROOT_NODE_ID};
-use monolith_workspace::Workspace;
+use moon_project::{ProjectError, ROOT_NODE_ID};
+use moon_workspace::Workspace;
 
 fn create_edge(dot_graph: &mut Scope, from: &str, to: &str) {
     let mut attr = dot_graph.edge(from, to).attributes();

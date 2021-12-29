@@ -1,4 +1,4 @@
-use monolith_config::{ProjectID, TargetID, TaskID};
+use moon_config::{ProjectID, TargetID, TaskID};
 
 pub struct Target {}
 

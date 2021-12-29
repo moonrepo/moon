@@ -942,7 +942,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "monolith_cli"
+name = "moon_cli"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
@@ -951,16 +951,16 @@ dependencies = [
  "insta",
  "itertools",
  "log",
- "monolith_logger",
- "monolith_project",
- "monolith_toolchain",
- "monolith_workspace",
+ "moon_logger",
+ "moon_project",
+ "moon_toolchain",
+ "moon_workspace",
  "predicates",
  "tokio",
 ]
 
 [[package]]
-name = "monolith_config"
+name = "moon_config"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
@@ -975,7 +975,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "monolith_logger"
+name = "moon_logger"
 version = "0.1.0"
 dependencies = [
  "ansi_term",
@@ -985,20 +985,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "monolith_project"
+name = "moon_project"
 version = "0.1.0"
 dependencies = [
  "dep-graph",
  "itertools",
- "monolith_config",
- "monolith_logger",
+ "moon_config",
+ "moon_logger",
  "serde",
  "serde_json",
  "thiserror",
 ]
 
 [[package]]
-name = "monolith_toolchain"
+name = "moon_toolchain"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
@@ -1006,8 +1006,8 @@ dependencies = [
  "dirs",
  "flate2",
  "mockito",
- "monolith_config",
- "monolith_logger",
+ "moon_config",
+ "moon_logger",
  "predicates",
  "reqwest",
  "sha2",
@@ -1017,13 +1017,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "monolith_workspace"
+name = "moon_workspace"
 version = "0.1.0"
 dependencies = [
- "monolith_config",
- "monolith_logger",
- "monolith_project",
- "monolith_toolchain",
+ "moon_config",
+ "moon_logger",
+ "moon_project",
+ "moon_toolchain",
  "thiserror",
 ]
 

@@ -12,13 +12,13 @@ pub trait Tool {
     /// Determine whether the tool has already been downloaded.
     fn is_downloaded(&self) -> bool;
 
-    /// Downloads the tool into the ~/.monolith/temp folder,
+    /// Downloads the tool into the ~/.moon/temp folder,
     /// and returns a file path to the downloaded binary.
     async fn download(&self, host: Option<&str>) -> Result<(), ToolchainError>;
 
     /// Returns an absolute file path to the temporary downloaded file.
     /// This _may not exist_, as the path is composed ahead of time.
-    /// This is typically ~/.monolith/temp/<file>.
+    /// This is typically ~/.moon/temp/<file>.
     fn get_download_path(&self) -> Option<&PathBuf>;
 
     /// Determine whether the tool has already been installed.
@@ -30,7 +30,7 @@ pub trait Tool {
 
     /// Returns an absolute file path to the directory containing the downloaded tool.
     /// This _may not exist_, as the path is composed ahead of time.
-    /// This is typically ~/.monolith/tools/<tool>/<version>.
+    /// This is typically ~/.moon/tools/<tool>/<version>.
     fn get_install_dir(&self) -> &PathBuf;
 
     /// Returns a semver version for the currently installed binary.

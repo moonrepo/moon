@@ -3,8 +3,8 @@ use crate::helpers::{exec_command, get_bin_version};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
-use monolith_config::workspace::PnpmConfig;
-use monolith_logger::{color, debug, trace};
+use moon_config::workspace::PnpmConfig;
+use moon_logger::{color, debug, trace};
 use std::env::consts;
 use std::path::PathBuf;
 

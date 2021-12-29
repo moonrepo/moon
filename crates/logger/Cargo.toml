@@ -1,5 +1,5 @@
 [package]
-name = "monolith_logger"
+name = "moon_logger"
 version = "0.1.0"
 edition = "2021"
 

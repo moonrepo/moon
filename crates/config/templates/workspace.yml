@@ -1,4 +1,4 @@
-# Configures Node.js within the toolchain. Monolith manages its own version of Node.js
+# Configures Node.js within the toolchain. Moon manages its own version of Node.js
 # instead of relying on a version found on the host machine. This ensures deterministic
 # and reproducible builds across any machine.
 node:

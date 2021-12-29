@@ -5,7 +5,7 @@
 
 Tasks are commands that are ran in the context of a [project](./project.md). Underneath the hood, a
 task is simply a node module binary or system/shell command that is ran as a child-process. Tasks
-communicate between the Monolith client and server through a JSON-like message system.
+communicate between the Moon client and server through a JSON-like message system.
 
 ## Targets
 

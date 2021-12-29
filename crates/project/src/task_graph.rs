@@ -3,7 +3,7 @@ use crate::project_graph::ProjectGraph;
 use crate::target::Target;
 use crate::task::Task;
 use dep_graph::{DepGraph, Node};
-use monolith_config::TargetID;
+use moon_config::TargetID;
 use std::collections::HashMap;
 
 #[derive(Default)]

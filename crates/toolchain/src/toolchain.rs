@@ -7,11 +7,11 @@ use crate::tools::npx::NpxTool;
 use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use dirs::home_dir as get_home_dir;
-use monolith_config::constants::CONFIG_DIRNAME;
-use monolith_config::workspace::{
+use moon_config::constants::CONFIG_DIRNAME;
+use moon_config::workspace::{
     NpmConfig, PackageManager as PM, PnpmConfig, WorkspaceConfig, YarnConfig,
 };
-use monolith_logger::{color, debug, trace};
+use moon_logger::{color, debug, trace};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -32,15 +32,15 @@ fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
 #[derive(Debug)]
 pub struct Toolchain {
     /// The directory where toolchain artifacts are stored.
-    /// This is typically ~/.monolith.
+    /// This is typically ~/.moon.
     pub dir: PathBuf,
 
     /// The directory where temporary files are stored.
-    /// This is typically ~/.monolith/temp.
+    /// This is typically ~/.moon/temp.
     pub temp_dir: PathBuf,
 
     /// The directory where tools are installed by version.
-    /// This is typically ~/.monolith/tools.
+    /// This is typically ~/.moon/tools.
     pub tools_dir: PathBuf,
 
     /// The workspace root directory.

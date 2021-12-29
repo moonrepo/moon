@@ -1,4 +1,4 @@
-// .monolith/workspace.yml
+// .moon/workspace.yml
 
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;

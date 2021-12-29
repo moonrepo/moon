@@ -1,11 +1,11 @@
 [package]
-name = "monolith_project"
+name = "moon_project"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-monolith_config = { path = "../config" }
-monolith_logger = { path = "../logger" }
+moon_config = { path = "../config" }
+moon_logger = { path = "../logger" }
 dep-graph = "0.2"
 itertools = "0.10"
 serde = { version = "1.0", features = ["derive"] }

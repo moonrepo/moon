@@ -1,14 +1,14 @@
 mod errors;
 
 use errors::WorkspaceError;
-use monolith_config::{constants, GlobalProjectConfig, WorkspaceConfig};
-use monolith_logger::{color, debug, trace};
-use monolith_project::ProjectGraph;
-use monolith_toolchain::Toolchain;
+use moon_config::{constants, GlobalProjectConfig, WorkspaceConfig};
+use moon_logger::{color, debug, trace};
+use moon_project::ProjectGraph;
+use moon_toolchain::Toolchain;
 use std::env;
 use std::path::{Path, PathBuf};
 
-/// Recursively attempt to find the workspace root by locating the ".monolith"
+/// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
 fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
     let config_dir = current_dir.join(constants::CONFIG_DIRNAME);
@@ -105,10 +105,10 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
 }
 
 pub struct Workspace {
-    /// Workspace configuration loaded from ".monolith/workspace.yml".
+    /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
-    /// The root of the workspace that contains the ".monolith" config folder.
+    /// The root of the workspace that contains the ".moon" config folder.
     pub dir: PathBuf,
 
     /// Path to the root `package.json` file.

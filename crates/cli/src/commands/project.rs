@@ -1,6 +1,6 @@
 use crate::helpers::{print_list, safe_exit};
 use itertools::Itertools;
-use monolith_workspace::Workspace;
+use moon_workspace::Workspace;
 
 enum ProjectExitCodes {
     UnknownProject = 1,

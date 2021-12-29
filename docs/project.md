@@ -23,8 +23,8 @@ files, assets, resources, and more. A project must exist and be configured withi
 ## ID
 
 A project identifier, also knows an a PID, or simply ID, is a unique resource for locating a
-project. The PID is explicitly configured within
-[`.monolith/workspace.yml`](./workspace.md#projects), as a key within the `projects` setting.
+project. The PID is explicitly configured within [`.moon/workspace.yml`](./workspace.md#projects),
+as a key within the `projects` setting.
 
 PIDs are used heavily by configuration and the command line to link and reference everything.
 They're also a much easier concept for remembering projects than file system paths, and they
@@ -107,14 +107,14 @@ dependsOn:
 
 #### fileGroups
 
-> Knowledge of [`.monolith/project.yml`](./workspace.md#filegroups) is required before continuing.
+> Knowledge of [`.moon/project.yml`](./workspace.md#filegroups) is required before continuing.
 
 As mentioned in the link above, file groups are a mechanism for grouping similar types of files
 within a project using file glob patterns. By default, this setting _is not required_ for the
 following reasons:
 
 - File groups are an optional feature, and are designed for advanced use cases.
-- File groups defined in `.monolith/project.yml` will be inherited by all projects.
+- File groups defined in `.moon/project.yml` will be inherited by all projects.
 
 The only scenario in which to define file groups at the project-level is when you want to _override_
 file groups defined at the workspace-level.
@@ -129,12 +129,12 @@ fileGroups:
     - 'types/**/*'
 ```
 
-> File groups defined in `project.yml` will override file groups defined in `.monolith/project.yml`
-> by object key, and _will not_ merge the value arrays.
+> File groups defined in `project.yml` will override file groups defined in `.moon/project.yml` by
+> object key, and _will not_ merge the value arrays.
 
 #### tasks
 
-> Knowledge of [`.monolith/project.yml`](./workspace.md#tasks) is required before continuing.
+> Knowledge of [`.moon/project.yml`](./workspace.md#tasks) is required before continuing.
 
 As mentioned in the link above, [tasks](./task.md) are actions that are ran within the context of a
 project, and commonly wrap an npm or shell command. By default, this setting _is not required_ as
@@ -162,8 +162,8 @@ tasks:
 
 ### `package.json`
 
-A Monolith project _does not require_ a `package.json`, but when one exists, the following
-functionality is enabled.
+A Moon project _does not require_ a `package.json`, but when one exists, the following functionality
+is enabled.
 
 - Dependency versions are included when computing cache keys.
 - Depended on projects (`dependsOn`) are mapped as npm/pnpm/yarn workspace dependencies (when
@@ -171,7 +171,7 @@ functionality is enabled.
 
 ### `tsconfig.json`
 
-A Monolith project _does not require_ TypeScript or a `tsconfig.json`, but when one exists, the
+A Moon project _does not require_ TypeScript or a `tsconfig.json`, but when one exists, the
 following functionality is enabled.
 
 - Depended on projects (`dependsOn`) are mapped as TypeScript project references (when applicable).

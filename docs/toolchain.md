@@ -22,23 +22,22 @@ necessary tools, _and_ to keep them in sync as time passes.
 
 ## How it works
 
-The toolchain is a `.monolith` directory within the current user's home directory, e.g.,
-`~/.monolith`.
+The toolchain is a `.moon` directory within the current user's home directory, e.g., `~/.moon`.
 
-The first step in a tool's life-cycle is being downloaded to `~/.monolith/temp`. Downloads are
-typically an archive that can be unpacked into a target directory.
+The first step in a tool's life-cycle is being downloaded to `~/.moon/temp`. Downloads are typically
+an archive that can be unpacked into a target directory.
 
 Once downloaded, we verify the downloaded file by running a sha256 checksum. If this check fails for
 _any reason_, the toolchain is unusable, and the process is aborted.
 
 After a successful verification, the last step in the tool's life-cycle can begin, installation.
 Depending on the type of download, the installation process may differ. For archives, we unpack the
-tool to `~/.monolith/tools/<name>/<version>`.
+tool to `~/.moon/tools/<name>/<version>`.
 
 ## Configuration
 
 The tools that are managed by the toolchain are configured through the
-[`.monolith/workspace.yml`](./workspace.md#workspaceyml) file.
+[`.moon/workspace.yml`](./workspace.md#workspaceyml) file.
 
 ## Supported tools
 
@@ -49,11 +48,11 @@ The following tools will be managed by the toolchain.
 
 ### Node.js
 
-Since Monolith was designed for JavaScript based monorepo's, we intentionally support Node.js as a
+Since Moon was designed for JavaScript based monorepo's, we intentionally support Node.js as a
 first-class citizen within the toolchain. Because of this, Node.js is _always enabled_.
 
 - Configured with: `node`
-- Installed to: `~/.monolith/tools/node/x.x.x`
+- Installed to: `~/.moon/tools/node/x.x.x`
 
 ### npm, npx
 
@@ -61,7 +60,7 @@ The `npm` and `npx` binaries come pre-installed with Node.js, and will _always e
 the `node.packageManager` setting.
 
 - Configured with: `node.npm`
-- Installed to: `~/.monolith/tools/node/x.x.x/bin/npm` (and `npx`)
+- Installed to: `~/.moon/tools/node/x.x.x/bin/npm` (and `npx`)
 
 ### pnpm
 
@@ -70,7 +69,7 @@ be enabled when `node.packageManager` is set to "pnpm". The binary will be insta
 global npm dependency.
 
 - Configured with: `node.pnpm`
-- Installed to: `~/.monolith/tools/node/x.x.x/bin/pnpm`
+- Installed to: `~/.moon/tools/node/x.x.x/bin/pnpm`
 
 ### Yarn
 
@@ -79,6 +78,6 @@ will be enabled when `node.packageManager` is set to "yarn". The binary will be 
 toolchain global npm dependency.
 
 - Configured with: `node.yarn`
-- Installed to: `~/.monolith/tools/node/x.x.x/bin/yarn`
+- Installed to: `~/.moon/tools/node/x.x.x/bin/yarn`
 
 > Supports v1 and v2/v3 in `node-modules` or `pnp` linker mode.

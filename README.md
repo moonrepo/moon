@@ -1,9 +1,13 @@
-# Monolith
+# Moon
 
-Monolith is a Rust program for managing JavaScript based monorepo's.
+> Currently a work in progress!
 
-> Inspired heavily from Bazel.
+Moon is a *m*onorepo *o*rganization, *o*rchestration, and *n*otification tool for JavaScript based
+projects, written in Rust. Many of the concepts within Moon are heavily inspired from Bazel.
 
+- [Documentation](./docs/README.md)
+
+<!--
 #### Tokens
 
 - File groups
@@ -21,3 +25,4 @@ Monolith is a Rust program for managing JavaScript based monorepo's.
 - Other
   - `@cache` - Returns an absolute file path to a location within the cache folder.
   - `@pid` - Returns the running project's ID as a fully-qualified ID from the workspace root.
+-->

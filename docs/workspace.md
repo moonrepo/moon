@@ -168,6 +168,8 @@ tasks:
     command: 'tsc'
 ```
 
+> Learn more about tasks and its concepts in the [tasks documentation](./task.md).
+
 ##### args
 
 The optional `args` param is a list of arguments to pass on the command line when executing the

@@ -1,6 +1,7 @@
 use monolith_config::{
     FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
+use monolith_logger::{color, debug};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -78,7 +79,7 @@ impl Task {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options.unwrap_or_default();
 
-        Task {
+        let task = Task {
             args: cloned_config.args.unwrap_or_else(Vec::new),
             command: cloned_config.command.unwrap_or_default(),
             deps: cloned_config.deps.unwrap_or_else(Vec::new),
@@ -95,7 +96,16 @@ impl Task {
             },
             outputs: cloned_config.outputs.unwrap_or_else(Vec::new),
             type_of: cloned_config.type_of.unwrap_or_default(),
-        }
+        };
+
+        debug!(
+            target: "moon:project",
+            "Creating task {} for command {}",
+            color::symbol(name),
+            color::shell(&task.command)
+        );
+
+        task
     }
 
     pub fn merge(&mut self, config: &TaskConfig) {

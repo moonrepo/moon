@@ -99,14 +99,6 @@ pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), Validat
     Ok(())
 }
 
-pub fn validate_file_groups(map: &HashMap<String, Vec<String>>) -> Result<(), ValidationError> {
-    for name in map.keys() {
-        validate_id(&format!("fileGroups.{}", name), name)?;
-    }
-
-    Ok(())
-}
-
 // Validate the value is a project ID, task ID, file group, etc.
 pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
     if !ID_PATTERN.is_match(id) {

@@ -4,7 +4,7 @@ use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use crate::task::TaskConfig;
 use crate::types::FileGroups;
-use crate::validators::{validate_file_groups, validate_id, HashMapValidate};
+use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -14,6 +14,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
+
+fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
+    for key in map.keys() {
+        validate_id(&format!("fileGroups.{}", key), key)?;
+    }
+
+    Ok(())
+}
 
 fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {

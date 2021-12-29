@@ -136,9 +136,9 @@ fileGroups:
 
 > Knowledge of [`.monolith/project.yml`](./workspace.md#tasks) is required before continuing.
 
-As mentioned in the link above, tasks are actions that are ran within the context of a project, and
-commonly wrap an npm or shell command. By default, this setting _is not required_ as tasks are
-typically defined globally, and not all projects require tasks.
+As mentioned in the link above, [tasks](./task.md) are actions that are ran within the context of a
+project, and commonly wrap an npm or shell command. By default, this setting _is not required_ as
+tasks are typically defined globally, and not all projects require tasks.
 
 With that being said, projects can define tasks that are unique to themselves, and can also define
 tasks that merge with global tasks of the same name!

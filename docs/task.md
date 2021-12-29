@@ -4,7 +4,7 @@
 - [Merge strategies](#merge-strategies)
 
 Tasks are commands that are ran in the context of a [project](./project.md). Underneath the hood, a
-task is simply a node module binary or system/shell command, that is ran as a child-process. Tasks
+task is simply a node module binary or system/shell command that is ran as a child-process. Tasks
 communicate between the Monolith client and server through a JSON-like message system.
 
 ## Targets
@@ -20,10 +20,10 @@ And task configurations for declaring cross-project or cross-task dependencies.
 
 ```yaml
 tasks:
-	build:
-		command: 'webpack'
-		deps:
-			- 'dsl:build'
+  build:
+    command: 'webpack'
+    deps:
+      - 'dsl:build'
 ```
 
 ## Merge strategies
@@ -50,51 +50,51 @@ point.
 ```yaml
 # Global
 tasks:
-	build:
-		command: 'webpack'
-		args:
-			- '--mode'
-			- 'production'
-			- '--color'
-		deps:
-			- 'dsl:build'
-		inputs:
-			- '/webpack.config.js'
-		outputs:
-			- 'build/'
+  build:
+    command: 'webpack'
+    args:
+      - '--mode'
+      - 'production'
+      - '--color'
+    deps:
+      - 'dsl:build'
+    inputs:
+      - '/webpack.config.js'
+    outputs:
+      - 'build/'
 
 # Local
 tasks:
-	build:
-		args:
-			- '--no-color'
-			- '--no-stats'
-		deps:
-			- 'hooks:build'
-		inputs:
-			- 'webpack.config.js'
-		options:
-			mergeArgs: 'append'
-			mergeDeps: 'prepend'
-			mergeInputs: 'replace'
+  build:
+    args:
+      - '--no-color'
+      - '--no-stats'
+    deps:
+      - 'hooks:build'
+    inputs:
+      - 'webpack.config.js'
+    options:
+      mergeArgs: 'append'
+      mergeDeps: 'prepend'
+      mergeInputs: 'replace'
 
 # Merged result
 tasks:
-	build:
-		command: 'webpack'
-		args:
-			- '--mode'
-			- 'production'
-			- '--color'
-			- '--no-color'
-			- '--no-stats'
-		deps:
-			- 'hooks:build'
-			- 'dsl:build'
-		inputs:
-			- 'webpack.config.js'
-		options:
-			mergeArgs: 'append'
-			mergeDeps: 'prepend'
-			mergeInputs: 'replace'
+  build:
+    command: 'webpack'
+    args:
+      - '--mode'
+      - 'production'
+      - '--color'
+      - '--no-color'
+      - '--no-stats'
+    deps:
+      - 'hooks:build'
+      - 'dsl:build'
+    inputs:
+      - 'webpack.config.js'
+    options:
+      mergeArgs: 'append'
+      mergeDeps: 'prepend'
+      mergeInputs: 'replace'
 ```

@@ -38,7 +38,7 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
-fn validate_projects_map(projects: &HashMap<String, FilePath>) -> Result<(), ValidationError> {
+fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), ValidationError> {
     for (key, value) in projects {
         validate_id(&format!("projects.{}", key), key)?;
 
@@ -137,7 +137,7 @@ pub struct WorkspaceConfig {
     #[validate]
     pub node: NodeConfig,
 
-    #[validate(custom = "validate_projects_map")]
+    #[validate(custom = "validate_projects")]
     pub projects: HashMap<String, FilePath>,
 }
 

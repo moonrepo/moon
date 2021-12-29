@@ -8,4 +8,6 @@ pub type FileGroups = HashMap<String, Vec<FilePathOrGlob>>;
 
 pub type ProjectID = String;
 
-pub type TargetID = String; // project_id:task_name
+pub type TaskID = String;
+
+pub type TargetID = String; // project_id:task_id

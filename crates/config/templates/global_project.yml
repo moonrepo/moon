@@ -50,7 +50,7 @@ tasks:
       - '@glob(tests)'
 
     # OPTIONAL: List of targets that will be executed *before* this task. A target is
-    # defined in the format of "project_id:task_name".
+    # defined in the format of "project_id:task_id".
     dependsOn: []
 
     # OPTIONAL: List of file paths/globs to calculate whether to execute the task based on files

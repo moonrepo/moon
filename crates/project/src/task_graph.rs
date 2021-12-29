@@ -24,16 +24,16 @@ impl TaskGraph {
         target: TargetID,
         parent_node: Option<&mut Node<TargetID>>,
     ) -> Result<(), ProjectError> {
-        let (project_id, task_name) = Target::parse(&target);
+        let (project_id, task_id) = Target::parse(&target);
 
         // Validate project first
         let project = projects.get(&project_id)?;
 
         // Validate task exists for project
-        let task = match project.tasks.get(&task_name) {
+        let task = match project.tasks.get(&task_id) {
             Some(t) => t,
             None => {
-                return Err(ProjectError::UnconfiguredTask(task_name, project_id));
+                return Err(ProjectError::UnconfiguredTask(task_id, project_id));
             }
         };
 

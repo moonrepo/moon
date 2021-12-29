@@ -10,7 +10,7 @@ communicate between the Monolith client and server through a JSON-like message s
 ## Targets
 
 A target is an identifier that pairs a project to an owned task, in the format of
-"project_id:task_name". Targets are used by terminal commands...
+"project_id:task_id". Targets are used by terminal commands...
 
 ```shell
 $ mono run project:build

@@ -4,7 +4,7 @@ use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use crate::task::TaskConfig;
 use crate::types::{FileGroups, ProjectID};
-use crate::validators::{validate_file_groups, validate_id_or_name, HashMapValidate};
+use crate::validators::{validate_file_groups, validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -17,7 +17,7 @@ use validator::{Validate, ValidationError, ValidationErrors};
 
 fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
-        validate_id_or_name(&format!("tasks.{}", name), name)?;
+        validate_id(&format!("tasks.{}", name), name)?;
 
         // Only fail for empty strings and not `None`
         if let Some(command) = &task.command {

@@ -14,7 +14,7 @@ pub use global_project::GlobalProjectConfig;
 pub use package::{PackageJson, PackageJsonValue};
 pub use project::{ProjectConfig, ProjectType};
 pub use task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
-pub use types::{FileGroups, FilePath, FilePathOrGlob, ProjectID, TargetID};
+pub use types::{FileGroups, FilePath, FilePathOrGlob, ProjectID, TargetID, TaskID};
 pub use validator::ValidationErrors;
 pub use workspace::WorkspaceConfig;
 

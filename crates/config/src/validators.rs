@@ -6,6 +6,15 @@ use std::collections::HashMap;
 use std::path::Path;
 use validator::{Validate, ValidationError, ValidationErrors};
 
+lazy_static! {
+    // Capture group for IDs/names/etc
+    static ref ID_GROUP: &'static str = "([A-Za-z]{1}[0-9A-Za-z_-]*)";
+
+    // Regex patterns based on the group above
+    pub static ref ID_PATTERN: Regex = Regex::new(&format!("^{}$", ID_GROUP.to_string())).unwrap();
+    pub static ref TARGET_PATTERN: Regex = Regex::new(&format!("^{}:{}$", ID_GROUP.to_string(), ID_GROUP.to_string())).unwrap();
+}
+
 // Extend validator lib
 pub trait VecValidate {
     fn validate(&self) -> Result<(), ValidationErrors>;
@@ -92,41 +101,32 @@ pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), Validat
 
 pub fn validate_file_groups(map: &HashMap<String, Vec<String>>) -> Result<(), ValidationError> {
     for name in map.keys() {
-        validate_id_or_name(&format!("fileGroups.{}", name), name)?;
+        validate_id(&format!("fileGroups.{}", name), name)?;
     }
 
     Ok(())
 }
 
-lazy_static! {
-    // Capture group for IDs/names/etc
-    static ref KEY_GROUP: String = "([A-Za-z]{1}[0-9A-Za-z_-]*)".to_owned();
-
-    // Regex patterns based on the key group above
-    pub static ref KEY_PATTERN: Regex = Regex::new(&format!("^{}$", KEY_GROUP.as_str())).unwrap();
-    pub static ref TARGET_PATTERN: Regex = Regex::new(&format!("^{}:{}$", KEY_GROUP.as_str(), KEY_GROUP.as_str())).unwrap();
-}
-
-// Validate the value is a project ID, task name, file group, etc.
-pub fn validate_id_or_name(key: &str, id: &str) -> Result<(), ValidationError> {
-    if !KEY_PATTERN.is_match(id) {
+// Validate the value is a project ID, task ID, file group, etc.
+pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
+    if !ID_PATTERN.is_match(id) {
         return Err(create_validation_error(
-            "invalid_format",
+            "invalid_id",
             key,
-            String::from("Invalid format. Accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), and must start with a letter."),
+            String::from("Must be a valid ID. Accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), and must start with a letter."),
         ));
     }
 
     Ok(())
 }
 
-// Validate the value is a target in the format of "project_id:task_name".
+// Validate the value is a target in the format of "project_id:task_id".
 pub fn validate_target(key: &str, target: &str) -> Result<(), ValidationError> {
     if !TARGET_PATTERN.is_match(target) {
         return Err(create_validation_error(
             "invalid_target",
             key,
-            String::from("Must be a valid target (project_id:task_name)."),
+            String::from("Must be a valid target (project_id:task_id)."),
         ));
     }
 

@@ -3,7 +3,7 @@
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
 use crate::types::FilePath;
-use crate::validators::{validate_child_relative_path, validate_semver_version};
+use crate::validators::{validate_child_relative_path, validate_id, validate_semver_version};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -39,7 +39,9 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
 fn validate_projects_map(projects: &HashMap<String, FilePath>) -> Result<(), ValidationError> {
-    for value in projects.values() {
+    for (key, value) in projects {
+        validate_id(&format!("projects.{}", key), key)?;
+
         match validate_child_relative_path("projects", value) {
             Ok(_) => {}
             Err(e) => return Err(e),

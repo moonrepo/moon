@@ -1,13 +1,13 @@
-use monolith_config::{ProjectID, TargetID};
+use monolith_config::{ProjectID, TargetID, TaskID};
 
 pub struct Target {}
 
 impl Target {
-    pub fn format(project_id: &str, task_name: &str) -> TargetID {
-        format!("{}:{}", project_id, task_name)
+    pub fn format(project_id: &str, task_id: &str) -> TargetID {
+        format!("{}:{}", project_id, task_id)
     }
 
-    pub fn parse(target: &str) -> (ProjectID, String) {
+    pub fn parse(target: &str) -> (ProjectID, TaskID) {
         let split: Vec<&str> = target.split(':').collect();
 
         (String::from(split[0]), String::from(split[1]))

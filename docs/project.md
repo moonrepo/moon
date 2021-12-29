@@ -1,4 +1,4 @@
-# Project
+# Projects
 
 - [ID](#id)
 - [Configuration](#configuration)

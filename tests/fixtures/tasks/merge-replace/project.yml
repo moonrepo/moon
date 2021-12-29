@@ -2,7 +2,7 @@ tasks:
   standard:
     type: shell
     command: newcmd
-    dependsOn:
+    deps:
       - b:standard
     args:
       - --b
@@ -11,4 +11,7 @@ tasks:
     outputs:
       - b
     options:
-      mergeStrategy: replace
+      mergeArgs: replace
+      mergeDeps: replace
+      mergeInputs: replace
+      mergeOutputs: replace

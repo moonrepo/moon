@@ -254,11 +254,47 @@ mod tasks {
         TaskConfig {
             args: None,
             command: Some(command.to_owned()),
-            depends_on: None,
+            deps: None,
             inputs: None,
             outputs: None,
             options: None,
             type_of: None,
+        }
+    }
+
+    fn mock_merged_task_options_config(strategy: TaskMergeStrategy) -> TaskOptionsConfig {
+        TaskOptionsConfig {
+            merge_args: Some(strategy.clone()),
+            merge_deps: Some(strategy.clone()),
+            merge_inputs: Some(strategy.clone()),
+            merge_outputs: Some(strategy),
+            retry_count: Some(1),
+            run_in_ci: Some(true),
+            run_from_workspace_root: None,
+        }
+    }
+
+    fn mock_local_task_options_config(strategy: TaskMergeStrategy) -> TaskOptionsConfig {
+        TaskOptionsConfig {
+            merge_args: Some(strategy.clone()),
+            merge_deps: Some(strategy.clone()),
+            merge_inputs: Some(strategy.clone()),
+            merge_outputs: Some(strategy),
+            retry_count: None,
+            run_in_ci: None,
+            run_from_workspace_root: None,
+        }
+    }
+
+    fn stub_global_task_options_config() -> TaskOptionsConfig {
+        TaskOptionsConfig {
+            merge_args: None,
+            merge_deps: None,
+            merge_inputs: None,
+            merge_outputs: None,
+            retry_count: Some(1),
+            run_in_ci: Some(true),
+            run_from_workspace_root: None,
         }
     }
 
@@ -363,15 +399,10 @@ mod tasks {
                     TaskConfig {
                         args: Some(vec!["--a".to_owned()]),
                         command: Some(String::from("standard")),
-                        depends_on: Some(vec!["a:standard".to_owned()]),
+                        deps: Some(vec!["a:standard".to_owned()]),
                         inputs: Some(vec!["a.*".to_owned()]),
                         outputs: Some(vec!["a".to_owned()]),
-                        options: Some(TaskOptionsConfig {
-                            merge_strategy: None,
-                            retry_count: Some(1),
-                            run_in_ci: Some(true),
-                            run_from_workspace_root: None,
-                        }),
+                        options: Some(stub_global_task_options_config()),
                         type_of: None,
                     },
                 )])),
@@ -392,15 +423,12 @@ mod tasks {
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: Some(String::from("newcmd")),
-                            depends_on: Some(vec!["b:standard".to_owned()]),
+                            deps: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
-                            options: Some(TaskOptionsConfig {
-                                merge_strategy: Some(TaskMergeStrategy::Replace),
-                                retry_count: None,
-                                run_in_ci: None,
-                                run_from_workspace_root: None,
-                            }),
+                            options: Some(mock_local_task_options_config(
+                                TaskMergeStrategy::Replace
+                            )),
                             type_of: Some(TaskType::Shell),
                         }
                     )])),
@@ -416,15 +444,12 @@ mod tasks {
                         &TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: Some(String::from("newcmd")),
-                            depends_on: Some(vec!["b:standard".to_owned()]),
+                            deps: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
-                            options: Some(TaskOptionsConfig {
-                                merge_strategy: Some(TaskMergeStrategy::Replace),
-                                retry_count: Some(1),
-                                run_in_ci: Some(true),
-                                run_from_workspace_root: None,
-                            }),
+                            options: Some(mock_merged_task_options_config(
+                                TaskMergeStrategy::Replace
+                            )),
                             type_of: Some(TaskType::Shell),
                         }
                     )
@@ -447,15 +472,10 @@ mod tasks {
                     TaskConfig {
                         args: Some(vec!["--a".to_owned()]),
                         command: Some(String::from("standard")),
-                        depends_on: Some(vec!["a:standard".to_owned()]),
+                        deps: Some(vec!["a:standard".to_owned()]),
                         inputs: Some(vec!["a.*".to_owned()]),
                         outputs: Some(vec!["a".to_owned()]),
-                        options: Some(TaskOptionsConfig {
-                            merge_strategy: None,
-                            retry_count: Some(1),
-                            run_in_ci: Some(true),
-                            run_from_workspace_root: None,
-                        }),
+                        options: Some(stub_global_task_options_config()),
                         type_of: None,
                     },
                 )])),
@@ -476,15 +496,12 @@ mod tasks {
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: None,
-                            depends_on: Some(vec!["b:standard".to_owned()]),
+                            deps: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
-                            options: Some(TaskOptionsConfig {
-                                merge_strategy: Some(TaskMergeStrategy::Append),
-                                retry_count: None,
-                                run_in_ci: None,
-                                run_from_workspace_root: None,
-                            }),
+                            options: Some(mock_local_task_options_config(
+                                TaskMergeStrategy::Append
+                            )),
                             type_of: Some(TaskType::Shell),
                         }
                     )])),
@@ -500,18 +517,12 @@ mod tasks {
                         &TaskConfig {
                             args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
                             command: Some(String::from("standard")),
-                            depends_on: Some(vec![
-                                "a:standard".to_owned(),
-                                "b:standard".to_owned(),
-                            ]),
+                            deps: Some(vec!["a:standard".to_owned(), "b:standard".to_owned(),]),
                             inputs: Some(vec!["a.*".to_owned(), "b.*".to_owned()]),
                             outputs: Some(vec!["a".to_owned(), "b".to_owned()]),
-                            options: Some(TaskOptionsConfig {
-                                merge_strategy: Some(TaskMergeStrategy::Append),
-                                retry_count: Some(1),
-                                run_in_ci: Some(true),
-                                run_from_workspace_root: None,
-                            }),
+                            options: Some(mock_merged_task_options_config(
+                                TaskMergeStrategy::Append
+                            )),
                             type_of: Some(TaskType::Shell),
                         }
                     )
@@ -534,15 +545,10 @@ mod tasks {
                     TaskConfig {
                         args: Some(vec!["--a".to_owned()]),
                         command: Some(String::from("standard")),
-                        depends_on: Some(vec!["a:standard".to_owned()]),
+                        deps: Some(vec!["a:standard".to_owned()]),
                         inputs: Some(vec!["a.*".to_owned()]),
                         outputs: Some(vec!["a".to_owned()]),
-                        options: Some(TaskOptionsConfig {
-                            merge_strategy: None,
-                            retry_count: Some(1),
-                            run_in_ci: Some(true),
-                            run_from_workspace_root: None,
-                        }),
+                        options: Some(stub_global_task_options_config()),
                         type_of: None,
                     },
                 )])),
@@ -563,15 +569,12 @@ mod tasks {
                         TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: Some(String::from("newcmd")),
-                            depends_on: Some(vec!["b:standard".to_owned()]),
+                            deps: Some(vec!["b:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned()]),
-                            options: Some(TaskOptionsConfig {
-                                merge_strategy: Some(TaskMergeStrategy::Prepend),
-                                retry_count: None,
-                                run_in_ci: None,
-                                run_from_workspace_root: None,
-                            }),
+                            options: Some(mock_local_task_options_config(
+                                TaskMergeStrategy::Prepend
+                            )),
                             type_of: Some(TaskType::Shell),
                         }
                     )])),
@@ -587,19 +590,101 @@ mod tasks {
                         &TaskConfig {
                             args: Some(vec!["--b".to_owned(), "--a".to_owned()]),
                             command: Some(String::from("newcmd")),
-                            depends_on: Some(vec![
-                                "b:standard".to_owned(),
-                                "a:standard".to_owned()
-                            ]),
+                            deps: Some(vec!["b:standard".to_owned(), "a:standard".to_owned()]),
                             inputs: Some(vec!["b.*".to_owned(), "a.*".to_owned()]),
                             outputs: Some(vec!["b".to_owned(), "a".to_owned()]),
+                            options: Some(mock_merged_task_options_config(
+                                TaskMergeStrategy::Prepend
+                            )),
+                            type_of: Some(TaskType::Shell),
+                        }
+                    )
+                ),]),
+            }
+        );
+    }
+
+    #[test]
+    fn strategy_all() {
+        let root_dir = get_fixture_root();
+        let project = Project::new(
+            "id",
+            "tasks/merge-all-strategies",
+            &root_dir,
+            &GlobalProjectConfig {
+                file_groups: HashMap::new(),
+                tasks: Some(HashMap::from([(
+                    String::from("standard"),
+                    TaskConfig {
+                        args: Some(vec!["--a".to_owned()]),
+                        command: Some(String::from("standard")),
+                        deps: Some(vec!["a:standard".to_owned()]),
+                        inputs: Some(vec!["a.*".to_owned()]),
+                        outputs: Some(vec!["a".to_owned()]),
+                        options: Some(stub_global_task_options_config()),
+                        type_of: None,
+                    },
+                )])),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            project,
+            Project {
+                id: String::from("id"),
+                config: Some(ProjectConfig {
+                    depends_on: None,
+                    file_groups: None,
+                    project: None,
+                    tasks: Some(HashMap::from([(
+                        String::from("standard"),
+                        TaskConfig {
+                            args: Some(vec!["--b".to_owned()]),
+                            command: None,
+                            deps: Some(vec!["b:standard".to_owned()]),
+                            inputs: Some(vec!["b.*".to_owned()]),
+                            outputs: Some(vec!["b".to_owned()]),
                             options: Some(TaskOptionsConfig {
-                                merge_strategy: Some(TaskMergeStrategy::Prepend),
+                                merge_args: Some(TaskMergeStrategy::Append),
+                                merge_deps: Some(TaskMergeStrategy::Prepend),
+                                merge_inputs: Some(TaskMergeStrategy::Replace),
+                                merge_outputs: Some(TaskMergeStrategy::Append),
+                                retry_count: None,
+                                run_in_ci: None,
+                                run_from_workspace_root: None,
+                            }),
+                            type_of: None,
+                        }
+                    )])),
+                }),
+                dir: root_dir
+                    .join("tasks/merge-all-strategies")
+                    .canonicalize()
+                    .unwrap(),
+                file_groups: HashMap::new(),
+                location: String::from("tasks/merge-all-strategies"),
+                package_json: None,
+                tasks: HashMap::from([(
+                    String::from("standard"),
+                    Task::from_config(
+                        "standard",
+                        &TaskConfig {
+                            args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
+                            command: Some(String::from("standard")),
+                            deps: Some(vec!["b:standard".to_owned(), "a:standard".to_owned()]),
+                            inputs: Some(vec!["b.*".to_owned()]),
+                            outputs: Some(vec!["a".to_owned(), "b".to_owned()]),
+                            options: Some(TaskOptionsConfig {
+                                merge_args: Some(TaskMergeStrategy::Append),
+                                merge_deps: Some(TaskMergeStrategy::Prepend),
+                                merge_inputs: Some(TaskMergeStrategy::Replace),
+                                merge_outputs: Some(TaskMergeStrategy::Append),
                                 retry_count: Some(1),
                                 run_in_ci: Some(true),
                                 run_from_workspace_root: None,
                             }),
-                            type_of: Some(TaskType::Shell),
+                            type_of: Some(TaskType::Npm),
                         }
                     )
                 ),]),

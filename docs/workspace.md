@@ -12,7 +12,7 @@
     - [fileGroups](#filegroups)
     - [tasks](#tasks)
       - [args](#args)
-      - [dependsOn](#dependson)
+      - [deps](#deps)
       - [inputs](#inputs)
       - [outputs](#outputs)
       - [options](#options)
@@ -198,11 +198,11 @@ tasks:
       - '--maxWorkers 3'
 ```
 
-##### dependsOn
+##### deps
 
-The optional `dependsOn` param is a list of other project tasks, known as targets, that will be
-executed _before_ this task. It achieves this by generating a concurrent task graph based on the
-project graph.
+The optional `deps` param is a list of other project tasks, known as targets, that will be executed
+_before_ this task. It achieves this by generating a concurrent task graph based on the project
+graph.
 
 A target is defined in the format of "project_id:task_name".
 
@@ -210,7 +210,7 @@ A target is defined in the format of "project_id:task_name".
 tasks:
   build:
     command: 'webpack'
-    dependsOn:
+    deps:
       - 'dsl:build'
       - 'hooks:build'
 ```
@@ -258,15 +258,21 @@ tasks:
 ##### options
 
 The optional `options` param is an object of configurable options that can be used to modify the
-task and its execution. The following fields can be provided.
+task and its execution. The following fields can be provided, with merge fields supporting all
+[merge strategies](./task.md#merge-strategies).
 
-- `mergeStrategy` (`append | prepend | replace`) - The strategy to use when merging a list (`args`,
-  `dependsOn`, `inputs`, `outputs`, etc). Defaults to "append".
-  ([View more about merge strategies](./task.md#merge-strategies))
+- `mergeArgs` (`TaskMergeStrategy`) - The strategy to use when merging the `args` list. Defaults to
+  "append".
+- `mergeDeps` (`TaskMergeStrategy`) - The strategy to use when merging the `deps` list. Defaults to
+  "append".
+- `mergeInputs` (`TaskMergeStrategy`) - The strategy to use when merging the `inputs` list. Defaults
+  to "append".
+- `mergeOutputs` (`TaskMergeStrategy`) - The strategy to use when merging the `outputs` list.
+  Defaults to "append".
 - `retryCount` (`number`) - The amount of times to task execution will retry when it fails. Defaults
   to `0`.
-- `runInCi` (`boolean`) - Whether to run the task automatically in a CI pipeline, when affected by
-  modified files. Defaults to `true`, and is _always_ true when a task defines `outputs`.
+- `runInCi` (`boolean`) - Whether to run the task automatically in a CI pipeline (when affected by
+  modified files). Defaults to `true`, and is _always_ true when a task defines `outputs`.
 - `runFromWorkspaceRoot` (`boolean`) - Whether to use the workspace root as the working directory
   when executing a task. Defaults to `false` and runs from the task's project root.
 

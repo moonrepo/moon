@@ -1,7 +1,7 @@
 tasks:
   standard:
     type: shell
-    dependsOn:
+    deps:
       - b:standard
     args:
       - --b
@@ -10,4 +10,7 @@ tasks:
     outputs:
       - b
     options:
-      mergeStrategy: append
+      mergeArgs: append
+      mergeDeps: append
+      mergeInputs: append
+      mergeOutputs: append

@@ -48,7 +48,7 @@ impl TaskGraph {
         // Add dependencies
         let mut node = Node::new(target.clone());
 
-        for dep_target in &task.depends_on {
+        for dep_target in &task.deps {
             self.generate(projects, dep_target.clone(), Some(&mut node))?;
         }
 

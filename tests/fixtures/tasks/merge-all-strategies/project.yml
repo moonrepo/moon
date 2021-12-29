@@ -1,7 +1,5 @@
 tasks:
   standard:
-    type: shell
-    command: newcmd
     deps:
       - b:standard
     args:
@@ -11,7 +9,7 @@ tasks:
     outputs:
       - b
     options:
-      mergeArgs: prepend
+      mergeArgs: append
       mergeDeps: prepend
-      mergeInputs: prepend
-      mergeOutputs: prepend
+      mergeInputs: replace
+      mergeOutputs: append

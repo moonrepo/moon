@@ -966,6 +966,8 @@ dependencies = [
  "assert_fs",
  "figment",
  "json",
+ "lazy_static",
+ "regex",
  "semver",
  "serde",
  "serde_yaml",

@@ -1,4 +1,6 @@
 use crate::errors::create_validation_error;
+use lazy_static::lazy_static;
+use regex::Regex;
 use semver::Version;
 use std::collections::HashMap;
 use std::path::Path;
@@ -88,10 +90,39 @@ pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), Validat
     Ok(())
 }
 
+pub fn validate_file_groups(map: &HashMap<String, Vec<String>>) -> Result<(), ValidationError> {
+    for name in map.keys() {
+        validate_id_or_name(&format!("fileGroups.{}", name), name)?;
+    }
+
+    Ok(())
+}
+
+lazy_static! {
+    // Capture group for IDs/names/etc
+    static ref KEY_GROUP: String = "([A-Za-z]{1}[0-9A-Za-z_-]*)".to_owned();
+
+    // Regex patterns based on the key group above
+    pub static ref KEY_PATTERN: Regex = Regex::new(&format!("^{}$", KEY_GROUP.as_str())).unwrap();
+    pub static ref TARGET_PATTERN: Regex = Regex::new(&format!("^{}:{}$", KEY_GROUP.as_str(), KEY_GROUP.as_str())).unwrap();
+}
+
+// Validate the value is a project ID, task name, file group, etc.
+pub fn validate_id_or_name(key: &str, id: &str) -> Result<(), ValidationError> {
+    if !KEY_PATTERN.is_match(id) {
+        return Err(create_validation_error(
+            "invalid_format",
+            key,
+            String::from("Invalid format. Accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), and must start with a letter."),
+        ));
+    }
+
+    Ok(())
+}
+
 // Validate the value is a target in the format of "project_id:task_name".
 pub fn validate_target(key: &str, target: &str) -> Result<(), ValidationError> {
-    // TODO regex
-    if !target.contains(':') {
+    if !TARGET_PATTERN.is_match(target) {
         return Err(create_validation_error(
             "invalid_target",
             key,

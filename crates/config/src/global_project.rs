@@ -4,7 +4,7 @@ use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use crate::project::FileGroups;
 use crate::task::TaskConfig;
-use crate::validators::HashMapValidate;
+use crate::validators::{validate_file_groups, validate_id_or_name, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -15,9 +15,10 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
 
-// Task commands are required when defined globally, but not locally
-fn validate_task_command(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
+fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
+        validate_id_or_name(&format!("tasks.{}", name), name)?;
+
         // Fail for both `None` and empty strings
         let command = task.command.clone().unwrap_or_default();
 
@@ -36,9 +37,10 @@ fn validate_task_command(map: &HashMap<String, TaskConfig>) -> Result<(), Valida
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct GlobalProjectConfig {
     #[serde(rename = "fileGroups")]
+    #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
-    #[validate(custom = "validate_task_command")]
+    #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: Option<HashMap<String, TaskConfig>>,
 }

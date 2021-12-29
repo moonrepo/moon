@@ -3,7 +3,7 @@
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use crate::task::TaskConfig;
-use crate::validators::HashMapValidate;
+use crate::validators::{validate_file_groups, validate_id_or_name, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
@@ -14,8 +14,10 @@ use std::collections::HashMap;
 use std::path::Path;
 use validator::{Validate, ValidationError, ValidationErrors};
 
-fn validate_task_command(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
+fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
+        validate_id_or_name(&format!("tasks.{}", name), name)?;
+
         // Only fail for empty strings and not `None`
         if let Some(command) = &task.command {
             if command.is_empty() {
@@ -78,12 +80,13 @@ pub struct ProjectConfig {
     pub depends_on: Option<Vec<ProjectID>>,
 
     #[serde(rename = "fileGroups")]
+    #[validate(custom = "validate_file_groups")]
     pub file_groups: Option<FileGroups>,
 
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
-    #[validate(custom = "validate_task_command")]
+    #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: Option<HashMap<String, TaskConfig>>,
 }

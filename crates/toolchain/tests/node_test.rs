@@ -1,6 +1,6 @@
-use monolith_config::WorkspaceConfig;
-use monolith_toolchain::tools::node::NodeTool;
-use monolith_toolchain::{Tool, Toolchain};
+use moon_config::WorkspaceConfig;
+use moon_toolchain::tools::node::NodeTool;
+use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
 use std::env;
 
@@ -30,16 +30,16 @@ fn get_node_platform() -> &'static str {
 fn generates_paths() {
     let (node, temp_dir) = create_node_tool();
 
-    assert!(predicates::str::ends_with(".monolith/tools/node/1.0.0")
+    assert!(predicates::str::ends_with(".moon/tools/node/1.0.0")
         .eval(node.get_install_dir().to_str().unwrap()));
 
     assert!(
-        predicates::str::ends_with(".monolith/tools/node/1.0.0/bin/node")
+        predicates::str::ends_with(".moon/tools/node/1.0.0/bin/node")
             .eval(node.get_bin_path().to_str().unwrap())
     );
 
     assert!(predicates::str::ends_with(format!(
-        ".monolith/temp/node/node-v1.0.0-{}-x64.tar.gz",
+        ".moon/temp/node/node-v1.0.0-{}-x64.tar.gz",
         get_node_platform()
     ))
     .eval(node.get_download_path().unwrap().to_str().unwrap()));

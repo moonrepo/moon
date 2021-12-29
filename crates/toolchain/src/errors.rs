@@ -3,7 +3,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolchainError {
-    #[error("Unknown monolith toolchain error.")]
+    #[error("Unknown moon toolchain error.")]
     Unknown,
 
     // TODO

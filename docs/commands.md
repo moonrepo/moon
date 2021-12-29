@@ -18,7 +18,7 @@ value.
 
 ```shell
 $ mono bin node
-/Users/example/.monolith/tools/node/x.x.x/bin/node
+/Users/example/.moon/tools/node/x.x.x/bin/node
 ```
 
 A tool is considered "not configured" when not in use, for example, querying yarn/pnpm when the

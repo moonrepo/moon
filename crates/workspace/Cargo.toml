@@ -1,11 +1,11 @@
 [package]
-name = "monolith_workspace"
+name = "moon_workspace"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-monolith_config = { path = "../config" }
-monolith_logger = { path = "../logger" }
-monolith_project = { path = "../project" }
-monolith_toolchain = { path = "../toolchain" }
+moon_config = { path = "../config" }
+moon_logger = { path = "../logger" }
+moon_project = { path = "../project" }
+moon_toolchain = { path = "../toolchain" }
 thiserror = "1.0"

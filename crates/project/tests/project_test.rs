@@ -1,9 +1,9 @@
-use monolith_config::project::ProjectMetadataConfig;
-use monolith_config::{
+use moon_config::project::ProjectMetadataConfig;
+use moon_config::{
     FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectType, TaskConfig,
     TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use monolith_project::{Project, Task};
+use moon_project::{Project, Task};
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;

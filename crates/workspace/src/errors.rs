@@ -1,6 +1,6 @@
-use monolith_config::{constants, ValidationErrors};
-use monolith_project::ProjectError;
-use monolith_toolchain::ToolchainError;
+use moon_config::{constants, ValidationErrors};
+use moon_project::ProjectError;
+use moon_toolchain::ToolchainError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -45,7 +45,7 @@ pub enum WorkspaceError {
     )]
     InvalidGlobalProjectConfigFile(ValidationErrors),
 
-    #[error("Unknown monolith workspace error.")]
+    #[error("Unknown moon workspace error.")]
     Unknown,
 
     #[error("Project error.")]

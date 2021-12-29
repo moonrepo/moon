@@ -74,7 +74,7 @@ pub enum Commands {
 #[derive(Debug, Parser)]
 #[clap(
     bin_name = "mono",
-    name = "Monolith",
+    name = "Moon",
     about = "Take your monorepo to the moon!",
     version
 )]

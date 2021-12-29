@@ -3,15 +3,15 @@ use crate::errors::ProjectError;
 use crate::project::Project;
 use dep_graph::{DepGraph, Node};
 use itertools::Itertools;
-use monolith_config::{GlobalProjectConfig, ProjectID};
-use monolith_logger::{color, debug, trace};
+use moon_config::{GlobalProjectConfig, ProjectID};
+use moon_logger::{color, debug, trace};
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 pub struct ProjectGraph {
     /// The global project configuration that all projects inherit from.
-    /// Is loaded from `.monolith/project.yml`.
+    /// Is loaded from `.moon/project.yml`.
     global_config: GlobalProjectConfig,
 
     /// A lightweight dependency graph, where each node is a project ID,
@@ -22,7 +22,7 @@ pub struct ProjectGraph {
     projects: RefCell<HashMap<ProjectID, Project>>,
 
     /// The mapping of projects by ID to a relative file system location.
-    /// Is the `projects` setting in `.monolith/workspace.yml`.
+    /// Is the `projects` setting in `.moon/workspace.yml`.
     projects_config: HashMap<ProjectID, String>,
 
     /// The workspace root, in which projects are relatively loaded from.

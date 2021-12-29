@@ -1,11 +1,11 @@
 use crate::errors::ProjectError;
 use crate::task::Task;
-use monolith_config::constants::CONFIG_PROJECT_FILENAME;
-use monolith_config::{
+use moon_config::constants::CONFIG_PROJECT_FILENAME;
+use moon_config::{
     FileGroups, FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig,
     ProjectID,
 };
-use monolith_logger::{color, debug, trace};
+use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

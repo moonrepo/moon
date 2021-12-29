@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use monolith_logger::{color, trace};
+use moon_logger::{color, trace};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;

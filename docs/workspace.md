@@ -20,20 +20,20 @@
 
 A workspace is a directory that contains [projects](./project.md), manages a
 [toolchain](./toolchain.md), and is typically coupled with a VCS repository. The root of a workspace
-is denoted by a `.monolith` folder and a `package.json`.
+is denoted by a `.moon` folder and a `package.json`.
 
-By default Monolith has been designed for monorepos, but can also be used for polyrepos.
+By default Moon has been designed for monorepos, but can also be used for polyrepos.
 
 ## Configuration
 
-Configurations that apply to the entire workspace are located within a `.monolith` folder at the
+Configurations that apply to the entire workspace are located within a `.moon` folder at the
 workspace root.
 
 > This folder _must_ be relative to the root `package.json` and it's associated lock file.
 
 ### `workspace.yml`
 
-The `.monolith/workspace.yml` file configures projects and the toolchain.
+The `.moon/workspace.yml` file configures projects and the toolchain.
 
 #### projects
 
@@ -51,10 +51,10 @@ projects:
   hooks: 'packages/react-hooks'
 ```
 
-Unlike packages in the JavaScript ecosystem, a Monolith project _does not_ require a `package.json`.
+Unlike packages in the JavaScript ecosystem, a Moon project _does not_ require a `package.json`.
 
-> **Why doesn't Monolith auto-detect projects?** Monolith _does not_ automatically detect projects
-> using file system globs for the following reasons:
+> **Why doesn't Moon auto-detect projects?** Moon _does not_ automatically detect projects using
+> file system globs for the following reasons:
 >
 > - Depth-first scans are expensive, especially when the workspace continues to grow.
 > - CI and other machines may inadvertently detect more projects because of left over artifacts.
@@ -63,7 +63,7 @@ Unlike packages in the JavaScript ecosystem, a Monolith project _does not_ requi
 #### node
 
 The `node` setting defines the Node.js version and package manager to install within the toolchain,
-as Monolith _does not_ use a Node.js binary found on the host machine. Managing the Node.js version
+as Moon _does not_ use a Node.js binary found on the host machine. Managing the Node.js version
 within the toolchain ensures a deterministic environment across any machine (whether a developer,
 CI, or production machine).
 
@@ -111,7 +111,7 @@ node:
 
 ### `project.yml`
 
-The `.monolith/project.yml` file configures settings that are inherited by _every_ project in the
+The `.moon/project.yml` file configures settings that are inherited by _every_ project in the
 workspace. Projects can override these settings within their `<project path>/project.yml`
 ([view the projects docs for more information](./project.md#configuration)).
 
@@ -298,5 +298,5 @@ tasks:
     type: 'shell'
 ```
 
-> This param exists because of our [toolchain](./toolchain.md), and Monolith ensuring the correct
+> This param exists because of our [toolchain](./toolchain.md), and Moon ensuring the correct
 > command is ran.

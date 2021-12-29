@@ -1,11 +1,11 @@
 [package]
-name = "monolith_toolchain"
+name = "moon_toolchain"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-monolith_config = { path = "../config" }
-monolith_logger = { path = "../logger" }
+moon_config = { path = "../config" }
+moon_logger = { path = "../logger" }
 async-trait = "0.1"
 dirs = "4.0"
 flate2 = "1.0"

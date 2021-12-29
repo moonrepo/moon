@@ -1,5 +1,5 @@
 [package]
-name = "monolith_config"
+name = "moon_config"
 version = "0.1.0"
 edition = "2021"
 

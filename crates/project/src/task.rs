@@ -1,7 +1,7 @@
-use monolith_config::{
+use moon_config::{
     FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use monolith_logger::{color, debug};
+use moon_logger::{color, debug};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

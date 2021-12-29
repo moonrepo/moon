@@ -10,8 +10,8 @@ use commands::project_graph::project_graph;
 use commands::setup::setup;
 use commands::teardown::teardown;
 use log::LevelFilter;
-use monolith_logger::Logger;
-use monolith_workspace::Workspace;
+use moon_logger::Logger;
+use moon_workspace::Workspace;
 
 // This is annoying, but clap requires applying the `ArgEnum`
 // trait onto the enum, which we can't apply to the log package.

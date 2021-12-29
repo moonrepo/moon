@@ -1,5 +1,5 @@
-use monolith_config::WorkspaceConfig;
-use monolith_toolchain::Toolchain;
+use moon_config::WorkspaceConfig;
+use moon_toolchain::Toolchain;
 use predicates::prelude::*;
 use std::env;
 use std::path::Path;
@@ -17,11 +17,9 @@ fn generates_paths() {
     let base_dir = assert_fs::TempDir::new().unwrap();
     let toolchain = create_toolchain(&base_dir);
 
-    assert!(predicates::str::ends_with(".monolith").eval(toolchain.dir.to_str().unwrap()));
-    assert!(predicates::str::ends_with(".monolith/temp").eval(toolchain.temp_dir.to_str().unwrap()));
-    assert!(
-        predicates::str::ends_with(".monolith/tools").eval(toolchain.tools_dir.to_str().unwrap())
-    );
+    assert!(predicates::str::ends_with(".moon").eval(toolchain.dir.to_str().unwrap()));
+    assert!(predicates::str::ends_with(".moon/temp").eval(toolchain.temp_dir.to_str().unwrap()));
+    assert!(predicates::str::ends_with(".moon/tools").eval(toolchain.tools_dir.to_str().unwrap()));
 
     base_dir.close().unwrap();
 }
@@ -29,9 +27,9 @@ fn generates_paths() {
 #[test]
 fn creates_dirs() {
     let base_dir = assert_fs::TempDir::new().unwrap();
-    let home_dir = base_dir.join(".monolith");
-    let temp_dir = base_dir.join(".monolith/temp");
-    let tools_dir = base_dir.join(".monolith/tools");
+    let home_dir = base_dir.join(".moon");
+    let temp_dir = base_dir.join(".moon/temp");
+    let tools_dir = base_dir.join(".moon/tools");
 
     assert!(!home_dir.exists());
     assert!(!temp_dir.exists());

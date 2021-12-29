@@ -1,7 +1,7 @@
 use crate::helpers::safe_exit;
 use clap::ArgEnum;
-use monolith_toolchain::Tool;
-use monolith_workspace::Workspace;
+use moon_toolchain::Tool;
+use moon_workspace::Workspace;
 
 #[derive(ArgEnum, Clone, Debug)]
 pub enum BinTools {

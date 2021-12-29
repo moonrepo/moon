@@ -1,7 +1,7 @@
-use monolith_config::workspace::{PackageManager, PnpmConfig};
-use monolith_config::WorkspaceConfig;
-use monolith_toolchain::tools::pnpm::PnpmTool;
-use monolith_toolchain::{Tool, Toolchain};
+use moon_config::workspace::{PackageManager, PnpmConfig};
+use moon_config::WorkspaceConfig;
+use moon_toolchain::tools::pnpm::PnpmTool;
+use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
 use std::env;
 
@@ -25,11 +25,11 @@ pub fn create_pnpm_tool() -> (PnpmTool, assert_fs::TempDir) {
 fn generates_paths() {
     let (pnpm, temp_dir) = create_pnpm_tool();
 
-    assert!(predicates::str::ends_with(".monolith/tools/node/1.0.0")
+    assert!(predicates::str::ends_with(".moon/tools/node/1.0.0")
         .eval(pnpm.get_install_dir().to_str().unwrap()));
 
     assert!(
-        predicates::str::ends_with(".monolith/tools/node/1.0.0/bin/pnpm")
+        predicates::str::ends_with(".moon/tools/node/1.0.0/bin/pnpm")
             .eval(pnpm.get_bin_path().to_str().unwrap())
     );
 

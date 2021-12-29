@@ -1,7 +1,7 @@
-use monolith_config::workspace::NpmConfig;
-use monolith_config::WorkspaceConfig;
-use monolith_toolchain::tools::npm::NpmTool;
-use monolith_toolchain::{Tool, Toolchain};
+use moon_config::workspace::NpmConfig;
+use moon_config::WorkspaceConfig;
+use moon_toolchain::tools::npm::NpmTool;
+use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
 use std::env;
 
@@ -24,13 +24,11 @@ pub fn create_npm_tool() -> (NpmTool, assert_fs::TempDir) {
 fn generates_paths() {
     let (npm, temp_dir) = create_npm_tool();
 
-    assert!(predicates::str::ends_with(".monolith/tools/node/1.0.0")
+    assert!(predicates::str::ends_with(".moon/tools/node/1.0.0")
         .eval(npm.get_install_dir().to_str().unwrap()));
 
-    assert!(
-        predicates::str::ends_with(".monolith/tools/node/1.0.0/bin/npm")
-            .eval(npm.get_bin_path().to_str().unwrap())
-    );
+    assert!(predicates::str::ends_with(".moon/tools/node/1.0.0/bin/npm")
+        .eval(npm.get_bin_path().to_str().unwrap()));
 
     temp_dir.close().unwrap();
 }

@@ -200,11 +200,9 @@ tasks:
 
 ##### deps
 
-The optional `deps` param is a list of other project tasks, known as targets, that will be executed
-_before_ this task. It achieves this by generating a concurrent task graph based on the project
-graph.
-
-A target is defined in the format of "project_id:task_name".
+The optional `deps` param is a list of other project tasks, known as [targets](./task.md#targets),
+that will be executed _before_ this task. It achieves this by generating a concurrent task graph
+based on the project graph.
 
 ```yaml
 tasks:

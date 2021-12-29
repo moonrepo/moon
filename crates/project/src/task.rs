@@ -1,5 +1,6 @@
-use monolith_config::{Target, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
-
+use monolith_config::{
+    FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -58,15 +59,15 @@ pub struct Task {
 
     pub command: String,
 
-    pub deps: Vec<Target>,
+    pub deps: Vec<TargetID>,
 
-    pub inputs: Vec<String>,
+    pub inputs: Vec<FilePathOrGlob>,
 
     pub name: String,
 
     pub options: TaskOptions,
 
-    pub outputs: Vec<String>,
+    pub outputs: Vec<FilePathOrGlob>,
 
     #[serde(rename = "type")]
     pub type_of: TaskType,

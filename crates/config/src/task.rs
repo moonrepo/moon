@@ -1,3 +1,4 @@
+use crate::types::{FilePathOrGlob, TargetID};
 use crate::validators::{validate_child_or_root_path, validate_target};
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
@@ -25,9 +26,6 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
     Ok(())
 }
-
-// project_id:task_name
-pub type Target = String;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -95,16 +93,16 @@ pub struct TaskConfig {
     pub command: Option<String>,
 
     #[validate(custom = "validate_deps")]
-    pub deps: Option<Vec<String>>,
+    pub deps: Option<Vec<TargetID>>,
 
     #[validate(custom = "validate_inputs")]
-    pub inputs: Option<Vec<String>>,
+    pub inputs: Option<Vec<FilePathOrGlob>>,
 
     #[validate]
     pub options: Option<TaskOptionsConfig>,
 
     #[validate(custom = "validate_outputs")]
-    pub outputs: Option<Vec<String>>,
+    pub outputs: Option<Vec<FilePathOrGlob>>,
 
     #[serde(rename = "type")]
     pub type_of: Option<TaskType>,

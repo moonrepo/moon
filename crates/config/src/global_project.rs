@@ -2,8 +2,8 @@
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
-use crate::project::FileGroups;
 use crate::task::TaskConfig;
+use crate::types::FileGroups;
 use crate::validators::{validate_file_groups, validate_id_or_name, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{

@@ -1,21 +1,16 @@
 use crate::errors::ProjectError;
 use crate::project_graph::ProjectGraph;
+use crate::target::Target;
 use crate::task::Task;
 use dep_graph::{DepGraph, Node};
-use monolith_config::{ProjectID, Target};
+use monolith_config::TargetID;
 use std::collections::HashMap;
-
-fn split_target(target: &str) -> (ProjectID, String) {
-    let split: Vec<&str> = target.split(':').collect();
-
-    (String::from(split[0]), String::from(split[1]))
-}
 
 #[derive(Default)]
 pub struct TaskGraph {
-    nodes: HashMap<Target, Node<Target>>,
+    nodes: HashMap<TargetID, Node<TargetID>>,
 
-    tasks: HashMap<Target, Task>,
+    tasks: HashMap<TargetID, Task>,
 }
 
 impl TaskGraph {
@@ -26,10 +21,10 @@ impl TaskGraph {
     pub fn generate(
         &mut self,
         projects: &ProjectGraph,
-        target: Target,
-        parent_node: Option<&mut Node<Target>>,
+        target: TargetID,
+        parent_node: Option<&mut Node<TargetID>>,
     ) -> Result<(), ProjectError> {
-        let (project_id, task_name) = split_target(&target);
+        let (project_id, task_name) = Target::parse(&target);
 
         // Validate project first
         let project = projects.get(&project_id)?;
@@ -67,7 +62,7 @@ impl TaskGraph {
             .nodes
             .iter()
             .map(|(_, node)| node.clone())
-            .collect::<Vec<Node<Target>>>();
+            .collect::<Vec<Node<TargetID>>>();
         let mut tasks: Vec<&Task> = vec![];
 
         DepGraph::new(&nodes).into_iter().for_each(|target| {

@@ -1,6 +1,30 @@
 # Tasks
 
-Tasks are npm/shell commands that are ran in the context of a [project](./project.md).
+- [Targets](#targets)
+- [Merge strategies](#merge-strategies)
+
+Tasks are commands that are ran in the context of a [project](./project.md). Underneath the hood, a
+task is simply a node module binary or system/shell command, that is ran as a child-process. Tasks
+communicate between the Monolith client and server through a JSON-like message system.
+
+## Targets
+
+A target is an identifier that pairs a project to an owned task, in the format of
+"project_id:task_name". Targets are used by terminal commands...
+
+```shell
+$ mono run project:build
+```
+
+And task configurations for declaring cross-project or cross-task dependencies.
+
+```yaml
+tasks:
+	build:
+		command: 'webpack'
+		deps:
+			- 'dsl:build'
+```
 
 ## Merge strategies
 

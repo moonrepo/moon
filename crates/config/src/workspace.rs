@@ -2,6 +2,7 @@
 
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
+use crate::types::FilePath;
 use crate::validators::{validate_child_relative_path, validate_semver_version};
 use figment::value::{Dict, Map};
 use figment::{
@@ -37,7 +38,7 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
-fn validate_projects_map(projects: &HashMap<String, String>) -> Result<(), ValidationError> {
+fn validate_projects_map(projects: &HashMap<String, FilePath>) -> Result<(), ValidationError> {
     for value in projects.values() {
         match validate_child_relative_path("projects", value) {
             Ok(_) => {}
@@ -135,7 +136,7 @@ pub struct WorkspaceConfig {
     pub node: NodeConfig,
 
     #[validate(custom = "validate_projects_map")]
-    pub projects: HashMap<String, String>,
+    pub projects: HashMap<String, FilePath>,
 }
 
 impl Provider for WorkspaceConfig {

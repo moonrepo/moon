@@ -3,6 +3,7 @@
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use crate::task::TaskConfig;
+use crate::types::{FileGroups, ProjectID};
 use crate::validators::{validate_file_groups, validate_id_or_name, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
@@ -44,10 +45,6 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
 
     Ok(())
 }
-
-pub type FileGroups = HashMap<String, Vec<String>>;
-
-pub type ProjectID = String;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]

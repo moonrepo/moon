@@ -101,7 +101,7 @@ impl Task {
         debug!(
             target: "moon:project",
             "Creating task {} for command {}",
-            color::symbol(name),
+            color::id(name),
             color::shell(&task.command)
         );
 

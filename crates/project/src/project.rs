@@ -154,7 +154,7 @@ impl Project {
             target: "moon:project",
             "Loading project from {} (id = {}, path = {})",
             color::file_path(&dir),
-            color::symbol(id),
+            color::id(id),
             color::path(location),
         );
 

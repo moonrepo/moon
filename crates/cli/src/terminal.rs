@@ -1,6 +1,6 @@
 use crate::helpers::safe_exit;
 use crate::output::replace_style_tokens;
-use console::{measure_text_width, Attribute, Style, StyledObject, Term};
+use console::{measure_text_width, Attribute, Style, Term};
 use moon_logger::color::Color;
 use std::io;
 
@@ -14,7 +14,7 @@ pub type TermLayoutResult = io::Result<()>;
 // Extend `Term` with our own methods
 
 pub trait ExtendedTerm {
-    fn format_label(&self, kind: Label, message: &str) -> StyledObject<String>;
+    fn format_label(&self, kind: Label, message: &str) -> String;
     fn render_error(&self, error: Box<dyn std::error::Error>) -> !;
 
     // LAYOUT
@@ -23,7 +23,7 @@ pub trait ExtendedTerm {
 }
 
 impl ExtendedTerm for Term {
-    fn format_label(&self, kind: Label, message: &str) -> StyledObject<String> {
+    fn format_label(&self, kind: Label, message: &str) -> String {
         let mut style = Style::new().attr(Attribute::Bold);
 
         match kind {
@@ -38,16 +38,20 @@ impl ExtendedTerm for Term {
               // }
         }
 
-        style.apply_to(format!(" {} ", message).to_uppercase())
+        style
+            .apply_to(format!(" {} ", message).to_uppercase())
+            .to_string()
     }
 
     fn render_error(&self, error: Box<dyn std::error::Error>) -> ! {
         let label = self.format_label(Label::Failure, "Error");
+        let label_width = measure_text_width(&label);
         let message = replace_style_tokens(error.to_string().trim());
         let message_width = measure_text_width(&message);
+        let available_space = self.size().1 as usize - label_width - 3; // padding
         let contents;
 
-        if message.contains('\n') || message_width > self.size().1.into() {
+        if message.contains('\n') || message_width > available_space {
             contents = format!("{}\n\n{}", label, &message);
         } else {
             contents = format!("{} {}", label, &message);

@@ -128,7 +128,7 @@ impl ProjectGraph {
             trace!(
                 target: "moon:project-graph",
                 "Project {} already exists in the project graph",
-                color::symbol(id),
+                color::id(id),
             );
 
             return Ok(());
@@ -137,7 +137,7 @@ impl ProjectGraph {
         trace!(
             target: "moon:project-graph",
             "Project {} does not exist in the project graph, attempting to load",
-            color::symbol(id),
+            color::id(id),
         );
 
         // Create project based on ID and location
@@ -159,7 +159,7 @@ impl ProjectGraph {
                 target: "moon:project-graph",
                 "Adding dependencies {} to project {}",
                 depends_on.clone().into_iter().map(|d| color::symbol(&d)).join(", "),
-                color::symbol(id),
+                color::id(id),
             );
 
             for dep in depends_on {

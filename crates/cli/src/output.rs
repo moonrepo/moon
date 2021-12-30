@@ -14,6 +14,7 @@ pub fn replace_style_tokens(value: &str) -> String {
 
         match token {
             "file_path" => color::file_path(Path::new(inner)),
+            "id" => color::id(inner),
             "path" => color::path(inner),
             "shell" => color::shell(inner),
             "symbol" => color::symbol(inner),

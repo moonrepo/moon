@@ -18,10 +18,10 @@ pub enum ProjectError {
     #[error("No project exists at path <path>{0}</path>.")]
     MissingFilePath(String),
 
-    #[error("No project has been configured with the ID <symbol>{0}</symbol>.")]
+    #[error("No project has been configured with the ID <id>{0}</id>.")]
     UnconfiguredID(String),
 
-    #[error("Task <symbol>{0}</symbol> has not been configured for project <symbol>{1}</symbol>.")]
+    #[error("Task <id>{0}</id> has not been configured for project <id>{1}</id>.")]
     UnconfiguredTask(String, String),
 
     #[error("Unknown moon project error.")]

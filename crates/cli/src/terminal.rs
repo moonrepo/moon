@@ -1,32 +1,29 @@
 use crate::helpers::safe_exit;
 use crate::output::replace_style_tokens;
-use console::{Attribute, Style, StyledObject, Term};
+use console::{measure_text_width, Attribute, Style, StyledObject, Term};
 use moon_logger::color::Color;
 use std::io;
 
 pub enum Label {
     Failure,
-    Success,
+    // Success,
 }
 
-pub struct Terminal {
-    term: Term,
+pub type TermLayoutResult = io::Result<()>;
+
+// Extend `Term` with our own methods
+
+pub trait ExtendedTerm {
+    fn format_label(&self, kind: Label, message: &str) -> StyledObject<String>;
+    fn render_error(&self, error: Box<dyn std::error::Error>) -> !;
+
+    // LAYOUT
+
+    fn block(&self, contents: &str, padding: u8) -> TermLayoutResult;
 }
 
-impl Terminal {
-    pub fn stdout() -> Self {
-        Terminal {
-            term: Term::stdout(),
-        }
-    }
-
-    pub fn stderr() -> Self {
-        Terminal {
-            term: Term::stdout(),
-        }
-    }
-
-    pub fn format_label(&self, kind: Label, message: &str) -> StyledObject<String> {
+impl ExtendedTerm for Term {
+    fn format_label(&self, kind: Label, message: &str) -> StyledObject<String> {
         let mut style = Style::new().attr(Attribute::Bold);
 
         match kind {
@@ -34,42 +31,53 @@ impl Terminal {
                 style = style
                     .color256(Color::White as u8)
                     .on_color256(Color::Red as u8);
-            }
-            Label::Success => {
-                style = style
-                    .color256(Color::Black as u8)
-                    .on_color256(Color::Green as u8);
-            }
+            } // Label::Success => {
+              //     style = style
+              //         .color256(Color::Black as u8)
+              //         .on_color256(Color::Green as u8);
+              // }
         }
 
         style.apply_to(format!(" {} ", message).to_uppercase())
     }
 
-    pub fn render_error(&self, error: Box<dyn std::error::Error>) -> ! {
-        let contents = format!(
-            "{} {}",
-            self.format_label(Label::Failure, "Error"),
-            &replace_style_tokens(&error.to_string())
-        );
+    fn render_error(&self, error: Box<dyn std::error::Error>) -> ! {
+        let label = self.format_label(Label::Failure, "Error");
+        let message = replace_style_tokens(error.to_string().trim());
+        let message_width = measure_text_width(&message);
+        let contents;
+
+        if message.contains('\n') || message_width > self.size().1.into() {
+            contents = format!("{}\n\n{}", label, &message);
+        } else {
+            contents = format!("{} {}", label, &message);
+        }
 
         self.block(&contents, 1).unwrap();
+        self.flush().unwrap();
 
         safe_exit(1);
     }
-}
 
-// LAYOUT
+    // LAYOUT
 
-pub type LayoutResult = io::Result<()>;
+    fn block(&self, contents: &str, padding: u8) -> TermLayoutResult {
+        if padding == 0 {
+            self.write_line(contents)?;
 
-impl Terminal {
-    pub fn block(&self, contents: &str, padding: u8) -> LayoutResult {
+            return Ok(());
+        }
+
         let y = String::from("\n").repeat(padding as usize);
         let x = String::from(" ").repeat(padding as usize);
 
-        self.term.write_str(&y)?;
-        self.term.write_line(&format!("{}{}{}", x, contents, x))?;
-        self.term.write_str(&y)?;
+        self.write_str(&y)?;
+
+        for line in contents.split('\n') {
+            self.write_line(&format!("{}{}{}", x, line, x))?;
+        }
+
+        self.write_str(&y)?;
 
         Ok(())
     }

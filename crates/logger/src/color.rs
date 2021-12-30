@@ -65,6 +65,10 @@ pub fn symbol(value: &str) -> String {
     paint(Color::Purple as u8, value)
 }
 
+pub fn id(value: &str) -> String {
+    paint(Color::Lime as u8, value)
+}
+
 // Based on https://github.com/debug-js/debug/blob/master/src/common.js#L41
 pub fn target(value: &str) -> String {
     if no_color() {

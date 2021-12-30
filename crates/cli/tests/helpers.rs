@@ -15,3 +15,8 @@ pub fn create_test_command(fixture: &str) -> Command {
 pub fn get_assert_output(assert: &assert_cmd::assert::Assert) -> String {
     String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()
 }
+
+#[allow(dead_code)]
+pub fn get_assert_stderr_output(assert: &assert_cmd::assert::Assert) -> String {
+    String::from_utf8(assert.get_output().stderr.to_owned()).unwrap()
+}

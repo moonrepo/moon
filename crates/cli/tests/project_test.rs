@@ -1,7 +1,7 @@
 mod helpers;
 use insta::assert_snapshot;
 
-use crate::helpers::{create_test_command, get_assert_output};
+use crate::helpers::{create_test_command, get_assert_output, get_assert_stderr_output};
 
 #[test]
 fn unknown_project() {
@@ -10,10 +10,9 @@ fn unknown_project() {
         .arg("unknown")
         .assert();
 
-    assert
-        .failure()
-        .code(1)
-        .stderr("Project \"unknown\" not found.\n");
+    assert_snapshot!(get_assert_stderr_output(&assert));
+
+    assert.failure().code(1);
 }
 
 #[test]

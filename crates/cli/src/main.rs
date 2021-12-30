@@ -11,9 +11,10 @@ use commands::project::project;
 use commands::project_graph::project_graph;
 use commands::setup::setup;
 use commands::teardown::teardown;
+use console::Term;
 use log::LevelFilter;
 use moon_logger::Logger;
-use terminal::*;
+use terminal::ExtendedTerm;
 
 // This is annoying, but clap requires applying the `ArgEnum`
 // trait onto the enum, which we can't apply to the log package.
@@ -58,6 +59,6 @@ async fn main() {
     }
 
     if let Err(error) = result {
-        Terminal::stderr().render_error(error);
+        Term::buffered_stderr().render_error(error);
     }
 }

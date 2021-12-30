@@ -6,7 +6,11 @@ enum ProjectExitCodes {
     UnknownProject = 1,
 }
 
-pub async fn project(workspace: Workspace, id: &str, json: &bool) -> Result<(), clap::Error> {
+pub async fn project(
+    workspace: Workspace,
+    id: &str,
+    json: &bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let project = match workspace.projects.get(id) {
         Ok(data) => data,
         Err(_) => {

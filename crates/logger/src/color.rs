@@ -6,6 +6,21 @@ use log::Level;
 use std::env;
 use std::path::Path;
 
+pub enum Color {
+    White = 15,
+    Black = 16,
+    Green = 34,
+    Teal = 36,
+    Cyan = 38,
+    Blue = 39,
+    Purple = 111,
+    Lime = 112,
+    Red = 161,
+    Pink = 183,
+    Yellow = 185,
+    Gray = 238,
+}
+
 fn paint(color: u8, value: &str) -> String {
     if no_color() || supports_color() < 2 {
         return value.to_owned();
@@ -15,39 +30,39 @@ fn paint(color: u8, value: &str) -> String {
 }
 
 pub fn muted(value: &str) -> String {
-    paint(238, value) // Gray
+    paint(Color::Gray as u8, value)
 }
 
 pub fn success(value: &str) -> String {
-    paint(34, value) // Green
+    paint(Color::Green as u8, value)
 }
 
 pub fn failure(value: &str) -> String {
-    paint(161, value) // Red
+    paint(Color::Red as u8, value)
 }
 
 pub fn invalid(value: &str) -> String {
-    paint(185, value) // Yellow
+    paint(Color::Yellow as u8, value)
 }
 
 pub fn path(path: &str) -> String {
-    paint(36, path) // Teal
+    paint(Color::Teal as u8, path)
 }
 
 pub fn file_path(path: &Path) -> String {
-    paint(38, &path.to_string_lossy()) // Turquoise
+    paint(Color::Cyan as u8, &path.to_string_lossy())
 }
 
 pub fn url(url: &str) -> String {
-    paint(39, url) // Blue
+    paint(Color::Blue as u8, url)
 }
 
 pub fn shell(cmd: &str) -> String {
-    paint(183, cmd) // Pink
+    paint(Color::Pink as u8, cmd)
 }
 
 pub fn symbol(value: &str) -> String {
-    paint(111, value) // Purple
+    paint(Color::Purple as u8, value)
 }
 
 // Based on https://github.com/debug-js/debug/blob/master/src/common.js#L41
@@ -79,14 +94,14 @@ pub fn target(value: &str) -> String {
 
 pub fn log_level(level: Level) -> String {
     let color = match level {
-        Level::Error => 161, // Red
-        Level::Warn => 185,  // Yellow
-        Level::Info => 15,   // White
-        Level::Debug => 45,  // Blue
-        Level::Trace => 112, // Lime
+        Level::Error => Color::Red,
+        Level::Warn => Color::Yellow,
+        Level::Info => Color::White,
+        Level::Debug => Color::Blue,
+        Level::Trace => Color::Lime,
     };
 
-    paint(color, &level.as_str().to_lowercase())
+    paint(color as u8, &level.as_str().to_lowercase())
 }
 
 pub fn no_color() -> bool {

@@ -8,8 +8,11 @@ moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
 moon_toolchain = { path = "../toolchain" }
 moon_workspace = { path = "../workspace" }
-clap = { version = "3.0.0-beta.1", features = ["derive"] }
+clap = { version = "3.0.0-rc.9", features = ["derive"] }
+console = "0.15"
+dialoguer = "0.9"
 dot-writer = "0.1"
+indicatif = "0.16"
 itertools = "0.10"
 log = "0.4"
 tokio = { version = "1.14", features = ["full"] }

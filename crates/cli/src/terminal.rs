@@ -1,46 +1,84 @@
 use crate::helpers::safe_exit;
 use crate::output::replace_style_tokens;
 use console::{measure_text_width, Attribute, Style, Term};
+use core::fmt::Debug;
 use moon_logger::color::Color;
 use std::io;
 
+pub use moon_logger::color;
+
 pub enum Label {
+    Default,
+    Brand,
     Failure,
     // Success,
 }
 
-pub type TermLayoutResult = io::Result<()>;
+pub type TermWriteResult = io::Result<()>;
 
 // Extend `Term` with our own methods
 
 pub trait ExtendedTerm {
+    fn format(&self, value: &impl Debug) -> String;
     fn format_label(&self, kind: Label, message: &str) -> String;
+
+    // RENDERERS
+
+    fn render_entry(&self, key: &str, value: &str) -> TermWriteResult;
+    fn render_entry_list(&self, key: &str, values: &[String]) -> TermWriteResult;
     fn render_error(&self, error: Box<dyn std::error::Error>) -> !;
+    fn render_label(&self, kind: Label, message: &str) -> TermWriteResult;
+    fn render_list(&self, values: &[String]) -> TermWriteResult;
 
     // LAYOUT
 
-    fn block(&self, contents: &str, padding: u8) -> TermLayoutResult;
+    fn block(&self, contents: &str, padding: u8) -> TermWriteResult;
 }
 
 impl ExtendedTerm for Term {
+    fn format(&self, value: &impl Debug) -> String {
+        format!("{:?}", value)
+    }
+
     fn format_label(&self, kind: Label, message: &str) -> String {
-        let mut style = Style::new().attr(Attribute::Bold);
+        let mut style = Style::new()
+            .attr(Attribute::Bold)
+            .color256(Color::Black as u8);
 
         match kind {
+            Label::Brand => {
+                style = style.on_color256(Color::Purple as u8);
+            }
+            Label::Default => {
+                style = style.on_color256(Color::White as u8);
+            }
             Label::Failure => {
                 style = style
                     .color256(Color::White as u8)
                     .on_color256(Color::Red as u8);
             } // Label::Success => {
-              //     style = style
-              //         .color256(Color::Black as u8)
-              //         .on_color256(Color::Green as u8);
+              //     style = style.on_color256(Color::Green as u8);
               // }
         }
 
         style
             .apply_to(format!(" {} ", message).to_uppercase())
             .to_string()
+    }
+
+    fn render_entry(&self, key: &str, value: &str) -> TermWriteResult {
+        let label = color::muted_light(&format!("{}:", key));
+
+        self.write_line(&format!(" {} {}", label, value))
+    }
+
+    fn render_entry_list(&self, key: &str, values: &[String]) -> TermWriteResult {
+        let label = color::muted_light(&format!(" {}:", key));
+
+        self.write_line(&label)?;
+        self.render_list(values)?;
+
+        Ok(())
     }
 
     fn render_error(&self, error: Box<dyn std::error::Error>) -> ! {
@@ -63,9 +101,25 @@ impl ExtendedTerm for Term {
         safe_exit(1);
     }
 
+    fn render_label(&self, kind: Label, message: &str) -> TermWriteResult {
+        self.write_str(" ")?;
+        self.write_line(&self.format_label(kind, message))?;
+        self.write_line("")?;
+
+        Ok(())
+    }
+
+    fn render_list(&self, values: &[String]) -> TermWriteResult {
+        for value in values {
+            self.write_line(&format!("  {} {}", color::muted("-"), value))?;
+        }
+
+        Ok(())
+    }
+
     // LAYOUT
 
-    fn block(&self, contents: &str, padding: u8) -> TermLayoutResult {
+    fn block(&self, contents: &str, padding: u8) -> TermWriteResult {
         if padding == 0 {
             self.write_line(contents)?;
 

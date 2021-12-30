@@ -3,18 +3,24 @@ source: crates/cli/tests/project_test.rs
 expression: get_assert_output(&assert)
 
 ---
-About
-ID: tasks
-Path: tasks
 
-Tasks
-lint: eslint --cache --report-unused-disable-directives
-test: jest --cache --color
+  TASKS 
 
-File groups
-sources:
-- src/**/*
-- types/**/*
-tests:
-- tests/**/*
+ [38;5;249mID:[0m [38;5;111mtasks[0m
+ [38;5;249mPath:[0m [38;5;36mtasks[0m
+ [38;5;249mRoot:[0m [38;5;38m/Users/milesj/Projects/moon/tests/fixtures/projects/tasks[0m
+
+  TASKS 
+
+ [38;5;249mlint:[0m [38;5;183meslint --cache --report-unused-disable-directives[0m
+ [38;5;249mtest:[0m [38;5;183mjest --cache --color[0m
+
+  FILE GROUPS 
+
+[38;5;249m sources:[0m
+  [38;5;238m-[0m [38;5;36msrc/**/*[0m
+  [38;5;238m-[0m [38;5;36mtypes/**/*[0m
+[38;5;249m tests:[0m
+  [38;5;238m-[0m [38;5;36mtests/**/*[0m
+
 

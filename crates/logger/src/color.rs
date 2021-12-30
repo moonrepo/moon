@@ -19,9 +19,10 @@ pub enum Color {
     Pink = 183,
     Yellow = 185,
     Gray = 238,
+    GrayLight = 249,
 }
 
-fn paint(color: u8, value: &str) -> String {
+pub fn paint(color: u8, value: &str) -> String {
     if no_color() || supports_color() < 2 {
         return value.to_owned();
     }
@@ -31,6 +32,10 @@ fn paint(color: u8, value: &str) -> String {
 
 pub fn muted(value: &str) -> String {
     paint(Color::Gray as u8, value)
+}
+
+pub fn muted_light(value: &str) -> String {
+    paint(Color::GrayLight as u8, value)
 }
 
 pub fn success(value: &str) -> String {

@@ -3,14 +3,19 @@ source: crates/cli/tests/project_test.rs
 expression: get_assert_output(&assert)
 
 ---
-About
-ID: emptyConfig
-Path: empty-config
 
-File groups
-sources:
-- src/**/*
-- types/**/*
-tests:
-- tests/**/*
+  EMPTYCONFIG 
+
+ [38;5;249mID:[0m [38;5;111memptyConfig[0m
+ [38;5;249mPath:[0m [38;5;36mempty-config[0m
+ [38;5;249mRoot:[0m [38;5;38m/Users/milesj/Projects/moon/tests/fixtures/projects/empty-config[0m
+
+  FILE GROUPS 
+
+[38;5;249m sources:[0m
+  [38;5;238m-[0m [38;5;36msrc/**/*[0m
+  [38;5;238m-[0m [38;5;36mtypes/**/*[0m
+[38;5;249m tests:[0m
+  [38;5;238m-[0m [38;5;36mtests/**/*[0m
+
 

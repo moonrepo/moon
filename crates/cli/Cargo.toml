@@ -14,7 +14,9 @@ dialoguer = "0.9"
 dot-writer = "0.1"
 indicatif = "0.16"
 itertools = "0.10"
+lazy_static = "1.4"
 log = "0.4"
+regex = "1.5"
 tokio = { version = "1.14", features = ["full"] }
 
 [dev-dependencies]

@@ -17,10 +17,8 @@ enum BinExitCodes {
     NotInstalled = 2,
 }
 
-pub async fn bin(
-    workspace: Workspace,
-    tool_type: &BinTools,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn bin(tool_type: &BinTools) -> Result<(), Box<dyn std::error::Error>> {
+    let workspace = Workspace::load()?;
     let toolchain = &workspace.toolchain;
 
     let tool: &dyn Tool = match tool_type {

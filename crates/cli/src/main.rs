@@ -1,6 +1,7 @@
 mod app;
 mod commands;
 mod helpers;
+mod output;
 mod terminal;
 
 use app::{App, Commands, LogLevel};
@@ -12,7 +13,6 @@ use commands::setup::setup;
 use commands::teardown::teardown;
 use log::LevelFilter;
 use moon_logger::Logger;
-use moon_workspace::Workspace;
 use terminal::*;
 
 // This is annoying, but clap requires applying the `ArgEnum`
@@ -28,10 +28,6 @@ fn map_log_level(level: LogLevel) -> LevelFilter {
     }
 }
 
-fn load_workspace() -> Workspace {
-    Workspace::load().unwrap() // TODO
-}
-
 #[tokio::main]
 async fn main() {
     // Create app and parse arguments
@@ -45,23 +41,23 @@ async fn main() {
 
     match &args.command {
         Commands::Bin { tool } => {
-            result = bin(load_workspace(), tool).await;
+            result = bin(tool).await;
         }
         Commands::Project { id, json } => {
-            result = project(load_workspace(), id, json).await;
+            result = project(id, json).await;
         }
         Commands::ProjectGraph { id } => {
-            result = project_graph(load_workspace(), id).await;
+            result = project_graph(id).await;
         }
         Commands::Setup => {
-            result = setup(load_workspace()).await;
+            result = setup().await;
         }
         Commands::Teardown => {
-            result = teardown(load_workspace()).await;
+            result = teardown().await;
         }
     }
 
     if let Err(error) = result {
-        Terminal::render_error(error);
+        Terminal::stderr().render_error(error);
     }
 }

@@ -1,23 +1,10 @@
-use crate::helpers::{print_list, safe_exit};
+use crate::helpers::print_list;
 use itertools::Itertools;
 use moon_workspace::Workspace;
 
-enum ProjectExitCodes {
-    UnknownProject = 1,
-}
-
-pub async fn project(
-    workspace: Workspace,
-    id: &str,
-    json: &bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let project = match workspace.projects.get(id) {
-        Ok(data) => data,
-        Err(_) => {
-            eprintln!("Project \"{}\" not found.", id);
-            safe_exit(ProjectExitCodes::UnknownProject as i32);
-        }
-    };
+pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Error>> {
+    let workspace = Workspace::load()?;
+    let project = workspace.projects.get(id)?;
 
     if *json {
         println!("{}", project.to_json());

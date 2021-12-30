@@ -992,12 +992,14 @@ dependencies = [
  "indicatif",
  "insta",
  "itertools",
+ "lazy_static",
  "log",
  "moon_logger",
  "moon_project",
  "moon_toolchain",
  "moon_workspace",
  "predicates",
+ "regex",
  "tokio",
 ]
 

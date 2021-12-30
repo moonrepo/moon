@@ -65,10 +65,8 @@ fn graph_for_single_project(
     Ok(())
 }
 
-pub async fn project_graph(
-    workspace: Workspace,
-    id: &Option<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn project_graph(id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    let workspace = Workspace::load()?;
     let mut output_bytes = Vec::new();
 
     {

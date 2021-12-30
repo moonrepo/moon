@@ -17,7 +17,7 @@ tool has not been configured or installed, this will return a 1 or 2 exit code r
 value.
 
 ```shell
-$ mono bin node
+$ moon bin node
 /Users/example/.moon/tools/node/x.x.x/bin/node
 ```
 
@@ -33,7 +33,7 @@ by doing the following:
 - Downloading and installing all configured tools into the toolchain.
 
 ```shell
-$ mono setup
+$ moon setup
 ```
 
 > This command should rarely be used, as the environment is automatically setup when running other
@@ -48,7 +48,7 @@ opposite the [`setup`](#setup) command. It achieves this by doing the following:
 - Removing any download or temporary files/folders.
 
 ```shell
-$ mono teardown
+$ moon teardown
 ```
 
 ## Projects
@@ -60,7 +60,7 @@ configured and exists within the graph. If a project does not exist, the program
 1 exit code.
 
 ```shell
-$ mono project web
+$ moon project web
 ```
 
 ### `project-graph`
@@ -72,8 +72,8 @@ tool or program that supports DOT, for example, this
 [live preview visualizer](https://dreampuf.github.io/GraphvizOnline).
 
 ```shell
-$ mono project-graph > graph.dot
+$ moon project-graph > graph.dot
 ```
 
 > A project ID can be passed to focus the graph to only that project and it's dependencies. For
-> example, `mono project-graph web`.
+> example, `moon project-graph web`.

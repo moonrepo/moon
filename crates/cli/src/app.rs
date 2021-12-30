@@ -22,7 +22,7 @@ impl Default for LogLevel {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    // mono bin <tool>
+    // moon bin <tool>
     #[clap(
         name = "bin",
         about = "Return an absolute path to a tool's binary within the toolchain.",
@@ -33,7 +33,7 @@ pub enum Commands {
         tool: BinTools,
     },
 
-    // mono project <id>
+    // moon project <id>
     #[clap(
         name = "project",
         about = "Display information about a single project."
@@ -46,7 +46,7 @@ pub enum Commands {
         json: bool,
     },
 
-    // mono project-graph [id]
+    // moon project-graph [id]
     #[clap(
         name = "project-graph",
         about = "Display a graph of projects in DOT format."
@@ -56,14 +56,14 @@ pub enum Commands {
         id: Option<String>,
     },
 
-    // mono setup
+    // moon setup
     #[clap(
         name = "setup",
         about = "Setup the environment by installing all tools."
     )]
     Setup,
 
-    // mono teardown
+    // moon teardown
     #[clap(
         name = "teardown",
         about = "Teardown the environment by uninstalling all tools and deleting temp files."
@@ -73,7 +73,7 @@ pub enum Commands {
 
 #[derive(Debug, Parser)]
 #[clap(
-    bin_name = "mono",
+    bin_name = "moon",
     name = "Moon",
     about = "Take your monorepo to the moon!",
     version

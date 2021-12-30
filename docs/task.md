@@ -13,7 +13,7 @@ A target is an identifier that pairs a project to an owned task, in the format o
 "project_id:task_id". Targets are used by terminal commands...
 
 ```shell
-$ mono run project:build
+$ moon run project:build
 ```
 
 And task configurations for declaring cross-project or cross-task dependencies.

@@ -3,6 +3,7 @@ use crate::output::replace_style_tokens;
 use console::{measure_text_width, Attribute, Style, Term};
 use core::fmt::Debug;
 use moon_logger::color::Color;
+use std::env;
 use std::io;
 
 pub use moon_logger::color;
@@ -44,6 +45,11 @@ impl ExtendedTerm for Term {
         let mut style = Style::new()
             .attr(Attribute::Bold)
             .color256(Color::Black as u8);
+
+        // Doesnt show styles in tests unless we force it
+        if env::var("MOON_TEST").is_ok() {
+            style = style.force_styling(true);
+        }
 
         match kind {
             Label::Brand => {

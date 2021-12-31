@@ -1,9 +1,0 @@
----
-source: crates/cli/tests/project_test.rs
-expression: get_assert_stderr_output(&assert)
-
----
-
-  ERROR  No project has been configured with the ID [38;5;111munknown[0m. 
-
-

@@ -1,16 +1,15 @@
 ---
-source: crates/cli/tests/project_test.rs
+source: crates/cli/src/commands/project.rs
 expression: get_assert_output(&assert)
 
 ---
 
-  EMPTYCONFIG 
+ [38;5;16m[48;5;111m[1m EMPTYCONFIG [0m
 
  [38;5;249mID:[0m [38;5;111memptyConfig[0m
  [38;5;249mPath:[0m [38;5;36mempty-config[0m
- [38;5;249mRoot:[0m [38;5;38m/Users/milesj/Projects/moon/tests/fixtures/projects/empty-config[0m
 
-  FILE GROUPS 
+ [38;5;16m[48;5;15m[1m FILE GROUPS [0m
 
 [38;5;249m sources:[0m
   [38;5;238m-[0m [38;5;36msrc/**/*[0m

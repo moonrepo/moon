@@ -1058,6 +1058,7 @@ dependencies = [
  "sha2",
  "tar",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -1078,6 +1079,7 @@ dependencies = [
  "moon_project",
  "moon_toolchain",
  "moon_utils",
+ "regex",
  "thiserror",
 ]
 

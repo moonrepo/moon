@@ -10,4 +10,5 @@ moon_project = { path = "../project" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 async-trait = "0.1"
+regex = "1.5"
 thiserror = "1.0"

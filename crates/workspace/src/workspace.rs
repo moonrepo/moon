@@ -151,7 +151,7 @@ impl Workspace {
         // Setup components
         let toolchain = Toolchain::new(&root_dir, &config)?;
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
-        let vcs = VcsDetector::detect(&root_dir, "origin/master");
+        let vcs = VcsDetector::detect(&root_dir, "origin/master")?;
 
         Ok(Workspace {
             config,
@@ -159,7 +159,7 @@ impl Workspace {
             package_json_path,
             projects,
             toolchain,
-            vcs: Box::new(vcs),
+            vcs,
             working_dir,
         })
     }

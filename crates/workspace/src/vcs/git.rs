@@ -34,8 +34,9 @@ impl Vcs for Git {
             .await
     }
 
+    // https://git-scm.com/docs/git-status#_short_format
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
-        let output = self.run_command(vec!["status", "-s", "-u", "-z"]).await?;
+        let output = self.run_command(vec!["status", "-s", "-u"]).await?;
         let mut added = HashSet::new();
         let mut deleted = HashSet::new();
         let mut modified = HashSet::new();
@@ -43,8 +44,7 @@ impl Vcs for Git {
         let mut staged = HashSet::new();
         let mut unstaged = HashSet::new();
 
-        // -z uses null for breaks instead of new lines
-        for line in output.split('\0') {
+        for line in output.split('\n') {
             let mut chars = line.chars();
             let x = chars.next().unwrap_or_default();
             let y = chars.next().unwrap_or_default();

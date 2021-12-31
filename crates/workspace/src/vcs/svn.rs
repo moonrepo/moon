@@ -29,9 +29,8 @@ impl Svn {
 
     async fn get_hash_for_rev(&self, rev: &str) -> VcsResult<String> {
         let output = self.run_command(vec!["info", "-r", rev]).await?;
-        let id = self.extract_line_from_info("Revision:", &output);
 
-        Ok(self.extract_line_from_info("Revision:", &id))
+        Ok(self.extract_line_from_info("Revision:", &output))
     }
 }
 
@@ -52,15 +51,15 @@ impl Vcs for Svn {
             ));
         }
 
-        Ok(self.origin_branch.clone())
+        Ok(self.get_origin_branch().to_owned())
     }
 
     async fn get_local_hash(&self) -> VcsResult<String> {
         Ok(self.get_hash_for_rev("BASE").await?)
     }
 
-    async fn get_origin_branch(&self) -> VcsResult<String> {
-        Ok(self.origin_branch.clone())
+    fn get_origin_branch(&self) -> &str {
+        &self.origin_branch
     }
 
     async fn get_origin_hash(&self) -> VcsResult<String> {

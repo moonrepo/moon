@@ -26,7 +26,7 @@ pub struct TouchedFiles {
 pub trait Vcs {
     async fn get_local_branch(&self) -> VcsResult<String>;
     async fn get_local_hash(&self) -> VcsResult<String>;
-    async fn get_origin_branch(&self) -> VcsResult<String>;
+    fn get_origin_branch(&self) -> &str;
     async fn get_origin_hash(&self) -> VcsResult<String>;
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;
     async fn run_command(&self, args: Vec<&str>) -> VcsResult<String>;

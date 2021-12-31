@@ -25,8 +25,8 @@ impl Vcs for Git {
         self.run_command(vec!["rev-parse", "HEAD"]).await
     }
 
-    async fn get_origin_branch(&self) -> VcsResult<String> {
-        Ok(self.origin_branch.clone())
+    fn get_origin_branch(&self) -> &str {
+        &self.origin_branch
     }
 
     async fn get_origin_hash(&self) -> VcsResult<String> {
@@ -52,7 +52,7 @@ impl Vcs for Git {
 
             // Copied files contain 2 file paths: ORIG -> NEW
             if let Some(index) = file.find(' ') {
-                file = &file[index..];
+                file = &file[index + 1..];
             }
 
             // Convert to a normal string

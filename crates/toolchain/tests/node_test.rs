@@ -35,17 +35,6 @@ fn get_download_file() -> &'static str {
 async fn generates_paths() {
     let (node, temp_dir) = create_node_tool().await;
 
-    println!(
-        "install = {}, {}",
-        node.get_install_dir().to_str().unwrap(),
-        PathBuf::from(".moon")
-            .join("tools")
-            .join("node")
-            .join("1.0.0")
-            .to_str()
-            .unwrap()
-    );
-
     // We have to use join a lot to test on windows
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")

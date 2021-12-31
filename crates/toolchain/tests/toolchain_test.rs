@@ -2,7 +2,7 @@ use moon_config::WorkspaceConfig;
 use moon_toolchain::Toolchain;
 use predicates::prelude::*;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 async fn create_toolchain(base_dir: &Path) -> Toolchain {
     let mut config = WorkspaceConfig::default();
@@ -22,8 +22,14 @@ async fn generates_paths() {
     let toolchain = create_toolchain(&base_dir).await;
 
     assert!(predicates::str::ends_with(".moon").eval(toolchain.dir.to_str().unwrap()));
-    assert!(predicates::str::ends_with(".moon/temp").eval(toolchain.temp_dir.to_str().unwrap()));
-    assert!(predicates::str::ends_with(".moon/tools").eval(toolchain.tools_dir.to_str().unwrap()));
+    assert!(
+        predicates::str::ends_with(PathBuf::from(".moon").join("temp").to_str().unwrap())
+            .eval(toolchain.temp_dir.to_str().unwrap())
+    );
+    assert!(
+        predicates::str::ends_with(PathBuf::from(".moon").join("tools").to_str().unwrap())
+            .eval(toolchain.tools_dir.to_str().unwrap())
+    );
 
     base_dir.close().unwrap();
 }

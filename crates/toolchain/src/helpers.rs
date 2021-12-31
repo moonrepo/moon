@@ -65,6 +65,12 @@ pub fn get_path_env_var(bin_dir: PathBuf) -> std::ffi::OsString {
 pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), ToolchainError> {
     let handle_error = |e: io::Error| map_io_to_fs_error(e, dest.to_path_buf());
 
+    trace!(
+        target: "moon:toolchain",
+        "Downloading file to {}",
+        color::file_path(dest.parent().unwrap()),
+    );
+
     // Ensure parent directories exist
     fs::create_dir_all(dest.parent().unwrap()).await?;
 

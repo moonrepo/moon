@@ -1,6 +1,6 @@
 mod errors;
 
-use errors::WorkspaceError;
+pub use errors::WorkspaceError;
 use moon_config::{constants, GlobalProjectConfig, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;

@@ -6,40 +6,40 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum WorkspaceError {
     #[error(
-        "Unable to determine workspace root. Please create a `{}` configuration folder.",
+        "Unable to determine workspace root. Please create a <path>{}</path> configuration folder.",
         constants::CONFIG_DIRNAME
     )]
     MissingConfigDir,
 
     #[error(
-        "Unable to locate a root `package.json`. Please create one alongside the `{}` configuration folder.",
+        "Unable to locate a root <path>package.json</path>. Please create one alongside the <path>{}</path> configuration folder.",
         constants::CONFIG_DIRNAME
     )]
     MissingPackageJson,
 
     #[error(
-        "Unable to locate `{}/{}` configuration file.",
+        "Unable to locate <path>{}/{}</path> configuration file.",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     MissingWorkspaceConfigFile,
 
     #[error(
-        "Unable to locate `{}/{}` configuration file.",
+        "Unable to locate <path>{}/{}</path> configuration file.",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_PROJECT_FILENAME
     )]
     MissingGlobalProjectConfigFile,
 
     #[error(
-        "Failed to validate `{}/{}` configuration file.",
+        "Failed to validate <path>{}/{}</path> configuration file.",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     InvalidWorkspaceConfigFile(ValidationErrors),
 
     #[error(
-        "Failed to validate `{}/{}` configuration file.",
+        "Failed to validate <path>{}/{}</path> configuration file.",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_PROJECT_FILENAME
     )]
@@ -48,9 +48,9 @@ pub enum WorkspaceError {
     #[error("Unknown moon workspace error.")]
     Unknown,
 
-    #[error("Project error.")]
+    #[error("{0}")]
     Project(#[from] ProjectError),
 
-    #[error("Toolchain error.")]
+    #[error("{0}")]
     Toolchain(#[from] ToolchainError),
 }

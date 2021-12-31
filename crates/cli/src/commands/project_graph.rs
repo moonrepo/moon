@@ -49,7 +49,7 @@ fn graph_for_single_project(
     id: &str,
 ) -> Result<(), ProjectError> {
     // Load project
-    let project = workspace.projects.get(id).unwrap();
+    let project = workspace.projects.get(id)?;
 
     // Add node to the graph
     create_node(dot_graph, id, true);
@@ -65,7 +65,8 @@ fn graph_for_single_project(
     Ok(())
 }
 
-pub async fn project_graph(workspace: Workspace, id: &Option<String>) -> Result<(), clap::Error> {
+pub async fn project_graph(id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    let workspace = Workspace::load()?;
     let mut output_bytes = Vec::new();
 
     {
@@ -83,8 +84,7 @@ pub async fn project_graph(workspace: Workspace, id: &Option<String>) -> Result<
             .set_font_color(Color::White);
 
         if let Some(project_id) = id {
-            graph_for_single_project(&workspace, &mut dot_graph, project_id).unwrap();
-        // TODO error
+            graph_for_single_project(&workspace, &mut dot_graph, project_id)?;
         } else {
             graph_for_all_projects(&workspace, &mut dot_graph);
         }
@@ -93,4 +93,47 @@ pub async fn project_graph(workspace: Workspace, id: &Option<String>) -> Result<
     println!("{}", String::from_utf8(output_bytes).unwrap());
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_snapshot;
+
+    use crate::helpers::{create_test_command, get_assert_output};
+
+    #[test]
+    fn no_projects() {
+        let assert = create_test_command("base").arg("project-graph").assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn many_projects() {
+        let assert = create_test_command("projects")
+            .arg("project-graph")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn single_project_with_deps() {
+        let assert = create_test_command("projects")
+            .arg("project-graph")
+            .arg("foo")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn single_project_no_deps() {
+        let assert = create_test_command("projects")
+            .arg("project-graph")
+            .arg("baz")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
 }

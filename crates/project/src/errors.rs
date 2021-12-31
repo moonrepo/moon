@@ -7,21 +7,21 @@ pub enum ProjectError {
     DependencyCycleDetected,
 
     #[error(
-        "Failed to validate `{0}/{}` configuration file.",
+        "Failed to validate <path>{0}/{}</path> configuration file.",
         constants::CONFIG_PROJECT_FILENAME
     )]
     InvalidConfigFile(String, ValidationErrors),
 
-    #[error("Failed to parse and open `{0}/package.json`: {1}")]
+    #[error("Failed to parse and open <path>{0}/package.json</path>: {1}")]
     InvalidPackageJson(String, String),
 
-    #[error("No project exists at path `{0}`.")]
+    #[error("No project exists at path <path>{0}</path>.")]
     MissingFilePath(String),
 
-    #[error("No project has been configured with the ID `{0}`.")]
+    #[error("No project has been configured with the ID <id>{0}</id>.")]
     UnconfiguredID(String),
 
-    #[error("Task `{0}` has not been configured for project `{1}`.")]
+    #[error("Task <id>{0}</id> has not been configured for project <id>{1}</id>.")]
     UnconfiguredTask(String, String),
 
     #[error("Unknown moon project error.")]

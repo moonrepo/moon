@@ -1,6 +1,8 @@
 mod app;
 mod commands;
 mod helpers;
+mod output;
+mod terminal;
 
 use app::{App, Commands, LogLevel};
 use clap::Parser;
@@ -9,9 +11,10 @@ use commands::project::project;
 use commands::project_graph::project_graph;
 use commands::setup::setup;
 use commands::teardown::teardown;
+use console::Term;
 use log::LevelFilter;
 use moon_logger::Logger;
-use moon_workspace::Workspace;
+use terminal::ExtendedTerm;
 
 // This is annoying, but clap requires applying the `ArgEnum`
 // trait onto the enum, which we can't apply to the log package.
@@ -26,10 +29,6 @@ fn map_log_level(level: LogLevel) -> LevelFilter {
     }
 }
 
-fn load_workspace() -> Workspace {
-    Workspace::load().unwrap() // TODO error
-}
-
 #[tokio::main]
 async fn main() {
     // Create app and parse arguments
@@ -39,21 +38,27 @@ async fn main() {
     Logger::init(map_log_level(args.log_level.unwrap_or_default()));
 
     // Match and run subcommand
+    let result;
+
     match &args.command {
         Commands::Bin { tool } => {
-            bin(load_workspace(), tool).await.unwrap(); // TODO error
+            result = bin(tool).await;
         }
         Commands::Project { id, json } => {
-            project(load_workspace(), id, json).await.unwrap(); // TODO error
+            result = project(id, json).await;
         }
         Commands::ProjectGraph { id } => {
-            project_graph(load_workspace(), id).await.unwrap(); // TODO error
+            result = project_graph(id).await;
         }
         Commands::Setup => {
-            setup(load_workspace()).await.unwrap(); // TODO error
+            result = setup().await;
         }
         Commands::Teardown => {
-            teardown(load_workspace()).await.unwrap(); // TODO error
+            result = teardown().await;
         }
+    }
+
+    if let Err(error) = result {
+        Term::buffered_stderr().render_error(error);
     }
 }

@@ -6,13 +6,7 @@ pub enum ToolchainError {
     #[error("Unknown moon toolchain error.")]
     Unknown,
 
-    // TODO
-    #[error("Command `{0}` failed to run.")]
-    FailedCommandExec(
-        String, // Command line
-    ),
-
-    #[error("Shashum check has failed for {0}, which was downloaded from {1}.")]
+    #[error("Shashum check has failed for <file_path>{0}</file_path>, which was downloaded from <url>{1}</url>.")]
     InvalidShasum(
         String, // Download path
         String, // URL
@@ -21,21 +15,23 @@ pub enum ToolchainError {
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,
 
-    #[error("Unsupported architecture `{0}`. Unable to install {1}.")]
+    #[error(
+        "Unsupported architecture <symbol>{0}</symbol>. Unable to install <symbol>{1}</symbol>."
+    )]
     UnsupportedArchitecture(
         String, // Arch
         String, // Tool name
     ),
 
-    #[error("Unsupported platform `{0}`. Unable to install {1}.")]
+    #[error("Unsupported platform <symbol>{0}</symbol>. Unable to install <symbol>{1}</symbol>.")]
     UnsupportedPlatform(
         String, // Platform
         String, // Tool name
     ),
 
-    #[error("I/O")]
+    #[error("I/O: {0}")]
     IO(#[from] io::Error),
 
-    #[error("HTTP")]
+    #[error("HTTP: {0}")]
     HTTP(#[from] reqwest::Error),
 }

@@ -7,6 +7,14 @@ pub struct Git {
     origin_branch: String,
 }
 
+impl Git {
+    pub fn new(origin_branch: &str) -> Self {
+        Git {
+            origin_branch: origin_branch.to_owned(),
+        }
+    }
+}
+
 #[async_trait]
 impl Vcs for Git {
     async fn get_local_branch(&self) -> VcsResult<String> {

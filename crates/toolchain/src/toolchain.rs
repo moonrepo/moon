@@ -121,7 +121,7 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub fn new(config: &WorkspaceConfig, root_dir: &Path) -> Result<Toolchain, ToolchainError> {
+    pub fn new(root_dir: &Path, config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
         Toolchain::from(
             config,
             &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,

@@ -2,7 +2,9 @@ mod git;
 
 use crate::errors::VcsError;
 use async_trait::async_trait;
+use git::Git;
 use std::collections::HashSet;
+use std::path::Path;
 
 pub type VcsResult<T> = Result<T, VcsError>;
 
@@ -50,4 +52,14 @@ pub trait Vcs {
     async fn get_origin_hash(&self) -> VcsResult<String>;
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;
     async fn run_command(&self, args: Vec<&str>) -> VcsResult<String>;
+}
+
+pub struct VcsDetector {}
+
+impl VcsDetector {
+    pub fn detect(workspace_root: &Path, origin_branch: &str) -> impl Vcs {
+        let git_dir = workspace_root.join(".git");
+
+        Git::new(origin_branch)
+    }
 }

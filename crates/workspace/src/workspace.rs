@@ -1,4 +1,5 @@
 use crate::errors::WorkspaceError;
+use crate::vcs::{Vcs, VcsDetector};
 use moon_config::{constants, GlobalProjectConfig, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;
@@ -118,6 +119,9 @@ pub struct Workspace {
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
 
+    /// The version control system currently being used.
+    pub vcs: Box<dyn Vcs>,
+
     /// The current working directory.
     pub working_dir: PathBuf,
 }
@@ -145,8 +149,9 @@ impl Workspace {
         let package_json_path = find_package_json(&root_dir)?;
 
         // Setup components
-        let toolchain = Toolchain::new(&config, &root_dir)?;
+        let toolchain = Toolchain::new(&root_dir, &config)?;
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
+        let vcs = VcsDetector::detect(&root_dir, "origin/master");
 
         Ok(Workspace {
             config,
@@ -154,6 +159,7 @@ impl Workspace {
             package_json_path,
             projects,
             toolchain,
+            vcs: Box::new(vcs),
             working_dir,
         })
     }

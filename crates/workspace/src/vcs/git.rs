@@ -1,7 +1,7 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
+use moon_utils::exec_command_with_output;
 use std::collections::HashSet;
-use tokio::process::Command;
 
 pub struct Git {
     origin_branch: String,
@@ -105,12 +105,6 @@ impl Vcs for Git {
     }
 
     async fn run_command(&self, args: Vec<&str>) -> VcsResult<String> {
-        let output = Command::new("git").args(args).output();
-        let output = output.await?;
-
-        Ok(String::from_utf8(output.stdout)
-            .unwrap_or_default()
-            .trim()
-            .to_owned())
+        Ok(exec_command_with_output("git", args).await?)
     }
 }

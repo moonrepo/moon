@@ -1,45 +1,22 @@
 use crate::errors::ToolchainError;
 use moon_logger::{color, trace};
+use moon_utils::exec_bin_with_output;
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
-use tokio::process::Command;
 
 pub fn is_ci() -> bool {
     env::var("CI").is_ok()
 }
 
-pub async fn exec_command(bin: &Path, args: Vec<&str>, cwd: &Path) -> Result<(), ToolchainError> {
-    let command_line = format!(
-        "{} {}",
-        bin.file_name().unwrap().to_str().unwrap(),
-        args.join(" ")
-    );
-
-    trace!(
-        target: "moon:toolchain",
-        "Running command {} in {}",
-        color::shell(&command_line),
-        color::file_path(cwd),
-    );
-
-    let output = Command::new(bin).args(args).current_dir(cwd).output();
-
-    output.await?;
-
-    Ok(())
-}
-
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
-    let output = Command::new(bin).args(["--version"]).output();
-    let output = output.await?;
+    let mut version = exec_bin_with_output(bin, vec!["--version"]).await?;
 
-    let mut version = String::from_utf8(output.stdout)
-        .unwrap_or_else(|_| String::from("0.0.0"))
-        .trim()
-        .to_owned();
+    if version.is_empty() {
+        version = String::from("0.0.0");
+    }
 
     if version.starts_with('v') {
         version = version.replace('v', "");

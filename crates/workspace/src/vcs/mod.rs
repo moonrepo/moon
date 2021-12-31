@@ -3,6 +3,7 @@ mod git;
 use crate::errors::VcsError;
 use async_trait::async_trait;
 use git::Git;
+use moon_logger::{color, debug};
 use std::collections::HashSet;
 use std::path::Path;
 
@@ -58,7 +59,13 @@ pub struct VcsDetector {}
 
 impl VcsDetector {
     pub fn detect(workspace_root: &Path, origin_branch: &str) -> impl Vcs {
-        let git_dir = workspace_root.join(".git");
+        // let git_dir = workspace_root.join(".git");
+
+        debug!(
+            target: "moon:workspace:vcs",
+            "Detecting version control system, starting from {}",
+            color::file_path(workspace_root)
+        );
 
         Git::new(origin_branch)
     }

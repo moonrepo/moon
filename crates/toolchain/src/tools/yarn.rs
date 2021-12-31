@@ -1,10 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{exec_command, get_bin_version, is_ci};
+use crate::helpers::{get_bin_version, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::workspace::YarnConfig;
 use moon_logger::{color, debug, trace};
+use moon_utils::exec_bin_in_dir;
 use std::env::consts;
 use std::path::PathBuf;
 
@@ -115,7 +116,7 @@ impl Tool for YarnTool {
                 color::shell(&format!("yarn set version {}", self.config.version))
             );
 
-            exec_command(
+            exec_bin_in_dir(
                 self.get_bin_path(),
                 vec!["set", "version", &self.config.version],
                 &toolchain.workspace_dir,
@@ -163,6 +164,6 @@ impl PackageManager for YarnTool {
             }
         }
 
-        Ok(exec_command(self.get_bin_path(), args, &toolchain.workspace_dir).await?)
+        Ok(exec_bin_in_dir(self.get_bin_path(), args, &toolchain.workspace_dir).await?)
     }
 }

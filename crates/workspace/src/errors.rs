@@ -54,3 +54,9 @@ pub enum WorkspaceError {
     #[error("{0}")]
     Toolchain(#[from] ToolchainError),
 }
+
+#[derive(Error, Debug)]
+pub enum VcsError {
+    #[error("I/O: {0}")]
+    IO(#[from] std::io::Error),
+}

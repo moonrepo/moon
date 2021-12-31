@@ -8,4 +8,6 @@ moon_config = { path = "../config" }
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
 moon_toolchain = { path = "../toolchain" }
+async-trait = "0.1"
 thiserror = "1.0"
+tokio = { version = "1.14", features = ["full"] }

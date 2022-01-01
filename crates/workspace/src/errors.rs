@@ -60,9 +60,6 @@ pub enum WorkspaceError {
 
 #[derive(Error, Debug)]
 pub enum VcsError {
-    #[error("Failed to detect a version control system. Looked for <symbol>git</symbol> and <symbol>svn</symbol>.")]
-    FailedDetection,
-
     #[error("I/O: {0}")]
     IO(#[from] std::io::Error),
 }

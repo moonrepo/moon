@@ -131,14 +131,20 @@ impl Default for NodeConfig {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VcsManager {
     Git,
     Svn,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+impl Default for VcsManager {
+    fn default() -> Self {
+        VcsManager::Git
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct VcsConfig {
     pub manager: Option<VcsManager>,
 
@@ -149,7 +155,7 @@ pub struct VcsConfig {
 impl Default for VcsConfig {
     fn default() -> Self {
         VcsConfig {
-            manager: Some(VcsManager::Git),
+            manager: Some(VcsManager::default()),
             default_branch: Some(String::from("origin/master")),
         }
     }
@@ -590,6 +596,8 @@ projects:
     }
 
     mod vcs {
+        use super::*;
+
         #[test]
         #[should_panic(
             expected = "Invalid field `vcs`. Expected struct VcsConfig type, received unsigned int `123`."

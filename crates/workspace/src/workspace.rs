@@ -1,5 +1,5 @@
 use crate::errors::WorkspaceError;
-use crate::vcs::{Vcs, VcsDetector};
+use crate::vcs::{Vcs, VcsManager};
 use moon_config::{constants, GlobalProjectConfig, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;
@@ -151,7 +151,7 @@ impl Workspace {
         // Setup components
         let toolchain = Toolchain::new(&root_dir, &config)?;
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
-        let vcs = VcsDetector::detect(&root_dir, "origin/master")?;
+        let vcs = VcsManager::load(&config.vcs);
 
         Ok(Workspace {
             config,

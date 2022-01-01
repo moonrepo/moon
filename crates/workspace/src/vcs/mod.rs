@@ -4,9 +4,9 @@ mod svn;
 use crate::errors::VcsError;
 use async_trait::async_trait;
 use git::Git;
-use moon_logger::{color, debug, trace};
+use moon_config::{VcsConfig, VcsManager as VM};
+use moon_logger::{color, debug};
 use std::collections::HashSet;
-use std::path::Path;
 use svn::Svn;
 
 pub type VcsResult<T> = Result<T, VcsError>;
@@ -32,47 +32,26 @@ pub trait Vcs {
     async fn run_command(&self, args: Vec<&str>) -> VcsResult<String>;
 }
 
-pub struct VcsDetector {}
+pub struct VcsManager {}
 
-impl VcsDetector {
-    pub fn detect(workspace_root: &Path, default_branch: &str) -> Result<Box<dyn Vcs>, VcsError> {
+impl VcsManager {
+    pub fn load(config: &Option<VcsConfig>) -> Box<dyn Vcs> {
+        let vcs_config = match config.as_ref() {
+            Some(cfg) => cfg.clone(),
+            None => VcsConfig::default(),
+        };
+
         debug!(
-            target: "moon:workspace:vcs",
-            "Detecting version control system, starting from {}",
-            color::file_path(workspace_root)
+            target: "moon:workspace",
+            "Using {} version control system",
+            color::symbol("git")
         );
 
-        if find_config_dir(workspace_root, "git") {
-            return Ok(Box::new(Git::new(default_branch)));
+        let branch = "origin/master";
+
+        match vcs_config.manager {
+            Some(VM::Svn) => Box::new(Svn::new(branch)),
+            _ => Box::new(Git::new(branch)),
         }
-
-        if find_config_dir(workspace_root, "svn") {
-            return Ok(Box::new(Svn::new(default_branch)));
-        }
-
-        Err(VcsError::FailedDetection)
-    }
-}
-
-fn find_config_dir(starting_dir: &Path, vcs: &str) -> bool {
-    let vcs_dir_name = format!(".{}", vcs);
-    let config_dir = starting_dir.join(vcs_dir_name);
-
-    trace!(
-        target: "moon:workspace:vcs",
-        "Attempting to find {} config folder {}",
-        color::symbol(vcs),
-        color::file_path(&config_dir),
-    );
-
-    if config_dir.exists() {
-        return true;
-    }
-
-    let parent_dir = starting_dir.parent();
-
-    match parent_dir {
-        Some(dir) => find_config_dir(dir, vcs),
-        None => false,
     }
 }

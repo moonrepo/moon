@@ -4,7 +4,7 @@ mod svn;
 use crate::errors::VcsError;
 use async_trait::async_trait;
 use git::Git;
-use moon_config::{VcsConfig, VcsManager as VM};
+use moon_config::{VcsManager as VM, WorkspaceConfig};
 use moon_logger::{color, debug};
 use std::collections::HashSet;
 use svn::Svn;
@@ -36,23 +36,20 @@ pub trait Vcs {
 pub struct VcsManager {}
 
 impl VcsManager {
-    pub fn load(config: &Option<VcsConfig>) -> Box<dyn Vcs> {
-        let vcs_config = match config.as_ref() {
-            Some(cfg) => cfg.clone(),
-            None => VcsConfig::default(),
-        };
+    pub fn load(config: &WorkspaceConfig) -> Box<dyn Vcs> {
+        let vcs_config = config.vcs.as_ref().unwrap();
+        let manager = vcs_config.manager.as_ref().unwrap();
+        let default_branch = vcs_config.default_branch.as_ref().unwrap().as_str();
 
         debug!(
             target: "moon:workspace",
             "Using {} version control system",
-            color::symbol("git") // TODO
+            color::symbol(&format!("{:?}", manager).to_lowercase())
         );
 
-        let branch = "origin/master";
-
-        match vcs_config.manager {
-            Some(VM::Svn) => Box::new(Svn::new(branch)),
-            _ => Box::new(Git::new(branch)),
+        match manager {
+            VM::Svn => Box::new(Svn::new(default_branch)),
+            _ => Box::new(Git::new(default_branch)),
         }
     }
 }

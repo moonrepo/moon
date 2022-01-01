@@ -20,7 +20,7 @@ fn mock_file_groups() -> FileGroups {
 
 fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
-        file_groups: mock_file_groups(),
+        file_groups: Some(mock_file_groups()),
         tasks: None,
     }
 }
@@ -177,7 +177,10 @@ fn overrides_global_file_groups() {
         "projects/basic",
         &root_dir,
         &GlobalProjectConfig {
-            file_groups: HashMap::from([(String::from("tests"), vec![String::from("tests/**/*")])]),
+            file_groups: Some(HashMap::from([(
+                String::from("tests"),
+                vec![String::from("tests/**/*")],
+            )])),
             tasks: None,
         },
     )
@@ -305,7 +308,7 @@ mod tasks {
             "tasks/no-tasks",
             &root_dir,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
+                file_groups: None,
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     mock_task_config("cmd"),
@@ -344,7 +347,7 @@ mod tasks {
             "tasks/basic",
             &root_dir,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
+                file_groups: None,
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     mock_task_config("cmd"),
@@ -392,7 +395,7 @@ mod tasks {
             "tasks/merge-replace",
             &root_dir,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
+                file_groups: None,
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
@@ -465,7 +468,7 @@ mod tasks {
             "tasks/merge-append",
             &root_dir,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
+                file_groups: None,
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
@@ -538,7 +541,7 @@ mod tasks {
             "tasks/merge-prepend",
             &root_dir,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
+                file_groups: None,
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
@@ -611,7 +614,7 @@ mod tasks {
             "tasks/merge-all-strategies",
             &root_dir,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
+                file_groups: None,
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     TaskConfig {

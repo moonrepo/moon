@@ -72,7 +72,7 @@ fn create_file_groups_from_config(
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
 ) -> FileGroups {
-    let mut file_groups = global_config.file_groups.clone();
+    let mut file_groups = global_config.file_groups.clone().unwrap_or_default();
 
     // Override global configs with local
     if let Some(local_config) = config {

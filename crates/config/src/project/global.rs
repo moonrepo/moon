@@ -16,14 +16,6 @@ use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
-    if map.is_empty() {
-        return Err(create_validation_error(
-            "required_field",
-            "fileGroups",
-            String::from("At least 1 file group is required."),
-        ));
-    }
-
     for key in map.keys() {
         validate_id(&format!("fileGroups.{}", key), key)?;
     }
@@ -54,7 +46,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
 pub struct GlobalProjectConfig {
     #[serde(rename = "fileGroups")]
     #[validate(custom = "validate_file_groups")]
-    pub file_groups: FileGroups,
+    pub file_groups: Option<FileGroups>,
 
     #[validate(custom = "validate_tasks")]
     #[validate]
@@ -123,26 +115,13 @@ fileGroups:
             assert_eq!(
                 config,
                 GlobalProjectConfig {
-                    file_groups: HashMap::from([(
+                    file_groups: Some(HashMap::from([(
                         String::from("sources"),
                         vec![String::from("src/**/*")]
-                    )]),
+                    )])),
                     tasks: None,
                 }
             );
-
-            Ok(())
-        });
-    }
-
-    #[test]
-    #[should_panic(expected = "Invalid field `fileGroups`. At least 1 file group is required.")]
-    fn empty_file() {
-        figment::Jail::expect_with(|jail| {
-            // Needs a fake yaml value, otherwise the file reading panics
-            jail.create_file(constants::CONFIG_PROJECT_FILENAME, "fake: value")?;
-
-            load_jailed_config()?;
 
             Ok(())
         });

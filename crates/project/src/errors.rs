@@ -7,7 +7,7 @@ pub enum ProjectError {
     DependencyCycleDetected,
 
     #[error(
-        "Failed to validate <path>{0}/{}</path> configuration file.",
+        "Failed to validate <path>{0}/{}</path> configuration file.\n\n<muted>{0}</muted>",
         constants::CONFIG_PROJECT_FILENAME
     )]
     InvalidConfigFile(String, ValidationErrors),

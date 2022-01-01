@@ -96,7 +96,7 @@ impl Default for NodeConfig {
         NodeConfig {
             version: String::from(NODE_VERSION),
             package_manager: Some(PackageManager::Npm),
-            npm: None,
+            npm: Some(NpmConfig::default()),
             pnpm: None,
             yarn: None,
         }

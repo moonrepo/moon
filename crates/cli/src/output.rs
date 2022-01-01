@@ -8,22 +8,21 @@ lazy_static! {
 }
 
 pub fn replace_style_tokens(value: &str) -> String {
-    let message = STYLE_TOKEN.replace(value, |caps: &Captures| {
+    String::from(STYLE_TOKEN.replace_all(value, |caps: &Captures| {
         let token = caps.get(1).map_or("", |m| m.as_str());
         let inner = caps.get(2).map_or("", |m| m.as_str());
 
         match token {
             "file_path" => color::file_path(Path::new(inner)),
             "id" => color::id(inner),
+            "muted" => color::muted_light(inner),
             "path" => color::path(inner),
             "shell" => color::shell(inner),
             "symbol" => color::symbol(inner),
             "url" => color::url(inner),
             _ => String::from(inner),
         }
-    });
-
-    String::from(message)
+    }))
 }
 
 #[cfg(test)]
@@ -35,7 +34,7 @@ mod test {
 
         #[test]
         fn renders_ansi() {
-            let list = vec!["file_path", "path", "shell", "symbol"];
+            let list = vec!["file_path", "muted", "id", "path", "shell", "symbol"];
 
             for token in list {
                 let value = format!("Before <{}>inner</{}> after", token, token);
@@ -45,6 +44,14 @@ mod test {
 
             assert_eq!(
                 replace_style_tokens("Before <unknown>inner</unknown> after"),
+                "Before inner after"
+            );
+        }
+
+        #[test]
+        fn renders_multiple_ansi() {
+            assert_ne!(
+                replace_style_tokens("<muted>Before</muted> <id>inner</id> <symbol>after</symbol>"),
                 "Before inner after"
             );
         }

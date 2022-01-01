@@ -8,9 +8,7 @@ use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use dirs::home_dir as get_home_dir;
 use moon_config::constants::CONFIG_DIRNAME;
-use moon_config::workspace::{
-    NpmConfig, PackageManager as PM, PnpmConfig, WorkspaceConfig, YarnConfig,
-};
+use moon_config::workspace::{NodeConfig, PackageManager as PM, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -91,29 +89,27 @@ impl Toolchain {
         // Order is IMPORTANT here, as some tools rely on others already
         // being instantiated. For example, npm requires node,
         // and pnpm/yarn require npm!
-        toolchain.node = Some(NodeTool::new(&toolchain, &config.node)?);
+        let node = match &config.node {
+            Some(cfg) => cfg.clone(),
+            None => NodeConfig::default(),
+        };
 
-        toolchain.npm = Some(NpmTool::new(
-            &toolchain,
-            config.node.npm.as_ref().unwrap_or(&NpmConfig::default()), // TODO: Better way?
-        )?);
+        toolchain.node = Some(NodeTool::new(&toolchain, &node)?);
+
+        toolchain.npm = Some(NpmTool::new(&toolchain, &node.npm.unwrap_or_default())?);
 
         toolchain.npx = Some(NpxTool::new(&toolchain));
 
-        if config.node.package_manager.is_some() {
-            match config.node.package_manager.as_ref().unwrap() {
+        if let Some(pm) = node.package_manager {
+            match pm {
                 PM::Npm => {}
                 PM::Pnpm => {
-                    toolchain.pnpm = Some(PnpmTool::new(
-                        &toolchain,
-                        config.node.pnpm.as_ref().unwrap_or(&PnpmConfig::default()),
-                    )?);
+                    toolchain.pnpm =
+                        Some(PnpmTool::new(&toolchain, &node.pnpm.unwrap_or_default())?);
                 }
                 PM::Yarn => {
-                    toolchain.yarn = Some(YarnTool::new(
-                        &toolchain,
-                        config.node.yarn.as_ref().unwrap_or(&YarnConfig::default()),
-                    )?);
+                    toolchain.yarn =
+                        Some(YarnTool::new(&toolchain, &node.yarn.unwrap_or_default())?);
                 }
             }
         }
@@ -121,7 +117,7 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub fn new(config: &WorkspaceConfig, root_dir: &Path) -> Result<Toolchain, ToolchainError> {
+    pub fn new(root_dir: &Path, config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
         Toolchain::from(
             config,
             &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,

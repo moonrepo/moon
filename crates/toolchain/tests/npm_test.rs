@@ -10,10 +10,12 @@ pub fn create_npm_tool() -> (NpmTool, assert_fs::TempDir) {
 
     let mut config = WorkspaceConfig::default();
 
-    config.node.version = String::from("1.0.0");
-    config.node.npm = Some(NpmConfig {
-        version: String::from("6.0.0"),
-    });
+    if let Some(ref mut node) = config.node {
+        node.version = String::from("1.0.0");
+        node.npm = Some(NpmConfig {
+            version: String::from("6.0.0"),
+        });
+    }
 
     let toolchain = Toolchain::from(&config, base_dir.path(), &env::temp_dir()).unwrap();
 

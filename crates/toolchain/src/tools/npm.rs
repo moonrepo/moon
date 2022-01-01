@@ -1,10 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{exec_command, get_bin_version, is_ci};
+use crate::helpers::{get_bin_version, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::workspace::NpmConfig;
 use moon_logger::{color, debug, trace};
+use moon_utils::exec_bin_in_dir;
 use std::env::consts;
 use std::path::PathBuf;
 
@@ -44,7 +45,7 @@ impl NpmTool {
     pub async fn add_global_dep(&self, name: &str, version: &str) -> Result<(), ToolchainError> {
         let package = format!("{}@{}", name, version);
 
-        exec_command(
+        exec_bin_in_dir(
             self.get_bin_path(),
             vec!["install", "-g", package.as_str()],
             &self.install_dir,
@@ -126,7 +127,7 @@ impl Tool for NpmTool {
 #[async_trait]
 impl PackageManager for NpmTool {
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        Ok(exec_command(
+        Ok(exec_bin_in_dir(
             self.get_bin_path(),
             vec![if is_ci() { "ci" } else { "install " }],
             &toolchain.workspace_dir,

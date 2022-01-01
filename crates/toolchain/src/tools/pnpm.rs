@@ -1,10 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{exec_command, get_bin_version};
+use crate::helpers::get_bin_version;
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::workspace::PnpmConfig;
 use moon_logger::{color, debug, trace};
+use moon_utils::exec_bin_in_dir;
 use std::env::consts;
 use std::path::PathBuf;
 
@@ -115,7 +116,7 @@ impl Tool for PnpmTool {
 #[async_trait]
 impl PackageManager for PnpmTool {
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        Ok(exec_command(
+        Ok(exec_bin_in_dir(
             self.get_bin_path(),
             vec!["install", "--frozen-lockfile"],
             &toolchain.workspace_dir,

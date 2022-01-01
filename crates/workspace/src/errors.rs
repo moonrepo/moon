@@ -48,9 +48,18 @@ pub enum WorkspaceError {
     #[error("Unknown moon workspace error.")]
     Unknown,
 
-    #[error("{0}")]
+    #[error(transparent)]
     Project(#[from] ProjectError),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Toolchain(#[from] ToolchainError),
+
+    #[error(transparent)]
+    Vcs(#[from] VcsError),
+}
+
+#[derive(Error, Debug)]
+pub enum VcsError {
+    #[error("I/O: {0}")]
+    IO(#[from] std::io::Error),
 }

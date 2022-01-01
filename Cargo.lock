@@ -1052,6 +1052,7 @@ dependencies = [
  "mockito",
  "moon_config",
  "moon_logger",
+ "moon_utils",
  "predicates",
  "reqwest",
  "sha2",
@@ -1061,13 +1062,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_utils"
+version = "0.1.0"
+dependencies = [
+ "moon_logger",
+ "tokio",
+]
+
+[[package]]
 name = "moon_workspace"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "moon_config",
  "moon_logger",
  "moon_project",
  "moon_toolchain",
+ "moon_utils",
+ "regex",
  "thiserror",
 ]
 

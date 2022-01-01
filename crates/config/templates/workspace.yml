@@ -1,4 +1,11 @@
-# Configures Node.js within the toolchain. Moon manages its own version of Node.js
+# A map of all projects found within the workspace. Each entry requires a unique project ID
+# as the map key, and a file system path to the project folder as the map value. File paths
+# are relative from the workspace root, and cannot reference projects located outside the
+# workspace boundary.
+projects:
+  example: 'packages/example'
+
+# OPTIONAL: Configures Node.js within the toolchain. Moon manages its own version of Node.js
 # instead of relying on a version found on the host machine. This ensures deterministic
 # and reproducible builds across any machine.
 node:
@@ -7,12 +14,18 @@ node:
   version: '16.13.0'
 
   # OPTIONAL: The package manager to use when managing dependencies.
-  # Accepts "npm", "pnpm", or "yarn".
-  packageManager: npm
+  # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".
+  packageManager: 'npm'
 
-# A map of all projects found within the workspace. Each entry requires a unique project ID
-# as the map key, and a file system path to the project folder as the map value. File paths
-# are relative from the workspace root, and cannot reference projects located outside the
-# workspace boundary.
-projects:
-  example: packages/example
+# OPTIONAL: Configures the version control system to utilize within the workspace. A VCS
+# is required for determining touched (added, modified, etc) files, calculating file hashes,
+# computing affected files, and much more.
+vcs:
+  # OPTIONAL: The manager/binary to use when managing the repository.
+  # Accepts "git", or "svn". Defaults to "git".
+  manager: 'git'
+
+  # OPTIONAL: The default branch (master/main/trunk) in the repository for comparing the
+  # local branch against. For git, this is is typically "origin/master" or "origin/main",
+  # and must include the remote prefix (before /). For svn, this should always be "trunk".
+  defaultBranch: 'origin/master'

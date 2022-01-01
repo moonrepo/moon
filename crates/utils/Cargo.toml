@@ -1,0 +1,8 @@
+[package]
+name = "moon_utils"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_logger = { path = "../logger" }
+tokio = { version = "1.14", features = ["full"] }

@@ -7,7 +7,9 @@ use std::path::Path;
 pub fn create_toolchain(base_dir: &Path) -> Toolchain {
     let mut config = WorkspaceConfig::default();
 
-    config.node.version = String::from("1.0.0");
+    if let Some(ref mut node) = config.node {
+        node.version = String::from("1.0.0");
+    }
 
     Toolchain::from(&config, base_dir, &env::temp_dir()).unwrap()
 }

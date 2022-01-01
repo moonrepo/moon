@@ -131,14 +131,56 @@ impl Default for NodeConfig {
     }
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VcsManager {
+    Git,
+    Svn,
+}
+
+impl Default for VcsManager {
+    fn default() -> Self {
+        VcsManager::Git
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+pub struct VcsConfig {
+    pub manager: Option<VcsManager>,
+
+    #[serde(rename = "defaultBranch")]
+    pub default_branch: Option<String>,
+}
+
+impl Default for VcsConfig {
+    fn default() -> Self {
+        VcsConfig {
+            manager: Some(VcsManager::default()),
+            default_branch: Some(String::from("origin/master")),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
-    #[serde(default)]
     #[validate]
-    pub node: NodeConfig,
+    pub node: Option<NodeConfig>,
 
     #[validate(custom = "validate_projects")]
     pub projects: HashMap<String, FilePath>,
+
+    #[validate]
+    pub vcs: Option<VcsConfig>,
+}
+
+impl Default for WorkspaceConfig {
+    fn default() -> Self {
+        WorkspaceConfig {
+            node: Some(NodeConfig::default()),
+            projects: HashMap::new(),
+            vcs: Some(VcsConfig::default()),
+        }
+    }
 }
 
 impl Provider for WorkspaceConfig {
@@ -206,14 +248,9 @@ mod tests {
             assert_eq!(
                 config,
                 WorkspaceConfig {
-                    node: NodeConfig {
-                        version: String::from(NODE_VERSION),
-                        package_manager: Some(PackageManager::Npm),
-                        npm: None,
-                        pnpm: None,
-                        yarn: None
-                    },
+                    node: None,
                     projects: HashMap::new(),
+                    vcs: None
                 }
             );
 
@@ -552,6 +589,67 @@ projects:
                         (String::from("foo"), String::from("./packages/foo"))
                     ]),
                 );
+
+                Ok(())
+            });
+        }
+    }
+
+    mod vcs {
+        use super::*;
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `vcs`. Expected struct VcsConfig type, received unsigned int `123`."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects: {}
+vcs: 123"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field `vcs.manager`. Unknown option `unknown`.")]
+        fn invalid_manager_option() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects: {}
+vcs:
+    manager: unknown"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `vcs.defaultBranch`. Expected a string type, received unsigned int `123`."
+        )]
+        fn invalid_default_branch_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects: {}
+vcs:
+    defaultBranch: 123"#,
+                )?;
+
+                super::load_jailed_config()?;
 
                 Ok(())
             });

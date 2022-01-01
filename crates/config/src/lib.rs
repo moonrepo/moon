@@ -16,7 +16,7 @@ pub use project::{ProjectConfig, ProjectType};
 pub use task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
 pub use types::{FileGroups, FilePath, FilePathOrGlob, ProjectID, TargetID, TaskID};
 pub use validator::ValidationErrors;
-pub use workspace::WorkspaceConfig;
+pub use workspace::{VcsConfig, VcsManager, WorkspaceConfig};
 
 pub fn load_workspace_config_template() -> &'static str {
     include_str!("../templates/workspace.yml")

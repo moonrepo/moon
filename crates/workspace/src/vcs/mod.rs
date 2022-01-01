@@ -11,6 +11,7 @@ use svn::Svn;
 
 pub type VcsResult<T> = Result<T, VcsError>;
 
+#[allow(dead_code)]
 pub struct TouchedFiles {
     added: HashSet<String>,
     deleted: HashSet<String>,
@@ -44,7 +45,7 @@ impl VcsManager {
         debug!(
             target: "moon:workspace",
             "Using {} version control system",
-            color::symbol("git")
+            color::symbol("git") // TODO
         );
 
         let branch = "origin/master";

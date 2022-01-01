@@ -43,6 +43,7 @@ impl Vcs for Git {
         let mut untracked = HashSet::new();
         let mut staged = HashSet::new();
         let mut unstaged = HashSet::new();
+        let mut all = HashSet::new();
 
         for line in output.split('\n') {
             let mut chars = line.chars();
@@ -92,10 +93,13 @@ impl Vcs for Git {
                 }
                 _ => {}
             }
+
+            all.insert(file.clone());
         }
 
         Ok(TouchedFiles {
             added,
+            all,
             deleted,
             modified,
             staged,

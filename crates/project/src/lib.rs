@@ -5,9 +5,11 @@ mod project_graph;
 mod target;
 mod task;
 mod task_graph;
+mod types;
 
 pub use constants::ROOT_NODE_ID;
 pub use errors::ProjectError;
+pub use types::AffectedFiles;
 
 // Projects
 pub use moon_config::{FileGroups, ProjectID, ProjectType};

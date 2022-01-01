@@ -2,6 +2,7 @@ use crate::errors::ProjectError;
 use crate::project_graph::ProjectGraph;
 use crate::target::Target;
 use crate::task::Task;
+use crate::types::AffectedFiles;
 use dep_graph::{DepGraph, Node};
 use moon_config::TargetID;
 use std::collections::HashMap;
@@ -14,13 +15,21 @@ pub struct TaskGraph {
 }
 
 impl TaskGraph {
-    pub fn new() -> Self {
-        TaskGraph::default()
+    pub fn new(
+        projects: &ProjectGraph,
+        affected_files: &AffectedFiles,
+        target: TargetID,
+    ) -> Result<Self, ProjectError> {
+        let mut graph = TaskGraph::default();
+        graph.load(projects, affected_files, target, None)?;
+
+        Ok(graph)
     }
 
-    pub fn generate(
+    fn load(
         &mut self,
         projects: &ProjectGraph,
+        affected_files: &AffectedFiles,
         target: TargetID,
         parent_node: Option<&mut Node<TargetID>>,
     ) -> Result<(), ProjectError> {
@@ -28,6 +37,10 @@ impl TaskGraph {
 
         // Validate project first
         let project = projects.get(&project_id)?;
+
+        if !project.is_affected(affected_files) {
+            return Ok(());
+        }
 
         // Validate task exists for project
         let task = match project.tasks.get(&task_id) {
@@ -44,7 +57,12 @@ impl TaskGraph {
         let mut node = Node::new(target.clone());
 
         for dep_target in &task.deps {
-            self.generate(projects, dep_target.clone(), Some(&mut node))?;
+            self.load(
+                projects,
+                affected_files,
+                dep_target.clone(),
+                Some(&mut node),
+            )?;
         }
 
         self.nodes.insert(target.clone(), node);

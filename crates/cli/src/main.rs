@@ -50,6 +50,9 @@ async fn main() {
         Commands::ProjectGraph { id } => {
             result = project_graph(id).await;
         }
+        Commands::Run { target } => {
+            panic!("TO DO {}", target);
+        }
         Commands::Setup => {
             result = setup().await;
         }

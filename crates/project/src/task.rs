@@ -1,8 +1,10 @@
 use moon_config::{
-    FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -68,7 +70,7 @@ pub struct Task {
 
     pub options: TaskOptions,
 
-    pub outputs: Vec<FilePathOrGlob>,
+    pub outputs: Vec<FilePath>,
 
     #[serde(rename = "type")]
     pub type_of: TaskType,
@@ -106,6 +108,32 @@ impl Task {
         );
 
         task
+    }
+
+    fn expand_io_paths(
+        &self,
+        workspace_root: &Path,
+        project_root: &Path,
+        files: &[FilePathOrGlob],
+    ) -> HashSet<PathBuf> {
+        files
+            .iter()
+            .map(|file| {
+                if file.starts_with('/') {
+                    workspace_root.join(file).canonicalize().unwrap()
+                } else {
+                    project_root.join(file).canonicalize().unwrap()
+                }
+            })
+            .collect()
+    }
+
+    pub fn expand_inputs(&self, workspace_root: &Path, project_root: &Path) -> HashSet<PathBuf> {
+        self.expand_io_paths(workspace_root, project_root, &self.inputs)
+    }
+
+    pub fn expand_outputs(&self, workspace_root: &Path, project_root: &Path) -> HashSet<PathBuf> {
+        self.expand_io_paths(workspace_root, project_root, &self.outputs)
     }
 
     pub fn merge(&mut self, config: &TaskConfig) {

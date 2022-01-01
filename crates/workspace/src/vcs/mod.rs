@@ -21,6 +21,7 @@ pub struct TouchedFiles {
     // Will contain files from the previous fields
     staged: HashSet<String>,
     unstaged: HashSet<String>,
+    all: HashSet<String>,
 }
 
 #[async_trait]

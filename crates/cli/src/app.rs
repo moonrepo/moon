@@ -3,6 +3,7 @@
 use crate::commands::bin::BinTools;
 use clap::ArgEnum;
 use clap::{AppSettings, Parser, Subcommand};
+use moon_project::TargetID;
 
 #[derive(ArgEnum, Clone, Debug)]
 pub enum LogLevel {
@@ -54,6 +55,16 @@ pub enum Commands {
     ProjectGraph {
         #[clap(help = "ID of project to *only* graph")]
         id: Option<String>,
+    },
+
+    // moon run [target]
+    #[clap(
+        name = "run",
+        about = "Run a project task and all its dependent tasks."
+    )]
+    Run {
+        #[clap(help = "Project:task target to run")]
+        target: TargetID,
     },
 
     // moon setup

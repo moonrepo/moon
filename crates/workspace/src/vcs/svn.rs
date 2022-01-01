@@ -75,6 +75,7 @@ impl Vcs for Svn {
         let mut untracked = HashSet::new();
         let mut staged = HashSet::new();
         let unstaged = HashSet::new();
+        let mut all = HashSet::new();
 
         for line in output.split('\n') {
             let mut chars = line.chars();
@@ -103,12 +104,15 @@ impl Vcs for Svn {
                 modified.insert(file.clone());
             }
 
+            all.insert(file.clone());
+
             // svn files are always staged by default
             staged.insert(file.clone());
         }
 
         Ok(TouchedFiles {
             added,
+            all,
             deleted,
             modified,
             staged,

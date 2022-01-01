@@ -1,5 +1,6 @@
 use crate::errors::ProjectError;
 use crate::task::Task;
+use crate::types::AffectedFiles;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     FileGroups, FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig,
@@ -191,6 +192,18 @@ impl Project {
         depends_on.sort();
 
         depends_on
+    }
+
+    /// Return true if this project is affected, based on touched files.
+    /// Will attempt to find any file that starts with the project root.
+    pub fn is_affected(&self, affected_files: &AffectedFiles) -> bool {
+        for file in affected_files {
+            if file.starts_with(&self.dir) {
+                return true;
+            }
+        }
+
+        false
     }
 
     /// Return the project as a JSON string.

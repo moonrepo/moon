@@ -32,14 +32,14 @@ pub enum WorkspaceError {
     MissingGlobalProjectConfigFile,
 
     #[error(
-        "Failed to validate <path>{}/{}</path> configuration file.",
+        "Failed to validate <path>{}/{}</path> configuration file.\n\n<muted>{0}</muted>",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     InvalidWorkspaceConfigFile(ValidationErrors),
 
     #[error(
-        "Failed to validate <path>{}/{}</path> configuration file.",
+        "Failed to validate <path>{}/{}</path> configuration file.\n\n<muted>{0}</muted>",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_PROJECT_FILENAME
     )]

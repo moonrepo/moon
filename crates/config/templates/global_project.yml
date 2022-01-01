@@ -1,6 +1,7 @@
-# File groups are a mechanism for grouping similar types of files within a project using file glob
-# patterns. These groups are then used by tasks to calculate functionality like cache computation,
-# affected files since last change, command line arguments, deterministic builds, and more.
+# OPTIONAL: File groups are a mechanism for grouping similar types of files within a project
+# using file glob patterns. These groups are then used by tasks to calculate functionality like
+# cache computation, affected files since last change, command line arguments, deterministic
+# builds, and more.
 #
 # This setting requires a map, where the key is the file group name, and the value is a list of
 # globs. Globs are relative to a project, even though they are defined globally. This enables

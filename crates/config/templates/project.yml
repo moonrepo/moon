@@ -2,6 +2,7 @@
 # setting is optional, when defined, all fields within it must be defined as well.
 project:
   # The type of project. Accepts "library", "application", or "tool".
+  # Defaults to "library".
   type: 'library'
 
   # A human readable name of the project.

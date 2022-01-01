@@ -3,7 +3,7 @@ use crate::helpers::{get_bin_version, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
-use moon_config::workspace::NpmConfig;
+use moon_config::NpmConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::exec_bin_in_dir;
 use std::env::consts;

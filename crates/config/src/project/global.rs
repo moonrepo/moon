@@ -2,7 +2,7 @@
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
-use crate::task::TaskConfig;
+use crate::project::task::TaskConfig;
 use crate::types::FileGroups;
 use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
@@ -46,7 +46,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
 pub struct GlobalProjectConfig {
     #[serde(rename = "fileGroups")]
     #[validate(custom = "validate_file_groups")]
-    pub file_groups: FileGroups,
+    pub file_groups: Option<FileGroups>,
 
     #[validate(custom = "validate_tasks")]
     #[validate]
@@ -69,7 +69,10 @@ impl Provider for GlobalProjectConfig {
 
 impl GlobalProjectConfig {
     pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ValidationErrors> {
-        let config: GlobalProjectConfig = match Figment::new().merge(Yaml::file(path)).extract() {
+        let config: GlobalProjectConfig = match Figment::from(GlobalProjectConfig::default())
+            .merge(Yaml::file(path))
+            .extract()
+        {
             Ok(cfg) => cfg,
             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
         };
@@ -97,13 +100,28 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Missing field `fileGroups`.")]
-    fn empty_file() {
+    fn loads_defaults() {
         figment::Jail::expect_with(|jail| {
-            // Needs a fake yaml value, otherwise the file reading panics
-            jail.create_file(constants::CONFIG_PROJECT_FILENAME, "fake: value")?;
+            jail.create_file(
+                constants::CONFIG_PROJECT_FILENAME,
+                r#"
+fileGroups:
+    sources:
+        - src/**/*"#,
+            )?;
 
-            load_jailed_config()?;
+            let config = load_jailed_config()?;
+
+            assert_eq!(
+                config,
+                GlobalProjectConfig {
+                    file_groups: Some(HashMap::from([(
+                        String::from("sources"),
+                        vec![String::from("src/**/*")]
+                    )])),
+                    tasks: None,
+                }
+            );
 
             Ok(())
         });
@@ -217,7 +235,8 @@ tasks:
                 jail.create_file(
                     super::constants::CONFIG_PROJECT_FILENAME,
                     r#"
-fileGroups: {}
+fileGroups:
+    sources: []
 tasks:
     test: {}
 "#,

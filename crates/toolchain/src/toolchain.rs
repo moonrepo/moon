@@ -8,7 +8,7 @@ use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use dirs::home_dir as get_home_dir;
 use moon_config::constants::CONFIG_DIRNAME;
-use moon_config::workspace::{NodeConfig, PackageManager as PM, WorkspaceConfig};
+use moon_config::{NodeConfig, PackageManager as PM, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use std::fs;
 use std::path::{Path, PathBuf};

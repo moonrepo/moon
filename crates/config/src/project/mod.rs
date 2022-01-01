@@ -1,8 +1,10 @@
 // <project path>/project.yml
 
+pub mod global;
+pub mod task;
+
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
-use crate::task::TaskConfig;
 use crate::types::{FileGroups, ProjectID};
 use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
@@ -13,6 +15,7 @@ use figment::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
+use task::TaskConfig;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
@@ -112,7 +115,10 @@ impl Provider for ProjectConfig {
 
 impl ProjectConfig {
     pub fn load(path: &Path) -> Result<ProjectConfig, ValidationErrors> {
-        let config: ProjectConfig = match Figment::new().merge(Yaml::file(path)).extract() {
+        let config: ProjectConfig = match Figment::from(ProjectConfig::default())
+            .merge(Yaml::file(path))
+            .extract()
+        {
             Ok(cfg) => cfg,
             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
         };
@@ -129,7 +135,6 @@ impl ProjectConfig {
 mod tests {
     use super::*;
     use crate::errors::tests::handled_jailed_error;
-    use figment;
     use std::path::PathBuf;
 
     fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {
@@ -146,6 +151,34 @@ mod tests {
             jail.create_file(constants::CONFIG_PROJECT_FILENAME, "fake: value")?;
 
             load_jailed_config()?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn loads_defaults() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                constants::CONFIG_PROJECT_FILENAME,
+                r#"
+fileGroups:
+    sources:
+        - src/**/*"#,
+            )?;
+
+            let config = load_jailed_config()?;
+
+            assert_eq!(
+                config,
+                ProjectConfig {
+                    file_groups: Some(HashMap::from([(
+                        String::from("sources"),
+                        vec![String::from("src/**/*")]
+                    )])),
+                    ..ProjectConfig::default()
+                }
+            );
 
             Ok(())
         });
@@ -203,6 +236,47 @@ fileGroups:
     }
 
     mod tasks {
+        use super::*;
+
+        // TODO: https://github.com/SergioBenitez/Figment/issues/41
+        #[test]
+        fn loads_defaults() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+tasks:
+    lint:
+        command: eslint
+        args:
+            - ."#,
+                )?;
+
+                let config = load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    ProjectConfig {
+                        tasks: Some(HashMap::from([(
+                            String::from("lint"),
+                            TaskConfig {
+                                args: Some(vec![".".to_owned()]),
+                                command: Some("eslint".to_owned()),
+                                deps: None,
+                                inputs: None,
+                                options: None,
+                                outputs: None,
+                                type_of: None
+                            }
+                        )])),
+                        ..ProjectConfig::default()
+                    }
+                );
+
+                Ok(())
+            });
+        }
+
         #[test]
         #[should_panic(
             expected = "Invalid field `tasks`. Expected a map type, received unsigned int `123`."

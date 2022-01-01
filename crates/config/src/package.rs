@@ -1,6 +1,5 @@
 // package.json
 
-use json;
 use json::object::Object;
 use json::JsonValue;
 use std::fs;

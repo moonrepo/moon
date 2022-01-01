@@ -1,5 +1,4 @@
-use moon_config::workspace::{PackageManager, PnpmConfig};
-use moon_config::WorkspaceConfig;
+use moon_config::{PackageManager, PnpmConfig, WorkspaceConfig};
 use moon_toolchain::tools::pnpm::PnpmTool;
 use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;

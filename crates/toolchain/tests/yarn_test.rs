@@ -1,5 +1,4 @@
-use moon_config::workspace::{PackageManager, YarnConfig};
-use moon_config::WorkspaceConfig;
+use moon_config::{PackageManager, WorkspaceConfig, YarnConfig};
 use moon_toolchain::tools::yarn::YarnTool;
 use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;

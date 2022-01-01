@@ -4,7 +4,7 @@ use crate::tool::Tool;
 use crate::Toolchain;
 use async_trait::async_trait;
 use flate2::read::GzDecoder;
-use moon_config::workspace::NodeConfig;
+use moon_config::NodeConfig;
 use moon_logger::{color, debug, error};
 use std::env::consts;
 use std::fs;

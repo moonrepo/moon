@@ -151,7 +151,7 @@ impl Workspace {
         // Setup components
         let toolchain = Toolchain::new(&root_dir, &config)?;
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
-        let vcs = VcsManager::load(&config.vcs);
+        let vcs = VcsManager::load(&config);
 
         Ok(Workspace {
             config,

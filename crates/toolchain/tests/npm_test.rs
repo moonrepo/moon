@@ -1,5 +1,4 @@
-use moon_config::workspace::NpmConfig;
-use moon_config::WorkspaceConfig;
+use moon_config::{NpmConfig, WorkspaceConfig};
 use moon_toolchain::tools::npm::NpmTool;
 use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;

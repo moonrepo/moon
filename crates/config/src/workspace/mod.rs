@@ -1,39 +1,23 @@
 // .moon/workspace.yml
 
+mod node;
+mod vcs;
+
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
 use crate::types::FilePath;
-use crate::validators::{validate_child_relative_path, validate_id, validate_semver_version};
+use crate::validators::{validate_child_relative_path, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Yaml},
     Figment, Metadata, Profile, Provider,
 };
+pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
-
-const NODE_VERSION: &str = "16.13.1";
-const NPM_VERSION: &str = "8.1.0";
-const PNPM_VERSION: &str = "6.23.6";
-const YARN_VERSION: &str = "3.1.0";
-
-fn validate_node_version(value: &str) -> Result<(), ValidationError> {
-    validate_semver_version("node.version", value)
-}
-
-fn validate_npm_version(value: &str) -> Result<(), ValidationError> {
-    validate_semver_version("node.npm.version", value)
-}
-
-fn validate_pnpm_version(value: &str) -> Result<(), ValidationError> {
-    validate_semver_version("node.pnpm.version", value)
-}
-
-fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
-    validate_semver_version("node.yarn.version", value)
-}
+pub use vcs::{VcsConfig, VcsManager};
 
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
@@ -49,116 +33,6 @@ fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), Validat
     }
 
     Ok(())
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum PackageManager {
-    Npm,
-    Pnpm,
-    Yarn,
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
-pub struct NpmConfig {
-    #[validate(custom = "validate_npm_version")]
-    pub version: String,
-}
-
-impl Default for NpmConfig {
-    fn default() -> Self {
-        NpmConfig {
-            version: String::from(NPM_VERSION),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
-pub struct PnpmConfig {
-    #[validate(custom = "validate_pnpm_version")]
-    pub version: String,
-}
-
-impl Default for PnpmConfig {
-    fn default() -> Self {
-        PnpmConfig {
-            version: String::from(PNPM_VERSION),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
-pub struct YarnConfig {
-    #[validate(custom = "validate_yarn_version")]
-    pub version: String,
-}
-
-impl Default for YarnConfig {
-    fn default() -> Self {
-        YarnConfig {
-            version: String::from(YARN_VERSION),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
-pub struct NodeConfig {
-    #[validate(custom = "validate_node_version")]
-    pub version: String,
-
-    #[serde(rename = "packageManager")]
-    pub package_manager: Option<PackageManager>,
-
-    #[validate]
-    pub npm: Option<NpmConfig>,
-
-    #[validate]
-    pub pnpm: Option<PnpmConfig>,
-
-    #[validate]
-    pub yarn: Option<YarnConfig>,
-}
-
-impl Default for NodeConfig {
-    fn default() -> Self {
-        NodeConfig {
-            version: String::from(NODE_VERSION),
-            package_manager: Some(PackageManager::Npm),
-            npm: None,
-            pnpm: None,
-            yarn: None,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum VcsManager {
-    Git,
-    Svn,
-}
-
-impl Default for VcsManager {
-    fn default() -> Self {
-        VcsManager::Git
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
-pub struct VcsConfig {
-    pub manager: Option<VcsManager>,
-
-    #[serde(rename = "defaultBranch")]
-    pub default_branch: Option<String>,
-}
-
-impl Default for VcsConfig {
-    fn default() -> Self {
-        VcsConfig {
-            manager: Some(VcsManager::default()),
-            default_branch: Some(String::from("origin/master")),
-        }
-    }
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
@@ -199,7 +73,10 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
-        let config: WorkspaceConfig = match Figment::new().merge(Yaml::file(path)).extract() {
+        let config: WorkspaceConfig = match Figment::from(WorkspaceConfig::default())
+            .merge(Yaml::file(path))
+            .extract()
+        {
             Ok(cfg) => cfg,
             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
         };
@@ -216,26 +93,12 @@ impl WorkspaceConfig {
 mod tests {
     use super::*;
     use crate::errors::tests::handled_jailed_error;
-    use figment;
 
     fn load_jailed_config() -> Result<WorkspaceConfig, figment::Error> {
         match WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME)) {
             Ok(cfg) => Ok(cfg),
             Err(errors) => Err(handled_jailed_error(&errors)),
         }
-    }
-
-    #[test]
-    #[should_panic(expected = "Missing field `projects`.")]
-    fn empty_file() {
-        figment::Jail::expect_with(|jail| {
-            // Needs a fake yaml value, otherwise the file reading panics
-            jail.create_file(constants::CONFIG_WORKSPACE_FILENAME, "fake: value")?;
-
-            load_jailed_config()?;
-
-            Ok(())
-        });
     }
 
     #[test]
@@ -248,9 +111,9 @@ mod tests {
             assert_eq!(
                 config,
                 WorkspaceConfig {
-                    node: None,
+                    node: Some(NodeConfig::default()),
                     projects: HashMap::new(),
-                    vcs: None
+                    vcs: Some(VcsConfig::default()),
                 }
             );
 
@@ -259,6 +122,37 @@ mod tests {
     }
 
     mod node {
+        use super::*;
+
+        #[test]
+        fn loads_defaults() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects: {}
+node:
+    packageManager: yarn"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    WorkspaceConfig {
+                        node: Some(NodeConfig {
+                            package_manager: Some(PackageManager::Yarn),
+                            ..NodeConfig::default()
+                        }),
+                        projects: HashMap::new(),
+                        vcs: Some(VcsConfig::default()),
+                    }
+                );
+
+                Ok(())
+            });
+        }
+
         #[test]
         #[should_panic(
             expected = "Invalid field `node`. Expected struct NodeConfig type, received unsigned int `123`."
@@ -597,6 +491,35 @@ projects:
 
     mod vcs {
         use super::*;
+
+        #[test]
+        fn loads_defaults() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects: {}
+vcs:
+    manager: svn"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    WorkspaceConfig {
+                        node: Some(NodeConfig::default()),
+                        projects: HashMap::new(),
+                        vcs: Some(VcsConfig {
+                            manager: Some(VcsManager::Svn),
+                            ..VcsConfig::default()
+                        }),
+                    }
+                );
+
+                Ok(())
+            });
+        }
 
         #[test]
         #[should_panic(

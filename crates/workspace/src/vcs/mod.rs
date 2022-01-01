@@ -25,9 +25,9 @@ pub struct TouchedFiles {
 #[async_trait]
 pub trait Vcs {
     async fn get_local_branch(&self) -> VcsResult<String>;
-    async fn get_local_hash(&self) -> VcsResult<String>;
-    fn get_origin_branch(&self) -> &str;
-    async fn get_origin_hash(&self) -> VcsResult<String>;
+    async fn get_local_branch_hash(&self) -> VcsResult<String>;
+    fn get_default_branch(&self) -> &str;
+    async fn get_default_branch_hash(&self) -> VcsResult<String>;
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;
     async fn run_command(&self, args: Vec<&str>) -> VcsResult<String>;
 }
@@ -35,7 +35,7 @@ pub trait Vcs {
 pub struct VcsDetector {}
 
 impl VcsDetector {
-    pub fn detect(workspace_root: &Path, origin_branch: &str) -> Result<Box<dyn Vcs>, VcsError> {
+    pub fn detect(workspace_root: &Path, default_branch: &str) -> Result<Box<dyn Vcs>, VcsError> {
         debug!(
             target: "moon:workspace:vcs",
             "Detecting version control system, starting from {}",
@@ -43,11 +43,11 @@ impl VcsDetector {
         );
 
         if find_config_dir(workspace_root, "git") {
-            return Ok(Box::new(Git::new(origin_branch)));
+            return Ok(Box::new(Git::new(default_branch)));
         }
 
         if find_config_dir(workspace_root, "svn") {
-            return Ok(Box::new(Svn::new()));
+            return Ok(Box::new(Svn::new(default_branch)));
         }
 
         Err(VcsError::FailedDetection)

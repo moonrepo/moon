@@ -7,13 +7,13 @@ use std::collections::HashSet;
 // TODO: This code hasn't been tested yet and may not be accurate!
 
 pub struct Svn {
-    origin_branch: String,
+    default_branch: String,
 }
 
 impl Svn {
-    pub fn new() -> Self {
+    pub fn new(default_branch: &str) -> Self {
         Svn {
-            origin_branch: String::from("trunk"),
+            default_branch: String::from(default_branch),
         }
     }
 
@@ -47,22 +47,22 @@ impl Vcs for Svn {
 
             return Ok(String::from(
                 caps.get(1)
-                    .map_or(self.origin_branch.as_str(), |m| m.as_str()),
+                    .map_or(self.default_branch.as_str(), |m| m.as_str()),
             ));
         }
 
-        Ok(self.get_origin_branch().to_owned())
+        Ok(self.get_default_branch().to_owned())
     }
 
-    async fn get_local_hash(&self) -> VcsResult<String> {
+    async fn get_local_branch_hash(&self) -> VcsResult<String> {
         Ok(self.get_hash_for_rev("BASE").await?)
     }
 
-    fn get_origin_branch(&self) -> &str {
-        &self.origin_branch
+    fn get_default_branch(&self) -> &str {
+        &self.default_branch
     }
 
-    async fn get_origin_hash(&self) -> VcsResult<String> {
+    async fn get_default_branch_hash(&self) -> VcsResult<String> {
         Ok(self.get_hash_for_rev("HEAD").await?)
     }
 

@@ -4,13 +4,13 @@ use moon_utils::exec_command_with_output;
 use std::collections::HashSet;
 
 pub struct Git {
-    origin_branch: String,
+    default_branch: String,
 }
 
 impl Git {
-    pub fn new(origin_branch: &str) -> Self {
+    pub fn new(default_branch: &str) -> Self {
         Git {
-            origin_branch: origin_branch.to_owned(),
+            default_branch: String::from(default_branch),
         }
     }
 }
@@ -21,16 +21,16 @@ impl Vcs for Git {
         self.run_command(vec!["branch", "--show-current"]).await
     }
 
-    async fn get_local_hash(&self) -> VcsResult<String> {
+    async fn get_local_branch_hash(&self) -> VcsResult<String> {
         self.run_command(vec!["rev-parse", "HEAD"]).await
     }
 
-    fn get_origin_branch(&self) -> &str {
-        &self.origin_branch
+    fn get_default_branch(&self) -> &str {
+        &self.default_branch
     }
 
-    async fn get_origin_hash(&self) -> VcsResult<String> {
-        self.run_command(vec!["rev-parse", &self.origin_branch])
+    async fn get_default_branch_hash(&self) -> VcsResult<String> {
+        self.run_command(vec!["rev-parse", &self.default_branch])
             .await
     }
 

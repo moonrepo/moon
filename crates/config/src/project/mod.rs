@@ -1,8 +1,10 @@
 // <project path>/project.yml
 
+pub mod global;
+pub mod task;
+
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
-use crate::task::TaskConfig;
 use crate::types::{FileGroups, ProjectID};
 use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
@@ -13,6 +15,7 @@ use figment::{
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
+use task::TaskConfig;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
@@ -129,7 +132,6 @@ impl ProjectConfig {
 mod tests {
     use super::*;
     use crate::errors::tests::handled_jailed_error;
-    use figment;
     use std::path::PathBuf;
 
     fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {

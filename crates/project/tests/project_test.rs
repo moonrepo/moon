@@ -1,7 +1,6 @@
-use moon_config::project::ProjectMetadataConfig;
 use moon_config::{
-    FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectType, TaskConfig,
-    TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectMetadataConfig,
+    ProjectType, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_project::{Project, Task};
 use std::collections::HashMap;

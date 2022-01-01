@@ -1,10 +1,10 @@
 use crate::errors::ProjectError;
 use crate::task::Task;
-use crate::types::AffectedFiles;
+use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     FileGroups, FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig,
-    ProjectID,
+    ProjectID, TaskConfig,
 };
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
@@ -85,16 +85,44 @@ fn create_file_groups_from_config(
     file_groups
 }
 
+fn create_task(
+    name: &str,
+    config: &TaskConfig,
+    workspace_root: &Path,
+    project_root: &Path,
+) -> Task {
+    let mut task = Task::from_config(name, config);
+    task.expand_inputs(workspace_root, project_root);
+    task.expand_outputs(workspace_root, project_root);
+    task
+}
+
 fn create_tasks_from_config(
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
+    project_root: &Path,
+    project_path: &str,
 ) -> TasksMap {
     let mut tasks = HashMap::<String, Task>::new();
+
+    // We dont have access to the workspace root, so traverse upwards based on location
+    let mut workspace_root = project_root.to_path_buf();
+
+    for part in project_path.split('/') {
+        if !part.is_empty() && part != "." {
+            workspace_root.push("..");
+        }
+    }
+
+    workspace_root = workspace_root.canonicalize().unwrap();
 
     // Add global tasks first
     if let Some(global_tasks) = &global_config.tasks {
         for (name, task_config) in global_tasks {
-            tasks.insert(name.clone(), Task::from_config(name, task_config));
+            tasks.insert(
+                name.clone(),
+                create_task(name, task_config, &workspace_root, project_root),
+            );
         }
     }
 
@@ -107,7 +135,10 @@ fn create_tasks_from_config(
                     tasks.get_mut(name).unwrap().merge(task_config);
                 } else {
                     // Insert a new task
-                    tasks.insert(name.clone(), Task::from_config(name, task_config));
+                    tasks.insert(
+                        name.clone(),
+                        create_task(name, task_config, &workspace_root, project_root),
+                    );
                 }
             }
         }
@@ -163,14 +194,15 @@ impl Project {
             return Err(ProjectError::MissingFilePath(String::from(location)));
         }
 
+        let dir = dir.canonicalize().unwrap();
         let config = load_project_config(root_dir, location)?;
         let package_json = load_package_json(root_dir, location)?;
         let file_groups = create_file_groups_from_config(&config, global_config);
-        let tasks = create_tasks_from_config(&config, global_config);
+        let tasks = create_tasks_from_config(&config, global_config, &dir, location);
 
         Ok(Project {
             config,
-            dir: dir.canonicalize().unwrap(),
+            dir,
             file_groups,
             id: String::from(id),
             location: String::from(location),
@@ -196,8 +228,8 @@ impl Project {
 
     /// Return true if this project is affected, based on touched files.
     /// Will attempt to find any file that starts with the project root.
-    pub fn is_affected(&self, affected_files: &AffectedFiles) -> bool {
-        for file in affected_files {
+    pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {
+        for file in touched_files {
             if file.starts_with(&self.dir) {
                 return true;
             }

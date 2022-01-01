@@ -1,10 +1,11 @@
+use crate::types::{ExpandedFiles, TouchedFilePaths};
 use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -66,11 +67,17 @@ pub struct Task {
 
     pub inputs: Vec<FilePathOrGlob>,
 
+    #[serde(skip)]
+    pub input_paths: ExpandedFiles,
+
     pub name: String,
 
     pub options: TaskOptions,
 
     pub outputs: Vec<FilePath>,
+
+    #[serde(skip)]
+    pub output_paths: ExpandedFiles,
 
     #[serde(rename = "type")]
     pub type_of: TaskType,
@@ -86,6 +93,7 @@ impl Task {
             command: cloned_config.command.unwrap_or_default(),
             deps: cloned_config.deps.unwrap_or_else(Vec::new),
             inputs: cloned_config.inputs.unwrap_or_else(Vec::new),
+            input_paths: HashSet::new(),
             name: name.to_owned(),
             options: TaskOptions {
                 merge_args: cloned_options.merge_args.unwrap_or_default(),
@@ -97,6 +105,7 @@ impl Task {
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },
             outputs: cloned_config.outputs.unwrap_or_else(Vec::new),
+            output_paths: HashSet::new(),
             type_of: cloned_config.type_of.unwrap_or_default(),
         };
 
@@ -115,25 +124,48 @@ impl Task {
         workspace_root: &Path,
         project_root: &Path,
         files: &[FilePathOrGlob],
-    ) -> HashSet<PathBuf> {
-        files
-            .iter()
-            .map(|file| {
-                if file.starts_with('/') {
-                    workspace_root.join(file).canonicalize().unwrap()
-                } else {
-                    project_root.join(file).canonicalize().unwrap()
-                }
-            })
-            .collect()
+    ) -> ExpandedFiles {
+        let mut paths = HashSet::new();
+
+        for file in files {
+            let expanded_file = if file.starts_with('/') {
+                workspace_root.join(file)
+            } else {
+                project_root.join(file)
+            };
+
+            paths.insert(expanded_file.canonicalize().unwrap());
+        }
+
+        paths
     }
 
-    pub fn expand_inputs(&self, workspace_root: &Path, project_root: &Path) -> HashSet<PathBuf> {
-        self.expand_io_paths(workspace_root, project_root, &self.inputs)
+    /// Expand the inputs list to a set of absolute file paths.
+    pub fn expand_inputs(&mut self, workspace_root: &Path, project_root: &Path) {
+        self.input_paths = self.expand_io_paths(workspace_root, project_root, &self.inputs);
     }
 
-    pub fn expand_outputs(&self, workspace_root: &Path, project_root: &Path) -> HashSet<PathBuf> {
-        self.expand_io_paths(workspace_root, project_root, &self.outputs)
+    /// Expand the outputs list to a set of absolute file paths.
+    pub fn expand_outputs(&mut self, workspace_root: &Path, project_root: &Path) {
+        self.output_paths = self.expand_io_paths(workspace_root, project_root, &self.outputs);
+    }
+
+    /// Return true if this task is affected, based on touched files.
+    /// Will attempt to find any file that matches our list of inputs.
+    pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {
+        // We have nothing to compare against, so treat it as always affected
+        if self.inputs.is_empty() {
+            return true;
+        }
+
+        for file in touched_files {
+            // File is a 1:1 match
+            if self.input_paths.contains(file) {
+                return true;
+            }
+        }
+
+        false
     }
 
     pub fn merge(&mut self, config: &TaskConfig) {

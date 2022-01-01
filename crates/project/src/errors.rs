@@ -15,6 +15,9 @@ pub enum ProjectError {
     #[error("Failed to parse and open <path>{0}/package.json</path>: {1}")]
     InvalidPackageJson(String, String),
 
+    #[error("Invalid target <id>{0}</id>, must be in the format of \"project_id:task_id\".")]
+    InvalidTargetFormat(String),
+
     #[error("No project exists at path <path>{0}</path>.")]
     MissingFilePath(String),
 

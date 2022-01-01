@@ -13,15 +13,15 @@ pub type VcsResult<T> = Result<T, VcsError>;
 
 #[allow(dead_code)]
 pub struct TouchedFiles {
-    added: HashSet<String>,
-    deleted: HashSet<String>,
-    modified: HashSet<String>,
-    untracked: HashSet<String>,
+    pub added: HashSet<String>,
+    pub deleted: HashSet<String>,
+    pub modified: HashSet<String>,
+    pub untracked: HashSet<String>,
 
     // Will contain files from the previous fields
-    staged: HashSet<String>,
-    unstaged: HashSet<String>,
-    all: HashSet<String>,
+    pub staged: HashSet<String>,
+    pub unstaged: HashSet<String>,
+    pub all: HashSet<String>,
 }
 
 #[async_trait]

@@ -9,6 +9,7 @@ use clap::Parser;
 use commands::bin::bin;
 use commands::project::project;
 use commands::project_graph::project_graph;
+use commands::run::run;
 use commands::setup::setup;
 use commands::teardown::teardown;
 use console::Term;
@@ -51,7 +52,7 @@ async fn main() {
             result = project_graph(id).await;
         }
         Commands::Run { target } => {
-            panic!("TO DO {}", target);
+            result = run(target).await;
         }
         Commands::Setup => {
             result = setup().await;

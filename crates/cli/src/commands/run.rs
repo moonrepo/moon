@@ -1,16 +1,41 @@
-use moon_project::{AffectedFiles, TargetID, TaskGraph};
+use moon_project::{TaskGraph, TouchedFilePaths};
 use moon_workspace::{TouchedFiles, Workspace};
+use std::collections::HashSet;
+// use std::fs;
+use std::io;
 
 // TODO: Filter touched files based on their last modified time
-fn get_affected_files(workspace: &Workspace, touched_files: &TouchedFiles) -> AffectedFiles {}
+fn get_touched_files(
+    workspace: &Workspace,
+    touched_files: TouchedFiles,
+) -> io::Result<TouchedFilePaths> {
+    let mut affected = HashSet::new();
 
-pub async fn run(target: TargetID) -> Result<(), Box<dyn std::error::Error>> {
+    for file in &touched_files.all {
+        let path = workspace.dir.join(file);
+        // let meta = fs::metadata(&path)?;
+
+        // if let Ok(time) = meta.modified() {
+        //     // TODO needs cache impl
+        // } else {
+        //     // Unable to get last modified time, so assume affected
+        //     affected.insert(path);
+        // }
+
+        affected.insert(path);
+    }
+
+    Ok(affected)
+}
+
+pub async fn run(target: &str) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load()?;
-    let touched_files = workspace.vcs.get_touched_files()?;
 
-    let graph = TaskGraph::new(&workspace.projects, target, touched_files.all);
+    // Gather files that have been touched in the working tree
+    let touched_files = get_touched_files(&workspace, workspace.vcs.get_touched_files().await?)?;
 
-    workspace.toolchain.setup().await?;
+    // Generate a task graph, that filters projects and tasks based on affected files
+    let _graph = TaskGraph::new(&workspace.projects, &touched_files, target.to_owned());
 
     Ok(())
 }

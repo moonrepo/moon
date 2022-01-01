@@ -16,6 +16,14 @@ use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
+    if map.is_empty() {
+        return Err(create_validation_error(
+            "required_field",
+            "fileGroups",
+            String::from("At least 1 file group is required."),
+        ));
+    }
+
     for key in map.keys() {
         validate_id(&format!("fileGroups.{}", key), key)?;
     }
@@ -69,7 +77,10 @@ impl Provider for GlobalProjectConfig {
 
 impl GlobalProjectConfig {
     pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ValidationErrors> {
-        let config: GlobalProjectConfig = match Figment::new().merge(Yaml::file(path)).extract() {
+        let config: GlobalProjectConfig = match Figment::from(GlobalProjectConfig::default())
+            .merge(Yaml::file(path))
+            .extract()
+        {
             Ok(cfg) => cfg,
             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
         };
@@ -97,7 +108,35 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Missing field `fileGroups`.")]
+    fn loads_defaults() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                constants::CONFIG_PROJECT_FILENAME,
+                r#"
+fileGroups:
+    sources:
+        - src/**/*"#,
+            )?;
+
+            let config = load_jailed_config()?;
+
+            assert_eq!(
+                config,
+                GlobalProjectConfig {
+                    file_groups: HashMap::from([(
+                        String::from("sources"),
+                        vec![String::from("src/**/*")]
+                    )]),
+                    tasks: None,
+                }
+            );
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid field `fileGroups`. At least 1 file group is required.")]
     fn empty_file() {
         figment::Jail::expect_with(|jail| {
             // Needs a fake yaml value, otherwise the file reading panics
@@ -217,7 +256,8 @@ tasks:
                 jail.create_file(
                     super::constants::CONFIG_PROJECT_FILENAME,
                     r#"
-fileGroups: {}
+fileGroups:
+    sources: []
 tasks:
     test: {}
 "#,

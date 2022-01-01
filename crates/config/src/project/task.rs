@@ -86,7 +86,7 @@ impl Default for TaskOptionsConfig {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct TaskConfig {
     pub args: Option<Vec<String>>,
 
@@ -106,6 +106,20 @@ pub struct TaskConfig {
 
     #[serde(rename = "type")]
     pub type_of: Option<TaskType>,
+}
+
+impl Default for TaskConfig {
+    fn default() -> Self {
+        TaskConfig {
+            args: None,
+            command: None,
+            deps: None,
+            inputs: None,
+            options: Some(TaskOptionsConfig::default()),
+            outputs: None,
+            type_of: Some(TaskType::default()),
+        }
+    }
 }
 
 #[cfg(test)]

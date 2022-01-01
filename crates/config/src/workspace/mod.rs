@@ -73,7 +73,10 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
-        let config: WorkspaceConfig = match Figment::new().merge(Yaml::file(path)).extract() {
+        let config: WorkspaceConfig = match Figment::from(WorkspaceConfig::default())
+            .merge(Yaml::file(path))
+            .extract()
+        {
             Ok(cfg) => cfg,
             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
         };
@@ -99,19 +102,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Missing field `projects`.")]
-    fn empty_file() {
-        figment::Jail::expect_with(|jail| {
-            // Needs a fake yaml value, otherwise the file reading panics
-            jail.create_file(constants::CONFIG_WORKSPACE_FILENAME, "fake: value")?;
-
-            load_jailed_config()?;
-
-            Ok(())
-        });
-    }
-
-    #[test]
     fn loads_defaults() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(constants::CONFIG_WORKSPACE_FILENAME, "projects: {}")?;
@@ -121,9 +111,9 @@ mod tests {
             assert_eq!(
                 config,
                 WorkspaceConfig {
-                    node: None,
+                    node: Some(NodeConfig::default()),
                     projects: HashMap::new(),
-                    vcs: None
+                    vcs: Some(VcsConfig::default()),
                 }
             );
 
@@ -132,6 +122,37 @@ mod tests {
     }
 
     mod node {
+        use super::*;
+
+        #[test]
+        fn loads_defaults() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects: {}
+node:
+    packageManager: yarn"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    WorkspaceConfig {
+                        node: Some(NodeConfig {
+                            package_manager: Some(PackageManager::Yarn),
+                            ..NodeConfig::default()
+                        }),
+                        projects: HashMap::new(),
+                        vcs: Some(VcsConfig::default()),
+                    }
+                );
+
+                Ok(())
+            });
+        }
+
         #[test]
         #[should_panic(
             expected = "Invalid field `node`. Expected struct NodeConfig type, received unsigned int `123`."
@@ -469,6 +490,37 @@ projects:
     }
 
     mod vcs {
+        use super::*;
+
+        #[test]
+        fn loads_defaults() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects: {}
+vcs:
+    manager: svn"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    WorkspaceConfig {
+                        node: Some(NodeConfig::default()),
+                        projects: HashMap::new(),
+                        vcs: Some(VcsConfig {
+                            manager: Some(VcsManager::Svn),
+                            ..VcsConfig::default()
+                        }),
+                    }
+                );
+
+                Ok(())
+            });
+        }
+
         #[test]
         #[should_panic(
             expected = "Invalid field `vcs`. Expected struct VcsConfig type, received unsigned int `123`."

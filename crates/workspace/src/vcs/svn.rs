@@ -69,6 +69,11 @@ impl Vcs for Svn {
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self.run_command(vec!["status", "wc"]).await?;
+
+        if output.is_empty() {
+            return Ok(TouchedFiles::default());
+        }
+
         let mut added = HashSet::new();
         let mut deleted = HashSet::new();
         let mut modified = HashSet::new();

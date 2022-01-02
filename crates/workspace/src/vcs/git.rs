@@ -37,6 +37,11 @@ impl Vcs for Git {
     // https://git-scm.com/docs/git-status#_short_format
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self.run_command(vec!["status", "-s", "-u"]).await?;
+
+        if output.is_empty() {
+            return Ok(TouchedFiles::default());
+        }
+
         let mut added = HashSet::new();
         let mut deleted = HashSet::new();
         let mut modified = HashSet::new();

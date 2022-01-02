@@ -12,6 +12,7 @@ use svn::Svn;
 pub type VcsResult<T> = Result<T, VcsError>;
 
 #[allow(dead_code)]
+#[derive(Default)]
 pub struct TouchedFiles {
     pub added: HashSet<String>,
     pub deleted: HashSet<String>,

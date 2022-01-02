@@ -16,7 +16,16 @@ pub struct TaskGraph {
 }
 
 impl TaskGraph {
-    pub fn new(
+    pub fn new() -> Self {
+        debug!(
+            target: "moon:task-graph",
+            "Creating task graph",
+        );
+
+        TaskGraph::default()
+    }
+
+    pub fn from_target(
         projects: &ProjectGraph,
         touched_files: &TouchedFilePaths,
         target: TargetID,

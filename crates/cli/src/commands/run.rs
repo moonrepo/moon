@@ -28,7 +28,7 @@ fn get_touched_files(
     touched_files: TouchedFiles,
     status: RunStatus,
 ) -> io::Result<TouchedFilePaths> {
-    let mut affected = HashSet::new();
+    let mut touched = HashSet::new();
     let files = match status {
         RunStatus::Added => touched_files.added,
         RunStatus::All => touched_files.all,
@@ -50,10 +50,10 @@ fn get_touched_files(
         //     affected.insert(path);
         // }
 
-        affected.insert(path);
+        touched.insert(path);
     }
 
-    Ok(affected)
+    Ok(touched)
 }
 
 pub async fn run(
@@ -69,8 +69,8 @@ pub async fn run(
         status.clone().unwrap_or_default(),
     )?;
 
-    // Generate a task graph, that filters projects and tasks based on affected files
-    let _graph = TaskGraph::new(&workspace.projects, &touched_files, target.to_owned())?;
+    // Generate a task graph, that filters projects and tasks based on touched files
+    let _graph = TaskGraph::from_target(&workspace.projects, &touched_files, target.to_owned())?;
 
     Ok(())
 }

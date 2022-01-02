@@ -1034,6 +1034,7 @@ version = "0.1.0"
 dependencies = [
  "dep-graph",
  "globset",
+ "globwalk",
  "itertools",
  "moon_config",
  "moon_logger",

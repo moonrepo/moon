@@ -37,5 +37,11 @@ pub enum ProjectError {
     UnconfiguredTask(String, String),
 
     #[error(transparent)]
-    Glob(#[from] globset::Error),
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    GlobWalk(#[from] globwalk::GlobError),
+
+    #[error(transparent)]
+    GlobSet(#[from] globset::Error),
 }

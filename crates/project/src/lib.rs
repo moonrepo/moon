@@ -1,5 +1,6 @@
 mod constants;
 mod errors;
+mod file_group;
 mod project;
 mod project_graph;
 mod target;

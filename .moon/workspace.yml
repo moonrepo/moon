@@ -4,3 +4,4 @@ projects:
   foo: tests/fixtures/projects/deps/foo
   bar: tests/fixtures/projects/deps/bar
   baz: tests/fixtures/projects/deps/baz
+  tasks: tests/fixtures/projects/tasks

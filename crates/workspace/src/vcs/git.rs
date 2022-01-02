@@ -37,12 +37,18 @@ impl Vcs for Git {
     // https://git-scm.com/docs/git-status#_short_format
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self.run_command(vec!["status", "-s", "-u"]).await?;
+
+        if output.is_empty() {
+            return Ok(TouchedFiles::default());
+        }
+
         let mut added = HashSet::new();
         let mut deleted = HashSet::new();
         let mut modified = HashSet::new();
         let mut untracked = HashSet::new();
         let mut staged = HashSet::new();
         let mut unstaged = HashSet::new();
+        let mut all = HashSet::new();
 
         for line in output.split('\n') {
             let mut chars = line.chars();
@@ -92,10 +98,13 @@ impl Vcs for Git {
                 }
                 _ => {}
             }
+
+            all.insert(file.clone());
         }
 
         Ok(TouchedFiles {
             added,
+            all,
             deleted,
             modified,
             staged,

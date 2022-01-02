@@ -9,7 +9,7 @@ tasks:
     inputs:
       - b.*
     outputs:
-      - b
+      - b.ts
     options:
       mergeArgs: replace
       mergeDeps: replace

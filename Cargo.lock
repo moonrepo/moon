@@ -1033,9 +1033,11 @@ name = "moon_project"
 version = "0.1.0"
 dependencies = [
  "dep-graph",
+ "globset",
  "itertools",
  "moon_config",
  "moon_logger",
+ "moon_utils",
  "serde",
  "serde_json",
  "thiserror",

@@ -69,12 +69,18 @@ impl Vcs for Svn {
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self.run_command(vec!["status", "wc"]).await?;
+
+        if output.is_empty() {
+            return Ok(TouchedFiles::default());
+        }
+
         let mut added = HashSet::new();
         let mut deleted = HashSet::new();
         let mut modified = HashSet::new();
         let mut untracked = HashSet::new();
         let mut staged = HashSet::new();
         let unstaged = HashSet::new();
+        let mut all = HashSet::new();
 
         for line in output.split('\n') {
             let mut chars = line.chars();
@@ -103,12 +109,15 @@ impl Vcs for Svn {
                 modified.insert(file.clone());
             }
 
+            all.insert(file.clone());
+
             // svn files are always staged by default
             staged.insert(file.clone());
         }
 
         Ok(TouchedFiles {
             added,
+            all,
             deleted,
             modified,
             staged,

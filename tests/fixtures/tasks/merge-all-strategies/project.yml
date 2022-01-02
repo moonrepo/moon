@@ -7,7 +7,7 @@ tasks:
     inputs:
       - b.*
     outputs:
-      - b
+      - b.ts
     options:
       mergeArgs: append
       mergeDeps: prepend

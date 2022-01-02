@@ -1,8 +1,14 @@
+use crate::errors::ProjectError;
+use crate::types::{ExpandedFiles, TouchedFilePaths};
+use globset::{Glob, GlobSetBuilder};
 use moon_config::{
-    FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug};
+use moon_utils::fs::is_glob;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -64,18 +70,27 @@ pub struct Task {
 
     pub inputs: Vec<FilePathOrGlob>,
 
-    pub name: String,
+    #[serde(skip)]
+    pub input_globs: Vec<FilePathOrGlob>,
+
+    #[serde(skip)]
+    pub input_paths: ExpandedFiles,
 
     pub options: TaskOptions,
 
-    pub outputs: Vec<FilePathOrGlob>,
+    pub outputs: Vec<FilePath>,
+
+    #[serde(skip)]
+    pub output_paths: ExpandedFiles,
+
+    pub target: TargetID,
 
     #[serde(rename = "type")]
     pub type_of: TaskType,
 }
 
 impl Task {
-    pub fn from_config(name: &str, config: &TaskConfig) -> Self {
+    pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options.unwrap_or_default();
 
@@ -84,7 +99,8 @@ impl Task {
             command: cloned_config.command.unwrap_or_default(),
             deps: cloned_config.deps.unwrap_or_else(Vec::new),
             inputs: cloned_config.inputs.unwrap_or_else(Vec::new),
-            name: name.to_owned(),
+            input_globs: vec![],
+            input_paths: HashSet::new(),
             options: TaskOptions {
                 merge_args: cloned_options.merge_args.unwrap_or_default(),
                 merge_deps: cloned_options.merge_deps.unwrap_or_default(),
@@ -95,17 +111,105 @@ impl Task {
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },
             outputs: cloned_config.outputs.unwrap_or_else(Vec::new),
+            output_paths: HashSet::new(),
+            target: target.clone(),
             type_of: cloned_config.type_of.unwrap_or_default(),
         };
 
         debug!(
             target: "moon:project",
             "Creating task {} for command {}",
-            color::id(name),
+            color::id(&target),
             color::shell(&task.command)
         );
 
         task
+    }
+
+    fn expand_io_path(&self, workspace_root: &Path, project_root: &Path, file: &str) -> PathBuf {
+        if file.starts_with('/') {
+            workspace_root.join(file.strip_prefix('/').unwrap())
+        } else {
+            project_root.join(file)
+        }
+    }
+
+    /// Expand the inputs list to a set of absolute file paths.
+    pub fn expand_inputs(
+        &mut self,
+        workspace_root: &Path,
+        project_root: &Path,
+    ) -> Result<(), ProjectError> {
+        for file in &self.inputs {
+            // Globs are separate from paths as we can't canonicalize it,
+            // and we need them to be absolute for it to match correctly:
+            // https://github.com/rust-lang-nursery/glob/issues/106
+            if is_glob(file) {
+                self.input_globs.push(String::from(
+                    self.expand_io_path(workspace_root, project_root, file)
+                        .to_string_lossy(),
+                ));
+            } else {
+                let file_path = self.expand_io_path(workspace_root, project_root, file);
+
+                self.input_paths
+                    .insert(file_path.canonicalize().map_err(|_| {
+                        ProjectError::InvalidUtf8File(String::from(file_path.to_string_lossy()))
+                    })?);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Expand the outputs list to a set of absolute file paths.
+    pub fn expand_outputs(
+        &mut self,
+        workspace_root: &Path,
+        project_root: &Path,
+    ) -> Result<(), ProjectError> {
+        for file in &self.outputs {
+            if is_glob(file) {
+                return Err(ProjectError::NoOutputGlob(
+                    file.to_owned(),
+                    self.target.clone(),
+                ));
+            } else {
+                let file_path = self.expand_io_path(workspace_root, project_root, file);
+
+                self.output_paths
+                    .insert(file_path.canonicalize().map_err(|_| {
+                        ProjectError::InvalidUtf8File(String::from(file_path.to_string_lossy()))
+                    })?);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Return true if this task is affected, based on touched files.
+    /// Will attempt to find any file that matches our list of inputs.
+    pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, ProjectError> {
+        // We have nothing to compare against, so treat it as always affected
+        if self.inputs.is_empty() {
+            return Ok(true);
+        }
+
+        let mut glob_builder = GlobSetBuilder::new();
+
+        for glob in &self.input_globs {
+            glob_builder.add(Glob::new(glob)?);
+        }
+
+        let globs = glob_builder.build()?;
+
+        for file in touched_files {
+            if self.input_paths.contains(file) || globs.is_match(file) {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
     }
 
     pub fn merge(&mut self, config: &TaskConfig) {
@@ -171,5 +275,160 @@ impl Task {
         }
 
         list
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Target;
+    use moon_config::TaskConfig;
+    use moon_utils::test::get_fixtures_dir;
+    use std::collections::HashSet;
+
+    mod is_affected {
+        use super::*;
+
+        fn create_expanded_test(
+            workspace_root: &Path,
+            project_root: &Path,
+            config: Option<TaskConfig>,
+        ) -> Result<Task, ProjectError> {
+            let mut task = Task::from_config(
+                Target::format("basic", "lint").unwrap(),
+                &config.unwrap_or_default(),
+            );
+
+            task.expand_inputs(workspace_root, project_root)?;
+            task.expand_outputs(workspace_root, project_root)?;
+
+            Ok(task)
+        }
+
+        #[test]
+        #[should_panic(expected = "NoOutputGlob")]
+        fn errors_for_output_glob() {
+            let workspace_root = get_fixtures_dir("projects");
+            let project_root = workspace_root.join("basic");
+
+            create_expanded_test(
+                &workspace_root,
+                &project_root,
+                Some(TaskConfig {
+                    outputs: Some(vec![String::from("some/**/glob")]),
+                    ..TaskConfig::default()
+                }),
+            )
+            .unwrap();
+        }
+
+        #[test]
+        fn returns_true_if_empty_inputs() {
+            let workspace_root = get_fixtures_dir("projects");
+            let project_root = workspace_root.join("basic");
+            let task = create_expanded_test(&workspace_root, &project_root, None).unwrap();
+
+            assert!(task.is_affected(&HashSet::new()).unwrap());
+        }
+
+        #[test]
+        fn returns_true_if_matches_file() {
+            let workspace_root = get_fixtures_dir("projects");
+            let project_root = workspace_root.join("basic");
+            let task = create_expanded_test(
+                &workspace_root,
+                &project_root,
+                Some(TaskConfig {
+                    inputs: Some(vec![String::from("file.ts")]),
+                    ..TaskConfig::default()
+                }),
+            )
+            .unwrap();
+
+            let mut set = HashSet::new();
+            set.insert(project_root.join("file.ts"));
+
+            assert!(task.is_affected(&set).unwrap());
+        }
+
+        #[test]
+        fn returns_true_if_matches_glob() {
+            let workspace_root = get_fixtures_dir("projects");
+            let project_root = workspace_root.join("basic");
+            let task = create_expanded_test(
+                &workspace_root,
+                &project_root,
+                Some(TaskConfig {
+                    inputs: Some(vec![String::from("file.*")]),
+                    ..TaskConfig::default()
+                }),
+            )
+            .unwrap();
+
+            let mut set = HashSet::new();
+            set.insert(project_root.join("file.ts"));
+
+            assert!(task.is_affected(&set).unwrap());
+        }
+
+        #[test]
+        fn returns_true_when_referencing_root_files() {
+            let workspace_root = get_fixtures_dir("projects");
+            let project_root = workspace_root.join("basic");
+            let task = create_expanded_test(
+                &workspace_root,
+                &project_root,
+                Some(TaskConfig {
+                    inputs: Some(vec![String::from("/package.json")]),
+                    ..TaskConfig::default()
+                }),
+            )
+            .unwrap();
+
+            let mut set = HashSet::new();
+            set.insert(workspace_root.join("package.json"));
+
+            assert!(task.is_affected(&set).unwrap());
+        }
+
+        #[test]
+        fn returns_false_if_outside_project() {
+            let workspace_root = get_fixtures_dir("projects");
+            let project_root = workspace_root.join("basic");
+            let task = create_expanded_test(
+                &workspace_root,
+                &project_root,
+                Some(TaskConfig {
+                    inputs: Some(vec![String::from("file.ts")]),
+                    ..TaskConfig::default()
+                }),
+            )
+            .unwrap();
+
+            let mut set = HashSet::new();
+            set.insert(workspace_root.join("projects/other/file.ts"));
+
+            assert!(!task.is_affected(&set).unwrap());
+        }
+
+        #[test]
+        fn returns_false_if_no_match() {
+            let workspace_root = get_fixtures_dir("projects");
+            let project_root = workspace_root.join("basic");
+            let task = create_expanded_test(
+                &workspace_root,
+                &project_root,
+                Some(TaskConfig {
+                    inputs: Some(vec![String::from("file.ts"), String::from("src/*")]),
+                    ..TaskConfig::default()
+                }),
+            )
+            .unwrap();
+
+            let mut set = HashSet::new();
+            set.insert(project_root.join("another.rs"));
+
+            assert!(!task.is_affected(&set).unwrap());
+        }
     }
 }

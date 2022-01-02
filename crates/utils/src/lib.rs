@@ -1,3 +1,6 @@
+pub mod fs;
+pub mod test;
+
 use moon_logger::{color, trace};
 use std::io::Error;
 use std::path::Path;

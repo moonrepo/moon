@@ -1,8 +1,10 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
 use crate::commands::bin::BinTools;
+use crate::commands::run::RunStatus;
 use clap::ArgEnum;
 use clap::{AppSettings, Parser, Subcommand};
+use moon_project::TargetID;
 
 #[derive(ArgEnum, Clone, Debug)]
 pub enum LogLevel {
@@ -54,6 +56,19 @@ pub enum Commands {
     ProjectGraph {
         #[clap(help = "ID of project to *only* graph")]
         id: Option<String>,
+    },
+
+    // moon run [target]
+    #[clap(
+        name = "run",
+        about = "Run a project task and all its dependent tasks."
+    )]
+    Run {
+        #[clap(help = "Target (project:task) to run")]
+        target: TargetID,
+
+        #[clap(arg_enum, long, help = "Determine affected files based on this status")]
+        status: Option<RunStatus>,
     },
 
     // moon setup

@@ -1,4 +1,4 @@
-use crate::types::{FilePathOrGlob, TargetID};
+use crate::types::{FilePath, FilePathOrGlob, TargetID};
 use crate::validators::{validate_child_or_root_path, validate_target};
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
@@ -102,7 +102,7 @@ pub struct TaskConfig {
     pub options: Option<TaskOptionsConfig>,
 
     #[validate(custom = "validate_outputs")]
-    pub outputs: Option<Vec<FilePathOrGlob>>,
+    pub outputs: Option<Vec<FilePath>>,
 
     #[serde(rename = "type")]
     pub type_of: Option<TaskType>,

@@ -1,11 +1,11 @@
 use moon_config::{
     FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectMetadataConfig,
-    ProjectType, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    ProjectType, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_project::{Project, Task};
+use moon_project::{Project, ProjectError, Target, Task};
 use std::collections::HashMap;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn get_fixture_root() -> PathBuf {
     let mut path = env::current_dir().unwrap();
@@ -300,6 +300,21 @@ mod tasks {
         }
     }
 
+    fn create_expanded_task(
+        target: TargetID,
+        config: &TaskConfig,
+        workspace_root: &Path,
+        project_path: &str,
+    ) -> Result<Task, ProjectError> {
+        let project_root = workspace_root.join(project_path);
+
+        let mut task = Task::from_config(target, config);
+        task.expand_inputs(workspace_root, &project_root)?;
+        task.expand_outputs(workspace_root, &project_root)?;
+
+        Ok(task)
+    }
+
     #[test]
     fn inherits_global_tasks() {
         let root_dir = get_fixture_root();
@@ -333,8 +348,11 @@ mod tasks {
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
-                    Task::from_config("standard", &mock_task_config("cmd"))
-                ),]),
+                    Task::from_config(
+                        Target::format("id", "standard").unwrap(),
+                        &mock_task_config("cmd")
+                    )
+                )]),
             }
         );
     }
@@ -376,11 +394,17 @@ mod tasks {
                 tasks: HashMap::from([
                     (
                         String::from("standard"),
-                        Task::from_config("standard", &mock_task_config("cmd"))
+                        Task::from_config(
+                            Target::format("id", "standard").unwrap(),
+                            &mock_task_config("cmd")
+                        )
                     ),
                     (
                         String::from("lint"),
-                        Task::from_config("lint", &mock_task_config("eslint"))
+                        Task::from_config(
+                            Target::format("id", "lint").unwrap(),
+                            &mock_task_config("eslint")
+                        )
                     )
                 ]),
             }
@@ -390,9 +414,10 @@ mod tasks {
     #[test]
     fn strategy_replace() {
         let root_dir = get_fixture_root();
+        let project_path = "tasks/merge-replace";
         let project = Project::new(
             "id",
-            "tasks/merge-replace",
+            project_path,
             &root_dir,
             &GlobalProjectConfig {
                 file_groups: None,
@@ -435,14 +460,14 @@ mod tasks {
                         }
                     )])),
                 }),
-                dir: root_dir.join("tasks/merge-replace").canonicalize().unwrap(),
+                dir: root_dir.join(project_path).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from("tasks/merge-replace"),
+                location: String::from(project_path),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
-                    Task::from_config(
-                        "standard",
+                    create_expanded_task(
+                        Target::format("id", "standard").unwrap(),
                         &TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: Some(String::from("newcmd")),
@@ -453,9 +478,12 @@ mod tasks {
                                 TaskMergeStrategy::Replace
                             )),
                             type_of: Some(TaskType::Shell),
-                        }
+                        },
+                        &root_dir,
+                        project_path
                     )
-                ),]),
+                    .unwrap()
+                )]),
             }
         );
     }
@@ -463,9 +491,10 @@ mod tasks {
     #[test]
     fn strategy_append() {
         let root_dir = get_fixture_root();
+        let project_path = "tasks/merge-append";
         let project = Project::new(
             "id",
-            "tasks/merge-append",
+            project_path,
             &root_dir,
             &GlobalProjectConfig {
                 file_groups: None,
@@ -508,27 +537,30 @@ mod tasks {
                         }
                     )])),
                 }),
-                dir: root_dir.join("tasks/merge-append").canonicalize().unwrap(),
+                dir: root_dir.join(project_path).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from("tasks/merge-append"),
+                location: String::from(project_path),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
-                    Task::from_config(
-                        "standard",
+                    create_expanded_task(
+                        Target::format("id", "standard").unwrap(),
                         &TaskConfig {
                             args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
                             command: Some(String::from("standard")),
-                            deps: Some(vec!["a:standard".to_owned(), "b:standard".to_owned(),]),
+                            deps: Some(vec!["a:standard".to_owned(), "b:standard".to_owned()]),
                             inputs: Some(vec!["a.*".to_owned(), "b.*".to_owned()]),
                             outputs: Some(vec!["a.ts".to_owned(), "b.ts".to_owned()]),
                             options: Some(mock_merged_task_options_config(
                                 TaskMergeStrategy::Append
                             )),
                             type_of: Some(TaskType::Shell),
-                        }
+                        },
+                        &root_dir,
+                        project_path
                     )
-                ),]),
+                    .unwrap()
+                )]),
             }
         );
     }
@@ -536,9 +568,10 @@ mod tasks {
     #[test]
     fn strategy_prepend() {
         let root_dir = get_fixture_root();
+        let project_path = "tasks/merge-prepend";
         let project = Project::new(
             "id",
-            "tasks/merge-prepend",
+            project_path,
             &root_dir,
             &GlobalProjectConfig {
                 file_groups: None,
@@ -581,14 +614,14 @@ mod tasks {
                         }
                     )])),
                 }),
-                dir: root_dir.join("tasks/merge-prepend").canonicalize().unwrap(),
+                dir: root_dir.join(project_path).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from("tasks/merge-prepend"),
+                location: String::from(project_path),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
-                    Task::from_config(
-                        "standard",
+                    create_expanded_task(
+                        Target::format("id", "standard").unwrap(),
                         &TaskConfig {
                             args: Some(vec!["--b".to_owned(), "--a".to_owned()]),
                             command: Some(String::from("newcmd")),
@@ -599,9 +632,12 @@ mod tasks {
                                 TaskMergeStrategy::Prepend
                             )),
                             type_of: Some(TaskType::Shell),
-                        }
+                        },
+                        &root_dir,
+                        project_path
                     )
-                ),]),
+                    .unwrap()
+                )]),
             }
         );
     }
@@ -609,9 +645,10 @@ mod tasks {
     #[test]
     fn strategy_all() {
         let root_dir = get_fixture_root();
+        let project_path = "tasks/merge-all-strategies";
         let project = Project::new(
             "id",
-            "tasks/merge-all-strategies",
+            project_path,
             &root_dir,
             &GlobalProjectConfig {
                 file_groups: None,
@@ -660,17 +697,14 @@ mod tasks {
                         }
                     )])),
                 }),
-                dir: root_dir
-                    .join("tasks/merge-all-strategies")
-                    .canonicalize()
-                    .unwrap(),
+                dir: root_dir.join(project_path).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from("tasks/merge-all-strategies"),
+                location: String::from(project_path),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
-                    Task::from_config(
-                        "standard",
+                    create_expanded_task(
+                        Target::format("id", "standard").unwrap(),
                         &TaskConfig {
                             args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
                             command: Some(String::from("standard")),
@@ -687,9 +721,12 @@ mod tasks {
                                 run_from_workspace_root: None,
                             }),
                             type_of: Some(TaskType::Npm),
-                        }
+                        },
+                        &root_dir,
+                        project_path
                     )
-                ),]),
+                    .unwrap()
+                )]),
             }
         );
     }

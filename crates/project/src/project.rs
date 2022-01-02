@@ -5,7 +5,7 @@ use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     FileGroups, FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig,
-    ProjectID, TargetID, TaskConfig,
+    ProjectID,
 };
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
@@ -86,19 +86,6 @@ fn create_file_groups_from_config(
     file_groups
 }
 
-fn create_task(
-    target: TargetID,
-    config: &TaskConfig,
-    workspace_root: &Path,
-    project_root: &Path,
-) -> Result<Task, ProjectError> {
-    let mut task = Task::from_config(target, config);
-    task.expand_inputs(workspace_root, project_root)?;
-    task.expand_outputs(workspace_root, project_root)?;
-
-    Ok(task)
-}
-
 fn create_tasks_from_config(
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
@@ -124,12 +111,7 @@ fn create_tasks_from_config(
         for (task_id, task_config) in global_tasks {
             tasks.insert(
                 task_id.clone(),
-                create_task(
-                    Target::format(project_id, task_id)?,
-                    task_config,
-                    &workspace_root,
-                    project_root,
-                )?,
+                Task::from_config(Target::format(project_id, task_id)?, task_config),
             );
         }
     }
@@ -145,16 +127,17 @@ fn create_tasks_from_config(
                     // Insert a new task
                     tasks.insert(
                         task_id.clone(),
-                        create_task(
-                            Target::format(project_id, task_id)?,
-                            task_config,
-                            &workspace_root,
-                            project_root,
-                        )?,
+                        Task::from_config(Target::format(project_id, task_id)?, task_config),
                     );
                 }
             }
         }
+    }
+
+    // Expand inputs and outputs after all tasks have been created
+    for task in tasks.values_mut() {
+        task.expand_inputs(&workspace_root, project_root)?;
+        task.expand_outputs(&workspace_root, project_root)?;
     }
 
     Ok(tasks)

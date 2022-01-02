@@ -3,16 +3,9 @@ use moon_config::{
     ProjectType, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_project::{Project, ProjectError, Target, Task};
+use moon_utils::test::get_fixtures_root;
 use std::collections::HashMap;
-use std::env;
-use std::path::{Path, PathBuf};
-
-fn get_fixture_root() -> PathBuf {
-    let mut path = env::current_dir().unwrap();
-    path.push("../../tests/fixtures");
-
-    path
-}
+use std::path::Path;
 
 fn mock_file_groups() -> FileGroups {
     HashMap::from([(String::from("sources"), vec![String::from("src/**/*")])])
@@ -31,7 +24,7 @@ fn doesnt_exist() {
     Project::new(
         "missing",
         "projects/missing",
-        &get_fixture_root(),
+        &get_fixtures_root(),
         &mock_global_project_config(),
     )
     .unwrap();
@@ -39,7 +32,7 @@ fn doesnt_exist() {
 
 #[test]
 fn no_config() {
-    let root_dir = get_fixture_root();
+    let root_dir = get_fixtures_root();
     let project = Project::new(
         "no-config",
         "projects/no-config",
@@ -64,7 +57,7 @@ fn no_config() {
 
 #[test]
 fn empty_config() {
-    let root_dir = get_fixture_root();
+    let root_dir = get_fixtures_root();
     let project = Project::new(
         "empty-config",
         "projects/empty-config",
@@ -97,7 +90,7 @@ fn empty_config() {
 
 #[test]
 fn basic_config() {
-    let root_dir = get_fixture_root();
+    let root_dir = get_fixtures_root();
     let project = Project::new(
         "basic",
         "projects/basic",
@@ -134,7 +127,7 @@ fn basic_config() {
 
 #[test]
 fn advanced_config() {
-    let root_dir = get_fixture_root();
+    let root_dir = get_fixtures_root();
     let project = Project::new(
         "advanced",
         "projects/advanced",
@@ -171,7 +164,7 @@ fn advanced_config() {
 
 #[test]
 fn overrides_global_file_groups() {
-    let root_dir = get_fixture_root();
+    let root_dir = get_fixtures_root();
     let project = Project::new(
         "basic",
         "projects/basic",
@@ -213,7 +206,7 @@ fn overrides_global_file_groups() {
 
 #[test]
 fn has_package_json() {
-    let root_dir = get_fixture_root();
+    let root_dir = get_fixtures_root();
     let project = Project::new(
         "package-json",
         "projects/package-json",
@@ -317,7 +310,7 @@ mod tasks {
 
     #[test]
     fn inherits_global_tasks() {
-        let root_dir = get_fixture_root();
+        let root_dir = get_fixtures_root();
         let project = Project::new(
             "id",
             "tasks/no-tasks",
@@ -359,7 +352,7 @@ mod tasks {
 
     #[test]
     fn merges_with_global_tasks() {
-        let root_dir = get_fixture_root();
+        let root_dir = get_fixtures_root();
         let project = Project::new(
             "id",
             "tasks/basic",
@@ -413,7 +406,7 @@ mod tasks {
 
     #[test]
     fn strategy_replace() {
-        let root_dir = get_fixture_root();
+        let root_dir = get_fixtures_root();
         let project_path = "tasks/merge-replace";
         let project = Project::new(
             "id",
@@ -490,7 +483,7 @@ mod tasks {
 
     #[test]
     fn strategy_append() {
-        let root_dir = get_fixture_root();
+        let root_dir = get_fixtures_root();
         let project_path = "tasks/merge-append";
         let project = Project::new(
             "id",
@@ -567,7 +560,7 @@ mod tasks {
 
     #[test]
     fn strategy_prepend() {
-        let root_dir = get_fixture_root();
+        let root_dir = get_fixtures_root();
         let project_path = "tasks/merge-prepend";
         let project = Project::new(
             "id",
@@ -644,7 +637,7 @@ mod tasks {
 
     #[test]
     fn strategy_all() {
-        let root_dir = get_fixture_root();
+        let root_dir = get_fixtures_root();
         let project_path = "tasks/merge-all-strategies";
         let project = Project::new(
             "id",

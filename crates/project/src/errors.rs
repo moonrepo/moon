@@ -37,5 +37,5 @@ pub enum ProjectError {
     UnconfiguredTask(String, String),
 
     #[error(transparent)]
-    Globset(#[from] globset::Error),
+    Glob(#[from] globset::Error),
 }

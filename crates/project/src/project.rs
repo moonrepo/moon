@@ -239,3 +239,49 @@ impl Project {
         serde_json::to_string_pretty(self).unwrap()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_config::GlobalProjectConfig;
+    use moon_utils::test::get_fixtures_root;
+    use std::collections::HashSet;
+
+    mod is_affected {
+        use super::*;
+
+        #[test]
+        fn returns_true_if_inside_project() {
+            let root = get_fixtures_root();
+            let project = Project::new(
+                "basic",
+                "projects/basic",
+                &root,
+                &GlobalProjectConfig::default(),
+            )
+            .unwrap();
+
+            let mut set = HashSet::new();
+            set.insert(root.join("projects/basic/file.ts"));
+
+            assert!(project.is_affected(&set));
+        }
+
+        #[test]
+        fn returns_false_if_outside_project() {
+            let root = get_fixtures_root();
+            let project = Project::new(
+                "basic",
+                "projects/basic",
+                &root,
+                &GlobalProjectConfig::default(),
+            )
+            .unwrap();
+
+            let mut set = HashSet::new();
+            set.insert(root.join("projects/other/file.ts"));
+
+            assert!(!project.is_affected(&set));
+        }
+    }
+}

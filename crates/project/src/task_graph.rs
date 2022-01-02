@@ -82,7 +82,7 @@ impl TaskGraph {
             }
         };
 
-        if !task.is_affected(&project.dir, touched_files)? {
+        if !task.is_affected(touched_files)? {
             trace!(
                 target: "moon:task-graph",
                 "Project {} task {} not affected based on touched files, skipping",

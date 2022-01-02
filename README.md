@@ -12,9 +12,6 @@ projects, written in Rust. Many of the concepts within Moon are heavily inspired
 
 - File groups
   - `@glob` - Returns the file group as a glob (typically as-is).
-  - `@root` - Returns the file group, reduced down to the lowest possible directory.
-  - `@dirs` - Returns the file group, reduced down to all possible directories.
-  - `@files` - Returns the file group as a list of all possible files.
 - Inputs & outputs
   - `@in` - Points to an index within a task's `inputs` list. This will be expanded to the
     underyling file path(s).

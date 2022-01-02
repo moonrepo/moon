@@ -1037,6 +1037,7 @@ dependencies = [
  "itertools",
  "moon_config",
  "moon_logger",
+ "moon_utils",
  "serde",
  "serde_json",
  "thiserror",

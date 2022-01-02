@@ -1,11 +1,14 @@
+use crate::errors::ProjectError;
 use crate::types::{ExpandedFiles, TouchedFilePaths};
+use globset::{Glob, GlobSetBuilder};
 use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug};
+use moon_utils::is_glob;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -68,9 +71,10 @@ pub struct Task {
     pub inputs: Vec<FilePathOrGlob>,
 
     #[serde(skip)]
-    pub input_paths: ExpandedFiles,
+    pub input_globs: Vec<FilePathOrGlob>,
 
-    pub name: String,
+    #[serde(skip)]
+    pub input_paths: ExpandedFiles,
 
     pub options: TaskOptions,
 
@@ -79,12 +83,14 @@ pub struct Task {
     #[serde(skip)]
     pub output_paths: ExpandedFiles,
 
+    pub target: TargetID,
+
     #[serde(rename = "type")]
     pub type_of: TaskType,
 }
 
 impl Task {
-    pub fn from_config(name: &str, config: &TaskConfig) -> Self {
+    pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options.unwrap_or_default();
 
@@ -93,8 +99,8 @@ impl Task {
             command: cloned_config.command.unwrap_or_default(),
             deps: cloned_config.deps.unwrap_or_else(Vec::new),
             inputs: cloned_config.inputs.unwrap_or_else(Vec::new),
+            input_globs: vec![],
             input_paths: HashSet::new(),
-            name: name.to_owned(),
             options: TaskOptions {
                 merge_args: cloned_options.merge_args.unwrap_or_default(),
                 merge_deps: cloned_options.merge_deps.unwrap_or_default(),
@@ -106,66 +112,112 @@ impl Task {
             },
             outputs: cloned_config.outputs.unwrap_or_else(Vec::new),
             output_paths: HashSet::new(),
+            target: target.clone(),
             type_of: cloned_config.type_of.unwrap_or_default(),
         };
 
         debug!(
             target: "moon:project",
             "Creating task {} for command {}",
-            color::id(name),
+            color::id(&target),
             color::shell(&task.command)
         );
 
         task
     }
 
-    fn expand_io_paths(
-        &self,
-        workspace_root: &Path,
-        project_root: &Path,
-        files: &[FilePathOrGlob],
-    ) -> ExpandedFiles {
-        let mut paths = HashSet::new();
-
-        for file in files {
-            let expanded_file = if file.starts_with('/') {
-                workspace_root.join(file)
-            } else {
-                project_root.join(file)
-            };
-
-            paths.insert(expanded_file.canonicalize().unwrap());
+    fn expand_io_path(&self, workspace_root: &Path, project_root: &Path, file: &str) -> PathBuf {
+        if file.starts_with('/') {
+            workspace_root.join(file)
+        } else {
+            project_root.join(file)
         }
-
-        paths
     }
 
     /// Expand the inputs list to a set of absolute file paths.
-    pub fn expand_inputs(&mut self, workspace_root: &Path, project_root: &Path) {
-        self.input_paths = self.expand_io_paths(workspace_root, project_root, &self.inputs);
+    pub fn expand_inputs(
+        &mut self,
+        workspace_root: &Path,
+        project_root: &Path,
+    ) -> Result<(), ProjectError> {
+        for file in &self.inputs {
+            // Globs are separate from paths as we can't canonicalize it,
+            // and we also need strings for `globset`.
+            if is_glob(file) {
+                self.input_globs.push(file.to_owned());
+            } else {
+                let file_path = self.expand_io_path(workspace_root, project_root, file);
+
+                self.input_paths.insert(
+                    self.expand_io_path(workspace_root, project_root, file)
+                        .canonicalize()
+                        .map_err(|_| {
+                            ProjectError::InvalidUtf8File(String::from(file_path.to_string_lossy()))
+                        })?,
+                );
+            }
+        }
+
+        Ok(())
     }
 
     /// Expand the outputs list to a set of absolute file paths.
-    pub fn expand_outputs(&mut self, workspace_root: &Path, project_root: &Path) {
-        self.output_paths = self.expand_io_paths(workspace_root, project_root, &self.outputs);
+    pub fn expand_outputs(
+        &mut self,
+        workspace_root: &Path,
+        project_root: &Path,
+    ) -> Result<(), ProjectError> {
+        for file in &self.outputs {
+            if is_glob(file) {
+                return Err(ProjectError::NoOutputGlob(
+                    file.to_owned(),
+                    self.target.clone(),
+                ));
+            } else {
+                let file_path = self.expand_io_path(workspace_root, project_root, file);
+
+                self.output_paths
+                    .insert(file_path.canonicalize().map_err(|_| {
+                        ProjectError::InvalidUtf8File(String::from(file_path.to_string_lossy()))
+                    })?);
+            }
+        }
+
+        Ok(())
     }
 
     /// Return true if this task is affected, based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
-    pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {
+    pub fn is_affected(
+        &self,
+        project_root: &Path,
+        touched_files: &TouchedFilePaths,
+    ) -> Result<bool, ProjectError> {
         // We have nothing to compare against, so treat it as always affected
         if self.inputs.is_empty() {
-            return true;
+            return Ok(true);
         }
 
+        let mut glob_builder = GlobSetBuilder::new();
+
+        for glob in &self.input_globs {
+            glob_builder.add(Glob::new(glob)?);
+        }
+
+        let globs = glob_builder.build()?;
+
         for file in touched_files {
-            // File is a 1:1 match
-            if self.input_paths.contains(file) {
-                return true;
+            // Not located within the parent project, skip it
+            if file.starts_with(project_root) {
+                continue;
+            }
+
+            if self.input_paths.contains(file) || globs.is_match(file) {
+                return Ok(true);
             }
         }
 
-        false
+        Ok(false)
     }
 
     pub fn merge(&mut self, config: &TaskConfig) {

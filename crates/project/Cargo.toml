@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_config = { path = "../config" }
 moon_logger = { path = "../logger" }
+moon_utils = { path = "../utils" }
 dep-graph = "0.2"
 globset = "0.4"
 itertools = "0.10"

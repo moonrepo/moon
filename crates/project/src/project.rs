@@ -1,10 +1,11 @@
 use crate::errors::ProjectError;
+use crate::target::Target;
 use crate::task::Task;
 use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     FileGroups, FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig,
-    ProjectID, TaskConfig,
+    ProjectID, TargetID, TaskConfig,
 };
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
@@ -86,23 +87,25 @@ fn create_file_groups_from_config(
 }
 
 fn create_task(
-    name: &str,
+    target: TargetID,
     config: &TaskConfig,
     workspace_root: &Path,
     project_root: &Path,
-) -> Task {
-    let mut task = Task::from_config(name, config);
-    task.expand_inputs(workspace_root, project_root);
-    task.expand_outputs(workspace_root, project_root);
-    task
+) -> Result<Task, ProjectError> {
+    let mut task = Task::from_config(target, config);
+    task.expand_inputs(workspace_root, project_root)?;
+    task.expand_outputs(workspace_root, project_root)?;
+
+    Ok(task)
 }
 
 fn create_tasks_from_config(
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
-    project_root: &Path,
+    project_id: &str,
     project_path: &str,
-) -> TasksMap {
+    project_root: &Path,
+) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
 
     // We dont have access to the workspace root, so traverse upwards based on location
@@ -118,10 +121,15 @@ fn create_tasks_from_config(
 
     // Add global tasks first
     if let Some(global_tasks) = &global_config.tasks {
-        for (name, task_config) in global_tasks {
+        for (task_id, task_config) in global_tasks {
             tasks.insert(
-                name.clone(),
-                create_task(name, task_config, &workspace_root, project_root),
+                task_id.clone(),
+                create_task(
+                    Target::format(project_id, task_id)?,
+                    task_config,
+                    &workspace_root,
+                    project_root,
+                )?,
             );
         }
     }
@@ -129,22 +137,27 @@ fn create_tasks_from_config(
     // Add local tasks second
     if let Some(local_config) = config {
         if let Some(local_tasks) = &local_config.tasks {
-            for (name, task_config) in local_tasks {
-                if tasks.contains_key(name) {
+            for (task_id, task_config) in local_tasks {
+                if tasks.contains_key(task_id) {
                     // Task already exists, so merge with it
-                    tasks.get_mut(name).unwrap().merge(task_config);
+                    tasks.get_mut(task_id).unwrap().merge(task_config);
                 } else {
                     // Insert a new task
                     tasks.insert(
-                        name.clone(),
-                        create_task(name, task_config, &workspace_root, project_root),
+                        task_id.clone(),
+                        create_task(
+                            Target::format(project_id, task_id)?,
+                            task_config,
+                            &workspace_root,
+                            project_root,
+                        )?,
                     );
                 }
             }
         }
     }
 
-    tasks
+    Ok(tasks)
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -198,7 +211,7 @@ impl Project {
         let config = load_project_config(root_dir, location)?;
         let package_json = load_package_json(root_dir, location)?;
         let file_groups = create_file_groups_from_config(&config, global_config);
-        let tasks = create_tasks_from_config(&config, global_config, &dir, location);
+        let tasks = create_tasks_from_config(&config, global_config, id, location, &dir)?;
 
         Ok(Project {
             config,

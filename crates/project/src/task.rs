@@ -148,13 +148,10 @@ impl Task {
             } else {
                 let file_path = self.expand_io_path(workspace_root, project_root, file);
 
-                self.input_paths.insert(
-                    self.expand_io_path(workspace_root, project_root, file)
-                        .canonicalize()
-                        .map_err(|_| {
-                            ProjectError::InvalidUtf8File(String::from(file_path.to_string_lossy()))
-                        })?,
-                );
+                self.input_paths
+                    .insert(file_path.canonicalize().map_err(|_| {
+                        ProjectError::InvalidUtf8File(String::from(file_path.to_string_lossy()))
+                    })?);
             }
         }
 
@@ -208,7 +205,7 @@ impl Task {
 
         for file in touched_files {
             // Not located within the parent project, skip it
-            if file.starts_with(project_root) {
+            if !file.starts_with(project_root) {
                 continue;
             }
 

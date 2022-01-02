@@ -51,8 +51,8 @@ async fn main() {
         Commands::ProjectGraph { id } => {
             result = project_graph(id).await;
         }
-        Commands::Run { target } => {
-            result = run(target).await;
+        Commands::Run { target, status } => {
+            result = run(target, status).await;
         }
         Commands::Setup => {
             result = setup().await;

@@ -88,7 +88,6 @@ impl TaskGraph {
         self.tasks.insert(target.clone(), task.clone());
 
         // Add dependencies
-
         let mut node = Node::new(target.clone());
 
         if !task.deps.is_empty() {

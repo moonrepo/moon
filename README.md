@@ -10,8 +10,6 @@ projects, written in Rust. Many of the concepts within Moon are heavily inspired
 <!--
 #### Tokens
 
-- File groups
-  - `@glob` - Returns the file group as a glob (typically as-is).
 - Inputs & outputs
   - `@in` - Points to an index within a task's `inputs` list. This will be expanded to the
     underyling file path(s).

@@ -28,16 +28,33 @@ impl FileGroup {
     }
 
     /// Returns the file group as an expanded list of absolute directory paths.
+    /// If a glob is detected, it will aggregate all directories found.
     pub fn dirs(&self) -> Result<Vec<PathBuf>, ProjectError> {
         self.walk(true)
     }
 
     /// Returns the file group as an expanded list of absolute file paths.
+    /// If a glob is detected, it will aggregate all files found.
     pub fn files(&self) -> Result<Vec<PathBuf>, ProjectError> {
         self.walk(false)
     }
 
-    /// Returns the file group, reduced down to the lowest common directory.
+    /// Returns the file group as a reduced list of file globs (as-is),
+    /// relative to the project root.
+    pub fn globs(&self) -> Result<Vec<String>, ProjectError> {
+        let mut globs = vec![];
+
+        for file in &self.files {
+            if is_glob(file) {
+                globs.push(file.to_owned())
+            }
+        }
+
+        Ok(globs)
+    }
+
+    /// Returns the file group reduced down to the lowest common directory.
+    /// If the reduced directories is not =1, the project root will be returned.
     pub fn root(&self) -> Result<PathBuf, ProjectError> {
         let dirs = self.dirs()?;
 
@@ -181,6 +198,29 @@ mod tests {
             let result: Vec<PathBuf> = vec![];
 
             assert_eq!(file_group.files().unwrap(), result);
+        }
+    }
+
+    mod globs {
+        use super::*;
+
+        #[test]
+        fn returns_only_globs() {
+            let root = get_fixtures_dir("base");
+            let file_group = FileGroup::new(
+                vec![
+                    "**/*".to_owned(),
+                    "*.rs".to_owned(),
+                    "file.ts".to_owned(),
+                    "dir".to_owned(),
+                ],
+                &root.join("files-and-dirs"),
+            );
+
+            assert_eq!(
+                file_group.globs().unwrap(),
+                vec!["**/*".to_owned(), "*.rs".to_owned()]
+            );
         }
     }
 

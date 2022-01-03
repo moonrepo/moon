@@ -166,9 +166,6 @@ pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
     pub config: Option<ProjectConfig>,
 
-    /// Absolute path to the project's root folder.
-    pub dir: PathBuf,
-
     /// File groups specific to the project. Inherits all file groups from the global config.
     #[serde(rename = "fileGroups")]
     pub file_groups: FileGroupsMap,
@@ -183,6 +180,9 @@ pub struct Project {
     #[serde(skip)]
     pub package_json: Option<PackageJsonValue>,
 
+    /// Absolute path to the project's root folder.
+    pub root: PathBuf,
+
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
 }
@@ -194,33 +194,33 @@ impl Project {
         workspace_root: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let dir = workspace_root.join(&location);
+        let root = workspace_root.join(&location);
 
         debug!(
             target: "moon:project",
             "Loading project from {} (id = {}, path = {})",
-            color::file_path(&dir),
+            color::file_path(&root),
             color::id(id),
             color::path(location),
         );
 
-        if !dir.exists() {
+        if !root.exists() {
             return Err(ProjectError::MissingFilePath(String::from(location)));
         }
 
-        let dir = dir.canonicalize().unwrap();
+        let root = root.canonicalize().unwrap();
         let config = load_project_config(workspace_root, location)?;
         let package_json = load_package_json(workspace_root, location)?;
-        let file_groups = create_file_groups_from_config(&config, global_config, &dir);
-        let tasks = create_tasks_from_config(&config, global_config, workspace_root, &dir, id)?;
+        let file_groups = create_file_groups_from_config(&config, global_config, &root);
+        let tasks = create_tasks_from_config(&config, global_config, workspace_root, &root, id)?;
 
         Ok(Project {
             config,
-            dir,
             file_groups,
             id: String::from(id),
             location: String::from(location),
             package_json,
+            root,
             tasks,
         })
     }
@@ -244,7 +244,7 @@ impl Project {
     /// Will attempt to find any file that starts with the project root.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {
         for file in touched_files {
-            if file.starts_with(&self.dir) {
+            if file.starts_with(&self.root) {
                 return true;
             }
         }

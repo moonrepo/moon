@@ -23,7 +23,7 @@ pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Er
 
     // Dont show in test snapshots
     if env::var("MOON_TEST").is_err() {
-        term.render_entry("Root", &color::file_path(&project.dir))?;
+        term.render_entry("Root", &color::file_path(&project.root))?;
     }
 
     if let Some(config) = project.config {

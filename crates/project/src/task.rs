@@ -135,8 +135,8 @@ impl Task {
         }
     }
 
-    /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_args(&mut self, token_resolver: &TokenResolver) -> Result<(), ProjectError> {
+    /// Expand the args list to resolve tokens, relative to the project root.
+    pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
         let mut args = vec![];
 
         for arg in &self.args {

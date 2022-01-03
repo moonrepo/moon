@@ -155,10 +155,9 @@ fn create_tasks_from_config(
     }
 
     // Expand inputs and outputs after all tasks have been created
-    let args_token_resolver = TokenResolver::for_args(file_groups);
 
     for task in tasks.values_mut() {
-        task.expand_args(&args_token_resolver)?;
+        task.expand_args(TokenResolver::for_args(file_groups))?;
         task.expand_inputs(workspace_root, project_root)?;
         task.expand_outputs(workspace_root, project_root)?;
     }

@@ -252,6 +252,7 @@ fn has_package_json() {
 
 mod tasks {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {

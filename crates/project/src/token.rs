@@ -89,6 +89,13 @@ impl<'a> TokenResolver<'a> {
         }
     }
 
+    pub fn for_outputs(file_groups: &'a HashMap<String, FileGroup>) -> TokenResolver {
+        TokenResolver {
+            file_groups,
+            context: ResolverType::Outputs,
+        }
+    }
+
     pub fn has_token(value: &str) -> bool {
         value.contains('@') || value.contains('$')
     }
@@ -409,6 +416,46 @@ mod tests {
                 resolver.resolve("@root(static)").unwrap(),
                 vec!["dir".to_owned()],
             );
+        }
+    }
+
+    mod outputs {
+        use super::*;
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"@dirs\", \"outputs\")")]
+        fn doesnt_support_dirs() {
+            let file_groups = create_file_groups();
+            let resolver = TokenResolver::for_outputs(&file_groups);
+
+            resolver.resolve("@dirs(static)").unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"@files\", \"outputs\")")]
+        fn doesnt_support_files() {
+            let file_groups = create_file_groups();
+            let resolver = TokenResolver::for_outputs(&file_groups);
+
+            resolver.resolve("@files(static)").unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"@globs\", \"outputs\")")]
+        fn doesnt_support_globs() {
+            let file_groups = create_file_groups();
+            let resolver = TokenResolver::for_outputs(&file_groups);
+
+            resolver.resolve("@globs(globs)").unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"@root\", \"outputs\")")]
+        fn doesnt_support_root() {
+            let file_groups = create_file_groups();
+            let resolver = TokenResolver::for_outputs(&file_groups);
+
+            resolver.resolve("@root(static)").unwrap();
         }
     }
 }

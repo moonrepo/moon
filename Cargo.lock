@@ -1016,7 +1016,7 @@ dependencies = [
  "assert_fs",
  "figment",
  "json",
- "lazy_static",
+ "moon_utils",
  "regex",
  "semver",
  "serde",
@@ -1075,7 +1075,9 @@ dependencies = [
 name = "moon_utils"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "moon_logger",
+ "regex",
  "tokio",
 ]
 

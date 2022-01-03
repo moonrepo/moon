@@ -83,7 +83,7 @@ pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Er
         for group in project.file_groups.keys().sorted() {
             let mut files = vec![];
 
-            for file in project.file_groups.get(group).unwrap() {
+            for file in &project.file_groups.get(group).unwrap().files {
                 files.push(color::path(file));
             }
 

@@ -139,8 +139,8 @@ fileGroups:
     - 'assets/**/*'
     - 'images/**/*'
     - 'static/**/*'
-    - '**/*.s?css'
-    - '**/*.mdx?'
+    - '**/*.{scss,css}'
+    - '**/*.mdx'
 ```
 
 > The code snippet above is merely an example of file groups. Feel free to use those groups as-is,

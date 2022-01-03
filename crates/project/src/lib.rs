@@ -1,5 +1,6 @@
 mod constants;
 mod errors;
+mod file_group;
 mod project;
 mod project_graph;
 mod target;
@@ -12,12 +13,15 @@ pub use errors::ProjectError;
 pub use types::TouchedFilePaths;
 
 // Projects
-pub use moon_config::{FileGroups, ProjectID, ProjectType};
+pub use moon_config::{ProjectID, ProjectType};
 pub use project::{Project, ProjectsMap};
 pub use project_graph::ProjectGraph;
 
-// Tasks
-pub use moon_config::{TargetID, TaskType};
+// Tasks & targets
+pub use moon_config::{TargetID, TaskID, TaskType};
 pub use target::Target;
 pub use task::{Task, TaskOptions};
 pub use task_graph::TaskGraph;
+
+// File groups
+pub use file_group::FileGroup;

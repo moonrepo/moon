@@ -29,8 +29,8 @@ fileGroups:
     - 'assets/**/*'
     - 'images/**/*'
     - 'static/**/*'
-    - '**/*.s?css'
-    - '**/*.mdx?'
+    - '**/*.{scss,css}'
+    - '**/*.mdx'
 
 # OPTIONAL: A task is an action that is ran within the context of a project, and wraps
 # around an npm or shell command. Tasks that are defined here and inherited by all projects

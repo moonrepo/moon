@@ -2,21 +2,29 @@ use crate::errors::ProjectError;
 use common_path::common_path_all;
 use globwalk::GlobWalkerBuilder;
 use moon_utils::fs::is_glob;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct FileGroup {
-    files: Vec<String>,
+    pub files: Vec<String>,
 
+    #[serde(skip)]
     project_root: PathBuf,
 }
 
 impl FileGroup {
-    pub fn new(files: Vec<String>, project_root: PathBuf) -> FileGroup {
+    pub fn new(files: Vec<String>, project_root: &Path) -> FileGroup {
         FileGroup {
             files,
-            project_root,
+            project_root: project_root.to_path_buf(),
         }
+    }
+
+    pub fn merge(&mut self, files: Vec<String>) {
+        // Local files should always override global
+        self.files = files;
     }
 
     /// Returns the file group as an expanded list of absolute directory paths.
@@ -102,13 +110,28 @@ mod tests {
     use super::*;
     use moon_utils::test::get_fixtures_dir;
 
+    mod merge {
+        use super::*;
+
+        #[test]
+        fn overwrites() {
+            let root = get_fixtures_dir("base");
+            let mut file_group =
+                FileGroup::new(vec!["**/*".to_owned()], &root.join("files-and-dirs"));
+
+            file_group.merge(vec!["*".to_owned()]);
+
+            assert_eq!(file_group.files, vec!["*".to_owned()]);
+        }
+    }
+
     mod dirs {
         use super::*;
 
         #[test]
         fn returns_all_dirs() {
             let root = get_fixtures_dir("base");
-            let file_group = FileGroup::new(vec!["**/*".to_owned()], root.join("files-and-dirs"));
+            let file_group = FileGroup::new(vec!["**/*".to_owned()], &root.join("files-and-dirs"));
 
             assert_eq!(
                 file_group.dirs().unwrap(),
@@ -123,7 +146,7 @@ mod tests {
         fn doesnt_return_files() {
             let root = get_fixtures_dir("base");
             let file_group =
-                FileGroup::new(vec!["file.ts".to_owned()], root.join("files-and-dirs"));
+                FileGroup::new(vec!["file.ts".to_owned()], &root.join("files-and-dirs"));
             let result: Vec<PathBuf> = vec![];
 
             assert_eq!(file_group.dirs().unwrap(), result);
@@ -138,7 +161,7 @@ mod tests {
             let root = get_fixtures_dir("base");
             let file_group = FileGroup::new(
                 vec!["**/*.{ts,tsx}".to_owned()],
-                root.join("files-and-dirs"),
+                &root.join("files-and-dirs"),
             );
 
             assert_eq!(
@@ -154,7 +177,7 @@ mod tests {
         #[test]
         fn doesnt_return_dirs() {
             let root = get_fixtures_dir("base");
-            let file_group = FileGroup::new(vec!["dir".to_owned()], root.join("files-and-dirs"));
+            let file_group = FileGroup::new(vec!["dir".to_owned()], &root.join("files-and-dirs"));
             let result: Vec<PathBuf> = vec![];
 
             assert_eq!(file_group.files().unwrap(), result);
@@ -167,7 +190,7 @@ mod tests {
         #[test]
         fn returns_lowest_dir() {
             let root = get_fixtures_dir("base");
-            let file_group = FileGroup::new(vec!["**/*".to_owned()], root.join("files-and-dirs"));
+            let file_group = FileGroup::new(vec!["**/*".to_owned()], &root.join("files-and-dirs"));
 
             assert_eq!(file_group.root().unwrap(), root.join("files-and-dirs/dir"));
         }
@@ -175,7 +198,7 @@ mod tests {
         #[test]
         fn returns_root_when_many() {
             let root = get_fixtures_dir("projects");
-            let file_group = FileGroup::new(vec!["**/*".to_owned()], root.clone());
+            let file_group = FileGroup::new(vec!["**/*".to_owned()], &root);
 
             assert_eq!(file_group.root().unwrap(), root);
         }
@@ -183,7 +206,7 @@ mod tests {
         #[test]
         fn returns_root_when_no_dirs() {
             let root = get_fixtures_dir("base");
-            let file_group = FileGroup::new(vec![], root.clone());
+            let file_group = FileGroup::new(vec![], &root);
 
             assert_eq!(file_group.root().unwrap(), root);
         }

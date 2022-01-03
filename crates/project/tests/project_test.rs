@@ -1,19 +1,25 @@
 use moon_config::{
-    FileGroups, GlobalProjectConfig, PackageJson, ProjectConfig, ProjectMetadataConfig,
-    ProjectType, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    GlobalProjectConfig, PackageJson, ProjectConfig, ProjectMetadataConfig, ProjectType, TargetID,
+    TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_project::{Project, ProjectError, Target, Task};
+use moon_project::{FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::test::get_fixtures_root;
 use std::collections::HashMap;
 use std::path::Path;
 
-fn mock_file_groups() -> FileGroups {
-    HashMap::from([(String::from("sources"), vec![String::from("src/**/*")])])
+fn mock_file_groups(root: &Path) -> HashMap<String, FileGroup> {
+    HashMap::from([(
+        String::from("sources"),
+        FileGroup::new(vec![String::from("src/**/*")], root),
+    )])
 }
 
 fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
-        file_groups: Some(mock_file_groups()),
+        file_groups: Some(HashMap::from([(
+            String::from("sources"),
+            vec![String::from("src/**/*")],
+        )])),
         tasks: None,
     }
 }
@@ -46,8 +52,8 @@ fn no_config() {
         Project {
             id: String::from("no-config"),
             config: None,
-            dir: root_dir.join("projects/no-config").canonicalize().unwrap(),
-            file_groups: mock_file_groups(),
+            dir: root_dir.join("projects/no-config"),
+            file_groups: mock_file_groups(&root_dir.join("projects/no-config")),
             location: String::from("projects/no-config"),
             package_json: None,
             tasks: HashMap::new(),
@@ -76,11 +82,8 @@ fn empty_config() {
                 project: None,
                 tasks: None,
             }),
-            dir: root_dir
-                .join("projects/empty-config")
-                .canonicalize()
-                .unwrap(),
-            file_groups: mock_file_groups(),
+            dir: root_dir.join("projects/empty-config"),
+            file_groups: mock_file_groups(&root_dir.join("projects/empty-config")),
             location: String::from("projects/empty-config"),
             package_json: None,
             tasks: HashMap::new(),
@@ -98,10 +101,14 @@ fn basic_config() {
         &mock_global_project_config(),
     )
     .unwrap();
+    let project_root = root_dir.join("projects/basic");
 
     // Merges with global
-    let mut file_groups = mock_file_groups();
-    file_groups.insert(String::from("tests"), vec![String::from("**/*_test.rs")]);
+    let mut file_groups = mock_file_groups(&project_root);
+    file_groups.insert(
+        String::from("tests"),
+        FileGroup::new(vec![String::from("**/*_test.rs")], &project_root),
+    );
 
     assert_eq!(
         project,
@@ -116,7 +123,7 @@ fn basic_config() {
                 project: None,
                 tasks: None,
             }),
-            dir: root_dir.join("projects/basic").canonicalize().unwrap(),
+            dir: project_root,
             file_groups,
             location: String::from("projects/basic"),
             package_json: None,
@@ -153,8 +160,8 @@ fn advanced_config() {
                 }),
                 tasks: None,
             }),
-            dir: root_dir.join("projects/advanced").canonicalize().unwrap(),
-            file_groups: mock_file_groups(),
+            dir: root_dir.join("projects/advanced"),
+            file_groups: mock_file_groups(&root_dir.join("projects/advanced")),
             location: String::from("projects/advanced"),
             package_json: None,
             tasks: HashMap::new(),
@@ -192,10 +199,13 @@ fn overrides_global_file_groups() {
                 project: None,
                 tasks: None,
             }),
-            dir: root_dir.join("projects/basic").canonicalize().unwrap(),
+            dir: root_dir.join("projects/basic"),
             file_groups: HashMap::from([(
                 String::from("tests"),
-                vec![String::from("**/*_test.rs")]
+                FileGroup::new(
+                    vec![String::from("**/*_test.rs")],
+                    &root_dir.join("projects/basic")
+                )
             )]),
             location: String::from("projects/basic"),
             package_json: None,
@@ -230,11 +240,8 @@ fn has_package_json() {
         Project {
             id: String::from("package-json"),
             config: None,
-            dir: root_dir
-                .join("projects/package-json")
-                .canonicalize()
-                .unwrap(),
-            file_groups: mock_file_groups(),
+            dir: root_dir.join("projects/package-json"),
+            file_groups: mock_file_groups(&root_dir.join("projects/package-json")),
             location: String::from("projects/package-json"),
             package_json: Some(PackageJson::from(json).unwrap()),
             tasks: HashMap::new(),

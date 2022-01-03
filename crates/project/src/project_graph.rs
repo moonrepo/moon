@@ -26,12 +26,12 @@ pub struct ProjectGraph {
     projects_config: HashMap<ProjectID, String>,
 
     /// The workspace root, in which projects are relatively loaded from.
-    workspace_dir: PathBuf,
+    workspace_root: PathBuf,
 }
 
 impl ProjectGraph {
     pub fn new(
-        workspace_dir: &Path,
+        workspace_root: &Path,
         global_config: GlobalProjectConfig,
         projects_config: &HashMap<ProjectID, String>,
     ) -> ProjectGraph {
@@ -49,7 +49,7 @@ impl ProjectGraph {
             )])),
             projects: RefCell::new(HashMap::new()),
             projects_config: projects_config.clone(),
-            workspace_dir: workspace_dir.to_path_buf(),
+            workspace_root: workspace_root.to_path_buf(),
         }
     }
 
@@ -146,7 +146,7 @@ impl ProjectGraph {
             None => return Err(ProjectError::UnconfiguredID(String::from(id))),
         };
 
-        let project = Project::new(id, location, &self.workspace_dir, &self.global_config)?;
+        let project = Project::new(id, location, &self.workspace_root, &self.global_config)?;
         let depends_on = project.get_dependencies();
 
         projects.insert(id.to_owned(), project);

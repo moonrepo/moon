@@ -1,33 +1,37 @@
 use crate::errors::ProjectError;
+use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
 use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
-    FileGroups, FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig,
-    ProjectID,
+    FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig, ProjectID, TaskID,
 };
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+pub type FileGroupsMap = HashMap<String, FileGroup>;
+
 pub type ProjectsMap = HashMap<ProjectID, Project>;
 
-pub type TasksMap = HashMap<String, Task>;
+pub type TasksMap = HashMap<TaskID, Task>;
 
 // project.yml
 fn load_project_config(
-    root_dir: &Path,
+    workspace_root: &Path,
     project_path: &str,
 ) -> Result<Option<ProjectConfig>, ProjectError> {
-    let config_path = root_dir.join(&project_path).join(CONFIG_PROJECT_FILENAME);
+    let config_path = workspace_root
+        .join(&project_path)
+        .join(CONFIG_PROJECT_FILENAME);
 
     trace!(
         target: "moon:project",
         "Attempting to find {} in {}",
         color::path("project.yml"),
-        color::file_path(&root_dir.join(&project_path)),
+        color::file_path(&workspace_root.join(&project_path)),
     );
 
     if config_path.exists() {
@@ -45,16 +49,16 @@ fn load_project_config(
 
 // package.json
 fn load_package_json(
-    root_dir: &Path,
+    workspace_root: &Path,
     project_path: &str,
 ) -> Result<Option<PackageJsonValue>, ProjectError> {
-    let package_path = root_dir.join(&project_path).join("package.json");
+    let package_path = workspace_root.join(&project_path).join("package.json");
 
     trace!(
         target: "moon:project",
         "Attempting to find {} in {}",
         color::path("package.json"),
-        color::file_path(&root_dir.join(&project_path)),
+        color::file_path(&workspace_root.join(&project_path)),
     );
 
     if package_path.exists() {
@@ -73,13 +77,38 @@ fn load_package_json(
 fn create_file_groups_from_config(
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
-) -> FileGroups {
-    let mut file_groups = global_config.file_groups.clone().unwrap_or_default();
+    project_root: &Path,
+) -> FileGroupsMap {
+    let mut file_groups = HashMap::<String, FileGroup>::new();
+
+    // Add global file groups first
+    if let Some(global_file_groups) = &global_config.file_groups {
+        for (group_id, files) in global_file_groups {
+            file_groups.insert(
+                group_id.to_owned(),
+                FileGroup::new(files.to_owned(), project_root),
+            );
+        }
+    }
 
     // Override global configs with local
     if let Some(local_config) = config {
         if let Some(local_file_groups) = &local_config.file_groups {
-            file_groups.extend(local_file_groups.clone());
+            for (group_id, files) in local_file_groups {
+                if file_groups.contains_key(group_id) {
+                    // Group already exists, so merge with it
+                    file_groups
+                        .get_mut(group_id)
+                        .unwrap()
+                        .merge(files.to_owned());
+                } else {
+                    // Insert a group
+                    file_groups.insert(
+                        group_id.clone(),
+                        FileGroup::new(files.to_owned(), project_root),
+                    );
+                }
+            }
         }
     }
 
@@ -89,22 +118,11 @@ fn create_file_groups_from_config(
 fn create_tasks_from_config(
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
-    project_id: &str,
-    project_path: &str,
+    workspace_root: &Path,
     project_root: &Path,
+    project_id: &str,
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
-
-    // We dont have access to the workspace root, so traverse upwards based on location
-    let mut workspace_root = project_root.to_path_buf();
-
-    for part in project_path.split('/') {
-        if !part.is_empty() && part != "." {
-            workspace_root.push("..");
-        }
-    }
-
-    workspace_root = workspace_root.canonicalize().unwrap();
 
     // Add global tasks first
     if let Some(global_tasks) = &global_config.tasks {
@@ -136,8 +154,8 @@ fn create_tasks_from_config(
 
     // Expand inputs and outputs after all tasks have been created
     for task in tasks.values_mut() {
-        task.expand_inputs(&workspace_root, project_root)?;
-        task.expand_outputs(&workspace_root, project_root)?;
+        task.expand_inputs(workspace_root, project_root)?;
+        task.expand_outputs(workspace_root, project_root)?;
     }
 
     Ok(tasks)
@@ -153,7 +171,7 @@ pub struct Project {
 
     /// File groups specific to the project. Inherits all file groups from the global config.
     #[serde(rename = "fileGroups")]
-    pub file_groups: FileGroups,
+    pub file_groups: FileGroupsMap,
 
     /// Unique ID for the project. Is the LHS of the `projects` setting.
     pub id: ProjectID,
@@ -173,10 +191,10 @@ impl Project {
     pub fn new(
         id: &str,
         location: &str,
-        root_dir: &Path,
+        workspace_root: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let dir = root_dir.join(&location);
+        let dir = workspace_root.join(&location);
 
         debug!(
             target: "moon:project",
@@ -191,10 +209,10 @@ impl Project {
         }
 
         let dir = dir.canonicalize().unwrap();
-        let config = load_project_config(root_dir, location)?;
-        let package_json = load_package_json(root_dir, location)?;
-        let file_groups = create_file_groups_from_config(&config, global_config);
-        let tasks = create_tasks_from_config(&config, global_config, id, location, &dir)?;
+        let config = load_project_config(workspace_root, location)?;
+        let package_json = load_package_json(workspace_root, location)?;
+        let file_groups = create_file_groups_from_config(&config, global_config, &dir);
+        let tasks = create_tasks_from_config(&config, global_config, workspace_root, &dir, id)?;
 
         Ok(Project {
             config,

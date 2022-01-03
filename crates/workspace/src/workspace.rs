@@ -107,14 +107,14 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
-    /// The root of the workspace that contains the ".moon" config folder.
-    pub dir: PathBuf,
-
     /// Path to the root `package.json` file.
     pub package_json_path: PathBuf,
 
     /// The project graph, where each project is lazy loaded in.
     pub projects: ProjectGraph,
+
+    /// The root of the workspace that contains the ".moon" config folder.
+    pub root: PathBuf,
 
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
@@ -155,9 +155,9 @@ impl Workspace {
 
         Ok(Workspace {
             config,
-            dir: root_dir,
             package_json_path,
             projects,
+            root: root_dir,
             toolchain,
             vcs,
             working_dir,

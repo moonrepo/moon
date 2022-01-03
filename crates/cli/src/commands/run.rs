@@ -40,7 +40,7 @@ fn get_touched_files(
     };
 
     for file in &files {
-        let path = workspace.dir.join(file);
+        let path = workspace.root.join(file);
         // let meta = fs::metadata(&path)?;
 
         // if let Ok(time) = meta.modified() {

@@ -10,7 +10,7 @@ use std::path::Path;
 fn mock_file_groups(root: &Path) -> HashMap<String, FileGroup> {
     HashMap::from([(
         String::from("sources"),
-        FileGroup::new(vec![String::from("src/**/*")], root),
+        FileGroup::new("sources", vec![String::from("src/**/*")], root),
     )])
 }
 
@@ -107,7 +107,7 @@ fn basic_config() {
     let mut file_groups = mock_file_groups(&project_root);
     file_groups.insert(
         String::from("tests"),
-        FileGroup::new(vec![String::from("**/*_test.rs")], &project_root),
+        FileGroup::new("tests", vec![String::from("**/*_test.rs")], &project_root),
     );
 
     assert_eq!(
@@ -203,6 +203,7 @@ fn overrides_global_file_groups() {
             file_groups: HashMap::from([(
                 String::from("tests"),
                 FileGroup::new(
+                    "tests",
                     vec![String::from("**/*_test.rs")],
                     &workspace_root.join("projects/basic")
                 )

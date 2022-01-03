@@ -311,8 +311,9 @@ mod tests {
                 &config.unwrap_or_default(),
             );
 
-            // task.expand_inputs(workspace_root, project_root)?;
-            // task.expand_outputs(workspace_root, project_root)?;
+            // TODO args
+            task.expand_inputs(workspace_root, project_root)?;
+            task.expand_outputs(workspace_root, project_root)?;
 
             Ok(task)
         }

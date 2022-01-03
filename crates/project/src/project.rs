@@ -87,7 +87,7 @@ fn create_file_groups_from_config(
         for (group_id, files) in global_file_groups {
             file_groups.insert(
                 group_id.to_owned(),
-                FileGroup::new(files.to_owned(), project_root),
+                FileGroup::new(group_id, files.to_owned(), project_root),
             );
         }
     }
@@ -106,7 +106,7 @@ fn create_file_groups_from_config(
                     // Insert a group
                     file_groups.insert(
                         group_id.clone(),
-                        FileGroup::new(files.to_owned(), project_root),
+                        FileGroup::new(group_id, files.to_owned(), project_root),
                     );
                 }
             }

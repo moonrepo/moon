@@ -309,8 +309,8 @@ mod tasks {
         let project_root = workspace_root.join(project_source);
 
         let mut task = Task::from_config(target, config);
-        task.expand_inputs(workspace_root, &project_root)?;
-        task.expand_outputs(workspace_root, &project_root)?;
+        // task.expand_inputs(workspace_root, &project_root)?;
+        // task.expand_outputs(workspace_root, &project_root)?;
 
         Ok(task)
     }

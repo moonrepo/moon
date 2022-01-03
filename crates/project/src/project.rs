@@ -2,6 +2,7 @@ use crate::errors::ProjectError;
 use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
+use crate::token::TokenResolver;
 use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
@@ -121,6 +122,7 @@ fn create_tasks_from_config(
     workspace_root: &Path,
     project_root: &Path,
     project_id: &str,
+    file_groups: &FileGroupsMap,
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
 
@@ -153,7 +155,10 @@ fn create_tasks_from_config(
     }
 
     // Expand inputs and outputs after all tasks have been created
+    let args_token_resolver = TokenResolver::for_args(file_groups);
+
     for task in tasks.values_mut() {
+        task.expand_args(&args_token_resolver)?;
         task.expand_inputs(workspace_root, project_root)?;
         task.expand_outputs(workspace_root, project_root)?;
     }
@@ -212,7 +217,14 @@ impl Project {
         let config = load_project_config(workspace_root, source)?;
         let package_json = load_package_json(workspace_root, source)?;
         let file_groups = create_file_groups_from_config(&config, global_config, &root);
-        let tasks = create_tasks_from_config(&config, global_config, workspace_root, &root, id)?;
+        let tasks = create_tasks_from_config(
+            &config,
+            global_config,
+            workspace_root,
+            &root,
+            id,
+            &file_groups,
+        )?;
 
         Ok(Project {
             config,

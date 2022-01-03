@@ -44,4 +44,16 @@ pub enum ProjectError {
 
     #[error(transparent)]
     GlobSet(#[from] globset::Error),
+
+    #[error(transparent)]
+    Token(#[from] TokenError),
+}
+
+#[derive(Error, Debug)]
+pub enum TokenError {
+    #[error("Token <symbol>{0}</symbol> cannot be used within arguments.")]
+    InvalidTokenInArgsContext(String),
+
+    #[error("Unknown token function <symbol>{0}</symbol>.")]
+    UnknownTokenFunc(String),
 }

@@ -1,4 +1,5 @@
 use crate::errors::ProjectError;
+use crate::token::TokenResolver;
 use crate::types::{ExpandedFiles, TouchedFilePaths};
 use globset::{Glob, GlobSetBuilder};
 use moon_config::{
@@ -134,7 +135,18 @@ impl Task {
         }
     }
 
-    /// Expand the inputs list to a set of absolute file paths.
+    /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
+    pub fn expand_args(&mut self, token_resolver: &TokenResolver) -> Result<(), ProjectError> {
+        let mut args = vec![];
+
+        for arg in &self.args {
+            args.extend(token_resolver.resolve(arg)?);
+        }
+
+        Ok(())
+    }
+
+    /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_inputs(
         &mut self,
         workspace_root: &Path,
@@ -162,7 +174,7 @@ impl Task {
         Ok(())
     }
 
-    /// Expand the outputs list to a set of absolute file paths.
+    /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_outputs(
         &mut self,
         workspace_root: &Path,
@@ -299,8 +311,8 @@ mod tests {
                 &config.unwrap_or_default(),
             );
 
-            task.expand_inputs(workspace_root, project_root)?;
-            task.expand_outputs(workspace_root, project_root)?;
+            // task.expand_inputs(workspace_root, project_root)?;
+            // task.expand_outputs(workspace_root, project_root)?;
 
             Ok(task)
         }

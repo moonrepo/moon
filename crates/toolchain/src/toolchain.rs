@@ -42,7 +42,7 @@ pub struct Toolchain {
     pub tools_dir: PathBuf,
 
     /// The workspace root directory.
-    pub workspace_dir: PathBuf,
+    pub workspace_root: PathBuf,
 
     // Tool instances are private, as we want to lazy load them.
     node: Option<NodeTool>,
@@ -77,7 +77,7 @@ impl Toolchain {
             dir,
             temp_dir,
             tools_dir,
-            workspace_dir: root_dir.to_path_buf(),
+            workspace_root: root_dir.to_path_buf(),
             node: None,
             npm: None,
             npx: None,

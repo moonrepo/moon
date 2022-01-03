@@ -38,11 +38,11 @@ fn doesnt_exist() {
 
 #[test]
 fn no_config() {
-    let root_dir = get_fixtures_root();
+    let workspace_root = get_fixtures_root();
     let project = Project::new(
         "no-config",
         "projects/no-config",
-        &root_dir,
+        &workspace_root,
         &mock_global_project_config(),
     )
     .unwrap();
@@ -52,9 +52,9 @@ fn no_config() {
         Project {
             id: String::from("no-config"),
             config: None,
-            dir: root_dir.join("projects/no-config"),
-            file_groups: mock_file_groups(&root_dir.join("projects/no-config")),
-            location: String::from("projects/no-config"),
+            root: workspace_root.join("projects/no-config"),
+            file_groups: mock_file_groups(&workspace_root.join("projects/no-config")),
+            source: String::from("projects/no-config"),
             package_json: None,
             tasks: HashMap::new(),
         }
@@ -63,11 +63,11 @@ fn no_config() {
 
 #[test]
 fn empty_config() {
-    let root_dir = get_fixtures_root();
+    let workspace_root = get_fixtures_root();
     let project = Project::new(
         "empty-config",
         "projects/empty-config",
-        &root_dir,
+        &workspace_root,
         &mock_global_project_config(),
     )
     .unwrap();
@@ -82,9 +82,9 @@ fn empty_config() {
                 project: None,
                 tasks: None,
             }),
-            dir: root_dir.join("projects/empty-config"),
-            file_groups: mock_file_groups(&root_dir.join("projects/empty-config")),
-            location: String::from("projects/empty-config"),
+            root: workspace_root.join("projects/empty-config"),
+            file_groups: mock_file_groups(&workspace_root.join("projects/empty-config")),
+            source: String::from("projects/empty-config"),
             package_json: None,
             tasks: HashMap::new(),
         }
@@ -93,15 +93,15 @@ fn empty_config() {
 
 #[test]
 fn basic_config() {
-    let root_dir = get_fixtures_root();
+    let workspace_root = get_fixtures_root();
     let project = Project::new(
         "basic",
         "projects/basic",
-        &root_dir,
+        &workspace_root,
         &mock_global_project_config(),
     )
     .unwrap();
-    let project_root = root_dir.join("projects/basic");
+    let project_root = workspace_root.join("projects/basic");
 
     // Merges with global
     let mut file_groups = mock_file_groups(&project_root);
@@ -123,9 +123,9 @@ fn basic_config() {
                 project: None,
                 tasks: None,
             }),
-            dir: project_root,
+            root: project_root,
             file_groups,
-            location: String::from("projects/basic"),
+            source: String::from("projects/basic"),
             package_json: None,
             tasks: HashMap::new(),
         }
@@ -134,11 +134,11 @@ fn basic_config() {
 
 #[test]
 fn advanced_config() {
-    let root_dir = get_fixtures_root();
+    let workspace_root = get_fixtures_root();
     let project = Project::new(
         "advanced",
         "projects/advanced",
-        &root_dir,
+        &workspace_root,
         &mock_global_project_config(),
     )
     .unwrap();
@@ -160,9 +160,9 @@ fn advanced_config() {
                 }),
                 tasks: None,
             }),
-            dir: root_dir.join("projects/advanced"),
-            file_groups: mock_file_groups(&root_dir.join("projects/advanced")),
-            location: String::from("projects/advanced"),
+            root: workspace_root.join("projects/advanced"),
+            file_groups: mock_file_groups(&workspace_root.join("projects/advanced")),
+            source: String::from("projects/advanced"),
             package_json: None,
             tasks: HashMap::new(),
         }
@@ -171,11 +171,11 @@ fn advanced_config() {
 
 #[test]
 fn overrides_global_file_groups() {
-    let root_dir = get_fixtures_root();
+    let workspace_root = get_fixtures_root();
     let project = Project::new(
         "basic",
         "projects/basic",
-        &root_dir,
+        &workspace_root,
         &GlobalProjectConfig {
             file_groups: Some(HashMap::from([(
                 String::from("tests"),
@@ -199,15 +199,15 @@ fn overrides_global_file_groups() {
                 project: None,
                 tasks: None,
             }),
-            dir: root_dir.join("projects/basic"),
+            root: workspace_root.join("projects/basic"),
             file_groups: HashMap::from([(
                 String::from("tests"),
                 FileGroup::new(
                     vec![String::from("**/*_test.rs")],
-                    &root_dir.join("projects/basic")
+                    &workspace_root.join("projects/basic")
                 )
             )]),
-            location: String::from("projects/basic"),
+            source: String::from("projects/basic"),
             package_json: None,
             tasks: HashMap::new(),
         }
@@ -216,11 +216,11 @@ fn overrides_global_file_groups() {
 
 #[test]
 fn has_package_json() {
-    let root_dir = get_fixtures_root();
+    let workspace_root = get_fixtures_root();
     let project = Project::new(
         "package-json",
         "projects/package-json",
-        &root_dir,
+        &workspace_root,
         &mock_global_project_config(),
     )
     .unwrap();
@@ -240,9 +240,9 @@ fn has_package_json() {
         Project {
             id: String::from("package-json"),
             config: None,
-            dir: root_dir.join("projects/package-json"),
-            file_groups: mock_file_groups(&root_dir.join("projects/package-json")),
-            location: String::from("projects/package-json"),
+            root: workspace_root.join("projects/package-json"),
+            file_groups: mock_file_groups(&workspace_root.join("projects/package-json")),
+            source: String::from("projects/package-json"),
             package_json: Some(PackageJson::from(json).unwrap()),
             tasks: HashMap::new(),
         }
@@ -304,9 +304,9 @@ mod tasks {
         target: TargetID,
         config: &TaskConfig,
         workspace_root: &Path,
-        project_path: &str,
+        project_source: &str,
     ) -> Result<Task, ProjectError> {
-        let project_root = workspace_root.join(project_path);
+        let project_root = workspace_root.join(project_source);
 
         let mut task = Task::from_config(target, config);
         task.expand_inputs(workspace_root, &project_root)?;
@@ -317,11 +317,11 @@ mod tasks {
 
     #[test]
     fn inherits_global_tasks() {
-        let root_dir = get_fixtures_root();
+        let workspace_root = get_fixtures_root();
         let project = Project::new(
             "id",
             "tasks/no-tasks",
-            &root_dir,
+            &workspace_root,
             &GlobalProjectConfig {
                 file_groups: None,
                 tasks: Some(HashMap::from([(
@@ -342,9 +342,12 @@ mod tasks {
                     project: None,
                     tasks: Some(HashMap::new()),
                 }),
-                dir: root_dir.join("tasks/no-tasks").canonicalize().unwrap(),
+                root: workspace_root
+                    .join("tasks/no-tasks")
+                    .canonicalize()
+                    .unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from("tasks/no-tasks"),
+                source: String::from("tasks/no-tasks"),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -359,11 +362,11 @@ mod tasks {
 
     #[test]
     fn merges_with_global_tasks() {
-        let root_dir = get_fixtures_root();
+        let workspace_root = get_fixtures_root();
         let project = Project::new(
             "id",
             "tasks/basic",
-            &root_dir,
+            &workspace_root,
             &GlobalProjectConfig {
                 file_groups: None,
                 tasks: Some(HashMap::from([(
@@ -387,9 +390,9 @@ mod tasks {
                         mock_task_config("eslint"),
                     )])),
                 }),
-                dir: root_dir.join("tasks/basic").canonicalize().unwrap(),
+                root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from("tasks/basic"),
+                source: String::from("tasks/basic"),
                 package_json: None,
                 tasks: HashMap::from([
                     (
@@ -413,12 +416,12 @@ mod tasks {
 
     #[test]
     fn strategy_replace() {
-        let root_dir = get_fixtures_root();
-        let project_path = "tasks/merge-replace";
+        let workspace_root = get_fixtures_root();
+        let project_source = "tasks/merge-replace";
         let project = Project::new(
             "id",
-            project_path,
-            &root_dir,
+            project_source,
+            &workspace_root,
             &GlobalProjectConfig {
                 file_groups: None,
                 tasks: Some(HashMap::from([(
@@ -460,9 +463,9 @@ mod tasks {
                         }
                     )])),
                 }),
-                dir: root_dir.join(project_path).canonicalize().unwrap(),
+                root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from(project_path),
+                source: String::from(project_source),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -479,8 +482,8 @@ mod tasks {
                             )),
                             type_of: Some(TaskType::Shell),
                         },
-                        &root_dir,
-                        project_path
+                        &workspace_root,
+                        project_source
                     )
                     .unwrap()
                 )]),
@@ -490,12 +493,12 @@ mod tasks {
 
     #[test]
     fn strategy_append() {
-        let root_dir = get_fixtures_root();
-        let project_path = "tasks/merge-append";
+        let workspace_root = get_fixtures_root();
+        let project_source = "tasks/merge-append";
         let project = Project::new(
             "id",
-            project_path,
-            &root_dir,
+            project_source,
+            &workspace_root,
             &GlobalProjectConfig {
                 file_groups: None,
                 tasks: Some(HashMap::from([(
@@ -537,9 +540,9 @@ mod tasks {
                         }
                     )])),
                 }),
-                dir: root_dir.join(project_path).canonicalize().unwrap(),
+                root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from(project_path),
+                source: String::from(project_source),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -556,8 +559,8 @@ mod tasks {
                             )),
                             type_of: Some(TaskType::Shell),
                         },
-                        &root_dir,
-                        project_path
+                        &workspace_root,
+                        project_source
                     )
                     .unwrap()
                 )]),
@@ -567,12 +570,12 @@ mod tasks {
 
     #[test]
     fn strategy_prepend() {
-        let root_dir = get_fixtures_root();
-        let project_path = "tasks/merge-prepend";
+        let workspace_root = get_fixtures_root();
+        let project_source = "tasks/merge-prepend";
         let project = Project::new(
             "id",
-            project_path,
-            &root_dir,
+            project_source,
+            &workspace_root,
             &GlobalProjectConfig {
                 file_groups: None,
                 tasks: Some(HashMap::from([(
@@ -614,9 +617,9 @@ mod tasks {
                         }
                     )])),
                 }),
-                dir: root_dir.join(project_path).canonicalize().unwrap(),
+                root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from(project_path),
+                source: String::from(project_source),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -633,8 +636,8 @@ mod tasks {
                             )),
                             type_of: Some(TaskType::Shell),
                         },
-                        &root_dir,
-                        project_path
+                        &workspace_root,
+                        project_source
                     )
                     .unwrap()
                 )]),
@@ -644,12 +647,12 @@ mod tasks {
 
     #[test]
     fn strategy_all() {
-        let root_dir = get_fixtures_root();
-        let project_path = "tasks/merge-all-strategies";
+        let workspace_root = get_fixtures_root();
+        let project_source = "tasks/merge-all-strategies";
         let project = Project::new(
             "id",
-            project_path,
-            &root_dir,
+            project_source,
+            &workspace_root,
             &GlobalProjectConfig {
                 file_groups: None,
                 tasks: Some(HashMap::from([(
@@ -697,9 +700,9 @@ mod tasks {
                         }
                     )])),
                 }),
-                dir: root_dir.join(project_path).canonicalize().unwrap(),
+                root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
-                location: String::from(project_path),
+                source: String::from(project_source),
                 package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -722,8 +725,8 @@ mod tasks {
                             }),
                             type_of: Some(TaskType::Npm),
                         },
-                        &root_dir,
-                        project_path
+                        &workspace_root,
+                        project_source
                     )
                     .unwrap()
                 )]),

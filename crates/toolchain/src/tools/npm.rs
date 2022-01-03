@@ -130,7 +130,7 @@ impl PackageManager for NpmTool {
         Ok(exec_bin_in_dir(
             self.get_bin_path(),
             vec![if is_ci() { "ci" } else { "install " }],
-            &toolchain.workspace_dir,
+            &toolchain.workspace_root,
         )
         .await?)
     }

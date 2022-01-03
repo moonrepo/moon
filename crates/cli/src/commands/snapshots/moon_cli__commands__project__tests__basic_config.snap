@@ -7,7 +7,7 @@ expression: get_assert_output(&assert)
  [38;5;16m[48;5;111m[1m BASIC [0m
 
  [38;5;249mID:[0m [38;5;111mbasic[0m
- [38;5;249mPath:[0m [38;5;36mbasic[0m
+ [38;5;249mSource:[0m [38;5;36mbasic[0m
 
  [38;5;16m[48;5;15m[1m DEPENDS ON [0m
 

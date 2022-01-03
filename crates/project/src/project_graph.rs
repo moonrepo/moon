@@ -140,13 +140,13 @@ impl ProjectGraph {
             color::id(id),
         );
 
-        // Create project based on ID and location
-        let location = match self.projects_config.get(id) {
+        // Create project based on ID and source
+        let source = match self.projects_config.get(id) {
             Some(path) => path,
             None => return Err(ProjectError::UnconfiguredID(String::from(id))),
         };
 
-        let project = Project::new(id, location, &self.workspace_root, &self.global_config)?;
+        let project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
         let depends_on = project.get_dependencies();
 
         projects.insert(id.to_owned(), project);

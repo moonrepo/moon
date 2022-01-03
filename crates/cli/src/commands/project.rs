@@ -19,7 +19,7 @@ pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Er
     term.write_line("")?;
     term.render_label(Label::Brand, &project.id)?;
     term.render_entry("ID", &color::id(&project.id))?;
-    term.render_entry("Path", &color::path(&project.location))?;
+    term.render_entry("Source", &color::path(&project.source))?;
 
     // Dont show in test snapshots
     if env::var("MOON_TEST").is_err() {
@@ -46,7 +46,7 @@ pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Er
                             "{} {}{}{}",
                             color::id(&dep_id),
                             color::muted_light("("),
-                            color::path(&dep.location),
+                            color::path(&dep.source),
                             color::muted_light(")"),
                         ));
                     }

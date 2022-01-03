@@ -21,24 +21,24 @@ pub type TasksMap = HashMap<TaskID, Task>;
 // project.yml
 fn load_project_config(
     workspace_root: &Path,
-    project_path: &str,
+    project_source: &str,
 ) -> Result<Option<ProjectConfig>, ProjectError> {
     let config_path = workspace_root
-        .join(&project_path)
+        .join(&project_source)
         .join(CONFIG_PROJECT_FILENAME);
 
     trace!(
         target: "moon:project",
         "Attempting to find {} in {}",
         color::path("project.yml"),
-        color::file_path(&workspace_root.join(&project_path)),
+        color::file_path(&workspace_root.join(&project_source)),
     );
 
     if config_path.exists() {
         return match ProjectConfig::load(&config_path) {
             Ok(cfg) => Ok(Some(cfg)),
             Err(error) => Err(ProjectError::InvalidConfigFile(
-                String::from(project_path),
+                String::from(project_source),
                 error,
             )),
         };
@@ -50,22 +50,22 @@ fn load_project_config(
 // package.json
 fn load_package_json(
     workspace_root: &Path,
-    project_path: &str,
+    project_source: &str,
 ) -> Result<Option<PackageJsonValue>, ProjectError> {
-    let package_path = workspace_root.join(&project_path).join("package.json");
+    let package_path = workspace_root.join(&project_source).join("package.json");
 
     trace!(
         target: "moon:project",
         "Attempting to find {} in {}",
         color::path("package.json"),
-        color::file_path(&workspace_root.join(&project_path)),
+        color::file_path(&workspace_root.join(&project_source)),
     );
 
     if package_path.exists() {
         return match PackageJson::load(&package_path) {
             Ok(json) => Ok(Some(json)),
             Err(error) => Err(ProjectError::InvalidPackageJson(
-                String::from(project_path),
+                String::from(project_source),
                 error.to_string(),
             )),
         };
@@ -173,15 +173,15 @@ pub struct Project {
     /// Unique ID for the project. Is the LHS of the `projects` setting.
     pub id: ProjectID,
 
-    /// Relative path of the project from the workspace root. Is the RHS of the `projects` setting.
-    pub location: FilePath,
-
     /// Loaded "package.json", if it exists.
     #[serde(skip)]
     pub package_json: Option<PackageJsonValue>,
 
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
+
+    /// Relative path of the project from the workspace root. Is the RHS of the `projects` setting.
+    pub source: FilePath,
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
@@ -190,27 +190,27 @@ pub struct Project {
 impl Project {
     pub fn new(
         id: &str,
-        location: &str,
+        source: &str,
         workspace_root: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let root = workspace_root.join(&location);
+        let root = workspace_root.join(&source);
 
         debug!(
             target: "moon:project",
             "Loading project from {} (id = {}, path = {})",
             color::file_path(&root),
             color::id(id),
-            color::path(location),
+            color::path(source),
         );
 
         if !root.exists() {
-            return Err(ProjectError::MissingFilePath(String::from(location)));
+            return Err(ProjectError::MissingFilePath(String::from(source)));
         }
 
         let root = root.canonicalize().unwrap();
-        let config = load_project_config(workspace_root, location)?;
-        let package_json = load_package_json(workspace_root, location)?;
+        let config = load_project_config(workspace_root, source)?;
+        let package_json = load_package_json(workspace_root, source)?;
         let file_groups = create_file_groups_from_config(&config, global_config, &root);
         let tasks = create_tasks_from_config(&config, global_config, workspace_root, &root, id)?;
 
@@ -218,9 +218,9 @@ impl Project {
             config,
             file_groups,
             id: String::from(id),
-            location: String::from(location),
             package_json,
             root,
+            source: String::from(source),
             tasks,
         })
     }

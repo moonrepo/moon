@@ -42,7 +42,7 @@ impl FileGroup {
         self.walk(false)
     }
 
-    /// Returns the file group as a reduced list of file globs (as-is),
+    /// Returns the file group as a list of file globs (as-is),
     /// relative to the project root.
     pub fn globs(&self) -> Result<Vec<String>, ProjectError> {
         let mut globs = vec![];

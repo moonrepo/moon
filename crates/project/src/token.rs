@@ -1,7 +1,7 @@
 use crate::errors::{ProjectError, TokenError};
 use crate::file_group::FileGroup;
-use moon_logger::{color, trace};
-use moon_utils::regex::TOKEN_FUNC_PATTERN;
+use moon_logger::{color, trace, warn};
+use moon_utils::regex::{TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN};
 use std::collections::HashMap;
 
 #[derive(PartialEq)]
@@ -147,6 +147,12 @@ impl<'a> TokenResolver<'a> {
                     )))
                 }
             };
+        } else if value.contains('@') && TOKEN_FUNC_ANYWHERE_PATTERN.is_match(value) {
+            warn!(
+                target: "moon:project:token",
+                "Found a token function in {} with other content. Token functions *must* be used literally as the only value.",
+                color::path(value)
+            );
         }
 
         Ok(vec![])
@@ -226,6 +232,17 @@ mod tests {
         let resolver = TokenResolver::for_args(&file_groups);
 
         resolver.resolve("@globs(no_globs)").unwrap();
+    }
+
+    #[test]
+    fn doesnt_match_when_not_alone() {
+        let file_groups = create_file_groups(&get_project_root());
+        let resolver = TokenResolver::for_args(&file_groups);
+
+        assert_eq!(
+            resolver.resolve("foo/@dirs(static)/bar").unwrap(),
+            Vec::<String>::new()
+        );
     }
 
     mod args {

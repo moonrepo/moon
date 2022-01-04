@@ -3,7 +3,7 @@ use moon_config::{
     TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_project::{FileGroup, Project, ProjectError, Target, Task, TokenResolver};
-use moon_utils::test::get_fixtures_root;
+use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -314,8 +314,12 @@ mod tasks {
 
         let mut task = Task::from_config(target, config);
         task.expand_args(TokenResolver::for_args(&file_groups))?;
-        task.expand_inputs(workspace_root, &project_root)?;
-        task.expand_outputs(workspace_root, &project_root)?;
+        task.expand_inputs(
+            TokenResolver::for_inputs(&file_groups),
+            workspace_root,
+            &project_root,
+        )?;
+        task.expand_outputs(TokenResolver::for_outputs(), workspace_root, &project_root)?;
 
         Ok(task)
     }
@@ -742,15 +746,15 @@ mod tasks {
     mod tokens {
         use super::*;
         use pretty_assertions::assert_eq;
+        use std::collections::HashSet;
+        use std::path::PathBuf;
 
         #[test]
         fn expands_args() {
-            let workspace_root = get_fixtures_root();
-            let project_source = "base/files-and-dirs";
             let project = Project::new(
                 "id",
-                project_source,
-                &workspace_root,
+                "base/files-and-dirs",
+                &get_fixtures_root(),
                 &GlobalProjectConfig {
                     file_groups: Some(create_file_groups_config()),
                     tasks: Some(HashMap::from([(
@@ -795,6 +799,68 @@ mod tasks {
                     "dir".to_owned(),
                 ],
             )
+        }
+
+        #[test]
+        fn expands_inputs() {
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
+            let project = Project::new(
+                "id",
+                "files-and-dirs",
+                &workspace_root,
+                &GlobalProjectConfig {
+                    file_groups: Some(create_file_groups_config()),
+                    tasks: Some(HashMap::from([(
+                        String::from("test"),
+                        TaskConfig {
+                            args: None,
+                            command: Some(String::from("test")),
+                            deps: None,
+                            inputs: Some(vec![
+                                "file.ts".to_owned(),
+                                "@dirs(static)".to_owned(),
+                                "@files(static)".to_owned(),
+                                "@globs(globs)".to_owned(),
+                                "@root(static)".to_owned(),
+                                "/package.json".to_owned(),
+                            ]),
+                            outputs: None,
+                            options: None,
+                            type_of: None,
+                        },
+                    )])),
+                },
+            )
+            .unwrap();
+
+            let task = project.tasks.get("test").unwrap();
+
+            assert_eq!(
+                task.input_globs,
+                vec![
+                    project_root.join("**/*.{ts,tsx}").to_string_lossy(),
+                    project_root.join("*.js").to_string_lossy()
+                ],
+            );
+
+            let a: HashSet<PathBuf> =
+                HashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
+            let b: HashSet<PathBuf> = HashSet::from_iter(
+                vec![
+                    project_root.join("file.ts"),
+                    project_root.join("dir"),
+                    project_root.join("dir/subdir"),
+                    project_root.join("file.ts"),
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts"),
+                    workspace_root.join("package.json"),
+                ]
+                .iter()
+                .map(PathBuf::from),
+            );
+
+            assert_eq!(a, b);
         }
     }
 }

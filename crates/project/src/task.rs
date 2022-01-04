@@ -146,7 +146,9 @@ impl Task {
         let mut args = vec![];
 
         for arg in &self.args {
-            args.extend(token_resolver.resolve(arg)?);
+            for tokenized_arg in token_resolver.resolve(arg)? {
+                args.push(tokenized_arg);
+            }
         }
 
         self.args = args;
@@ -157,6 +159,7 @@ impl Task {
     /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_inputs(
         &mut self,
+        token_resolver: TokenResolver,
         workspace_root: &Path,
         project_root: &Path,
     ) -> Result<(), ProjectError> {
@@ -166,17 +169,24 @@ impl Task {
             color::id(&self.target),
         );
 
-        for file in &self.inputs {
+        let mut inputs = vec![];
+
+        for input in &self.inputs {
+            for tokenized_input in token_resolver.resolve(input)? {
+                inputs.push(tokenized_input);
+            }
+        }
+
+        for input in &inputs {
             // Globs are separate from paths as we can't canonicalize it,
-            // and we need them to be absolute for it to match correctly:
-            // https://github.com/rust-lang-nursery/glob/issues/106
-            if is_glob(file) {
+            // and we need them to be absolute for it to match correctly.
+            if is_glob(input) {
                 self.input_globs.push(String::from(
-                    self.expand_io_path(workspace_root, project_root, file)
+                    self.expand_io_path(workspace_root, project_root, input)
                         .to_string_lossy(),
                 ));
             } else {
-                let file_path = self.expand_io_path(workspace_root, project_root, file);
+                let file_path = self.expand_io_path(workspace_root, project_root, input);
 
                 self.input_paths
                     .insert(file_path.canonicalize().map_err(|_| {
@@ -191,6 +201,7 @@ impl Task {
     /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_outputs(
         &mut self,
+        _token_resolver: TokenResolver,
         workspace_root: &Path,
         project_root: &Path,
     ) -> Result<(), ProjectError> {
@@ -200,14 +211,14 @@ impl Task {
             color::id(&self.target),
         );
 
-        for file in &self.outputs {
-            if is_glob(file) {
+        for output in &self.outputs {
+            if is_glob(output) {
                 return Err(ProjectError::NoOutputGlob(
-                    file.to_owned(),
+                    output.to_owned(),
                     self.target.clone(),
                 ));
             } else {
-                let file_path = self.expand_io_path(workspace_root, project_root, file);
+                let file_path = self.expand_io_path(workspace_root, project_root, output);
 
                 self.output_paths
                     .insert(file_path.canonicalize().map_err(|_| {
@@ -313,11 +324,10 @@ impl Task {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::token::TokenResolver;
     use crate::Target;
     use moon_config::TaskConfig;
     use moon_utils::test::get_fixtures_dir;
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
 
     fn create_expanded_task(
         workspace_root: &Path,
@@ -329,8 +339,15 @@ mod tests {
             &config.unwrap_or_default(),
         );
 
-        task.expand_inputs(workspace_root, project_root)?;
-        task.expand_outputs(workspace_root, project_root)?;
+        task.expand_args(TokenResolver::for_args(&HashMap::new()))?;
+
+        task.expand_inputs(
+            TokenResolver::for_inputs(&HashMap::new()),
+            workspace_root,
+            project_root,
+        )?;
+
+        task.expand_outputs(TokenResolver::for_outputs(), workspace_root, project_root)?;
 
         Ok(task)
     }

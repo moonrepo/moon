@@ -70,7 +70,7 @@ impl TokenType {
 }
 
 pub struct TokenResolver<'a> {
-    file_groups: &'a HashMap<String, FileGroup>,
+    file_groups: Option<&'a HashMap<String, FileGroup>>,
 
     context: ResolverType,
 }
@@ -78,21 +78,21 @@ pub struct TokenResolver<'a> {
 impl<'a> TokenResolver<'a> {
     pub fn for_args(file_groups: &'a HashMap<String, FileGroup>) -> TokenResolver {
         TokenResolver {
-            file_groups,
+            file_groups: Some(file_groups),
             context: ResolverType::Args,
         }
     }
 
     pub fn for_inputs(file_groups: &'a HashMap<String, FileGroup>) -> TokenResolver {
         TokenResolver {
-            file_groups,
+            file_groups: Some(file_groups),
             context: ResolverType::Inputs,
         }
     }
 
-    pub fn for_outputs(file_groups: &'a HashMap<String, FileGroup>) -> TokenResolver {
+    pub fn for_outputs() -> TokenResolver<'a> {
         TokenResolver {
-            file_groups,
+            file_groups: None,
             context: ResolverType::Outputs,
         }
     }
@@ -160,12 +160,13 @@ impl<'a> TokenResolver<'a> {
         token_type.check_context(&self.context)?;
 
         let mut files = vec![];
+        let file_groups = self.file_groups.unwrap();
 
         let mut replace_token = |token: &str, replacement: &str| {
             files.push(String::from(value).replace(token, replacement));
         };
 
-        let get_file_group = |token: &str, id: &str| match self.file_groups.get(id) {
+        let get_file_group = |token: &str, id: &str| match file_groups.get(id) {
             Some(fg) => Ok(fg),
             None => Err(ProjectError::Token(TokenError::UnknownFileGroup(
                 token.to_owned(),
@@ -389,8 +390,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "InvalidTokenContext(\"@dirs\", \"outputs\")")]
         fn doesnt_support_dirs() {
-            let file_groups = create_file_groups(&get_project_root());
-            let resolver = TokenResolver::for_outputs(&file_groups);
+            let resolver = TokenResolver::for_outputs();
 
             resolver.resolve("@dirs(static)").unwrap();
         }
@@ -398,8 +398,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "InvalidTokenContext(\"@files\", \"outputs\")")]
         fn doesnt_support_files() {
-            let file_groups = create_file_groups(&get_project_root());
-            let resolver = TokenResolver::for_outputs(&file_groups);
+            let resolver = TokenResolver::for_outputs();
 
             resolver.resolve("@files(static)").unwrap();
         }
@@ -407,8 +406,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "InvalidTokenContext(\"@globs\", \"outputs\")")]
         fn doesnt_support_globs() {
-            let file_groups = create_file_groups(&get_project_root());
-            let resolver = TokenResolver::for_outputs(&file_groups);
+            let resolver = TokenResolver::for_outputs();
 
             resolver.resolve("@globs(globs)").unwrap();
         }
@@ -416,8 +414,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "InvalidTokenContext(\"@root\", \"outputs\")")]
         fn doesnt_support_root() {
-            let file_groups = create_file_groups(&get_project_root());
-            let resolver = TokenResolver::for_outputs(&file_groups);
+            let resolver = TokenResolver::for_outputs();
 
             resolver.resolve("@root(static)").unwrap();
         }

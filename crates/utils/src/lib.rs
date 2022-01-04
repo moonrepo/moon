@@ -1,4 +1,5 @@
 pub mod fs;
+pub mod regex;
 pub mod test;
 
 use moon_logger::{color, trace};

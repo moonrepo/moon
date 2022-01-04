@@ -44,4 +44,22 @@ pub enum ProjectError {
 
     #[error(transparent)]
     GlobSet(#[from] globset::Error),
+
+    #[error(transparent)]
+    Token(#[from] TokenError),
+}
+
+#[derive(Error, Debug)]
+pub enum TokenError {
+    #[error("Token <symbol>{0}</symbol> cannot be used within <id>{1}</id>.")]
+    InvalidTokenContext(String, String), // token, context
+
+    #[error("No globs defined in file group <id>{0}</id>.")]
+    NoGlobs(String), // file group
+
+    #[error("Unknown file group <id>{1}</> used in token <symbol>{0}</symbol>.")]
+    UnknownFileGroup(String, String), // token, file group
+
+    #[error("Unknown token function <symbol>{0}</symbol>.")]
+    UnknownTokenFunc(String), // token
 }

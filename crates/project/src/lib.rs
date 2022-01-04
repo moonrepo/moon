@@ -6,6 +6,8 @@ mod project_graph;
 mod target;
 mod task;
 mod task_graph;
+pub mod test;
+mod token;
 mod types;
 
 pub use constants::ROOT_NODE_ID;
@@ -22,6 +24,9 @@ pub use moon_config::{TargetID, TaskID, TaskType};
 pub use target::Target;
 pub use task::{Task, TaskOptions};
 pub use task_graph::TaskGraph;
+
+// Tokens
+pub use token::{ResolverType, TokenResolver, TokenType};
 
 // File groups
 pub use file_group::FileGroup;

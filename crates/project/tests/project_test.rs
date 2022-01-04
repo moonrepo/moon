@@ -2,15 +2,15 @@ use moon_config::{
     GlobalProjectConfig, PackageJson, ProjectConfig, ProjectMetadataConfig, ProjectType, TargetID,
     TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_project::{FileGroup, Project, ProjectError, Target, Task};
-use moon_utils::test::get_fixtures_root;
+use moon_project::{FileGroup, Project, ProjectError, Target, Task, TokenResolver};
+use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::HashMap;
 use std::path::Path;
 
 fn mock_file_groups(root: &Path) -> HashMap<String, FileGroup> {
     HashMap::from([(
         String::from("sources"),
-        FileGroup::new(vec![String::from("src/**/*")], root),
+        FileGroup::new("sources", vec![String::from("src/**/*")], root),
     )])
 }
 
@@ -107,7 +107,7 @@ fn basic_config() {
     let mut file_groups = mock_file_groups(&project_root);
     file_groups.insert(
         String::from("tests"),
-        FileGroup::new(vec![String::from("**/*_test.rs")], &project_root),
+        FileGroup::new("tests", vec![String::from("**/*_test.rs")], &project_root),
     );
 
     assert_eq!(
@@ -203,6 +203,7 @@ fn overrides_global_file_groups() {
             file_groups: HashMap::from([(
                 String::from("tests"),
                 FileGroup::new(
+                    "tests",
                     vec![String::from("**/*_test.rs")],
                     &workspace_root.join("projects/basic")
                 )
@@ -251,6 +252,8 @@ fn has_package_json() {
 
 mod tasks {
     use super::*;
+    use moon_project::test::{create_file_groups, create_file_groups_config};
+    use pretty_assertions::assert_eq;
 
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {
@@ -307,10 +310,16 @@ mod tasks {
         project_source: &str,
     ) -> Result<Task, ProjectError> {
         let project_root = workspace_root.join(project_source);
+        let file_groups = create_file_groups(&project_root);
 
         let mut task = Task::from_config(target, config);
-        task.expand_inputs(workspace_root, &project_root)?;
-        task.expand_outputs(workspace_root, &project_root)?;
+        task.expand_args(TokenResolver::for_args(&file_groups))?;
+        task.expand_inputs(
+            TokenResolver::for_inputs(&file_groups),
+            workspace_root,
+            &project_root,
+        )?;
+        task.expand_outputs(TokenResolver::for_outputs(), workspace_root, &project_root)?;
 
         Ok(task)
     }
@@ -732,5 +741,126 @@ mod tasks {
                 )]),
             }
         );
+    }
+
+    mod tokens {
+        use super::*;
+        use pretty_assertions::assert_eq;
+        use std::collections::HashSet;
+        use std::path::PathBuf;
+
+        #[test]
+        fn expands_args() {
+            let project = Project::new(
+                "id",
+                "base/files-and-dirs",
+                &get_fixtures_root(),
+                &GlobalProjectConfig {
+                    file_groups: Some(create_file_groups_config()),
+                    tasks: Some(HashMap::from([(
+                        String::from("test"),
+                        TaskConfig {
+                            args: Some(vec![
+                                "--dirs".to_owned(),
+                                "@dirs(static)".to_owned(),
+                                "--files".to_owned(),
+                                "@files(static)".to_owned(),
+                                "--globs".to_owned(),
+                                "@globs(globs)".to_owned(),
+                                "--root".to_owned(),
+                                "@root(static)".to_owned(),
+                            ]),
+                            command: Some(String::from("test")),
+                            deps: None,
+                            inputs: None,
+                            outputs: None,
+                            options: None,
+                            type_of: None,
+                        },
+                    )])),
+                },
+            )
+            .unwrap();
+
+            assert_eq!(
+                *project.tasks.get("test").unwrap().args,
+                vec![
+                    "--dirs".to_owned(),
+                    "dir".to_owned(),
+                    "dir/subdir".to_owned(),
+                    "--files".to_owned(),
+                    "file.ts".to_owned(),
+                    "dir/other.tsx".to_owned(),
+                    "dir/subdir/another.ts".to_owned(),
+                    "--globs".to_owned(),
+                    "**/*.{ts,tsx}".to_owned(),
+                    "*.js".to_owned(),
+                    "--root".to_owned(),
+                    "dir".to_owned(),
+                ],
+            )
+        }
+
+        #[test]
+        fn expands_inputs() {
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
+            let project = Project::new(
+                "id",
+                "files-and-dirs",
+                &workspace_root,
+                &GlobalProjectConfig {
+                    file_groups: Some(create_file_groups_config()),
+                    tasks: Some(HashMap::from([(
+                        String::from("test"),
+                        TaskConfig {
+                            args: None,
+                            command: Some(String::from("test")),
+                            deps: None,
+                            inputs: Some(vec![
+                                "file.ts".to_owned(),
+                                "@dirs(static)".to_owned(),
+                                "@files(static)".to_owned(),
+                                "@globs(globs)".to_owned(),
+                                "@root(static)".to_owned(),
+                                "/package.json".to_owned(),
+                            ]),
+                            outputs: None,
+                            options: None,
+                            type_of: None,
+                        },
+                    )])),
+                },
+            )
+            .unwrap();
+
+            let task = project.tasks.get("test").unwrap();
+
+            assert_eq!(
+                task.input_globs,
+                vec![
+                    project_root.join("**/*.{ts,tsx}").to_string_lossy(),
+                    project_root.join("*.js").to_string_lossy()
+                ],
+            );
+
+            let a: HashSet<PathBuf> =
+                HashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
+            let b: HashSet<PathBuf> = HashSet::from_iter(
+                vec![
+                    project_root.join("file.ts"),
+                    project_root.join("dir"),
+                    project_root.join("dir/subdir"),
+                    project_root.join("file.ts"),
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts"),
+                    workspace_root.join("package.json"),
+                ]
+                .iter()
+                .map(PathBuf::from),
+            );
+
+            assert_eq!(a, b);
+        }
     }
 }

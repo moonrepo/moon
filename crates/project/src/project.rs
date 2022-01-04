@@ -2,6 +2,7 @@ use crate::errors::ProjectError;
 use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
+use crate::token::TokenResolver;
 use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
@@ -86,7 +87,7 @@ fn create_file_groups_from_config(
         for (group_id, files) in global_file_groups {
             file_groups.insert(
                 group_id.to_owned(),
-                FileGroup::new(files.to_owned(), project_root),
+                FileGroup::new(group_id, files.to_owned(), project_root),
             );
         }
     }
@@ -105,7 +106,7 @@ fn create_file_groups_from_config(
                     // Insert a group
                     file_groups.insert(
                         group_id.clone(),
-                        FileGroup::new(files.to_owned(), project_root),
+                        FileGroup::new(group_id, files.to_owned(), project_root),
                     );
                 }
             }
@@ -121,6 +122,7 @@ fn create_tasks_from_config(
     workspace_root: &Path,
     project_root: &Path,
     project_id: &str,
+    file_groups: &FileGroupsMap,
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
 
@@ -152,10 +154,17 @@ fn create_tasks_from_config(
         }
     }
 
-    // Expand inputs and outputs after all tasks have been created
+    // Expand args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
-        task.expand_inputs(workspace_root, project_root)?;
-        task.expand_outputs(workspace_root, project_root)?;
+        task.expand_args(TokenResolver::for_args(file_groups))?;
+
+        task.expand_inputs(
+            TokenResolver::for_inputs(file_groups),
+            workspace_root,
+            project_root,
+        )?;
+
+        task.expand_outputs(TokenResolver::for_outputs(), workspace_root, project_root)?;
     }
 
     Ok(tasks)
@@ -212,7 +221,14 @@ impl Project {
         let config = load_project_config(workspace_root, source)?;
         let package_json = load_package_json(workspace_root, source)?;
         let file_groups = create_file_groups_from_config(&config, global_config, &root);
-        let tasks = create_tasks_from_config(&config, global_config, workspace_root, &root, id)?;
+        let tasks = create_tasks_from_config(
+            &config,
+            global_config,
+            workspace_root,
+            &root,
+            id,
+            &file_groups,
+        )?;
 
         Ok(Project {
             config,

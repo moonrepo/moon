@@ -1,19 +1,9 @@
 use crate::errors::create_validation_error;
-use lazy_static::lazy_static;
-use regex::Regex;
+use moon_utils::regex::{matches_id, matches_target};
 use semver::Version;
 use std::collections::HashMap;
 use std::path::Path;
 use validator::{Validate, ValidationError, ValidationErrors};
-
-lazy_static! {
-    // Capture group for IDs/names/etc
-    static ref ID_GROUP: &'static str = "([A-Za-z]{1}[0-9A-Za-z_-]*)";
-
-    // Regex patterns based on the group above
-    pub static ref ID_PATTERN: Regex = Regex::new(&format!("^{}$", ID_GROUP.to_string())).unwrap();
-    pub static ref TARGET_PATTERN: Regex = Regex::new(&format!("^{}:{}$", ID_GROUP.to_string(), ID_GROUP.to_string())).unwrap();
-}
 
 // Extend validator lib
 pub trait VecValidate {
@@ -101,7 +91,7 @@ pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), Validat
 
 // Validate the value is a project ID, task ID, file group, etc.
 pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
-    if !ID_PATTERN.is_match(id) {
+    if !matches_id(id) {
         return Err(create_validation_error(
             "invalid_id",
             key,
@@ -114,7 +104,7 @@ pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
 
 // Validate the value is a target in the format of "project_id:task_id".
 pub fn validate_target(key: &str, target: &str) -> Result<(), ValidationError> {
-    if !TARGET_PATTERN.is_match(target) {
+    if !matches_target(target) {
         return Err(create_validation_error(
             "invalid_target",
             key,

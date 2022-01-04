@@ -5,4 +5,6 @@ edition = "2021"
 
 [dependencies]
 moon_logger = { path = "../logger" }
+lazy_static = "1.4"
+regex = "1.5"
 tokio = { version = "1.14", features = ["full"] }

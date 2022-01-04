@@ -6,6 +6,7 @@ mod project_graph;
 mod target;
 mod task;
 mod task_graph;
+pub mod test;
 mod token;
 mod types;
 
@@ -25,7 +26,7 @@ pub use task::{Task, TaskOptions};
 pub use task_graph::TaskGraph;
 
 // Tokens
-pub use token::TokenType;
+pub use token::{ResolverType, TokenResolver, TokenType};
 
 // File groups
 pub use file_group::FileGroup;

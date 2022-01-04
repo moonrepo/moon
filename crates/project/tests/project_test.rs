@@ -2,7 +2,7 @@ use moon_config::{
     GlobalProjectConfig, PackageJson, ProjectConfig, ProjectMetadataConfig, ProjectType, TargetID,
     TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_project::{FileGroup, Project, ProjectError, Target, Task};
+use moon_project::{FileGroup, Project, ProjectError, Target, Task, TokenResolver};
 use moon_utils::test::get_fixtures_root;
 use std::collections::HashMap;
 use std::path::Path;
@@ -252,6 +252,7 @@ fn has_package_json() {
 
 mod tasks {
     use super::*;
+    use moon_project::test::{create_file_groups, create_file_groups_config};
     use pretty_assertions::assert_eq;
 
     fn mock_task_config(command: &str) -> TaskConfig {
@@ -309,10 +310,12 @@ mod tasks {
         project_source: &str,
     ) -> Result<Task, ProjectError> {
         let project_root = workspace_root.join(project_source);
+        let file_groups = create_file_groups(&project_root);
 
         let mut task = Task::from_config(target, config);
-        // task.expand_inputs(workspace_root, &project_root)?;
-        // task.expand_outputs(workspace_root, &project_root)?;
+        task.expand_args(TokenResolver::for_args(&file_groups))?;
+        task.expand_inputs(workspace_root, &project_root)?;
+        task.expand_outputs(workspace_root, &project_root)?;
 
         Ok(task)
     }
@@ -734,5 +737,64 @@ mod tasks {
                 )]),
             }
         );
+    }
+
+    mod tokens {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn expands_args() {
+            let workspace_root = get_fixtures_root();
+            let project_source = "base/files-and-dirs";
+            let project = Project::new(
+                "id",
+                project_source,
+                &workspace_root,
+                &GlobalProjectConfig {
+                    file_groups: Some(create_file_groups_config()),
+                    tasks: Some(HashMap::from([(
+                        String::from("test"),
+                        TaskConfig {
+                            args: Some(vec![
+                                "--dirs".to_owned(),
+                                "@dirs(static)".to_owned(),
+                                "--files".to_owned(),
+                                "@files(static)".to_owned(),
+                                "--globs".to_owned(),
+                                "@globs(globs)".to_owned(),
+                                "--root".to_owned(),
+                                "@root(static)".to_owned(),
+                            ]),
+                            command: Some(String::from("test")),
+                            deps: None,
+                            inputs: None,
+                            outputs: None,
+                            options: None,
+                            type_of: None,
+                        },
+                    )])),
+                },
+            )
+            .unwrap();
+
+            assert_eq!(
+                *project.tasks.get("test").unwrap().args,
+                vec![
+                    "--dirs".to_owned(),
+                    "dir".to_owned(),
+                    "dir/subdir".to_owned(),
+                    "--files".to_owned(),
+                    "file.ts".to_owned(),
+                    "dir/other.tsx".to_owned(),
+                    "dir/subdir/another.ts".to_owned(),
+                    "--globs".to_owned(),
+                    "**/*.{ts,tsx}".to_owned(),
+                    "*.js".to_owned(),
+                    "--root".to_owned(),
+                    "dir".to_owned(),
+                ],
+            )
+        }
     }
 }

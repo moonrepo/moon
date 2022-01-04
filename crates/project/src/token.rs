@@ -1,5 +1,6 @@
 use crate::errors::{ProjectError, TokenError};
 use crate::file_group::FileGroup;
+use moon_logger::{color, trace};
 use moon_utils::regex::TOKEN_FUNC_PATTERN;
 use std::collections::HashMap;
 
@@ -115,6 +116,14 @@ impl<'a> TokenResolver<'a> {
             let func = matches.get(1).unwrap().as_str(); // name
             let arg = matches.get(2).unwrap().as_str(); // arg
 
+            trace!(
+                target: "moon:project:token",
+                "Resolving token {} for {} value {}",
+                color::id(token),
+                self.context.context_label(),
+                color::path(value)
+            );
+
             return match func {
                 "dirs" => self.replace_file_group_tokens(
                     value,
@@ -192,63 +201,18 @@ impl<'a> TokenResolver<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test::create_file_groups;
     use moon_utils::test::get_fixtures_dir;
-    use std::collections::HashMap;
+    use std::path::PathBuf;
 
-    fn create_file_groups() -> HashMap<String, FileGroup> {
-        let project_root = get_fixtures_dir("base").join("files-and-dirs");
-        let mut map = HashMap::new();
-
-        map.insert(
-            String::from("static"),
-            FileGroup::new(
-                "static",
-                vec![
-                    "file.ts".to_owned(),
-                    "dir".to_owned(),
-                    "dir/other.tsx".to_owned(),
-                    "dir/subdir".to_owned(),
-                    "dir/subdir/another.ts".to_owned(),
-                ],
-                &project_root,
-            ),
-        );
-
-        map.insert(
-            String::from("dirs_glob"),
-            FileGroup::new("dirs_glob", vec!["**/*".to_owned()], &project_root),
-        );
-
-        map.insert(
-            String::from("files_glob"),
-            FileGroup::new(
-                "files_glob",
-                vec!["**/*.{ts,tsx}".to_owned()],
-                &project_root,
-            ),
-        );
-
-        map.insert(
-            String::from("globs"),
-            FileGroup::new(
-                "globs",
-                vec!["**/*.{ts,tsx}".to_owned(), "*.js".to_owned()],
-                &project_root,
-            ),
-        );
-
-        map.insert(
-            String::from("no_globs"),
-            FileGroup::new("no_globs", vec!["config.js".to_owned()], &project_root),
-        );
-
-        map
+    fn get_project_root() -> PathBuf {
+        get_fixtures_dir("base").join("files-and-dirs")
     }
 
     #[test]
     #[should_panic(expected = "UnknownFileGroup(\"@dirs(unknown)\", \"unknown\")")]
     fn errors_for_unknown_file_group() {
-        let file_groups = create_file_groups();
+        let file_groups = create_file_groups(&get_project_root());
         let resolver = TokenResolver::for_args(&file_groups);
 
         resolver.resolve("@dirs(unknown)").unwrap();
@@ -257,7 +221,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "NoGlobs(\"no_globs\")")]
     fn errors_if_no_globs_in_file_group() {
-        let file_groups = create_file_groups();
+        let file_groups = create_file_groups(&get_project_root());
         let resolver = TokenResolver::for_args(&file_groups);
 
         resolver.resolve("@globs(no_globs)").unwrap();
@@ -268,7 +232,7 @@ mod tests {
 
         #[test]
         fn supports_dirs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_args(&file_groups);
 
             assert_eq!(
@@ -279,7 +243,7 @@ mod tests {
 
         #[test]
         fn supports_dirs_with_globs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_args(&file_groups);
 
             assert_eq!(
@@ -290,7 +254,7 @@ mod tests {
 
         #[test]
         fn supports_files() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_args(&file_groups);
 
             assert_eq!(
@@ -305,7 +269,7 @@ mod tests {
 
         #[test]
         fn supports_files_with_globs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_args(&file_groups);
 
             assert_eq!(
@@ -320,7 +284,7 @@ mod tests {
 
         #[test]
         fn supports_globs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_args(&file_groups);
 
             assert_eq!(
@@ -331,7 +295,7 @@ mod tests {
 
         #[test]
         fn supports_root() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_args(&file_groups);
 
             assert_eq!(
@@ -346,7 +310,7 @@ mod tests {
 
         #[test]
         fn supports_dirs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_inputs(&file_groups);
 
             assert_eq!(
@@ -357,7 +321,7 @@ mod tests {
 
         #[test]
         fn supports_dirs_with_globs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_inputs(&file_groups);
 
             assert_eq!(
@@ -368,7 +332,7 @@ mod tests {
 
         #[test]
         fn supports_files() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_inputs(&file_groups);
 
             assert_eq!(
@@ -383,7 +347,7 @@ mod tests {
 
         #[test]
         fn supports_files_with_globs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_inputs(&file_groups);
 
             assert_eq!(
@@ -398,7 +362,7 @@ mod tests {
 
         #[test]
         fn supports_globs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_inputs(&file_groups);
 
             assert_eq!(
@@ -409,7 +373,7 @@ mod tests {
 
         #[test]
         fn supports_root() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_inputs(&file_groups);
 
             assert_eq!(
@@ -425,7 +389,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "InvalidTokenContext(\"@dirs\", \"outputs\")")]
         fn doesnt_support_dirs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_outputs(&file_groups);
 
             resolver.resolve("@dirs(static)").unwrap();
@@ -434,7 +398,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "InvalidTokenContext(\"@files\", \"outputs\")")]
         fn doesnt_support_files() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_outputs(&file_groups);
 
             resolver.resolve("@files(static)").unwrap();
@@ -443,7 +407,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "InvalidTokenContext(\"@globs\", \"outputs\")")]
         fn doesnt_support_globs() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_outputs(&file_groups);
 
             resolver.resolve("@globs(globs)").unwrap();
@@ -452,7 +416,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "InvalidTokenContext(\"@root\", \"outputs\")")]
         fn doesnt_support_root() {
-            let file_groups = create_file_groups();
+            let file_groups = create_file_groups(&get_project_root());
             let resolver = TokenResolver::for_outputs(&file_groups);
 
             resolver.resolve("@root(static)").unwrap();

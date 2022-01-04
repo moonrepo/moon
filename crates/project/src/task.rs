@@ -5,7 +5,7 @@ use globset::{Glob, GlobSetBuilder};
 use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_logger::{color, debug};
+use moon_logger::{color, debug, trace};
 use moon_utils::fs::is_glob;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -118,7 +118,7 @@ impl Task {
         };
 
         debug!(
-            target: "moon:project",
+            target: "moon:project:task",
             "Creating task {} for command {}",
             color::id(&target),
             color::shell(&task.command)
@@ -137,11 +137,19 @@ impl Task {
 
     /// Expand the args list to resolve tokens, relative to the project root.
     pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
+        trace!(
+            target: "moon:project:task",
+            "Expanding args for task {}",
+            color::id(&self.target),
+        );
+
         let mut args = vec![];
 
         for arg in &self.args {
             args.extend(token_resolver.resolve(arg)?);
         }
+
+        self.args = args;
 
         Ok(())
     }
@@ -152,6 +160,12 @@ impl Task {
         workspace_root: &Path,
         project_root: &Path,
     ) -> Result<(), ProjectError> {
+        trace!(
+            target: "moon:project:task",
+            "Expanding inputs for task {}",
+            color::id(&self.target),
+        );
+
         for file in &self.inputs {
             // Globs are separate from paths as we can't canonicalize it,
             // and we need them to be absolute for it to match correctly:
@@ -180,6 +194,12 @@ impl Task {
         workspace_root: &Path,
         project_root: &Path,
     ) -> Result<(), ProjectError> {
+        trace!(
+            target: "moon:project:task",
+            "Expanding outputs for task {}",
+            color::id(&self.target),
+        );
+
         for file in &self.outputs {
             if is_glob(file) {
                 return Err(ProjectError::NoOutputGlob(
@@ -293,53 +313,53 @@ impl Task {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::token::TokenResolver;
     use crate::Target;
     use moon_config::TaskConfig;
     use moon_utils::test::get_fixtures_dir;
     use std::collections::HashSet;
 
+    fn create_expanded_task(
+        workspace_root: &Path,
+        project_root: &Path,
+        config: Option<TaskConfig>,
+    ) -> Result<Task, ProjectError> {
+        let mut task = Task::from_config(
+            Target::format("basic", "lint").unwrap(),
+            &config.unwrap_or_default(),
+        );
+
+        task.expand_inputs(workspace_root, project_root)?;
+        task.expand_outputs(workspace_root, project_root)?;
+
+        Ok(task)
+    }
+
+    #[test]
+    #[should_panic(expected = "NoOutputGlob")]
+    fn errors_for_output_glob() {
+        let workspace_root = get_fixtures_dir("projects");
+        let project_root = workspace_root.join("basic");
+
+        create_expanded_task(
+            &workspace_root,
+            &project_root,
+            Some(TaskConfig {
+                outputs: Some(vec![String::from("some/**/glob")]),
+                ..TaskConfig::default()
+            }),
+        )
+        .unwrap();
+    }
+
     mod is_affected {
         use super::*;
-
-        fn create_expanded_test(
-            workspace_root: &Path,
-            project_root: &Path,
-            config: Option<TaskConfig>,
-        ) -> Result<Task, ProjectError> {
-            let mut task = Task::from_config(
-                Target::format("basic", "lint").unwrap(),
-                &config.unwrap_or_default(),
-            );
-
-            // TODO args
-            task.expand_inputs(workspace_root, project_root)?;
-            task.expand_outputs(workspace_root, project_root)?;
-
-            Ok(task)
-        }
-
-        #[test]
-        #[should_panic(expected = "NoOutputGlob")]
-        fn errors_for_output_glob() {
-            let workspace_root = get_fixtures_dir("projects");
-            let project_root = workspace_root.join("basic");
-
-            create_expanded_test(
-                &workspace_root,
-                &project_root,
-                Some(TaskConfig {
-                    outputs: Some(vec![String::from("some/**/glob")]),
-                    ..TaskConfig::default()
-                }),
-            )
-            .unwrap();
-        }
 
         #[test]
         fn returns_true_if_empty_inputs() {
             let workspace_root = get_fixtures_dir("projects");
             let project_root = workspace_root.join("basic");
-            let task = create_expanded_test(&workspace_root, &project_root, None).unwrap();
+            let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
 
             assert!(task.is_affected(&HashSet::new()).unwrap());
         }
@@ -348,7 +368,7 @@ mod tests {
         fn returns_true_if_matches_file() {
             let workspace_root = get_fixtures_dir("projects");
             let project_root = workspace_root.join("basic");
-            let task = create_expanded_test(
+            let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
@@ -368,7 +388,7 @@ mod tests {
         fn returns_true_if_matches_glob() {
             let workspace_root = get_fixtures_dir("projects");
             let project_root = workspace_root.join("basic");
-            let task = create_expanded_test(
+            let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
@@ -388,7 +408,7 @@ mod tests {
         fn returns_true_when_referencing_root_files() {
             let workspace_root = get_fixtures_dir("projects");
             let project_root = workspace_root.join("basic");
-            let task = create_expanded_test(
+            let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
@@ -408,7 +428,7 @@ mod tests {
         fn returns_false_if_outside_project() {
             let workspace_root = get_fixtures_dir("projects");
             let project_root = workspace_root.join("basic");
-            let task = create_expanded_test(
+            let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
@@ -428,7 +448,7 @@ mod tests {
         fn returns_false_if_no_match() {
             let workspace_root = get_fixtures_dir("projects");
             let project_root = workspace_root.join("basic");
-            let task = create_expanded_test(
+            let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {

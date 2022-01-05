@@ -9,7 +9,21 @@ use moon_logger::{color, debug, trace};
 use moon_utils::fs::is_glob;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+fn handle_canonicalize(path: PathBuf) -> Result<PathBuf, ProjectError> {
+    match path.canonicalize() {
+        Ok(p) => Ok(p),
+        Err(e) => {
+            // Just pass it through
+            if e.kind() == std::io::ErrorKind::NotFound {
+                return Err(ProjectError::MissingFile(path));
+            }
+
+            Err(ProjectError::InvalidUtf8File(path))
+        }
+    }
+}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -127,14 +141,6 @@ impl Task {
         task
     }
 
-    fn expand_io_path(&self, workspace_root: &Path, project_root: &Path, file: &str) -> PathBuf {
-        if file.starts_with('/') {
-            workspace_root.join(file.strip_prefix('/').unwrap())
-        } else {
-            project_root.join(file)
-        }
-    }
-
     /// Expand the args list to resolve tokens, relative to the project root.
     pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
         trace!(
@@ -143,55 +149,29 @@ impl Task {
             color::id(&self.target),
         );
 
-        let mut args = vec![];
-
-        for arg in &self.args {
-            for tokenized_arg in token_resolver.resolve(arg)? {
-                args.push(tokenized_arg);
-            }
-        }
-
-        self.args = args;
+        self.args = token_resolver.resolve(&self.args, Some(self))?;
 
         Ok(())
     }
 
     /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_inputs(
-        &mut self,
-        token_resolver: TokenResolver,
-        workspace_root: &Path,
-        project_root: &Path,
-    ) -> Result<(), ProjectError> {
+    pub fn expand_inputs(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
         trace!(
             target: "moon:project:task",
             "Expanding inputs for task {}",
             color::id(&self.target),
         );
 
-        let mut inputs = vec![];
-
-        for input in &self.inputs {
-            for tokenized_input in token_resolver.resolve(input)? {
-                inputs.push(tokenized_input);
-            }
-        }
-
-        for input in &inputs {
+        for input in &token_resolver.resolve(&self.inputs, None)? {
             // Globs are separate from paths as we can't canonicalize it,
             // and we need them to be absolute for it to match correctly.
             if is_glob(input) {
                 self.input_globs.push(String::from(
-                    self.expand_io_path(workspace_root, project_root, input)
-                        .to_string_lossy(),
+                    token_resolver.expand_io_path(input).to_string_lossy(),
                 ));
             } else {
-                let file_path = self.expand_io_path(workspace_root, project_root, input);
-
                 self.input_paths
-                    .insert(file_path.canonicalize().map_err(|_| {
-                        ProjectError::InvalidUtf8File(String::from(file_path.to_string_lossy()))
-                    })?);
+                    .insert(handle_canonicalize(token_resolver.expand_io_path(input))?);
             }
         }
 
@@ -199,12 +179,7 @@ impl Task {
     }
 
     /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_outputs(
-        &mut self,
-        _token_resolver: TokenResolver,
-        workspace_root: &Path,
-        project_root: &Path,
-    ) -> Result<(), ProjectError> {
+    pub fn expand_outputs(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
         trace!(
             target: "moon:project:task",
             "Expanding outputs for task {}",
@@ -218,12 +193,8 @@ impl Task {
                     self.target.clone(),
                 ));
             } else {
-                let file_path = self.expand_io_path(workspace_root, project_root, output);
-
                 self.output_paths
-                    .insert(file_path.canonicalize().map_err(|_| {
-                        ProjectError::InvalidUtf8File(String::from(file_path.to_string_lossy()))
-                    })?);
+                    .insert(handle_canonicalize(token_resolver.expand_io_path(output))?);
             }
         }
 
@@ -324,10 +295,13 @@ impl Task {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test::create_file_groups;
+    use crate::token::TokenSharedData;
     use crate::Target;
     use moon_config::TaskConfig;
     use moon_utils::test::get_fixtures_dir;
-    use std::collections::{HashMap, HashSet};
+    use std::collections::HashSet;
+    use std::path::Path;
 
     fn create_expanded_task(
         workspace_root: &Path,
@@ -338,16 +312,12 @@ mod tests {
             Target::format("basic", "lint").unwrap(),
             &config.unwrap_or_default(),
         );
+        let file_groups = create_file_groups(project_root);
+        let metadata = TokenSharedData::new(&file_groups, workspace_root, project_root);
 
-        task.expand_args(TokenResolver::for_args(&HashMap::new()))?;
-
-        task.expand_inputs(
-            TokenResolver::for_inputs(&HashMap::new()),
-            workspace_root,
-            project_root,
-        )?;
-
-        task.expand_outputs(TokenResolver::for_outputs(), workspace_root, project_root)?;
+        task.expand_inputs(TokenResolver::for_inputs(&metadata))?;
+        task.expand_outputs(TokenResolver::for_outputs(&metadata))?;
+        task.expand_args(TokenResolver::for_args(&metadata))?; // Must be last
 
         Ok(task)
     }
@@ -374,8 +344,8 @@ mod tests {
 
         #[test]
         fn returns_true_if_empty_inputs() {
-            let workspace_root = get_fixtures_dir("projects");
-            let project_root = workspace_root.join("basic");
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
             let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
 
             assert!(task.is_affected(&HashSet::new()).unwrap());
@@ -383,8 +353,8 @@ mod tests {
 
         #[test]
         fn returns_true_if_matches_file() {
-            let workspace_root = get_fixtures_dir("projects");
-            let project_root = workspace_root.join("basic");
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
             let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
@@ -403,8 +373,8 @@ mod tests {
 
         #[test]
         fn returns_true_if_matches_glob() {
-            let workspace_root = get_fixtures_dir("projects");
-            let project_root = workspace_root.join("basic");
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
             let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
@@ -423,8 +393,8 @@ mod tests {
 
         #[test]
         fn returns_true_when_referencing_root_files() {
-            let workspace_root = get_fixtures_dir("projects");
-            let project_root = workspace_root.join("basic");
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
             let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
@@ -443,8 +413,8 @@ mod tests {
 
         #[test]
         fn returns_false_if_outside_project() {
-            let workspace_root = get_fixtures_dir("projects");
-            let project_root = workspace_root.join("basic");
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
             let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
@@ -456,20 +426,41 @@ mod tests {
             .unwrap();
 
             let mut set = HashSet::new();
-            set.insert(workspace_root.join("projects/other/file.ts"));
+            set.insert(workspace_root.join("base/other/outside.ts"));
 
             assert!(!task.is_affected(&set).unwrap());
         }
 
         #[test]
         fn returns_false_if_no_match() {
-            let workspace_root = get_fixtures_dir("projects");
-            let project_root = workspace_root.join("basic");
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
             let task = create_expanded_task(
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
                     inputs: Some(vec![String::from("file.ts"), String::from("src/*")]),
+                    ..TaskConfig::default()
+                }),
+            )
+            .unwrap();
+
+            let mut set = HashSet::new();
+            set.insert(project_root.join("another.rs"));
+
+            assert!(!task.is_affected(&set).unwrap());
+        }
+
+        #[test]
+        #[should_panic(expected = "MissingFile")]
+        fn panics_for_missing_file() {
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
+            let task = create_expanded_task(
+                &workspace_root,
+                &project_root,
+                Some(TaskConfig {
+                    inputs: Some(vec![String::from("missing.ts")]),
                     ..TaskConfig::default()
                 }),
             )

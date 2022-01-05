@@ -2,7 +2,7 @@ use crate::errors::ProjectError;
 use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
-use crate::token::TokenResolver;
+use crate::token::{TokenResolver, TokenSharedData};
 use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
@@ -156,15 +156,13 @@ fn create_tasks_from_config(
 
     // Expand args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
-        task.expand_args(TokenResolver::for_args(file_groups))?;
+        let data = TokenSharedData::new(file_groups, workspace_root, project_root);
 
-        task.expand_inputs(
-            TokenResolver::for_inputs(file_groups),
-            workspace_root,
-            project_root,
-        )?;
+        task.expand_inputs(TokenResolver::for_inputs(&data))?;
+        task.expand_outputs(TokenResolver::for_outputs(&data))?;
 
-        task.expand_outputs(TokenResolver::for_outputs(), workspace_root, project_root)?;
+        // Must be last as it references inputs/outputs
+        task.expand_args(TokenResolver::for_args(&data))?;
     }
 
     Ok(tasks)
@@ -214,7 +212,7 @@ impl Project {
         );
 
         if !root.exists() {
-            return Err(ProjectError::MissingFilePath(String::from(source)));
+            return Err(ProjectError::MissingProject(String::from(source)));
         }
 
         let root = root.canonicalize().unwrap();

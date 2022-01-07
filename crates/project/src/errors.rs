@@ -65,6 +65,9 @@ pub enum TokenError {
     #[error("Input index {1} doesn't exist for token <symbol>{0}</symbol>.")]
     InvalidInIndex(String, u8), // token, index
 
+    #[error("Output index {1} doesn't exist for token <symbol>{0}</symbol>.")]
+    InvalidOutIndex(String, u8), // token, index
+
     #[error("Token <symbol>{0}</symbol> cannot be used within <id>{1}</id>.")]
     InvalidTokenContext(String, String), // token, context
 

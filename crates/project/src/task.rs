@@ -15,7 +15,6 @@ fn handle_canonicalize(path: PathBuf) -> Result<PathBuf, ProjectError> {
     match path.canonicalize() {
         Ok(p) => Ok(p),
         Err(e) => {
-            // Just pass it through
             if e.kind() == std::io::ErrorKind::NotFound {
                 return Err(ProjectError::MissingFile(path));
             }
@@ -186,7 +185,7 @@ impl Task {
             color::id(&self.target),
         );
 
-        for output in &self.outputs {
+        for output in &token_resolver.resolve(&self.outputs, None)? {
             if is_glob(output) {
                 return Err(ProjectError::NoOutputGlob(
                     output.to_owned(),

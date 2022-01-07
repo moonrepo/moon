@@ -4,6 +4,8 @@
   - [Variables](#variables)
   - [Functions](#functions)
     - [File groups](#file-groups)
+    - [Inputs](#inputs)
+    - [Outputs](#outputs)
 - [Targets](#targets)
 - [Merge strategies](#merge-strategies)
 
@@ -42,7 +44,8 @@ The `@dirs(file_group)` token will be replaced with an expanded list of director
 from the file group of the same name. If a glob pattern is detected within the file group, it will
 walk the file system and aggregate all directories found.
 
-When used in `args`, it will return relative paths, while `inputs` will return absolute paths.
+When used in `args`, it will return relative or absolute paths, depending on run context, while
+`inputs` will return absolute paths.
 
 ```yaml
 fileGroups:
@@ -84,7 +87,8 @@ The `@files(file_group)` token will be replaced with an expanded list of file pa
 the file group of the same name. If a glob pattern is detected within the file group, it will walk
 the file system and aggregate all files found.
 
-When used in `args`, it will return relative paths, while `inputs` will return absolute paths.
+When used in `args`, it will return relative or absolute paths, depending on run context, while
+`inputs` will return absolute paths.
 
 ```yaml
 fileGroups:
@@ -123,10 +127,11 @@ tasks:
 
 The `@globs(file_group)` token will be replaced with an expanded list of glob patterns (as-is),
 derived from the file group of the same name. If a non-glob pattern is detected within the file
-group, it will be ignored
+group, it will be ignored.
 
-When used in `args`, it will return relative paths, while `inputs` will return absolute paths _and_
-also be used in affected files detection by matching against the patterns.
+When used in `args`, it will return relative or absolute paths, depending on run context, while
+`inputs` will return absolute paths _and_ also be used in affected files detection by matching
+against the patterns.
 
 ```yaml
 fileGroups:
@@ -142,7 +147,7 @@ tasks:
       - '--testMatch'
       - '@globs(tests)'
     inputs:
-      - '@globs(config)'
+      - '@globs(tests)'
 
 # Resolves to
 tasks:
@@ -197,6 +202,78 @@ tasks:
 
 > When there's no directies, or too many directories, this function will return the project root
 > using `.`.
+
+#### Inputs
+
+##### `@in`
+
+> Usable in `args` only.
+
+The `@in(index)` token will be replaced with a single path, derived from `inputs` by numerical
+index. If a glob pattern is referenced by index, the glob will be used as-is, instead of returning
+the expanded list of files.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'babel'
+    args:
+      - '--copy-files'
+      - '--config-file'
+      - '@in(1)'
+      - '@in(0)'
+    inputs:
+      - 'src'
+      - 'babel.config.js'
+
+# Resolves to
+tasks:
+  build:
+    command: 'babel'
+    args:
+      - '--copy-files'
+      - '--config-file'
+      - 'babel.config.js'
+      - 'src'
+    inputs:
+      - '/path/to/project/src'
+      - '/path/to/project/babel.config.js'
+```
+
+#### Outputs
+
+##### `@out`
+
+> Usable in `args` only.
+
+The `@out(index)` token will be replaced with a single path, derived from `outputs` by numerical
+index. If a glob pattern is referenced by index, the process will **fail**, as it requires literal
+folder and file paths.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'babel'
+    args:
+      - '.'
+      - '--out-dir'
+      - '@out(0)'
+    outputs:
+      - 'lib'
+
+# Resolves to
+tasks:
+  build:
+    command: 'babel'
+    args:
+      - '.'
+      - '--out-dir'
+      - 'lib'
+    outputs:
+      - '/path/to/project/lib'
+```
 
 ## Targets
 

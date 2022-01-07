@@ -1,4 +1,9 @@
+use crate::errors::ProjectError;
 use crate::file_group::FileGroup;
+use crate::target::Target;
+use crate::task::Task;
+use crate::token::{TokenResolver, TokenSharedData};
+use moon_config::TaskConfig;
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -73,4 +78,23 @@ pub fn create_file_groups(project_root: &Path) -> HashMap<String, FileGroup> {
     );
 
     map
+}
+
+pub fn create_expanded_task(
+    workspace_root: &Path,
+    project_root: &Path,
+    config: Option<TaskConfig>,
+) -> Result<Task, ProjectError> {
+    let mut task = Task::from_config(
+        Target::format("project", "task").unwrap(),
+        &config.unwrap_or_default(),
+    );
+    let file_groups = create_file_groups(project_root);
+    let metadata = TokenSharedData::new(&file_groups, workspace_root, project_root);
+
+    task.expand_inputs(TokenResolver::for_inputs(&metadata))?;
+    task.expand_outputs(TokenResolver::for_outputs(&metadata))?;
+    task.expand_args(TokenResolver::for_args(&metadata))?; // Must be last
+
+    Ok(task)
 }

@@ -294,33 +294,10 @@ impl Task {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::test::create_file_groups;
-    use crate::token::TokenSharedData;
-    use crate::Target;
+    use crate::test::create_expanded_task;
     use moon_config::TaskConfig;
     use moon_utils::test::get_fixtures_dir;
     use std::collections::HashSet;
-    use std::path::Path;
-
-    fn create_expanded_task(
-        workspace_root: &Path,
-        project_root: &Path,
-        config: Option<TaskConfig>,
-    ) -> Result<Task, ProjectError> {
-        let mut task = Task::from_config(
-            Target::format("basic", "lint").unwrap(),
-            &config.unwrap_or_default(),
-        );
-        let file_groups = create_file_groups(project_root);
-        let metadata = TokenSharedData::new(&file_groups, workspace_root, project_root);
-
-        task.expand_inputs(TokenResolver::for_inputs(&metadata))?;
-        task.expand_outputs(TokenResolver::for_outputs(&metadata))?;
-        task.expand_args(TokenResolver::for_args(&metadata))?; // Must be last
-
-        Ok(task)
-    }
 
     #[test]
     #[should_panic(expected = "NoOutputGlob")]

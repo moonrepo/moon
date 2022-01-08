@@ -6,20 +6,20 @@ use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug, trace};
-use moon_utils::fs::is_glob;
+use moon_utils::fs::is_path_glob;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-fn handle_canonicalize(path: PathBuf) -> Result<PathBuf, ProjectError> {
+fn handle_canonicalize(path: &Path) -> Result<PathBuf, ProjectError> {
     match path.canonicalize() {
         Ok(p) => Ok(p),
         Err(e) => {
             if e.kind() == std::io::ErrorKind::NotFound {
-                return Err(ProjectError::MissingFile(path));
+                return Err(ProjectError::MissingFile(path.to_path_buf()));
             }
 
-            Err(ProjectError::InvalidUtf8File(path))
+            Err(ProjectError::InvalidUtf8File(path.to_path_buf()))
         }
     }
 }
@@ -148,7 +148,38 @@ impl Task {
             color::id(&self.target),
         );
 
-        self.args = token_resolver.resolve(&self.args, Some(self))?;
+        let mut args: Vec<String> = vec![];
+        let run_in_project = !self.options.run_from_workspace_root;
+
+        // We cant use `TokenResolver.resolve_paths` as args are a mix of strings,
+        // strings with tokens, and file paths when tokens are resolved.
+        for arg in &self.args {
+            if token_resolver.has_token(arg) {
+                for resolved_arg in token_resolver.resolve(&[String::from(arg)], Some(self))? {
+                    // When running within a project:
+                    //  - Project paths are relative and start with "./"
+                    //  - Workspace paths are absolute
+                    // When running from the workspace:
+                    //  - All paths are absolute
+                    if run_in_project && resolved_arg.starts_with(token_resolver.data.project_root)
+                    {
+                        args.push(format!(
+                            "./{}",
+                            resolved_arg
+                                .strip_prefix(token_resolver.data.project_root)
+                                .unwrap()
+                                .to_string_lossy()
+                        ));
+                    } else {
+                        args.push(String::from(resolved_arg.to_string_lossy()));
+                    }
+                }
+            } else {
+                args.push(arg.clone());
+            }
+        }
+
+        self.args = args;
 
         Ok(())
     }
@@ -164,13 +195,10 @@ impl Task {
         for input in &token_resolver.resolve(&self.inputs, None)? {
             // Globs are separate from paths as we can't canonicalize it,
             // and we need them to be absolute for it to match correctly.
-            if is_glob(input) {
-                self.input_globs.push(String::from(
-                    token_resolver.expand_io_path(input).to_string_lossy(),
-                ));
+            if is_path_glob(input) {
+                self.input_globs.push(String::from(input.to_string_lossy()));
             } else {
-                self.input_paths
-                    .insert(handle_canonicalize(token_resolver.expand_io_path(input))?);
+                self.input_paths.insert(handle_canonicalize(input)?);
             }
         }
 
@@ -186,14 +214,13 @@ impl Task {
         );
 
         for output in &token_resolver.resolve(&self.outputs, None)? {
-            if is_glob(output) {
+            if is_path_glob(output) {
                 return Err(ProjectError::NoOutputGlob(
                     output.to_owned(),
                     self.target.clone(),
                 ));
             } else {
-                self.output_paths
-                    .insert(handle_canonicalize(token_resolver.expand_io_path(output))?);
+                self.output_paths.insert(handle_canonicalize(output)?);
             }
         }
 
@@ -295,6 +322,7 @@ impl Task {
 mod tests {
     use crate::test::create_expanded_task;
     use moon_config::TaskConfig;
+    use moon_utils::string_vec;
     use moon_utils::test::get_fixtures_dir;
     use std::collections::HashSet;
 
@@ -308,7 +336,7 @@ mod tests {
             &workspace_root,
             &project_root,
             Some(TaskConfig {
-                outputs: Some(vec![String::from("some/**/glob")]),
+                outputs: Some(string_vec!["some/**/glob"]),
                 ..TaskConfig::default()
             }),
         )
@@ -335,7 +363,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("file.ts")]),
+                    inputs: Some(string_vec!["file.ts"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -355,7 +383,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("file.*")]),
+                    inputs: Some(string_vec!["file.*"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -375,7 +403,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("/package.json")]),
+                    inputs: Some(string_vec!["/package.json"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -395,7 +423,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("file.ts")]),
+                    inputs: Some(string_vec!["file.ts"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -415,7 +443,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("file.ts"), String::from("src/*")]),
+                    inputs: Some(string_vec!["file.ts", "src/*"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -436,7 +464,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("missing.ts")]),
+                    inputs: Some(string_vec!["missing.ts"]),
                     ..TaskConfig::default()
                 }),
             )

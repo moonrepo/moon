@@ -2,7 +2,7 @@ use crate::errors::{ProjectError, TokenError};
 use crate::file_group::FileGroup;
 use crate::task::Task;
 use moon_logger::{color, trace, warn};
-use moon_utils::fs::is_glob;
+use moon_utils::fs::{expand_root_path, is_glob};
 use moon_utils::regex::{TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -134,34 +134,30 @@ impl<'a> TokenResolver<'a> {
         }
     }
 
-    pub fn expand_io_path(&self, file: &str) -> PathBuf {
-        if file.starts_with('/') {
-            self.data
-                .workspace_root
-                .join(file.strip_prefix('/').unwrap())
-        } else {
-            self.data.project_root.join(file)
-        }
-    }
-
-    pub fn has_token(value: &str) -> bool {
+    pub fn has_token(&self, value: &str) -> bool {
         value.contains('@') || value.contains('$')
     }
 
+    /// Cycle through the values, resolve any tokens, and return a list of absolute file paths.
+    /// This should only be used for `inputs` and `outputs`.
     pub fn resolve(
         &self,
         values: &[String],
         task: Option<&Task>,
-    ) -> Result<Vec<String>, ProjectError> {
-        let mut results: Vec<String> = vec![];
+    ) -> Result<Vec<PathBuf>, ProjectError> {
+        let mut results: Vec<PathBuf> = vec![];
 
         for value in values {
-            if Self::has_token(value) {
+            if self.has_token(value) {
                 for resolved_value in self.replace_token(value, task)? {
                     results.push(resolved_value);
                 }
             } else {
-                results.push(value.to_owned());
+                results.push(expand_root_path(
+                    value,
+                    self.data.workspace_root,
+                    self.data.project_root,
+                ));
             }
         }
 
@@ -178,7 +174,11 @@ impl<'a> TokenResolver<'a> {
         }
     }
 
-    fn replace_token(&self, value: &str, task: Option<&Task>) -> Result<Vec<String>, ProjectError> {
+    fn replace_token(
+        &self,
+        value: &str,
+        task: Option<&Task>,
+    ) -> Result<Vec<PathBuf>, ProjectError> {
         if value.contains('@') && TOKEN_FUNC_PATTERN.is_match(value) {
             let matches = TOKEN_FUNC_PATTERN.captures(value).unwrap();
             let token = matches.get(0).unwrap().as_str(); // @name(arg)
@@ -194,20 +194,13 @@ impl<'a> TokenResolver<'a> {
             );
 
             return match func {
-                "dirs" => self.replace_file_group_tokens(
-                    value,
-                    TokenType::Dirs(token.to_owned(), arg.to_owned()),
-                ),
-                "files" => self.replace_file_group_tokens(
-                    value,
-                    TokenType::Files(token.to_owned(), arg.to_owned()),
-                ),
-                "globs" => self.replace_file_group_tokens(
-                    value,
-                    TokenType::Globs(token.to_owned(), arg.to_owned()),
-                ),
+                "dirs" => self
+                    .replace_file_group_tokens(TokenType::Dirs(token.to_owned(), arg.to_owned())),
+                "files" => self
+                    .replace_file_group_tokens(TokenType::Files(token.to_owned(), arg.to_owned())),
+                "globs" => self
+                    .replace_file_group_tokens(TokenType::Globs(token.to_owned(), arg.to_owned())),
                 "in" => self.replace_input_token(
-                    value,
                     TokenType::In(
                         token.to_owned(),
                         self.convert_string_to_u8(token, arg.to_owned())?,
@@ -215,17 +208,14 @@ impl<'a> TokenResolver<'a> {
                     task,
                 ),
                 "out" => self.replace_output_token(
-                    value,
                     TokenType::Out(
                         token.to_owned(),
                         self.convert_string_to_u8(token, arg.to_owned())?,
                     ),
                     task,
                 ),
-                "root" => self.replace_file_group_tokens(
-                    value,
-                    TokenType::Root(token.to_owned(), arg.to_owned()),
-                ),
+                "root" => self
+                    .replace_file_group_tokens(TokenType::Root(token.to_owned(), arg.to_owned())),
                 _ => {
                     return Err(ProjectError::Token(TokenError::UnknownTokenFunc(
                         token.to_owned(),
@@ -245,17 +235,12 @@ impl<'a> TokenResolver<'a> {
 
     fn replace_file_group_tokens(
         &self,
-        value: &str,
         token_type: TokenType,
-    ) -> Result<Vec<String>, ProjectError> {
+    ) -> Result<Vec<PathBuf>, ProjectError> {
         token_type.check_context(&self.context)?;
 
         let mut results = vec![];
         let file_groups = self.data.file_groups;
-
-        let mut replace_token = |token: &str, replacement: &str| {
-            results.push(String::from(value).replace(token, replacement));
-        };
 
         let get_file_group = |token: &str, id: &str| match file_groups.get(id) {
             Some(fg) => Ok(fg),
@@ -265,24 +250,27 @@ impl<'a> TokenResolver<'a> {
             ))),
         };
 
+        let workspace_root = self.data.workspace_root;
+        let project_root = self.data.project_root;
+
         match token_type {
             TokenType::Dirs(token, group) => {
-                for glob in get_file_group(&token, &group)?.dirs()? {
-                    replace_token(&token, &glob);
+                for glob in get_file_group(&token, &group)?.dirs(workspace_root, project_root)? {
+                    results.push(glob);
                 }
             }
             TokenType::Files(token, group) => {
-                for glob in get_file_group(&token, &group)?.files()? {
-                    replace_token(&token, &glob);
+                for file in get_file_group(&token, &group)?.files(workspace_root, project_root)? {
+                    results.push(file);
                 }
             }
             TokenType::Globs(token, group) => {
-                for glob in get_file_group(&token, &group)?.globs()? {
-                    replace_token(&token, &glob);
+                for dir in get_file_group(&token, &group)?.globs(workspace_root, project_root)? {
+                    results.push(dir);
                 }
             }
             TokenType::Root(token, group) => {
-                replace_token(&token, &get_file_group(&token, &group)?.root()?);
+                results.push(get_file_group(&token, &group)?.root(project_root)?);
             }
             _ => {}
         }
@@ -292,21 +280,16 @@ impl<'a> TokenResolver<'a> {
 
     fn replace_input_token(
         &self,
-        value: &str,
         token_type: TokenType,
         task: Option<&Task>,
-    ) -> Result<Vec<String>, ProjectError> {
+    ) -> Result<Vec<PathBuf>, ProjectError> {
         token_type.check_context(&self.context)?;
 
         let mut results = vec![];
         let task = task.unwrap();
 
-        let mut replace_token = |token: &str, replacement: &str| {
-            results.push(String::from(value).replace(token, replacement));
-        };
-
         if let TokenType::In(token, index) = token_type {
-            let error = ProjectError::Token(TokenError::InvalidInIndex(token.to_owned(), index));
+            let error = ProjectError::Token(TokenError::InvalidInIndex(token, index));
             let input = match task.inputs.get(index as usize) {
                 Some(i) => i,
                 None => {
@@ -317,16 +300,22 @@ impl<'a> TokenResolver<'a> {
             if is_glob(input) {
                 match task.input_globs.iter().find(|g| g.ends_with(input)) {
                     Some(g) => {
-                        replace_token(&token, g);
+                        results.push(PathBuf::from(g));
                     }
                     None => {
                         return Err(error);
                     }
                 };
             } else {
-                match task.input_paths.get(&self.expand_io_path(input)) {
+                let workspace_root = self.data.workspace_root;
+                let project_root = self.data.project_root;
+
+                match task
+                    .input_paths
+                    .get(&expand_root_path(input, workspace_root, project_root))
+                {
                     Some(p) => {
-                        replace_token(&token, p.to_str().unwrap());
+                        results.push(p.clone());
                     }
                     None => {
                         return Err(error);
@@ -340,21 +329,16 @@ impl<'a> TokenResolver<'a> {
 
     fn replace_output_token(
         &self,
-        value: &str,
         token_type: TokenType,
         task: Option<&Task>,
-    ) -> Result<Vec<String>, ProjectError> {
+    ) -> Result<Vec<PathBuf>, ProjectError> {
         token_type.check_context(&self.context)?;
 
         let mut results = vec![];
         let task = task.unwrap();
 
-        let mut replace_token = |token: &str, replacement: &str| {
-            results.push(String::from(value).replace(token, replacement));
-        };
-
         if let TokenType::Out(token, index) = token_type {
-            let error = ProjectError::Token(TokenError::InvalidOutIndex(token.to_owned(), index));
+            let error = ProjectError::Token(TokenError::InvalidOutIndex(token, index));
             let output = match task.outputs.get(index as usize) {
                 Some(i) => i,
                 None => {
@@ -362,9 +346,15 @@ impl<'a> TokenResolver<'a> {
                 }
             };
 
-            match task.output_paths.get(&self.expand_io_path(output)) {
+            let workspace_root = self.data.workspace_root;
+            let project_root = self.data.project_root;
+
+            match task
+                .output_paths
+                .get(&expand_root_path(output, workspace_root, project_root))
+            {
                 Some(p) => {
-                    replace_token(&token, p.to_str().unwrap());
+                    results.push(p.clone());
                 }
                 None => {
                     return Err(error);
@@ -398,7 +388,7 @@ mod tests {
     fn errors_for_unknown_file_group() {
         let project_root = get_project_root();
         let workspace_root = get_workspace_root();
-        let file_groups = create_file_groups(&project_root);
+        let file_groups = create_file_groups();
         let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
         let resolver = TokenResolver::for_args(&metadata);
 
@@ -412,7 +402,7 @@ mod tests {
     fn errors_if_no_globs_in_file_group() {
         let project_root = get_project_root();
         let workspace_root = get_workspace_root();
-        let file_groups = create_file_groups(&project_root);
+        let file_groups = create_file_groups();
         let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
         let resolver = TokenResolver::for_args(&metadata);
 
@@ -425,7 +415,7 @@ mod tests {
     fn doesnt_match_when_not_alone() {
         let project_root = get_project_root();
         let workspace_root = get_workspace_root();
-        let file_groups = create_file_groups(&project_root);
+        let file_groups = create_file_groups();
         let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
         let resolver = TokenResolver::for_args(&metadata);
 
@@ -433,7 +423,7 @@ mod tests {
             resolver
                 .resolve(&string_vec!["foo/@dirs(static)/bar"], None)
                 .unwrap(),
-            Vec::<String>::new()
+            Vec::<PathBuf>::new()
         );
     }
 
@@ -445,7 +435,7 @@ mod tests {
         fn errors_for_invalid_index_format() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -469,7 +459,7 @@ mod tests {
         fn errors_for_index_out_of_bounds() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -497,7 +487,7 @@ mod tests {
         fn errors_for_invalid_index_format() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -521,7 +511,7 @@ mod tests {
         fn errors_for_index_out_of_bounds() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -548,7 +538,7 @@ mod tests {
         fn supports_dirs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -556,7 +546,7 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@dirs(static)"], None)
                     .unwrap(),
-                vec!["dir", "dir/subdir"]
+                vec![project_root.join("dir"), project_root.join("dir/subdir")]
             );
         }
 
@@ -564,7 +554,7 @@ mod tests {
         fn supports_dirs_with_globs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -572,7 +562,7 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@dirs(dirs_glob)"], None)
                     .unwrap(),
-                vec!["dir", "dir/subdir"]
+                vec![project_root.join("dir"), project_root.join("dir/subdir")]
             );
         }
 
@@ -580,7 +570,7 @@ mod tests {
         fn supports_files() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -588,7 +578,11 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@files(static)"], None)
                     .unwrap(),
-                vec!["file.ts", "dir/other.tsx", "dir/subdir/another.ts",]
+                vec![
+                    project_root.join("file.ts"),
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts")
+                ]
             );
         }
 
@@ -596,7 +590,7 @@ mod tests {
         fn supports_files_with_globs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -604,7 +598,11 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@files(files_glob)"], None)
                     .unwrap(),
-                vec!["file.ts", "dir/subdir/another.ts", "dir/other.tsx",]
+                vec![
+                    project_root.join("file.ts"),
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("dir/other.tsx")
+                ]
             );
         }
 
@@ -612,7 +610,7 @@ mod tests {
         fn supports_globs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -620,7 +618,10 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@globs(globs)"], None)
                     .unwrap(),
-                vec!["**/*.{ts,tsx}", "*.js"],
+                vec![
+                    project_root.join("**/*.{ts,tsx}"),
+                    project_root.join("*.js")
+                ],
             );
         }
 
@@ -628,7 +629,7 @@ mod tests {
         fn supports_in_paths() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -644,9 +645,9 @@ mod tests {
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["arg", "@in(1)"], Some(&task))
+                    .resolve(&string_vec!["@in(1)"], Some(&task))
                     .unwrap(),
-                vec!["arg", project_root.join("file.ts").to_str().unwrap()],
+                vec![project_root.join("file.ts")],
             );
         }
 
@@ -654,7 +655,7 @@ mod tests {
         fn supports_in_globs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -670,9 +671,9 @@ mod tests {
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["arg", "@in(0)"], Some(&task))
+                    .resolve(&string_vec!["@in(0)"], Some(&task))
                     .unwrap(),
-                vec!["arg", project_root.join("src/**/*").to_str().unwrap()],
+                vec![project_root.join("src/**/*")],
             );
         }
 
@@ -680,7 +681,7 @@ mod tests {
         fn supports_out_paths() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -696,17 +697,9 @@ mod tests {
 
             assert_eq!(
                 resolver
-                    .resolve(
-                        &string_vec!["--out-dir", "@out(0)", "--out-file", "@out(1)"],
-                        Some(&task)
-                    )
+                    .resolve(&string_vec!["@out(0)", "@out(1)"], Some(&task))
                     .unwrap(),
-                vec![
-                    "--out-dir",
-                    project_root.join("dir").to_str().unwrap(),
-                    "--out-file",
-                    project_root.join("file.ts").to_str().unwrap(),
-                ],
+                vec![project_root.join("dir"), project_root.join("file.ts"),],
             );
         }
 
@@ -714,7 +707,7 @@ mod tests {
         fn supports_root() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -722,7 +715,7 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@root(static)"], None)
                     .unwrap(),
-                vec!["dir"],
+                vec![project_root.join("dir")],
             );
         }
     }
@@ -734,7 +727,7 @@ mod tests {
         fn supports_dirs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
@@ -742,7 +735,7 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@dirs(static)"], None)
                     .unwrap(),
-                vec!["dir", "dir/subdir"]
+                vec![project_root.join("dir"), project_root.join("dir/subdir")]
             );
         }
 
@@ -750,7 +743,7 @@ mod tests {
         fn supports_dirs_with_globs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
@@ -758,7 +751,7 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@dirs(dirs_glob)"], None)
                     .unwrap(),
-                vec!["dir", "dir/subdir"]
+                vec![project_root.join("dir"), project_root.join("dir/subdir")]
             );
         }
 
@@ -766,7 +759,7 @@ mod tests {
         fn supports_files() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
@@ -774,7 +767,11 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@files(static)"], None)
                     .unwrap(),
-                vec!["file.ts", "dir/other.tsx", "dir/subdir/another.ts",]
+                vec![
+                    project_root.join("file.ts"),
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts")
+                ]
             );
         }
 
@@ -782,7 +779,7 @@ mod tests {
         fn supports_files_with_globs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
@@ -790,7 +787,11 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@files(files_glob)"], None)
                     .unwrap(),
-                vec!["file.ts", "dir/subdir/another.ts", "dir/other.tsx",]
+                vec![
+                    project_root.join("file.ts"),
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("dir/other.tsx")
+                ]
             );
         }
 
@@ -798,7 +799,7 @@ mod tests {
         fn supports_globs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
@@ -806,7 +807,10 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@globs(globs)"], None)
                     .unwrap(),
-                vec!["**/*.{ts,tsx}", "*.js"],
+                vec![
+                    project_root.join("**/*.{ts,tsx}"),
+                    project_root.join("*.js")
+                ],
             );
         }
 
@@ -815,7 +819,7 @@ mod tests {
         fn doesnt_support_in() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
@@ -827,7 +831,7 @@ mod tests {
         fn doesnt_support_out() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
@@ -838,7 +842,7 @@ mod tests {
         fn supports_root() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
@@ -846,7 +850,7 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@root(static)"], None)
                     .unwrap(),
-                vec!["dir"],
+                vec![project_root.join("dir")],
             );
         }
     }
@@ -859,7 +863,7 @@ mod tests {
         fn doesnt_support_dirs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_outputs(&metadata);
 
@@ -873,7 +877,7 @@ mod tests {
         fn doesnt_support_files() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_outputs(&metadata);
 
@@ -887,7 +891,7 @@ mod tests {
         fn doesnt_support_globs() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_outputs(&metadata);
 
@@ -901,7 +905,7 @@ mod tests {
         fn doesnt_support_in() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_outputs(&metadata);
 
@@ -913,7 +917,7 @@ mod tests {
         fn doesnt_support_out() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_outputs(&metadata);
 
@@ -925,7 +929,7 @@ mod tests {
         fn doesnt_support_root() {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups(&project_root);
+            let file_groups = create_file_groups();
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_outputs(&metadata);
 

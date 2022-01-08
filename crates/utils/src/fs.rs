@@ -1,3 +1,14 @@
+use std::path::{Path, PathBuf};
+
+/// If a file starts with "/", expand from the workspace root, otherwise the project root.
+pub fn expand_root_path(file: &str, workspace_root: &Path, project_root: &Path) -> PathBuf {
+    if file.starts_with('/') {
+        workspace_root.join(file.strip_prefix('/').unwrap())
+    } else {
+        project_root.join(file)
+    }
+}
+
 // This is not very exhaustive and may be inaccurate.
 pub fn is_glob(value: &str) -> bool {
     let single_values = vec!['*', '?', '1'];
@@ -40,6 +51,10 @@ pub fn is_glob(value: &str) -> bool {
     }
 
     false
+}
+
+pub fn is_path_glob(path: &Path) -> bool {
+    is_glob(&path.to_string_lossy())
 }
 
 #[cfg(test)]

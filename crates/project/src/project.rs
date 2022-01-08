@@ -78,7 +78,6 @@ fn load_package_json(
 fn create_file_groups_from_config(
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
-    project_root: &Path,
 ) -> FileGroupsMap {
     let mut file_groups = HashMap::<String, FileGroup>::new();
 
@@ -87,7 +86,7 @@ fn create_file_groups_from_config(
         for (group_id, files) in global_file_groups {
             file_groups.insert(
                 group_id.to_owned(),
-                FileGroup::new(group_id, files.to_owned(), project_root),
+                FileGroup::new(group_id, files.to_owned()),
             );
         }
     }
@@ -104,10 +103,8 @@ fn create_file_groups_from_config(
                         .merge(files.to_owned());
                 } else {
                     // Insert a group
-                    file_groups.insert(
-                        group_id.clone(),
-                        FileGroup::new(group_id, files.to_owned(), project_root),
-                    );
+                    file_groups
+                        .insert(group_id.clone(), FileGroup::new(group_id, files.to_owned()));
                 }
             }
         }
@@ -218,7 +215,7 @@ impl Project {
         let root = root.canonicalize().unwrap();
         let config = load_project_config(workspace_root, source)?;
         let package_json = load_package_json(workspace_root, source)?;
-        let file_groups = create_file_groups_from_config(&config, global_config, &root);
+        let file_groups = create_file_groups_from_config(&config, global_config);
         let tasks = create_tasks_from_config(
             &config,
             global_config,

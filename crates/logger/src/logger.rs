@@ -21,7 +21,7 @@ impl Logger {
             ansi_term::enable_ansi_support();
         }
 
-        let mut dispatch = Dispatch::new()
+        Dispatch::new()
             .filter(|metadata| metadata.target().starts_with("moon"))
             .format(|out, message, record| {
                 let mut date_format = "[%Y-%m-%d %H:%M:%S]";
@@ -49,18 +49,8 @@ impl Logger {
                     message
                 ));
             })
-            // Pipe errors to stderr
-            .chain(
-                Dispatch::new()
-                    .level(LevelFilter::Error)
-                    .chain(io::stderr()),
-            );
-
-        // All other log types go to stdout
-        if level != LevelFilter::Error {
-            dispatch = dispatch.chain(fern::Dispatch::new().level(level).chain(io::stdout()));
-        }
-
-        dispatch.apply().unwrap();
+            .chain(Dispatch::new().level(level).chain(io::stderr()))
+            .apply()
+            .unwrap();
     }
 }

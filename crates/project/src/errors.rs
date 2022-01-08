@@ -33,8 +33,10 @@ pub enum ProjectError {
     #[error("No project exists at path <path>{0}</path>.")]
     MissingProject(String),
 
-    #[error("Task outputs do not support file globs. Found <path>{0}</path> in <id>{1}<id>.")]
-    NoOutputGlob(String, String),
+    #[error(
+        "Task outputs do not support file globs. Found <file_path>{0}</file_path> in <id>{1}<id>."
+    )]
+    NoOutputGlob(PathBuf, String),
 
     #[error("No project has been configured with the ID <id>{0}</id>.")]
     UnconfiguredID(String),

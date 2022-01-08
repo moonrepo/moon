@@ -852,6 +852,64 @@ mod tasks {
         }
 
         #[test]
+        fn expands_args_with_vars() {
+            let workspace_root = get_fixtures_root();
+            let project_root = workspace_root.join("base/files-and-dirs");
+            let project = Project::new(
+                "id",
+                "base/files-and-dirs",
+                &workspace_root,
+                &GlobalProjectConfig {
+                    file_groups: Some(create_file_groups_config()),
+                    tasks: Some(HashMap::from([(
+                        String::from("test"),
+                        TaskConfig {
+                            args: Some(string_vec![
+                                "some/$unknown/var", // Unknown
+                                "--pid",
+                                "$project/foo", // At start
+                                "--proot",
+                                "$projectRoot", // Alone
+                                "--psource",
+                                "foo/$projectSource", // At end
+                                "--target",
+                                "foo/$target/bar", // In middle
+                                "--tid=$task",     // As an arg
+                                "--wsroot",
+                                "$workspaceRoot" // Alone
+                            ]),
+                            command: Some(String::from("test")),
+                            deps: None,
+                            inputs: None,
+                            outputs: None,
+                            options: None,
+                            type_of: None,
+                        },
+                    )])),
+                },
+            )
+            .unwrap();
+
+            assert_eq!(
+                *project.tasks.get("test").unwrap().args,
+                vec![
+                    "some/$unknown/var",
+                    "--pid",
+                    "id/foo",
+                    "--proot",
+                    project_root.to_str().unwrap(),
+                    "--psource",
+                    "foo/base/files-and-dirs",
+                    "--target",
+                    "foo/id:test/bar",
+                    "--tid=test",
+                    "--wsroot",
+                    workspace_root.to_str().unwrap(),
+                ],
+            )
+        }
+
+        #[test]
         fn expands_inputs() {
             let workspace_root = get_fixtures_dir("base");
             let project_root = workspace_root.join("files-and-dirs");

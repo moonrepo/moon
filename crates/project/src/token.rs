@@ -1,9 +1,13 @@
 use crate::errors::{ProjectError, TokenError};
 use crate::file_group::FileGroup;
+use crate::target::Target;
 use crate::task::Task;
 use moon_logger::{color, trace, warn};
 use moon_utils::fs::{expand_root_path, is_glob};
-use moon_utils::regex::{TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN};
+use moon_utils::regex::{
+    matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
+    TOKEN_VAR_PATTERN,
+};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -26,7 +30,7 @@ impl ResolverType {
 
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
-    // Var(String),
+    Var(String),
 
     // File groups: token, group name
     Dirs(String, String),
@@ -60,6 +64,9 @@ impl TokenType {
             TokenType::Root(_, _) => {
                 matches!(context, ResolverType::Args) || matches!(context, ResolverType::Inputs)
             }
+            TokenType::Var(_) => {
+                matches!(context, ResolverType::Args)
+            }
         };
 
         if !allowed {
@@ -80,6 +87,7 @@ impl TokenType {
             TokenType::In(_, _) => "@in",
             TokenType::Out(_, _) => "@out",
             TokenType::Root(_, _) => "@root",
+            TokenType::Var(_) => "$var",
         })
     }
 }
@@ -134,8 +142,24 @@ impl<'a> TokenResolver<'a> {
         }
     }
 
-    pub fn has_token(&self, value: &str) -> bool {
-        value.contains('@') || value.contains('$')
+    pub fn has_token_func(&self, value: &str) -> bool {
+        if value.contains('@') {
+            if matches_token_func(value) {
+                return true;
+            } else if TOKEN_FUNC_ANYWHERE_PATTERN.is_match(value) {
+                warn!(
+                    target: "moon:project:token",
+                    "Found a token function in {} with other content. Token functions *must* be used literally as the only value.",
+                    color::path(value)
+                );
+            }
+        }
+
+        false
+    }
+
+    pub fn has_token_var(&self, value: &str) -> bool {
+        value.contains('$') && matches_token_var(value)
     }
 
     /// Cycle through the values, resolve any tokens, and return a list of absolute file paths.
@@ -148,10 +172,13 @@ impl<'a> TokenResolver<'a> {
         let mut results: Vec<PathBuf> = vec![];
 
         for value in values {
-            if self.has_token(value) {
-                for resolved_value in self.replace_token(value, task)? {
+            if self.has_token_func(value) {
+                for resolved_value in self.resolve_func(value, task)? {
                     results.push(resolved_value);
                 }
+            } else if self.has_token_var(value) {
+                // Vars now allowed here
+                TokenType::Var(String::new()).check_context(&self.context)?;
             } else {
                 results.push(expand_root_path(
                     value,
@@ -164,6 +191,100 @@ impl<'a> TokenResolver<'a> {
         Ok(results)
     }
 
+    pub fn resolve_func(
+        &self,
+        value: &str,
+        task: Option<&Task>,
+    ) -> Result<Vec<PathBuf>, ProjectError> {
+        let matches = TOKEN_FUNC_PATTERN.captures(value).unwrap();
+        let token = matches.get(0).unwrap().as_str(); // @name(arg)
+        let func = matches.get(1).unwrap().as_str(); // name
+        let arg = matches.get(2).unwrap().as_str(); // arg
+
+        trace!(
+            target: "moon:project:token",
+            "Resolving token function {} for {} value {}",
+            color::id(token),
+            self.context.context_label(),
+            color::path(value)
+        );
+
+        match func {
+            "dirs" => {
+                self.replace_file_group_tokens(TokenType::Dirs(token.to_owned(), arg.to_owned()))
+            }
+            "files" => {
+                self.replace_file_group_tokens(TokenType::Files(token.to_owned(), arg.to_owned()))
+            }
+            "globs" => {
+                self.replace_file_group_tokens(TokenType::Globs(token.to_owned(), arg.to_owned()))
+            }
+            "in" => self.replace_input_token(
+                TokenType::In(
+                    token.to_owned(),
+                    self.convert_string_to_u8(token, arg.to_owned())?,
+                ),
+                task,
+            ),
+            "out" => self.replace_output_token(
+                TokenType::Out(
+                    token.to_owned(),
+                    self.convert_string_to_u8(token, arg.to_owned())?,
+                ),
+                task,
+            ),
+            "root" => {
+                self.replace_file_group_tokens(TokenType::Root(token.to_owned(), arg.to_owned()))
+            }
+            _ => Err(ProjectError::Token(TokenError::UnknownTokenFunc(
+                token.to_owned(),
+            ))),
+        }
+    }
+
+    pub fn resolve_var(&self, value: &str, task: &Task) -> Result<String, ProjectError> {
+        let matches = TOKEN_VAR_PATTERN.captures(value).unwrap();
+        let token = matches.get(0).unwrap().as_str(); // $var
+        let var = matches.get(1).unwrap().as_str(); // var
+
+        trace!(
+            target: "moon:project:token",
+            "Resolving token variable {} for {} value {}",
+            color::id(token),
+            self.context.context_label(),
+            color::path(value)
+        );
+
+        let (project_id, task_id) = Target::parse(&task.target)?;
+        let workspace_root = self.data.workspace_root;
+        let project_root = self.data.project_root;
+
+        let var_value = match var {
+            "project" => project_id,
+            "projectRoot" => String::from(project_root.to_string_lossy()),
+            "projectSource" => String::from(
+                project_root
+                    .strip_prefix(workspace_root)
+                    .unwrap()
+                    .to_string_lossy(),
+            ),
+            "target" => task.target.clone(),
+            "task" => task_id,
+            "workspaceRoot" => String::from(workspace_root.to_string_lossy()),
+            _ => {
+                warn!(
+                    target: "moon:project:token",
+                    "Found a token variable in \"{}\" that is not supported, but this may be intentional, so leaving it.",
+                    value
+                );
+
+                return Ok(String::from(value));
+            }
+        };
+
+        Ok(String::from(value).replace(token, &var_value))
+    }
+
     fn convert_string_to_u8(&self, token: &str, value: String) -> Result<u8, ProjectError> {
         match value.parse::<u8>() {
             Ok(i) => Ok(i),
@@ -172,65 +293,6 @@ impl<'a> TokenResolver<'a> {
                 value,
             ))),
         }
-    }
-
-    fn replace_token(
-        &self,
-        value: &str,
-        task: Option<&Task>,
-    ) -> Result<Vec<PathBuf>, ProjectError> {
-        if value.contains('@') && TOKEN_FUNC_PATTERN.is_match(value) {
-            let matches = TOKEN_FUNC_PATTERN.captures(value).unwrap();
-            let token = matches.get(0).unwrap().as_str(); // @name(arg)
-            let func = matches.get(1).unwrap().as_str(); // name
-            let arg = matches.get(2).unwrap().as_str(); // arg
-
-            trace!(
-                target: "moon:project:token",
-                "Resolving token {} for {} value {}",
-                color::id(token),
-                self.context.context_label(),
-                color::path(value)
-            );
-
-            return match func {
-                "dirs" => self
-                    .replace_file_group_tokens(TokenType::Dirs(token.to_owned(), arg.to_owned())),
-                "files" => self
-                    .replace_file_group_tokens(TokenType::Files(token.to_owned(), arg.to_owned())),
-                "globs" => self
-                    .replace_file_group_tokens(TokenType::Globs(token.to_owned(), arg.to_owned())),
-                "in" => self.replace_input_token(
-                    TokenType::In(
-                        token.to_owned(),
-                        self.convert_string_to_u8(token, arg.to_owned())?,
-                    ),
-                    task,
-                ),
-                "out" => self.replace_output_token(
-                    TokenType::Out(
-                        token.to_owned(),
-                        self.convert_string_to_u8(token, arg.to_owned())?,
-                    ),
-                    task,
-                ),
-                "root" => self
-                    .replace_file_group_tokens(TokenType::Root(token.to_owned(), arg.to_owned())),
-                _ => {
-                    return Err(ProjectError::Token(TokenError::UnknownTokenFunc(
-                        token.to_owned(),
-                    )))
-                }
-            };
-        } else if value.contains('@') && TOKEN_FUNC_ANYWHERE_PATTERN.is_match(value) {
-            warn!(
-                target: "moon:project:token",
-                "Found a token function in {} with other content. Token functions *must* be used literally as the only value.",
-                color::path(value)
-            );
-        }
-
-        Ok(vec![])
     }
 
     fn replace_file_group_tokens(
@@ -423,7 +485,7 @@ mod tests {
             resolver
                 .resolve(&string_vec!["foo/@dirs(static)/bar"], None)
                 .unwrap(),
-            Vec::<PathBuf>::new()
+            vec![project_root.join("foo/@dirs(static)/bar")]
         );
     }
 
@@ -718,6 +780,22 @@ mod tests {
                 vec![project_root.join("dir")],
             );
         }
+
+        #[test]
+        fn supports_vars() {
+            let project_root = get_project_root();
+            let workspace_root = get_workspace_root();
+            let file_groups = create_file_groups();
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let resolver = TokenResolver::for_args(&metadata);
+
+            let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
+
+            assert_eq!(
+                resolver.resolve_var("$target", &task).unwrap(),
+                "project:task"
+            );
+        }
     }
 
     mod inputs {
@@ -853,6 +931,18 @@ mod tests {
                 vec![project_root.join("dir")],
             );
         }
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"$var\", \"inputs\"))")]
+        fn doesnt_support_vars() {
+            let project_root = get_project_root();
+            let workspace_root = get_workspace_root();
+            let file_groups = create_file_groups();
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let resolver = TokenResolver::for_inputs(&metadata);
+
+            resolver.resolve(&string_vec!["$project"], None).unwrap();
+        }
     }
 
     mod outputs {
@@ -936,6 +1026,18 @@ mod tests {
             resolver
                 .resolve(&string_vec!["@root(static)"], None)
                 .unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"$var\", \"outputs\"))")]
+        fn doesnt_support_vars() {
+            let project_root = get_project_root();
+            let workspace_root = get_workspace_root();
+            let file_groups = create_file_groups();
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let resolver = TokenResolver::for_outputs(&metadata);
+
+            resolver.resolve(&string_vec!["$project"], None).unwrap();
         }
     }
 }

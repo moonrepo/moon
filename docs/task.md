@@ -1,16 +1,16 @@
 # Tasks
 
 - [Tokens](#tokens)
-  - [Variables](#variables)
   - [Functions](#functions)
     - [File groups](#file-groups)
     - [Inputs](#inputs)
     - [Outputs](#outputs)
+  - [Variables](#variables)
 - [Targets](#targets)
 - [Merge strategies](#merge-strategies)
 
 Tasks are commands that are ran in the context of a [project](./project.md). Underneath the hood, a
-task is simply a node module binary or system/shell command that is ran as a child-process. Tasks
+task is simply a node module binary or a system/shell command that is ran as a child-process. Tasks
 communicate between the Moon client and server through a JSON-like message system.
 
 ## Tokens
@@ -18,10 +18,6 @@ communicate between the Moon client and server through a JSON-like message syste
 Tokens are variables and functions that can be used by `args`, `inputs`, and `outputs` when
 configuring a task. They provide a way of accessing file group paths, referencing values from other
 task fields, and referencing metadata about the project and task itself.
-
-### Variables
-
-TODO
 
 ### Functions
 
@@ -273,6 +269,50 @@ tasks:
       - 'lib'
     outputs:
       - '/path/to/project/lib'
+```
+
+### Variables
+
+> Usable in `args` only.
+
+A token variable is a value that starts with `$` and is substituted to a value derived from the
+current workspace, project, and task. The following variables are available:
+
+- `$project` - Project ID of the project that owns the currently running task, as defined in
+  `.moon/workspace.yml`.
+- `$projectSource` - Relative file path from the workspace root to the project root, as defined in
+  `.moon/workspace.yml`.
+- `$projectRoot` - Absolute file path to the project root.
+- `$target` - Target that is currently running. Is a combination of project and task IDs.
+- `$task` - Task ID that is currently running.
+- `$workspaceRoot` - Absolute file path to the workspace root.
+
+> Unlike token functions, token variables can be placed _within_ content when necessary.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '$target'
+      - '--cache-dir'
+      - '../../.cache/$projectSource'
+      - '--project'
+      - '$project'
+      - '--task=$task'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - 'web:build'
+      - '--cache-dir'
+      - '../../.cache/apps/web'
+      - '--project'
+      - 'web'
+      - '--task=build'
 ```
 
 ## Targets

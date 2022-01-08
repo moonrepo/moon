@@ -151,11 +151,11 @@ impl Task {
         let mut args: Vec<String> = vec![];
         let run_in_project = !self.options.run_from_workspace_root;
 
-        // We cant use `TokenResolver.resolve_paths` as args are a mix of strings,
+        // We cant use `TokenResolver.resolve` as args are a mix of strings,
         // strings with tokens, and file paths when tokens are resolved.
         for arg in &self.args {
-            if token_resolver.has_token(arg) {
-                for resolved_arg in token_resolver.resolve(&[String::from(arg)], Some(self))? {
+            if token_resolver.has_token_func(arg) {
+                for resolved_arg in token_resolver.resolve_func(arg, Some(self))? {
                     // When running within a project:
                     //  - Project paths are relative and start with "./"
                     //  - Workspace paths are absolute
@@ -174,6 +174,8 @@ impl Task {
                         args.push(String::from(resolved_arg.to_string_lossy()));
                     }
                 }
+            } else if token_resolver.has_token_var(arg) {
+                args.push(token_resolver.resolve_var(arg, self)?);
             } else {
                 args.push(arg.clone());
             }

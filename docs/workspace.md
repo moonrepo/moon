@@ -40,8 +40,8 @@ The `.moon/workspace.yml` file configures projects and the toolchain.
 The `projects` setting is a map that defines the location of all [projects](./project.md) within the
 workspace. Each project requires a unique ID as the map key, where this ID is used heavily on the
 command line and within the project graph for uniquely identifying the project amongst all projects.
-The map value is a file system path to the project folder, relative from the workspace root, and
-must be contained within the workspace boundary.
+The map value (known as the project source) is a file system path to the project folder, relative
+from the workspace root, and must be contained within the workspace boundary.
 
 ```yaml
 projects:

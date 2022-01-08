@@ -176,6 +176,9 @@ impl<'a> TokenResolver<'a> {
                 for resolved_value in self.resolve_func(value, task)? {
                     results.push(resolved_value);
                 }
+            } else if self.has_token_var(value) {
+                // Vars now allowed here
+                TokenType::Var(String::new()).check_context(&self.context)?;
             } else {
                 results.push(expand_root_path(
                     value,
@@ -777,6 +780,22 @@ mod tests {
                 vec![project_root.join("dir")],
             );
         }
+
+        #[test]
+        fn supports_vars() {
+            let project_root = get_project_root();
+            let workspace_root = get_workspace_root();
+            let file_groups = create_file_groups();
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let resolver = TokenResolver::for_args(&metadata);
+
+            let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
+
+            assert_eq!(
+                resolver.resolve_var("$target", &task).unwrap(),
+                "project:task"
+            );
+        }
     }
 
     mod inputs {
@@ -912,6 +931,18 @@ mod tests {
                 vec![project_root.join("dir")],
             );
         }
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"$var\", \"inputs\"))")]
+        fn doesnt_support_vars() {
+            let project_root = get_project_root();
+            let workspace_root = get_workspace_root();
+            let file_groups = create_file_groups();
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let resolver = TokenResolver::for_inputs(&metadata);
+
+            resolver.resolve(&string_vec!["$project"], None).unwrap();
+        }
     }
 
     mod outputs {
@@ -995,6 +1026,18 @@ mod tests {
             resolver
                 .resolve(&string_vec!["@root(static)"], None)
                 .unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"$var\", \"outputs\"))")]
+        fn doesnt_support_vars() {
+            let project_root = get_project_root();
+            let workspace_root = get_workspace_root();
+            let file_groups = create_file_groups();
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let resolver = TokenResolver::for_outputs(&metadata);
+
+            resolver.resolve(&string_vec!["$project"], None).unwrap();
         }
     }
 }

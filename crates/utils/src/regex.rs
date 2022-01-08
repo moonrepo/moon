@@ -13,7 +13,7 @@ lazy_static! {
 
     pub static ref TOKEN_FUNC_PATTERN: Regex = Regex::new(&format!("^@([a-z]+)\\({}\\)$", TOKEN_GROUP.to_string())).unwrap();
     pub static ref TOKEN_FUNC_ANYWHERE_PATTERN: Regex = Regex::new(&format!("@([a-z]+)\\({}\\)", TOKEN_GROUP.to_string())).unwrap();
-    pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$([a-zA-Z+])").unwrap();
+    pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$([a-zA-Z]+)").unwrap();
 }
 
 pub fn matches_id(id: &str) -> bool {

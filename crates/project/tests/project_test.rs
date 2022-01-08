@@ -795,6 +795,63 @@ mod tasks {
         }
 
         #[test]
+        fn expands_args_from_workspace() {
+            let workspace_root = get_fixtures_root();
+            let project_root = workspace_root.join("base/files-and-dirs");
+            let project = Project::new(
+                "id",
+                "base/files-and-dirs",
+                &workspace_root,
+                &GlobalProjectConfig {
+                    file_groups: Some(create_file_groups_config()),
+                    tasks: Some(HashMap::from([(
+                        String::from("test"),
+                        TaskConfig {
+                            args: Some(vec![
+                                "--dirs".to_owned(),
+                                "@dirs(static)".to_owned(),
+                                "--files".to_owned(),
+                                "@files(static)".to_owned(),
+                                "--globs".to_owned(),
+                                "@globs(globs)".to_owned(),
+                                "--root".to_owned(),
+                                "@root(static)".to_owned(),
+                            ]),
+                            command: Some(String::from("test")),
+                            deps: None,
+                            inputs: None,
+                            outputs: None,
+                            options: Some(TaskOptionsConfig {
+                                run_from_workspace_root: Some(true),
+                                ..TaskOptionsConfig::default()
+                            }),
+                            type_of: None,
+                        },
+                    )])),
+                },
+            )
+            .unwrap();
+
+            assert_eq!(
+                *project.tasks.get("test").unwrap().args,
+                vec![
+                    "--dirs",
+                    project_root.join("dir").to_str().unwrap(),
+                    project_root.join("dir/subdir").to_str().unwrap(),
+                    "--files",
+                    project_root.join("file.ts").to_str().unwrap(),
+                    project_root.join("dir/other.tsx").to_str().unwrap(),
+                    project_root.join("dir/subdir/another.ts").to_str().unwrap(),
+                    "--globs",
+                    project_root.join("**/*.{ts,tsx}").to_str().unwrap(),
+                    project_root.join("*.js").to_str().unwrap(),
+                    "--root",
+                    project_root.join("dir").to_str().unwrap(),
+                ],
+            )
+        }
+
+        #[test]
         fn expands_inputs() {
             let workspace_root = get_fixtures_dir("base");
             let project_root = workspace_root.join("files-and-dirs");

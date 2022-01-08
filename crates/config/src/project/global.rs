@@ -91,6 +91,7 @@ mod tests {
     use super::*;
     use crate::errors::tests::handled_jailed_error;
     use figment;
+    use moon_utils::string_vec;
 
     fn load_jailed_config() -> Result<GlobalProjectConfig, figment::Error> {
         match GlobalProjectConfig::load(PathBuf::from(constants::CONFIG_PROJECT_FILENAME)) {
@@ -117,7 +118,7 @@ fileGroups:
                 GlobalProjectConfig {
                     file_groups: Some(HashMap::from([(
                         String::from("sources"),
-                        vec![String::from("src/**/*")]
+                        string_vec!["src/**/*"]
                     )])),
                     tasks: None,
                 }

@@ -13,25 +13,22 @@ pub fn create_file_groups_config() -> HashMap<String, Vec<String>> {
 
     map.insert(
         String::from("static"),
-        vec![
-            "file.ts".to_owned(),
-            "dir".to_owned(),
-            "dir/other.tsx".to_owned(),
-            "dir/subdir".to_owned(),
-            "dir/subdir/another.ts".to_owned(),
+        string_vec![
+            "file.ts",
+            "dir",
+            "dir/other.tsx",
+            "dir/subdir",
+            "dir/subdir/another.ts",
         ],
     );
 
-    map.insert(String::from("dirs_glob"), vec!["**/*".to_owned()]);
+    map.insert(String::from("dirs_glob"), string_vec!["**/*"]);
 
-    map.insert(String::from("files_glob"), vec!["**/*.{ts,tsx}".to_owned()]);
+    map.insert(String::from("files_glob"), string_vec!["**/*.{ts,tsx}"]);
 
-    map.insert(
-        String::from("globs"),
-        vec!["**/*.{ts,tsx}".to_owned(), "*.js".to_owned()],
-    );
+    map.insert(String::from("globs"), string_vec!["**/*.{ts,tsx}", "*.js"]);
 
-    map.insert(String::from("no_globs"), vec!["config.js".to_owned()]);
+    map.insert(String::from("no_globs"), string_vec!["config.js"]);
 
     map
 }

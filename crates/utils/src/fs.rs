@@ -3,11 +3,9 @@ use std::path::{Path, PathBuf};
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
 pub fn expand_root_path(file: &str, workspace_root: &Path, project_root: &Path) -> PathBuf {
     if file.starts_with('/') {
-        workspace_root
-            .join(file.strip_prefix('/').unwrap())
-            .to_path_buf()
+        workspace_root.join(file.strip_prefix('/').unwrap())
     } else {
-        project_root.join(file).to_path_buf()
+        project_root.join(file)
     }
 }
 

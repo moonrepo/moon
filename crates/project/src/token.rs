@@ -289,7 +289,7 @@ impl<'a> TokenResolver<'a> {
         let task = task.unwrap();
 
         if let TokenType::In(token, index) = token_type {
-            let error = ProjectError::Token(TokenError::InvalidInIndex(token.to_owned(), index));
+            let error = ProjectError::Token(TokenError::InvalidInIndex(token, index));
             let input = match task.inputs.get(index as usize) {
                 Some(i) => i,
                 None => {
@@ -338,7 +338,7 @@ impl<'a> TokenResolver<'a> {
         let task = task.unwrap();
 
         if let TokenType::Out(token, index) = token_type {
-            let error = ProjectError::Token(TokenError::InvalidOutIndex(token.to_owned(), index));
+            let error = ProjectError::Token(TokenError::InvalidOutIndex(token, index));
             let output = match task.outputs.get(index as usize) {
                 Some(i) => i,
                 None => {

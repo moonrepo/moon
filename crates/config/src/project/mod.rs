@@ -135,6 +135,7 @@ impl ProjectConfig {
 mod tests {
     use super::*;
     use crate::errors::tests::handled_jailed_error;
+    use moon_utils::string_vec;
     use std::path::PathBuf;
 
     fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {
@@ -174,7 +175,7 @@ fileGroups:
                 ProjectConfig {
                     file_groups: Some(HashMap::from([(
                         String::from("sources"),
-                        vec![String::from("src/**/*")]
+                        string_vec!["src/**/*"]
                     )])),
                     ..ProjectConfig::default()
                 }

@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 fn handle_canonicalize(path: &Path) -> Result<PathBuf, ProjectError> {
     match path.canonicalize() {
-        Ok(p) => Ok(p.to_path_buf()),
+        Ok(p) => Ok(p),
         Err(e) => {
             if e.kind() == std::io::ErrorKind::NotFound {
                 return Err(ProjectError::MissingFile(path.to_path_buf()));
@@ -322,6 +322,7 @@ impl Task {
 mod tests {
     use crate::test::create_expanded_task;
     use moon_config::TaskConfig;
+    use moon_utils::string_vec;
     use moon_utils::test::get_fixtures_dir;
     use std::collections::HashSet;
 
@@ -335,7 +336,7 @@ mod tests {
             &workspace_root,
             &project_root,
             Some(TaskConfig {
-                outputs: Some(vec![String::from("some/**/glob")]),
+                outputs: Some(string_vec!["some/**/glob"]),
                 ..TaskConfig::default()
             }),
         )
@@ -362,7 +363,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("file.ts")]),
+                    inputs: Some(string_vec!["file.ts"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -382,7 +383,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("file.*")]),
+                    inputs: Some(string_vec!["file.*"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -402,7 +403,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("/package.json")]),
+                    inputs: Some(string_vec!["/package.json"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -422,7 +423,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("file.ts")]),
+                    inputs: Some(string_vec!["file.ts"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -442,7 +443,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("file.ts"), String::from("src/*")]),
+                    inputs: Some(string_vec!["file.ts", "src/*"]),
                     ..TaskConfig::default()
                 }),
             )
@@ -463,7 +464,7 @@ mod tests {
                 &workspace_root,
                 &project_root,
                 Some(TaskConfig {
-                    inputs: Some(vec![String::from("missing.ts")]),
+                    inputs: Some(string_vec!["missing.ts"]),
                     ..TaskConfig::default()
                 }),
             )

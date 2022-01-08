@@ -116,10 +116,10 @@ fn basic_config() {
         Project {
             id: String::from("basic"),
             config: Some(ProjectConfig {
-                depends_on: Some(vec![String::from("noConfig")]),
+                depends_on: Some(string_vec!["noConfig"]),
                 file_groups: Some(HashMap::from([(
                     String::from("tests"),
-                    vec![String::from("**/*_test.rs")]
+                    string_vec!["**/*_test.rs"]
                 )])),
                 project: None,
                 tasks: None,
@@ -156,7 +156,7 @@ fn advanced_config() {
                     name: String::from("Advanced"),
                     description: String::from("Advanced example."),
                     owner: String::from("Batman"),
-                    maintainers: vec![String::from("Bruce Wayne")],
+                    maintainers: string_vec!["Bruce Wayne"],
                     channel: String::from("#batcave"),
                 }),
                 tasks: None,
@@ -180,7 +180,7 @@ fn overrides_global_file_groups() {
         &GlobalProjectConfig {
             file_groups: Some(HashMap::from([(
                 String::from("tests"),
-                vec![String::from("tests/**/*")],
+                string_vec!["tests/**/*"],
             )])),
             tasks: None,
         },
@@ -192,10 +192,10 @@ fn overrides_global_file_groups() {
         Project {
             id: String::from("basic"),
             config: Some(ProjectConfig {
-                depends_on: Some(vec![String::from("noConfig")]),
+                depends_on: Some(string_vec!["noConfig"]),
                 file_groups: Some(HashMap::from([(
                     String::from("tests"),
-                    vec![String::from("**/*_test.rs")]
+                    string_vec!["**/*_test.rs"]
                 )])),
                 project: None,
                 tasks: None,
@@ -429,11 +429,11 @@ mod tasks {
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
-                        args: Some(vec!["--a".to_owned()]),
+                        args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
-                        deps: Some(vec!["a:standard".to_owned()]),
-                        inputs: Some(vec!["a.*".to_owned()]),
-                        outputs: Some(vec!["a.ts".to_owned()]),
+                        deps: Some(string_vec!["a:standard"]),
+                        inputs: Some(string_vec!["a.*"]),
+                        outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
                         type_of: None,
                     },
@@ -453,11 +453,11 @@ mod tasks {
                     tasks: Some(HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
-                            args: Some(vec!["--b".to_owned()]),
+                            args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
-                            deps: Some(vec!["b:standard".to_owned()]),
-                            inputs: Some(vec!["b.*".to_owned()]),
-                            outputs: Some(vec!["b.ts".to_owned()]),
+                            deps: Some(string_vec!["b:standard"]),
+                            inputs: Some(string_vec!["b.*"]),
+                            outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
                                 TaskMergeStrategy::Replace
                             )),
@@ -474,11 +474,11 @@ mod tasks {
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
                         TaskConfig {
-                            args: Some(vec!["--b".to_owned()]),
+                            args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
-                            deps: Some(vec!["b:standard".to_owned()]),
-                            inputs: Some(vec!["b.*".to_owned()]),
-                            outputs: Some(vec!["b.ts".to_owned()]),
+                            deps: Some(string_vec!["b:standard"]),
+                            inputs: Some(string_vec!["b.*"]),
+                            outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_merged_task_options_config(
                                 TaskMergeStrategy::Replace
                             )),
@@ -506,11 +506,11 @@ mod tasks {
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
-                        args: Some(vec!["--a".to_owned()]),
+                        args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
-                        deps: Some(vec!["a:standard".to_owned()]),
-                        inputs: Some(vec!["a.*".to_owned()]),
-                        outputs: Some(vec!["a.ts".to_owned()]),
+                        deps: Some(string_vec!["a:standard"]),
+                        inputs: Some(string_vec!["a.*"]),
+                        outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
                         type_of: None,
                     },
@@ -530,11 +530,11 @@ mod tasks {
                     tasks: Some(HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
-                            args: Some(vec!["--b".to_owned()]),
+                            args: Some(string_vec!["--b"]),
                             command: None,
-                            deps: Some(vec!["b:standard".to_owned()]),
-                            inputs: Some(vec!["b.*".to_owned()]),
-                            outputs: Some(vec!["b.ts".to_owned()]),
+                            deps: Some(string_vec!["b:standard"]),
+                            inputs: Some(string_vec!["b.*"]),
+                            outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
                                 TaskMergeStrategy::Append
                             )),
@@ -551,11 +551,11 @@ mod tasks {
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
                         TaskConfig {
-                            args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
+                            args: Some(string_vec!["--a", "--b"]),
                             command: Some(String::from("standard")),
-                            deps: Some(vec!["a:standard".to_owned(), "b:standard".to_owned()]),
-                            inputs: Some(vec!["a.*".to_owned(), "b.*".to_owned()]),
-                            outputs: Some(vec!["a.ts".to_owned(), "b.ts".to_owned()]),
+                            deps: Some(string_vec!["a:standard", "b:standard"]),
+                            inputs: Some(string_vec!["a.*", "b.*"]),
+                            outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: Some(mock_merged_task_options_config(
                                 TaskMergeStrategy::Append
                             )),
@@ -583,11 +583,11 @@ mod tasks {
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
-                        args: Some(vec!["--a".to_owned()]),
+                        args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
-                        deps: Some(vec!["a:standard".to_owned()]),
-                        inputs: Some(vec!["a.*".to_owned()]),
-                        outputs: Some(vec!["a.ts".to_owned()]),
+                        deps: Some(string_vec!["a:standard"]),
+                        inputs: Some(string_vec!["a.*"]),
+                        outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
                         type_of: None,
                     },
@@ -607,11 +607,11 @@ mod tasks {
                     tasks: Some(HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
-                            args: Some(vec!["--b".to_owned()]),
+                            args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
-                            deps: Some(vec!["b:standard".to_owned()]),
-                            inputs: Some(vec!["b.*".to_owned()]),
-                            outputs: Some(vec!["b.ts".to_owned()]),
+                            deps: Some(string_vec!["b:standard"]),
+                            inputs: Some(string_vec!["b.*"]),
+                            outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
                                 TaskMergeStrategy::Prepend
                             )),
@@ -628,11 +628,11 @@ mod tasks {
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
                         TaskConfig {
-                            args: Some(vec!["--b".to_owned(), "--a".to_owned()]),
+                            args: Some(string_vec!["--b", "--a"]),
                             command: Some(String::from("newcmd")),
-                            deps: Some(vec!["b:standard".to_owned(), "a:standard".to_owned()]),
-                            inputs: Some(vec!["b.*".to_owned(), "a.*".to_owned()]),
-                            outputs: Some(vec!["b.ts".to_owned(), "a.ts".to_owned()]),
+                            deps: Some(string_vec!["b:standard", "a:standard"]),
+                            inputs: Some(string_vec!["b.*", "a.*"]),
+                            outputs: Some(string_vec!["b.ts", "a.ts"]),
                             options: Some(mock_merged_task_options_config(
                                 TaskMergeStrategy::Prepend
                             )),
@@ -660,11 +660,11 @@ mod tasks {
                 tasks: Some(HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
-                        args: Some(vec!["--a".to_owned()]),
+                        args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
-                        deps: Some(vec!["a:standard".to_owned()]),
-                        inputs: Some(vec!["a.*".to_owned()]),
-                        outputs: Some(vec!["a.ts".to_owned()]),
+                        deps: Some(string_vec!["a:standard"]),
+                        inputs: Some(string_vec!["a.*"]),
+                        outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
                         type_of: None,
                     },
@@ -684,11 +684,11 @@ mod tasks {
                     tasks: Some(HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
-                            args: Some(vec!["--b".to_owned()]),
+                            args: Some(string_vec!["--b"]),
                             command: None,
-                            deps: Some(vec!["b:standard".to_owned()]),
-                            inputs: Some(vec!["b.*".to_owned()]),
-                            outputs: Some(vec!["b.ts".to_owned()]),
+                            deps: Some(string_vec!["b:standard"]),
+                            inputs: Some(string_vec!["b.*"]),
+                            outputs: Some(string_vec!["b.ts"]),
                             options: Some(TaskOptionsConfig {
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
@@ -711,11 +711,11 @@ mod tasks {
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
                         TaskConfig {
-                            args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
+                            args: Some(string_vec!["--a", "--b"]),
                             command: Some(String::from("standard")),
-                            deps: Some(vec!["b:standard".to_owned(), "a:standard".to_owned()]),
-                            inputs: Some(vec!["b.*".to_owned()]),
-                            outputs: Some(vec!["a.ts".to_owned(), "b.ts".to_owned()]),
+                            deps: Some(string_vec!["b:standard", "a:standard"]),
+                            inputs: Some(string_vec!["b.*"]),
+                            outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: Some(TaskOptionsConfig {
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
@@ -753,15 +753,15 @@ mod tasks {
                     tasks: Some(HashMap::from([(
                         String::from("test"),
                         TaskConfig {
-                            args: Some(vec![
-                                "--dirs".to_owned(),
-                                "@dirs(static)".to_owned(),
-                                "--files".to_owned(),
-                                "@files(static)".to_owned(),
-                                "--globs".to_owned(),
-                                "@globs(globs)".to_owned(),
-                                "--root".to_owned(),
-                                "@root(static)".to_owned(),
+                            args: Some(string_vec![
+                                "--dirs",
+                                "@dirs(static)",
+                                "--files",
+                                "@files(static)",
+                                "--globs",
+                                "@globs(globs)",
+                                "--root",
+                                "@root(static)",
                             ]),
                             command: Some(String::from("test")),
                             deps: None,
@@ -778,18 +778,18 @@ mod tasks {
             assert_eq!(
                 *project.tasks.get("test").unwrap().args,
                 vec![
-                    "--dirs".to_owned(),
-                    "./dir".to_owned(),
-                    "./dir/subdir".to_owned(),
-                    "--files".to_owned(),
-                    "./file.ts".to_owned(),
-                    "./dir/other.tsx".to_owned(),
-                    "./dir/subdir/another.ts".to_owned(),
-                    "--globs".to_owned(),
-                    "./**/*.{ts,tsx}".to_owned(),
-                    "./*.js".to_owned(),
-                    "--root".to_owned(),
-                    "./dir".to_owned(),
+                    "--dirs",
+                    "./dir",
+                    "./dir/subdir",
+                    "--files",
+                    "./file.ts",
+                    "./dir/other.tsx",
+                    "./dir/subdir/another.ts",
+                    "--globs",
+                    "./**/*.{ts,tsx}",
+                    "./*.js",
+                    "--root",
+                    "./dir",
                 ],
             )
         }
@@ -807,15 +807,15 @@ mod tasks {
                     tasks: Some(HashMap::from([(
                         String::from("test"),
                         TaskConfig {
-                            args: Some(vec![
-                                "--dirs".to_owned(),
-                                "@dirs(static)".to_owned(),
-                                "--files".to_owned(),
-                                "@files(static)".to_owned(),
-                                "--globs".to_owned(),
-                                "@globs(globs)".to_owned(),
-                                "--root".to_owned(),
-                                "@root(static)".to_owned(),
+                            args: Some(string_vec![
+                                "--dirs",
+                                "@dirs(static)",
+                                "--files",
+                                "@files(static)",
+                                "--globs",
+                                "@globs(globs)",
+                                "--root",
+                                "@root(static)",
                             ]),
                             command: Some(String::from("test")),
                             deps: None,
@@ -867,13 +867,13 @@ mod tasks {
                             args: None,
                             command: Some(String::from("test")),
                             deps: None,
-                            inputs: Some(vec![
-                                "file.ts".to_owned(),
-                                "@dirs(static)".to_owned(),
-                                "@files(static)".to_owned(),
-                                "@globs(globs)".to_owned(),
-                                "@root(static)".to_owned(),
-                                "/package.json".to_owned(),
+                            inputs: Some(string_vec![
+                                "file.ts",
+                                "@dirs(static)",
+                                "@files(static)",
+                                "@globs(globs)",
+                                "@root(static)",
+                                "/package.json",
                             ]),
                             outputs: None,
                             options: None,

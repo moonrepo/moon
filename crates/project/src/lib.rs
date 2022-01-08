@@ -26,7 +26,7 @@ pub use task::{Task, TaskOptions};
 pub use task_graph::TaskGraph;
 
 // Tokens
-pub use token::{ResolverType, TokenResolver, TokenType};
+pub use token::{ResolverType, TokenResolver, TokenSharedData, TokenType};
 
 // File groups
 pub use file_group::FileGroup;

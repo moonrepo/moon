@@ -7,6 +7,18 @@ use std::io::Error;
 use std::path::Path;
 use tokio::process::Command;
 
+#[macro_export]
+macro_rules! string_vec {
+    () => {{
+        Vec::<String>::new()
+    }};
+    ($($item:expr),+ $(,)?) => {{
+        vec![
+            $( String::from($item), )*
+        ]
+    }};
+}
+
 pub async fn exec_bin_in_dir(file: &Path, args: Vec<&str>, dir: &Path) -> Result<(), Error> {
     Ok(exec_command_in_dir(file.to_str().unwrap(), args, dir).await?)
 }

@@ -101,9 +101,7 @@ impl FileGroup {
                         let entry_path = entry_path.strip_prefix(&self.project_root).unwrap();
 
                         list.push(String::from(entry_path.to_str().ok_or_else(|| {
-                            ProjectError::InvalidUtf8File(String::from(
-                                entry_path.to_string_lossy(),
-                            ))
+                            ProjectError::InvalidUtf8File(entry_path.to_owned())
                         })?));
                     }
                 }

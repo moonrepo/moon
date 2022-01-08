@@ -2,7 +2,7 @@ use moon_config::{
     GlobalProjectConfig, PackageJson, ProjectConfig, ProjectMetadataConfig, ProjectType, TargetID,
     TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_project::{FileGroup, Project, ProjectError, Target, Task, TokenResolver};
+use moon_project::{FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::HashMap;
 use std::path::Path;
@@ -25,7 +25,7 @@ fn mock_global_project_config() -> GlobalProjectConfig {
 }
 
 #[test]
-#[should_panic(expected = "MissingFilePath(\"projects/missing\")")]
+#[should_panic(expected = "MissingProject(\"projects/missing\")")]
 fn doesnt_exist() {
     Project::new(
         "missing",
@@ -252,7 +252,9 @@ fn has_package_json() {
 
 mod tasks {
     use super::*;
-    use moon_project::test::{create_file_groups, create_file_groups_config};
+    use moon_project::test::{
+        create_expanded_task as create_expanded_task_internal, create_file_groups_config,
+    };
     use pretty_assertions::assert_eq;
 
     fn mock_task_config(command: &str) -> TaskConfig {
@@ -305,21 +307,15 @@ mod tasks {
 
     fn create_expanded_task(
         target: TargetID,
-        config: &TaskConfig,
+        config: TaskConfig,
         workspace_root: &Path,
         project_source: &str,
     ) -> Result<Task, ProjectError> {
         let project_root = workspace_root.join(project_source);
-        let file_groups = create_file_groups(&project_root);
+        let mut task =
+            create_expanded_task_internal(workspace_root, &project_root, Some(config)).unwrap();
 
-        let mut task = Task::from_config(target, config);
-        task.expand_args(TokenResolver::for_args(&file_groups))?;
-        task.expand_inputs(
-            TokenResolver::for_inputs(&file_groups),
-            workspace_root,
-            &project_root,
-        )?;
-        task.expand_outputs(TokenResolver::for_outputs(), workspace_root, &project_root)?;
+        task.target = target;
 
         Ok(task)
     }
@@ -480,7 +476,7 @@ mod tasks {
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
-                        &TaskConfig {
+                        TaskConfig {
                             args: Some(vec!["--b".to_owned()]),
                             command: Some(String::from("newcmd")),
                             deps: Some(vec!["b:standard".to_owned()]),
@@ -557,7 +553,7 @@ mod tasks {
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
-                        &TaskConfig {
+                        TaskConfig {
                             args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
                             command: Some(String::from("standard")),
                             deps: Some(vec!["a:standard".to_owned(), "b:standard".to_owned()]),
@@ -634,7 +630,7 @@ mod tasks {
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
-                        &TaskConfig {
+                        TaskConfig {
                             args: Some(vec!["--b".to_owned(), "--a".to_owned()]),
                             command: Some(String::from("newcmd")),
                             deps: Some(vec!["b:standard".to_owned(), "a:standard".to_owned()]),
@@ -717,7 +713,7 @@ mod tasks {
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
-                        &TaskConfig {
+                        TaskConfig {
                             args: Some(vec!["--a".to_owned(), "--b".to_owned()]),
                             command: Some(String::from("standard")),
                             deps: Some(vec!["b:standard".to_owned(), "a:standard".to_owned()]),

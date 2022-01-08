@@ -158,8 +158,6 @@ mod tests {
 
         #[test]
         fn overwrites() {
-            let workspace_root = get_fixtures_dir("base");
-            let project_root = workspace_root.join("files-and-dirs");
             let mut file_group = FileGroup::new("id", string_vec!["**/*"]);
 
             file_group.merge(string_vec!["*"]);
@@ -211,7 +209,7 @@ mod tests {
                     "**/*.{ts,tsx}",
                     "/*.json",
                     // Literals
-                    "README.ts",
+                    "README.md",
                     "/README.md"
                 ],
             );
@@ -222,8 +220,8 @@ mod tests {
                     project_root.join("file.ts"),
                     project_root.join("dir/subdir/another.ts"),
                     project_root.join("dir/other.tsx"),
-                    project_root.join("README.md"),
                     workspace_root.join("package.json"),
+                    project_root.join("README.md"),
                     workspace_root.join("README.md")
                 ]
             );
@@ -281,11 +279,10 @@ mod tests {
 
         #[test]
         fn returns_root_when_many() {
-            let workspace_root = get_fixtures_dir("base");
-            let project_root = workspace_root.join("files-and-dirs");
+            let workspace_root = get_fixtures_dir("projects");
             let file_group = FileGroup::new("id", string_vec!["**/*"]);
 
-            assert_eq!(file_group.root(&project_root).unwrap(), project_root);
+            assert_eq!(file_group.root(&workspace_root).unwrap(), workspace_root);
         }
 
         #[test]

@@ -3,14 +3,15 @@ use moon_config::{
     TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_project::{FileGroup, Project, ProjectError, Target, Task};
+use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::HashMap;
 use std::path::Path;
 
-fn mock_file_groups(root: &Path) -> HashMap<String, FileGroup> {
+fn mock_file_groups() -> HashMap<String, FileGroup> {
     HashMap::from([(
         String::from("sources"),
-        FileGroup::new("sources", vec![String::from("src/**/*")], root),
+        FileGroup::new("sources", string_vec!["src/**/*"]),
     )])
 }
 
@@ -18,7 +19,7 @@ fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
         file_groups: Some(HashMap::from([(
             String::from("sources"),
-            vec![String::from("src/**/*")],
+            string_vec!["src/**/*"],
         )])),
         tasks: None,
     }
@@ -53,7 +54,7 @@ fn no_config() {
             id: String::from("no-config"),
             config: None,
             root: workspace_root.join("projects/no-config"),
-            file_groups: mock_file_groups(&workspace_root.join("projects/no-config")),
+            file_groups: mock_file_groups(),
             source: String::from("projects/no-config"),
             package_json: None,
             tasks: HashMap::new(),
@@ -83,7 +84,7 @@ fn empty_config() {
                 tasks: None,
             }),
             root: workspace_root.join("projects/empty-config"),
-            file_groups: mock_file_groups(&workspace_root.join("projects/empty-config")),
+            file_groups: mock_file_groups(),
             source: String::from("projects/empty-config"),
             package_json: None,
             tasks: HashMap::new(),
@@ -104,10 +105,10 @@ fn basic_config() {
     let project_root = workspace_root.join("projects/basic");
 
     // Merges with global
-    let mut file_groups = mock_file_groups(&project_root);
+    let mut file_groups = mock_file_groups();
     file_groups.insert(
         String::from("tests"),
-        FileGroup::new("tests", vec![String::from("**/*_test.rs")], &project_root),
+        FileGroup::new("tests", string_vec!["**/*_test.rs"]),
     );
 
     assert_eq!(
@@ -161,7 +162,7 @@ fn advanced_config() {
                 tasks: None,
             }),
             root: workspace_root.join("projects/advanced"),
-            file_groups: mock_file_groups(&workspace_root.join("projects/advanced")),
+            file_groups: mock_file_groups(),
             source: String::from("projects/advanced"),
             package_json: None,
             tasks: HashMap::new(),
@@ -202,11 +203,7 @@ fn overrides_global_file_groups() {
             root: workspace_root.join("projects/basic"),
             file_groups: HashMap::from([(
                 String::from("tests"),
-                FileGroup::new(
-                    "tests",
-                    vec![String::from("**/*_test.rs")],
-                    &workspace_root.join("projects/basic")
-                )
+                FileGroup::new("tests", string_vec!["**/*_test.rs"],)
             )]),
             source: String::from("projects/basic"),
             package_json: None,
@@ -242,7 +239,7 @@ fn has_package_json() {
             id: String::from("package-json"),
             config: None,
             root: workspace_root.join("projects/package-json"),
-            file_groups: mock_file_groups(&workspace_root.join("projects/package-json")),
+            file_groups: mock_file_groups(),
             source: String::from("projects/package-json"),
             package_json: Some(PackageJson::from(json).unwrap()),
             tasks: HashMap::new(),
@@ -782,17 +779,17 @@ mod tasks {
                 *project.tasks.get("test").unwrap().args,
                 vec![
                     "--dirs".to_owned(),
-                    "dir".to_owned(),
-                    "dir/subdir".to_owned(),
+                    "./dir".to_owned(),
+                    "./dir/subdir".to_owned(),
                     "--files".to_owned(),
-                    "file.ts".to_owned(),
-                    "dir/other.tsx".to_owned(),
-                    "dir/subdir/another.ts".to_owned(),
+                    "./file.ts".to_owned(),
+                    "./dir/other.tsx".to_owned(),
+                    "./dir/subdir/another.ts".to_owned(),
                     "--globs".to_owned(),
-                    "**/*.{ts,tsx}".to_owned(),
-                    "*.js".to_owned(),
+                    "./**/*.{ts,tsx}".to_owned(),
+                    "./*.js".to_owned(),
                     "--root".to_owned(),
-                    "dir".to_owned(),
+                    "./dir".to_owned(),
                 ],
             )
         }

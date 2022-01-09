@@ -1049,6 +1049,10 @@ dependencies = [
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
+ "moon_utils",
+ "serde",
+ "serde_json",
+ "thiserror",
  "tokio",
 ]
 

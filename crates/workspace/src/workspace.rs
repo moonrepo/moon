@@ -1,5 +1,6 @@
 use crate::errors::WorkspaceError;
 use crate::vcs::{Vcs, VcsManager};
+use moon_cache::CacheEngine;
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
 use moon_config::{constants, GlobalProjectConfig, WorkspaceConfig};
@@ -125,6 +126,9 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
 }
 
 pub struct Workspace {
+    /// Engine for reading and writing cache/outputs.
+    pub cache: CacheEngine,
+
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
@@ -179,6 +183,7 @@ impl Workspace {
         let vcs = VcsManager::load(&config);
 
         Ok(Workspace {
+            cache: CacheEngine::new(&root_dir)?,
             config,
             package_json,
             projects,

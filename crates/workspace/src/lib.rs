@@ -1,3 +1,4 @@
+mod actions;
 mod errors;
 mod vcs;
 mod workspace;

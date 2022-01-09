@@ -126,10 +126,19 @@ impl Tool for NpmTool {
 
 #[async_trait]
 impl PackageManager for NpmTool {
+    async fn dedupe_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        Ok(exec_bin_in_dir(
+            self.get_bin_path(),
+            vec!["dedupe"],
+            &toolchain.workspace_root,
+        )
+        .await?)
+    }
+
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(exec_bin_in_dir(
             self.get_bin_path(),
-            vec![if is_ci() { "ci" } else { "install " }],
+            vec![if is_ci() { "ci" } else { "install" }],
             &toolchain.workspace_root,
         )
         .await?)

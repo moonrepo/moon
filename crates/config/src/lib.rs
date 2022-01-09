@@ -1,6 +1,7 @@
 mod errors;
 mod package;
 mod project;
+mod tsconfig;
 mod types;
 mod validators;
 mod workspace;
@@ -11,6 +12,7 @@ pub use package::{PackageJson, PackageJsonValue};
 pub use project::global::GlobalProjectConfig;
 pub use project::task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
 pub use project::{ProjectConfig, ProjectMetadataConfig, ProjectType};
+pub use tsconfig::{TsconfigJson, TsconfigJsonValue};
 pub use types::{FilePath, FilePathOrGlob, ProjectID, TargetID, TaskID};
 pub use validator::ValidationErrors;
 pub use workspace::{

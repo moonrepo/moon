@@ -7,6 +7,7 @@ use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig, ProjectID, TaskID,
+    TsconfigJson, TsconfigJsonValue,
 };
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
@@ -66,6 +67,33 @@ fn load_package_json(
         return match PackageJson::load(&package_path) {
             Ok(json) => Ok(Some(json)),
             Err(error) => Err(ProjectError::InvalidPackageJson(
+                String::from(project_source),
+                error.to_string(),
+            )),
+        };
+    }
+
+    Ok(None)
+}
+
+// tsconfig.json
+fn load_tsconfig_json(
+    workspace_root: &Path,
+    project_source: &str,
+) -> Result<Option<PackageJsonValue>, ProjectError> {
+    let package_path = workspace_root.join(&project_source).join("tsconfig.json");
+
+    trace!(
+        target: "moon:project",
+        "Attempting to find {} in {}",
+        color::path("tsconfig.json"),
+        color::file_path(&workspace_root.join(&project_source)),
+    );
+
+    if package_path.exists() {
+        return match TsconfigJson::load(&package_path) {
+            Ok(json) => Ok(Some(json)),
+            Err(error) => Err(ProjectError::InvalidTsconfigJson(
                 String::from(project_source),
                 error.to_string(),
             )),
@@ -189,6 +217,10 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
+
+    /// Loaded "tsconfig.json", if it exists.
+    #[serde(skip)]
+    pub tsconfig_json: Option<TsconfigJsonValue>,
 }
 
 impl Project {
@@ -215,6 +247,7 @@ impl Project {
         let root = root.canonicalize().unwrap();
         let config = load_project_config(workspace_root, source)?;
         let package_json = load_package_json(workspace_root, source)?;
+        let tsconfig_json = load_tsconfig_json(workspace_root, source)?;
         let file_groups = create_file_groups_from_config(&config, global_config);
         let tasks = create_tasks_from_config(
             &config,
@@ -233,6 +266,7 @@ impl Project {
             root,
             source: String::from(source),
             tasks,
+            tsconfig_json,
         })
     }
 

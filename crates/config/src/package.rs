@@ -28,12 +28,6 @@ impl PackageJson {
     pub fn load(path: &Path) -> Result<Object, json::Error> {
         PackageJson::from(fs::read_to_string(path).unwrap().as_str())
     }
-
-    pub fn save(path: &Path, data: JsonValue) -> Result<(), json::Error> {
-        fs::write(path, json::stringify_pretty(data, 2)).unwrap();
-
-        Ok(())
-    }
 }
 
 #[cfg(test)]

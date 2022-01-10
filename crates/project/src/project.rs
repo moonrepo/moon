@@ -5,9 +5,9 @@ use crate::task::Task;
 use crate::token::{TokenResolver, TokenSharedData};
 use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
+use moon_config::tsconfig::TsConfigJson;
 use moon_config::{
     FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig, ProjectID, TaskID,
-    TsconfigJson,
 };
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
@@ -80,8 +80,8 @@ fn load_package_json(
 fn load_tsconfig_json(
     workspace_root: &Path,
     project_source: &str,
-) -> Result<Option<TsconfigJson>, ProjectError> {
-    let package_path = workspace_root.join(&project_source).join("tsconfig.json");
+) -> Result<Option<TsConfigJson>, ProjectError> {
+    let tsconfig_path = workspace_root.join(&project_source).join("tsconfig.json");
 
     trace!(
         target: "moon:project",
@@ -90,9 +90,9 @@ fn load_tsconfig_json(
         color::file_path(&workspace_root.join(&project_source)),
     );
 
-    if package_path.exists() {
-        return match TsconfigJson::load(&package_path) {
-            Ok(json) => Ok(Some(json)),
+    if tsconfig_path.exists() {
+        return match TsConfigJson::load(&tsconfig_path) {
+            Ok(cfg) => Ok(Some(cfg)),
             Err(error) => Err(ProjectError::InvalidTsconfigJson(
                 String::from(project_source),
                 error.to_string(),
@@ -222,8 +222,7 @@ pub struct Project {
     pub tasks: TasksMap,
 
     /// Loaded "tsconfig.json", if it exists.
-    #[serde(skip)]
-    pub tsconfig_json: Option<TsconfigJson>,
+    pub tsconfig_json: Option<TsConfigJson>,
 }
 
 impl Project {

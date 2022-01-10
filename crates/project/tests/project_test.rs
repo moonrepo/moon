@@ -57,6 +57,7 @@ fn no_config() {
             file_groups: mock_file_groups(),
             source: String::from("projects/no-config"),
             package_json: None,
+            package_name: None,
             tasks: HashMap::new(),
             tsconfig_json: None,
         }
@@ -88,6 +89,7 @@ fn empty_config() {
             file_groups: mock_file_groups(),
             source: String::from("projects/empty-config"),
             package_json: None,
+            package_name: None,
             tasks: HashMap::new(),
             tsconfig_json: None,
         }
@@ -130,6 +132,7 @@ fn basic_config() {
             file_groups,
             source: String::from("projects/basic"),
             package_json: None,
+            package_name: None,
             tasks: HashMap::new(),
             tsconfig_json: None,
         }
@@ -168,6 +171,7 @@ fn advanced_config() {
             file_groups: mock_file_groups(),
             source: String::from("projects/advanced"),
             package_json: None,
+            package_name: None,
             tasks: HashMap::new(),
             tsconfig_json: None,
         }
@@ -211,6 +215,7 @@ fn overrides_global_file_groups() {
             )]),
             source: String::from("projects/basic"),
             package_json: None,
+            package_name: None,
             tasks: HashMap::new(),
             tsconfig_json: None,
         }
@@ -247,6 +252,7 @@ fn has_package_json() {
             file_groups: mock_file_groups(),
             source: String::from("projects/package-json"),
             package_json: Some(PackageJson::from(json).unwrap()),
+            package_name: Some(String::from("npm-example")),
             tasks: HashMap::new(),
             tsconfig_json: None,
         }
@@ -357,6 +363,7 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from("tasks/no-tasks"),
                 package_json: None,
+                package_name: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     Task::from_config(
@@ -403,6 +410,7 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from("tasks/basic"),
                 package_json: None,
+                package_name: None,
                 tasks: HashMap::from([
                     (
                         String::from("standard"),
@@ -477,6 +485,7 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from(project_source),
                 package_json: None,
+                package_name: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     create_expanded_task(
@@ -555,6 +564,7 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from(project_source),
                 package_json: None,
+                package_name: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     create_expanded_task(
@@ -633,6 +643,7 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from(project_source),
                 package_json: None,
+                package_name: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     create_expanded_task(
@@ -717,6 +728,7 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from(project_source),
                 package_json: None,
+                package_name: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     create_expanded_task(

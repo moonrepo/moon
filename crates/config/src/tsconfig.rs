@@ -5,7 +5,7 @@ use json_comments::StripComments;
 use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{to_string_pretty, Value};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::fs;
 use std::io::Read;
@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
 // integration with the rest of the crates. We also can't wait for upsteam for new updates.
-// @see https://github.com/drivasperez/tsconfig/blob/master/src/lib.rs
+// https://github.com/drivasperez/tsconfig
 
 // Original license: Copyright 2021 Daniel Rivas Perez
 
@@ -34,6 +34,10 @@ pub struct TsConfigJson {
     pub type_acquisition: Option<TypeAcquisition>,
     pub compile_on_save: Option<bool>,
     pub compiler_options: Option<CompilerOptions>,
+
+    // Unknown fields
+    #[serde(flatten)]
+    pub unknown_fields: BTreeMap<String, Value>,
 
     // Non-standard
     #[serde(skip)]
@@ -216,8 +220,8 @@ pub struct CompilerOptions {
     pub no_unused_parameters: Option<bool>,
     pub out_dir: Option<String>,
     pub out_file: Option<String>,
-    pub paths: Option<HashMap<String, Vec<String>>>,
-    pub plugins: Option<Vec<HashMap<String, Value>>>,
+    pub paths: Option<BTreeMap<String, Vec<String>>>,
+    pub plugins: Option<Vec<BTreeMap<String, Value>>>,
     pub preserve_const_enums: Option<bool>,
     pub preserve_symlinks: Option<bool>,
     pub preserve_value_imports: Option<bool>,

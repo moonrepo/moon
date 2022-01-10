@@ -168,6 +168,15 @@ impl PackageManager for YarnTool {
         }
     }
 
+    fn get_workspace_dependency_range(&self) -> String {
+        if self.is_v1() {
+            String::from("*")
+        } else {
+            // https://yarnpkg.com/features/workspaces/#workspace-ranges-workspace
+            String::from("workspace:*")
+        }
+    }
+
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 

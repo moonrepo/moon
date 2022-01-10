@@ -7,7 +7,7 @@ use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig, ProjectID, TaskID,
-    TsconfigJson, TsconfigJsonValue,
+    TsconfigJson,
 };
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
@@ -80,7 +80,7 @@ fn load_package_json(
 fn load_tsconfig_json(
     workspace_root: &Path,
     project_source: &str,
-) -> Result<Option<PackageJsonValue>, ProjectError> {
+) -> Result<Option<TsconfigJson>, ProjectError> {
     let package_path = workspace_root.join(&project_source).join("tsconfig.json");
 
     trace!(
@@ -209,6 +209,9 @@ pub struct Project {
     #[serde(skip)]
     pub package_json: Option<PackageJsonValue>,
 
+    #[serde(rename = "packageName")]
+    pub package_name: Option<String>,
+
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
 
@@ -220,7 +223,7 @@ pub struct Project {
 
     /// Loaded "tsconfig.json", if it exists.
     #[serde(skip)]
-    pub tsconfig_json: Option<TsconfigJsonValue>,
+    pub tsconfig_json: Option<TsconfigJson>,
 }
 
 impl Project {
@@ -247,6 +250,10 @@ impl Project {
         let root = root.canonicalize().unwrap();
         let config = load_project_config(workspace_root, source)?;
         let package_json = load_package_json(workspace_root, source)?;
+        let package_name = match &package_json {
+            Some(json) => Some(String::from(json["name"].as_str().unwrap())),
+            None => None,
+        };
         let tsconfig_json = load_tsconfig_json(workspace_root, source)?;
         let file_groups = create_file_groups_from_config(&config, global_config);
         let tasks = create_tasks_from_config(
@@ -263,6 +270,7 @@ impl Project {
             file_groups,
             id: String::from(id),
             package_json,
+            package_name,
             root,
             source: String::from(source),
             tasks,

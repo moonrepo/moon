@@ -1,36 +1,38 @@
 // tsconfig.json
 
-use json::object::Object;
 use json::JsonValue;
 use std::fs;
-use std::path::Path;
-
-pub use json::object::Object as TsconfigJsonValue;
+use std::path::{Path, PathBuf};
 
 // We can't use serde_json here because:
 //  - Additional or unknown fields are entirely lost,
 //      which is problematic when we need to write back to the file.
 //  - Field values are non-deterministic and can be _anything_,
 //      which would result in parsing failures.
-#[derive(Debug)]
-pub struct TsconfigJson;
+#[derive(Clone, Debug, PartialEq)]
+pub struct TsconfigJson {
+    pub path: PathBuf,
+
+    pub value: json::object::Object,
+}
 
 impl TsconfigJson {
-    pub fn from(contents: &str) -> Result<Object, json::Error> {
-        match json::parse(contents)? {
-            JsonValue::Object(data) => Ok(data),
+    pub fn load(path: &Path) -> Result<TsconfigJson, json::Error> {
+        let contents = fs::read_to_string(path).unwrap();
+
+        match json::parse(&contents)? {
+            JsonValue::Object(value) => Ok(TsconfigJson {
+                path: path.to_path_buf(),
+                value,
+            }),
             _ => Err(json::Error::WrongType(String::from(
                 "Invalid `tsconfig.json`, must be an object.",
             ))),
         }
     }
 
-    pub fn load(path: &Path) -> Result<Object, json::Error> {
-        TsconfigJson::from(fs::read_to_string(path).unwrap().as_str())
-    }
-
-    pub fn save(path: &Path, data: JsonValue) -> Result<(), json::Error> {
-        fs::write(path, json::stringify_pretty(data, 2)).unwrap();
+    pub fn save(&self) -> Result<(), json::Error> {
+        fs::write(&self.path, json::stringify_pretty(self.value.clone(), 2)).unwrap();
 
         Ok(())
     }

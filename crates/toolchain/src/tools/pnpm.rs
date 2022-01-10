@@ -126,6 +126,11 @@ impl PackageManager for PnpmTool {
         .await?)
     }
 
+    fn get_workspace_dependency_range(&self) -> String {
+        // https://pnpm.io/workspaces#workspace-protocol-workspace
+        String::from("workspace:*")
+    }
+
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(exec_bin_in_dir(
             self.get_bin_path(),

@@ -135,6 +135,11 @@ impl PackageManager for NpmTool {
         .await?)
     }
 
+    fn get_workspace_dependency_range(&self) -> String {
+        // Doesn't support "workspace:*"
+        String::from("*")
+    }
+
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(exec_bin_in_dir(
             self.get_bin_path(),

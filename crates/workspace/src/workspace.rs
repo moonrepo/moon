@@ -1,5 +1,7 @@
 use crate::errors::WorkspaceError;
 use crate::vcs::{Vcs, VcsManager};
+use moon_config::package::PackageJson;
+use moon_config::tsconfig::TsConfigJson;
 use moon_config::{constants, GlobalProjectConfig, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;
@@ -30,7 +32,8 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
     }
 }
 
-fn find_package_json(root_dir: &Path) -> Result<PathBuf, WorkspaceError> {
+// package.json
+fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceError> {
     let package_json_path = root_dir.join("package.json");
 
     trace!(
@@ -44,7 +47,25 @@ fn find_package_json(root_dir: &Path) -> Result<PathBuf, WorkspaceError> {
         return Err(WorkspaceError::MissingPackageJson);
     }
 
-    Ok(package_json_path)
+    Ok(PackageJson::load(&package_json_path)?)
+}
+
+// tsconfig.json
+fn load_tsconfig_json(root_dir: &Path) -> Result<Option<TsConfigJson>, WorkspaceError> {
+    let tsconfig_json_path = root_dir.join("tsconfig.json");
+
+    trace!(
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::path("tsconfig.json"),
+        color::file_path(root_dir),
+    );
+
+    if !tsconfig_json_path.exists() {
+        return Ok(None);
+    }
+
+    Ok(Some(TsConfigJson::load(&tsconfig_json_path)?))
 }
 
 // project.yml
@@ -107,8 +128,8 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
-    /// Path to the root `package.json` file.
-    pub package_json_path: PathBuf,
+    /// The root `package.json` file.
+    pub package_json: PackageJson,
 
     /// The project graph, where each project is lazy loaded in.
     pub projects: ProjectGraph,
@@ -118,6 +139,9 @@ pub struct Workspace {
 
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
+
+    /// The root `tsconfig.json` file, if it exists.
+    pub tsconfig_json: Option<TsConfigJson>,
 
     /// The version control system currently being used.
     pub vcs: Box<dyn Vcs>,
@@ -146,7 +170,8 @@ impl Workspace {
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
-        let package_json_path = find_package_json(&root_dir)?;
+        let package_json = load_package_json(&root_dir)?;
+        let tsconfig_json = load_tsconfig_json(&root_dir)?;
 
         // Setup components
         let toolchain = Toolchain::new(&root_dir, &config)?;
@@ -155,10 +180,11 @@ impl Workspace {
 
         Ok(Workspace {
             config,
-            package_json_path,
+            package_json,
             projects,
             root: root_dir,
             toolchain,
+            tsconfig_json,
             vcs,
             working_dir,
         })

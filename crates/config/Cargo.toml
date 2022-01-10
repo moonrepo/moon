@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 moon_utils = { path = "../utils"}
 figment = { version = "0.10", features = ["test", "yaml"] }
-json = "0.12"
 json_comments = "0.2"
 regex = "1.5"
 semver = "1.0"

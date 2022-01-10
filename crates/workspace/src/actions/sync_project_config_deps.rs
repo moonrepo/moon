@@ -1,23 +1,9 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
-use moon_config::json::JsonValue;
 use moon_project::Project;
 use pathdiff::diff_paths;
 use std::collections::HashSet;
 use std::path::PathBuf;
-
-fn get_ref_path(item: &JsonValue) -> String {
-    match item {
-        JsonValue::Object(data) => {
-            if let JsonValue::String(path) = &data["path"] {
-                path.to_owned()
-            } else {
-                String::new()
-            }
-        }
-        _ => String::new(),
-    }
-}
 
 async fn sync_project(
     workspace: &Workspace,
@@ -34,46 +20,19 @@ async fn sync_project(
     for dep in depends_on {
         let dep_project = workspace.projects.get(&dep)?;
 
-        // if let Some(package) = &project.package_json {}
         // Update `dependencies` within `tsconfig.json`
 
         // Update `references` within `tsconfig.json`
-        if project.tsconfig_json.is_some() {
-            let tsconfig_json = project.tsconfig_json.as_mut().unwrap();
-            let tsconfig = &mut tsconfig_json.value;
-
-            // Convert to a vec so we can sort it
-            let mut references: Vec<JsonValue> = if tsconfig["references"].is_null() {
-                vec![]
-            } else {
-                tsconfig["references"].members().cloned().collect()
-            };
-
-            // Check if the reference already exists
-            let dep_reference_path = String::from(
+        if let Some(tsconfig) = &mut project.tsconfig_json {
+            let dep_ref_path = String::from(
                 diff_paths(&project.root, &dep_project.root)
                     .unwrap_or_else(|| PathBuf::from("."))
                     .to_string_lossy(),
             );
 
-            let has_reference = references
-                .iter()
-                .find(|item| get_ref_path(item) == dep_reference_path);
-
-            // Add if it does not exist
-            if has_reference.is_none() {
-                let mut reference = JsonValue::new_object();
-                reference["path"] = JsonValue::String(dep_reference_path);
-
-                references.push(reference);
+            if tsconfig.add_project_ref(dep_ref_path) {
+                tsconfig.save()?;
             }
-
-            // Sort the references
-            references.sort_by_key(get_ref_path);
-
-            // Save and write to the file
-            tsconfig["references"] = JsonValue::Array(references);
-            tsconfig_json.save().unwrap();
         }
     }
 
@@ -83,7 +42,7 @@ async fn sync_project(
 }
 
 pub async fn sync_project_config_deps(
-    workspace: &Workspace,
+    workspace: &mut Workspace,
     project: &mut Project,
 ) -> Result<(), WorkspaceError> {
     let mut synced = HashSet::<String>::new();
@@ -94,6 +53,13 @@ pub async fn sync_project_config_deps(
             let mut dep_project = workspace.projects.get(&dep)?;
 
             sync_project(workspace, &mut dep_project, &mut synced).await?;
+        }
+    }
+
+    // Sync a project reference to the root `tsconfig.json`
+    if let Some(tsconfig) = &mut workspace.tsconfig_json {
+        if tsconfig.add_project_ref(project.source.to_owned()) {
+            tsconfig.save()?;
         }
     }
 

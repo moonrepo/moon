@@ -63,8 +63,8 @@ impl TsConfigJson {
 
     pub fn add_project_ref(&mut self, path: String) -> bool {
         let mut references = match &self.references {
-            Some(refs) => refs,
-            None => vec![],
+            Some(refs) => refs.clone(),
+            None => Vec::<Reference>::new(),
         };
 
         // Check if the reference already exists
@@ -78,7 +78,7 @@ impl TsConfigJson {
             prepend: None,
         });
 
-        references.sort_by_key(|r| r.path);
+        references.sort_by_key(|r| r.path.clone());
 
         self.references = Some(references);
 
@@ -108,7 +108,7 @@ fn merge(a: &mut Value, b: Value) {
 }
 
 pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, ConfigError> {
-    let json = std::fs::read_to_string(path)?;
+    let json = fs::read_to_string(path)?;
     let mut value = parse_to_value(&json)?;
 
     if extend {

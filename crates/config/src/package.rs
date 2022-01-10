@@ -1,21 +1,16 @@
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_json::Value;
+// package.json
+
+use crate::errors::ConfigError;
+use json_comments::StripComments;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use serde_json::{to_string_pretty, Value};
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::fs;
+use std::io::Read;
+use std::path::{Path, PathBuf};
 
-// This implementation is forked from the wonderful crate "npm-package-json", as we need full
-// control for integration with the rest of the crates. We also can't wait for upsteam for new
-// updates. https://github.com/mainrs/npm-package-json-rs
-
-// Original license: Copyright 2020 Sven Lechner
-
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageJson {
     pub author: Option<Person>,
@@ -78,6 +73,30 @@ pub struct PackageJson {
     pub path: PathBuf,
 }
 
+impl PackageJson {
+    pub fn load(path: &Path) -> Result<PackageJson, ConfigError> {
+        let json = fs::read_to_string(path)?;
+
+        let mut stripped = String::with_capacity(json.len());
+        StripComments::new(json.as_bytes()).read_to_string(&mut stripped)?;
+
+        // Remove trailing commas from objects.
+        let pattern = Regex::new(r",(?P<valid>\s*})").unwrap();
+        let stripped = pattern.replace_all(&stripped, "$valid");
+
+        let mut cfg: PackageJson = serde_json::from_str(&stripped)?;
+        cfg.path = path.to_path_buf();
+
+        Ok(cfg)
+    }
+
+    pub fn save(&self) -> Result<(), ConfigError> {
+        fs::write(&self.path, to_string_pretty(self)?)?;
+
+        Ok(())
+    }
+}
+
 pub type BinSet = BTreeMap<String, String>;
 pub type DepsMetaSet = BTreeMap<String, DependencyMeta>;
 pub type DepsSet = BTreeMap<String, String>;
@@ -87,19 +106,19 @@ pub type PeerDepsMetaSet = BTreeMap<String, PeerDependencyMeta>;
 pub type ScriptsSet = BTreeMap<String, String>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-enum StringOrArray<T> {
+pub enum StringOrArray<T> {
     String(String),
     Object(T),
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-enum StringOrObject<T> {
+pub enum StringOrObject<T> {
     String(String),
     Object(T),
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-enum StringObjectAndArray<T> {
+pub enum StringObjectAndArray<T> {
     String(String),
     Object(T),
     Array(T),
@@ -121,7 +140,7 @@ pub struct DependencyMeta {
     pub built: Option<bool>,
     pub unplugged: Option<bool>,
 
-    // pnpm
+    // Pnpm
     pub injected: Option<bool>,
 }
 

@@ -1,6 +1,6 @@
 pub mod constants;
 mod errors;
-mod package;
+pub mod package;
 mod project;
 pub mod tsconfig;
 mod types;
@@ -8,8 +8,6 @@ mod validators;
 mod workspace;
 
 pub use errors::ConfigError;
-pub use json;
-pub use package::{PackageJson, PackageJsonValue};
 pub use project::global::GlobalProjectConfig;
 pub use project::task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
 pub use project::{ProjectConfig, ProjectMetadataConfig, ProjectType};

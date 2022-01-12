@@ -136,12 +136,12 @@ impl Toolchain {
         self.load_tool(self.get_npm()).await?;
         self.load_tool(self.get_npx()).await?;
 
-        if self.pnpm.is_some() {
-            self.load_tool(self.get_pnpm().unwrap()).await?;
+        if let Some(pnp) = &self.pnpm {
+            self.load_tool(pnp).await?;
         }
 
-        if self.yarn.is_some() {
-            self.load_tool(self.get_yarn().unwrap()).await?;
+        if let Some(yarn) = &self.yarn {
+            self.load_tool(yarn).await?;
         }
 
         Ok(())
@@ -154,12 +154,12 @@ impl Toolchain {
             "Tearing down toolchain, uninstalling tools",
         );
 
-        if self.yarn.is_some() {
-            self.unload_tool(self.get_yarn().unwrap()).await?;
+        if let Some(yarn) = &self.yarn {
+            self.unload_tool(yarn).await?;
         }
 
-        if self.pnpm.is_some() {
-            self.unload_tool(self.get_pnpm().unwrap()).await?;
+        if let Some(pnp) = &self.pnpm {
+            self.unload_tool(pnp).await?;
         }
 
         self.unload_tool(self.get_npx()).await?;

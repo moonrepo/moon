@@ -115,6 +115,22 @@ impl Tool for PnpmTool {
 
 #[async_trait]
 impl PackageManager for PnpmTool {
+    async fn dedupe_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        // pnpm doesn't support deduping, but maybe prune is good here?
+        // https://pnpm.io/cli/prune
+        Ok(exec_bin_in_dir(
+            self.get_bin_path(),
+            vec!["prune"],
+            &toolchain.workspace_root,
+        )
+        .await?)
+    }
+
+    fn get_workspace_dependency_range(&self) -> String {
+        // https://pnpm.io/workspaces#workspace-protocol-workspace
+        String::from("workspace:*")
+    }
+
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(exec_bin_in_dir(
             self.get_bin_path(),

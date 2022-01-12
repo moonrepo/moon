@@ -1,7 +1,17 @@
 use figment::error::Kind;
 use figment::Error as FigmentError;
 use std::borrow::Cow;
+use thiserror::Error;
 use validator::{ValidationError, ValidationErrors};
+
+#[derive(Error, Debug)]
+pub enum ConfigError {
+    #[error(transparent)]
+    IO(#[from] std::io::Error),
+
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+}
 
 pub fn create_validation_error(code: &'static str, path: &str, message: String) -> ValidationError {
     let mut error = ValidationError::new(code);

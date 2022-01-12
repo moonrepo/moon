@@ -8,6 +8,12 @@
       - [packageManager](#packagemanager)
       - [npm, pnpm, yarn](#npm-pnpm-yarn)
         - [version](#version-1)
+      - [dedupeOnInstall](#dedupeoninstall)
+      - [syncProjectWorkspaceDependencies](#syncprojectworkspacedependencies)
+      - [syncTypeScriptProjectReferences](#synctypescriptprojectreferences)
+    - [vcs](#vcs)
+      - [manager](#manager)
+      - [defaultBranch](#defaultbranch)
   - [`project.yml`](#projectyml)
     - [fileGroups](#filegroups)
     - [tasks](#tasks)
@@ -67,6 +73,8 @@ as Moon _does not_ use a Node.js binary found on the host machine. Managing the 
 within the toolchain ensures a deterministic environment across any machine (whether a developer,
 CI, or production machine).
 
+This setting also houses any configuration for JavaScript, TypeScript, or the related ecosystem.
+
 > This setting is optional, and will default Node.js to the latest
 > [active LTS version](https://nodejs.org/en/about/releases/) when not defined.
 
@@ -107,6 +115,110 @@ major, minor, and patch version, to ensure the same environment is used across e
 node:
   yarn:
     version: '3.1.0'
+```
+
+##### dedupeOnInstall
+
+The `dedupeOnInstall` setting will dedupe dependencies after they have been installed, in an effort
+to keep the workspace tree as clean and lean as possible. Defaults to `true`.
+
+```yaml
+node:
+  dedupeOnInstall: true
+```
+
+##### syncProjectWorkspaceDependencies
+
+The `syncProjectWorkspaceDependencies` setting will sync the `dependsOn` setting within a project's
+`project.yml` as normal dependencies within the project's `package.json`, using `workspace:*` or `*`
+version ranges (depending on what the package manager supports). If a dependent project does not
+have a `package.json`, or if a dependency of the same name has an explicit version already defined,
+the sync will be skipped. Defaults to `true`.
+
+```yaml
+node:
+  syncProjectWorkspaceDependencies: true
+```
+
+A quick example on how this works. Given the following `dependsOn`:
+
+```yaml
+dependsOn:
+  - design-system
+  - react-utils
+```
+
+Would result in the following `dependencies` within a project's `package.json`.
+
+```jsonc
+{
+	// ...
+	"dependencies": {
+		"@company/design-system": "workspace:*",
+		"@company/react-utils": "workspace:*"
+		// ...
+	}
+}
+```
+
+##### syncTypeScriptProjectReferences
+
+The `syncTypeScriptProjectReferences` setting will sync the `dependsOn` setting within a project's
+`project.yml` as project references within the project's `tsconfig.json`, and the workspace root
+`tsconfig.json`. Defaults to `true`.
+
+```yaml
+node:
+  syncTypeScriptProjectReferences: true
+```
+
+A quick example on how this works. Given the following `dependsOn`:
+
+```yaml
+dependsOn:
+  - design-system
+  - react-utils
+```
+
+Would result in the following `references` within both `tsconfig.json`s.
+
+```jsonc
+{
+	// ...
+	"references": [
+		// ...
+		{ "path": "../../design-system" },
+		{ "path": "../../react-utils" }
+	]
+}
+```
+
+#### vcs
+
+Configures the version control system to utilize within the workspace (and repository). A VCS is
+required for determining touched (added, modified, etc) files, calculating file hashes, computing
+affected files, and much more.
+
+##### manager
+
+The `manager` setting definges the VCS tool/binary that is being used for managing the repository.
+Accepts "git" (default) or "svn" (experimental).
+
+```yaml
+vcs:
+  manager: 'git'
+```
+
+##### defaultBranch
+
+The `defaultBranch` setting defines the default upstream branch (master/main/trunk) in the
+repository for comparing the local branch against. For git, this is is typically "origin/master"
+(default) or "origin/main", and must include the remote prefix (before /). For svn, this should
+always be "trunk".
+
+```yaml
+vcs:
+  defaultBranch: 'origin/master'
 ```
 
 ### `project.yml`

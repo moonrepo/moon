@@ -6,11 +6,13 @@ edition = "2021"
 [dependencies]
 moon_utils = { path = "../utils"}
 figment = { version = "0.10", features = ["test", "yaml"] }
-json = "0.12"
+json_comments = "0.2"
 regex = "1.5"
 semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 serde_yaml = "0.8"
+thiserror = "1.0"
 validator = { version = "0.14", features = ["derive"] }
 
 [dev-dependencies]

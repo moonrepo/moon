@@ -146,6 +146,37 @@ impl Tool for YarnTool {
 
 #[async_trait]
 impl PackageManager for YarnTool {
+    async fn dedupe_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        // Yarn v1 doesnt dedupe natively, so use:
+        // npx yarn-deduplicate yarn.lock
+        if self.is_v1() {
+            Ok(exec_bin_in_dir(
+                toolchain.get_npx().get_bin_path(),
+                vec!["yarn-deduplicate", "yarn.lock"],
+                &toolchain.workspace_root,
+            )
+            .await?)
+
+        // yarn dedupe
+        } else {
+            Ok(exec_bin_in_dir(
+                self.get_bin_path(),
+                vec!["dedupe"],
+                &toolchain.workspace_root,
+            )
+            .await?)
+        }
+    }
+
+    fn get_workspace_dependency_range(&self) -> String {
+        if self.is_v1() {
+            String::from("*")
+        } else {
+            // https://yarnpkg.com/features/workspaces/#workspace-ranges-workspace
+            String::from("workspace:*")
+        }
+    }
+
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 

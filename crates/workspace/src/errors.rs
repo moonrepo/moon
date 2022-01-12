@@ -1,4 +1,4 @@
-use moon_config::{constants, ValidationErrors};
+use moon_config::{constants, ConfigError, ValidationErrors};
 use moon_project::ProjectError;
 use moon_toolchain::ToolchainError;
 use thiserror::Error;
@@ -47,6 +47,9 @@ pub enum WorkspaceError {
 
     #[error("Unknown moon workspace error.")]
     Unknown,
+
+    #[error(transparent)]
+    Config(#[from] ConfigError),
 
     #[error(transparent)]
     Project(#[from] ProjectError),

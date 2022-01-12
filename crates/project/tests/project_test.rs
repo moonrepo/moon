@@ -1,11 +1,12 @@
+use moon_config::package::PackageJson;
 use moon_config::{
-    GlobalProjectConfig, PackageJson, ProjectConfig, ProjectMetadataConfig, ProjectType, TargetID,
-    TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    GlobalProjectConfig, ProjectConfig, ProjectMetadataConfig, ProjectType, TargetID, TaskConfig,
+    TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_project::{FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 fn mock_file_groups() -> HashMap<String, FileGroup> {
@@ -58,6 +59,7 @@ fn no_config() {
             source: String::from("projects/no-config"),
             package_json: None,
             tasks: HashMap::new(),
+            tsconfig_json: None,
         }
     );
 }
@@ -88,6 +90,7 @@ fn empty_config() {
             source: String::from("projects/empty-config"),
             package_json: None,
             tasks: HashMap::new(),
+            tsconfig_json: None,
         }
     );
 }
@@ -129,6 +132,7 @@ fn basic_config() {
             source: String::from("projects/basic"),
             package_json: None,
             tasks: HashMap::new(),
+            tsconfig_json: None,
         }
     );
 }
@@ -166,6 +170,7 @@ fn advanced_config() {
             source: String::from("projects/advanced"),
             package_json: None,
             tasks: HashMap::new(),
+            tsconfig_json: None,
         }
     );
 }
@@ -208,6 +213,7 @@ fn overrides_global_file_groups() {
             source: String::from("projects/basic"),
             package_json: None,
             tasks: HashMap::new(),
+            tsconfig_json: None,
         }
     );
 }
@@ -223,16 +229,6 @@ fn has_package_json() {
     )
     .unwrap();
 
-    let json = r#"
-{
-    "name": "npm-example",
-    "version": "1.2.3",
-    "scripts": {
-        "build": "babel"
-    }
-}
-"#;
-
     assert_eq!(
         project,
         Project {
@@ -241,8 +237,15 @@ fn has_package_json() {
             root: workspace_root.join("projects/package-json"),
             file_groups: mock_file_groups(),
             source: String::from("projects/package-json"),
-            package_json: Some(PackageJson::from(json).unwrap()),
+            package_json: Some(PackageJson {
+                path: workspace_root.join("projects/package-json/package.json"),
+                name: Some(String::from("npm-example")),
+                version: Some(String::from("1.2.3")),
+                scripts: Some(BTreeMap::from([("build".to_owned(), "babel".to_owned())])),
+                ..PackageJson::default()
+            }),
             tasks: HashMap::new(),
+            tsconfig_json: None,
         }
     );
 }
@@ -358,6 +361,7 @@ mod tasks {
                         &mock_task_config("cmd")
                     )
                 )]),
+                tsconfig_json: None,
             }
         );
     }
@@ -412,6 +416,7 @@ mod tasks {
                         )
                     )
                 ]),
+                tsconfig_json: None,
             }
         );
     }
@@ -489,6 +494,7 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
+                tsconfig_json: None,
             }
         );
     }
@@ -566,6 +572,7 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
+                tsconfig_json: None,
             }
         );
     }
@@ -643,6 +650,7 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
+                tsconfig_json: None,
             }
         );
     }
@@ -732,6 +740,7 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
+                tsconfig_json: None,
             }
         );
     }

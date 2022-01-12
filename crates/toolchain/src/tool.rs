@@ -40,6 +40,12 @@ pub trait Tool {
 
 #[async_trait]
 pub trait PackageManager {
+    /// Dedupe dependencies after they have been installed.
+    async fn dedupe_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
+
+    /// Return the dependency range to use when linking local workspace packages.
+    fn get_workspace_dependency_range(&self) -> String;
+
     /// Install dependencies at the root where a `package.json` exists.
     async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 }

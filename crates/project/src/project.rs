@@ -5,9 +5,9 @@ use crate::task::Task;
 use crate::token::{TokenResolver, TokenSharedData};
 use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
-use moon_config::{
-    FilePath, GlobalProjectConfig, PackageJson, PackageJsonValue, ProjectConfig, ProjectID, TaskID,
-};
+use moon_config::package::PackageJson;
+use moon_config::tsconfig::TsConfigJson;
+use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -52,7 +52,7 @@ fn load_project_config(
 fn load_package_json(
     workspace_root: &Path,
     project_source: &str,
-) -> Result<Option<PackageJsonValue>, ProjectError> {
+) -> Result<Option<PackageJson>, ProjectError> {
     let package_path = workspace_root.join(&project_source).join("package.json");
 
     trace!(
@@ -66,6 +66,33 @@ fn load_package_json(
         return match PackageJson::load(&package_path) {
             Ok(json) => Ok(Some(json)),
             Err(error) => Err(ProjectError::InvalidPackageJson(
+                String::from(project_source),
+                error.to_string(),
+            )),
+        };
+    }
+
+    Ok(None)
+}
+
+// tsconfig.json
+fn load_tsconfig_json(
+    workspace_root: &Path,
+    project_source: &str,
+) -> Result<Option<TsConfigJson>, ProjectError> {
+    let tsconfig_path = workspace_root.join(&project_source).join("tsconfig.json");
+
+    trace!(
+        target: "moon:project",
+        "Attempting to find {} in {}",
+        color::path("tsconfig.json"),
+        color::file_path(&workspace_root.join(&project_source)),
+    );
+
+    if tsconfig_path.exists() {
+        return match TsConfigJson::load(&tsconfig_path) {
+            Ok(cfg) => Ok(Some(cfg)),
+            Err(error) => Err(ProjectError::InvalidTsConfigJson(
                 String::from(project_source),
                 error.to_string(),
             )),
@@ -166,20 +193,19 @@ fn create_tasks_from_config(
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
     pub config: Option<ProjectConfig>,
 
     /// File groups specific to the project. Inherits all file groups from the global config.
-    #[serde(rename = "fileGroups")]
     pub file_groups: FileGroupsMap,
 
     /// Unique ID for the project. Is the LHS of the `projects` setting.
     pub id: ProjectID,
 
     /// Loaded "package.json", if it exists.
-    #[serde(skip)]
-    pub package_json: Option<PackageJsonValue>,
+    pub package_json: Option<PackageJson>,
 
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
@@ -189,6 +215,9 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
+
+    /// Loaded "tsconfig.json", if it exists.
+    pub tsconfig_json: Option<TsConfigJson>,
 }
 
 impl Project {
@@ -215,6 +244,7 @@ impl Project {
         let root = root.canonicalize().unwrap();
         let config = load_project_config(workspace_root, source)?;
         let package_json = load_package_json(workspace_root, source)?;
+        let tsconfig_json = load_tsconfig_json(workspace_root, source)?;
         let file_groups = create_file_groups_from_config(&config, global_config);
         let tasks = create_tasks_from_config(
             &config,
@@ -233,6 +263,7 @@ impl Project {
             root,
             source: String::from(source),
             tasks,
+            tsconfig_json,
         })
     }
 
@@ -249,6 +280,17 @@ impl Project {
         depends_on.sort();
 
         depends_on
+    }
+
+    /// Return the "package.json" name, if the file exists.
+    pub fn get_package_name(&self) -> Option<String> {
+        if let Some(json) = &self.package_json {
+            if let Some(name) = &json.name {
+                return Some(name.clone());
+            }
+        }
+
+        None
     }
 
     /// Return true if this project is affected, based on touched files.

@@ -4,9 +4,9 @@
 - [Configuration](#configuration)
 - [Supported tools](#supported-tools)
   - [Node.js](#nodejs)
-  - [npm, npx](#npm-npx)
-  - [pnpm](#pnpm)
-  - [Yarn](#yarn)
+    - [npm, npx](#npm-npx)
+    - [pnpm](#pnpm)
+    - [yarn](#yarn)
 
 The toolchain is an internal layer for downloading, installing, and managing tools (languages,
 libraries, and binaries) that are required at runtime. We embrace this approach over relying on
@@ -54,7 +54,7 @@ first-class citizen within the toolchain. Because of this, Node.js is _always en
 - Configured with: `node`
 - Installed to: `~/.moon/tools/node/x.x.x`
 
-### npm, npx
+#### npm, npx
 
 The `npm` and `npx` binaries come pre-installed with Node.js, and will _always exist_, regardless of
 the `node.packageManager` setting.
@@ -62,7 +62,7 @@ the `node.packageManager` setting.
 - Configured with: `node.npm`
 - Installed to: `~/.moon/tools/node/x.x.x/bin/npm` (and `npx`)
 
-### pnpm
+#### pnpm
 
 The [`pnpm`](https://pnpm.io) library can be used as an alternative package manager to npm, and will
 be enabled when `node.packageManager` is set to "pnpm". The binary will be installed as a toolchain
@@ -71,7 +71,7 @@ global npm dependency.
 - Configured with: `node.pnpm`
 - Installed to: `~/.moon/tools/node/x.x.x/bin/pnpm`
 
-### Yarn
+#### yarn
 
 The [`yarn`](https://yarnpkg.com) library can be used as an alternative package manager to npm, and
 will be enabled when `node.packageManager` is set to "yarn". The binary will be installed as a

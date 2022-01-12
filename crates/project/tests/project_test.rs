@@ -238,6 +238,7 @@ fn has_package_json() {
             file_groups: mock_file_groups(),
             source: String::from("projects/package-json"),
             package_json: Some(PackageJson {
+                path: workspace_root.join("projects/package-json/package.json"),
                 name: Some(String::from("npm-example")),
                 version: Some(String::from("1.2.3")),
                 scripts: Some(BTreeMap::from([("build".to_owned(), "babel".to_owned())])),

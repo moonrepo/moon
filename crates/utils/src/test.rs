@@ -6,7 +6,7 @@ pub fn get_fixtures_dir(dir: &str) -> PathBuf {
 }
 
 pub fn get_fixtures_root() -> PathBuf {
-    let mut path = env::current_dir().unwrap();
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("../../tests/fixtures");
 
     path.canonicalize().unwrap()

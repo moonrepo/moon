@@ -68,7 +68,7 @@ impl TsConfigJson {
         };
 
         // Check if the reference already exists
-        if references.iter().find(|r| r.path == path).is_some() {
+        if references.iter().any(|r| r.path == path) {
             return false;
         }
 

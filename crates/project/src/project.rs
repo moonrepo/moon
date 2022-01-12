@@ -283,10 +283,10 @@ impl Project {
     }
 
     /// Return the "package.json" name, if the file exists.
-    pub fn get_package_name(&self) -> Option<&String> {
+    pub fn get_package_name(&self) -> Option<String> {
         if let Some(json) = &self.package_json {
             if let Some(name) = &json.name {
-                return Some(name);
+                return Some(name.clone());
             }
         }
 

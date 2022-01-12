@@ -21,6 +21,19 @@ async fn sync_project(
         let dep_project = workspace.projects.get(&dep)?;
 
         // Update `dependencies` within `tsconfig.json`
+        if let Some(package) = &mut project.package_json {
+            if let Some(package_deps) = &mut package.dependencies {
+                let dep_ws_path = manager.get_workspace_dependency_range();
+                let dep_package_name = dep_project.get_package_name();
+
+                // Only add if the dependent project has a `package.json`,
+                // and this `package.json` has not already declared the dep.
+                if dep_package_name.is_some() && package_deps.contains_key(&dep_ws_path) {
+                    package_deps.insert(dep_package_name.unwrap(), dep_ws_path);
+                    package.save()?;
+                }
+            }
+        }
 
         // Update `references` within `tsconfig.json`
         if let Some(tsconfig) = &mut project.tsconfig_json {

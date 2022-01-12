@@ -1,5 +1,5 @@
 {
-  "extends": "./b/tsconfig.base.json",
+  "extends": "./b/tsconfig.json",
   "compilerOptions": {
     "traceResolution": false,
     "declaration": true,

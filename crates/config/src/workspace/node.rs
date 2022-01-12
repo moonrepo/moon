@@ -74,18 +74,20 @@ impl Default for YarnConfig {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
-    #[validate(custom = "validate_node_version")]
-    pub version: String,
-
-    #[serde(rename = "packageManager")]
-    pub package_manager: Option<PackageManager>,
+    pub dedupe_on_install: Option<bool>,
 
     #[validate]
     pub npm: Option<NpmConfig>,
 
+    pub package_manager: Option<PackageManager>,
+
     #[validate]
     pub pnpm: Option<PnpmConfig>,
+
+    #[validate(custom = "validate_node_version")]
+    pub version: String,
 
     #[validate]
     pub yarn: Option<YarnConfig>,
@@ -94,10 +96,11 @@ pub struct NodeConfig {
 impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
-            version: String::from(NODE_VERSION),
-            package_manager: Some(PackageManager::Npm),
+            dedupe_on_install: Some(true),
             npm: Some(NpmConfig::default()),
+            package_manager: Some(PackageManager::Npm),
             pnpm: None,
+            version: String::from(NODE_VERSION),
             yarn: None,
         }
     }

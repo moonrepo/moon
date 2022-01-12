@@ -23,7 +23,7 @@ pub enum ProjectError {
     InvalidTargetFormat(String),
 
     #[error("Failed to parse and open <path>{0}/tsconfig.json</path>: {1}")]
-    InvalidTsconfigJson(String, String),
+    InvalidTsConfigJson(String, String),
 
     #[error(
         "Invalid or missing file <file_path>{0}</file_path>, must be a valid UTF-8 file path."

@@ -8,6 +8,7 @@
       - [packageManager](#packagemanager)
       - [npm, pnpm, yarn](#npm-pnpm-yarn)
         - [version](#version-1)
+      - [dedupeOnInstall](#dedupeoninstall)
   - [`project.yml`](#projectyml)
     - [fileGroups](#filegroups)
     - [tasks](#tasks)
@@ -107,6 +108,16 @@ major, minor, and patch version, to ensure the same environment is used across e
 node:
   yarn:
     version: '3.1.0'
+```
+
+##### dedupeOnInstall
+
+If true, will dedupe dependencies after they have been installed, in an effort to keep the workspace
+tree as clean and lean as possible. Defaults to `true`.
+
+```yaml
+node:
+  dedupeOnInstall: true
 ```
 
 ### `project.yml`

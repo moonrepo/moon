@@ -6,7 +6,12 @@ pub async fn install_node_deps(workspace: &Workspace) -> Result<(), WorkspaceErr
     let manager = toolchain.get_package_manager();
 
     manager.install_deps(toolchain).await?;
-    manager.dedupe_deps(toolchain).await?;
+
+    if let Some(node_config) = &workspace.config.node {
+        if node_config.dedupe_on_install.unwrap_or(true) {
+            manager.dedupe_deps(toolchain).await?;
+        }
+    }
 
     Ok(())
 }

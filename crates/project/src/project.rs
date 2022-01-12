@@ -92,7 +92,7 @@ fn load_tsconfig_json(
     if tsconfig_path.exists() {
         return match TsConfigJson::load(&tsconfig_path) {
             Ok(cfg) => Ok(Some(cfg)),
-            Err(error) => Err(ProjectError::InvalidTsconfigJson(
+            Err(error) => Err(ProjectError::InvalidTsConfigJson(
                 String::from(project_source),
                 error.to_string(),
             )),

@@ -269,7 +269,7 @@ pub struct CompilerOptions {
 
 // https://www.typescriptlang.org/tsconfig#watch-options
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "camelCase")]
 pub struct WatchOptions {
     pub exclude_directories: Option<Vec<String>>,
     pub exclude_files: Option<Vec<String>>,
@@ -645,7 +645,7 @@ mod test {
 
     #[test]
     fn parse_inheritance_chain() {
-        let path = get_fixtures_dir("base/tsconfig-json/a/tsconfig.inherits_again.json");
+        let path = get_fixtures_dir("base/tsconfig-json/a/tsconfig.json");
         let config = TsConfigJson::load_with_extends(&path).unwrap();
 
         assert_eq!(

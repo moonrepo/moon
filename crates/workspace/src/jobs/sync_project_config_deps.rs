@@ -5,6 +5,7 @@ use pathdiff::diff_paths;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
+#[allow(dead_code)]
 async fn sync_project(
     workspace: &Workspace,
     project: &mut Project,
@@ -60,6 +61,7 @@ async fn sync_project(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn sync_project_config_deps(
     workspace: &mut Workspace,
     project: &mut Project,

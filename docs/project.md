@@ -101,8 +101,8 @@ When defined, this setting requires an array of project IDs, which are the keys 
 
 ```yaml
 dependsOn:
-	- 'dsl'
-	- 'hooks'
+  - 'dsl'
+  - 'hooks'
 ```
 
 #### fileGroups

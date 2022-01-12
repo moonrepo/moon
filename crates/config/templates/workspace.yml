@@ -20,6 +20,14 @@ node:
   # OPTIONAL: Dedupe dependencies after installing them.
   dedupeOnInstall: true
 
+  # OPTIONAL: Sync a project's `dependsOn` as normal dependencies within the project's
+  # `package.json`. Will use "workspace:*" ranges when available in the package manager.
+  syncProjectWorkspaceDependencies: true
+
+  # OPTIONAL: Sync a project's `dependsOn` as TypeScript project references within the
+  # project's `tsconfig.json` and the workspace root `tsconfig.json`.
+  syncTypeScriptProjectReferences: true,
+
 # OPTIONAL: Configures the version control system to utilize within the workspace. A VCS
 # is required for determining touched (added, modified, etc) files, calculating file hashes,
 # computing affected files, and much more.

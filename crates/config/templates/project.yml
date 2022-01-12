@@ -25,6 +25,10 @@ project:
 
 # OPTIONAL: A list of other projects that this project depends on. Each value
 # must be a unique project ID, and NOT a file path or project name.
+#
+# When `node.syncProjectWorkspaceDependencies` and `node.syncTypeScriptProjectReferences`
+# are enabled in `.moon/workspace.yml`, these dependencies will be mapped as dependencies
+# in `package.json` and project references in `tsconfig.json`, respectively.
 dependsOn: []
 
 # OPTIONAL: File groups are a mechanism for grouping similar types of files within

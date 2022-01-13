@@ -154,6 +154,10 @@ impl PackageManager for NpmTool {
         Ok(exec_bin_in_dir(&self.npx_path, exec_args, &toolchain.workspace_root).await?)
     }
 
+    fn get_lockfile_name(&self) -> String {
+        String::from("package-lock.json")
+    }
+
     fn get_workspace_dependency_range(&self) -> String {
         // Doesn't support "workspace:*"
         String::from("*")

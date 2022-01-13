@@ -1,13 +1,11 @@
 use crate::errors::CacheError;
-use crate::items::CacheItem;
-use moon_utils::string_vec;
-use serde_json::to_string;
+use crate::items::{CacheItem, WorkspaceStateItem};
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
-use tokio::fs;
+use std::time::SystemTime;
 
 pub struct CacheEngine {
-    /// The `.moon/cache` dir relative to workspace root.
+    /// The `.moon/cache` directory relative to workspace root.
     root: PathBuf,
 }
 
@@ -20,32 +18,19 @@ impl CacheEngine {
         Ok(CacheEngine { root })
     }
 
-    pub async fn read(&self, _item: CacheItem) {}
+    pub fn to_millis(&self, time: SystemTime) -> u128 {
+        match time.duration_since(SystemTime::UNIX_EPOCH) {
+            Ok(d) => d.as_millis(),
+            Err(_) => 0,
+        }
+    }
 
-    pub async fn write(&self, item: CacheItem) -> Result<(), CacheError> {
-        Ok(fs::write(
-            self.get_item_cache_path(&item),
-            self.stringify_item_value(&item)?,
+    pub async fn workspace_state(&self) -> Result<CacheItem<WorkspaceStateItem>, CacheError> {
+        Ok(CacheItem::load(
+            self.root.join("workspaceState.json"),
+            WorkspaceStateItem::default(),
         )
         .await?)
-    }
-
-    fn get_item_cache_path(&self, item: &CacheItem) -> PathBuf {
-        let parts = match item {
-            CacheItem::RunTarget(i) => {
-                string_vec![target_to_path(i.target.as_str()), "lastRun.json"]
-            }
-        };
-
-        let cache_path: PathBuf = parts.iter().collect();
-
-        self.root.join(cache_path)
-    }
-
-    fn stringify_item_value(&self, item: &CacheItem) -> Result<String, CacheError> {
-        match item {
-            CacheItem::RunTarget(i) => Ok(to_string(&i)?),
-        }
     }
 }
 

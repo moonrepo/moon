@@ -184,6 +184,10 @@ impl PackageManager for YarnTool {
         Ok(exec_bin_in_dir(self.get_bin_path(), exec_args, &toolchain.workspace_root).await?)
     }
 
+    fn get_lockfile_name(&self) -> String {
+        String::from("yarn.lock")
+    }
+
     fn get_workspace_dependency_range(&self) -> String {
         if self.is_v1() {
             String::from("*")

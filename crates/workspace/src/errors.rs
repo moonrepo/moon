@@ -56,6 +56,9 @@ pub enum WorkspaceError {
     Config(#[from] ConfigError),
 
     #[error(transparent)]
+    IO(#[from] std::io::Error),
+
+    #[error(transparent)]
     Project(#[from] ProjectError),
 
     #[error(transparent)]

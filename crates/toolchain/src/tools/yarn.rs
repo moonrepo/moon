@@ -8,6 +8,7 @@ use moon_logger::{color, debug, trace};
 use moon_utils::exec_bin_in_dir;
 use std::env::consts;
 use std::path::PathBuf;
+use std::process::Output;
 
 #[derive(Clone, Debug)]
 pub struct YarnTool {
@@ -121,7 +122,7 @@ impl Tool for YarnTool {
                 vec!["set", "version", &self.config.version],
                 &toolchain.workspace_root,
             )
-            .await?
+            .await?;
         }
 
         Ok(())
@@ -146,7 +147,7 @@ impl Tool for YarnTool {
 
 #[async_trait]
 impl PackageManager for YarnTool {
-    async fn dedupe_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {
@@ -175,13 +176,17 @@ impl PackageManager for YarnTool {
         toolchain: &Toolchain,
         package: &str,
         args: Vec<&str>,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<Output, ToolchainError> {
         let mut exec_args = vec!["dlx", "--package", package];
 
         exec_args.extend(args);
 
         // https://yarnpkg.com/cli/dlx
         Ok(exec_bin_in_dir(self.get_bin_path(), exec_args, &toolchain.workspace_root).await?)
+    }
+
+    fn get_lockfile_name(&self) -> String {
+        String::from("yarn.lock")
     }
 
     fn get_workspace_dependency_range(&self) -> String {
@@ -193,7 +198,7 @@ impl PackageManager for YarnTool {
         }
     }
 
-    async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
         let mut args = vec!["install"];
 
         if self.is_v1() {

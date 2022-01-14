@@ -1046,6 +1046,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_cache"
+version = "0.1.0"
+dependencies = [
+ "moon_utils",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "moon_cli"
 version = "0.1.0"
 dependencies = [
@@ -1149,6 +1160,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "futures",
+ "moon_cache",
  "moon_config",
  "moon_logger",
  "moon_project",
@@ -1157,6 +1169,7 @@ dependencies = [
  "pathdiff",
  "regex",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]

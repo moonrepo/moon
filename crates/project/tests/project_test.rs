@@ -733,7 +733,7 @@ mod tasks {
                                 run_in_ci: Some(true),
                                 run_from_workspace_root: None,
                             }),
-                            type_of: Some(TaskType::Npm),
+                            type_of: Some(TaskType::Node),
                         },
                         &workspace_root,
                         project_source

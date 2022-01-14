@@ -1,3 +1,4 @@
+use moon_cache::CacheError;
 use moon_config::{constants, ConfigError, ValidationErrors};
 use moon_project::ProjectError;
 use moon_toolchain::ToolchainError;
@@ -49,7 +50,13 @@ pub enum WorkspaceError {
     Unknown,
 
     #[error(transparent)]
+    Cache(#[from] CacheError),
+
+    #[error(transparent)]
     Config(#[from] ConfigError),
+
+    #[error(transparent)]
+    IO(#[from] std::io::Error),
 
     #[error(transparent)]
     Project(#[from] ProjectError),

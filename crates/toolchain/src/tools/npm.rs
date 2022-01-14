@@ -8,6 +8,7 @@ use moon_logger::{color, debug, trace};
 use moon_utils::exec_bin_in_dir;
 use std::env::consts;
 use std::path::PathBuf;
+use std::process::Output;
 
 #[derive(Clone, Debug)]
 pub struct NpmTool {
@@ -132,7 +133,7 @@ impl Tool for NpmTool {
 
 #[async_trait]
 impl PackageManager for NpmTool {
-    async fn dedupe_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
         Ok(exec_bin_in_dir(
             self.get_bin_path(),
             vec!["dedupe"],
@@ -146,7 +147,7 @@ impl PackageManager for NpmTool {
         toolchain: &Toolchain,
         package: &str,
         args: Vec<&str>,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<Output, ToolchainError> {
         let mut exec_args = vec!["--package", package, "--"];
 
         exec_args.extend(args);
@@ -154,12 +155,16 @@ impl PackageManager for NpmTool {
         Ok(exec_bin_in_dir(&self.npx_path, exec_args, &toolchain.workspace_root).await?)
     }
 
+    fn get_lockfile_name(&self) -> String {
+        String::from("package-lock.json")
+    }
+
     fn get_workspace_dependency_range(&self) -> String {
         // Doesn't support "workspace:*"
         String::from("*")
     }
 
-    async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
         Ok(exec_bin_in_dir(
             self.get_bin_path(),
             vec![if is_ci() { "ci" } else { "install" }],

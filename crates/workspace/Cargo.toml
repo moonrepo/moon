@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
@@ -14,3 +15,4 @@ futures = "0.3"
 pathdiff = "0.2"
 regex = "1.5"
 thiserror = "1.0"
+tokio = { version = "1.14", features = ["full"] }

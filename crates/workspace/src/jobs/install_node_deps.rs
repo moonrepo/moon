@@ -3,7 +3,7 @@ use crate::workspace::Workspace;
 use std::fs;
 
 #[allow(dead_code)]
-pub async fn install_node_dependencies(workspace: &Workspace) -> Result<(), WorkspaceError> {
+pub async fn install_node_deps(workspace: &Workspace) -> Result<(), WorkspaceError> {
     let mut cache = workspace.cache.workspace_state().await?;
     let toolchain = &workspace.toolchain;
     let manager = toolchain.get_package_manager();

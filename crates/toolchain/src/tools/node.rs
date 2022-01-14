@@ -157,7 +157,13 @@ impl NodeTool {
         package_name: &str,
         starting_dir: &Path,
     ) -> Result<PathBuf, ToolchainError> {
-        let bin_path = starting_dir.join("node_modules/.bin").join(package_name);
+        let mut bin_path = starting_dir.join("node_modules/.bin");
+
+        if consts::OS == "windows" {
+            bin_path.push(format!("{}.cmd", package_name));
+        } else {
+            bin_path.push(package_name);
+        }
 
         if bin_path.exists() {
             return Ok(bin_path);

@@ -2,6 +2,7 @@ use crate::errors::ToolchainError;
 use crate::Toolchain;
 use async_trait::async_trait;
 use std::path::PathBuf;
+use std::process::Output;
 
 #[async_trait]
 pub trait Tool {
@@ -41,7 +42,7 @@ pub trait Tool {
 #[async_trait]
 pub trait PackageManager {
     /// Dedupe dependencies after they have been installed.
-    async fn dedupe_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
+    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError>;
 
     /// Download and execute a one-off package.
     async fn exec_package(
@@ -49,7 +50,7 @@ pub trait PackageManager {
         toolchain: &Toolchain,
         package: &str,
         args: Vec<&str>,
-    ) -> Result<(), ToolchainError>;
+    ) -> Result<Output, ToolchainError>;
 
     /// Return the name of the lockfile.
     fn get_lockfile_name(&self) -> String;
@@ -58,5 +59,5 @@ pub trait PackageManager {
     fn get_workspace_dependency_range(&self) -> String;
 
     /// Install dependencies at the root where a `package.json` exists.
-    async fn install_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
+    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError>;
 }

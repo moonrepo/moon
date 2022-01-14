@@ -16,3 +16,4 @@ futures = "0.3"
 pathdiff = "0.2"
 regex = "1.5"
 thiserror = "1.0"
+tokio = { version = "1.14", features = ["full"] }

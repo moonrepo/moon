@@ -5,6 +5,7 @@ pub mod test;
 use moon_logger::{color, trace};
 use std::io::Error;
 use std::path::Path;
+use std::process::Output;
 use tokio::process::Command;
 
 #[macro_export]
@@ -19,7 +20,14 @@ macro_rules! string_vec {
     }};
 }
 
-pub async fn exec_bin_in_dir(file: &Path, args: Vec<&str>, dir: &Path) -> Result<(), Error> {
+pub fn output_to_string(data: Vec<u8>) -> String {
+    String::from_utf8(data)
+        .unwrap_or_default()
+        .trim()
+        .to_owned()
+}
+
+pub async fn exec_bin_in_dir(file: &Path, args: Vec<&str>, dir: &Path) -> Result<Output, Error> {
     Ok(exec_command_in_dir(file.to_str().unwrap(), args, dir).await?)
 }
 
@@ -27,7 +35,7 @@ pub async fn exec_bin_with_output(file: &Path, args: Vec<&str>) -> Result<String
     Ok(exec_command_with_output(file.to_str().unwrap(), args).await?)
 }
 
-pub async fn exec_command_in_dir(bin: &str, args: Vec<&str>, dir: &Path) -> Result<(), Error> {
+pub async fn exec_command_in_dir(bin: &str, args: Vec<&str>, dir: &Path) -> Result<Output, Error> {
     let command_line = format!("{} {}", bin, args.join(" "));
 
     trace!(
@@ -39,9 +47,7 @@ pub async fn exec_command_in_dir(bin: &str, args: Vec<&str>, dir: &Path) -> Resu
 
     let output = Command::new(bin).args(args).current_dir(dir).output();
 
-    output.await?;
-
-    Ok(())
+    Ok(output.await?)
 }
 
 pub async fn exec_command_with_output(bin: &str, args: Vec<&str>) -> Result<String, Error> {
@@ -55,8 +61,5 @@ pub async fn exec_command_with_output(bin: &str, args: Vec<&str>) -> Result<Stri
 
     let output = Command::new(bin).args(args).output();
 
-    Ok(String::from_utf8(output.await?.stdout)
-        .unwrap_or_default()
-        .trim()
-        .to_owned())
+    Ok(output_to_string(output.await?.stdout))
 }

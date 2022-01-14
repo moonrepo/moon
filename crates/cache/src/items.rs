@@ -29,16 +29,35 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
 
         Ok(())
     }
+
+    pub fn now_millis(&self) -> u128 {
+        self.to_millis(SystemTime::now())
+    }
+
+    pub fn to_millis(&self, time: SystemTime) -> u128 {
+        match time.duration_since(SystemTime::UNIX_EPOCH) {
+            Ok(d) => d.as_millis(),
+            Err(_) => 0,
+        }
+    }
 }
 
 #[derive(Default, Deserialize, Serialize)]
-pub struct TargetRunItem {
+#[serde(rename_all = "camelCase")]
+pub struct TargetRunState {
+    pub exit_code: i32,
+
     pub last_run_time: u128,
+
+    pub stderr: String,
+
+    pub stdout: String,
 
     pub target: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
-pub struct WorkspaceStateItem {
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceState {
     pub last_node_install_time: u128,
 }

@@ -62,7 +62,7 @@ async fn sync_project(
 }
 
 #[allow(dead_code)]
-pub async fn sync_project_config_deps(
+pub async fn sync_project_config_dependencies(
     workspace: &mut Workspace,
     project: &mut Project,
 ) -> Result<(), WorkspaceError> {

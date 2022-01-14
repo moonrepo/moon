@@ -118,7 +118,7 @@ mod tests {
     }
 
     #[test]
-    fn single_project_with_deps() {
+    fn single_project_with_dependencies() {
         let assert = create_test_command("projects")
             .arg("project-graph")
             .arg("foo")
@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn single_project_no_deps() {
+    fn single_project_no_dependencies() {
         let assert = create_test_command("projects")
             .arg("project-graph")
             .arg("baz")

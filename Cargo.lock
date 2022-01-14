@@ -1170,6 +1170,7 @@ dependencies = [
  "pathdiff",
  "regex",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]

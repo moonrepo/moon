@@ -4,6 +4,7 @@ use crate::tool::Tool;
 use crate::Toolchain;
 use async_trait::async_trait;
 use flate2::read::GzDecoder;
+use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_logger::{color, debug, error};
 use std::env::consts;
@@ -149,6 +150,28 @@ impl NodeTool {
             download_path,
             install_dir,
         })
+    }
+
+    pub fn find_package_bin_path(
+        &self,
+        package_name: &str,
+        starting_dir: &Path,
+    ) -> Result<PathBuf, ToolchainError> {
+        let bin_path = starting_dir.join("node_modules/.bin").join(package_name);
+
+        if bin_path.exists() {
+            return Ok(bin_path);
+        }
+
+        // If we've reached the root of the workspace, and still haven't found
+        // a binary, just abort with an error...
+        if starting_dir.join(CONFIG_DIRNAME).exists() {
+            return Err(ToolchainError::MissingNodeModuleBin(String::from(
+                package_name,
+            )));
+        }
+
+        self.find_package_bin_path(package_name, starting_dir.parent().unwrap())
     }
 }
 

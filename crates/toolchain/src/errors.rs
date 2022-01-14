@@ -15,6 +15,9 @@ pub enum ToolchainError {
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,
 
+    #[error("Unable to find a node module binary for <symbol>{0}</symbol>. Have you installed the corresponding package?")]
+    MissingNodeModuleBin(String), // bin name
+
     #[error(
         "Unsupported architecture <symbol>{0}</symbol>. Unable to install <symbol>{1}</symbol>."
     )]

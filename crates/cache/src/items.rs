@@ -32,13 +32,13 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
 }
 
 #[derive(Default, Deserialize, Serialize)]
-pub struct RunTargetItem {
-    pub last_run_time: u64,
+pub struct TargetRunItem {
+    pub last_run_time: u128,
 
     pub target: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
 pub struct WorkspaceStateItem {
-    pub last_node_install: u128,
+    pub last_node_install_time: u128,
 }

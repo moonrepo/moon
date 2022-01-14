@@ -10,14 +10,13 @@ pub async fn install_node_deps(workspace: &Workspace) -> Result<(), WorkspaceErr
     let manager = toolchain.get_package_manager();
 
     // Get the last modified time of the root lockfile
-    let current_time = workspace.cache.to_millis(SystemTime::now());
     let last_modified = workspace
         .cache
         .to_millis(fs::metadata(&workspace.root.join(manager.get_lockfile_name()))?.modified()?);
 
     // Install deps if the lockfile has been modified
     // since the last time dependencies were installed!
-    if last_modified > current_time {
+    if last_modified > cache.item.last_node_install_time {
         manager.install_deps(toolchain).await?;
 
         if let Some(node_config) = &workspace.config.node {
@@ -25,11 +24,11 @@ pub async fn install_node_deps(workspace: &Workspace) -> Result<(), WorkspaceErr
                 manager.dedupe_deps(toolchain).await?;
             }
         }
-    }
 
-    // Update the cache with the timestamp
-    cache.item.last_node_install = current_time;
-    cache.save().await?;
+        // Update the cache with the timestamp
+        cache.item.last_node_install_time = workspace.cache.to_millis(SystemTime::now());
+        cache.save().await?;
+    }
 
     Ok(())
 }

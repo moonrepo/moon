@@ -1,0 +1,13 @@
+---
+source: crates/cli/src/commands/project_graph.rs
+assertion_line: 137
+expression: get_assert_output(&assert)
+
+---
+digraph {
+  WORKSPACE [style="filled", shape=circle, fillcolor=black, fontcolor=white];
+  baz [style="filled", shape=circle, fillcolor=palegreen, fontcolor=black];
+  WORKSPACE -> baz [arrowhead=none];
+}
+
+

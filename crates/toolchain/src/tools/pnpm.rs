@@ -126,6 +126,20 @@ impl PackageManager for PnpmTool {
         .await?)
     }
 
+    async fn exec_package(
+        &self,
+        toolchain: &Toolchain,
+        package: &str,
+        args: Vec<&str>,
+    ) -> Result<(), ToolchainError> {
+        let mut exec_args = vec!["--package", package, "dlx"];
+
+        exec_args.extend(args);
+
+        // https://pnpm.io/cli/dlx
+        Ok(exec_bin_in_dir(self.get_bin_path(), exec_args, &toolchain.workspace_root).await?)
+    }
+
     fn get_workspace_dependency_range(&self) -> String {
         // https://pnpm.io/workspaces#workspace-protocol-workspace
         String::from("workspace:*")

@@ -150,12 +150,14 @@ impl PackageManager for YarnTool {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {
-            Ok(exec_bin_in_dir(
-                toolchain.get_npx().get_bin_path(),
-                vec!["yarn-deduplicate", "yarn.lock"],
-                &toolchain.workspace_root,
-            )
-            .await?)
+            Ok(toolchain
+                .get_npm()
+                .exec_package(
+                    toolchain,
+                    "yarn-deduplicate",
+                    vec!["yarn-deduplicate", "yarn.lock"],
+                )
+                .await?)
 
         // yarn dedupe
         } else {
@@ -166,6 +168,20 @@ impl PackageManager for YarnTool {
             )
             .await?)
         }
+    }
+
+    async fn exec_package(
+        &self,
+        toolchain: &Toolchain,
+        package: &str,
+        args: Vec<&str>,
+    ) -> Result<(), ToolchainError> {
+        let mut exec_args = vec!["dlx", "--package", package];
+
+        exec_args.extend(args);
+
+        // https://yarnpkg.com/cli/dlx
+        Ok(exec_bin_in_dir(self.get_bin_path(), exec_args, &toolchain.workspace_root).await?)
     }
 
     fn get_workspace_dependency_range(&self) -> String {

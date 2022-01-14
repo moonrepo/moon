@@ -43,6 +43,14 @@ pub trait PackageManager {
     /// Dedupe dependencies after they have been installed.
     async fn dedupe_deps(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 
+    /// Download and execute a one-off package.
+    async fn exec_package(
+        &self,
+        toolchain: &Toolchain,
+        package: &str,
+        args: Vec<&str>,
+    ) -> Result<(), ToolchainError>;
+
     /// Return the dependency range to use when linking local workspace packages.
     fn get_workspace_dependency_range(&self) -> String;
 

@@ -3,7 +3,6 @@ use crate::tool::PackageManager;
 use crate::tool::Tool;
 use crate::tools::node::NodeTool;
 use crate::tools::npm::NpmTool;
-use crate::tools::npx::NpxTool;
 use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use dirs::home_dir as get_home_dir;
@@ -47,7 +46,6 @@ pub struct Toolchain {
     // Tool instances are private, as we want to lazy load them.
     node: Option<NodeTool>,
     npm: Option<NpmTool>,
-    npx: Option<NpxTool>,
     pnpm: Option<PnpmTool>,
     yarn: Option<YarnTool>,
 }
@@ -80,7 +78,6 @@ impl Toolchain {
             workspace_root: root_dir.to_path_buf(),
             node: None,
             npm: None,
-            npx: None,
             pnpm: None,
             yarn: None,
         };
@@ -97,8 +94,6 @@ impl Toolchain {
         toolchain.node = Some(NodeTool::new(&toolchain, &node)?);
 
         toolchain.npm = Some(NpmTool::new(&toolchain, &node.npm.unwrap_or_default())?);
-
-        toolchain.npx = Some(NpxTool::new(&toolchain));
 
         if let Some(pm) = node.package_manager {
             match pm {
@@ -134,7 +129,6 @@ impl Toolchain {
 
         self.load_tool(self.get_node()).await?;
         self.load_tool(self.get_npm()).await?;
-        self.load_tool(self.get_npx()).await?;
 
         if let Some(pnp) = &self.pnpm {
             self.load_tool(pnp).await?;
@@ -162,7 +156,6 @@ impl Toolchain {
             self.unload_tool(pnp).await?;
         }
 
-        self.unload_tool(self.get_npx()).await?;
         self.unload_tool(self.get_npm()).await?;
         self.unload_tool(self.get_node()).await?;
 
@@ -215,10 +208,6 @@ impl Toolchain {
 
     pub fn get_npm(&self) -> &NpmTool {
         self.npm.as_ref().unwrap()
-    }
-
-    pub fn get_npx(&self) -> &NpxTool {
-        self.npx.as_ref().unwrap()
     }
 
     pub fn get_pnpm(&self) -> Option<&PnpmTool> {

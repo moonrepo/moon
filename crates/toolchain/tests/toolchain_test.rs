@@ -53,7 +53,6 @@ fn creates_dirs() {
 
 //     assert_ne!(toolchain.get_node(), None);
 //     assert_ne!(toolchain.get_npm(), None);
-//     assert_ne!(toolchain.get_npx(), None);
 //     assert_eq!(toolchain.get_pnpm(), None);
 //     assert_eq!(toolchain.get_yarn(), None);
 //

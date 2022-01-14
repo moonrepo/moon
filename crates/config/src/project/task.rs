@@ -30,13 +30,13 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TaskType {
-    Npm,
+    Node,
     Shell,
 }
 
 impl Default for TaskType {
     fn default() -> Self {
-        TaskType::Npm
+        TaskType::Node
     }
 }
 

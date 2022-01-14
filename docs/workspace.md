@@ -400,8 +400,8 @@ tasks:
 
 ##### type
 
-The optional `type` param defines the type of command to run, and where to locate it. Accepts "npm"
-or "shell" and defaults to "npm".
+The optional `type` param defines the type of command to run, where to locate it, and which tool to
+use. Accepts "node" or "shell" and defaults to "node".
 
 ```yaml
 tasks:

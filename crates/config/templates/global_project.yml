@@ -70,5 +70,5 @@ tasks:
     outputs: []
 
     # OPTIONAL: The type of command to run, and where to locate it.
-    # Accepts "npm" or "shell".
-    type: 'npm'
+    # Accepts "node" or "shell".
+    type: 'node'

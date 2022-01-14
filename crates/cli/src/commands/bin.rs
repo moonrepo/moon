@@ -7,7 +7,6 @@ use moon_workspace::Workspace;
 pub enum BinTools {
     Node,
     Npm,
-    Npx,
     Pnpm,
     Yarn,
 }
@@ -24,7 +23,6 @@ pub async fn bin(tool_type: &BinTools) -> Result<(), Box<dyn std::error::Error>>
     let tool: &dyn Tool = match tool_type {
         BinTools::Node => toolchain.get_node(),
         BinTools::Npm => toolchain.get_npm(),
-        BinTools::Npx => toolchain.get_npx(),
         BinTools::Pnpm => match toolchain.get_pnpm() {
             Some(t) => t,
             None => {

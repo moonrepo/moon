@@ -15,6 +15,8 @@ pub struct NpmTool {
 
     install_dir: PathBuf,
 
+    npx_path: PathBuf,
+
     pub config: NpmConfig,
 }
 
@@ -22,11 +24,14 @@ impl NpmTool {
     pub fn new(toolchain: &Toolchain, config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
         let install_dir = toolchain.get_node().get_install_dir().clone();
         let mut bin_path = install_dir.clone();
+        let mut npx_path = install_dir.clone();
 
         if consts::OS == "windows" {
             bin_path.push("npm");
+            npx_path.push("npx");
         } else {
             bin_path.push("bin/npm");
+            npx_path.push("bin/npx");
         }
 
         debug!(
@@ -39,6 +44,7 @@ impl NpmTool {
             bin_path,
             config: config.to_owned(),
             install_dir,
+            npx_path,
         })
     }
 
@@ -133,6 +139,19 @@ impl PackageManager for NpmTool {
             &toolchain.workspace_root,
         )
         .await?)
+    }
+
+    async fn exec_package(
+        &self,
+        toolchain: &Toolchain,
+        package: &str,
+        args: Vec<&str>,
+    ) -> Result<(), ToolchainError> {
+        let mut exec_args = vec!["--package", package, "--"];
+
+        exec_args.extend(args);
+
+        Ok(exec_bin_in_dir(&self.npx_path, exec_args, &toolchain.workspace_root).await?)
     }
 
     fn get_workspace_dependency_range(&self) -> String {

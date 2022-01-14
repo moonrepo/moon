@@ -4,7 +4,7 @@
 - [Configuration](#configuration)
 - [Supported tools](#supported-tools)
   - [Node.js](#nodejs)
-    - [npm, npx](#npm-npx)
+    - [npm](#npm)
     - [pnpm](#pnpm)
     - [yarn](#yarn)
 
@@ -54,10 +54,10 @@ first-class citizen within the toolchain. Because of this, Node.js is _always en
 - Configured with: `node`
 - Installed to: `~/.moon/tools/node/x.x.x`
 
-#### npm, npx
+#### npm
 
-The `npm` and `npx` binaries come pre-installed with Node.js, and will _always exist_, regardless of
-the `node.packageManager` setting.
+The `npm` binary comes pre-installed with Node.js, and will _always exist_, regardless of the
+`node.packageManager` setting.
 
 - Configured with: `node.npm`
 - Installed to: `~/.moon/tools/node/x.x.x/bin/npm` (and `npx`)

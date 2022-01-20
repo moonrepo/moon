@@ -2,6 +2,7 @@ use crate::errors::WorkspaceError;
 use moon_project::{ProjectGraph, Target, TaskGraph};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Graph;
+use petgraph::algo::toposort;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -55,6 +56,15 @@ impl<'a> WorkGraph<'a> {
             projects,
             synced_projects: RefCell::new(HashMap::new()),
             tasks,
+        }
+    }
+
+    pub fn sort_topological(&self) -> Result<Vec<NodeIndex>, WorkspaceError> {
+        let graph = self.graph.borrow();
+
+        match toposort(&*graph, None) {
+            Ok(nodes) => Ok(nodes),
+            Err(error) => Err(WorkspaceError::CycleDetected(error.node_id().index()))
         }
     }
 

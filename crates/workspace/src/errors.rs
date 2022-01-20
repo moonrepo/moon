@@ -6,6 +6,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum WorkspaceError {
+    #[error("A dependency cycle has been detected for {0}.")]
+    CycleDetected(usize),
+
     #[error(
         "Unable to determine workspace root. Please create a <path>{}</path> configuration folder.",
         constants::CONFIG_DIRNAME

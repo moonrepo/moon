@@ -1,6 +1,6 @@
 use clap::ArgEnum;
 use moon_project::{TaskGraph, TouchedFilePaths};
-use moon_workspace::{TouchedFiles, Workspace};
+use moon_workspace::{Orchestrator, TouchedFiles, WorkGraph, Workspace};
 use std::collections::HashSet;
 // use std::fs;
 use std::io;
@@ -69,8 +69,13 @@ pub async fn run(
         status.clone().unwrap_or_default(),
     )?;
 
-    // Generate a task graph, that filters projects and tasks based on touched files
-    let _graph = TaskGraph::from_target(&workspace.projects, &touched_files, target.to_owned())?;
+    // Generate a task graph, that filters targets based on touched files
+    let task_graph =
+        TaskGraph::from_target(&workspace.projects, &touched_files, target.to_owned())?;
+
+    // Generate a work graph for all the processes that need to be ran
+    let work_graph = WorkGraph::new(&workspace.projects, &task_graph);
+    work_graph.run_target(target)?;
 
     Ok(())
 }

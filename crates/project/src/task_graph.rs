@@ -42,6 +42,10 @@ impl TaskGraph {
         Ok(graph)
     }
 
+    pub fn get(&self, target: &str) -> Option<&Task> {
+        self.tasks.get(target)
+    }
+
     fn load(
         &mut self,
         projects: &ProjectGraph,

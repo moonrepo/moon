@@ -1,11 +1,13 @@
 use crate::errors::WorkspaceError;
 use moon_logger::{color, debug, trace};
-use moon_project::{ProjectError, ProjectGraph, Target, TouchedFilePaths};
+use moon_project::{ProjectGraph, Target, TouchedFilePaths};
 use petgraph::algo::toposort;
-use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::graph::DiGraph;
 use petgraph::Graph;
 use std::cell::RefCell;
 use std::collections::HashMap;
+
+pub use petgraph::graph::NodeIndex;
 
 pub enum JobType {
     InstallNodeDeps,

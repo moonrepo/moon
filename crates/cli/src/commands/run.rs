@@ -73,7 +73,7 @@ pub async fn run(
     let work_graph = WorkGraph::new(&workspace.projects);
     work_graph.run_target_if_touched(target, &touched_files)?;
 
-    let mut dep_graph = DepGraph::new();
+    let mut dep_graph = DepGraph::default();
     dep_graph.run_target_if_touched(target, &touched_files, &workspace.projects)?;
 
     Ok(())

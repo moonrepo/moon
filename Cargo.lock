@@ -1166,6 +1166,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "futures",
+ "insta",
  "moon_cache",
  "moon_config",
  "moon_logger",

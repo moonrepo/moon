@@ -21,7 +21,7 @@ pub struct Node {
     pub type_of: NodeType,
 }
 
-type GraphType = DiGraph<Node, u8>;
+type GraphType = DiGraph<Node, ()>;
 
 /// A directed acyclic graph (DAG) for the work that needs to be processed, based on a
 /// project or task's dependency chain. This is also known as a "task graph" (not to
@@ -38,41 +38,35 @@ pub struct DepGraph {
 
     /// Reference node for the "install deps" job.
     install_deps_node: NodeIndex,
-
-    /// Mapping of node indices to node data.
-    nodes: HashMap<NodeIndex, NodeType>,
 }
 
 impl DepGraph {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         debug!(
             target: "moon:dep-graph",
             "Creating work graph",
         );
 
         let mut graph: GraphType = Graph::new();
-        let mut nodes: HashMap<NodeIndex, NodeType> = HashMap::new();
 
         // Toolchain must be setup first
         let toolchain_node = graph.add_node(Node {
-            label: String::from(":setup_toolchain"),
+            label: String::from("SetupToolchain"),
             type_of: NodeType::SetupToolchain,
         });
-        nodes.insert(toolchain_node, NodeType::SetupToolchain);
 
         // Deps can be installed *after* the toolchain exists
         let install_deps_node = graph.add_node(Node {
-            label: String::from(":install_node_deps"),
+            label: String::from("InstallNodeDeps"),
             type_of: NodeType::InstallNodeDeps,
         });
-        graph.add_edge(toolchain_node, install_deps_node, 0);
-        nodes.insert(toolchain_node, NodeType::InstallNodeDeps);
+
+        graph.add_edge(install_deps_node, toolchain_node, ());
 
         DepGraph {
             graph,
             index_cache: HashMap::new(),
             install_deps_node,
-            nodes,
             toolchain_node,
         }
     }
@@ -107,16 +101,14 @@ impl DepGraph {
         let project = projects.get(&project_id)?;
 
         let node = self.graph.add_node(Node {
-            label: target.to_owned(),
+            label: format!("RunTarget({})", target),
             type_of: NodeType::RunTarget(target.to_owned()),
         });
-        self.graph.add_edge(self.install_deps_node, node, 0);
-        self.nodes
-            .insert(node, NodeType::RunTarget(target.to_owned()));
+        self.graph.add_edge(node, self.install_deps_node, ());
 
         // We should sync projects *before* running targets
         let project_node = self.sync_project(&project.id, projects)?;
-        self.graph.add_edge(project_node, node, 0);
+        self.graph.add_edge(node, project_node, ());
 
         // And we also need to wait on all dependent nodes
         let task = project.get_task(&task_id)?;
@@ -138,7 +130,7 @@ impl DepGraph {
 
             for dep_target in &task.deps {
                 let dep_node = self.run_target(dep_target, projects)?;
-                self.graph.add_edge(dep_node, node, 0);
+                self.graph.add_edge(node, dep_node, ());
             }
         }
 
@@ -185,14 +177,7 @@ impl DepGraph {
         Ok(Some(self.run_target(target, projects)?))
     }
 
-    pub fn to_dot(&self) -> String {
-        let dot = Dot::with_config(&self.graph, &[Config::EdgeNoLabel, Config::NodeIndexLabel]);
-
-        // format!("{:?}", dot)
-        String::from("")
-    }
-
-    fn sync_project(
+    pub fn sync_project(
         &mut self,
         project_id: &str,
         projects: &ProjectGraph,
@@ -210,24 +195,121 @@ impl DepGraph {
         let project = projects.get(project_id)?;
 
         // Sync can be run in parallel while deps are installing
-        let node = self.graph.add_node(Node {
-            label: project_id.to_owned(),
+        let node_index = self.graph.add_node(Node {
+            label: format!("SyncProject({})", project_id),
             type_of: NodeType::SyncProject(project_id.to_owned()),
         });
 
-        self.graph.add_edge(self.toolchain_node, node, 0);
-        self.nodes
-            .insert(node, NodeType::SyncProject(project_id.to_owned()));
+        self.graph.add_edge(node_index, self.toolchain_node, ());
 
         // But we need to wait on all dependent nodes
         for dep_id in projects.get_dependencies_of(&project)? {
-            let dep_node = self.sync_project(&dep_id, projects)?;
-            self.graph.add_edge(dep_node, node, 0);
+            let dep_node_index = self.sync_project(&dep_id, projects)?;
+            self.graph.add_edge(node_index, dep_node_index, ());
         }
 
         // Also cache so we don't sync the same project multiple times
-        self.index_cache.insert(project_id.to_owned(), node);
+        self.index_cache.insert(project_id.to_owned(), node_index);
 
-        Ok(node)
+        Ok(node_index)
+    }
+
+    pub fn to_dot(&self) -> String {
+        let graph = self.graph.map(|_, n| n.label.as_str(), |_, e| e);
+        let dot = Dot::with_config(&graph, &[Config::EdgeNoLabel]);
+
+        format!("{:?}", dot)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use insta::assert_snapshot;
+    use moon_config::GlobalProjectConfig;
+    use moon_project::ProjectGraph;
+    use moon_utils::test::get_fixtures_dir;
+    use std::collections::HashMap;
+
+    fn create_project_graph() -> ProjectGraph {
+        ProjectGraph::new(
+            &get_fixtures_dir("projects"),
+            GlobalProjectConfig::default(),
+            &HashMap::from([
+                ("advanced".to_owned(), "advanced".to_owned()),
+                ("basic".to_owned(), "basic".to_owned()),
+                ("emptyConfig".to_owned(), "empty-config".to_owned()),
+                ("noConfig".to_owned(), "no-config".to_owned()),
+                ("foo".to_owned(), "deps/foo".to_owned()),
+                ("bar".to_owned(), "deps/bar".to_owned()),
+                ("baz".to_owned(), "deps/baz".to_owned()),
+                ("tasks".to_owned(), "tasks".to_owned()),
+            ]),
+        )
+    }
+
+    #[test]
+    fn default_graph() {
+        let graph = DepGraph::default();
+
+        assert_snapshot!(graph.to_dot());
+    }
+
+    mod run_target {
+        use super::*;
+
+        #[test]
+        fn single_targets() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.sync_project("advanced", &projects).unwrap();
+            graph.sync_project("basic", &projects).unwrap();
+            graph.sync_project("emptyConfig", &projects).unwrap();
+            graph.sync_project("noConfig", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+    }
+
+    mod sync_project {
+        use super::*;
+
+        #[test]
+        fn isolated_projects() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.sync_project("advanced", &projects).unwrap();
+            graph.sync_project("basic", &projects).unwrap();
+            graph.sync_project("emptyConfig", &projects).unwrap();
+            graph.sync_project("noConfig", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        fn projects_with_deps() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.sync_project("foo", &projects).unwrap();
+            graph.sync_project("bar", &projects).unwrap();
+            graph.sync_project("baz", &projects).unwrap();
+            graph.sync_project("basic", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        fn projects_with_tasks() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.sync_project("noConfig", &projects).unwrap();
+            graph.sync_project("tasks", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
     }
 }

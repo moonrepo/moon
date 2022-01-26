@@ -1,8 +1,9 @@
 use crate::errors::WorkspaceError;
-use moon_project::{ProjectGraph, Target, TaskGraph};
+use moon_logger::{color, debug, trace};
+use moon_project::{ProjectError, ProjectGraph, Target, TouchedFilePaths};
+use petgraph::algo::toposort;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Graph;
-use petgraph::algo::toposort;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -25,21 +26,23 @@ pub struct WorkGraph<'a> {
     /// Reference node for the "setup toolchain" job.
     toolchain_node: NodeIndex,
 
+    /// Mapping of IDs to existing node indices.
+    index_cache: RefCell<HashMap<String, NodeIndex>>,
+
     /// Reference node for the "install deps" job.
     install_deps_node: NodeIndex,
 
     /// Graph of all projects.
     projects: &'a ProjectGraph,
-
-    /// Mapping of project IDs to existing node indices.
-    synced_projects: RefCell<HashMap<String, NodeIndex>>,
-
-    /// Graph of all tasks indexed by targets.
-    tasks: &'a TaskGraph,
 }
 
 impl<'a> WorkGraph<'a> {
-    pub fn new(projects: &'a ProjectGraph, tasks: &'a TaskGraph) -> Self {
+    pub fn new(projects: &'a ProjectGraph) -> Self {
+        debug!(
+            target: "moon:work-graph",
+            "Creating work graph",
+        );
+
         let mut graph = Graph::<JobType, u8>::new();
 
         // Toolchain must be setup first
@@ -51,11 +54,10 @@ impl<'a> WorkGraph<'a> {
 
         WorkGraph {
             graph: RefCell::new(graph),
-            toolchain_node,
+            index_cache: RefCell::new(HashMap::new()),
             install_deps_node,
             projects,
-            synced_projects: RefCell::new(HashMap::new()),
-            tasks,
+            toolchain_node,
         }
     }
 
@@ -64,48 +66,119 @@ impl<'a> WorkGraph<'a> {
 
         match toposort(&*graph, None) {
             Ok(nodes) => Ok(nodes),
-            Err(error) => Err(WorkspaceError::CycleDetected(error.node_id().index()))
+            Err(error) => Err(WorkspaceError::CycleDetected(error.node_id().index())),
         }
     }
 
     pub fn run_target(&self, target: &str) -> Result<NodeIndex, WorkspaceError> {
         let mut graph = self.graph.borrow_mut();
-        let mut synced_projects = self.synced_projects.borrow_mut();
+        let mut index_cache = self.index_cache.borrow_mut();
 
-        self.do_run_target(target, &mut graph, &mut synced_projects)
+        self.do_run_target(target, &mut graph, &mut index_cache)
+    }
+
+    pub fn run_target_if_touched(
+        &self,
+        target: &str,
+        touched_files: &TouchedFilePaths,
+    ) -> Result<Option<NodeIndex>, WorkspaceError> {
+        let mut graph = self.graph.borrow_mut();
+        let mut index_cache = self.index_cache.borrow_mut();
+
+        // Validate project first
+        let (project_id, task_id) = Target::parse(target)?;
+        let project = self.projects.get(&project_id)?;
+
+        if !project.is_affected(touched_files) {
+            trace!(
+                target: "moon:work-graph",
+                "Project {} not affected based on touched files, skipping",
+                color::id(&project_id),
+            );
+
+            return Ok(None);
+        }
+
+        // Validate task exists for project
+        let task = project.get_task(&task_id)?;
+
+        if !task.is_affected(touched_files)? {
+            trace!(
+                target: "moon:work-graph",
+                "Project {} task {} not affected based on touched files, skipping",
+                color::id(&project_id),
+                color::id(&task_id),
+            );
+
+            return Ok(None);
+        }
+
+        Ok(Some(self.do_run_target(
+            target,
+            &mut graph,
+            &mut index_cache,
+        )?))
     }
 
     pub fn sync_project(&self, project_id: &str) -> Result<NodeIndex, WorkspaceError> {
         let mut graph = self.graph.borrow_mut();
-        let mut synced_projects = self.synced_projects.borrow_mut();
+        let mut index_cache = self.index_cache.borrow_mut();
 
-        self.do_sync_project(project_id, &mut graph, &mut synced_projects)
+        self.do_sync_project(project_id, &mut graph, &mut index_cache)
     }
 
     fn do_run_target(
         &self,
         target: &str,
         graph: &mut GraphType,
-        synced_projects: &mut HashMap<String, NodeIndex>,
+        index_cache: &mut HashMap<String, NodeIndex>,
     ) -> Result<NodeIndex, WorkspaceError> {
-        let (project_id, _) = Target::parse(target)?;
+        if index_cache.contains_key(target) {
+            return Ok(*index_cache.get(target).unwrap());
+        }
+
+        trace!(
+            target: "moon:work-graph",
+            "Target {} does not exist in the work graph, inserting",
+            color::id(target),
+        );
+
+        let (project_id, task_id) = Target::parse(target)?;
+        let project = self.projects.get(&project_id)?;
 
         let node = graph.add_node(JobType::RunTarget(target.to_owned()));
         graph.add_edge(self.install_deps_node, node, 0);
 
         // We should sync projects *before* running targets
-        let project_node = self.do_sync_project(&project_id, graph, synced_projects)?;
+        let project_node = self.do_sync_project(&project_id, graph, index_cache)?;
         graph.add_edge(project_node, node, 0);
 
         // And we also need to wait on all dependent nodes
-        let task = self.tasks.get(target).unwrap();
+        let task = project.get_task(&task_id)?;
 
         if !task.deps.is_empty() {
+            let dep_names: Vec<String> = task
+                .deps
+                .clone()
+                .into_iter()
+                .map(|d| color::symbol(&d))
+                .collect();
+
+            trace!(
+                target: "moon:work-graph",
+                "Adding dependencies {} from target {}",
+                dep_names.join(", "),
+                color::id(target),
+            );
+
             for dep_target in &task.deps {
-                let dep_node = self.do_run_target(dep_target, graph, synced_projects)?;
+                let dep_node = self.do_run_target(dep_target, graph, index_cache)?;
                 graph.add_edge(dep_node, node, 0);
             }
         }
+
+        // Also cache so we don't run the same target multiple times
+        index_cache.insert(target.to_owned(), node);
 
         Ok(node)
     }
@@ -114,11 +187,17 @@ impl<'a> WorkGraph<'a> {
         &self,
         project_id: &str,
         graph: &mut GraphType,
-        synced_projects: &mut HashMap<String, NodeIndex>,
+        index_cache: &mut HashMap<String, NodeIndex>,
     ) -> Result<NodeIndex, WorkspaceError> {
-        if synced_projects.contains_key(project_id) {
-            return Ok(*synced_projects.get(project_id).unwrap());
+        if index_cache.contains_key(project_id) {
+            return Ok(*index_cache.get(project_id).unwrap());
         }
+
+        trace!(
+            target: "moon:work-graph",
+            "Syncing project {} configs and dependencies",
+            color::id(project_id),
+        );
 
         let project = self.projects.get(project_id)?;
         let node = graph.add_node(JobType::SyncProject(project_id.to_owned()));
@@ -128,12 +207,12 @@ impl<'a> WorkGraph<'a> {
 
         // But we need to wait on all dependent nodes
         for dep_id in self.projects.get_dependencies_of(&project)? {
-            let dep_node = self.do_sync_project(&dep_id, graph, synced_projects)?;
+            let dep_node = self.do_sync_project(&dep_id, graph, index_cache)?;
             graph.add_edge(dep_node, node, 0);
         }
 
         // Also cache so we don't sync the same project multiple times
-        synced_projects.insert(project_id.to_owned(), node);
+        index_cache.insert(project_id.to_owned(), node);
 
         Ok(node)
     }

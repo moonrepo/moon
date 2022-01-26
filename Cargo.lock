@@ -1174,6 +1174,7 @@ dependencies = [
  "moon_utils",
  "pathdiff",
  "petgraph",
+ "rayon",
  "regex",
  "thiserror",
  "tokio",

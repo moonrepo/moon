@@ -293,6 +293,17 @@ impl Project {
         None
     }
 
+    /// Return a task with the defined ID.
+    pub fn get_task(&self, task_id: &str) -> Result<&Task, ProjectError> {
+        match self.tasks.get(task_id) {
+            Some(t) => Ok(t),
+            None => Err(ProjectError::UnconfiguredTask(
+                task_id.to_owned(),
+                self.id.to_owned(),
+            )),
+        }
+    }
+
     /// Return true if this project is affected, based on touched files.
     /// Will attempt to find any file that starts with the project root.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {

@@ -5,7 +5,6 @@ mod project;
 mod project_graph;
 mod target;
 mod task;
-mod task_graph;
 pub mod test;
 mod token;
 mod types;
@@ -23,7 +22,6 @@ pub use project_graph::ProjectGraph;
 pub use moon_config::{TargetID, TaskID, TaskType};
 pub use target::Target;
 pub use task::{Task, TaskOptions};
-pub use task_graph::TaskGraph;
 
 // Tokens
 pub use token::{ResolverType, TokenResolver, TokenSharedData, TokenType};

@@ -2,6 +2,7 @@ use crate::errors::WorkspaceError;
 use moon_logger::{color, debug, trace};
 use moon_project::{ProjectGraph, Target, TouchedFilePaths};
 use petgraph::algo::toposort;
+use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
 use petgraph::Graph;
 use std::cell::RefCell;
@@ -127,6 +128,14 @@ impl<'a> WorkGraph<'a> {
         let mut index_cache = self.index_cache.borrow_mut();
 
         self.do_sync_project(project_id, &mut graph, &mut index_cache)
+    }
+
+    pub fn to_dot(&self) -> String {
+        let graph = self.graph.borrow();
+        let dot = Dot::with_config(&*graph, &[Config::EdgeNoLabel, Config::NodeIndexLabel]);
+
+        // format!("{:?}", dot)
+        String::new()
     }
 
     fn do_run_target(

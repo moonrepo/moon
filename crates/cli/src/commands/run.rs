@@ -1,6 +1,6 @@
 use clap::ArgEnum;
 use moon_project::TouchedFilePaths;
-use moon_workspace::{Orchestrator, TouchedFiles, WorkGraph, Workspace};
+use moon_workspace::{DepGraph, Orchestrator, TouchedFiles, WorkGraph, Workspace};
 use std::collections::HashSet;
 // use std::fs;
 use std::io;
@@ -72,6 +72,9 @@ pub async fn run(
     // Generate a work graph for all the targets that need to be ran
     let work_graph = WorkGraph::new(&workspace.projects);
     work_graph.run_target_if_touched(target, &touched_files)?;
+
+    let mut dep_graph = DepGraph::new();
+    dep_graph.run_target_if_touched(target, &touched_files, &workspace.projects)?;
 
     Ok(())
 }

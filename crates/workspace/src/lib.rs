@@ -10,5 +10,4 @@ pub use dep_graph::DepGraph;
 pub use errors::WorkspaceError;
 pub use orchestrator::Orchestrator;
 pub use vcs::TouchedFiles;
-pub use work_graph::WorkGraph;
 pub use workspace::Workspace;

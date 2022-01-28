@@ -3,7 +3,6 @@ mod errors;
 mod jobs;
 mod orchestrator;
 mod vcs;
-mod work_graph;
 mod workspace;
 
 pub use dep_graph::DepGraph;

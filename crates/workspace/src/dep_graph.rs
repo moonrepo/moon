@@ -5,7 +5,7 @@ use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
 use petgraph::Graph;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub use petgraph::graph::NodeIndex;
 
@@ -28,6 +28,7 @@ impl Node {
 }
 
 type GraphType = DiGraph<Node, ()>;
+type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 
 /// A directed acyclic graph (DAG) for the work that needs to be processed, based on a
 /// project or task's dependency chain. This is also known as a "task graph" (not to
@@ -70,15 +71,80 @@ impl DepGraph {
         }
     }
 
+    pub fn detect_cycle(&self) -> Result<(), WorkspaceError> {
+        Ok(())
+    }
+
     pub fn get_node_from_index(&self, index: NodeIndex) -> Option<&Node> {
         self.graph.node_weight(index)
     }
 
     pub fn sort_topological(&self) -> Result<Vec<NodeIndex>, WorkspaceError> {
-        match toposort(&self.graph, None) {
-            Ok(nodes) => Ok(nodes),
-            Err(error) => Err(WorkspaceError::CycleDetected(error.node_id().index())),
+        let list = match toposort(&self.graph, None) {
+            Ok(nodes) => nodes,
+            Err(error) => {
+                return Err(WorkspaceError::CycleDetected(error.node_id().index()));
+            }
+        };
+
+        Ok(list.into_iter().rev().collect())
+    }
+
+    pub fn sort_batched_topological(&self) -> Result<BatchedTopoSort, WorkspaceError> {
+        let mut batches: BatchedTopoSort = vec![];
+
+        // Count how many times an index is referened across nodes and edges
+        let mut node_counts = HashMap::<NodeIndex, u32>::new();
+
+        for ix in self.graph.node_indices() {
+            node_counts.entry(ix).and_modify(|e| *e += 1).or_insert(0);
+
+            for dep_ix in self.graph.neighbors(ix) {
+                node_counts
+                    .entry(dep_ix)
+                    .and_modify(|e| *e += 1)
+                    .or_insert(0);
+            }
         }
+
+        // Gather root nodes (count of 0)
+        let mut root_nodes = HashSet::<NodeIndex>::new();
+
+        for (ix, count) in &node_counts {
+            if *count == 0 {
+                root_nodes.insert(*ix);
+            }
+        }
+
+        // If no root nodes are found, but nodes exist, then we have a cycle
+        if root_nodes.is_empty() && !node_counts.is_empty() {
+            self.detect_cycle()?;
+        }
+
+        while !root_nodes.is_empty() {
+            // Push this batch onto the list
+            batches.push(root_nodes.clone().into_iter().collect());
+
+            // Reset the root nodes and find new ones after decrementing
+            let mut next_root_nodes = HashSet::<NodeIndex>::new();
+
+            for ix in &root_nodes {
+                for dep_ix in self.graph.neighbors(*ix) {
+                    let count = node_counts
+                        .entry(dep_ix)
+                        .and_modify(|e| *e -= 1)
+                        .or_insert(0);
+
+                    if *count == 0 {
+                        next_root_nodes.insert(dep_ix);
+                    }
+                }
+            }
+
+            root_nodes = next_root_nodes;
+        }
+
+        Ok(batches.into_iter().rev().collect())
     }
 
     pub fn run_target(
@@ -99,11 +165,11 @@ impl DepGraph {
         let (project_id, task_id) = Target::parse(target)?;
         let project = projects.get(&project_id)?;
 
-        let node = self.graph.add_node(Node::RunTarget(target.to_owned()));
-        self.graph.add_edge(node, self.install_node_deps_index, ());
-
         // We should sync projects *before* running targets
         let project_node = self.sync_project(&project.id, projects)?;
+        let node = self.graph.add_node(Node::RunTarget(target.to_owned()));
+
+        self.graph.add_edge(node, self.install_node_deps_index, ());
         self.graph.add_edge(node, project_node, ());
 
         // And we also need to wait on all dependent nodes
@@ -245,11 +311,32 @@ mod tests {
         )
     }
 
+    fn sort_batches(batches: BatchedTopoSort) -> BatchedTopoSort {
+        let mut list: BatchedTopoSort = vec![];
+
+        for batch in batches {
+            let mut new_batch = batch.clone();
+            new_batch.sort();
+            list.push(new_batch);
+        }
+
+        list
+    }
+
     #[test]
     fn default_graph() {
         let graph = DepGraph::default();
 
         assert_snapshot!(graph.to_dot());
+
+        assert_eq!(
+            graph.sort_topological().unwrap(),
+            vec![NodeIndex::new(0), NodeIndex::new(1)]
+        );
+        assert_eq!(
+            sort_batches(graph.sort_batched_topological().unwrap()),
+            vec![vec![NodeIndex::new(0)], vec![NodeIndex::new(1)]]
+        );
     }
 
     mod run_target {
@@ -264,6 +351,25 @@ mod tests {
             graph.run_target("tasks:lint", &projects).unwrap();
 
             assert_snapshot!(graph.to_dot());
+
+            assert_eq!(
+                graph.sort_topological().unwrap(),
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(1),
+                    NodeIndex::new(2), // sync project
+                    NodeIndex::new(3), // test
+                    NodeIndex::new(4), // lint
+                ]
+            );
+            assert_eq!(
+                sort_batches(graph.sort_batched_topological().unwrap()),
+                vec![
+                    vec![NodeIndex::new(0)],
+                    vec![NodeIndex::new(1), NodeIndex::new(2)],
+                    vec![NodeIndex::new(3), NodeIndex::new(4)]
+                ]
+            );
         }
 
         #[test]
@@ -276,6 +382,37 @@ mod tests {
             graph.run_target("tasksChain:a", &projects).unwrap();
 
             assert_snapshot!(graph.to_dot());
+
+            assert_eq!(
+                graph.sort_topological().unwrap(),
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(1),
+                    NodeIndex::new(2),  // sync project
+                    NodeIndex::new(3),  // test
+                    NodeIndex::new(4),  // lint
+                    NodeIndex::new(5),  // sync project
+                    NodeIndex::new(11), // f
+                    NodeIndex::new(10), // e
+                    NodeIndex::new(9),  // d
+                    NodeIndex::new(8),  // c
+                    NodeIndex::new(7),  // b
+                    NodeIndex::new(6),  // a
+                ]
+            );
+            assert_eq!(
+                sort_batches(graph.sort_batched_topological().unwrap()),
+                vec![
+                    vec![NodeIndex::new(0)],
+                    vec![NodeIndex::new(1), NodeIndex::new(5)],
+                    vec![NodeIndex::new(11)],
+                    vec![NodeIndex::new(10)],
+                    vec![NodeIndex::new(9)],
+                    vec![NodeIndex::new(8)],
+                    vec![NodeIndex::new(2), NodeIndex::new(7)],
+                    vec![NodeIndex::new(3), NodeIndex::new(4), NodeIndex::new(6)]
+                ]
+            );
         }
 
         #[test]
@@ -288,6 +425,24 @@ mod tests {
             graph.run_target("tasks:lint", &projects).unwrap();
 
             assert_snapshot!(graph.to_dot());
+
+            assert_eq!(
+                graph.sort_topological().unwrap(),
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(1),
+                    NodeIndex::new(2), // sync project
+                    NodeIndex::new(3), // lint
+                ]
+            );
+            assert_eq!(
+                sort_batches(graph.sort_batched_topological().unwrap()),
+                vec![
+                    vec![NodeIndex::new(0)],
+                    vec![NodeIndex::new(1), NodeIndex::new(2)],
+                    vec![NodeIndex::new(3)]
+                ]
+            );
         }
 
         #[test]
@@ -338,6 +493,31 @@ mod tests {
             graph.sync_project("noConfig", &projects).unwrap();
 
             assert_snapshot!(graph.to_dot());
+
+            assert_eq!(
+                graph.sort_topological().unwrap(),
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(1),
+                    NodeIndex::new(2),
+                    NodeIndex::new(4), // noConfig
+                    NodeIndex::new(3), // basic
+                    NodeIndex::new(5), // emptyConfig
+                ]
+            );
+            assert_eq!(
+                sort_batches(graph.sort_batched_topological().unwrap()),
+                vec![
+                    vec![NodeIndex::new(0)],
+                    vec![NodeIndex::new(4)],
+                    vec![
+                        NodeIndex::new(1),
+                        NodeIndex::new(2),
+                        NodeIndex::new(3),
+                        NodeIndex::new(5)
+                    ]
+                ]
+            );
         }
 
         #[test]
@@ -350,7 +530,29 @@ mod tests {
             graph.sync_project("baz", &projects).unwrap();
             graph.sync_project("basic", &projects).unwrap();
 
-            assert_snapshot!(graph.to_dot());
+            // Not deterministic!
+            // assert_snapshot!(graph.to_dot());
+
+            assert_eq!(
+                graph.sort_topological().unwrap(),
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(1),
+                    NodeIndex::new(3), // bar
+                    NodeIndex::new(4), // baz
+                    NodeIndex::new(2), // foo
+                    NodeIndex::new(6), // emptyConfig
+                    NodeIndex::new(5), // basic
+                ]
+            );
+            assert_eq!(
+                sort_batches(graph.sort_batched_topological().unwrap()),
+                vec![
+                    vec![NodeIndex::new(0)],
+                    vec![NodeIndex::new(3), NodeIndex::new(4), NodeIndex::new(6)],
+                    vec![NodeIndex::new(1), NodeIndex::new(2), NodeIndex::new(5)]
+                ]
+            );
         }
 
         #[test]
@@ -362,6 +564,23 @@ mod tests {
             graph.sync_project("tasks", &projects).unwrap();
 
             assert_snapshot!(graph.to_dot());
+
+            assert_eq!(
+                graph.sort_topological().unwrap(),
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(1),
+                    NodeIndex::new(2),
+                    NodeIndex::new(3),
+                ]
+            );
+            assert_eq!(
+                sort_batches(graph.sort_batched_topological().unwrap()),
+                vec![
+                    vec![NodeIndex::new(0)],
+                    vec![NodeIndex::new(1), NodeIndex::new(2), NodeIndex::new(3)]
+                ]
+            );
         }
 
         #[test]

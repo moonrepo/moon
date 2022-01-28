@@ -9,65 +9,64 @@ use std::collections::HashMap;
 
 pub use petgraph::graph::NodeIndex;
 
-pub enum NodeType {
+pub enum Node {
     InstallNodeDeps,
     RunTarget(String), // target id
     SetupToolchain,
     SyncProject(String), // project id
 }
 
-pub struct Node {
-    pub label: String,
-    pub type_of: NodeType,
+impl Node {
+    pub fn label(&self) -> String {
+        match self {
+            Node::InstallNodeDeps => String::from("InstallNodeDeps"),
+            Node::RunTarget(id) => format!("RunTarget({})", id),
+            Node::SetupToolchain => String::from("SetupToolchain"),
+            Node::SyncProject(id) => format!("SyncProject({})", id),
+        }
+    }
 }
 
 type GraphType = DiGraph<Node, ()>;
 
 /// A directed acyclic graph (DAG) for the work that needs to be processed, based on a
 /// project or task's dependency chain. This is also known as a "task graph" (not to
-/// be confused with ours) or a "dependency graph". We call it a "work graph", as it's
-/// the combination of those 2 with additional information for the work unit (a job).
+/// be confused with ours) or a "dependency graph".
 pub struct DepGraph {
     graph: GraphType,
-
-    /// Reference node for the "setup toolchain" job.
-    toolchain_node: NodeIndex,
 
     /// Mapping of IDs to existing node indices.
     index_cache: HashMap<String, NodeIndex>,
 
-    /// Reference node for the "install deps" job.
-    install_deps_node: NodeIndex,
+    /// Reference node for the "install node deps" job.
+    install_node_deps_index: NodeIndex,
+
+    /// Reference node for the "setup toolchain" job.
+    setup_toolchain_index: NodeIndex,
 }
 
 impl DepGraph {
     pub fn default() -> Self {
         debug!(
             target: "moon:dep-graph",
-            "Creating work graph",
+            "Creating dependency graph",
         );
 
         let mut graph: GraphType = Graph::new();
 
         // Toolchain must be setup first
-        let toolchain_node = graph.add_node(Node {
-            label: String::from("SetupToolchain"),
-            type_of: NodeType::SetupToolchain,
-        });
+        let setup_toolchain_index = graph.add_node(Node::SetupToolchain);
 
         // Deps can be installed *after* the toolchain exists
-        let install_deps_node = graph.add_node(Node {
-            label: String::from("InstallNodeDeps"),
-            type_of: NodeType::InstallNodeDeps,
-        });
+        let install_node_deps_index = graph.add_node(Node::InstallNodeDeps);
 
-        graph.add_edge(install_deps_node, toolchain_node, ());
+        graph.add_edge(install_node_deps_index, setup_toolchain_index, ());
 
         DepGraph {
             graph,
             index_cache: HashMap::new(),
-            install_deps_node,
-            toolchain_node,
+            install_node_deps_index,
+            setup_toolchain_index,
         }
     }
 
@@ -93,18 +92,15 @@ impl DepGraph {
 
         trace!(
             target: "moon:dep-graph",
-            "Target {} does not exist in the work graph, inserting",
+            "Target {} does not exist in the dependency graph, inserting",
             color::id(target),
         );
 
         let (project_id, task_id) = Target::parse(target)?;
         let project = projects.get(&project_id)?;
 
-        let node = self.graph.add_node(Node {
-            label: format!("RunTarget({})", target),
-            type_of: NodeType::RunTarget(target.to_owned()),
-        });
-        self.graph.add_edge(node, self.install_deps_node, ());
+        let node = self.graph.add_node(Node::RunTarget(target.to_owned()));
+        self.graph.add_edge(node, self.install_node_deps_index, ());
 
         // We should sync projects *before* running targets
         let project_node = self.sync_project(&project.id, projects)?;
@@ -195,12 +191,12 @@ impl DepGraph {
         let project = projects.get(project_id)?;
 
         // Sync can be run in parallel while deps are installing
-        let node_index = self.graph.add_node(Node {
-            label: format!("SyncProject({})", project_id),
-            type_of: NodeType::SyncProject(project_id.to_owned()),
-        });
+        let node_index = self
+            .graph
+            .add_node(Node::SyncProject(project_id.to_owned()));
 
-        self.graph.add_edge(node_index, self.toolchain_node, ());
+        self.graph
+            .add_edge(node_index, self.setup_toolchain_index, ());
 
         // But we need to wait on all dependent nodes
         for dep_id in projects.get_dependencies_of(&project)? {
@@ -215,7 +211,7 @@ impl DepGraph {
     }
 
     pub fn to_dot(&self) -> String {
-        let graph = self.graph.map(|_, n| n.label.as_str(), |_, e| e);
+        let graph = self.graph.map(|_, n| n.label(), |_, e| e);
         let dot = Dot::with_config(&graph, &[Config::EdgeNoLabel]);
 
         format!("{:?}", dot)
@@ -244,6 +240,7 @@ mod tests {
                 ("bar".to_owned(), "deps/bar".to_owned()),
                 ("baz".to_owned(), "deps/baz".to_owned()),
                 ("tasks".to_owned(), "tasks".to_owned()),
+                ("tasksChain".to_owned(), "tasks-chain".to_owned()),
             ]),
         )
     }
@@ -263,10 +260,65 @@ mod tests {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.sync_project("advanced", &projects).unwrap();
-            graph.sync_project("basic", &projects).unwrap();
-            graph.sync_project("emptyConfig", &projects).unwrap();
-            graph.sync_project("noConfig", &projects).unwrap();
+            graph.run_target("tasks:test", &projects).unwrap();
+            graph.run_target("tasks:lint", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        fn deps_chain_target() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.run_target("tasks:test", &projects).unwrap();
+            graph.run_target("tasks:lint", &projects).unwrap();
+            graph.run_target("tasksChain:a", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        fn avoids_dupe_targets() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.run_target("tasks:lint", &projects).unwrap();
+            graph.run_target("tasks:lint", &projects).unwrap();
+            graph.run_target("tasks:lint", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        #[should_panic(expected = "Project(InvalidTargetFormat(\"invalid-target\"))")]
+        fn errors_for_invalid_target() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.run_target("invalid-target", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        #[should_panic(expected = "Project(UnconfiguredID(\"unknown\"))")]
+        fn errors_for_unknown_project() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.run_target("unknown:test", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        #[should_panic(expected = "Project(UnconfiguredTask(\"build\", \"tasks\"))")]
+        fn errors_for_unknown_task() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.run_target("tasks:build", &projects).unwrap();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -308,6 +360,29 @@ mod tests {
             let mut graph = DepGraph::default();
             graph.sync_project("noConfig", &projects).unwrap();
             graph.sync_project("tasks", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        fn avoids_dupe_projects() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.sync_project("advanced", &projects).unwrap();
+            graph.sync_project("advanced", &projects).unwrap();
+            graph.sync_project("advanced", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        #[should_panic(expected = "Project(UnconfiguredID(\"unknown\"))")]
+        fn errors_for_unknown_project() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph.sync_project("unknown", &projects).unwrap();
 
             assert_snapshot!(graph.to_dot());
         }

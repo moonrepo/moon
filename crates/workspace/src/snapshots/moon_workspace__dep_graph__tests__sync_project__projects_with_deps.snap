@@ -1,6 +1,6 @@
 ---
 source: crates/workspace/src/dep_graph.rs
-assertion_line: 301
+assertion_line: 353
 expression: graph.to_dot()
 
 ---

@@ -1,4 +1,4 @@
-use crate::dep_graph::{DepGraph, NodeIndex, NodeType};
+use crate::dep_graph::{DepGraph, Node, NodeIndex};
 use crate::errors::WorkspaceError;
 use crate::jobs::install_node_deps::install_node_deps;
 use crate::jobs::run_target::run_target;
@@ -40,18 +40,18 @@ impl<'a> Orchestrator<'a> {
         });
     }
 
-    async fn run_job(&mut self, node: NodeType) -> Result<(), WorkspaceError> {
+    async fn run_job(&mut self, node: Node) -> Result<(), WorkspaceError> {
         match node {
-            NodeType::InstallNodeDeps => {
+            Node::InstallNodeDeps => {
                 install_node_deps(&self.workspace).await?;
             }
-            NodeType::RunTarget(target_id) => {
+            Node::RunTarget(target_id) => {
                 run_target(&self.workspace, target_id).await?;
             }
-            NodeType::SetupToolchain => {
+            Node::SetupToolchain => {
                 setup_toolchain(&self.workspace).await?;
             }
-            NodeType::SyncProject(project_id) => {
+            Node::SyncProject(project_id) => {
                 sync_project(&mut self.workspace, project_id).await?;
             }
         }

@@ -34,11 +34,11 @@ fn graph_for_all_projects(workspace: &Workspace, dot_graph: &mut Scope) {
 
     for id in projects.ids() {
         // Add node to the graph
-        create_node(dot_graph, id, false);
+        create_node(dot_graph, &id, false);
 
         // Load project and map deps as edges
-        for dep in projects.get(id).unwrap().get_dependencies() {
-            create_edge(dot_graph, &dep, id);
+        for dep in projects.get(&id).unwrap().get_dependencies() {
+            create_edge(dot_graph, &dep, &id);
         }
     }
 }

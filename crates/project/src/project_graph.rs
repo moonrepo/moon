@@ -1,25 +1,32 @@
 use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::project::Project;
-use dep_graph::{DepGraph, Node};
 use itertools::Itertools;
 use moon_config::{GlobalProjectConfig, ProjectID};
 use moon_logger::{color, debug, trace};
-use std::cell::{RefCell, RefMut};
+use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::Direction;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, RwLock, RwLockWriteGuard};
+
+type GraphType = DiGraph<Project, ()>;
+type IndicesType = HashMap<ProjectID, NodeIndex>;
+
+const READ_ERROR: &str = "Failed to acquire a read lock";
+const WRITE_ERROR: &str = "Failed to acquire a write lock";
 
 pub struct ProjectGraph {
     /// The global project configuration that all projects inherit from.
     /// Is loaded from `.moon/project.yml`.
     global_config: GlobalProjectConfig,
 
-    /// A lightweight dependency graph, where each node is a project ID,
-    /// and can depend on other project IDs.
-    nodes: RefCell<HashMap<ProjectID, Node<ProjectID>>>,
+    /// Projects that have been loaded into the graph (DAG).
+    graph: Arc<RwLock<GraphType>>,
 
-    /// Projects that have been loaded into the graph.
-    projects: RefCell<HashMap<ProjectID, Project>>,
+    /// Mapping of project IDs to node indices, as we need a way
+    /// to query the graph by ID as it only supports it by index.
+    indices: Arc<RwLock<IndicesType>>,
 
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
@@ -43,19 +50,25 @@ impl ProjectGraph {
 
         ProjectGraph {
             global_config,
-            nodes: RefCell::new(HashMap::from([(
-                ROOT_NODE_ID.to_owned(),
-                Node::new(ROOT_NODE_ID.to_owned()),
-            )])),
-            projects: RefCell::new(HashMap::new()),
+            graph: Arc::new(RwLock::new(DiGraph::new())),
+            indices: Arc::new(RwLock::new(HashMap::new())),
             projects_config: projects_config.clone(),
             workspace_root: workspace_root.to_path_buf(),
         }
     }
 
     /// Return a list of all configured project IDs in ascending order.
-    pub fn ids(&self) -> std::vec::IntoIter<&ProjectID> {
-        self.projects_config.keys().sorted()
+    pub fn ids(&self) -> Vec<ProjectID> {
+        let mut nodes: Vec<ProjectID> = self
+            .graph
+            .read()
+            .expect(READ_ERROR)
+            .node_weights()
+            .map(|p| p.id.clone())
+            .collect();
+
+        nodes.sort();
+        nodes
     }
 
     /// Return a project with the associated ID. If the project
@@ -63,31 +76,38 @@ impl ProjectGraph {
     /// project graph. If the project does not exist or has been
     /// misconfigured, an error will be returned.
     pub fn get(&self, id: &str) -> Result<Project, ProjectError> {
-        let mut projects = self.projects.borrow_mut();
-        let mut nodes = self.nodes.borrow_mut();
+        // Check if the project already exists in read-only mode,
+        // so that it may be dropped immediately after!
+        {
+            let indices = self.indices.read().expect(READ_ERROR);
 
-        // Lazy load the project if it has not been
-        self.load(&mut projects, &mut nodes, id)?;
+            if let Some(idx) = indices.get(id) {
+                let graph = self.graph.read().expect(READ_ERROR);
 
-        // TODO: Is it possible to not clone here???
-        Ok(projects.get(id).unwrap().clone())
+                return Ok(graph.node_weight(*idx).unwrap().clone());
+            }
+        }
+
+        // Otherwise we need to load the project in write mode
+        let mut indices = self.indices.write().expect(WRITE_ERROR);
+        let mut graph = self.graph.write().expect(WRITE_ERROR);
+        let index = self.load(id, &mut indices, &mut graph)?;
+
+        Ok(graph.node_weight(index).unwrap().clone())
     }
 
     /// Return a list of project IDs that a project depends on,
     /// in the priority order in which they are depended on.
     pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
-        let mut nodes = vec![];
+        let indices = self.indices.read().expect(READ_ERROR);
+        let graph = self.graph.read().expect(READ_ERROR);
 
-        self.extract_nodes(&mut nodes, &project.id)?;
+        let deps = graph
+            .neighbors_directed(*indices.get(&project.id).unwrap(), Direction::Outgoing)
+            .map(|idx| graph.node_weight(idx).unwrap().id.clone())
+            .collect();
 
-        // Depending on the chain, our own project ID may end up in this
-        // list, so remove it. This is a bit unfortunate, but hopefully
-        // the dependency chain isn't too large. Revisit in the future!
-        if let Some(index) = nodes.iter().position(|n| n.id() == &project.id) {
-            nodes.remove(index);
-        }
-
-        Ok(DepGraph::new(&nodes).into_iter().collect())
+        Ok(deps)
     }
 
     /// Return a list of project IDs that a project depends on,
@@ -102,43 +122,23 @@ impl ProjectGraph {
         Ok(deps)
     }
 
-    /// Recursively extract a list of nodes based on its dependency chain.
-    fn extract_nodes(
-        &self,
-        nodes: &mut Vec<Node<ProjectID>>,
-        id: &str,
-    ) -> Result<(), ProjectError> {
-        match self.nodes.borrow().get(id) {
-            Some(node) => {
-                for dep_id in node.deps() {
-                    self.extract_nodes(nodes, dep_id)?;
-                }
-
-                nodes.push(node.clone());
-            }
-            None => return Err(ProjectError::UnconfiguredID(id.to_owned())),
-        }
-
-        Ok(())
-    }
-
     /// Internal method for lazily loading a project and its
     /// dependencies into the graph.
     fn load(
         &self,
-        projects: &mut RefMut<HashMap<ProjectID, Project>>,
-        nodes: &mut RefMut<HashMap<ProjectID, Node<ProjectID>>>,
         id: &str,
-    ) -> Result<(), ProjectError> {
+        indices: &mut RwLockWriteGuard<IndicesType>,
+        graph: &mut RwLockWriteGuard<GraphType>,
+    ) -> Result<NodeIndex, ProjectError> {
         // Already loaded, abort early
-        if projects.contains_key(id) || id == ROOT_NODE_ID {
+        if indices.contains_key(id) || id == ROOT_NODE_ID {
             trace!(
                 target: "moon:project-graph",
                 "Project {} already exists in the project graph",
                 color::id(id),
             );
 
-            return Ok(());
+            return Ok(*indices.get(id).unwrap());
         }
 
         trace!(
@@ -156,10 +156,9 @@ impl ProjectGraph {
         let project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
         let depends_on = project.get_dependencies();
 
-        projects.insert(id.to_owned(), project);
-
         // Insert the project into the graph
-        let mut node = Node::new(id.to_owned());
+        let node_index = graph.add_node(project);
+        indices.insert(id.to_owned(), node_index);
 
         if !depends_on.is_empty() {
             trace!(
@@ -169,16 +168,12 @@ impl ProjectGraph {
                 color::id(id),
             );
 
-            for dep in depends_on {
-                // Ensure the dependent project is also loaded
-                self.load(projects, nodes, dep.as_str())?;
-
-                node.add_dep(dep);
+            for dep_id in depends_on {
+                let dep_index = self.load(dep_id.as_str(), indices, graph)?;
+                graph.add_edge(node_index, dep_index, ());
             }
         }
 
-        nodes.insert(id.to_owned(), node);
-
-        Ok(())
+        Ok(node_index)
     }
 }

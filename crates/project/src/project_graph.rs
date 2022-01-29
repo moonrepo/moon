@@ -80,6 +80,13 @@ impl ProjectGraph {
 
         self.extract_nodes(&mut nodes, &project.id)?;
 
+        // Depending on the chain, our own project ID may end up in this
+        // list, so remove it. This is a bit unfortunate, but hopefully
+        // the dependency chain isn't too large. Revisit in the future!
+        if let Some(index) = nodes.iter().position(|n| n.id() == &project.id) {
+            nodes.remove(index);
+        }
+
         Ok(DepGraph::new(&nodes).into_iter().collect())
     }
 
@@ -103,8 +110,8 @@ impl ProjectGraph {
     ) -> Result<(), ProjectError> {
         match self.nodes.borrow().get(id) {
             Some(node) => {
-                for dep in node.deps() {
-                    self.extract_nodes(nodes, dep)?;
+                for dep_id in node.deps() {
+                    self.extract_nodes(nodes, dep_id)?;
                 }
 
                 nodes.push(node.clone());

@@ -1,6 +1,6 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
-use moon_config::{TargetID, TaskType};
+use moon_config::TaskType;
 use moon_project::{Project, Target, Task};
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::Tool;
@@ -45,14 +45,14 @@ async fn run_shell_target(task: &Task, exec_dir: &Path) -> Result<Output, Worksp
 }
 
 #[allow(dead_code)]
-pub async fn run_target(workspace: &Workspace, target: TargetID) -> Result<(), WorkspaceError> {
-    let mut cache = workspace.cache.target_run_state(&target).await?;
+pub async fn run_target(workspace: &Workspace, target: &str) -> Result<(), WorkspaceError> {
+    let mut cache = workspace.cache.run_target_state(target).await?;
     let toolchain = &workspace.toolchain;
 
     // TODO abort early for a cache hit
 
     // Gather the project and task
-    let (project_id, task_id) = Target::parse(&target)?;
+    let (project_id, task_id) = Target::parse(target)?;
     let project = workspace.projects.get(&project_id)?;
     let task = project.tasks.get(&task_id).unwrap();
 

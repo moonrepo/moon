@@ -1,0 +1,9 @@
+tasks:
+  a:
+    command: a
+    inputs:
+      - 'a.ts'
+  a2:
+    command: a2
+    inputs:
+      - 'a2.ts'

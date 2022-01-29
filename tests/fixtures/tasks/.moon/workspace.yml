@@ -2,16 +2,4 @@ node:
   # We use an old version to avoid conflicts within local dev
   version: '10.0.0'
 
-projects:
-  advanced: advanced
-  basic: basic
-  emptyConfig: empty-config
-  noConfig: no-config
-
-  # Deps
-  foo: deps/foo
-  bar: deps/bar
-  baz: deps/baz
-
-  # Tasks
-  tasks: tasks
+projects: {}

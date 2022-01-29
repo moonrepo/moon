@@ -636,14 +636,17 @@ mod tests {
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
+            let mut files = resolver
+                .resolve(&string_vec!["@files(static)"], None)
+                .unwrap();
+            files.sort();
+
             assert_eq!(
-                resolver
-                    .resolve(&string_vec!["@files(static)"], None)
-                    .unwrap(),
+                files,
                 vec![
-                    project_root.join("file.ts"),
                     project_root.join("dir/other.tsx"),
-                    project_root.join("dir/subdir/another.ts")
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("file.ts"),
                 ]
             );
         }
@@ -656,14 +659,17 @@ mod tests {
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_args(&metadata);
 
+            let mut files = resolver
+                .resolve(&string_vec!["@files(files_glob)"], None)
+                .unwrap();
+            files.sort();
+
             assert_eq!(
-                resolver
-                    .resolve(&string_vec!["@files(files_glob)"], None)
-                    .unwrap(),
+                files,
                 vec![
-                    project_root.join("file.ts"),
+                    project_root.join("dir/other.tsx"),
                     project_root.join("dir/subdir/another.ts"),
-                    project_root.join("dir/other.tsx")
+                    project_root.join("file.ts"),
                 ]
             );
         }
@@ -841,14 +847,17 @@ mod tests {
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
+            let mut files = resolver
+                .resolve(&string_vec!["@files(static)"], None)
+                .unwrap();
+            files.sort();
+
             assert_eq!(
-                resolver
-                    .resolve(&string_vec!["@files(static)"], None)
-                    .unwrap(),
+                files,
                 vec![
-                    project_root.join("file.ts"),
                     project_root.join("dir/other.tsx"),
-                    project_root.join("dir/subdir/another.ts")
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("file.ts"),
                 ]
             );
         }
@@ -861,14 +870,17 @@ mod tests {
             let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
             let resolver = TokenResolver::for_inputs(&metadata);
 
+            let mut files = resolver
+                .resolve(&string_vec!["@files(files_glob)"], None)
+                .unwrap();
+            files.sort();
+
             assert_eq!(
-                resolver
-                    .resolve(&string_vec!["@files(files_glob)"], None)
-                    .unwrap(),
+                files,
                 vec![
-                    project_root.join("file.ts"),
+                    project_root.join("dir/other.tsx"),
                     project_root.join("dir/subdir/another.ts"),
-                    project_root.join("dir/other.tsx")
+                    project_root.join("file.ts"),
                 ]
             );
         }

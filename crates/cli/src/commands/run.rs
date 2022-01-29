@@ -1,6 +1,6 @@
 use clap::ArgEnum;
-use moon_project::{TaskGraph, TouchedFilePaths};
-use moon_workspace::{TouchedFiles, Workspace};
+use moon_project::TouchedFilePaths;
+use moon_workspace::{DepGraph, TouchedFiles, Workspace};
 use std::collections::HashSet;
 // use std::fs;
 use std::io;
@@ -61,16 +61,18 @@ pub async fn run(
     status: &Option<RunStatus>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load()?;
+    let vcs = workspace.detect_vcs();
 
     // Gather files that have been touched in the working tree
     let touched_files = get_touched_files(
         &workspace,
-        workspace.vcs.get_touched_files().await?,
+        vcs.get_touched_files().await?,
         status.clone().unwrap_or_default(),
     )?;
 
-    // Generate a task graph, that filters projects and tasks based on touched files
-    let _graph = TaskGraph::from_target(&workspace.projects, &touched_files, target.to_owned())?;
+    // Generate a dependency graph for all the targets that need to be ran
+    let mut dep_graph = DepGraph::default();
+    dep_graph.run_target_if_touched(target, &touched_files, &workspace.projects)?;
 
     Ok(())
 }

@@ -214,15 +214,18 @@ mod tests {
                 ],
             );
 
+            let mut files = file_group.files(&workspace_root, &project_root).unwrap();
+            files.sort();
+
             assert_eq!(
-                file_group.files(&workspace_root, &project_root).unwrap(),
+                files,
                 vec![
-                    project_root.join("file.ts"),
-                    project_root.join("dir/subdir/another.ts"),
-                    project_root.join("dir/other.tsx"),
-                    workspace_root.join("package.json"),
+                    workspace_root.join("README.md"),
                     project_root.join("README.md"),
-                    workspace_root.join("README.md")
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("file.ts"),
+                    workspace_root.join("package.json"),
                 ]
             );
         }

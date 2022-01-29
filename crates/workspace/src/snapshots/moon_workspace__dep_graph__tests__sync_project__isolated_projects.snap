@@ -1,0 +1,21 @@
+---
+source: crates/workspace/src/dep_graph.rs
+assertion_line: 288
+expression: graph.to_dot()
+
+---
+digraph {
+    0 [ label = "\"SetupToolchain\"" ]
+    1 [ label = "\"InstallNodeDeps\"" ]
+    2 [ label = "\"SyncProject(advanced)\"" ]
+    3 [ label = "\"SyncProject(basic)\"" ]
+    4 [ label = "\"SyncProject(noConfig)\"" ]
+    5 [ label = "\"SyncProject(emptyConfig)\"" ]
+    1 -> 0 [ ]
+    2 -> 0 [ ]
+    3 -> 0 [ ]
+    4 -> 0 [ ]
+    3 -> 4 [ ]
+    5 -> 0 [ ]
+}
+

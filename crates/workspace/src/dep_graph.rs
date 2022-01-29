@@ -320,8 +320,33 @@ mod tests {
                 ("bar".to_owned(), "deps/bar".to_owned()),
                 ("baz".to_owned(), "deps/baz".to_owned()),
                 ("tasks".to_owned(), "tasks".to_owned()),
-                ("tasksChain".to_owned(), "tasks-chain".to_owned()),
-                ("tasksCycle".to_owned(), "tasks-cycle".to_owned()),
+            ]),
+        )
+    }
+
+    fn create_tasks_project_graph() -> ProjectGraph {
+        let global_config = GlobalProjectConfig {
+            file_groups: Some(HashMap::from([(
+                "sources".to_owned(),
+                vec!["src/**/*".to_owned()],
+            )])),
+            ..GlobalProjectConfig::default()
+        };
+
+        ProjectGraph::new(
+            &get_fixtures_dir("tasks"),
+            global_config,
+            &HashMap::from([
+                ("basic".to_owned(), "basic".to_owned()),
+                ("chain".to_owned(), "chain".to_owned()),
+                ("cycle".to_owned(), "cycle".to_owned()),
+                ("inputA".to_owned(), "input-a".to_owned()),
+                ("inputB".to_owned(), "input-b".to_owned()),
+                ("inputC".to_owned(), "input-C".to_owned()),
+                ("mergeAppend".to_owned(), "merge-append".to_owned()),
+                ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
+                ("mergeReplace".to_owned(), "merge-replace".to_owned()),
+                ("no-tasks".to_owned(), "no-tasks".to_owned()),
             ]),
         )
     }
@@ -356,15 +381,15 @@ mod tests {
 
     #[test]
     #[should_panic(
-        expected = "CycleDetected(\"RunTarget(tasksCycle:a) -> RunTarget(tasksCycle:b) -> RunTarget(tasksCycle:c)\")"
+        expected = "CycleDetected(\"RunTarget(cycle:a) -> RunTarget(cycle:b) -> RunTarget(cycle:c)\")"
     )]
     fn detects_cycles() {
-        let projects = create_project_graph();
+        let projects = create_tasks_project_graph();
 
         let mut graph = DepGraph::default();
-        graph.run_target("tasksCycle:a", &projects).unwrap();
-        graph.run_target("tasksCycle:b", &projects).unwrap();
-        graph.run_target("tasksCycle:c", &projects).unwrap();
+        graph.run_target("cycle:a", &projects).unwrap();
+        graph.run_target("cycle:b", &projects).unwrap();
+        graph.run_target("cycle:c", &projects).unwrap();
 
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
@@ -407,12 +432,12 @@ mod tests {
 
         #[test]
         fn deps_chain_target() {
-            let projects = create_project_graph();
+            let projects = create_tasks_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("tasks:test", &projects).unwrap();
-            graph.run_target("tasks:lint", &projects).unwrap();
-            graph.run_target("tasksChain:a", &projects).unwrap();
+            graph.run_target("basic:test", &projects).unwrap();
+            graph.run_target("basic:lint", &projects).unwrap();
+            graph.run_target("chain:a", &projects).unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -507,6 +532,52 @@ mod tests {
 
             let mut graph = DepGraph::default();
             graph.run_target("tasks:build", &projects).unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+    }
+
+    mod run_target_if_touched {
+        use super::*;
+
+        #[test]
+        fn skips_if_untouched_project() {
+            let projects = create_tasks_project_graph();
+
+            let mut touched_files = HashSet::new();
+            touched_files.insert(get_fixtures_dir("tasks").join("input-a/a.ts"));
+            touched_files.insert(get_fixtures_dir("tasks").join("input-c/c.ts"));
+
+            let mut graph = DepGraph::default();
+            graph
+                .run_target_if_touched("inputA:a", &touched_files, &projects)
+                .unwrap();
+            graph
+                .run_target_if_touched("inputB:b", &touched_files, &projects)
+                .unwrap();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[test]
+        fn skips_if_untouched_task() {
+            let projects = create_tasks_project_graph();
+
+            let mut touched_files = HashSet::new();
+            touched_files.insert(get_fixtures_dir("tasks").join("input-a/a2.ts"));
+            touched_files.insert(get_fixtures_dir("tasks").join("input-b/b2.ts"));
+            touched_files.insert(get_fixtures_dir("tasks").join("input-c/any.ts"));
+
+            let mut graph = DepGraph::default();
+            graph
+                .run_target_if_touched("inputA:a", &touched_files, &projects)
+                .unwrap();
+            graph
+                .run_target_if_touched("inputB:b2", &touched_files, &projects)
+                .unwrap();
+            graph
+                .run_target_if_touched("inputC:c", &touched_files, &projects)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
         }

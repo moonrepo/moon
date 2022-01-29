@@ -391,10 +391,10 @@ mod tasks {
                     depends_on: None,
                     file_groups: None,
                     project: None,
-                    tasks: Some(HashMap::from([(
-                        String::from("lint"),
-                        mock_task_config("eslint"),
-                    )])),
+                    tasks: Some(HashMap::from([
+                        (String::from("test"), mock_task_config("jest"),),
+                        (String::from("lint"), mock_task_config("eslint"),)
+                    ])),
                 }),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -406,6 +406,13 @@ mod tasks {
                         Task::from_config(
                             Target::format("id", "standard").unwrap(),
                             &mock_task_config("cmd")
+                        )
+                    ),
+                    (
+                        String::from("test"),
+                        Task::from_config(
+                            Target::format("id", "test").unwrap(),
+                            &mock_task_config("jest")
                         )
                     ),
                     (

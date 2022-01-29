@@ -1,0 +1,4 @@
+tasks:
+  c:
+    command: c
+    # No inputs, always affected

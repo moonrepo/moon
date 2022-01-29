@@ -1,0 +1,18 @@
+tasks:
+  a:
+    command: a
+    deps: ['chain:b']
+  b:
+    command: b
+    deps: ['chain:c']
+  c:
+    command: c
+    deps: ['chain:d']
+  d:
+    command: d
+    deps: ['chain:e']
+  e:
+    command: e
+    deps: ['chain:f']
+  f:
+    command: f

@@ -1,22 +1,22 @@
 ---
 source: crates/workspace/src/dep_graph.rs
-assertion_line: 369
+assertion_line: 439
 expression: graph.to_dot()
 
 ---
 digraph {
     0 [ label = "\"SetupToolchain\"" ]
     1 [ label = "\"InstallNodeDeps\"" ]
-    2 [ label = "\"SyncProject(tasks)\"" ]
-    3 [ label = "\"RunTarget(tasks:test)\"" ]
-    4 [ label = "\"RunTarget(tasks:lint)\"" ]
-    5 [ label = "\"SyncProject(tasksChain)\"" ]
-    6 [ label = "\"RunTarget(tasksChain:a)\"" ]
-    7 [ label = "\"RunTarget(tasksChain:b)\"" ]
-    8 [ label = "\"RunTarget(tasksChain:c)\"" ]
-    9 [ label = "\"RunTarget(tasksChain:d)\"" ]
-    10 [ label = "\"RunTarget(tasksChain:e)\"" ]
-    11 [ label = "\"RunTarget(tasksChain:f)\"" ]
+    2 [ label = "\"SyncProject(basic)\"" ]
+    3 [ label = "\"RunTarget(basic:test)\"" ]
+    4 [ label = "\"RunTarget(basic:lint)\"" ]
+    5 [ label = "\"SyncProject(chain)\"" ]
+    6 [ label = "\"RunTarget(chain:a)\"" ]
+    7 [ label = "\"RunTarget(chain:b)\"" ]
+    8 [ label = "\"RunTarget(chain:c)\"" ]
+    9 [ label = "\"RunTarget(chain:d)\"" ]
+    10 [ label = "\"RunTarget(chain:e)\"" ]
+    11 [ label = "\"RunTarget(chain:f)\"" ]
     1 -> 0 [ ]
     2 -> 0 [ ]
     3 -> 1 [ ]

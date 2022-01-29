@@ -4,6 +4,7 @@ use crate::project::Project;
 use itertools::Itertools;
 use moon_config::{GlobalProjectConfig, ProjectID};
 use moon_logger::{color, debug, trace};
+use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Direction;
 use std::collections::HashMap;
@@ -48,9 +49,19 @@ impl ProjectGraph {
             projects_config.len(),
         );
 
+        let mut graph = DiGraph::new();
+
+        // Add a virtual root node
+        graph.add_node(Project {
+            id: ROOT_NODE_ID.to_owned(),
+            root: workspace_root.to_path_buf(),
+            source: String::from("."),
+            ..Project::default()
+        });
+
         ProjectGraph {
             global_config,
-            graph: Arc::new(RwLock::new(DiGraph::new())),
+            graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(HashMap::new())),
             projects_config: projects_config.clone(),
             workspace_root: workspace_root.to_path_buf(),
@@ -59,14 +70,7 @@ impl ProjectGraph {
 
     /// Return a list of all configured project IDs in ascending order.
     pub fn ids(&self) -> Vec<ProjectID> {
-        let mut nodes: Vec<ProjectID> = self
-            .graph
-            .read()
-            .expect(READ_ERROR)
-            .node_weights()
-            .map(|p| p.id.clone())
-            .collect();
-
+        let mut nodes: Vec<ProjectID> = self.projects_config.keys().cloned().collect();
         nodes.sort();
         nodes
     }
@@ -122,6 +126,21 @@ impl ProjectGraph {
         Ok(deps)
     }
 
+    /// Format as a DOT string.
+    pub fn to_dot(&self) -> String {
+        let graph = self.graph.read().expect(READ_ERROR);
+        let new_graph = graph.map(|_, n| n.id.clone(), |_, e| e);
+
+        let dot = Dot::with_attr_getters(
+            &new_graph,
+            &[Config::EdgeNoLabel],
+            &|_, _| String::new(),
+            &|_, _| String::new(),
+        );
+
+        format!("{:?}", dot)
+    }
+
     /// Internal method for lazily loading a project and its
     /// dependencies into the graph.
     fn load(
@@ -158,6 +177,7 @@ impl ProjectGraph {
 
         // Insert the project into the graph
         let node_index = graph.add_node(project);
+        graph.add_edge(NodeIndex::new(0), node_index, ());
         indices.insert(id.to_owned(), node_index);
 
         if !depends_on.is_empty() {

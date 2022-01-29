@@ -67,30 +67,38 @@ fn graph_for_single_project(
 
 pub async fn project_graph(id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load()?;
-    let mut output_bytes = Vec::new();
 
-    {
-        let mut writer = DotWriter::from(&mut output_bytes);
-
-        writer.set_pretty_print(true);
-
-        let mut dot_graph = writer.digraph();
-
-        dot_graph
-            .node_named(ROOT_NODE_ID)
-            .set_style(Style::Filled)
-            .set_shape(Shape::Circle)
-            .set_fill_color(Color::Black)
-            .set_font_color(Color::White);
-
-        if let Some(project_id) = id {
-            graph_for_single_project(&workspace, &mut dot_graph, project_id)?;
-        } else {
-            graph_for_all_projects(&workspace, &mut dot_graph);
+    if let Some(pid) = id {
+        workspace.projects.get(pid)?;
+    } else {
+        for pid in workspace.projects.ids() {
+            workspace.projects.get(&pid)?;
         }
     }
 
-    println!("{}", String::from_utf8(output_bytes).unwrap());
+    // let mut output_bytes = Vec::new();
+    // {
+    //     let mut writer = DotWriter::from(&mut output_bytes);
+
+    //     writer.set_pretty_print(true);
+
+    //     let mut dot_graph = writer.digraph();
+
+    //     dot_graph
+    //         .node_named(ROOT_NODE_ID)
+    //         .set_style(Style::Filled)
+    //         .set_shape(Shape::Circle)
+    //         .set_fill_color(Color::Black)
+    //         .set_font_color(Color::White);
+
+    //     if let Some(project_id) = id {
+    //         graph_for_single_project(&workspace, &mut dot_graph, project_id)?;
+    //     } else {
+    //         graph_for_all_projects(&workspace, &mut dot_graph);
+    //     }
+    // }
+
+    println!("{}", workspace.projects.to_dot());
 
     Ok(())
 }

@@ -11,6 +11,7 @@ use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskI
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 pub type FileGroupsMap = HashMap<String, FileGroup>;
@@ -192,7 +193,7 @@ fn create_tasks_from_config(
     Ok(tasks)
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
@@ -319,6 +320,12 @@ impl Project {
     /// Return the project as a JSON string.
     pub fn to_json(&self) -> String {
         serde_json::to_string_pretty(self).unwrap()
+    }
+}
+
+impl<'a> fmt::Display for Project {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} ({})", self.id, self.source)
     }
 }
 

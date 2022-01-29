@@ -25,15 +25,15 @@ impl<'a> Orchestrator<'a> {
         for batch in graph.sort_batched_topological()? {
             // Process a batch of jobs within a Rayon scope. This scope will complete
             // once all jobs complete as their own thread in the pool.
-            self.pool.scope(move |s| {
-                for job in batch {
-                    s.spawn(move |s| {
-                        if let Some(node) = graph.get_node_from_index(job) {
-                            self.run_job(node);
-                        }
-                    });
-                }
-            });
+            // self.pool.scope(move |s| {
+            //     for job in batch {
+            //         s.spawn(move |s| {
+            //             if let Some(node) = graph.get_node_from_index(job) {
+            //                 self.run_job(node);
+            //             }
+            //         });
+            //     }
+            // });
         }
 
         Ok(())

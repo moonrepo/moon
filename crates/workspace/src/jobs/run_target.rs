@@ -1,6 +1,6 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
-use moon_config::{TargetID, TaskType};
+use moon_config::TaskType;
 use moon_project::{Project, Target, Task};
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::Tool;

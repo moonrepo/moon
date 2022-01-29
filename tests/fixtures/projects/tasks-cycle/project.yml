@@ -1,0 +1,10 @@
+tasks:
+  a:
+    command: a
+    deps: ['tasksCycle:b']
+  b:
+    command: b
+    deps: ['tasksCycle:c']
+  c:
+    command: c
+    deps: ['tasksCycle:a']

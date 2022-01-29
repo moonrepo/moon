@@ -71,10 +71,6 @@ impl DepGraph {
         }
     }
 
-    pub fn detect_cycle(&self) -> Result<(), WorkspaceError> {
-        Ok(())
-    }
-
     pub fn get_node_from_index(&self, index: NodeIndex) -> Option<&Node> {
         self.graph.node_weight(index)
     }
@@ -83,7 +79,9 @@ impl DepGraph {
         let list = match toposort(&self.graph, None) {
             Ok(nodes) => nodes,
             Err(error) => {
-                return Err(WorkspaceError::CycleDetected(error.node_id().index()));
+                return Err(WorkspaceError::CycleDetected(
+                    self.get_node_from_index(error.node_id()).unwrap().label(),
+                ));
             }
         };
 
@@ -172,6 +170,9 @@ impl DepGraph {
         self.graph.add_edge(node, self.install_node_deps_index, ());
         self.graph.add_edge(node, project_node, ());
 
+        // Also cache so we don't run the same target multiple times
+        self.index_cache.insert(target.to_owned(), node);
+
         // And we also need to wait on all dependent nodes
         let task = project.get_task(&task_id)?;
 
@@ -195,9 +196,6 @@ impl DepGraph {
                 self.graph.add_edge(node, dep_node, ());
             }
         }
-
-        // Also cache so we don't run the same target multiple times
-        self.index_cache.insert(target.to_owned(), node);
 
         Ok(node)
     }
@@ -264,14 +262,14 @@ impl DepGraph {
         self.graph
             .add_edge(node_index, self.setup_toolchain_index, ());
 
+        // Cache so we don't sync the same project multiple times
+        self.index_cache.insert(project_id.to_owned(), node_index);
+
         // But we need to wait on all dependent nodes
         for dep_id in projects.get_dependencies_of(&project)? {
             let dep_node_index = self.sync_project(&dep_id, projects)?;
             self.graph.add_edge(node_index, dep_node_index, ());
         }
-
-        // Also cache so we don't sync the same project multiple times
-        self.index_cache.insert(project_id.to_owned(), node_index);
 
         Ok(node_index)
     }
@@ -281,6 +279,22 @@ impl DepGraph {
         let dot = Dot::with_config(&graph, &[Config::EdgeNoLabel]);
 
         format!("{:?}", dot)
+    }
+
+    fn detect_cycle(&self) -> Result<(), WorkspaceError> {
+        use petgraph::algo::kosaraju_scc;
+
+        // Not exactly accurate, revisit!!!
+        let scc = kosaraju_scc(&self.graph);
+        let cycle = scc
+            .last()
+            .unwrap()
+            .iter()
+            .map(|i| self.get_node_from_index(*i).unwrap().label())
+            .collect::<Vec<String>>()
+            .join(" -> ");
+
+        Err(WorkspaceError::CycleDetected(cycle))
     }
 }
 
@@ -307,6 +321,7 @@ mod tests {
                 ("baz".to_owned(), "deps/baz".to_owned()),
                 ("tasks".to_owned(), "tasks".to_owned()),
                 ("tasksChain".to_owned(), "tasks-chain".to_owned()),
+                ("tasksCycle".to_owned(), "tasks-cycle".to_owned()),
             ]),
         )
     }
@@ -333,6 +348,24 @@ mod tests {
             graph.sort_topological().unwrap(),
             vec![NodeIndex::new(0), NodeIndex::new(1)]
         );
+        assert_eq!(
+            sort_batches(graph.sort_batched_topological().unwrap()),
+            vec![vec![NodeIndex::new(0)], vec![NodeIndex::new(1)]]
+        );
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "CycleDetected(\"RunTarget(tasksCycle:a) -> RunTarget(tasksCycle:b) -> RunTarget(tasksCycle:c)\")"
+    )]
+    fn detects_cycles() {
+        let projects = create_project_graph();
+
+        let mut graph = DepGraph::default();
+        graph.run_target("tasksCycle:a", &projects).unwrap();
+        graph.run_target("tasksCycle:b", &projects).unwrap();
+        graph.run_target("tasksCycle:c", &projects).unwrap();
+
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![vec![NodeIndex::new(0)], vec![NodeIndex::new(1)]]

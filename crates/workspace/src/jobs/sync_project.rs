@@ -1,16 +1,15 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
-use moon_project::ProjectID;
 use pathdiff::diff_paths;
 use std::path::PathBuf;
 
 #[allow(dead_code)]
 pub async fn sync_project(
     workspace: &mut Workspace,
-    project_id: ProjectID,
+    project_id: &str,
 ) -> Result<(), WorkspaceError> {
     let manager = workspace.toolchain.get_package_manager();
-    let mut project = workspace.projects.get(&project_id)?;
+    let mut project = workspace.projects.get(project_id)?;
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();

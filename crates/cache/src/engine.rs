@@ -17,7 +17,7 @@ impl CacheEngine {
         Ok(CacheEngine { root })
     }
 
-    pub async fn target_run_state(
+    pub async fn run_target_state(
         &self,
         target: &str,
     ) -> Result<CacheItem<TargetRunState>, CacheError> {

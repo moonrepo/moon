@@ -342,7 +342,7 @@ mod tests {
                 ("cycle".to_owned(), "cycle".to_owned()),
                 ("inputA".to_owned(), "input-a".to_owned()),
                 ("inputB".to_owned(), "input-b".to_owned()),
-                ("inputC".to_owned(), "input-C".to_owned()),
+                ("inputC".to_owned(), "input-c".to_owned()),
                 ("mergeAppend".to_owned(), "merge-append".to_owned()),
                 ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
                 ("mergeReplace".to_owned(), "merge-replace".to_owned()),

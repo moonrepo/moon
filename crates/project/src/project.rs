@@ -11,7 +11,6 @@ use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskI
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
 use std::path::{Path, PathBuf};
 
 pub type FileGroupsMap = HashMap<String, FileGroup>;
@@ -320,12 +319,6 @@ impl Project {
     /// Return the project as a JSON string.
     pub fn to_json(&self) -> String {
         serde_json::to_string_pretty(self).unwrap()
-    }
-}
-
-impl<'a> fmt::Display for Project {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ({})", self.id, self.source)
     }
 }
 

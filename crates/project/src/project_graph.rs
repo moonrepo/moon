@@ -23,7 +23,7 @@ pub struct ProjectGraph {
     /// Is loaded from `.moon/project.yml`.
     global_config: GlobalProjectConfig,
 
-    /// Projects that have been loaded into the graph (DAG).
+    /// Projects that have been loaded into scope represented as a DAG.
     graph: Arc<RwLock<GraphType>>,
 
     /// Mapping of project IDs to node indices, as we need a way
@@ -86,10 +86,10 @@ impl ProjectGraph {
         {
             let indices = self.indices.read().expect(READ_ERROR);
 
-            if let Some(idx) = indices.get(id) {
+            if let Some(index) = indices.get(id) {
                 let graph = self.graph.read().expect(READ_ERROR);
 
-                return Ok(graph.node_weight(*idx).unwrap().clone());
+                return Ok(graph.node_weight(*index).unwrap().clone());
             }
         }
 
@@ -103,12 +103,12 @@ impl ProjectGraph {
 
     /// Return a list of project IDs that a project depends on,
     /// in the priority order in which they are depended on.
-    pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
+    pub fn get_dependencies_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
         let indices = self.indices.read().expect(READ_ERROR);
         let graph = self.graph.read().expect(READ_ERROR);
 
         let deps = graph
-            .neighbors_directed(*indices.get(&project.id).unwrap(), Direction::Outgoing)
+            .neighbors_directed(*indices.get(id).unwrap(), Direction::Outgoing)
             .map(|idx| graph.node_weight(idx).unwrap().id.clone())
             .collect();
 
@@ -117,11 +117,8 @@ impl ProjectGraph {
 
     /// Return a list of project IDs that a project depends on,
     /// in ascending order.
-    pub fn get_sorted_dependencies_of(
-        &self,
-        project: &Project,
-    ) -> Result<Vec<ProjectID>, ProjectError> {
-        let mut deps = self.get_dependencies_of(project)?;
+    pub fn get_sorted_dependencies_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
+        let mut deps = self.get_dependencies_of(id)?;
         deps.sort();
 
         Ok(deps)

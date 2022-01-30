@@ -3,6 +3,7 @@ use moon_workspace::Workspace;
 pub async fn project_graph(id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load()?;
 
+    // Force load projects into the graph
     if let Some(pid) = id {
         workspace.projects.get(pid)?;
     } else {

@@ -6,6 +6,7 @@ use moon_config::{GlobalProjectConfig, ProjectID};
 use moon_logger::{color, debug, trace};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -129,13 +130,36 @@ impl ProjectGraph {
     /// Format as a DOT string.
     pub fn to_dot(&self) -> String {
         let graph = self.graph.read().expect(READ_ERROR);
-        let new_graph = graph.map(|_, n| n.id.clone(), |_, e| e);
+        let labeled_graph = graph.map(|_, n| n.id.clone(), |_, e| e);
+        // let highlight_id = highlight_id.clone().unwrap_or_default();
 
         let dot = Dot::with_attr_getters(
-            &new_graph,
-            &[Config::EdgeNoLabel],
-            &|_, _| String::new(),
-            &|_, _| String::new(),
+            &labeled_graph,
+            &[Config::EdgeNoLabel, Config::NodeNoLabel],
+            &|_, e| {
+                if e.source().index() == 0 {
+                    String::from("arrowhead=none")
+                } else {
+                    String::from("arrowhead=box, arrowtail=box")
+                }
+            },
+            &|_, n| {
+                let id = n.1;
+
+                if id == ROOT_NODE_ID {
+                    format!(
+                        "label=\"{}\" style=filled, shape=circle, fillcolor=black, fontcolor=white",
+                        id
+                    )
+                // } else if id == &highlight_id {
+                //     String::from("style=filled, shape=circle, fillcolor=palegreen, fontcolor=black")
+                } else {
+                    format!(
+                        "label=\"{}\" style=filled, shape=circle, fillcolor=gray, fontcolor=black",
+                        id
+                    )
+                }
+            },
         );
 
         format!("{:?}", dot)

@@ -1,29 +1,30 @@
 ---
 source: crates/cli/src/commands/project_graph.rs
+assertion_line: 38
 expression: get_assert_output(&assert)
 
 ---
 digraph {
-  WORKSPACE [style="filled", shape=circle, fillcolor=black, fontcolor=white];
-  advanced [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
-  WORKSPACE -> advanced [arrowhead=none];
-  bar [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
-  WORKSPACE -> bar [arrowhead=none];
-  basic [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
-  WORKSPACE -> basic [arrowhead=none];
-  noConfig -> basic [arrowhead=box, arrowtail=box];
-  baz [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
-  WORKSPACE -> baz [arrowhead=none];
-  emptyConfig [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
-  WORKSPACE -> emptyConfig [arrowhead=none];
-  foo [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
-  WORKSPACE -> foo [arrowhead=none];
-  bar -> foo [arrowhead=box, arrowtail=box];
-  baz -> foo [arrowhead=box, arrowtail=box];
-  noConfig [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
-  WORKSPACE -> noConfig [arrowhead=none];
-  tasks [style="filled", shape=circle, fillcolor=gray, fontcolor=black];
-  WORKSPACE -> tasks [arrowhead=none];
+    0 [ label="(workspace)" style=filled, shape=circle, fillcolor=black, fontcolor=white]
+    1 [ label="advanced" style=filled, shape=circle, fillcolor=gray, fontcolor=black]
+    2 [ label="bar" style=filled, shape=circle, fillcolor=gray, fontcolor=black]
+    3 [ label="basic" style=filled, shape=circle, fillcolor=gray, fontcolor=black]
+    4 [ label="noConfig" style=filled, shape=circle, fillcolor=gray, fontcolor=black]
+    5 [ label="baz" style=filled, shape=circle, fillcolor=gray, fontcolor=black]
+    6 [ label="emptyConfig" style=filled, shape=circle, fillcolor=gray, fontcolor=black]
+    7 [ label="foo" style=filled, shape=circle, fillcolor=gray, fontcolor=black]
+    8 [ label="tasks" style=filled, shape=circle, fillcolor=gray, fontcolor=black]
+    0 -> 1 [ arrowhead=none]
+    0 -> 2 [ arrowhead=none]
+    0 -> 3 [ arrowhead=none]
+    0 -> 4 [ arrowhead=none]
+    3 -> 4 [ arrowhead=box, arrowtail=box]
+    0 -> 5 [ arrowhead=none]
+    0 -> 6 [ arrowhead=none]
+    0 -> 7 [ arrowhead=none]
+    7 -> 2 [ arrowhead=box, arrowtail=box]
+    7 -> 5 [ arrowhead=box, arrowtail=box]
+    0 -> 8 [ arrowhead=none]
 }
 
 

@@ -1,1 +1,1 @@
-pub const ROOT_NODE_ID: &str = "WORKSPACE";
+pub const ROOT_NODE_ID: &str = "(workspace)";

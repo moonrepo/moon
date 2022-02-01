@@ -1,5 +1,5 @@
 {
-  "name": "@moon/runtime",
+  "name": "@moonrepo/runtime",
   "version": "0.0.1",
   "description": "Task runner and runtime utilities.",
   "keywords": [
@@ -10,15 +10,32 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
+  "type": "module",
+  "main": "./mjs/index.mjs",
+  "module": "./mjs/index.mjs",
   "repository": {
     "type": "git",
     "url": "https://github.com/milesj/moon",
-    "directory": "packages/runner"
+    "directory": "packages/runtime"
   },
+  "files": [
+    "dts/**/*.d.ts",
+    "mjs/**/*.{mjs,map}",
+    "src/**/*.{ts,tsx,json}"
+  ],
   "packemon": {
+    "format": "mjs",
     "platform": "node"
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "dependencies": {
+    "@boost/common": "^3.2.1"
+  },
+  "engines": {
+    "node": ">=12.17.0",
+    "npm": ">=6.13.0"
+  },
+  "types": "./dts/index.d.ts"
 }

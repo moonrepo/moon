@@ -3,6 +3,8 @@
   "private": true,
   "packageManager": "yarn@3.1.1",
   "scripts": {
+    "build": "packemon build --addEngines",
+    "pack": "NODE_ENV=production yarn run packemon pack --addEngines --declaration=standard",
     "lint": "eslint --cache --color --fix --ext .ts,.tsx ./packages"
   },
   "workspaces": [

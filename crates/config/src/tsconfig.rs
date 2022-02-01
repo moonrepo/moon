@@ -127,7 +127,7 @@ pub fn parse_to_value(json: &str) -> Result<Value, ConfigError> {
     let mut stripped = String::with_capacity(json.len());
     StripComments::new(json.as_bytes()).read_to_string(&mut stripped)?;
 
-    // Remove trailing commas from objects.
+    // Remove trailing commas from objects
     let pattern = Regex::new(r",(?P<valid>\s*})").unwrap();
     let stripped = pattern.replace_all(&stripped, "$valid");
 

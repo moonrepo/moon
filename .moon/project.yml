@@ -1,1 +1,23 @@
-fileGroups: {}
+fileGroups:
+  configs:
+    - '*.{js,json}'
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*.test.*'
+
+tasks:
+  typecheck:
+    command: 'tsc'
+    args:
+      - '--build'
+      - '--pretty'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'tsconfig.json'
+      - 'tsconfig.*.json'
+      - '/tsconfig.options.json'
+    outputs:
+      - 'dts'

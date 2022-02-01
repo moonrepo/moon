@@ -30,9 +30,6 @@
     "platform": "node",
     "bundle": true
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "dependencies": {
     "@boost/common": "^3.2.1"
   },

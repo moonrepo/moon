@@ -80,7 +80,7 @@ impl PackageJson {
         let mut stripped = String::with_capacity(json.len());
         StripComments::new(json.as_bytes()).read_to_string(&mut stripped)?;
 
-        // Remove trailing commas from objects.
+        // Remove trailing commas from objects
         let pattern = Regex::new(r",(?P<valid>\s*})").unwrap();
         let stripped = pattern.replace_all(&stripped, "$valid");
 
@@ -106,22 +106,25 @@ pub type PeerDepsMetaSet = BTreeMap<String, PeerDependencyMeta>;
 pub type ScriptsSet = BTreeMap<String, String>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(untagged)]
 pub enum StringOrArray<T> {
     String(String),
-    Object(T),
+    Array(Vec<T>),
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(untagged)]
 pub enum StringOrObject<T> {
     String(String),
     Object(T),
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub enum StringObjectAndArray<T> {
+#[serde(untagged)]
+pub enum StringArrayOrObject<T> {
     String(String),
+    Array(Vec<T>),
     Object(T),
-    Array(T),
 }
 
 pub type Bin = StringOrArray<BinSet>;
@@ -157,7 +160,7 @@ pub struct FundingMetadata {
     pub url: String,
 }
 
-pub type Funding = StringObjectAndArray<FundingMetadata>;
+pub type Funding = StringArrayOrObject<FundingMetadata>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct LicenseMetadata {
@@ -166,7 +169,7 @@ pub struct LicenseMetadata {
     pub url: String,
 }
 
-pub type License = StringObjectAndArray<LicenseMetadata>;
+pub type License = StringArrayOrObject<LicenseMetadata>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct PersonMetadata {
@@ -205,4 +208,9 @@ pub struct WorkspacesExpanded {
     pub packages: Option<Vec<String>>,
 }
 
-pub type Workspaces = StringOrObject<WorkspacesExpanded>;
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum Workspaces {
+    Array(Vec<String>),
+    Object(WorkspacesExpanded),
+}

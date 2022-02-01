@@ -1,0 +1,14 @@
+coverage/
+
+# Build folders
+coverage/
+build/
+cjs/
+dts/
+esm/
+lib/
+mjs/
+umd/
+
+# Node.js formats differently
+*.json

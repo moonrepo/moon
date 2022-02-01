@@ -15,6 +15,8 @@ fn handle_canonicalize(path: &Path) -> Result<PathBuf, ProjectError> {
     match path.canonicalize() {
         Ok(p) => Ok(p),
         Err(e) => {
+            // println!("{:#?}", e);
+
             if e.kind() == std::io::ErrorKind::NotFound {
                 return Err(ProjectError::MissingFile(path.to_path_buf()));
             }
@@ -222,7 +224,9 @@ impl Task {
                     self.target.clone(),
                 ));
             } else {
-                self.output_paths.insert(handle_canonicalize(output)?);
+                // Dont canonicalize as it checks if the file exists,
+                // which is something we *do not* want for outputs!
+                self.output_paths.insert(output.clone());
             }
         }
 

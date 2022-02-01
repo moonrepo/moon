@@ -1,1 +1,38 @@
-fileGroups: {}
+fileGroups:
+  configs:
+    - '*.{js,json}'
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*.test.*'
+
+tasks:
+  build:
+    command: 'packemon'
+    args:
+      - 'build'
+      - '--addEngines'
+      - '--addExports'
+    inputs:
+      - '@globs(sources)'
+      - 'package.json'
+      - 'tsconfig.json'
+      - '/tsconfig.options.json'
+    outputs:
+      - 'dts'
+      - 'mjs'
+
+  typecheck:
+    command: 'tsc'
+    args:
+      - '--build'
+      - '--pretty'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'tsconfig.json'
+      - 'tsconfig.*.json'
+      - '/tsconfig.options.json'
+    outputs:
+      - 'dts'

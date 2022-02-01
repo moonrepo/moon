@@ -51,13 +51,17 @@ impl Vcs for Git {
         let mut all = HashSet::new();
 
         for line in output.split('\n') {
+            if line.is_empty() {
+                continue;
+            }
+
             let mut chars = line.chars();
             let x = chars.next().unwrap_or_default();
             let y = chars.next().unwrap_or_default();
             let mut file = &line[3..];
 
             // Copied files contain 2 file paths: ORIG -> NEW
-            if let Some(index) = file.find(' ') {
+            if let Some(index) = file.find("->") {
                 file = &file[index + 1..];
             }
 

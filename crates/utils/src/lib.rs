@@ -21,10 +21,7 @@ macro_rules! string_vec {
 }
 
 pub fn output_to_string(data: Vec<u8>) -> String {
-    String::from_utf8(data)
-        .unwrap_or_default()
-        .trim()
-        .to_owned()
+    String::from_utf8(data).unwrap_or_default().to_owned()
 }
 
 pub async fn exec_bin_in_dir(file: &Path, args: Vec<&str>, dir: &Path) -> Result<Output, Error> {

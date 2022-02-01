@@ -5,7 +5,10 @@
   "scripts": {
     "build": "packemon build --addEngines",
     "pack": "NODE_ENV=production yarn run packemon pack --addEngines --declaration=standard",
-    "lint": "eslint --cache --color --fix --ext .ts,.tsx ./packages"
+    "format": "prettier --write ./packages",
+    "test": "jest --passWithNoTests",
+    "lint": "eslint --cache --color --fix --ext .ts,.tsx ./packages",
+    "type": "tsc --build"
   },
   "workspaces": [
     "packages/*"

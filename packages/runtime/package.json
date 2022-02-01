@@ -17,5 +17,8 @@
   },
   "packemon": {
     "platform": "node"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

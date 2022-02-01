@@ -1,0 +1,21 @@
+{
+  "name": "@moon/runtime",
+  "version": "0.0.1",
+  "description": "Task runner and runtime utilities.",
+  "keywords": [
+    "moon",
+    "task",
+    "runner",
+    "runtime"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/milesj/moon",
+    "directory": "packages/runner"
+  },
+  "packemon": {
+    "platform": "node"
+  }
+}

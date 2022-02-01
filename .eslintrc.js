@@ -1,4 +1,4 @@
 module.exports = {
 	root: true,
-	extends: ['beemo'],
+	extends: ['beemo', 'beemo/node'],
 };

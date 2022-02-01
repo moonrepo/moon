@@ -8,3 +8,18 @@
 !.yarn/sdks
 !.yarn/versions
 .pnp.*
+
+# Build folders
+coverage/
+build/
+cjs/
+dts/
+esm/
+lib/
+mjs/
+umd/
+
+# Artifacts
+*.map
+*.min.js
+*.tsbuildinfo

@@ -2,6 +2,9 @@
   "name": "moon",
   "private": true,
   "packageManager": "yarn@3.1.1",
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "eslint": "^8.8.0",
     "eslint-config-beemo": "^1.2.2",

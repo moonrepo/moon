@@ -1948,6 +1948,8 @@ __metadata:
 "@moonrepo/runtime@workspace:packages/runtime":
   version: 0.0.0-use.local
   resolution: "@moonrepo/runtime@workspace:packages/runtime"
+  dependencies:
+    "@boost/common": ^3.2.1
   languageName: unknown
   linkType: soft
 

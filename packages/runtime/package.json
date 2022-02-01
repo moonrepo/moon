@@ -4,6 +4,7 @@
   "description": "Task runner and runtime utilities.",
   "keywords": [
     "moon",
+    "repo",
     "task",
     "runner",
     "runtime"
@@ -13,6 +14,7 @@
   "type": "module",
   "main": "./mjs/index.mjs",
   "module": "./mjs/index.mjs",
+  "types": "./dts/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/milesj/moon",
@@ -25,7 +27,8 @@
   ],
   "packemon": {
     "format": "mjs",
-    "platform": "node"
+    "platform": "node",
+    "bundle": true
   },
   "publishConfig": {
     "access": "public"
@@ -37,5 +40,12 @@
     "node": ">=12.17.0",
     "npm": ">=6.13.0"
   },
-  "types": "./dts/index.d.ts"
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "node": {
+        "import": "./mjs/index.mjs"
+      }
+    }
+  }
 }

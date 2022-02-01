@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "yarn@3.1.1",
   "scripts": {
-    "build": "packemon build --addEngines",
+    "build": "packemon build --addEngines --addExports",
     "pack": "NODE_ENV=production yarn run packemon pack --addEngines --declaration=standard",
     "format": "prettier --write ./packages",
     "test": "jest --passWithNoTests",

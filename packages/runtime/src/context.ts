@@ -13,12 +13,12 @@ export interface RuntimeContext {
 export async function getContext(): Promise<RuntimeContext> {
 	const { env } = process;
 
-	if (!env.MOON_PROJECT_RUNTIME_FILE) {
+	if (!env.MOON_RUN_PROJECT_FILE) {
 		throw new Error('Attempting to access Moon context outside of a run process.');
 	}
 
 	const project = json.parse<Project>(
-		await fs.promises.readFile(env.MOON_PROJECT_RUNTIME_FILE, 'utf8'),
+		await fs.promises.readFile(env.MOON_RUN_PROJECT_FILE, 'utf8'),
 	);
 
 	return {

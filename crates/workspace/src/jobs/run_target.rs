@@ -4,7 +4,7 @@ use moon_config::TaskType;
 use moon_project::{Project, Target, Task};
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::Tool;
-use moon_utils::{exec_bin_in_dir, exec_command_in_dir, output_to_string};
+use moon_utils::process::{exec_bin_in_dir, exec_command_in_dir, output_to_string};
 use std::path::Path;
 use std::process::Output;
 

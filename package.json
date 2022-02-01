@@ -2,6 +2,9 @@
   "name": "moon",
   "private": true,
   "packageManager": "yarn@3.1.1",
+  "scripts": {
+    "lint": "eslint --cache --color --fix --ext .ts,.tsx ./packages"
+  },
   "workspaces": [
     "packages/*"
   ],

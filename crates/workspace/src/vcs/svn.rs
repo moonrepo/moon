@@ -1,6 +1,6 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
-use moon_utils::exec_command_with_output;
+use moon_utils::process::exec_command_with_output;
 use regex::Regex;
 use std::collections::HashSet;
 

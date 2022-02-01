@@ -5,7 +5,7 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_logger::{color, debug, trace};
-use moon_utils::exec_bin_in_dir;
+use moon_utils::process::exec_bin_in_dir;
 use std::env::consts;
 use std::path::PathBuf;
 use std::process::Output;

@@ -1,6 +1,6 @@
 use crate::errors::ToolchainError;
 use moon_logger::{color, trace};
-use moon_utils::exec_bin_with_output;
+use moon_utils::process::exec_bin_with_output;
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
@@ -13,6 +13,8 @@ pub fn is_ci() -> bool {
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let mut version = exec_bin_with_output(bin, vec!["--version"]).await?;
+
+    version = version.trim().to_owned();
 
     if version.is_empty() {
         version = String::from("0.0.0");

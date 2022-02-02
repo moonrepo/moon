@@ -7,52 +7,49 @@ use crate::jobs::sync_project::sync_project;
 use crate::workspace::Workspace;
 use rayon::{ThreadPool, ThreadPoolBuilder};
 
-pub struct Orchestrator<'a> {
-    pool: ThreadPool,
-
-    workspace: &'a mut Workspace,
-}
-
-impl<'a> Orchestrator<'a> {
-    pub fn new(workspace: &'a mut Workspace) -> Self {
-        Orchestrator {
-            pool: ThreadPoolBuilder::new().build().unwrap(),
-            workspace,
+async fn run_job(workspace: &mut Workspace, node: &Node) -> Result<(), WorkspaceError> {
+    match node {
+        Node::InstallNodeDeps => {
+            install_node_deps(workspace).await?;
+        }
+        Node::RunTarget(target_id) => {
+            run_target(workspace, target_id).await?;
+        }
+        Node::SetupToolchain => {
+            setup_toolchain(workspace).await?;
+        }
+        Node::SyncProject(project_id) => {
+            sync_project(workspace, project_id).await?;
         }
     }
 
-    pub fn run(&self, graph: &'a DepGraph) -> Result<(), WorkspaceError> {
+    Ok(())
+}
+
+pub struct Orchestrator {
+    pool: ThreadPool,
+}
+
+impl Orchestrator {
+    pub fn new() -> Self {
+        Orchestrator {
+            pool: ThreadPoolBuilder::new().build().unwrap(),
+        }
+    }
+
+    pub fn run(&self, workspace: &mut Workspace, graph: &DepGraph) -> Result<(), WorkspaceError> {
         for batch in graph.sort_batched_topological()? {
             // Process a batch of jobs within a Rayon scope. This scope will complete
             // once all jobs complete as their own thread in the pool.
-            // self.pool.scope(move |s| {
-            //     for job in batch {
-            //         s.spawn(move |s| {
-            //             if let Some(node) = graph.get_node_from_index(job) {
-            //                 self.run_job(node);
-            //             }
-            //         });
-            //     }
-            // });
-        }
-
-        Ok(())
-    }
-
-    async fn run_job(&mut self, node: &Node) -> Result<(), WorkspaceError> {
-        match node {
-            Node::InstallNodeDeps => {
-                install_node_deps(&self.workspace).await?;
-            }
-            Node::RunTarget(target_id) => {
-                run_target(&self.workspace, target_id).await?;
-            }
-            Node::SetupToolchain => {
-                setup_toolchain(&self.workspace).await?;
-            }
-            Node::SyncProject(project_id) => {
-                sync_project(&mut self.workspace, project_id).await?;
-            }
+            self.pool.scope_fifo(move |scope| {
+                for job in batch {
+                    scope.spawn_fifo(move |s| {
+                        if let Some(node) = graph.get_node_from_index(job) {
+                            run_job(workspace, node);
+                        }
+                    });
+                }
+            });
         }
 
         Ok(())

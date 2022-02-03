@@ -7,7 +7,8 @@ use crate::jobs::sync_project::sync_project;
 use crate::workspace::{Workspace, Workspace2};
 use awaitgroup::WaitGroup;
 use futures::future::join_all;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tokio::task;
 
 // async fn run_job(workspace: &Workspace2, node: &Node) -> Result<(), WorkspaceError> {
@@ -36,13 +37,19 @@ impl Orchestrator {
         Orchestrator {}
     }
 
-    pub async fn run(&self, workspace: Workspace, graph: DepGraph) -> Result<(), WorkspaceError> {
+    pub async fn run<'a>(
+        &self,
+        workspace: Workspace2,
+        graph: DepGraph,
+    ) -> Result<(), WorkspaceError> {
         let batches = graph.sort_batched_topological()?;
 
         // let workspace = Arc::new(RwLock::new(workspace));
         // let graph = Arc::new(RwLock::new(graph));
         // let ws = &workspace;
         // let gp = &graph;
+
+        let ws = Arc::new(RwLock::new(workspace));
 
         for (i, batch) in batches.into_iter().enumerate() {
             println!("running batch {}", i);
@@ -51,9 +58,12 @@ impl Orchestrator {
 
             for job in batch {
                 let worker = wait_group.worker();
+                let ws_clone = Arc::clone(&ws);
 
                 task::spawn(async move {
-                    println!("\t running job {:?} = {:?}", job, 0);
+                    let my_ws = ws_clone.read().await;
+
+                    println!("\t running job {:?} = {:?}", job, my_ws.root);
                     worker.done();
                 });
             }

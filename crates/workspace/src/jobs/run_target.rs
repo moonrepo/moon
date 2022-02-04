@@ -1,12 +1,15 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
 use moon_config::TaskType;
+use moon_logger::debug;
 use moon_project::{Project, Target, Task};
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::Tool;
 use moon_utils::process::{exec_bin_in_dir, exec_command_in_dir, output_to_string};
 use std::path::Path;
 use std::process::Output;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 /// Runs a task command through our toolchain's installed Node.js instance.
 /// We accomplish this by executing the Node.js binary as a child process,
@@ -44,8 +47,17 @@ async fn run_shell_target(task: &Task, exec_dir: &Path) -> Result<Output, Worksp
     .await?)
 }
 
-#[allow(dead_code)]
-pub async fn run_target(workspace: &Workspace, target: &str) -> Result<(), WorkspaceError> {
+pub async fn run_target(
+    workspace: Arc<RwLock<Workspace>>,
+    target: &str,
+) -> Result<(), WorkspaceError> {
+    debug!(
+        target: "moon:orchestrator:run-target",
+        "Running target {}",
+        target
+    );
+
+    let workspace = workspace.read().await;
     let mut cache = workspace.cache.run_target_state(target).await?;
     let toolchain = &workspace.toolchain;
 

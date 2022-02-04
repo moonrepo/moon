@@ -125,11 +125,6 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     }
 }
 
-pub struct Workspace2 {
-    /// The root of the workspace that contains the ".moon" config folder.
-    pub root: PathBuf,
-}
-
 pub struct Workspace {
     /// Engine for reading and writing cache/outputs.
     pub cache: CacheEngine,

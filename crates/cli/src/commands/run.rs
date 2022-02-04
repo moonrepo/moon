@@ -74,7 +74,9 @@ pub async fn run(
     let mut dep_graph = DepGraph::default();
     dep_graph.run_target_if_touched(target, &touched_files, &workspace.projects)?;
 
-    Orchestrator::new().run(workspace, dep_graph).await?;
+    println!("{}", dep_graph.to_dot());
+
+    Orchestrator::default().run(workspace, dep_graph).await?;
 
     Ok(())
 }

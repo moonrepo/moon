@@ -170,7 +170,7 @@ impl Toolchain {
 
     /// Load a tool into the toolchain by downloading an artifact/binary
     /// into the temp folder, then installing it into the tools folder.
-    async fn load_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
+    async fn load_tool(&self, tool: &(dyn Tool + Send + Sync)) -> Result<(), ToolchainError> {
         if !tool.is_downloaded() {
             tool.download(None).await?;
         }
@@ -184,7 +184,7 @@ impl Toolchain {
 
     /// Unload the tool by removing any downloaded/installed artifacts.
     /// This can be ran manually, or automatically during a failed load.
-    async fn unload_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
+    async fn unload_tool(&self, tool: &(dyn Tool + Send + Sync)) -> Result<(), ToolchainError> {
         if tool.is_downloaded() {
             if let Some(download_path) = tool.get_download_path() {
                 fs::remove_file(download_path)
@@ -232,7 +232,7 @@ impl Toolchain {
         }
     }
 
-    pub fn get_package_manager(&self) -> &dyn PackageManager {
+    pub fn get_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
         if self.pnpm.is_some() {
             return self.get_pnpm().unwrap();
         }

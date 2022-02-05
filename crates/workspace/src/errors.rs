@@ -49,9 +49,6 @@ pub enum WorkspaceError {
     )]
     InvalidGlobalProjectConfigFile(ValidationErrors),
 
-    #[error("Unknown moon workspace error.")]
-    Unknown,
-
     #[error(transparent)]
     Moon(#[from] MoonError),
 

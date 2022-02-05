@@ -575,7 +575,7 @@ mod test {
 
     #[test]
     fn merge_two_configs() {
-        let json_1 = r#"{"compilerOptions": {"jsx": "react", "noEmit": true,}}"#;
+        let json_1 = r#"{"compilerOptions": {"jsx": "react", "noEmit": true}}"#;
         let json_2 = r#"{"compilerOptions": {"jsx": "preserve", "removeComments": true}}"#;
 
         let mut value1: Value = serde_json::from_str(json_1).unwrap();

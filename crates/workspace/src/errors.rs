@@ -2,6 +2,7 @@ use moon_cache::CacheError;
 use moon_config::{constants, ConfigError, ValidationErrors};
 use moon_project::ProjectError;
 use moon_toolchain::ToolchainError;
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

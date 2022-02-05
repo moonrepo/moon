@@ -1,14 +1,12 @@
 // tsconfig.json
 
-use crate::errors::ConfigError;
-use json_comments::StripComments;
-use regex::Regex;
+use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
+use moon_utils::fs::read_json_file;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{to_string_pretty, Value};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fs;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
@@ -45,17 +43,21 @@ pub struct TsConfigJson {
 }
 
 impl TsConfigJson {
-    pub fn load(path: &Path) -> Result<TsConfigJson, ConfigError> {
+    pub fn load(path: &Path) -> Result<TsConfigJson, MoonError> {
         let values = load_to_value(path, false)?;
-        let mut cfg: TsConfigJson = serde_json::from_value(values)?;
+
+        let mut cfg: TsConfigJson =
+            serde_json::from_value(values).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
         cfg.path = path.to_path_buf();
 
         Ok(cfg)
     }
 
-    pub fn load_with_extends(path: &Path) -> Result<TsConfigJson, ConfigError> {
+    pub fn load_with_extends(path: &Path) -> Result<TsConfigJson, MoonError> {
         let values = load_to_value(path, true)?;
-        let mut cfg: TsConfigJson = serde_json::from_value(values)?;
+
+        let mut cfg: TsConfigJson =
+            serde_json::from_value(values).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
         cfg.path = path.to_path_buf();
 
         Ok(cfg)
@@ -85,8 +87,10 @@ impl TsConfigJson {
         true
     }
 
-    pub fn save(&self) -> Result<(), ConfigError> {
-        fs::write(&self.path, to_string_pretty(self)?)?;
+    pub fn save(&self) -> Result<(), MoonError> {
+        let json = to_string_pretty(self).map_err(|e| map_json_to_error(e, self.path.clone()))?;
+
+        fs::write(&self.path, json).map_err(|e| map_io_to_fs_error(e, self.path.clone()))?;
 
         Ok(())
     }
@@ -107,33 +111,20 @@ fn merge(a: &mut Value, b: Value) {
     }
 }
 
-pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, ConfigError> {
-    let json = fs::read_to_string(path)?;
-    let mut value = parse_to_value(&json)?;
+pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
+    let mut json: Value = serde_json::from_str(&read_json_file(path)?)
+        .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
     if extend {
-        if let Value::String(s) = &value["extends"] {
+        if let Value::String(s) = &json["extends"] {
             let extends_path = path.parent().unwrap_or_else(|| Path::new("")).join(s);
             let extends_value = load_to_value(&extends_path, extend)?;
 
-            merge(&mut value, extends_value);
+            merge(&mut json, extends_value);
         }
     }
 
-    Ok(value)
-}
-
-pub fn parse_to_value(json: &str) -> Result<Value, ConfigError> {
-    let mut stripped = String::with_capacity(json.len());
-    StripComments::new(json.as_bytes()).read_to_string(&mut stripped)?;
-
-    // Remove trailing commas from objects
-    let pattern = Regex::new(r",(?P<valid>\s*})").unwrap();
-    let stripped = pattern.replace_all(&stripped, "$valid");
-
-    let value: Value = serde_json::from_str(&stripped)?;
-
-    Ok(value)
+    Ok(json)
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -587,8 +578,8 @@ mod test {
         let json_1 = r#"{"compilerOptions": {"jsx": "react", "noEmit": true,}}"#;
         let json_2 = r#"{"compilerOptions": {"jsx": "preserve", "removeComments": true}}"#;
 
-        let mut value1: Value = parse_to_value(json_1).unwrap();
-        let value2: Value = parse_to_value(json_2).unwrap();
+        let mut value1: Value = serde_json::from_str(json_1).unwrap();
+        let value2: Value = serde_json::from_str(json_2).unwrap();
 
         merge(&mut value1, value2);
 

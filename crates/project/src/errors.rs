@@ -1,12 +1,10 @@
 use moon_config::{constants, ValidationErrors};
+use moon_error::MoonError;
 use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProjectError {
-    #[error("Unknown moon project error.")]
-    Unknown,
-
     #[error("A dependency cycle has been detected between projects.")]
     DependencyCycleDetected,
 
@@ -48,7 +46,7 @@ pub enum ProjectError {
     UnconfiguredTask(String, String),
 
     #[error(transparent)]
-    Io(#[from] std::io::Error),
+    Moon(#[from] MoonError),
 
     #[error(transparent)]
     GlobWalk(#[from] globwalk::GlobError),

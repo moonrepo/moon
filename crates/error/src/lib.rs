@@ -9,19 +9,20 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MoonError {
-    #[error("File system failure for {0}: {1}")]
+    #[error("File system failure for <file_path>{0}</file_path>: {1}")]
     FileSystem(PathBuf, #[source] IoError),
 
-    #[error("Failed to parse {0}: {1}")]
+    #[error("Failed to parse <file_path>{0}</file_path>: {1}")]
     Json(PathBuf, #[source] JsonError),
 
-    // #[error(transparent)]
-    // Io(#[from] IoError),
     #[error("Network failure: {0}")]
     Network(#[source] IoError),
 
-    #[error("Network failure for {0}: {1}")]
+    #[error("Network failure for <file_path>{0}</file_path>: {1}")]
     NetworkWithHandle(PathBuf, #[source] IoError),
+
+    #[error("Process failure for <path>{0}</path>: {1}")]
+    Process(String, #[source] IoError),
 }
 
 pub fn map_io_to_fs_error(error: IoError, path: PathBuf) -> MoonError {
@@ -73,6 +74,10 @@ pub fn map_io_to_net_error(error: IoError, handle: Option<PathBuf>) -> MoonError
         },
         _ => MoonError::Network(error), // TODO
     }
+}
+
+pub fn map_io_to_process_error(error: IoError, bin: &str) -> MoonError {
+    MoonError::Process(String::from(bin), error)
 }
 
 pub fn map_json_to_error(error: JsonError, path: PathBuf) -> MoonError {

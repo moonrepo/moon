@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 common-path = "1.0"

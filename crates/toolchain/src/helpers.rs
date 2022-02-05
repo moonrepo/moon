@@ -1,4 +1,5 @@
 use crate::errors::ToolchainError;
+use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
 use moon_utils::process::exec_bin_with_output;
 use sha2::{Digest, Sha256};
@@ -28,10 +29,12 @@ pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
 }
 
 pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
-    let mut file = fs::File::open(path)?;
+    let handle_error = |e: io::Error| map_io_to_fs_error(e, path.to_path_buf());
+
+    let mut file = fs::File::open(path).map_err(handle_error)?;
     let mut sha = Sha256::new();
 
-    io::copy(&mut file, &mut sha)?;
+    io::copy(&mut file, &mut sha).map_err(handle_error)?;
 
     let hash = format!("{:x}", sha.finalize());
 
@@ -46,17 +49,20 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
 }
 
 pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), ToolchainError> {
+    let handle_error = |e: io::Error| map_io_to_fs_error(e, dest.to_path_buf());
+
     // Ensure parent directories exist
-    fs::create_dir_all(dest.parent().unwrap())?;
+    let parent = dest.parent().unwrap();
+    fs::create_dir_all(parent).map_err(|e| map_io_to_fs_error(e, parent.to_path_buf()))?;
 
     // Fetch the file from the HTTP source
     let response = reqwest::get(url).await?;
 
     // Write the bytes to our local file
     let mut contents = io::Cursor::new(response.bytes().await?);
-    let mut file = fs::File::create(dest)?;
+    let mut file = fs::File::create(dest).map_err(handle_error)?;
 
-    io::copy(&mut contents, &mut file)?;
+    io::copy(&mut contents, &mut file).map_err(handle_error)?;
 
     Ok(())
 }

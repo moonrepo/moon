@@ -1129,6 +1129,7 @@ dependencies = [
  "insta",
  "moon_cache",
  "moon_config",
+ "moon_error",
  "moon_logger",
  "moon_project",
  "moon_toolchain",

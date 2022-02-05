@@ -72,7 +72,7 @@ pub fn map_io_to_net_error(error: IoError, handle: Option<PathBuf>) -> MoonError
                 MoonError::Network(error)
             }
         },
-        _ => MoonError::Network(error), // TODO
+        _ => MoonError::Network(error),
     }
 }
 

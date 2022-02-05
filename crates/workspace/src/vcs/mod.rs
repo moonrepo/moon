@@ -1,7 +1,7 @@
 mod git;
 mod svn;
 
-use crate::errors::VcsError;
+use crate::errors::WorkspaceError;
 use async_trait::async_trait;
 use git::Git;
 use moon_config::{VcsManager as VM, WorkspaceConfig};
@@ -9,7 +9,7 @@ use moon_logger::{color, debug};
 use std::collections::HashSet;
 use svn::Svn;
 
-pub type VcsResult<T> = Result<T, VcsError>;
+pub type VcsResult<T> = Result<T, WorkspaceError>;
 
 #[allow(dead_code)]
 #[derive(Default)]

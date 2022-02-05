@@ -1,11 +1,8 @@
-use std::io;
+use moon_error::MoonError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolchainError {
-    #[error("Unknown moon toolchain error.")]
-    Unknown,
-
     #[error("Shashum check has failed for <file_path>{0}</file_path>, which was downloaded from <url>{1}</url>.")]
     InvalidShasum(
         String, // Download path
@@ -32,8 +29,8 @@ pub enum ToolchainError {
         String, // Tool name
     ),
 
-    #[error("I/O: {0}")]
-    IO(#[from] io::Error),
+    #[error(transparent)]
+    Moon(#[from] MoonError),
 
     #[error("HTTP: {0}")]
     HTTP(#[from] reqwest::Error),

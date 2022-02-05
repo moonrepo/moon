@@ -1,3 +1,8 @@
+use json_comments::StripComments;
+use moon_error::{map_io_to_fs_error, MoonError};
+use regex::Regex;
+use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
@@ -55,6 +60,25 @@ pub fn is_glob(value: &str) -> bool {
 
 pub fn is_path_glob(path: &Path) -> bool {
     is_glob(&path.to_string_lossy())
+}
+
+pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
+    let handle_io_error = |e: std::io::Error| map_io_to_fs_error(e, path.to_path_buf());
+    let json = fs::read_to_string(path).map_err(handle_io_error)?;
+
+    // Remove comments
+    let mut stripped = String::with_capacity(json.len());
+
+    StripComments::new(json.as_bytes())
+        .read_to_string(&mut stripped)
+        .map_err(handle_io_error)?;
+
+    // Remove trailing commas
+    let stripped = Regex::new(r",(?P<valid>\s*})")
+        .unwrap()
+        .replace_all(&stripped, "$valid");
+
+    Ok(String::from(stripped))
 }
 
 #[cfg(test)]

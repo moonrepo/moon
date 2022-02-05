@@ -1,5 +1,5 @@
-use moon_cache::CacheError;
-use moon_config::{constants, ConfigError, ValidationErrors};
+use moon_config::{constants, ValidationErrors};
+use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_toolchain::ToolchainError;
 use thiserror::Error;
@@ -49,30 +49,12 @@ pub enum WorkspaceError {
     )]
     InvalidGlobalProjectConfigFile(ValidationErrors),
 
-    #[error("Unknown moon workspace error.")]
-    Unknown,
-
     #[error(transparent)]
-    Cache(#[from] CacheError),
-
-    #[error(transparent)]
-    Config(#[from] ConfigError),
-
-    #[error(transparent)]
-    IO(#[from] std::io::Error),
+    Moon(#[from] MoonError),
 
     #[error(transparent)]
     Project(#[from] ProjectError),
 
     #[error(transparent)]
     Toolchain(#[from] ToolchainError),
-
-    #[error(transparent)]
-    Vcs(#[from] VcsError),
-}
-
-#[derive(Error, Debug)]
-pub enum VcsError {
-    #[error("I/O: {0}")]
-    IO(#[from] std::io::Error),
 }

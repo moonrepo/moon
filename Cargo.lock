@@ -1005,10 +1005,10 @@ dependencies = [
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
+ "moon_error",
  "moon_utils",
  "serde",
  "serde_json",
- "thiserror",
  "tokio",
 ]
 
@@ -1040,15 +1040,22 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "figment",
- "json_comments",
+ "moon_error",
  "moon_utils",
  "regex",
  "semver",
  "serde",
  "serde_json",
  "serde_yaml",
- "thiserror",
  "validator",
+]
+
+[[package]]
+name = "moon_error"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
@@ -1070,6 +1077,7 @@ dependencies = [
  "globwalk",
  "itertools",
  "moon_config",
+ "moon_error",
  "moon_logger",
  "moon_utils",
  "petgraph",
@@ -1089,6 +1097,7 @@ dependencies = [
  "flate2",
  "mockito",
  "moon_config",
+ "moon_error",
  "moon_logger",
  "moon_utils",
  "predicates",
@@ -1103,7 +1112,9 @@ dependencies = [
 name = "moon_utils"
 version = "0.1.0"
 dependencies = [
+ "json_comments",
  "lazy_static",
+ "moon_error",
  "moon_logger",
  "regex",
  "tokio",
@@ -1118,6 +1129,7 @@ dependencies = [
  "insta",
  "moon_cache",
  "moon_config",
+ "moon_error",
  "moon_logger",
  "moon_project",
  "moon_toolchain",

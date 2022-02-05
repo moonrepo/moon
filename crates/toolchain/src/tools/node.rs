@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use flate2::read::GzDecoder;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
+use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, error};
 use std::env::consts;
 use std::fs;
@@ -88,13 +89,12 @@ fn verify_shasum(
     download_path: &Path,
     shasums_path: &Path,
 ) -> Result<(), ToolchainError> {
-    let file_name = download_path.file_name().unwrap().to_str().unwrap();
     let sha_hash = get_file_sha256_hash(download_path)?;
+    let file_name = download_path.file_name().unwrap().to_str().unwrap();
+    let file_handle = fs::File::open(shasums_path)
+        .map_err(|e| map_io_to_fs_error(e, shasums_path.to_path_buf()))?;
 
-    for line in BufReader::new(fs::File::open(shasums_path)?)
-        .lines()
-        .flatten()
-    {
+    for line in BufReader::new(file_handle).lines().flatten() {
         // hash1923hnsdouahsd91houn79h1beyasdpaksdm  node-vx.x.x-darwin-arm64.tar.gz
         if line.starts_with(sha_hash.as_str()) && line.ends_with(file_name) {
             return Ok(());
@@ -240,7 +240,8 @@ impl Tool for NodeTool {
                 "Shasum verification has failed. The downloaded file has been deleted, please try again."
             );
 
-            fs::remove_file(&self.download_path)?;
+            fs::remove_file(&self.download_path)
+                .map_err(|e| map_io_to_fs_error(e, self.download_path.clone()))?;
 
             return Err(error);
         }
@@ -277,10 +278,13 @@ impl Tool for NodeTool {
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        fs::create_dir_all(self.get_install_dir())?;
+        let install_dir = self.get_install_dir();
+
+        fs::create_dir_all(install_dir).map_err(|e| map_io_to_fs_error(e, install_dir.clone()))?;
 
         // Open .tar.gz file
-        let tar_gz = fs::File::open(&self.download_path)?;
+        let tar_gz = fs::File::open(&self.download_path)
+            .map_err(|e| map_io_to_fs_error(e, self.download_path.clone()))?;
 
         // Decompress to .tar
         let tar = GzDecoder::new(tar_gz);

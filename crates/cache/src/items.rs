@@ -1,4 +1,4 @@
-use crate::errors::CacheError;
+use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -12,11 +12,16 @@ pub struct CacheItem<T: DeserializeOwned + Serialize> {
 }
 
 impl<T: DeserializeOwned + Serialize> CacheItem<T> {
-    pub async fn load(path: PathBuf, default: T) -> Result<CacheItem<T>, CacheError> {
+    pub async fn load(path: PathBuf, default: T) -> Result<CacheItem<T>, MoonError> {
         let item: T;
 
         if path.exists() {
-            item = serde_json::from_str(&fs::read_to_string(&path).await?)?;
+            let contents = fs::read_to_string(&path)
+                .await
+                .map_err(|e| map_io_to_fs_error(e, path.clone()))?;
+
+            item =
+                serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.clone()))?;
         } else {
             item = default;
         }
@@ -24,8 +29,13 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
         Ok(CacheItem { item, path })
     }
 
-    pub async fn save(&self) -> Result<(), CacheError> {
-        fs::write(&self.path, serde_json::to_string(&self.item)?).await?;
+    pub async fn save(&self) -> Result<(), MoonError> {
+        let json = serde_json::to_string(&self.item)
+            .map_err(|e| map_json_to_error(e, self.path.clone()))?;
+
+        fs::write(&self.path, json)
+            .await
+            .map_err(|e| map_io_to_fs_error(e, self.path.clone()))?;
 
         Ok(())
     }

@@ -1,9 +1,14 @@
 use crate::fs::get_home_dir;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, trace};
+use std::ffi::OsStr;
 use std::path::Path;
 use std::process::Output;
 use tokio::process::Command;
+
+pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
+    Command::new(bin)
+}
 
 pub fn output_to_string(data: &[u8]) -> String {
     String::from_utf8(data.to_vec()).unwrap_or_default()

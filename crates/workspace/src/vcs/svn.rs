@@ -1,6 +1,6 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
-use moon_utils::process::exec_command_with_output;
+use moon_utils::process::{create_command, exec_command_capture_stdout};
 use regex::Regex;
 use std::collections::HashSet;
 
@@ -127,6 +127,6 @@ impl Vcs for Svn {
     }
 
     async fn run_command(&self, args: Vec<&str>) -> VcsResult<String> {
-        Ok(exec_command_with_output("svn", args).await?)
+        Ok(exec_command_capture_stdout(create_command("svn").args(args)).await?)
     }
 }

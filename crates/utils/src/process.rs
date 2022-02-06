@@ -2,16 +2,11 @@ use crate::fs::get_home_dir;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, trace};
 use std::ffi::OsStr;
-use std::path::Path;
 use std::process::Output;
 use tokio::process::Command;
 
 pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
     Command::new(bin)
-}
-
-pub fn output_to_string(data: &[u8]) -> String {
-    String::from_utf8(data.to_vec()).unwrap_or_default()
 }
 
 pub async fn exec_command(command: &mut Command) -> Result<Output, MoonError> {
@@ -53,16 +48,6 @@ pub async fn exec_command_capture_stdout(command: &mut Command) -> Result<String
     Ok(output_to_string(&output.stdout))
 }
 
-pub async fn exec_command_in_dir(
-    bin: &str,
-    args: Vec<&str>,
-    dir: &Path,
-) -> Result<Output, MoonError> {
-    Ok(exec_command(Command::new(bin).args(args).current_dir(dir)).await?)
-}
-
-pub async fn exec_command_with_output(bin: &str, args: Vec<&str>) -> Result<String, MoonError> {
-    let output = exec_command(Command::new(bin).args(args)).await?;
-
-    Ok(output_to_string(&output.stdout))
+pub fn output_to_string(data: &[u8]) -> String {
+    String::from_utf8(data.to_vec()).unwrap_or_default()
 }

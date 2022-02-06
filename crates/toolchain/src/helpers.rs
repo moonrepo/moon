@@ -1,7 +1,7 @@
 use crate::errors::ToolchainError;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
-use moon_utils::process::exec_bin_with_output;
+use moon_utils::process::{create_command, exec_command_capture_stdout};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
@@ -13,7 +13,7 @@ pub fn is_ci() -> bool {
 }
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
-    let mut version = exec_bin_with_output(bin, vec!["--version"]).await?;
+    let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"])).await?;
 
     version = version.trim().to_owned();
 

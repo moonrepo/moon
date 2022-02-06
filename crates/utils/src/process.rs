@@ -14,18 +14,6 @@ pub fn output_to_string(data: &[u8]) -> String {
     String::from_utf8(data.to_vec()).unwrap_or_default()
 }
 
-pub async fn exec_bin_in_dir(
-    file: &Path,
-    args: Vec<&str>,
-    dir: &Path,
-) -> Result<Output, MoonError> {
-    Ok(exec_command_in_dir(file.to_str().unwrap(), args, dir).await?)
-}
-
-pub async fn exec_bin_with_output(file: &Path, args: Vec<&str>) -> Result<String, MoonError> {
-    Ok(exec_command_with_output(file.to_str().unwrap(), args).await?)
-}
-
 pub async fn exec_command(command: &mut Command) -> Result<Output, MoonError> {
     let output = command.output(); // Start immediately
 
@@ -57,6 +45,12 @@ pub async fn exec_command(command: &mut Command) -> Result<Output, MoonError> {
     Ok(output
         .await
         .map_err(|e| map_io_to_process_error(e, bin_name))?)
+}
+
+pub async fn exec_command_capture_stdout(command: &mut Command) -> Result<String, MoonError> {
+    let output = exec_command(command).await?;
+
+    Ok(output_to_string(&output.stdout))
 }
 
 pub async fn exec_command_in_dir(

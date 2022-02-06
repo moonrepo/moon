@@ -23,6 +23,14 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
             item =
                 serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.clone()))?;
         } else {
+            let parent = path.parent().unwrap();
+
+            if !parent.exists() {
+                fs::create_dir_all(parent)
+                    .await
+                    .map_err(|e| map_io_to_fs_error(e, parent.to_path_buf()))?;
+            }
+
             item = default;
         }
 

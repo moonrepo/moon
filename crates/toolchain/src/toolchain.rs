@@ -131,7 +131,20 @@ impl Toolchain {
             "Setting up toolchain, downloading and installing tools",
         );
 
-        self.load_tool(self.get_node()).await?;
+        let node = self.get_node();
+
+        self.load_tool(node).await?;
+
+        // Enable corepack when available
+        if node.is_corepack_aware() {
+            debug!(
+                target: "moon:toolchain:node",
+                "Enabling corepack for package manager control"
+            );
+
+            node.exec_corepack(["enable"]).await?;
+        }
+
         self.load_tool(self.get_npm()).await?;
 
         if let Some(pnp) = &self.pnpm {

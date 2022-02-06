@@ -338,16 +338,6 @@ impl Tool for NodeTool {
             color::file_path(self.get_install_dir())
         );
 
-        // Enable corepack when available
-        if self.is_corepack_aware() {
-            debug!(
-                target: "moon:toolchain:node",
-                "Enabling corepack for package manager control"
-            );
-
-            self.exec_corepack(["enable"]).await?;
-        }
-
         Ok(())
     }
 

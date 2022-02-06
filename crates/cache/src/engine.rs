@@ -1,4 +1,5 @@
 use crate::items::{CacheItem, TargetRunState, WorkspaceState};
+use crate::runfiles::CacheRunfile;
 use moon_error::{map_io_to_fs_error, MoonError};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -22,19 +23,22 @@ impl CacheEngine {
     pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
         let dir = self.dir.join("runfiles");
 
-        remove_dir_all(&dir).map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+        if dir.exists() {
+            remove_dir_all(&dir).map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+        }
 
         Ok(())
     }
 
-    pub async fn runfile<'de, T: DeserializeOwned + Serialize>(
+    pub async fn runfile<T: DeserializeOwned + Serialize>(
         &self,
-        hash: &str,
-        data: T,
-    ) -> Result<CacheItem<T>, MoonError> {
-        let path: PathBuf = ["runfiles", &format!("{}.json", hash)].iter().collect();
+        path: &str,
+        id: &str,
+        data: &T,
+    ) -> Result<CacheRunfile, MoonError> {
+        let path: PathBuf = ["runfiles", path, &format!("{}.json", id)].iter().collect();
 
-        Ok(CacheItem::load(self.dir.join(path), data).await?)
+        Ok(CacheRunfile::load(self.dir.join(path), data).await?)
     }
 
     pub async fn run_target_state(

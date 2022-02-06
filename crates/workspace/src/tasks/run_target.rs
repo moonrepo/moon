@@ -13,15 +13,12 @@ use std::sync::Arc;
 use tokio::process::Command;
 use tokio::sync::RwLock;
 
-fn map_path_buf(path: &Path) -> String {
-    String::from(path.to_str().unwrap())
-}
-
 pub async fn create_env_vars(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
 ) -> Result<HashMap<String, String>, WorkspaceError> {
+    let map_path_buf = |path: &Path| String::from(path.to_str().unwrap());
     let mut env_vars = HashMap::new();
 
     env_vars.insert(
@@ -31,6 +28,7 @@ pub async fn create_env_vars(
     env_vars.insert("MOON_PROJECT_ID".to_owned(), project.id.clone());
     env_vars.insert("MOON_PROJECT_ROOT".to_owned(), map_path_buf(&project.root));
     env_vars.insert("MOON_PROJECT_SOURCE".to_owned(), project.source.clone());
+    env_vars.insert("MOON_RUN_TARGET".to_owned(), task.target.clone());
     env_vars.insert(
         "MOON_TOOLCHAIN_DIR".to_owned(),
         map_path_buf(&workspace.toolchain.dir),
@@ -45,19 +43,15 @@ pub async fn create_env_vars(
     );
 
     // Store runtime data on the file system so that downstream commands can utilize it
-    env_vars.insert("MOON_RUN_TARGET".to_owned(), task.target.clone());
-
     let runfile = workspace
         .cache
-        .runfile(&project.id, project.clone())
+        .runfile("projects", &project.id, project)
         .await?;
 
     env_vars.insert(
-        "MOON_RUN_PROJECT_FILE".to_owned(),
+        "MOON_PROJECT_RUNFILE".to_owned(),
         map_path_buf(&runfile.path),
     );
-
-    runfile.save().await?;
 
     Ok(env_vars)
 }

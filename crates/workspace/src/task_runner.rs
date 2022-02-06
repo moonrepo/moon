@@ -122,7 +122,6 @@ impl TaskRunner {
         }
 
         self.cleanup().await?;
-
         Ok(results)
     }
 

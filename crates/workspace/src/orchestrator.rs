@@ -12,11 +12,6 @@ use tokio::sync::RwLock;
 use tokio::task;
 
 async fn run_job(workspace: Arc<RwLock<Workspace>>, node: &Node) -> Result<(), WorkspaceError> {
-    trace!(
-        target: "moon:orchestrator:batch:job",
-        "Node = {:#?}", node
-    );
-
     match node {
         Node::InstallNodeDeps => {
             install_node_deps(workspace).await?;

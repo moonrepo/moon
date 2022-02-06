@@ -14,17 +14,22 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
 
     // Get the last modified time of the root lockfile
     let lockfile = workspace.root.join(manager.get_lockfile_name());
-    let lockfile_metadata =
-        fs::metadata(&lockfile).map_err(|e| map_io_to_fs_error(e, lockfile.clone()))?;
-    let last_modified = cache.to_millis(
-        lockfile_metadata
-            .modified()
-            .map_err(|e| map_io_to_fs_error(e, lockfile.clone()))?,
-    );
+    let mut last_modified = 0;
+
+    if lockfile.exists() {
+        let lockfile_metadata =
+            fs::metadata(&lockfile).map_err(|e| map_io_to_fs_error(e, lockfile.clone()))?;
+
+        last_modified = cache.to_millis(
+            lockfile_metadata
+                .modified()
+                .map_err(|e| map_io_to_fs_error(e, lockfile.clone()))?,
+        );
+    }
 
     // Install deps if the lockfile has been modified
     // since the last time dependencies were installed!
-    if last_modified > cache.item.last_node_install_time {
+    if last_modified == 0 || last_modified > cache.item.last_node_install_time {
         debug!(
             target: "moon:orchestrator:install-node-deps",
             "Installing Node.js dependencies",

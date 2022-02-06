@@ -1,10 +1,9 @@
 use crate::dep_graph::{DepGraph, Node};
 use crate::errors::WorkspaceError;
-use crate::task_result::TaskResult;
+use crate::task_result::{TaskResult, TaskResultStatus};
 use crate::tasks::{install_node_deps, run_target, setup_toolchain, sync_project};
 use crate::workspace::Workspace;
-use awaitgroup::WaitGroup;
-use moon_logger::{debug, error, trace};
+use moon_logger::{debug, trace};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task;
@@ -56,7 +55,7 @@ impl TaskRunner {
             "Running {} tasks across {} batches", node_count, batches_count
         );
 
-        let results: Vec<TaskResult> = vec![];
+        let mut results: Vec<TaskResult> = vec![];
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
@@ -68,11 +67,10 @@ impl TaskRunner {
                 tasks_count
             );
 
-            let mut wait_group = WaitGroup::new();
+            let mut task_handles = vec![];
 
             for (t, task) in batch.into_iter().enumerate() {
                 let task_count = t + 1;
-                let worker = wait_group.worker();
                 let workspace_clone = Arc::clone(&workspace);
                 let graph_clone = Arc::clone(&graph);
 
@@ -81,32 +79,46 @@ impl TaskRunner {
                     "Running task",
                 );
 
-                task::spawn(async move {
+                let mut task_result = TaskResult::new(task);
+
+                // TODO - abort parallel threads when an error occurs in a sibling thread
+                task_handles.push(task::spawn(async move {
+                    task_result.start();
+
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(task) {
                         match run_task(workspace_clone, node).await {
-                            Ok(_) => {}
-                            Err(e) => {
-                                error!(
-                                    target: "moon:task-runner:batch:task",
-                                    "Failed to run task {:?}: {}", task, e
-                                );
+                            Ok(_) => {
+                                task_result.pass();
+                            }
+                            Err(error) => {
+                                task_result.fail();
+
+                                return Err(error);
                             }
                         }
                     } else {
-                        trace!(
-                            target: "moon:task-runner:batch:task",
-                            "Node not found with index {:?}", task
-                        );
+                        task_result.status = TaskResultStatus::Invalid;
+
+                        return Err(WorkspaceError::DepGraphUnknownNode(task.index()));
                     }
 
-                    worker.done();
-                });
+                    Ok(())
+                }));
+
+                // results.push(task_result);
             }
 
-            // Wait for all tasks in this batch to complete
-            wait_group.wait().await;
+            // Wait for all tasks in this batch to complete,
+            // while also handling and propagating errors
+            for handle in task_handles {
+                match handle.await {
+                    Ok(Ok(_)) => {}
+                    Ok(Err(e)) => return Err(e),
+                    Err(e) => return Err(WorkspaceError::TaskRunnerFailure(e)),
+                }
+            }
         }
 
         Ok(results)

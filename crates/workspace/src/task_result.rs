@@ -1,21 +1,56 @@
+use chrono::prelude::*;
+use petgraph::graph::NodeIndex;
+
 pub enum TaskResultStatus {
     Cancelled,
     Failed,
+    Invalid,
     Passed,
     Pending,
     Running,
 }
 
 pub struct TaskResult {
-    start_time: i64,
+    pub start_time: Option<DateTime<Local>>,
 
-    status: TaskResultStatus,
+    pub status: TaskResultStatus,
 
-    end_time: i64,
+    pub end_time: Option<DateTime<Local>>,
 
-    exit_code: u8,
+    pub exit_code: i8,
 
-    stderr: String,
+    pub node_index: NodeIndex,
 
-    stdout: String,
+    pub stderr: String,
+
+    pub stdout: String,
+}
+
+impl TaskResult {
+    pub fn new(node_index: NodeIndex) -> Self {
+        TaskResult {
+            start_time: None,
+            status: TaskResultStatus::Pending,
+            end_time: None,
+            exit_code: -1,
+            node_index,
+            stderr: String::new(),
+            stdout: String::new(),
+        }
+    }
+
+    pub fn start(&mut self) {
+        self.status = TaskResultStatus::Running;
+        self.start_time = Some(Local::now());
+    }
+
+    pub fn pass(&mut self) {
+        self.status = TaskResultStatus::Passed;
+        self.end_time = Some(Local::now());
+    }
+
+    pub fn fail(&mut self) {
+        self.status = TaskResultStatus::Failed;
+        self.end_time = Some(Local::now());
+    }
 }

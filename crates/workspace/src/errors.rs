@@ -7,7 +7,13 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum WorkspaceError {
     #[error("A dependency cycle has been detected for <path>{0}</path>.")]
-    CycleDetected(String),
+    DepGraphCycleDetected(String),
+
+    #[error("Unknown node {0} found in dependency graph. How did this get here?")]
+    DepGraphUnknownNode(usize),
+
+    #[error("Task runner failed to run: {0}")]
+    TaskRunnerFailure(#[from] tokio::task::JoinError),
 
     #[error(
         "Unable to determine workspace root. Please create a <path>{}</path> configuration folder.",

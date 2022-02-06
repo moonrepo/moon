@@ -80,7 +80,7 @@ impl DepGraph {
         let list = match toposort(&self.graph, None) {
             Ok(nodes) => nodes,
             Err(error) => {
-                return Err(WorkspaceError::CycleDetected(
+                return Err(WorkspaceError::DepGraphCycleDetected(
                     self.get_node_from_index(error.node_id()).unwrap().label(),
                 ));
             }
@@ -296,7 +296,7 @@ impl DepGraph {
             .collect::<Vec<String>>()
             .join(" -> ");
 
-        Err(WorkspaceError::CycleDetected(cycle))
+        Err(WorkspaceError::DepGraphCycleDetected(cycle))
     }
 }
 

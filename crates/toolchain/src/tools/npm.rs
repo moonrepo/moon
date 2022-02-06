@@ -5,10 +5,9 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_logger::{color, debug, trace};
-use moon_utils::process::exec_bin_in_dir;
+use moon_utils::process::{create_command, exec_command, Output};
 use std::env::consts;
 use std::path::PathBuf;
-use std::process::Output;
 
 #[derive(Clone, Debug)]
 pub struct NpmTool {
@@ -52,10 +51,10 @@ impl NpmTool {
     pub async fn add_global_dep(&self, name: &str, version: &str) -> Result<(), ToolchainError> {
         let package = format!("{}@{}", name, version);
 
-        exec_bin_in_dir(
-            self.get_bin_path(),
-            vec!["install", "-g", package.as_str()],
-            &self.install_dir,
+        exec_command(
+            create_command(self.get_bin_path())
+                .args(["install", "-g", &package])
+                .current_dir(&self.install_dir),
         )
         .await?;
 
@@ -149,10 +148,10 @@ impl Tool for NpmTool {
 #[async_trait]
 impl PackageManager for NpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
-        Ok(exec_bin_in_dir(
-            self.get_bin_path(),
-            vec!["dedupe"],
-            &toolchain.workspace_root,
+        Ok(exec_command(
+            create_command(self.get_bin_path())
+                .args(["dedupe"])
+                .current_dir(&toolchain.workspace_root),
         )
         .await?)
     }
@@ -167,7 +166,12 @@ impl PackageManager for NpmTool {
 
         exec_args.extend(args);
 
-        Ok(exec_bin_in_dir(&self.npx_path, exec_args, &toolchain.workspace_root).await?)
+        Ok(exec_command(
+            create_command(&self.npx_path)
+                .args(exec_args)
+                .current_dir(&toolchain.workspace_root),
+        )
+        .await?)
     }
 
     fn get_lockfile_name(&self) -> String {
@@ -180,10 +184,10 @@ impl PackageManager for NpmTool {
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
-        Ok(exec_bin_in_dir(
-            self.get_bin_path(),
-            vec![if is_ci() { "ci" } else { "install" }],
-            &toolchain.workspace_root,
+        Ok(exec_command(
+            create_command(self.get_bin_path())
+                .args([if is_ci() { "ci" } else { "install" }])
+                .current_dir(&toolchain.workspace_root),
         )
         .await?)
     }

@@ -8,14 +8,13 @@ use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, error};
-use moon_utils::process::{create_command, exec_command};
+use moon_utils::process::{create_command, exec_command, Output};
 use semver::{Version, VersionReq};
 use std::env::consts;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::process::Output;
 use tar::Archive;
 
 fn get_download_file_ext() -> &'static str {

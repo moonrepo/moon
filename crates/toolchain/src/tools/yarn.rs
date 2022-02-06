@@ -5,10 +5,9 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_logger::{color, debug, trace};
-use moon_utils::process::exec_bin_in_dir;
+use moon_utils::process::{create_command, exec_command, Output};
 use std::env::consts;
 use std::path::PathBuf;
-use std::process::Output;
 
 #[derive(Clone, Debug)]
 pub struct YarnTool {
@@ -142,10 +141,10 @@ impl Tool for YarnTool {
                 color::shell(&format!("yarn set version {}", self.config.version))
             );
 
-            exec_bin_in_dir(
-                self.get_bin_path(),
-                vec!["set", "version", &self.config.version],
-                &toolchain.workspace_root,
+            exec_command(
+                create_command(self.get_bin_path())
+                    .args(["set", "version", &self.config.version])
+                    .current_dir(&toolchain.workspace_root),
             )
             .await?;
         }
@@ -187,10 +186,10 @@ impl PackageManager for YarnTool {
 
         // yarn dedupe
         } else {
-            Ok(exec_bin_in_dir(
-                self.get_bin_path(),
-                vec!["dedupe"],
-                &toolchain.workspace_root,
+            Ok(exec_command(
+                create_command(self.get_bin_path())
+                    .args(["dedupe"])
+                    .current_dir(&toolchain.workspace_root),
             )
             .await?)
         }
@@ -207,7 +206,12 @@ impl PackageManager for YarnTool {
         exec_args.extend(args);
 
         // https://yarnpkg.com/cli/dlx
-        Ok(exec_bin_in_dir(self.get_bin_path(), exec_args, &toolchain.workspace_root).await?)
+        Ok(exec_command(
+            create_command(self.get_bin_path())
+                .args(exec_args)
+                .current_dir(&toolchain.workspace_root),
+        )
+        .await?)
     }
 
     fn get_lockfile_name(&self) -> String {
@@ -243,6 +247,11 @@ impl PackageManager for YarnTool {
             }
         }
 
-        Ok(exec_bin_in_dir(self.get_bin_path(), args, &toolchain.workspace_root).await?)
+        Ok(exec_command(
+            create_command(self.get_bin_path())
+                .args(args)
+                .current_dir(&toolchain.workspace_root),
+        )
+        .await?)
     }
 }

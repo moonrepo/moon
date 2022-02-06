@@ -5,10 +5,9 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_logger::{color, debug, trace};
-use moon_utils::process::exec_bin_in_dir;
+use moon_utils::process::{create_command, exec_command, Output};
 use std::env::consts;
 use std::path::PathBuf;
-use std::process::Output;
 
 #[derive(Clone, Debug)]
 pub struct PnpmTool {
@@ -134,10 +133,10 @@ impl PackageManager for PnpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune
-        Ok(exec_bin_in_dir(
-            self.get_bin_path(),
-            vec!["prune"],
-            &toolchain.workspace_root,
+        Ok(exec_command(
+            create_command(self.get_bin_path())
+                .args(["prune"])
+                .current_dir(&toolchain.workspace_root),
         )
         .await?)
     }
@@ -153,7 +152,12 @@ impl PackageManager for PnpmTool {
         exec_args.extend(args);
 
         // https://pnpm.io/cli/dlx
-        Ok(exec_bin_in_dir(self.get_bin_path(), exec_args, &toolchain.workspace_root).await?)
+        Ok(exec_command(
+            create_command(self.get_bin_path())
+                .args(exec_args)
+                .current_dir(&toolchain.workspace_root),
+        )
+        .await?)
     }
 
     fn get_lockfile_name(&self) -> String {
@@ -172,6 +176,11 @@ impl PackageManager for PnpmTool {
             args.push("--frozen-lockfile");
         }
 
-        Ok(exec_bin_in_dir(self.get_bin_path(), args, &toolchain.workspace_root).await?)
+        Ok(exec_command(
+            create_command(self.get_bin_path())
+                .args(args)
+                .current_dir(&toolchain.workspace_root),
+        )
+        .await?)
     }
 }

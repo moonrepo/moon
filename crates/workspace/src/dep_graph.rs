@@ -35,7 +35,7 @@ type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 /// project or task's dependency chain. This is also known as a "task graph" (not to
 /// be confused with ours) or a "dependency graph".
 pub struct DepGraph {
-    graph: GraphType,
+    pub graph: GraphType,
 
     /// Mapping of IDs to existing node indices.
     index_cache: HashMap<String, NodeIndex>,

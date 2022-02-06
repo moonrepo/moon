@@ -31,7 +31,7 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
     // since the last time dependencies were installed!
     if last_modified == 0 || last_modified > cache.item.last_node_install_time {
         debug!(
-            target: "moon:orchestrator:install-node-deps",
+            target: "moon:task-runner:install-node-deps",
             "Installing Node.js dependencies",
         );
 
@@ -40,7 +40,7 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
         if let Some(node_config) = &workspace.config.node {
             if node_config.dedupe_on_install.unwrap_or(true) {
                 debug!(
-                    target: "moon:orchestrator:install-node-deps",
+                    target: "moon:task-runner:install-node-deps",
                     "Dedupeing dependencies",
                 );
 
@@ -53,7 +53,7 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
         cache.save().await?;
     } else {
         debug!(
-            target: "moon:orchestrator:install-node-deps",
+            target: "moon:task-runner:install-node-deps",
             "Lockfile has not changed since last install, skipping Node.js dependencies",
         );
     }

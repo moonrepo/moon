@@ -52,7 +52,7 @@ pub async fn run_target(
     target: &str,
 ) -> Result<(), WorkspaceError> {
     debug!(
-        target: "moon:orchestrator:run-target",
+        target: "moon:task-runner:run-target",
         "Running target {}",
         target
     );

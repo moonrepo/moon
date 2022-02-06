@@ -22,7 +22,7 @@ pub async fn sync_project(
     //         && tsconfig.add_project_ref(project.source.to_owned())
     //     {
     //         debug!(
-    //             target: "moon:orchestrator:sync-project",
+    //             target: "moon:task-runner:sync-project",
     //             "Syncing {} as a project reference to the root {}",
     //             color::id(project_id),
     //             color::path("tsconfig.json")
@@ -47,7 +47,7 @@ pub async fn sync_project(
                     && !package_deps.contains_key(&dep_package_name)
                 {
                     debug!(
-                        target: "moon:orchestrator:sync-project",
+                        target: "moon:task-runner:sync-project",
                         "Syncing {} as a dependency to {}'s {}",
                         color::id(&dep_id),
                         color::id(project_id),
@@ -72,7 +72,7 @@ pub async fn sync_project(
                 && tsconfig.add_project_ref(dep_ref_path)
             {
                 debug!(
-                    target: "moon:orchestrator:sync-project",
+                    target: "moon:task-runner:sync-project",
                     "Syncing {} as a project reference to {}'s {}",
                     color::id(&dep_id),
                     color::id(project_id),

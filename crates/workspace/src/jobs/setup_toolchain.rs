@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 
 pub async fn setup_toolchain(workspace: Arc<RwLock<Workspace>>) -> Result<(), WorkspaceError> {
     debug!(
-        target: "moon:orchestrator:setup-toolchain",
+        target: "moon:task-runner:setup-toolchain",
         "Setting up toolchain",
     );
 

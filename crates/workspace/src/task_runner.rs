@@ -4,9 +4,10 @@ use crate::jobs::install_node_deps::install_node_deps;
 use crate::jobs::run_target::run_target;
 use crate::jobs::setup_toolchain::setup_toolchain;
 use crate::jobs::sync_project::sync_project;
+use crate::results::Result;
 use crate::workspace::Workspace;
 use awaitgroup::WaitGroup;
-use moon_logger::{color, debug, error, trace};
+use moon_logger::{debug, error, trace};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task;
@@ -30,35 +31,42 @@ async fn run_job(workspace: Arc<RwLock<Workspace>>, node: &Node) -> Result<(), W
     Ok(())
 }
 
-pub struct Orchestrator {}
+pub struct TaskRunner {}
 
-impl Orchestrator {
+impl TaskRunner {
     pub fn default() -> Self {
         debug!(
-            target: "moon:orchestrator",
-            "Creating orchestrator",
+            target: "moon:task-runner",
+            "Creating task runner",
         );
 
-        Orchestrator {}
+        TaskRunner {}
     }
 
-    pub async fn run<'a>(
+    pub async fn run(
         &self,
         workspace: Workspace,
         graph: DepGraph,
-    ) -> Result<(), WorkspaceError> {
+    ) -> Result<Vec<Result>, WorkspaceError> {
+        let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let workspace = Arc::new(RwLock::new(workspace));
         let graph = Arc::new(RwLock::new(graph));
+
+        debug!(
+            target: "moon:task-runner",
+            "Running {} jobs across {} batches", node_count, batches_count
+        );
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
             let jobs_count = batch.len();
 
             trace!(
-                target: "moon:orchestrator:batch",
-                "[{}/{}] {{", batch_count, batches_count
+                target: &format!("moon:task-runner:batch:{}", batch_count),
+                "Running {} jobs",
+                jobs_count
             );
 
             let mut wait_group = WaitGroup::new();
@@ -69,12 +77,12 @@ impl Orchestrator {
                 let workspace_clone = Arc::clone(&workspace);
                 let graph_clone = Arc::clone(&graph);
 
-                task::spawn(async move {
-                    trace!(
-                        target: "moon:orchestrator:batch:job",
-                        "[{}/{}] {{", job_count, jobs_count
-                    );
+                trace!(
+                    target: &format!("moon:task-runner:batch:{}:{}", batch_count, job_count),
+                    "Running job",
+                );
 
+                task::spawn(async move {
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(job) {
@@ -82,34 +90,24 @@ impl Orchestrator {
                             Ok(_) => {}
                             Err(e) => {
                                 error!(
-                                    target: "moon:orchestrator:batch:job",
+                                    target: "moon:task-runner:batch:job",
                                     "Failed to run job {:?}: {}", job, e
                                 );
                             }
                         }
                     } else {
                         trace!(
-                            target: "moon:orchestrator:batch:job",
+                            target: "moon:task-runner:batch:job",
                             "Node not found with index {:?}", job
                         );
                     }
 
                     worker.done();
-
-                    trace!(
-                        target: "moon:orchestrator:batch:job",
-                        "[{}/{}] }}", job_count, jobs_count
-                    );
                 });
             }
 
             // Wait for all jobs in this batch to complete
             wait_group.wait().await;
-
-            trace!(
-                target: "moon:orchestrator:batch",
-                "[{}/{}] }}", batch_count, batches_count
-            );
         }
 
         Ok(())

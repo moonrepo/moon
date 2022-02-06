@@ -40,10 +40,10 @@ pub struct DepGraph {
     /// Mapping of IDs to existing node indices.
     index_cache: HashMap<String, NodeIndex>,
 
-    /// Reference node for the "install node deps" job.
+    /// Reference node for the "install node deps" task.
     install_node_deps_index: NodeIndex,
 
-    /// Reference node for the "setup toolchain" job.
+    /// Reference node for the "setup toolchain" task.
     setup_toolchain_index: NodeIndex,
 }
 

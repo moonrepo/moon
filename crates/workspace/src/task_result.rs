@@ -1,4 +1,4 @@
-pub enum ResultStatus {
+pub enum TaskResultStatus {
     Cancelled,
     Failed,
     Passed,
@@ -6,10 +6,10 @@ pub enum ResultStatus {
     Running,
 }
 
-pub struct Result {
+pub struct TaskResult {
     start_time: i64,
 
-    status: ResultStatus,
+    status: TaskResultStatus,
 
     end_time: i64,
 

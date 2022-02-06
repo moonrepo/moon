@@ -6,6 +6,7 @@ use crate::tools::npm::NpmTool;
 use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use moon_config::constants::CONFIG_DIRNAME;
+use moon_config::package::PackageJson;
 use moon_config::{NodeConfig, PackageManager as PM, WorkspaceConfig};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace};
@@ -125,18 +126,22 @@ impl Toolchain {
     }
 
     /// Download and install all tools into the toolchain.
-    pub async fn setup(&self) -> Result<(), ToolchainError> {
+    pub async fn setup(&self, root_package: &mut PackageJson) -> Result<(), ToolchainError> {
         debug!(
             target: "moon:toolchain",
-            "Setting up toolchain, downloading and installing tools",
+            "Downloading and installing tools",
         );
 
+        // Install node and add engines to `package.json`
         let node = self.get_node();
+        let using_corepack = node.is_corepack_aware();
 
         self.load_tool(node).await?;
 
-        // Enable corepack when available
-        if node.is_corepack_aware() {
+        root_package.add_engine("node", &node.config.version);
+
+        // Enable corepack before intalling package managers (when available)
+        if using_corepack {
             debug!(
                 target: "moon:toolchain:node",
                 "Enabling corepack for package manager control"
@@ -145,13 +150,26 @@ impl Toolchain {
             node.exec_corepack(["enable"]).await?;
         }
 
+        // Install npm (should always be available even if using another package manager)
         self.load_tool(self.get_npm()).await?;
 
-        if let Some(pnp) = &self.pnpm {
-            self.load_tool(pnp).await?;
+        // Install pnpm *after* setting the corepack package manager
+        if let Some(pnpm) = &self.pnpm {
+            if using_corepack {
+                root_package.package_manager = Some(format!("pnpm@{}", pnpm.config.version));
+                root_package.save()?;
+            }
+
+            self.load_tool(pnpm).await?;
         }
 
+        // Install yarn *after* setting the corepack package manager
         if let Some(yarn) = &self.yarn {
+            if using_corepack {
+                root_package.package_manager = Some(format!("yarn@{}", yarn.config.version));
+                root_package.save()?;
+            }
+
             self.load_tool(yarn).await?;
         }
 

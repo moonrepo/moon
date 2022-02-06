@@ -90,6 +90,14 @@ impl PackageJson {
 
         Ok(())
     }
+
+    pub fn add_engine(&mut self, engine: &str, range: &str) {
+        if let Some(engines) = &mut self.engines {
+            engines.insert(engine.to_owned(), range.to_owned());
+        } else {
+            self.engines = Some(BTreeMap::from([(engine.to_owned(), range.to_owned())]));
+        }
+    }
 }
 
 pub type BinSet = BTreeMap<String, String>;

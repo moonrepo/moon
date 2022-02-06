@@ -6,12 +6,11 @@ pub enum TaskResultStatus {
     Failed,
     Invalid,
     Passed,
-    Pending,
     Running,
 }
 
 pub struct TaskResult {
-    pub start_time: Option<DateTime<Local>>,
+    pub start_time: DateTime<Local>,
 
     pub status: TaskResultStatus,
 
@@ -29,19 +28,14 @@ pub struct TaskResult {
 impl TaskResult {
     pub fn new(node_index: NodeIndex) -> Self {
         TaskResult {
-            start_time: None,
-            status: TaskResultStatus::Pending,
+            start_time: Local::now(),
+            status: TaskResultStatus::Running,
             end_time: None,
             exit_code: -1,
             node_index,
             stderr: String::new(),
             stdout: String::new(),
         }
-    }
-
-    pub fn start(&mut self) {
-        self.status = TaskResultStatus::Running;
-        self.start_time = Some(Local::now());
     }
 
     pub fn pass(&mut self) {

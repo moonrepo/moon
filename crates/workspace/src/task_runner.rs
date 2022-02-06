@@ -79,42 +79,37 @@ impl TaskRunner {
                     "Running task",
                 );
 
-                let mut task_result = TaskResult::new(task);
-
                 // TODO - abort parallel threads when an error occurs in a sibling thread
                 task_handles.push(task::spawn(async move {
-                    task_result.start();
-
+                    let mut result = TaskResult::new(task);
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(task) {
                         match run_task(workspace_clone, node).await {
                             Ok(_) => {
-                                task_result.pass();
+                                result.pass();
                             }
                             Err(error) => {
-                                task_result.fail();
+                                result.fail();
 
                                 return Err(error);
                             }
                         }
                     } else {
-                        task_result.status = TaskResultStatus::Invalid;
+                        result.status = TaskResultStatus::Invalid;
 
                         return Err(WorkspaceError::DepGraphUnknownNode(task.index()));
                     }
 
-                    Ok(())
+                    Ok(result)
                 }));
-
-                // results.push(task_result);
             }
 
             // Wait for all tasks in this batch to complete,
             // while also handling and propagating errors
             for handle in task_handles {
                 match handle.await {
-                    Ok(Ok(_)) => {}
+                    Ok(Ok(result)) => results.push(result),
                     Ok(Err(e)) => return Err(e),
                     Err(e) => return Err(WorkspaceError::TaskRunnerFailure(e)),
                 }

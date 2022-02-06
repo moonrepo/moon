@@ -10,28 +10,30 @@ pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
 ) -> Result<(), WorkspaceError> {
-    let mut workspace = workspace.write().await;
-    let manager = workspace.toolchain.get_package_manager();
+    let mut workspace_writable = workspace.write().await;
+    let workspace = workspace.read().await;
     let mut project = workspace.projects.get(project_id)?;
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();
 
-    // if let Some(tsconfig) = &mut workspace.tsconfig_json {
-    //     if node_config.sync_typescript_project_references.unwrap()
-    //         && tsconfig.add_project_ref(project.source.to_owned())
-    //     {
-    //         debug!(
-    //             target: "moon:task-runner:sync-project",
-    //             "Syncing {} as a project reference to the root {}",
-    //             color::id(project_id),
-    //             color::path("tsconfig.json")
-    //         );
-    //         tsconfig.save()?;
-    //     }
-    // }
+    if let Some(tsconfig) = &mut workspace_writable.tsconfig_json {
+        if node_config.sync_typescript_project_references.unwrap()
+            && tsconfig.add_project_ref(project.source.to_owned())
+        {
+            debug!(
+                target: "moon:task-runner:sync-project",
+                "Syncing {} as a project reference to the root {}",
+                color::id(project_id),
+                color::path("tsconfig.json")
+            );
+            tsconfig.save()?;
+        }
+    }
 
     // Sync each dependency to `tsconfig.json` and `package.json`
+    let manager = workspace.toolchain.get_package_manager();
+
     for dep_id in project.get_dependencies() {
         let dep_project = workspace.projects.get(&dep_id)?;
 

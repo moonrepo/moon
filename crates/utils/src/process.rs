@@ -2,8 +2,9 @@ use crate::fs::get_home_dir;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, trace};
 use std::ffi::OsStr;
-use std::process::Output;
 use tokio::process::Command;
+
+pub use std::process::Output;
 
 pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
     Command::new(bin)

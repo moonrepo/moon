@@ -5,10 +5,9 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_logger::{color, debug, trace};
-use moon_utils::process::{create_command, exec_command};
+use moon_utils::process::{create_command, exec_command, Output};
 use std::env::consts;
 use std::path::PathBuf;
-use std::process::Output;
 
 #[derive(Clone, Debug)]
 pub struct PnpmTool {

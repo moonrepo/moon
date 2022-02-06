@@ -27,27 +27,26 @@ async fn run_task(workspace: Arc<RwLock<Workspace>>, node: &Node) -> Result<(), 
     Ok(())
 }
 
-pub struct TaskRunner {}
+pub struct TaskRunner {
+    workspace: Arc<RwLock<Workspace>>,
+}
 
 impl TaskRunner {
-    pub fn default() -> Self {
+    pub fn new(workspace: Workspace) -> Self {
         debug!(
             target: "moon:task-runner",
             "Creating task runner",
         );
 
-        TaskRunner {}
+        TaskRunner {
+            workspace: Arc::new(RwLock::new(workspace)),
+        }
     }
 
-    pub async fn run(
-        &self,
-        workspace: Workspace,
-        graph: DepGraph,
-    ) -> Result<Vec<TaskResult>, WorkspaceError> {
+    pub async fn run(&self, graph: DepGraph) -> Result<Vec<TaskResult>, WorkspaceError> {
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
-        let workspace = Arc::new(RwLock::new(workspace));
         let graph = Arc::new(RwLock::new(graph));
 
         debug!(
@@ -71,7 +70,7 @@ impl TaskRunner {
 
             for (t, task) in batch.into_iter().enumerate() {
                 let task_count = t + 1;
-                let workspace_clone = Arc::clone(&workspace);
+                let workspace_clone = Arc::clone(&self.workspace);
                 let graph_clone = Arc::clone(&graph);
 
                 trace!(
@@ -110,12 +109,29 @@ impl TaskRunner {
             for handle in task_handles {
                 match handle.await {
                     Ok(Ok(result)) => results.push(result),
-                    Ok(Err(e)) => return Err(e),
-                    Err(e) => return Err(WorkspaceError::TaskRunnerFailure(e)),
+                    Ok(Err(e)) => {
+                        self.cleanup().await?;
+                        return Err(e);
+                    }
+                    Err(e) => {
+                        self.cleanup().await?;
+                        return Err(WorkspaceError::TaskRunnerFailure(e));
+                    }
                 }
             }
         }
 
+        self.cleanup().await?;
+
         Ok(results)
+    }
+
+    pub async fn cleanup(&self) -> Result<(), WorkspaceError> {
+        let workspace = self.workspace.read().await;
+
+        // Delete all runfiles created during this process
+        workspace.cache.delete_runfiles().await?;
+
+        Ok(())
     }
 }

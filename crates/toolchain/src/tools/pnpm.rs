@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::get_bin_version;
+use crate::helpers::{get_bin_version, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
@@ -151,11 +151,12 @@ impl PackageManager for PnpmTool {
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
-        Ok(exec_bin_in_dir(
-            self.get_bin_path(),
-            vec!["install", "--frozen-lockfile"],
-            &toolchain.workspace_root,
-        )
-        .await?)
+        let mut args = vec!["install"];
+
+        if is_ci() {
+            args.push("--frozen-lockfile");
+        }
+
+        Ok(exec_bin_in_dir(self.get_bin_path(), args, &toolchain.workspace_root).await?)
     }
 }

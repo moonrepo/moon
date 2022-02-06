@@ -1,5 +1,5 @@
 node:
-  version: '16.13.0'
+  version: '16.13.2'
   packageManager: 'yarn'
   yarn:
     version: '3.1.1'

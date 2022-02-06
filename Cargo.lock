@@ -1056,7 +1056,6 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "async-trait",
- "dirs",
  "flate2",
  "mockito",
  "moon_config",
@@ -1075,6 +1074,7 @@ dependencies = [
 name = "moon_utils"
 version = "0.1.0"
 dependencies = [
+ "dirs",
  "json_comments",
  "lazy_static",
  "moon_error",

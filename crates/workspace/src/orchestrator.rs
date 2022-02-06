@@ -52,15 +52,13 @@ impl Orchestrator {
         let workspace = Arc::new(RwLock::new(workspace));
         let graph = Arc::new(RwLock::new(graph));
 
-        println!("{:#?}", batches);
-
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
             let jobs_count = batch.len();
 
             trace!(
                 target: "moon:orchestrator:batch",
-                "[{}/{}] ▸▸▸", batch_count, batches_count
+                "[{}/{}] {{", batch_count, batches_count
             );
 
             let mut wait_group = WaitGroup::new();
@@ -74,7 +72,7 @@ impl Orchestrator {
                 task::spawn(async move {
                     trace!(
                         target: "moon:orchestrator:batch:job",
-                        "[{}/{}] ▸▸▸", job_count, jobs_count
+                        "[{}/{}] {{", job_count, jobs_count
                     );
 
                     let own_graph = graph_clone.read().await;
@@ -100,7 +98,7 @@ impl Orchestrator {
 
                     trace!(
                         target: "moon:orchestrator:batch:job",
-                        "[{}/{}] ◂◂◂", job_count, jobs_count
+                        "[{}/{}] }}", job_count, jobs_count
                     );
                 });
             }
@@ -110,7 +108,7 @@ impl Orchestrator {
 
             trace!(
                 target: "moon:orchestrator:batch",
-                "[{}/{}] ◂◂◂", batch_count, batches_count
+                "[{}/{}] }}", batch_count, batches_count
             );
         }
 

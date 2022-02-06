@@ -1,12 +1,10 @@
 use moon_workspace::Workspace;
 
 pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
-    let mut workspace = Workspace::load()?;
+    let workspace = Workspace::load()?;
+    let mut root_package = workspace.load_package_json()?;
 
-    workspace
-        .toolchain
-        .setup(&mut workspace.package_json)
-        .await?;
+    workspace.toolchain.setup(&mut root_package).await?;
 
     Ok(())
 }

@@ -10,14 +10,13 @@ pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
 ) -> Result<(), WorkspaceError> {
-    let mut workspace_writable = workspace.write().await;
     let workspace = workspace.read().await;
     let mut project = workspace.projects.get(project_id)?;
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();
 
-    if let Some(tsconfig) = &mut workspace_writable.tsconfig_json {
+    if let Some(mut tsconfig) = workspace.load_tsconfig_json()? {
         if node_config.sync_typescript_project_references.unwrap()
             && tsconfig.add_project_ref(project.source.to_owned())
         {

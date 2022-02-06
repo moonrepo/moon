@@ -33,42 +33,6 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
     }
 }
 
-// package.json
-fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceError> {
-    let package_json_path = root_dir.join("package.json");
-
-    trace!(
-        target: "moon:workspace",
-        "Attempting to find {} in {}",
-        color::path("package.json"),
-        color::file_path(root_dir),
-    );
-
-    if !package_json_path.exists() {
-        return Err(WorkspaceError::MissingPackageJson);
-    }
-
-    Ok(PackageJson::load(&package_json_path)?)
-}
-
-// tsconfig.json
-fn load_tsconfig_json(root_dir: &Path) -> Result<Option<TsConfigJson>, WorkspaceError> {
-    let tsconfig_json_path = root_dir.join("tsconfig.json");
-
-    trace!(
-        target: "moon:workspace",
-        "Attempting to find {} in {}",
-        color::path("tsconfig.json"),
-        color::file_path(root_dir),
-    );
-
-    if !tsconfig_json_path.exists() {
-        return Ok(None);
-    }
-
-    Ok(Some(TsConfigJson::load(&tsconfig_json_path)?))
-}
-
 // project.yml
 fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, WorkspaceError> {
     let config_path = root_dir
@@ -132,9 +96,6 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
-    /// The root `package.json` file.
-    pub package_json: PackageJson,
-
     /// The project graph, where each project is lazy loaded in.
     pub projects: ProjectGraph,
 
@@ -143,9 +104,6 @@ pub struct Workspace {
 
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
-
-    /// The root `tsconfig.json` file, if it exists.
-    pub tsconfig_json: Option<TsConfigJson>,
 
     /// The current working directory.
     pub working_dir: PathBuf,
@@ -171,8 +129,6 @@ impl Workspace {
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
-        let package_json = load_package_json(&root_dir)?;
-        let tsconfig_json = load_tsconfig_json(&root_dir)?;
 
         // Setup components
         let toolchain = Toolchain::new(&root_dir, &config)?;
@@ -181,11 +137,9 @@ impl Workspace {
         Ok(Workspace {
             cache: CacheEngine::new(&root_dir)?,
             config,
-            package_json,
             projects,
             root: root_dir,
             toolchain,
-            tsconfig_json,
             working_dir,
         })
     }
@@ -193,5 +147,41 @@ impl Workspace {
     /// Detect the version control system currently being used.
     pub fn detect_vcs(&self) -> Box<dyn Vcs> {
         VcsManager::load(&self.config)
+    }
+
+    /// Load and parse the root `package.json`.
+    pub fn load_package_json(&self) -> Result<PackageJson, WorkspaceError> {
+        let package_json_path = self.root.join("package.json");
+
+        trace!(
+            target: "moon:workspace",
+            "Attempting to find {} in {}",
+            color::path("package.json"),
+            color::file_path(&self.root),
+        );
+
+        if !package_json_path.exists() {
+            return Err(WorkspaceError::MissingPackageJson);
+        }
+
+        Ok(PackageJson::load(&package_json_path)?)
+    }
+
+    /// Load and parse the root `tsconfig.json` if it exists.
+    pub fn load_tsconfig_json(&self) -> Result<Option<TsConfigJson>, WorkspaceError> {
+        let tsconfig_json_path = self.root.join("tsconfig.json");
+
+        trace!(
+            target: "moon:workspace",
+            "Attempting to find {} in {}",
+            color::path("tsconfig.json"),
+            color::file_path(&self.root),
+        );
+
+        if !tsconfig_json_path.exists() {
+            return Ok(None);
+        }
+
+        Ok(Some(TsConfigJson::load(&tsconfig_json_path)?))
     }
 }

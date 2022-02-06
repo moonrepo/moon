@@ -1,10 +1,10 @@
 use crate::errors::ToolchainError;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
+use moon_utils::fs;
 use moon_utils::process::{create_command, exec_command_capture_stdout};
 use sha2::{Digest, Sha256};
 use std::env;
-use std::fs;
 use std::io;
 use std::path::Path;
 
@@ -53,7 +53,7 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
 
     // Ensure parent directories exist
     let parent = dest.parent().unwrap();
-    fs::create_dir_all(parent).map_err(|e| map_io_to_fs_error(e, parent.to_path_buf()))?;
+    fs::create_dir_all(parent).await?;
 
     // Fetch the file from the HTTP source
     let response = reqwest::get(url).await?;

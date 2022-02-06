@@ -8,11 +8,11 @@ use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, error};
+use moon_utils::fs;
 use moon_utils::process::{create_command, exec_command, Output};
 use semver::{Version, VersionReq};
 use std::env::consts;
 use std::ffi::OsStr;
-use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use tar::Archive;
@@ -264,8 +264,7 @@ impl Tool for NodeTool {
                 "Shasum verification has failed. The downloaded file has been deleted, please try again."
             );
 
-            fs::remove_file(&self.download_path)
-                .map_err(|e| map_io_to_fs_error(e, self.download_path.clone()))?;
+            fs::remove_file(&self.download_path).await?;
 
             return Err(error);
         }
@@ -304,7 +303,7 @@ impl Tool for NodeTool {
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let install_dir = self.get_install_dir();
 
-        fs::create_dir_all(install_dir).map_err(|e| map_io_to_fs_error(e, install_dir.clone()))?;
+        fs::create_dir_all(install_dir).await?;
 
         // Open .tar.gz file
         let tar_gz = fs::File::open(&self.download_path)

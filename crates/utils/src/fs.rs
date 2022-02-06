@@ -1,11 +1,28 @@
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, MoonError};
 use regex::Regex;
-use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use tokio::fs;
 
 pub use dirs::home_dir as get_home_dir;
+pub use tokio::fs::File;
+
+pub async fn create_dir(dir: &Path) -> Result<(), MoonError> {
+    fs::create_dir(&dir)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+
+    Ok(())
+}
+
+pub async fn create_dir_all(dir: &Path) -> Result<(), MoonError> {
+    fs::create_dir_all(&dir)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+
+    Ok(())
+}
 
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
 pub fn expand_root_path(file: &str, workspace_root: &Path, project_root: &Path) -> PathBuf {
@@ -64,9 +81,9 @@ pub fn is_path_glob(path: &Path) -> bool {
     is_glob(&path.to_string_lossy())
 }
 
-pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
+pub async fn read_json_file(path: &Path) -> Result<String, MoonError> {
     let handle_io_error = |e: std::io::Error| map_io_to_fs_error(e, path.to_path_buf());
-    let json = fs::read_to_string(path).map_err(handle_io_error)?;
+    let json = fs::read_to_string(path).await.map_err(handle_io_error)?;
 
     // Remove comments
     let mut stripped = String::with_capacity(json.len());
@@ -81,6 +98,36 @@ pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
         .replace_all(&stripped, "$valid");
 
     Ok(String::from(stripped))
+}
+
+pub async fn remove_dir(dir: &Path) -> Result<(), MoonError> {
+    if dir.exists() {
+        fs::remove_dir(&dir)
+            .await
+            .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+    }
+
+    Ok(())
+}
+
+pub async fn remove_dir_all(dir: &Path) -> Result<(), MoonError> {
+    if dir.exists() {
+        fs::remove_dir_all(&dir)
+            .await
+            .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+    }
+
+    Ok(())
+}
+
+pub async fn remove_file(file: &Path) -> Result<(), MoonError> {
+    if file.exists() {
+        fs::remove_file(&file)
+            .await
+            .map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

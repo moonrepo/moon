@@ -1,9 +1,9 @@
 use crate::items::{CacheItem, TargetRunState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
-use moon_error::{map_io_to_fs_error, MoonError};
+use moon_error::MoonError;
+use moon_utils::fs::{create_dir_all, remove_dir_all};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::fs::{create_dir_all, remove_dir_all};
 use std::path::{Path, PathBuf};
 
 pub struct CacheEngine {
@@ -12,20 +12,16 @@ pub struct CacheEngine {
 }
 
 impl CacheEngine {
-    pub fn new(workspace_root: &Path) -> Result<Self, MoonError> {
+    pub async fn new(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(".moon/cache");
 
-        create_dir_all(&dir).map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+        create_dir_all(&dir).await?;
 
         Ok(CacheEngine { dir })
     }
 
     pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
-        let dir = self.dir.join("runfiles");
-
-        if dir.exists() {
-            remove_dir_all(&dir).map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
-        }
+        remove_dir_all(&self.dir.join("runfiles")).await?;
 
         Ok(())
     }

@@ -10,20 +10,17 @@ use moon_config::package::PackageJson;
 use moon_config::{NodeConfig, PackageManager as PM, WorkspaceConfig};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace};
-use moon_utils::fs::get_home_dir;
-use std::fs;
+use moon_utils::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
-    let handle_error = |e: io::Error| map_io_to_fs_error(e, dir.to_path_buf());
-
+async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     if dir.exists() {
         if dir.is_file() {
-            fs::remove_file(dir).map_err(handle_error)?;
+            fs::remove_file(dir).await?;
         }
     } else {
-        fs::create_dir(dir).map_err(handle_error)?;
+        fs::create_dir(dir).await?;
     }
 
     trace!(target: "moon:toolchain", "Created directory {}", color::file_path(dir));
@@ -194,7 +191,7 @@ impl Toolchain {
         self.unload_tool(self.get_npm()).await?;
         self.unload_tool(self.get_node()).await?;
 
-        fs::remove_dir_all(&self.dir).map_err(|e| map_io_to_fs_error(e, self.dir.clone()))?;
+        fs::remove_dir_all(&self.dir).await?;
 
         Ok(())
     }
@@ -218,18 +215,19 @@ impl Toolchain {
     async fn unload_tool(&self, tool: &(dyn Tool + Send + Sync)) -> Result<(), ToolchainError> {
         if tool.is_downloaded() {
             if let Some(download_path) = tool.get_download_path() {
-                fs::remove_file(download_path)
-                    .map_err(|e| map_io_to_fs_error(e, download_path.clone()))?;
+                fs::remove_file(download_path).await?;
 
-                trace!(target: "moon:toolchain", "Deleted download {}", color::file_path(download_path));
+                trace!(
+                    target: "moon:toolchain", "Deleted download {}",
+                    color::file_path(download_path)
+                );
             }
         }
 
         if tool.is_installed().await? {
             let install_dir = tool.get_install_dir();
 
-            fs::remove_dir_all(install_dir)
-                .map_err(|e| map_io_to_fs_error(e, install_dir.clone()))?;
+            fs::remove_dir_all(install_dir).await?;
 
             trace!(
                 target: "moon:toolchain",

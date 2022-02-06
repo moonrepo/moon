@@ -83,16 +83,31 @@ impl Tool for PnpmTool {
     }
 
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        debug!(
-            target: "moon:toolchain:pnpm",
-            "Installing package with {}",
-            color::shell(&format!("npm install -g pnpm@{}", self.config.version))
-        );
+        let package = format!("pnpm@{}", self.config.version);
 
-        toolchain
-            .get_npm()
-            .add_global_dep("pnpm", self.config.version.as_str())
-            .await?;
+        if toolchain.get_node().is_corepack_aware() {
+            debug!(
+                target: "moon:toolchain:pnpm",
+                "Enabling package manager with {}",
+                color::shell(&format!("corepack prepare {} --activate", package))
+            );
+
+            toolchain
+                .get_node()
+                .exec_corepack(["prepare", &package, "--activate"])
+                .await?;
+        } else {
+            debug!(
+                target: "moon:toolchain:pnpm",
+                "Installing package manager with {}",
+                color::shell(&format!("npm install -g {}", package))
+            );
+
+            toolchain
+                .get_npm()
+                .add_global_dep("pnpm", self.config.version.as_str())
+                .await?;
+        }
 
         Ok(())
     }

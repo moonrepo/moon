@@ -101,15 +101,30 @@ impl Tool for NpmTool {
         Ok(false)
     }
 
-    async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        debug!(
-            target: "moon:toolchain:npm",
-            "Installing package with {}",
-            color::shell(&format!("npm install -g npm@{}", self.config.version))
-        );
+    async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        let package = format!("npm@{}", self.config.version);
 
-        self.add_global_dep("npm", self.config.version.as_str())
-            .await?;
+        if toolchain.get_node().is_corepack_aware() {
+            debug!(
+                target: "moon:toolchain:npm",
+                "Enabling package manager with {}",
+                color::shell(&format!("corepack prepare {} --activate", package))
+            );
+
+            toolchain
+                .get_node()
+                .exec_corepack(["prepare", &package, "--activate"])
+                .await?;
+        } else {
+            debug!(
+                target: "moon:toolchain:npm",
+                "Installing package manager with {}",
+                color::shell(&format!("npm install -g {}", package))
+            );
+
+            self.add_global_dep("npm", self.config.version.as_str())
+                .await?;
+        }
 
         Ok(())
     }

@@ -92,28 +92,53 @@ impl Tool for YarnTool {
     // is stored *within* the repository, and the v1 package detects it.
     // Because of this, we need to always install the v1 package!
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        let node = toolchain.get_node();
         let npm = toolchain.get_npm();
 
         if self.is_v1() {
-            debug!(
-                target: "moon:toolchain:yarn",
-                "Installing package with {}",
-                color::shell(&format!("npm install -g yarn@{}", self.config.version))
-            );
+            let package = format!("yarn@{}", self.config.version);
 
-            npm.add_global_dep("yarn", &self.config.version).await?;
+            if node.is_corepack_aware() {
+                debug!(
+                    target: "moon:toolchain:yarn",
+                    "Enabling package manager with {}",
+                    color::shell(&format!("corepack prepare {} --activate", package))
+                );
+
+                node.exec_corepack(["prepare", &package, "--activate"])
+                    .await?;
+            } else {
+                debug!(
+                    target: "moon:toolchain:yarn",
+                    "Installing package with {}",
+                    color::shell(&format!("npm install -g {}", package))
+                );
+
+                npm.add_global_dep("yarn", &self.config.version).await?;
+            }
         } else {
+            if node.is_corepack_aware() {
+                debug!(
+                    target: "moon:toolchain:yarn",
+                    "Enabling package manager with {}",
+                    color::shell("corepack prepare yarn --activate")
+                );
+
+                node.exec_corepack(["prepare", "yarn", "--activate"])
+                    .await?;
+            } else {
+                debug!(
+                    target: "moon:toolchain:yarn",
+                    "Installing legacy package with {}",
+                    color::shell("npm install -g yarn@latest")
+                );
+
+                npm.add_global_dep("yarn", "latest").await?;
+            }
+
             debug!(
                 target: "moon:toolchain:yarn",
-                "Installing legacy package with {}",
-                color::shell("npm install -g yarn@latest")
-            );
-
-            npm.add_global_dep("yarn", "latest").await?;
-
-            debug!(
-                target: "moon:toolchain:yarn",
-                "Installing package with {}",
+                "Installing package manager with {}",
                 color::shell(&format!("yarn set version {}", self.config.version))
             );
 

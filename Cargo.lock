@@ -1058,6 +1058,7 @@ dependencies = [
  "moon_utils",
  "predicates",
  "reqwest",
+ "semver",
  "sha2",
  "tar",
  "thiserror",

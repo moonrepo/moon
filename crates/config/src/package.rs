@@ -11,55 +11,137 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageJson {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<Person>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bin: Option<Bin>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub browser: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bugs: Option<Bug>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bundled_dependencies: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub config: Option<Value>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub contributors: Option<Vec<Person>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cpu: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<DepsSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub dev_dependencies: Option<DepsSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub directories: Option<Directories>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub engines: Option<EnginesSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub funding: Option<Funding>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub homepage: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub keywords: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<License>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub main: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub man: Option<StringOrArray<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub module: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub optional_dependencies: Option<DepsSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub os: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub overrides: Option<OverridesSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_dependencies: Option<DepsSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_dependencies_meta: Option<PeerDepsMetaSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub private: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub publish_config: Option<Value>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub repository: Option<Repository>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scripts: Option<ScriptsSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "type")]
     pub type_of: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub workspaces: Option<Workspaces>,
 
     // Node.js specific: https://nodejs.org/api/packages.html#nodejs-packagejson-field-definitions
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exports: Option<Value>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub imports: Option<Value>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub package_manager: Option<String>,
 
     // Pnpm specific: https://pnpm.io/package_json
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pnpm: Option<Pnpm>,
 
     // Yarn specific: https://yarnpkg.com/configuration/manifest
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub dependencies_meta: Option<DepsMetaSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub language_name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub install_config: Option<Value>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub prefer_unplugged: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resolutions: Option<DepsSet>,
 
     // Unknown fields
@@ -89,6 +171,14 @@ impl PackageJson {
         fs::write(&self.path, json).map_err(|e| map_io_to_fs_error(e, self.path.clone()))?;
 
         Ok(())
+    }
+
+    pub fn add_engine(&mut self, engine: &str, range: &str) {
+        if let Some(engines) = &mut self.engines {
+            engines.insert(engine.to_owned(), range.to_owned());
+        } else {
+            self.engines = Some(BTreeMap::from([(engine.to_owned(), range.to_owned())]));
+        }
     }
 }
 

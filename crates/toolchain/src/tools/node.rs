@@ -8,10 +8,14 @@ use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, error};
+use moon_utils::process::{create_command, exec_command};
+use semver::{Version, VersionReq};
 use std::env::consts;
+use std::ffi::OsStr;
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
+use std::process::Output;
 use tar::Archive;
 
 fn get_download_file_ext() -> &'static str {
@@ -111,6 +115,8 @@ fn verify_shasum(
 pub struct NodeTool {
     bin_path: PathBuf,
 
+    corepack_bin_path: PathBuf,
+
     download_path: PathBuf,
 
     install_dir: PathBuf,
@@ -131,11 +137,14 @@ impl NodeTool {
         install_dir.push(&config.version);
 
         let mut bin_path = install_dir.clone();
+        let mut corepack_bin_path = install_dir.clone();
 
         if consts::OS == "windows" {
             bin_path.push("node.exe");
+            corepack_bin_path.push("corepack.exe");
         } else {
             bin_path.push("bin/node");
+            corepack_bin_path.push("bin/corepack");
         }
 
         debug!(
@@ -146,10 +155,19 @@ impl NodeTool {
 
         Ok(NodeTool {
             bin_path,
+            corepack_bin_path,
             config: config.to_owned(),
             download_path,
             install_dir,
         })
+    }
+
+    pub async fn exec_corepack<I, S>(&self, args: I) -> Result<Output, ToolchainError>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        Ok(exec_command(create_command(&self.corepack_bin_path).args(args)).await?)
     }
 
     pub fn find_package_bin_path(
@@ -178,6 +196,13 @@ impl NodeTool {
         }
 
         self.find_package_bin_path(package_name, starting_dir.parent().unwrap())
+    }
+
+    pub fn is_corepack_aware(&self) -> bool {
+        let min_version = VersionReq::parse(">=16.9.0").unwrap();
+        let cfg_version = Version::parse(&self.config.version).unwrap();
+
+        min_version.matches(&cfg_version)
     }
 }
 

@@ -9,7 +9,6 @@ use std::collections::{HashMap, HashSet};
 
 pub use petgraph::graph::NodeIndex;
 
-#[derive(Debug)]
 pub enum Node {
     InstallNodeDeps,
     RunTarget(String), // target id

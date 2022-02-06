@@ -8,6 +8,22 @@ use tokio::fs;
 pub use dirs::home_dir as get_home_dir;
 pub use tokio::fs::File;
 
+pub fn clean_json(json: String) -> Result<String, MoonError> {
+    // Remove comments
+    let mut stripped = String::with_capacity(json.len());
+
+    StripComments::new(json.as_bytes())
+        .read_to_string(&mut stripped)
+        .map_err(MoonError::Unknown)?;
+
+    // Remove trailing commas
+    let stripped = Regex::new(r",(?P<valid>\s*})")
+        .unwrap()
+        .replace_all(&stripped, "$valid");
+
+    Ok(String::from(stripped))
+}
+
 pub async fn create_dir(dir: &Path) -> Result<(), MoonError> {
     fs::create_dir(&dir)
         .await
@@ -81,23 +97,12 @@ pub fn is_path_glob(path: &Path) -> bool {
     is_glob(&path.to_string_lossy())
 }
 
-pub async fn read_json_file(path: &Path) -> Result<String, MoonError> {
-    let handle_io_error = |e: std::io::Error| map_io_to_fs_error(e, path.to_path_buf());
-    let json = fs::read_to_string(path).await.map_err(handle_io_error)?;
+pub async fn read_json(path: &Path) -> Result<String, MoonError> {
+    let json = fs::read_to_string(path)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
-    // Remove comments
-    let mut stripped = String::with_capacity(json.len());
-
-    StripComments::new(json.as_bytes())
-        .read_to_string(&mut stripped)
-        .map_err(handle_io_error)?;
-
-    // Remove trailing commas
-    let stripped = Regex::new(r",(?P<valid>\s*})")
-        .unwrap()
-        .replace_all(&stripped, "$valid");
-
-    Ok(String::from(stripped))
+    clean_json(json)
 }
 
 pub async fn remove_dir(dir: &Path) -> Result<(), MoonError> {
@@ -126,6 +131,14 @@ pub async fn remove_file(file: &Path) -> Result<(), MoonError> {
             .await
             .map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
     }
+
+    Ok(())
+}
+
+pub async fn write<D: AsRef<[u8]>>(file: &Path, data: D) -> Result<(), MoonError> {
+    fs::write(&file, data)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
 
     Ok(())
 }

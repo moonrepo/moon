@@ -1,11 +1,10 @@
 // package.json
 
-use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
-use moon_utils::fs::read_json_file;
+use moon_error::{map_json_to_error, MoonError};
+use moon_utils::fs;
 use serde::{Deserialize, Serialize};
 use serde_json::{to_string_pretty, Value};
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -154,8 +153,8 @@ pub struct PackageJson {
 }
 
 impl PackageJson {
-    pub fn load(path: &Path) -> Result<PackageJson, MoonError> {
-        let json = read_json_file(path)?;
+    pub async fn load(path: &Path) -> Result<PackageJson, MoonError> {
+        let json = fs::read_json(path).await?;
 
         let mut cfg: PackageJson =
             serde_json::from_str(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
@@ -165,10 +164,10 @@ impl PackageJson {
         Ok(cfg)
     }
 
-    pub fn save(&self) -> Result<(), MoonError> {
+    pub async fn save(&self) -> Result<(), MoonError> {
         let json = to_string_pretty(self).map_err(|e| map_json_to_error(e, self.path.clone()))?;
 
-        fs::write(&self.path, json).map_err(|e| map_io_to_fs_error(e, self.path.clone()))?;
+        fs::write(&self.path, json).await?;
 
         Ok(())
     }

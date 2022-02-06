@@ -23,6 +23,9 @@ pub enum MoonError {
 
     #[error("Process failure for <path>{0}</path>: {1}")]
     Process(String, #[source] IoError),
+
+    #[error("Unknown failure: {0}")]
+    Unknown(#[source] IoError),
 }
 
 pub fn map_io_to_fs_error(error: IoError, path: PathBuf) -> MoonError {

@@ -1,12 +1,11 @@
 // tsconfig.json
 
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
-use moon_utils::fs::read_json_file;
+use moon_utils::fs;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{to_string_pretty, Value};
 use std::collections::BTreeMap;
 use std::fmt;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
@@ -87,10 +86,10 @@ impl TsConfigJson {
         true
     }
 
-    pub fn save(&self) -> Result<(), MoonError> {
+    pub async fn save(&self) -> Result<(), MoonError> {
         let json = to_string_pretty(self).map_err(|e| map_json_to_error(e, self.path.clone()))?;
 
-        fs::write(&self.path, json).map_err(|e| map_io_to_fs_error(e, self.path.clone()))?;
+        fs::write(&self.path, json).await?;
 
         Ok(())
     }
@@ -112,8 +111,12 @@ fn merge(a: &mut Value, b: Value) {
 }
 
 pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
-    let mut json: Value = serde_json::from_str(&read_json_file(path)?)
-        .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+    let json_string = fs::clean_json(
+        std::fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?,
+    )?;
+
+    let mut json: Value =
+        serde_json::from_str(&json_string).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
     if extend {
         if let Value::String(s) = &json["extends"] {

@@ -5,11 +5,11 @@ use crate::tools::node::NodeTool;
 use crate::tools::npm::NpmTool;
 use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
-use dirs::home_dir as get_home_dir;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::{NodeConfig, PackageManager as PM, WorkspaceConfig};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace};
+use moon_utils::fs::get_home_dir;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -170,7 +170,7 @@ impl Toolchain {
 
     /// Load a tool into the toolchain by downloading an artifact/binary
     /// into the temp folder, then installing it into the tools folder.
-    async fn load_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
+    async fn load_tool(&self, tool: &(dyn Tool + Send + Sync)) -> Result<(), ToolchainError> {
         if !tool.is_downloaded() {
             tool.download(None).await?;
         }
@@ -184,7 +184,7 @@ impl Toolchain {
 
     /// Unload the tool by removing any downloaded/installed artifacts.
     /// This can be ran manually, or automatically during a failed load.
-    async fn unload_tool(&self, tool: &dyn Tool) -> Result<(), ToolchainError> {
+    async fn unload_tool(&self, tool: &(dyn Tool + Send + Sync)) -> Result<(), ToolchainError> {
         if tool.is_downloaded() {
             if let Some(download_path) = tool.get_download_path() {
                 fs::remove_file(download_path)
@@ -232,7 +232,7 @@ impl Toolchain {
         }
     }
 
-    pub fn get_package_manager(&self) -> &dyn PackageManager {
+    pub fn get_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
         if self.pnpm.is_some() {
             return self.get_pnpm().unwrap();
         }

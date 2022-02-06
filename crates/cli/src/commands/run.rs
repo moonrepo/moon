@@ -1,6 +1,6 @@
 use clap::ArgEnum;
 use moon_project::TouchedFilePaths;
-use moon_workspace::{DepGraph, TouchedFiles, Workspace};
+use moon_workspace::{DepGraph, TaskRunner, TouchedFiles, Workspace};
 use std::collections::HashSet;
 // use std::fs;
 use std::io;
@@ -73,6 +73,8 @@ pub async fn run(
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();
     dep_graph.run_target_if_touched(target, &touched_files, &workspace.projects)?;
+
+    TaskRunner::default().run(workspace, dep_graph).await?;
 
     Ok(())
 }

@@ -34,15 +34,15 @@ type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 /// project or task's dependency chain. This is also known as a "task graph" (not to
 /// be confused with ours) or a "dependency graph".
 pub struct DepGraph {
-    graph: GraphType,
+    pub graph: GraphType,
 
     /// Mapping of IDs to existing node indices.
     index_cache: HashMap<String, NodeIndex>,
 
-    /// Reference node for the "install node deps" job.
+    /// Reference node for the "install node deps" task.
     install_node_deps_index: NodeIndex,
 
-    /// Reference node for the "setup toolchain" job.
+    /// Reference node for the "setup toolchain" task.
     setup_toolchain_index: NodeIndex,
 }
 
@@ -79,7 +79,7 @@ impl DepGraph {
         let list = match toposort(&self.graph, None) {
             Ok(nodes) => nodes,
             Err(error) => {
-                return Err(WorkspaceError::CycleDetected(
+                return Err(WorkspaceError::DepGraphCycleDetected(
                     self.get_node_from_index(error.node_id()).unwrap().label(),
                 ));
             }
@@ -295,7 +295,7 @@ impl DepGraph {
             .collect::<Vec<String>>()
             .join(" -> ");
 
-        Err(WorkspaceError::CycleDetected(cycle))
+        Err(WorkspaceError::DepGraphCycleDetected(cycle))
     }
 }
 

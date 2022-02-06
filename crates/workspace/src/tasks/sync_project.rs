@@ -1,29 +1,38 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
+use moon_logger::{color, debug};
 use pathdiff::diff_paths;
 use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
-#[allow(dead_code)]
 pub async fn sync_project(
-    workspace: &mut Workspace,
+    workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
 ) -> Result<(), WorkspaceError> {
-    let manager = workspace.toolchain.get_package_manager();
+    let mut workspace_writable = workspace.write().await;
+    let workspace = workspace.read().await;
     let mut project = workspace.projects.get(project_id)?;
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();
 
-    if let Some(tsconfig) = &mut workspace.tsconfig_json {
+    if let Some(tsconfig) = &mut workspace_writable.tsconfig_json {
         if node_config.sync_typescript_project_references.unwrap()
             && tsconfig.add_project_ref(project.source.to_owned())
         {
+            debug!(
+                target: "moon:task-runner:sync-project",
+                "Syncing {} as a project reference to the root {}",
+                color::id(project_id),
+                color::path("tsconfig.json")
+            );
             tsconfig.save()?;
         }
     }
 
     // Sync each dependency to `tsconfig.json` and `package.json`
-    let node_config = workspace.config.node.as_ref().unwrap();
+    let manager = workspace.toolchain.get_package_manager();
 
     for dep_id in project.get_dependencies() {
         let dep_project = workspace.projects.get(&dep_id)?;
@@ -39,6 +48,14 @@ pub async fn sync_project(
                     && !dep_package_name.is_empty()
                     && !package_deps.contains_key(&dep_package_name)
                 {
+                    debug!(
+                        target: "moon:task-runner:sync-project",
+                        "Syncing {} as a dependency to {}'s {}",
+                        color::id(&dep_id),
+                        color::id(project_id),
+                        color::path("package.json")
+                    );
+
                     package_deps.insert(dep_package_name, manager.get_workspace_dependency_range());
                     package.save()?;
                 }
@@ -56,6 +73,14 @@ pub async fn sync_project(
             if node_config.sync_typescript_project_references.unwrap()
                 && tsconfig.add_project_ref(dep_ref_path)
             {
+                debug!(
+                    target: "moon:task-runner:sync-project",
+                    "Syncing {} as a project reference to {}'s {}",
+                    color::id(&dep_id),
+                    color::id(project_id),
+                    color::path("tsconfig.json")
+                );
+
                 tsconfig.save()?;
             }
         }

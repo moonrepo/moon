@@ -201,18 +201,20 @@ impl PackageManager for YarnTool {
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
         let mut args = vec!["install"];
 
-        if self.is_v1() {
-            args.push("--frozen-lockfile");
-            args.push("--non-interactive");
+        if is_ci() {
+            if self.is_v1() {
+                args.push("--frozen-lockfile");
+                args.push("--non-interactive");
 
-            if is_ci() {
-                args.push("--check-files");
-            }
-        } else {
-            args.push("--immutable");
+                if is_ci() {
+                    args.push("--check-files");
+                }
+            } else {
+                args.push("--immutable");
 
-            if is_ci() {
-                args.push("--check-cache");
+                if is_ci() {
+                    args.push("--check-cache");
+                }
             }
         }
 

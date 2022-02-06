@@ -24,3 +24,6 @@ umd/
 *.map
 *.min.js
 *.tsbuildinfo
+
+# Moon
+.moon/cache

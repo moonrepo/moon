@@ -1,8 +1,14 @@
+use crate::fs::get_home_dir;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, trace};
 use std::path::Path;
 use std::process::Output;
 use tokio::process::Command;
+
+pub fn get_command_line(bin: &str, args: &[&str]) -> String {
+    format!("{} {}", bin, args.join(" "))
+        .replace(get_home_dir().unwrap_or_default().to_str().unwrap(), "~")
+}
 
 pub fn output_to_string(data: Vec<u8>) -> String {
     String::from_utf8(data).unwrap_or_default()
@@ -25,12 +31,10 @@ pub async fn exec_command_in_dir(
     args: Vec<&str>,
     dir: &Path,
 ) -> Result<Output, MoonError> {
-    let command_line = format!("{} {}", bin, args.join(" "));
-
     trace!(
         target: "moon:utils",
         "Running command {} in {}",
-        color::shell(&command_line),
+        color::shell(&get_command_line(bin, &args)),
         color::file_path(dir),
     );
 
@@ -40,12 +44,10 @@ pub async fn exec_command_in_dir(
 }
 
 pub async fn exec_command_with_output(bin: &str, args: Vec<&str>) -> Result<String, MoonError> {
-    let command_line = format!("{} {}", bin, args.join(" "));
-
     trace!(
         target: "moon:utils",
         "Running command {} and returning output",
-        color::shell(&command_line),
+        color::shell(&get_command_line(bin, &args)),
     );
 
     let output = Command::new(bin).args(args).output();

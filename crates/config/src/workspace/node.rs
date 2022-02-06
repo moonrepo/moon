@@ -2,10 +2,10 @@ use crate::validators::validate_semver_version;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
-const NODE_VERSION: &str = "16.13.1";
-const NPM_VERSION: &str = "8.1.0";
-const PNPM_VERSION: &str = "6.23.6";
-const YARN_VERSION: &str = "3.1.0";
+const NODE_VERSION: &str = "16.13.2";
+const NPM_VERSION: &str = "8.1.2";
+const PNPM_VERSION: &str = "6.29.1";
+const YARN_VERSION: &str = "3.1.1";
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.version", value)

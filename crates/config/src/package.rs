@@ -166,6 +166,24 @@ impl PackageJson {
         Ok(())
     }
 
+    pub fn add_dependency(&mut self, name: String, range: String, if_missing: bool) -> bool {
+        let mut dependencies = match &self.dependencies {
+            Some(deps) => deps.clone(),
+            None => BTreeMap::new(),
+        };
+
+        // Only add if the dependency doesnt already exist
+        if if_missing && dependencies.contains_key(&name) {
+            return false;
+        }
+
+        dependencies.insert(name, range);
+
+        self.dependencies = Some(dependencies);
+
+        true
+    }
+
     pub fn add_engine(&mut self, engine: &str, range: &str) {
         if let Some(engines) = &mut self.engines {
             engines.insert(engine.to_owned(), range.to_owned());

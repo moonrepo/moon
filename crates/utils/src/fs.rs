@@ -1,11 +1,22 @@
 use json_comments::StripComments;
-use moon_error::{map_io_to_fs_error, MoonError};
+use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
-use std::fs;
+use serde::{Deserialize, Serialize};
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use tokio::fs;
 
 pub use dirs::home_dir as get_home_dir;
+
+pub async fn create_dir_all(dir: &Path) -> Result<(), MoonError> {
+    if !dir.exists() {
+        fs::create_dir_all(&dir)
+            .await
+            .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+    }
+
+    Ok(())
+}
 
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
 pub fn expand_root_path(file: &str, workspace_root: &Path, project_root: &Path) -> PathBuf {
@@ -64,9 +75,18 @@ pub fn is_path_glob(path: &Path) -> bool {
     is_glob(&path.to_string_lossy())
 }
 
-pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
+pub async fn read_json<'a, T>(path: &Path) -> Result<T, MoonError>
+where
+    T: Deserialize<'a>,
+{
+    let contents = read_json_string(&path).await?;
+
+    Ok(serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?)
+}
+
+pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
     let handle_io_error = |e: std::io::Error| map_io_to_fs_error(e, path.to_path_buf());
-    let json = fs::read_to_string(path).map_err(handle_io_error)?;
+    let json = fs::read_to_string(path).await.map_err(handle_io_error)?;
 
     // Remove comments
     let mut stripped = String::with_capacity(json.len());
@@ -81,6 +101,49 @@ pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
         .replace_all(&stripped, "$valid");
 
     Ok(String::from(stripped))
+}
+
+pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
+    let handle_io_error = |e: std::io::Error| map_io_to_fs_error(e, path.to_path_buf());
+    let json = std::fs::read_to_string(path).map_err(handle_io_error)?;
+
+    // Remove comments
+    let mut stripped = String::with_capacity(json.len());
+
+    StripComments::new(json.as_bytes())
+        .read_to_string(&mut stripped)
+        .map_err(handle_io_error)?;
+
+    // Remove trailing commas
+    let stripped = Regex::new(r",(?P<valid>\s*})")
+        .unwrap()
+        .replace_all(&stripped, "$valid");
+
+    Ok(String::from(stripped))
+}
+
+pub async fn remove_dir_all(dir: &Path) -> Result<(), MoonError> {
+    if dir.exists() {
+        fs::remove_dir_all(&dir)
+            .await
+            .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+    }
+
+    Ok(())
+}
+
+pub async fn write_json<T>(file: &Path, data: &T) -> Result<(), MoonError>
+where
+    T: ?Sized + Serialize,
+{
+    let json =
+        serde_json::to_string(&data).map_err(|e| map_json_to_error(e, file.to_path_buf()))?;
+
+    fs::write(file, json)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
+
+    Ok(())
 }
 
 #[cfg(test)]

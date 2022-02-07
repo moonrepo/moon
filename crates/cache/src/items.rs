@@ -1,9 +1,9 @@
-use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
+use moon_error::MoonError;
+use moon_utils::fs;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::SystemTime;
-use tokio::fs;
 
 pub struct CacheItem<T: DeserializeOwned + Serialize> {
     pub item: T,
@@ -16,34 +16,18 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
         let item: T;
 
         if path.exists() {
-            let contents = fs::read_to_string(&path)
-                .await
-                .map_err(|e| map_io_to_fs_error(e, path.clone()))?;
-
-            item =
-                serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.clone()))?;
+            item = fs::read_json(&path).await?;
         } else {
-            let parent = path.parent().unwrap();
-
-            if !parent.exists() {
-                fs::create_dir_all(parent)
-                    .await
-                    .map_err(|e| map_io_to_fs_error(e, parent.to_path_buf()))?;
-            }
-
             item = default;
+
+            fs::create_dir_all(path.parent().unwrap()).await?;
         }
 
         Ok(CacheItem { item, path })
     }
 
     pub async fn save(&self) -> Result<(), MoonError> {
-        let json = serde_json::to_string(&self.item)
-            .map_err(|e| map_json_to_error(e, self.path.clone()))?;
-
-        fs::write(&self.path, json)
-            .await
-            .map_err(|e| map_io_to_fs_error(e, self.path.clone()))?;
+        fs::write_json(&self.path, &self.item).await?;
 
         Ok(())
     }

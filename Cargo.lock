@@ -1075,6 +1075,8 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "regex",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

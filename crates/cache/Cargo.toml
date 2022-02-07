@@ -10,4 +10,4 @@ serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 assert_fs = "1.0"
-tokio = { version = "1.14", features = ["test-util"] }
+tokio = { version = "1.16", features = ["test-util"] }

@@ -9,11 +9,11 @@ use tokio::fs;
 
 pub use dirs::home_dir as get_home_dir;
 
-pub async fn create_dir_all(dir: &Path) -> Result<(), MoonError> {
-    if !dir.exists() {
-        fs::create_dir_all(&dir)
+pub async fn create_dir_all(path: &Path) -> Result<(), MoonError> {
+    if !path.exists() {
+        fs::create_dir_all(&path)
             .await
-            .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+            .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
     }
 
     Ok(())
@@ -128,26 +128,26 @@ pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
     Ok(String::from(stripped))
 }
 
-pub async fn remove_dir_all(dir: &Path) -> Result<(), MoonError> {
-    if dir.exists() {
-        fs::remove_dir_all(&dir)
+pub async fn remove_dir_all(path: &Path) -> Result<(), MoonError> {
+    if path.exists() {
+        fs::remove_dir_all(&path)
             .await
-            .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
+            .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
     }
 
     Ok(())
 }
 
-pub async fn write_json<T>(file: &Path, json: &T) -> Result<(), MoonError>
+pub async fn write_json<T>(path: &Path, json: &T) -> Result<(), MoonError>
 where
     T: ?Sized + Serialize,
 {
     let data =
-        serde_json::to_string(&json).map_err(|e| map_json_to_error(e, file.to_path_buf()))?;
+        serde_json::to_string(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
-    fs::write(file, data)
+    fs::write(path, data)
         .await
-        .map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
     Ok(())
 }

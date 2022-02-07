@@ -82,7 +82,10 @@ where
 {
     let contents = read_json_string(path).await?;
 
-    Ok(serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?)
+    let json: T =
+        serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+
+    Ok(json)
 }
 
 pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
@@ -105,7 +108,7 @@ pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
     Ok(String::from(stripped))
 }
 
-#[deprecated]
+// TODO: Deprecate
 pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
     let handle_io_error = |e: std::io::Error| map_io_to_fs_error(e, path.to_path_buf());
     let json = std::fs::read_to_string(path).map_err(handle_io_error)?;
@@ -135,14 +138,14 @@ pub async fn remove_dir_all(dir: &Path) -> Result<(), MoonError> {
     Ok(())
 }
 
-pub async fn write_json<T>(file: &Path, data: &T) -> Result<(), MoonError>
+pub async fn write_json<T>(file: &Path, json: &T) -> Result<(), MoonError>
 where
     T: ?Sized + Serialize,
 {
-    let json =
-        serde_json::to_string(&data).map_err(|e| map_json_to_error(e, file.to_path_buf()))?;
+    let data =
+        serde_json::to_string(&json).map_err(|e| map_json_to_error(e, file.to_path_buf()))?;
 
-    fs::write(file, json)
+    fs::write(file, data)
         .await
         .map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
 

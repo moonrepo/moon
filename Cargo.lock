@@ -962,10 +962,10 @@ dependencies = [
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
+ "assert_fs",
  "moon_error",
  "moon_utils",
  "serde",
- "serde_json",
  "tokio",
 ]
 

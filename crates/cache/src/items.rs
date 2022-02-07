@@ -44,9 +44,9 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     }
 }
 
-#[derive(Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TargetRunState {
+pub struct RunTargetState {
     pub exit_code: i32,
 
     pub last_run_time: u128,

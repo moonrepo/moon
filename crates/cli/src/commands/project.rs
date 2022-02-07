@@ -5,7 +5,7 @@ use moon_workspace::Workspace;
 use std::env;
 
 pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load()?;
+    let workspace = Workspace::load().await?;
     let project = workspace.projects.get(id)?;
 
     if *json {

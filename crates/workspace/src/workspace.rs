@@ -112,7 +112,7 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub fn load() -> Result<Workspace, WorkspaceError> {
+    pub async fn load() -> Result<Workspace, WorkspaceError> {
         let working_dir = env::current_dir().unwrap();
         let root_dir = match find_workspace_root(working_dir.clone()) {
             Some(dir) => dir.canonicalize().unwrap(),
@@ -135,7 +135,7 @@ impl Workspace {
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
 
         Ok(Workspace {
-            cache: CacheEngine::new(&root_dir)?,
+            cache: CacheEngine::create(&root_dir).await?,
             config,
             projects,
             root: root_dir,

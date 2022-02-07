@@ -17,7 +17,7 @@ enum BinExitCodes {
 }
 
 pub async fn bin(tool_type: &BinTools) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load()?;
+    let workspace = Workspace::load().await?;
     let toolchain = &workspace.toolchain;
 
     let tool: &dyn Tool = match tool_type {

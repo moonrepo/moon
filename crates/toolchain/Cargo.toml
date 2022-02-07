@@ -20,4 +20,4 @@ thiserror = "1.0"
 assert_fs = "1.0"
 mockito = "0.30"
 predicates = "2.0"
-tokio = "1.14"
+tokio = { version = "1.16", features = ["test-util"] }

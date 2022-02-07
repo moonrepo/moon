@@ -92,6 +92,12 @@ pub fn is_path_glob(path: &Path) -> bool {
     is_glob(&path.to_string_lossy())
 }
 
+pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
+    Ok(fs::metadata(path)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?)
+}
+
 pub async fn read_json<T>(path: &Path) -> Result<T, MoonError>
 where
     T: DeserializeOwned,
@@ -110,6 +116,16 @@ pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
     Ok(clean_json(json)?)
+}
+
+pub async fn remove_file(path: &Path) -> Result<(), MoonError> {
+    if path.exists() {
+        fs::remove_file(&path)
+            .await
+            .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+    }
+
+    Ok(())
 }
 
 pub async fn remove_dir_all(path: &Path) -> Result<(), MoonError> {

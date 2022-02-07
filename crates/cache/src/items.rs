@@ -58,7 +58,7 @@ pub struct RunTargetState {
     pub target: String,
 }
 
-#[derive(Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceState {
     pub last_node_install_time: u128,

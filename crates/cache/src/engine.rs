@@ -184,4 +184,58 @@ mod tests {
             dir.close().unwrap();
         }
     }
+
+    mod workspace_state {
+        use super::*;
+
+        #[tokio::test]
+        async fn creates_parent_dir_on_call() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = cache.workspace_state().await.unwrap();
+
+            assert!(!item.path.exists());
+            assert!(item.path.parent().unwrap().exists());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn loads_cache_if_it_exists() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/workspaceState.json")
+                .write_str(r#"{"lastNodeInstallTime":123}"#)
+                .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = cache.workspace_state().await.unwrap();
+
+            assert_eq!(
+                item.item,
+                WorkspaceState {
+                    last_node_install_time: 123
+                }
+            );
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn saves_to_cache() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let mut item = cache.workspace_state().await.unwrap();
+
+            item.item.last_node_install_time = 123;
+            item.save().await.unwrap();
+
+            assert_eq!(
+                fs::read_to_string(item.path).unwrap(),
+                r#"{"lastNodeInstallTime":123}"#
+            );
+
+            dir.close().unwrap();
+        }
+    }
 }

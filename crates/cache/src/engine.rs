@@ -12,7 +12,7 @@ pub struct CacheEngine {
 }
 
 impl CacheEngine {
-    pub async fn new(workspace_root: &Path) -> Result<Self, MoonError> {
+    pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(".moon/cache");
 
         create_dir_all(&dir).await?;

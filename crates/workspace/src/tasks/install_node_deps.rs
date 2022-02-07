@@ -1,11 +1,13 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
+use async_recursion::async_recursion;
 use moon_error::map_io_to_fs_error;
 use moon_logger::debug;
 use std::fs;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+#[async_recursion(?Send)]
 pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), WorkspaceError> {
     let workspace = workspace.read().await;
     let toolchain = &workspace.toolchain;

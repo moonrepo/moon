@@ -196,7 +196,7 @@ impl ProjectGraph {
             None => return Err(ProjectError::UnconfiguredID(String::from(id))),
         };
 
-        let project = Project::new(id, source, &self.workspace_root, &self.global_config).await?;
+        let project = Project::load(id, source, &self.workspace_root, &self.global_config).await?;
         let depends_on = project.get_dependencies();
 
         // Insert the project into the graph

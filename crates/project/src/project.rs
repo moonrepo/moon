@@ -221,7 +221,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub async fn new(
+    pub async fn load(
         id: &str,
         source: &str,
         workspace_root: &Path,

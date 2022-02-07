@@ -1,11 +1,13 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
+use async_recursion::async_recursion;
 use moon_logger::{color, debug};
 use pathdiff::diff_paths;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+#[async_recursion(?Send)]
 pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,

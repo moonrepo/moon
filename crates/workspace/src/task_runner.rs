@@ -3,11 +3,13 @@ use crate::errors::WorkspaceError;
 use crate::task_result::{TaskResult, TaskResultStatus};
 use crate::tasks::{install_node_deps, run_target, setup_toolchain, sync_project};
 use crate::workspace::Workspace;
+use async_recursion::async_recursion;
 use moon_logger::{debug, trace};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task;
 
+#[async_recursion(?Send)]
 async fn run_task(workspace: Arc<RwLock<Workspace>>, node: &Node) -> Result<(), WorkspaceError> {
     match node {
         Node::InstallNodeDeps => {
@@ -43,6 +45,7 @@ impl TaskRunner {
         }
     }
 
+    #[async_recursion(?Send)]
     pub async fn run(&self, graph: DepGraph) -> Result<Vec<TaskResult>, WorkspaceError> {
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
@@ -110,18 +113,19 @@ impl TaskRunner {
                 match handle.await {
                     Ok(Ok(result)) => results.push(result),
                     Ok(Err(e)) => {
-                        self.cleanup().await?;
                         return Err(e);
                     }
                     Err(e) => {
-                        self.cleanup().await?;
                         return Err(WorkspaceError::TaskRunnerFailure(e));
                     }
                 }
             }
         }
 
+        // Cleanup on success only, as we want to persist files on
+        // failures for easier debugging
         self.cleanup().await?;
+
         Ok(results)
     }
 

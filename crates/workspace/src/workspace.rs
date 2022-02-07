@@ -131,11 +131,11 @@ impl Workspace {
         let project_config = load_global_project_config(&root_dir)?;
 
         // Setup components
-        let toolchain = Toolchain::new(&root_dir, &config).await?;
+        let toolchain = Toolchain::create(&root_dir, &config).await?;
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
 
         Ok(Workspace {
-            cache: CacheEngine::new(&root_dir).await?,
+            cache: CacheEngine::create(&root_dir).await?,
             config,
             projects,
             root: root_dir,

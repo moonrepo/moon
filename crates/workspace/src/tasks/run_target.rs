@@ -1,5 +1,6 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
+use async_recursion::async_recursion;
 use moon_config::TaskType;
 use moon_logger::debug;
 use moon_project::{Project, Target, Task};
@@ -104,6 +105,7 @@ async fn run_shell_target(
     .await?)
 }
 
+#[async_recursion(?Send)]
 pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
     target: &str,

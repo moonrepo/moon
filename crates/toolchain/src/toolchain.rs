@@ -51,7 +51,7 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub async fn from(
+    pub async fn create_from_dir(
         config: &WorkspaceConfig,
         base_dir: &Path,
         root_dir: &Path,
@@ -112,11 +112,11 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub async fn new(
+    pub async fn create(
         root_dir: &Path,
         config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
-        Ok(Toolchain::from(
+        Ok(Toolchain::create_from_dir(
             config,
             &fs::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,

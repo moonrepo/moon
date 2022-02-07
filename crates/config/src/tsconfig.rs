@@ -596,10 +596,10 @@ mod test {
         assert_eq!(value.compiler_options.unwrap().remove_comments, Some(true));
     }
 
-    #[test]
-    fn parse_basic_file() {
+    #[tokio::test]
+    async fn parse_basic_file() {
         let path = get_fixtures_dir("base/tsconfig-json/tsconfig.default.json");
-        let config = TsConfigJson::load(&path).unwrap();
+        let config = TsConfigJson::load(&path).await.unwrap();
 
         assert_eq!(
             config.compiler_options.clone().unwrap().target,
@@ -612,10 +612,10 @@ mod test {
         assert_eq!(config.compiler_options.unwrap().strict, Some(true));
     }
 
-    #[test]
-    fn parse_inheriting_file() {
+    #[tokio::test]
+    async fn parse_inheriting_file() {
         let path = get_fixtures_dir("base/tsconfig-json/tsconfig.inherits.json");
-        let config = TsConfigJson::load_with_extends(&path).unwrap();
+        let config = TsConfigJson::load_with_extends(&path).await.unwrap();
 
         assert_eq!(
             config
@@ -637,10 +637,10 @@ mod test {
         );
     }
 
-    #[test]
-    fn parse_inheritance_chain() {
+    #[tokio::test]
+    async fn parse_inheritance_chain() {
         let path = get_fixtures_dir("base/tsconfig-json/a/tsconfig.json");
-        let config = TsConfigJson::load_with_extends(&path).unwrap();
+        let config = TsConfigJson::load_with_extends(&path).await.unwrap();
 
         assert_eq!(
             config

@@ -1,7 +1,8 @@
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -75,25 +76,26 @@ pub fn is_path_glob(path: &Path) -> bool {
     is_glob(&path.to_string_lossy())
 }
 
-pub async fn read_json<'a, T>(path: &Path) -> Result<T, MoonError>
+pub async fn read_json<T>(path: &Path) -> Result<T, MoonError>
 where
-    T: Deserialize<'a>,
+    T: DeserializeOwned,
 {
-    let contents = read_json_string(&path).await?;
+    let contents = read_json_string(path).await?;
 
     Ok(serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?)
 }
 
 pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
-    let handle_io_error = |e: std::io::Error| map_io_to_fs_error(e, path.to_path_buf());
-    let json = fs::read_to_string(path).await.map_err(handle_io_error)?;
+    let json = fs::read_to_string(path)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
     // Remove comments
     let mut stripped = String::with_capacity(json.len());
 
     StripComments::new(json.as_bytes())
         .read_to_string(&mut stripped)
-        .map_err(handle_io_error)?;
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
     // Remove trailing commas
     let stripped = Regex::new(r",(?P<valid>\s*})")
@@ -103,6 +105,7 @@ pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
     Ok(String::from(stripped))
 }
 
+#[deprecated]
 pub fn read_json_file(path: &Path) -> Result<String, MoonError> {
     let handle_io_error = |e: std::io::Error| map_io_to_fs_error(e, path.to_path_buf());
     let json = std::fs::read_to_string(path).map_err(handle_io_error)?;

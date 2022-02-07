@@ -60,7 +60,7 @@ pub async fn run(
     target: &str,
     status: &Option<RunStatus>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load()?;
+    let workspace = Workspace::load().await?;
     let vcs = workspace.detect_vcs();
 
     // Gather files that have been touched in the working tree

@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use tokio::fs;
 
 pub use dirs::home_dir as get_home_dir;
-pub use tokio::fs::File;
+pub use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub fn clean_json(json: String) -> Result<String, MoonError> {
     // Remove comments
@@ -38,6 +38,14 @@ pub async fn create_dir_all(dir: &Path) -> Result<(), MoonError> {
         .map_err(|e| map_io_to_fs_error(e, dir.to_path_buf()))?;
 
     Ok(())
+}
+
+pub async fn create_file(path: &Path) -> Result<fs::File, MoonError> {
+    let handle = fs::File::create(path)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    Ok(handle)
 }
 
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
@@ -95,6 +103,14 @@ pub fn is_glob(value: &str) -> bool {
 
 pub fn is_path_glob(path: &Path) -> bool {
     is_glob(&path.to_string_lossy())
+}
+
+pub async fn open_file(path: &Path) -> Result<fs::File, MoonError> {
+    let handle = fs::File::open(path)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    Ok(handle)
 }
 
 pub async fn read_json(path: &Path) -> Result<String, MoonError> {

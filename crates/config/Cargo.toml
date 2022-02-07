@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_error = { path = "../error"}
 moon_utils = { path = "../utils"}
+async-recursion = "1.0"
 figment = { version = "0.10", features = ["test", "yaml"] }
 regex = "1.5"
 semver = "1.0"

@@ -8,10 +8,8 @@ use crate::tools::yarn::YarnTool;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::package::PackageJson;
 use moon_config::{NodeConfig, PackageManager as PM, WorkspaceConfig};
-use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace};
 use moon_utils::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 
 async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
@@ -53,7 +51,7 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub fn from(
+    pub async fn from(
         config: &WorkspaceConfig,
         base_dir: &Path,
         root_dir: &Path,
@@ -68,9 +66,9 @@ impl Toolchain {
             color::file_path(&dir)
         );
 
-        create_dir(&dir)?;
-        create_dir(&temp_dir)?;
-        create_dir(&tools_dir)?;
+        fs::create_dir(&dir).await?;
+        fs::create_dir(&temp_dir).await?;
+        fs::create_dir(&tools_dir).await?;
 
         // Create the instance first, so we can pass to each tool initializer
         let mut toolchain = Toolchain {
@@ -114,12 +112,16 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub fn new(root_dir: &Path, config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
-        Toolchain::from(
+    pub async fn new(
+        root_dir: &Path,
+        config: &WorkspaceConfig,
+    ) -> Result<Toolchain, ToolchainError> {
+        Ok(Toolchain::from(
             config,
-            &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
+            &fs::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
         )
+        .await?)
     }
 
     /// Download and install all tools into the toolchain.
@@ -154,7 +156,7 @@ impl Toolchain {
         if let Some(pnpm) = &self.pnpm {
             if using_corepack {
                 root_package.package_manager = Some(format!("pnpm@{}", pnpm.config.version));
-                root_package.save()?;
+                root_package.save().await?;
             }
 
             self.load_tool(pnpm).await?;
@@ -164,7 +166,7 @@ impl Toolchain {
         if let Some(yarn) = &self.yarn {
             if using_corepack {
                 root_package.package_manager = Some(format!("yarn@{}", yarn.config.version));
-                root_package.save()?;
+                root_package.save().await?;
             }
 
             self.load_tool(yarn).await?;

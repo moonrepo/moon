@@ -1,6 +1,7 @@
 use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::project::Project;
+use async_recursion::async_recursion;
 use itertools::Itertools;
 use moon_config::{GlobalProjectConfig, ProjectID};
 use moon_logger::{color, debug, trace};
@@ -80,7 +81,8 @@ impl ProjectGraph {
     /// has not been loaded, it will be loaded and inserted into the
     /// project graph. If the project does not exist or has been
     /// misconfigured, an error will be returned.
-    pub fn get(&self, id: &str) -> Result<Project, ProjectError> {
+    #[async_recursion(?Send)]
+    pub async fn get(&self, id: &str) -> Result<Project, ProjectError> {
         // Check if the project already exists in read-only mode,
         // so that it may be dropped immediately after!
         {
@@ -96,7 +98,7 @@ impl ProjectGraph {
         // Otherwise we need to load the project in write mode
         let mut indices = self.indices.write().expect(WRITE_ERROR);
         let mut graph = self.graph.write().expect(WRITE_ERROR);
-        let index = self.load(id, &mut indices, &mut graph)?;
+        let index = self.load(id, &mut indices, &mut graph).await?;
 
         Ok(graph.node_weight(index).unwrap().clone())
     }
@@ -164,7 +166,8 @@ impl ProjectGraph {
 
     /// Internal method for lazily loading a project and its
     /// dependencies into the graph.
-    fn load(
+    #[async_recursion(?Send)]
+    async fn load(
         &self,
         id: &str,
         indices: &mut RwLockWriteGuard<IndicesType>,
@@ -193,7 +196,7 @@ impl ProjectGraph {
             None => return Err(ProjectError::UnconfiguredID(String::from(id))),
         };
 
-        let project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
+        let project = Project::new(id, source, &self.workspace_root, &self.global_config).await?;
         let depends_on = project.get_dependencies();
 
         // Insert the project into the graph
@@ -210,7 +213,7 @@ impl ProjectGraph {
             );
 
             for dep_id in depends_on {
-                let dep_index = self.load(dep_id.as_str(), indices, graph)?;
+                let dep_index = self.load(dep_id.as_str(), indices, graph).await?;
                 graph.add_edge(node_index, dep_index, ());
             }
         }

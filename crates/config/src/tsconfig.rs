@@ -1,6 +1,7 @@
 // tsconfig.json
 
-use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
+use async_recursion::async_recursion;
+use moon_error::{map_json_to_error, MoonError};
 use moon_utils::fs;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{to_string_pretty, Value};
@@ -42,8 +43,8 @@ pub struct TsConfigJson {
 }
 
 impl TsConfigJson {
-    pub fn load(path: &Path) -> Result<TsConfigJson, MoonError> {
-        let values = load_to_value(path, false)?;
+    pub async fn load(path: &Path) -> Result<TsConfigJson, MoonError> {
+        let values = load_to_value(path, false).await?;
 
         let mut cfg: TsConfigJson =
             serde_json::from_value(values).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
@@ -52,8 +53,8 @@ impl TsConfigJson {
         Ok(cfg)
     }
 
-    pub fn load_with_extends(path: &Path) -> Result<TsConfigJson, MoonError> {
-        let values = load_to_value(path, true)?;
+    pub async fn load_with_extends(path: &Path) -> Result<TsConfigJson, MoonError> {
+        let values = load_to_value(path, true).await?;
 
         let mut cfg: TsConfigJson =
             serde_json::from_value(values).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
@@ -110,10 +111,9 @@ fn merge(a: &mut Value, b: Value) {
     }
 }
 
-pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
-    let json_string = fs::clean_json(
-        std::fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?,
-    )?;
+#[async_recursion]
+pub async fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
+    let json_string = fs::read_json(path).await?;
 
     let mut json: Value =
         serde_json::from_str(&json_string).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
@@ -121,7 +121,7 @@ pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
     if extend {
         if let Value::String(s) = &json["extends"] {
             let extends_path = path.parent().unwrap_or_else(|| Path::new("")).join(s);
-            let extends_value = load_to_value(&extends_path, extend)?;
+            let extends_value = load_to_value(&extends_path, extend).await?;
 
             merge(&mut json, extends_value);
         }

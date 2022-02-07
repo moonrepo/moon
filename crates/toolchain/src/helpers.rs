@@ -5,6 +5,7 @@ use moon_utils::fs;
 use moon_utils::process::{create_command, exec_command_capture_stdout};
 use sha2::{Digest, Sha256};
 use std::env;
+use std::fs::File;
 use std::io;
 use std::path::Path;
 
@@ -31,7 +32,7 @@ pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
 pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
     let handle_error = |e: io::Error| map_io_to_fs_error(e, path.to_path_buf());
 
-    let mut file = fs::File::open(path).map_err(handle_error)?;
+    let mut file = File::open(path).map_err(handle_error)?;
     let mut sha = Sha256::new();
 
     io::copy(&mut file, &mut sha).map_err(handle_error)?;
@@ -60,7 +61,7 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
 
     // Write the bytes to our local file
     let mut contents = io::Cursor::new(response.bytes().await?);
-    let mut file = fs::File::create(dest).map_err(handle_error)?;
+    let mut file = File::create(dest).map_err(handle_error)?;
 
     io::copy(&mut contents, &mut file).map_err(handle_error)?;
 

@@ -49,7 +49,7 @@ fn load_project_config(
 }
 
 // package.json
-fn load_package_json(
+async fn load_package_json(
     workspace_root: &Path,
     project_source: &str,
 ) -> Result<Option<PackageJson>, ProjectError> {
@@ -63,7 +63,7 @@ fn load_package_json(
     );
 
     if package_path.exists() {
-        return match PackageJson::load(&package_path) {
+        return match PackageJson::load(&package_path).await {
             Ok(json) => Ok(Some(json)),
             Err(error) => Err(ProjectError::InvalidPackageJson(
                 String::from(project_source),
@@ -76,7 +76,7 @@ fn load_package_json(
 }
 
 // tsconfig.json
-fn load_tsconfig_json(
+async fn load_tsconfig_json(
     workspace_root: &Path,
     project_source: &str,
 ) -> Result<Option<TsConfigJson>, ProjectError> {
@@ -90,7 +90,7 @@ fn load_tsconfig_json(
     );
 
     if tsconfig_path.exists() {
-        return match TsConfigJson::load(&tsconfig_path) {
+        return match TsConfigJson::load(&tsconfig_path).await {
             Ok(cfg) => Ok(Some(cfg)),
             Err(error) => Err(ProjectError::InvalidTsConfigJson(
                 String::from(project_source),
@@ -221,7 +221,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn new(
+    pub async fn new(
         id: &str,
         source: &str,
         workspace_root: &Path,
@@ -243,8 +243,8 @@ impl Project {
 
         let root = root.canonicalize().unwrap();
         let config = load_project_config(workspace_root, source)?;
-        let package_json = load_package_json(workspace_root, source)?;
-        let tsconfig_json = load_tsconfig_json(workspace_root, source)?;
+        let package_json = load_package_json(workspace_root, source).await?;
+        let tsconfig_json = load_tsconfig_json(workspace_root, source).await?;
         let file_groups = create_file_groups_from_config(&config, global_config);
         let tasks = create_tasks_from_config(
             &config,
@@ -332,8 +332,8 @@ mod tests {
     mod is_affected {
         use super::*;
 
-        #[test]
-        fn returns_true_if_inside_project() {
+        #[tokio::test]
+        async fn returns_true_if_inside_project() {
             let root = get_fixtures_root();
             let project = Project::new(
                 "basic",
@@ -341,6 +341,7 @@ mod tests {
                 &root,
                 &GlobalProjectConfig::default(),
             )
+            .await
             .unwrap();
 
             let mut set = HashSet::new();
@@ -349,8 +350,8 @@ mod tests {
             assert!(project.is_affected(&set));
         }
 
-        #[test]
-        fn returns_false_if_outside_project() {
+        #[tokio::test]
+        async fn returns_false_if_outside_project() {
             let root = get_fixtures_root();
             let project = Project::new(
                 "basic",
@@ -358,6 +359,7 @@ mod tests {
                 &root,
                 &GlobalProjectConfig::default(),
             )
+            .await
             .unwrap();
 
             let mut set = HashSet::new();

@@ -13,6 +13,7 @@ use moon_utils::process::{create_command, exec_command, Output};
 use semver::{Version, VersionReq};
 use std::env::consts;
 use std::ffi::OsStr;
+use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use tar::Archive;
@@ -94,8 +95,8 @@ fn verify_shasum(
 ) -> Result<(), ToolchainError> {
     let sha_hash = get_file_sha256_hash(download_path)?;
     let file_name = download_path.file_name().unwrap().to_str().unwrap();
-    let file_handle = fs::File::open(shasums_path)
-        .map_err(|e| map_io_to_fs_error(e, shasums_path.to_path_buf()))?;
+    let file_handle =
+        File::open(shasums_path).map_err(|e| map_io_to_fs_error(e, shasums_path.to_path_buf()))?;
 
     for line in BufReader::new(file_handle).lines().flatten() {
         // hash1923hnsdouahsd91houn79h1beyasdpaksdm  node-vx.x.x-darwin-arm64.tar.gz
@@ -306,7 +307,7 @@ impl Tool for NodeTool {
         fs::create_dir_all(install_dir).await?;
 
         // Open .tar.gz file
-        let tar_gz = fs::File::open(&self.download_path)
+        let tar_gz = File::open(&self.download_path)
             .map_err(|e| map_io_to_fs_error(e, self.download_path.clone()))?;
 
         // Decompress to .tar

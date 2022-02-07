@@ -37,9 +37,9 @@ pub async fn sync_project(
         let dep_project = workspace.projects.get(&dep_id)?;
 
         // Update `dependencies` within `tsconfig.json`
-        if let Some(package) = &mut project.package_json {
+        if let Some(mut package) = project.load_package_json().await? {
             if let Some(package_deps) = &mut package.dependencies {
-                let dep_package_name = dep_project.get_package_name().unwrap_or_default();
+                let dep_package_name = dep_project.get_package_name().await?.unwrap_or_default();
 
                 // Only add if the dependent project has a `package.json`,
                 // and this `package.json` has not already declared the dep.
@@ -56,7 +56,7 @@ pub async fn sync_project(
                     );
 
                     package_deps.insert(dep_package_name, manager.get_workspace_dependency_range());
-                    package.save()?;
+                    package.save().await?;
                 }
             }
         }

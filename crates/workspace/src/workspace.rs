@@ -150,7 +150,7 @@ impl Workspace {
     }
 
     /// Load and parse the root `package.json`.
-    pub fn load_package_json(&self) -> Result<PackageJson, WorkspaceError> {
+    pub async fn load_package_json(&self) -> Result<PackageJson, WorkspaceError> {
         let package_json_path = self.root.join("package.json");
 
         trace!(
@@ -164,7 +164,7 @@ impl Workspace {
             return Err(WorkspaceError::MissingPackageJson);
         }
 
-        Ok(PackageJson::load(&package_json_path)?)
+        Ok(PackageJson::load(&package_json_path).await?)
     }
 
     /// Load and parse the root `tsconfig.json` if it exists.

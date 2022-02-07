@@ -11,6 +11,7 @@ moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
+async-recursion = "1.0"
 async-trait = "0.1"
 chrono = "0.4.19"
 futures = "0.3"

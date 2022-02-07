@@ -122,7 +122,7 @@ pub async fn run_target(
 
     // Gather the project and task
     let (project_id, task_id) = Target::parse(target)?;
-    let project = workspace.projects.get(&project_id)?;
+    let project = workspace.projects.load(&project_id).await?;
     let task = project.tasks.get(&task_id).unwrap();
 
     // Run the task command as a child process

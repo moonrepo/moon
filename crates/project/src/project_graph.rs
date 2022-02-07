@@ -82,7 +82,7 @@ impl ProjectGraph {
     /// project graph. If the project does not exist or has been
     /// misconfigured, an error will be returned.
     #[async_recursion(?Send)]
-    pub async fn get(&self, id: &str) -> Result<Project, ProjectError> {
+    pub async fn load(&self, id: &str) -> Result<Project, ProjectError> {
         // Check if the project already exists in read-only mode,
         // so that it may be dropped immediately after!
         {
@@ -98,7 +98,7 @@ impl ProjectGraph {
         // Otherwise we need to load the project in write mode
         let mut indices = self.indices.write().expect(WRITE_ERROR);
         let mut graph = self.graph.write().expect(WRITE_ERROR);
-        let index = self.load(id, &mut indices, &mut graph).await?;
+        let index = self.internal_load(id, &mut indices, &mut graph).await?;
 
         Ok(graph.node_weight(index).unwrap().clone())
     }
@@ -167,7 +167,7 @@ impl ProjectGraph {
     /// Internal method for lazily loading a project and its
     /// dependencies into the graph.
     #[async_recursion(?Send)]
-    async fn load(
+    async fn internal_load(
         &self,
         id: &str,
         indices: &mut RwLockWriteGuard<IndicesType>,
@@ -213,7 +213,7 @@ impl ProjectGraph {
             );
 
             for dep_id in depends_on {
-                let dep_index = self.load(dep_id.as_str(), indices, graph).await?;
+                let dep_index = self.internal_load(dep_id.as_str(), indices, graph).await?;
                 graph.add_edge(node_index, dep_index, ());
             }
         }

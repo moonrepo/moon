@@ -11,12 +11,12 @@ pub async fn sync_project(
     project_id: &str,
 ) -> Result<(), WorkspaceError> {
     let workspace = workspace.read().await;
-    let mut project = workspace.projects.get(project_id)?;
+    let mut project = workspace.projects.load(project_id).await?;
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();
 
-    if let Some(mut tsconfig) = workspace.load_tsconfig_json()? {
+    if let Some(mut tsconfig) = workspace.load_tsconfig_json().await? {
         if node_config.sync_typescript_project_references.unwrap()
             && tsconfig.add_project_ref(project.source.to_owned())
         {
@@ -26,7 +26,7 @@ pub async fn sync_project(
                 color::id(project_id),
                 color::path("tsconfig.json")
             );
-            tsconfig.save()?;
+            tsconfig.save().await?;
         }
     }
 
@@ -34,7 +34,7 @@ pub async fn sync_project(
     let manager = workspace.toolchain.get_package_manager();
 
     for dep_id in project.get_dependencies() {
-        let dep_project = workspace.projects.get(&dep_id)?;
+        let dep_project = workspace.projects.load(&dep_id).await?;
 
         // Update `dependencies` within `tsconfig.json`
         if let Some(package) = &mut project.package_json {
@@ -56,7 +56,7 @@ pub async fn sync_project(
                     );
 
                     package_deps.insert(dep_package_name, manager.get_workspace_dependency_range());
-                    package.save()?;
+                    package.save().await?;
                 }
             }
         }
@@ -80,7 +80,7 @@ pub async fn sync_project(
                     color::path("tsconfig.json")
                 );
 
-                tsconfig.save()?;
+                tsconfig.save().await?;
             }
         }
     }

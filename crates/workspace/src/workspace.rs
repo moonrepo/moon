@@ -112,7 +112,7 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub fn load() -> Result<Workspace, WorkspaceError> {
+    pub async fn load() -> Result<Workspace, WorkspaceError> {
         let working_dir = env::current_dir().unwrap();
         let root_dir = match find_workspace_root(working_dir.clone()) {
             Some(dir) => dir.canonicalize().unwrap(),
@@ -131,11 +131,11 @@ impl Workspace {
         let project_config = load_global_project_config(&root_dir)?;
 
         // Setup components
-        let toolchain = Toolchain::new(&root_dir, &config)?;
+        let toolchain = Toolchain::new(&root_dir, &config).await?;
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
 
         Ok(Workspace {
-            cache: CacheEngine::new(&root_dir)?,
+            cache: CacheEngine::new(&root_dir).await?,
             config,
             projects,
             root: root_dir,
@@ -150,7 +150,7 @@ impl Workspace {
     }
 
     /// Load and parse the root `package.json`.
-    pub fn load_package_json(&self) -> Result<PackageJson, WorkspaceError> {
+    pub async fn load_package_json(&self) -> Result<PackageJson, WorkspaceError> {
         let package_json_path = self.root.join("package.json");
 
         trace!(
@@ -164,11 +164,11 @@ impl Workspace {
             return Err(WorkspaceError::MissingPackageJson);
         }
 
-        Ok(PackageJson::load(&package_json_path)?)
+        Ok(PackageJson::load(&package_json_path).await?)
     }
 
     /// Load and parse the root `tsconfig.json` if it exists.
-    pub fn load_tsconfig_json(&self) -> Result<Option<TsConfigJson>, WorkspaceError> {
+    pub async fn load_tsconfig_json(&self) -> Result<Option<TsConfigJson>, WorkspaceError> {
         let tsconfig_json_path = self.root.join("tsconfig.json");
 
         trace!(
@@ -182,6 +182,6 @@ impl Workspace {
             return Ok(None);
         }
 
-        Ok(Some(TsConfigJson::load(&tsconfig_json_path)?))
+        Ok(Some(TsConfigJson::load(&tsconfig_json_path).await?))
     }
 }

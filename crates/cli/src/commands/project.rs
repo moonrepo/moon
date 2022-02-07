@@ -6,7 +6,7 @@ use std::env;
 
 pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load()?;
-    let project = workspace.projects.get(id)?;
+    let project = workspace.projects.load(id).await?;
 
     if *json {
         println!("{}", project.to_json());
@@ -40,7 +40,7 @@ pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Er
             let mut deps = vec![];
 
             for dep_id in depends_on {
-                match workspace.projects.get(&dep_id) {
+                match workspace.projects.load(&dep_id).await {
                     Ok(dep) => {
                         deps.push(format!(
                             "{} {}{}{}",

@@ -1,4 +1,5 @@
 use crate::errors::WorkspaceError;
+use async_recursion::async_recursion;
 use moon_logger::{color, debug, trace};
 use moon_project::{ProjectGraph, Target, TouchedFilePaths};
 use petgraph::algo::toposort;
@@ -145,7 +146,8 @@ impl DepGraph {
         Ok(batches.into_iter().rev().collect())
     }
 
-    pub fn run_target(
+    #[async_recursion(?Send)]
+    pub async fn run_target(
         &mut self,
         target: &str,
         projects: &ProjectGraph,
@@ -161,10 +163,10 @@ impl DepGraph {
         );
 
         let (project_id, task_id) = Target::parse(target)?;
-        let project = projects.get(&project_id)?;
+        let project = projects.load(&project_id).await?;
 
         // We should sync projects *before* running targets
-        let project_node = self.sync_project(&project.id, projects)?;
+        let project_node = self.sync_project(&project.id, projects).await?;
         let node = self.graph.add_node(Node::RunTarget(target.to_owned()));
 
         self.graph.add_edge(node, self.install_node_deps_index, ());
@@ -192,7 +194,7 @@ impl DepGraph {
             );
 
             for dep_target in &task.deps {
-                let dep_node = self.run_target(dep_target, projects)?;
+                let dep_node = self.run_target(dep_target, projects).await?;
                 self.graph.add_edge(node, dep_node, ());
             }
         }
@@ -200,7 +202,8 @@ impl DepGraph {
         Ok(node)
     }
 
-    pub fn run_target_if_touched(
+    #[async_recursion(?Send)]
+    pub async fn run_target_if_touched(
         &mut self,
         target: &str,
         touched_files: &TouchedFilePaths,
@@ -208,7 +211,7 @@ impl DepGraph {
     ) -> Result<Option<NodeIndex>, WorkspaceError> {
         // Validate project first
         let (project_id, task_id) = Target::parse(target)?;
-        let project = projects.get(&project_id)?;
+        let project = projects.load(&project_id).await?;
 
         if !project.is_affected(touched_files) {
             trace!(
@@ -234,10 +237,11 @@ impl DepGraph {
             return Ok(None);
         }
 
-        Ok(Some(self.run_target(target, projects)?))
+        Ok(Some(self.run_target(target, projects).await?))
     }
 
-    pub fn sync_project(
+    #[async_recursion(?Send)]
+    pub async fn sync_project(
         &mut self,
         project_id: &str,
         projects: &ProjectGraph,
@@ -253,7 +257,7 @@ impl DepGraph {
         );
 
         // Force load project into the graph
-        projects.get(project_id)?;
+        projects.load(project_id).await?;
 
         // Sync can be run in parallel while deps are installing
         let node_index = self
@@ -268,7 +272,7 @@ impl DepGraph {
 
         // But we need to wait on all dependent nodes
         for dep_id in projects.get_dependencies_of(project_id)? {
-            let dep_node_index = self.sync_project(&dep_id, projects)?;
+            let dep_node_index = self.sync_project(&dep_id, projects).await?;
             self.graph.add_edge(node_index, dep_node_index, ());
         }
 

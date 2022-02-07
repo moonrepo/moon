@@ -157,7 +157,7 @@ impl Toolchain {
         if let Some(pnpm) = &self.pnpm {
             if using_corepack {
                 root_package.package_manager = Some(format!("pnpm@{}", pnpm.config.version));
-                root_package.save()?;
+                root_package.save().await?;
             }
 
             self.load_tool(pnpm).await?;
@@ -167,7 +167,7 @@ impl Toolchain {
         if let Some(yarn) = &self.yarn {
             if using_corepack {
                 root_package.package_manager = Some(format!("yarn@{}", yarn.config.version));
-                root_package.save()?;
+                root_package.save().await?;
             }
 
             self.load_tool(yarn).await?;

@@ -48,60 +48,6 @@ fn load_project_config(
     Ok(None)
 }
 
-// package.json
-fn load_package_json(
-    workspace_root: &Path,
-    project_source: &str,
-) -> Result<Option<PackageJson>, ProjectError> {
-    let package_path = workspace_root.join(&project_source).join("package.json");
-
-    trace!(
-        target: "moon:project",
-        "Attempting to find {} in {}",
-        color::path("package.json"),
-        color::file_path(&workspace_root.join(&project_source)),
-    );
-
-    if package_path.exists() {
-        return match PackageJson::load(&package_path) {
-            Ok(json) => Ok(Some(json)),
-            Err(error) => Err(ProjectError::InvalidPackageJson(
-                String::from(project_source),
-                error.to_string(),
-            )),
-        };
-    }
-
-    Ok(None)
-}
-
-// tsconfig.json
-fn load_tsconfig_json(
-    workspace_root: &Path,
-    project_source: &str,
-) -> Result<Option<TsConfigJson>, ProjectError> {
-    let tsconfig_path = workspace_root.join(&project_source).join("tsconfig.json");
-
-    trace!(
-        target: "moon:project",
-        "Attempting to find {} in {}",
-        color::path("tsconfig.json"),
-        color::file_path(&workspace_root.join(&project_source)),
-    );
-
-    if tsconfig_path.exists() {
-        return match TsConfigJson::load(&tsconfig_path) {
-            Ok(cfg) => Ok(Some(cfg)),
-            Err(error) => Err(ProjectError::InvalidTsConfigJson(
-                String::from(project_source),
-                error.to_string(),
-            )),
-        };
-    }
-
-    Ok(None)
-}
-
 fn create_file_groups_from_config(
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
@@ -204,9 +150,6 @@ pub struct Project {
     /// Unique ID for the project. Is the LHS of the `projects` setting.
     pub id: ProjectID,
 
-    /// Loaded "package.json", if it exists.
-    pub package_json: Option<PackageJson>,
-
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
 
@@ -215,9 +158,6 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
-
-    /// Loaded "tsconfig.json", if it exists.
-    pub tsconfig_json: Option<TsConfigJson>,
 }
 
 impl Project {
@@ -243,8 +183,6 @@ impl Project {
 
         let root = root.canonicalize().unwrap();
         let config = load_project_config(workspace_root, source)?;
-        let package_json = load_package_json(workspace_root, source)?;
-        let tsconfig_json = load_tsconfig_json(workspace_root, source)?;
         let file_groups = create_file_groups_from_config(&config, global_config);
         let tasks = create_tasks_from_config(
             &config,
@@ -259,11 +197,9 @@ impl Project {
             config,
             file_groups,
             id: String::from(id),
-            package_json,
             root,
             source: String::from(source),
             tasks,
-            tsconfig_json,
         })
     }
 
@@ -283,14 +219,14 @@ impl Project {
     }
 
     /// Return the "package.json" name, if the file exists.
-    pub fn get_package_name(&self) -> Option<String> {
-        if let Some(json) = &self.package_json {
+    pub async fn get_package_name(&self) -> Result<Option<String>, ProjectError> {
+        if let Some(json) = self.load_package_json().await? {
             if let Some(name) = &json.name {
-                return Some(name.clone());
+                return Ok(Some(name.clone()));
             }
         }
 
-        None
+        Ok(None)
     }
 
     /// Return a task with the defined ID.
@@ -314,6 +250,54 @@ impl Project {
         }
 
         false
+    }
+
+    /// Load and parse the package's `package.json` if it exists.
+    pub async fn load_package_json(&self) -> Result<Option<PackageJson>, ProjectError> {
+        let package_path = self.root.join("package.json");
+
+        trace!(
+            target: "moon:project",
+            "Attempting to find {} in {}",
+            color::path("package.json"),
+            color::file_path(&self.root),
+        );
+
+        if package_path.exists() {
+            return match PackageJson::load(&package_path).await {
+                Ok(json) => Ok(Some(json)),
+                Err(error) => Err(ProjectError::InvalidPackageJson(
+                    String::from(&self.source),
+                    error.to_string(),
+                )),
+            };
+        }
+
+        Ok(None)
+    }
+
+    /// Load and parse the package's `tsconfig.json` if it exists.
+    pub async fn load_tsconfig_json(&self) -> Result<Option<TsConfigJson>, ProjectError> {
+        let tsconfig_path = self.root.join("tsconfig.json");
+
+        trace!(
+            target: "moon:project",
+            "Attempting to find {} in {}",
+            color::path("tsconfig.json"),
+            color::file_path(&self.root),
+        );
+
+        if tsconfig_path.exists() {
+            return match TsConfigJson::load(&tsconfig_path).await {
+                Ok(cfg) => Ok(Some(cfg)),
+                Err(error) => Err(ProjectError::InvalidTsConfigJson(
+                    String::from(&self.source),
+                    error.to_string(),
+                )),
+            };
+        }
+
+        Ok(None)
     }
 
     /// Return the project as a JSON string.

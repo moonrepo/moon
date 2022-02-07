@@ -11,7 +11,7 @@ pub async fn setup_toolchain(workspace: Arc<RwLock<Workspace>>) -> Result<(), Wo
     );
 
     let workspace = workspace.read().await;
-    let mut root_package = workspace.load_package_json()?;
+    let mut root_package = workspace.load_package_json().await?;
 
     workspace.toolchain.setup(&mut root_package).await?;
 

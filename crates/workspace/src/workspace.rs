@@ -168,7 +168,7 @@ impl Workspace {
     }
 
     /// Load and parse the root `tsconfig.json` if it exists.
-    pub fn load_tsconfig_json(&self) -> Result<Option<TsConfigJson>, WorkspaceError> {
+    pub async fn load_tsconfig_json(&self) -> Result<Option<TsConfigJson>, WorkspaceError> {
         let tsconfig_json_path = self.root.join("tsconfig.json");
 
         trace!(
@@ -182,6 +182,6 @@ impl Workspace {
             return Ok(None);
         }
 
-        Ok(Some(TsConfigJson::load(&tsconfig_json_path)?))
+        Ok(Some(TsConfigJson::load(&tsconfig_json_path).await?))
     }
 }

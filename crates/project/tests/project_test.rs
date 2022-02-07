@@ -57,9 +57,7 @@ fn no_config() {
             root: workspace_root.join("projects/no-config"),
             file_groups: mock_file_groups(),
             source: String::from("projects/no-config"),
-            package_json: None,
             tasks: HashMap::new(),
-            tsconfig_json: None,
         }
     );
 }
@@ -88,9 +86,7 @@ fn empty_config() {
             root: workspace_root.join("projects/empty-config"),
             file_groups: mock_file_groups(),
             source: String::from("projects/empty-config"),
-            package_json: None,
             tasks: HashMap::new(),
-            tsconfig_json: None,
         }
     );
 }
@@ -130,9 +126,7 @@ fn basic_config() {
             root: project_root,
             file_groups,
             source: String::from("projects/basic"),
-            package_json: None,
             tasks: HashMap::new(),
-            tsconfig_json: None,
         }
     );
 }
@@ -168,9 +162,7 @@ fn advanced_config() {
             root: workspace_root.join("projects/advanced"),
             file_groups: mock_file_groups(),
             source: String::from("projects/advanced"),
-            package_json: None,
             tasks: HashMap::new(),
-            tsconfig_json: None,
         }
     );
 }
@@ -211,15 +203,13 @@ fn overrides_global_file_groups() {
                 FileGroup::new("tests", string_vec!["**/*_test.rs"],)
             )]),
             source: String::from("projects/basic"),
-            package_json: None,
             tasks: HashMap::new(),
-            tsconfig_json: None,
         }
     );
 }
 
-#[test]
-fn has_package_json() {
+#[tokio::test]
+async fn has_package_json() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
         "package-json",
@@ -230,22 +220,13 @@ fn has_package_json() {
     .unwrap();
 
     assert_eq!(
-        project,
-        Project {
-            id: String::from("package-json"),
-            config: None,
-            root: workspace_root.join("projects/package-json"),
-            file_groups: mock_file_groups(),
-            source: String::from("projects/package-json"),
-            package_json: Some(PackageJson {
-                path: workspace_root.join("projects/package-json/package.json"),
-                name: Some(String::from("npm-example")),
-                version: Some(String::from("1.2.3")),
-                scripts: Some(BTreeMap::from([("build".to_owned(), "babel".to_owned())])),
-                ..PackageJson::default()
-            }),
-            tasks: HashMap::new(),
-            tsconfig_json: None,
+        project.load_package_json().await.unwrap().unwrap(),
+        PackageJson {
+            path: workspace_root.join("projects/package-json/package.json"),
+            name: Some(String::from("npm-example")),
+            version: Some(String::from("1.2.3")),
+            scripts: Some(BTreeMap::from([("build".to_owned(), "babel".to_owned())])),
+            ..PackageJson::default()
         }
     );
 }
@@ -353,7 +334,6 @@ mod tasks {
                     .unwrap(),
                 file_groups: HashMap::new(),
                 source: String::from("tasks/no-tasks"),
-                package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     Task::from_config(
@@ -361,7 +341,6 @@ mod tasks {
                         &mock_task_config("cmd")
                     )
                 )]),
-                tsconfig_json: None,
             }
         );
     }
@@ -399,7 +378,6 @@ mod tasks {
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 file_groups: HashMap::new(),
                 source: String::from("tasks/basic"),
-                package_json: None,
                 tasks: HashMap::from([
                     (
                         String::from("standard"),
@@ -423,7 +401,6 @@ mod tasks {
                         )
                     )
                 ]),
-                tsconfig_json: None,
             }
         );
     }
@@ -480,7 +457,6 @@ mod tasks {
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
                 source: String::from(project_source),
-                package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     create_expanded_task(
@@ -501,7 +477,6 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
-                tsconfig_json: None,
             }
         );
     }
@@ -558,7 +533,6 @@ mod tasks {
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
                 source: String::from(project_source),
-                package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     create_expanded_task(
@@ -579,7 +553,6 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
-                tsconfig_json: None,
             }
         );
     }
@@ -636,7 +609,6 @@ mod tasks {
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
                 source: String::from(project_source),
-                package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     create_expanded_task(
@@ -657,7 +629,6 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
-                tsconfig_json: None,
             }
         );
     }
@@ -720,7 +691,6 @@ mod tasks {
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
                 source: String::from(project_source),
-                package_json: None,
                 tasks: HashMap::from([(
                     String::from("standard"),
                     create_expanded_task(
@@ -747,7 +717,6 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
-                tsconfig_json: None,
             }
         );
     }

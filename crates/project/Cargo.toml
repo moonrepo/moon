@@ -19,3 +19,4 @@ thiserror = "1.0"
 
 [dev-dependencies]
 pretty_assertions = "1.0"
+tokio = { version = "1.16", features = ["test-util"] }

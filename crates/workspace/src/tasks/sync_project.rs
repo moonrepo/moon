@@ -11,22 +11,26 @@ pub async fn sync_project(
     project_id: &str,
 ) -> Result<(), WorkspaceError> {
     let workspace = workspace.read().await;
-    let mut project = workspace.projects.get(project_id)?;
+    let project = workspace.projects.get(project_id)?;
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();
 
-    if let Some(mut tsconfig) = workspace.load_tsconfig_json()? {
-        if node_config.sync_typescript_project_references.unwrap()
-            && tsconfig.add_project_ref(project.source.to_owned())
-        {
-            debug!(
-                target: "moon:task-runner:sync-project",
-                "Syncing {} as a project reference to the root {}",
-                color::id(project_id),
-                color::path("tsconfig.json")
-            );
-            tsconfig.save()?;
+    if node_config
+        .sync_typescript_project_references
+        .unwrap_or(true)
+    {
+        if let Some(mut tsconfig) = workspace.load_tsconfig_json().await? {
+            if tsconfig.add_project_ref(project.source.to_owned()) {
+                debug!(
+                    target: "moon:task-runner:sync-project",
+                    "Syncing {} as a project reference to the root {}",
+                    color::id(project_id),
+                    color::path("tsconfig.json")
+                );
+
+                tsconfig.save().await?;
+            }
         }
     }
 
@@ -62,25 +66,28 @@ pub async fn sync_project(
         }
 
         // Update `references` within `tsconfig.json`
-        if let Some(tsconfig) = &mut project.tsconfig_json {
-            let dep_ref_path = String::from(
-                diff_paths(&project.root, &dep_project.root)
-                    .unwrap_or_else(|| PathBuf::from("."))
-                    .to_string_lossy(),
-            );
-
-            if node_config.sync_typescript_project_references.unwrap()
-                && tsconfig.add_project_ref(dep_ref_path)
-            {
-                debug!(
-                    target: "moon:task-runner:sync-project",
-                    "Syncing {} as a project reference to {}'s {}",
-                    color::id(&dep_id),
-                    color::id(project_id),
-                    color::path("tsconfig.json")
+        if node_config
+            .sync_typescript_project_references
+            .unwrap_or(true)
+        {
+            if let Some(mut tsconfig) = project.load_tsconfig_json().await? {
+                let dep_ref_path = String::from(
+                    diff_paths(&project.root, &dep_project.root)
+                        .unwrap_or_else(|| PathBuf::from("."))
+                        .to_string_lossy(),
                 );
 
-                tsconfig.save()?;
+                if tsconfig.add_project_ref(dep_ref_path) {
+                    debug!(
+                        target: "moon:task-runner:sync-project",
+                        "Syncing {} as a project reference to {}'s {}",
+                        color::id(&dep_id),
+                        color::id(project_id),
+                        color::path("tsconfig.json")
+                    );
+
+                    tsconfig.save().await?;
+                }
             }
         }
     }

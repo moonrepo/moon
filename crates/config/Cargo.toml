@@ -16,3 +16,4 @@ validator = { version = "0.14", features = ["derive"] }
 
 [dev-dependencies]
 assert_fs = "1.0"
+tokio = { version = "1.16", features = ["test-util"] }

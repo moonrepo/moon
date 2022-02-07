@@ -1,12 +1,11 @@
 // tsconfig.json
 
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
-use moon_utils::fs::read_json_file;
+use moon_utils::fs;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_json::{to_string_pretty, Value};
+use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fmt;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
@@ -43,17 +42,14 @@ pub struct TsConfigJson {
 }
 
 impl TsConfigJson {
-    pub fn load(path: &Path) -> Result<TsConfigJson, MoonError> {
-        let values = load_to_value(path, false)?;
-
-        let mut cfg: TsConfigJson =
-            serde_json::from_value(values).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+    pub async fn load(path: &Path) -> Result<TsConfigJson, MoonError> {
+        let mut cfg: TsConfigJson = fs::read_json(path).await?;
         cfg.path = path.to_path_buf();
 
         Ok(cfg)
     }
 
-    pub fn load_with_extends(path: &Path) -> Result<TsConfigJson, MoonError> {
+    pub async fn load_with_extends(path: &Path) -> Result<TsConfigJson, MoonError> {
         let values = load_to_value(path, true)?;
 
         let mut cfg: TsConfigJson =
@@ -87,10 +83,8 @@ impl TsConfigJson {
         true
     }
 
-    pub fn save(&self) -> Result<(), MoonError> {
-        let json = to_string_pretty(self).map_err(|e| map_json_to_error(e, self.path.clone()))?;
-
-        fs::write(&self.path, json).map_err(|e| map_io_to_fs_error(e, self.path.clone()))?;
+    pub async fn save(&self) -> Result<(), MoonError> {
+        fs::write_json(&self.path, self).await?;
 
         Ok(())
     }
@@ -112,7 +106,10 @@ fn merge(a: &mut Value, b: Value) {
 }
 
 pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
-    let mut json: Value = serde_json::from_str(&read_json_file(path)?)
+    let json =
+        std::fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    let mut json: Value = serde_json::from_str(&fs::clean_json(json)?)
         .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
     if extend {
@@ -593,10 +590,10 @@ mod test {
         assert_eq!(value.compiler_options.unwrap().remove_comments, Some(true));
     }
 
-    #[test]
-    fn parse_basic_file() {
+    #[tokio::test]
+    async fn parse_basic_file() {
         let path = get_fixtures_dir("base/tsconfig-json/tsconfig.default.json");
-        let config = TsConfigJson::load(&path).unwrap();
+        let config = TsConfigJson::load(&path).await.unwrap();
 
         assert_eq!(
             config.compiler_options.clone().unwrap().target,
@@ -609,10 +606,10 @@ mod test {
         assert_eq!(config.compiler_options.unwrap().strict, Some(true));
     }
 
-    #[test]
-    fn parse_inheriting_file() {
+    #[tokio::test]
+    async fn parse_inheriting_file() {
         let path = get_fixtures_dir("base/tsconfig-json/tsconfig.inherits.json");
-        let config = TsConfigJson::load_with_extends(&path).unwrap();
+        let config = TsConfigJson::load_with_extends(&path).await.unwrap();
 
         assert_eq!(
             config
@@ -634,10 +631,10 @@ mod test {
         );
     }
 
-    #[test]
-    fn parse_inheritance_chain() {
+    #[tokio::test]
+    async fn parse_inheritance_chain() {
         let path = get_fixtures_dir("base/tsconfig-json/a/tsconfig.json");
-        let config = TsConfigJson::load_with_extends(&path).unwrap();
+        let config = TsConfigJson::load_with_extends(&path).await.unwrap();
 
         assert_eq!(
             config

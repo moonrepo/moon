@@ -274,19 +274,4 @@ impl Toolchain {
             None => None,
         }
     }
-
-    /// We need to ensure that our toolchain binaries are executed instead of
-    /// other binaries of the same name. Otherwise, tooling like nvm will
-    /// intercept execution and break our processes. We can work around this
-    /// by prepending the `PATH` environment variable.
-    pub fn get_path_env_var(&self) -> std::ffi::OsString {
-        use std::env;
-
-        let path = env::var("PATH").unwrap_or_default();
-        let mut paths = vec![self.get_node().get_bin_dir()];
-
-        paths.extend(env::split_paths(&path).collect::<Vec<_>>());
-
-        env::join_paths(paths).unwrap()
-    }
 }

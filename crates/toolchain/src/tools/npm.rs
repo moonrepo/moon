@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_version, is_ci};
+use crate::helpers::{get_bin_version, get_path_env_var, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
@@ -151,7 +151,8 @@ impl PackageManager for NpmTool {
         Ok(exec_command(
             create_command(self.get_bin_path())
                 .args(["dedupe"])
-                .current_dir(&toolchain.workspace_root),
+                .current_dir(&toolchain.workspace_root)
+                .env("PATH", get_path_env_var(self.get_bin_dir())),
         )
         .await?)
     }
@@ -169,7 +170,8 @@ impl PackageManager for NpmTool {
         Ok(exec_command(
             create_command(&self.npx_path)
                 .args(exec_args)
-                .current_dir(&toolchain.workspace_root),
+                .current_dir(&toolchain.workspace_root)
+                .env("PATH", get_path_env_var(self.get_bin_dir())),
         )
         .await?)
     }
@@ -187,7 +189,8 @@ impl PackageManager for NpmTool {
         Ok(exec_command(
             create_command(self.get_bin_path())
                 .args([if is_ci() { "ci" } else { "install" }])
-                .current_dir(&toolchain.workspace_root),
+                .current_dir(&toolchain.workspace_root)
+                .env("PATH", get_path_env_var(self.get_bin_dir())),
         )
         .await?)
     }

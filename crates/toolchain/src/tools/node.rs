@@ -198,6 +198,10 @@ impl NodeTool {
         self.find_package_bin_path(package_name, starting_dir.parent().unwrap())
     }
 
+    pub fn get_bin_dir(&self) -> PathBuf {
+        self.bin_path.parent().unwrap().to_path_buf()
+    }
+
     pub fn is_corepack_aware(&self) -> bool {
         let min_version = VersionReq::parse(">=16.9.0").unwrap();
         let cfg_version = Version::parse(&self.config.version).unwrap();

@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 use std::env;
 use std::fs::File;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub fn is_ci() -> bool {
     env::var("CI").is_ok()
@@ -47,6 +47,19 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
     );
 
     Ok(hash)
+}
+
+/// We need to ensure that our toolchain binaries are executed instead of
+/// other binaries of the same name. Otherwise, tooling like nvm will
+/// intercept execution and break our processes. We can work around this
+/// by prepending the `PATH` environment variable.
+pub fn get_path_env_var(bin_dir: PathBuf) -> std::ffi::OsString {
+    let path = env::var("PATH").unwrap_or_default();
+    let mut paths = vec![bin_dir];
+
+    paths.extend(env::split_paths(&path).collect::<Vec<_>>());
+
+    env::join_paths(paths).unwrap()
 }
 
 pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), ToolchainError> {

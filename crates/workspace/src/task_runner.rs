@@ -3,7 +3,7 @@ use crate::errors::WorkspaceError;
 use crate::task_result::{TaskResult, TaskResultStatus};
 use crate::tasks::{install_node_deps, run_target, setup_toolchain, sync_project};
 use crate::workspace::Workspace;
-use moon_logger::{debug, trace};
+use moon_logger::{color, debug, trace};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task;
@@ -49,6 +49,10 @@ impl TaskRunner {
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
 
+        // Clean the runner state *before* running tasks instead of after,
+        // so that failing or broken builds can dig into and debug the state!
+        self.cleanup().await?;
+
         debug!(
             target: "moon:task-runner",
             "Running {} tasks across {} batches", node_count, batches_count
@@ -73,17 +77,19 @@ impl TaskRunner {
                 let workspace_clone = Arc::clone(&self.workspace);
                 let graph_clone = Arc::clone(&graph);
 
-                trace!(
-                    target: &format!("moon:task-runner:batch:{}:{}", batch_count, task_count),
-                    "Running task",
-                );
-
                 // TODO - abort parallel threads when an error occurs in a sibling thread
                 task_handles.push(task::spawn(async move {
                     let mut result = TaskResult::new(task);
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(task) {
+                        trace!(
+                            target:
+                                &format!("moon:task-runner:batch:{}:{}", batch_count, task_count),
+                            "Running task {}",
+                            color::muted_light(&node.label())
+                        );
+
                         match run_task(workspace_clone, node).await {
                             Ok(_) => {
                                 result.pass();
@@ -110,18 +116,20 @@ impl TaskRunner {
                 match handle.await {
                     Ok(Ok(result)) => results.push(result),
                     Ok(Err(e)) => {
-                        self.cleanup().await?;
                         return Err(e);
                     }
                     Err(e) => {
-                        self.cleanup().await?;
                         return Err(WorkspaceError::TaskRunnerFailure(e));
                     }
                 }
             }
         }
 
-        self.cleanup().await?;
+        debug!(
+            target: "moon:task-runner",
+            "Finished running {} tasks", node_count
+        );
+
         Ok(results)
     }
 
@@ -129,6 +137,11 @@ impl TaskRunner {
         let workspace = self.workspace.read().await;
 
         // Delete all runfiles created during this process
+        trace!(
+            target: "moon:task-runner",
+            "Deleting stale runfiles"
+        );
+
         workspace.cache.delete_runfiles().await?;
 
         Ok(())

@@ -6,6 +6,11 @@ use std::process::Output;
 
 #[async_trait]
 pub trait Tool {
+    /// Returns an absolute file path to the directory containing the executable binaries.
+    fn get_bin_dir(&self) -> PathBuf {
+        self.get_bin_path().parent().unwrap().to_path_buf()
+    }
+
     /// Returns an absolute file path to the executable binary for the tool.
     /// This _may not exist_, as the path is composed ahead of time.
     fn get_bin_path(&self) -> &PathBuf;

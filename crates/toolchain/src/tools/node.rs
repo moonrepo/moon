@@ -1,5 +1,7 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{download_file_from_url, get_bin_version, get_file_sha256_hash};
+use crate::helpers::{
+    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var,
+};
 use crate::tool::Tool;
 use crate::Toolchain;
 use async_trait::async_trait;
@@ -167,7 +169,12 @@ impl NodeTool {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        Ok(exec_command(create_command(&self.corepack_bin_path).args(args)).await?)
+        Ok(exec_command(
+            create_command(&self.corepack_bin_path)
+                .args(args)
+                .env("PATH", get_path_env_var(self.get_bin_dir())),
+        )
+        .await?)
     }
 
     pub fn find_package_bin_path(

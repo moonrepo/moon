@@ -4,7 +4,7 @@ use moon_config::TaskType;
 use moon_logger::debug;
 use moon_project::{Project, Target, Task};
 use moon_toolchain::tools::node::NodeTool;
-use moon_toolchain::Tool;
+use moon_toolchain::{get_path_env_var, Tool};
 use moon_utils::process::{exec_command, output_to_string, Output};
 use std::collections::HashMap;
 use std::path::Path;
@@ -78,13 +78,14 @@ async fn run_node_target(
         package_bin_path.to_str().unwrap(),
     ];
 
-    // Node module args
+    // Package args
     args.extend(task.args.iter().map(|a| a.as_str()));
 
     Ok(exec_command(
         Command::new(node.get_bin_path())
             .args(&args)
             .current_dir(&exec_dir)
+            .env("PATH", get_path_env_var(node.get_bin_dir()))
             .envs(env_vars),
     )
     .await?)

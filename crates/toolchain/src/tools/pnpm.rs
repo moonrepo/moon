@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_version, is_ci};
+use crate::helpers::{get_bin_version, get_path_env_var, is_ci};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
@@ -136,7 +136,8 @@ impl PackageManager for PnpmTool {
         Ok(exec_command(
             create_command(self.get_bin_path())
                 .args(["prune"])
-                .current_dir(&toolchain.workspace_root),
+                .current_dir(&toolchain.workspace_root)
+                .env("PATH", get_path_env_var(self.get_bin_dir())),
         )
         .await?)
     }
@@ -155,7 +156,8 @@ impl PackageManager for PnpmTool {
         Ok(exec_command(
             create_command(self.get_bin_path())
                 .args(exec_args)
-                .current_dir(&toolchain.workspace_root),
+                .current_dir(&toolchain.workspace_root)
+                .env("PATH", get_path_env_var(self.get_bin_dir())),
         )
         .await?)
     }
@@ -179,7 +181,8 @@ impl PackageManager for PnpmTool {
         Ok(exec_command(
             create_command(self.get_bin_path())
                 .args(args)
-                .current_dir(&toolchain.workspace_root),
+                .current_dir(&toolchain.workspace_root)
+                .env("PATH", get_path_env_var(self.get_bin_dir())),
         )
         .await?)
     }

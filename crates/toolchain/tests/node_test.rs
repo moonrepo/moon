@@ -4,7 +4,7 @@ use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
 use std::env;
 
-fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
+async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
     let mut config = WorkspaceConfig::default();
@@ -13,7 +13,9 @@ fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
         node.version = String::from("1.0.0");
     }
 
-    let toolchain = Toolchain::from(&config, base_dir.path(), &env::temp_dir()).unwrap();
+    let toolchain = Toolchain::create_from_dir(&config, base_dir.path(), &env::temp_dir())
+        .await
+        .unwrap();
 
     (toolchain.get_node().to_owned(), base_dir)
 }
@@ -28,9 +30,9 @@ fn get_node_platform() -> &'static str {
     }
 }
 
-#[test]
-fn generates_paths() {
-    let (node, temp_dir) = create_node_tool();
+#[tokio::test]
+async fn generates_paths() {
+    let (node, temp_dir) = create_node_tool().await;
 
     assert!(predicates::str::ends_with(".moon/tools/node/1.0.0")
         .eval(node.get_install_dir().to_str().unwrap()));
@@ -53,9 +55,9 @@ mod download {
     use super::*;
     use mockito::mock;
 
-    #[test]
-    fn is_downloaded_checks() {
-        let (node, temp_dir) = create_node_tool();
+    #[tokio::test]
+    async fn is_downloaded_checks() {
+        let (node, temp_dir) = create_node_tool().await;
 
         assert!(!node.is_downloaded());
 
@@ -73,7 +75,7 @@ mod download {
 
     #[tokio::test]
     async fn downloads_to_temp_dir() {
-        let (node, temp_dir) = create_node_tool();
+        let (node, temp_dir) = create_node_tool().await;
 
         assert!(!node.get_download_path().unwrap().exists());
 
@@ -105,7 +107,7 @@ mod download {
     #[tokio::test]
     #[should_panic(expected = "InvalidShasum")]
     async fn fails_on_invalid_shasum() {
-        let (node, temp_dir) = create_node_tool();
+        let (node, temp_dir) = create_node_tool().await;
 
         let archive = mock(
             "GET",

@@ -4,7 +4,7 @@ use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
 use std::env;
 
-pub fn create_yarn_tool() -> (YarnTool, assert_fs::TempDir) {
+async fn create_yarn_tool() -> (YarnTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
     let mut config = WorkspaceConfig::default();
@@ -17,14 +17,16 @@ pub fn create_yarn_tool() -> (YarnTool, assert_fs::TempDir) {
         });
     }
 
-    let toolchain = Toolchain::from(&config, base_dir.path(), &env::temp_dir()).unwrap();
+    let toolchain = Toolchain::create_from_dir(&config, base_dir.path(), &env::temp_dir())
+        .await
+        .unwrap();
 
     (toolchain.get_yarn().unwrap().to_owned(), base_dir)
 }
 
-#[test]
-fn generates_paths() {
-    let (yarn, temp_dir) = create_yarn_tool();
+#[tokio::test]
+async fn generates_paths() {
+    let (yarn, temp_dir) = create_yarn_tool().await;
 
     assert!(predicates::str::ends_with(".moon/tools/node/1.0.0")
         .eval(yarn.get_install_dir().to_str().unwrap()));

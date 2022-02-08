@@ -2,14 +2,14 @@ use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
 use moon_error::map_io_to_fs_error;
 use moon_logger::debug;
-use std::fs;
+use moon_utils::fs;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), WorkspaceError> {
     let workspace = workspace.read().await;
     let toolchain = &workspace.toolchain;
-    let manager = toolchain.get_package_manager();
+    let manager = toolchain.get_node_package_manager();
     let mut cache = workspace.cache.workspace_state().await?;
 
     // Get the last modified time of the root lockfile
@@ -17,8 +17,7 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
     let mut last_modified = 0;
 
     if lockfile.exists() {
-        let lockfile_metadata =
-            fs::metadata(&lockfile).map_err(|e| map_io_to_fs_error(e, lockfile.clone()))?;
+        let lockfile_metadata = fs::metadata(&lockfile).await?;
 
         last_modified = cache.to_millis(
             lockfile_metadata

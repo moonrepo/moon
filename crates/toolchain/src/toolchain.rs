@@ -8,22 +8,17 @@ use crate::tools::yarn::YarnTool;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::package::PackageJson;
 use moon_config::{NodeConfig, PackageManager as PM, WorkspaceConfig};
-use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace};
-use moon_utils::fs::get_home_dir;
-use std::fs;
-use std::io;
+use moon_utils::fs;
 use std::path::{Path, PathBuf};
 
-fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
-    let handle_error = |e: io::Error| map_io_to_fs_error(e, dir.to_path_buf());
-
+async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     if dir.exists() {
         if dir.is_file() {
-            fs::remove_file(dir).map_err(handle_error)?;
+            fs::remove_file(dir).await?;
         }
     } else {
-        fs::create_dir(dir).map_err(handle_error)?;
+        fs::create_dir_all(dir).await?;
     }
 
     trace!(target: "moon:toolchain", "Created directory {}", color::file_path(dir));
@@ -56,7 +51,7 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub fn from(
+    pub async fn create_from_dir(
         config: &WorkspaceConfig,
         base_dir: &Path,
         root_dir: &Path,
@@ -71,9 +66,9 @@ impl Toolchain {
             color::file_path(&dir)
         );
 
-        create_dir(&dir)?;
-        create_dir(&temp_dir)?;
-        create_dir(&tools_dir)?;
+        create_dir(&dir).await?;
+        create_dir(&temp_dir).await?;
+        create_dir(&tools_dir).await?;
 
         // Create the instance first, so we can pass to each tool initializer
         let mut toolchain = Toolchain {
@@ -117,12 +112,16 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub fn new(root_dir: &Path, config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
-        Toolchain::from(
+    pub async fn create(
+        root_dir: &Path,
+        config: &WorkspaceConfig,
+    ) -> Result<Toolchain, ToolchainError> {
+        Ok(Toolchain::create_from_dir(
             config,
-            &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
+            &fs::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
         )
+        .await?)
     }
 
     /// Download and install all tools into the toolchain.
@@ -194,7 +193,7 @@ impl Toolchain {
         self.unload_tool(self.get_npm()).await?;
         self.unload_tool(self.get_node()).await?;
 
-        fs::remove_dir_all(&self.dir).map_err(|e| map_io_to_fs_error(e, self.dir.clone()))?;
+        fs::remove_dir_all(&self.dir).await?;
 
         Ok(())
     }
@@ -218,18 +217,19 @@ impl Toolchain {
     async fn unload_tool(&self, tool: &(dyn Tool + Send + Sync)) -> Result<(), ToolchainError> {
         if tool.is_downloaded() {
             if let Some(download_path) = tool.get_download_path() {
-                fs::remove_file(download_path)
-                    .map_err(|e| map_io_to_fs_error(e, download_path.clone()))?;
+                fs::remove_file(download_path).await?;
 
-                trace!(target: "moon:toolchain", "Deleted download {}", color::file_path(download_path));
+                trace!(
+                    target: "moon:toolchain", "Deleted download {}",
+                    color::file_path(download_path)
+                );
             }
         }
 
         if tool.is_installed().await? {
             let install_dir = tool.get_install_dir();
 
-            fs::remove_dir_all(install_dir)
-                .map_err(|e| map_io_to_fs_error(e, install_dir.clone()))?;
+            fs::remove_dir_all(install_dir).await?;
 
             trace!(
                 target: "moon:toolchain",
@@ -243,6 +243,18 @@ impl Toolchain {
 
     pub fn get_node(&self) -> &NodeTool {
         self.node.as_ref().unwrap()
+    }
+
+    pub fn get_node_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
+        if self.pnpm.is_some() {
+            return self.get_pnpm().unwrap();
+        }
+
+        if self.yarn.is_some() {
+            return self.get_yarn().unwrap();
+        }
+
+        self.get_npm()
     }
 
     pub fn get_npm(&self) -> &NpmTool {
@@ -261,17 +273,5 @@ impl Toolchain {
             Some(tool) => Some(tool),
             None => None,
         }
-    }
-
-    pub fn get_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
-        if self.pnpm.is_some() {
-            return self.get_pnpm().unwrap();
-        }
-
-        if self.yarn.is_some() {
-            return self.get_yarn().unwrap();
-        }
-
-        self.get_npm()
     }
 }

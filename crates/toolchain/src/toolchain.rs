@@ -245,6 +245,18 @@ impl Toolchain {
         self.node.as_ref().unwrap()
     }
 
+    pub fn get_node_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
+        if self.pnpm.is_some() {
+            return self.get_pnpm().unwrap();
+        }
+
+        if self.yarn.is_some() {
+            return self.get_yarn().unwrap();
+        }
+
+        self.get_npm()
+    }
+
     pub fn get_npm(&self) -> &NpmTool {
         self.npm.as_ref().unwrap()
     }
@@ -261,17 +273,5 @@ impl Toolchain {
             Some(tool) => Some(tool),
             None => None,
         }
-    }
-
-    pub fn get_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
-        if self.pnpm.is_some() {
-            return self.get_pnpm().unwrap();
-        }
-
-        if self.yarn.is_some() {
-            return self.get_yarn().unwrap();
-        }
-
-        self.get_npm()
     }
 }

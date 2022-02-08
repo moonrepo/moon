@@ -9,7 +9,7 @@ use tokio::sync::RwLock;
 pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), WorkspaceError> {
     let workspace = workspace.read().await;
     let toolchain = &workspace.toolchain;
-    let manager = toolchain.get_package_manager();
+    let manager = toolchain.get_node_package_manager();
     let mut cache = workspace.cache.workspace_state().await?;
 
     // Get the last modified time of the root lockfile

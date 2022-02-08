@@ -123,7 +123,7 @@ pub async fn run_target(
     // Gather the project and task
     let (project_id, task_id) = Target::parse(target)?;
     let project = workspace.projects.get(&project_id)?;
-    let task = project.tasks.get(&task_id).unwrap();
+    let task = project.get_task(&task_id)?;
 
     // Run the task command as a child process
     let exec_dir = if task.options.run_from_workspace_root {

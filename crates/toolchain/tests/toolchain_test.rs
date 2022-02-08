@@ -4,20 +4,22 @@ use predicates::prelude::*;
 use std::env;
 use std::path::Path;
 
-pub fn create_toolchain(base_dir: &Path) -> Toolchain {
+async fn create_toolchain(base_dir: &Path) -> Toolchain {
     let mut config = WorkspaceConfig::default();
 
     if let Some(ref mut node) = config.node {
         node.version = String::from("1.0.0");
     }
 
-    Toolchain::from(&config, base_dir, &env::temp_dir()).unwrap()
+    Toolchain::create_from_dir(&config, base_dir, &env::temp_dir())
+        .await
+        .unwrap()
 }
 
-#[test]
-fn generates_paths() {
+#[tokio::test]
+async fn generates_paths() {
     let base_dir = assert_fs::TempDir::new().unwrap();
-    let toolchain = create_toolchain(&base_dir);
+    let toolchain = create_toolchain(&base_dir).await;
 
     assert!(predicates::str::ends_with(".moon").eval(toolchain.dir.to_str().unwrap()));
     assert!(predicates::str::ends_with(".moon/temp").eval(toolchain.temp_dir.to_str().unwrap()));
@@ -26,8 +28,8 @@ fn generates_paths() {
     base_dir.close().unwrap();
 }
 
-#[test]
-fn creates_dirs() {
+#[tokio::test]
+async fn creates_dirs() {
     let base_dir = assert_fs::TempDir::new().unwrap();
     let home_dir = base_dir.join(".moon");
     let temp_dir = base_dir.join(".moon/temp");
@@ -37,7 +39,7 @@ fn creates_dirs() {
     assert!(!temp_dir.exists());
     assert!(!tools_dir.exists());
 
-    create_toolchain(&base_dir);
+    create_toolchain(&base_dir).await;
 
     assert!(home_dir.exists());
     assert!(temp_dir.exists());
@@ -49,7 +51,7 @@ fn creates_dirs() {
 // #[test]
 // fn loads_node_npm() {
 //     let base_dir = assert_fs::TempDir::new().unwrap();
-//     let toolchain = create_toolchain(&base_dir);
+//     let toolchain = create_toolchain(&base_dir).await;
 
 //     assert_ne!(toolchain.get_node(), None);
 //     assert_ne!(toolchain.get_npm(), None);

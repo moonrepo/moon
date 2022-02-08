@@ -35,7 +35,7 @@ pub async fn sync_project(
     }
 
     // Sync each dependency to `tsconfig.json` and `package.json`
-    let manager = workspace.toolchain.get_package_manager();
+    let manager = workspace.toolchain.get_node_package_manager();
 
     for dep_id in project.get_dependencies() {
         let dep_project = workspace.projects.get(&dep_id)?;

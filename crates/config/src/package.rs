@@ -161,7 +161,7 @@ impl PackageJson {
     }
 
     pub async fn save(&self) -> Result<(), MoonError> {
-        fs::write_json(&self.path, self).await?;
+        fs::write_json(&self.path, self, true).await?;
 
         Ok(())
     }

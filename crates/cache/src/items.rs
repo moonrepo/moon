@@ -27,7 +27,7 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     }
 
     pub async fn save(&self) -> Result<(), MoonError> {
-        fs::write_json(&self.path, &self.item).await?;
+        fs::write_json(&self.path, &self.item, false).await?;
 
         Ok(())
     }

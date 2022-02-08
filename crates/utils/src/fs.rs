@@ -138,12 +138,15 @@ pub async fn remove_dir_all(path: &Path) -> Result<(), MoonError> {
     Ok(())
 }
 
-pub async fn write_json<T>(path: &Path, json: &T) -> Result<(), MoonError>
+pub async fn write_json<T>(path: &Path, json: &T, pretty: bool) -> Result<(), MoonError>
 where
     T: ?Sized + Serialize,
 {
-    let data =
-        serde_json::to_string(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+    let data = if pretty {
+        serde_json::to_string_pretty(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?
+    } else {
+        serde_json::to_string(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?
+    };
 
     fs::write(path, data)
         .await

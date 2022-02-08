@@ -16,7 +16,7 @@ impl CacheRunfile {
         fs::create_dir_all(path.parent().unwrap()).await?;
 
         if !path.exists() {
-            fs::write_json(&path, data).await?;
+            fs::write_json(&path, data, false).await?;
         }
 
         Ok(CacheRunfile { path })

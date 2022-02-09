@@ -23,13 +23,28 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extends: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub include: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub references: Option<Vec<Reference>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub type_acquisition: Option<TypeAcquisition>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub compile_on_save: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub compiler_options: Option<CompilerOptions>,
 
     // Unknown fields
@@ -127,6 +142,8 @@ pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Reference {
     pub path: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub prepend: Option<bool>,
 }
 
@@ -134,8 +151,14 @@ pub struct Reference {
 #[serde(rename_all = "camelCase")]
 pub struct TypeAcquisition {
     pub enable: bool,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub include: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_filename_based_type_acquisition: Option<bool>,
 }
 
@@ -143,114 +166,315 @@ pub struct TypeAcquisition {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompilerOptions {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_js: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_synthetic_default_imports: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_umd_global_access: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_unreachable_code: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_unused_labels: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub always_strict: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub assume_changes_only_affect_direct_dependencies: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub base_url: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub check_js: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub composite: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub declaration_dir: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub declaration_map: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub declaration: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_referenced_project_load: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_size_limit: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_solution_searching: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_source_of_project_reference_redirect: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub downlevel_iteration: Option<bool>,
+
     #[serde(rename = "emitBOM")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub emit_bom: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub emit_declaration_only: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub emit_decorator_metadata: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub es_module_interop: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exact_optional_property_types: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub experimental_decorators: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub explain_files: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extended_diagnostics: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub force_consistent_casing_in_file_names: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub generate_cpu_profile: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub import_helpers: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub imports_not_used_as_values: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub incremental: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub inline_source_map: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub inline_sources: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub isolated_modules: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jsx_factory: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jsx_fragment_factory: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jsx_import_source: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jsx: Option<Jsx>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lib: Option<Vec<Lib>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub list_emitted_files: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub list_files: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub map_root: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_node_module_js_depth: Option<u32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub module_resolution: Option<ModuleResolution>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub module: Option<Module>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub new_line: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_emit_helpers: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_emit_on_error: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_emit: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_error_truncation: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_fallthrough_cases_in_switch: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_implicit_any: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_implicit_override: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_implicit_returns: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_implicit_this: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_lib: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_property_access_from_index_signature: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_resolve: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_unchecked_indexed_access: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_unused_locals: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_unused_parameters: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub out_dir: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub out_file: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub paths: Option<BTreeMap<String, Vec<String>>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub plugins: Option<Vec<BTreeMap<String, Value>>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_const_enums: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_symlinks: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_value_imports: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_watch_output: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pretty: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub react_namespace: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub remove_comments: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resolve_json_module: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub root_dir: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub root_dirs: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub skip_default_lib_check: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub skip_lib_check: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub source_map: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub source_root: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_bind_call_apply: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_function_types: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_null_checks: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_property_initialization: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strip_internal: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub target: Option<Target>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub trace_resolution: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ts_build_info_file: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub type_roots: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub types: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub use_define_for_class_fields: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub use_unknown_in_catch_variables: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub watch_options: Option<WatchOptions>,
 
+    // Deprecated
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub charset: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub keyof_strings_only: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub no_implicit_use_strict: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub no_strict_generic_checks: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub out: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub suppress_excess_property_errors: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub suppress_implicit_any_index_errors: Option<bool>,
 }
@@ -259,11 +483,22 @@ pub struct CompilerOptions {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WatchOptions {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude_directories: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude_files: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub fallback_polling: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub synchronous_watch_directory: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub watch_directory: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub watch_file: Option<String>,
 }
 

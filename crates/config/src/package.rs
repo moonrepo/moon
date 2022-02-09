@@ -227,25 +227,36 @@ pub type Bin = StringOrArray<BinSet>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Bug {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DependencyMeta {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub optional: Option<bool>,
 
     // Yarn
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub built: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub unplugged: Option<bool>,
 
     // Pnpm
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub injected: Option<bool>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Directories {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bin: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub man: Option<String>,
 }
 
@@ -270,7 +281,11 @@ pub type License = StringArrayOrObject<LicenseMetadata>;
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct PersonMetadata {
     pub name: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
 
@@ -278,21 +293,30 @@ pub type Person = StringOrObject<PersonMetadata>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct PeerDependencyMeta {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub optional: Option<bool>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Pnpm {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub never_built_dependencies: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub overrides: Option<OverridesSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub package_extensions: Option<Value>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct RepositoryMetadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub directory: Option<String>,
+
     #[serde(rename = "type")]
     pub type_of: String,
+
     pub url: String,
 }
 
@@ -300,7 +324,10 @@ pub type Repository = StringOrObject<RepositoryMetadata>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct WorkspacesExpanded {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub nohoist: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub packages: Option<Vec<String>>,
 }
 

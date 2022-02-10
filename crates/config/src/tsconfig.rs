@@ -20,17 +20,32 @@ use std::path::{Path, PathBuf};
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
-    pub exclude: Option<Vec<String>>,
-    pub extends: Option<String>,
-    pub files: Option<Vec<String>>,
-    pub include: Option<Vec<String>>,
-    pub references: Option<Vec<Reference>>,
-    pub type_acquisition: Option<TypeAcquisition>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub compile_on_save: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub compiler_options: Option<CompilerOptions>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extends: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub files: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub references: Option<Vec<Reference>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub type_acquisition: Option<TypeAcquisition>,
 
     // Unknown fields
     #[serde(flatten)]
@@ -84,7 +99,7 @@ impl TsConfigJson {
     }
 
     pub async fn save(&self) -> Result<(), MoonError> {
-        fs::write_json(&self.path, self).await?;
+        fs::write_json(&self.path, self, true).await?;
 
         Ok(())
     }
@@ -124,146 +139,366 @@ pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
     Ok(json)
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Reference {
     pub path: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub prepend: Option<bool>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TypeAcquisition {
     pub enable: bool,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub include: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_filename_based_type_acquisition: Option<bool>,
 }
 
 // https://www.typescriptlang.org/tsconfig#compilerOptions
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompilerOptions {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_js: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_synthetic_default_imports: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_umd_global_access: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_unreachable_code: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_unused_labels: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub always_strict: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub assume_changes_only_affect_direct_dependencies: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub base_url: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub check_js: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub composite: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub declaration_dir: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub declaration_map: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub declaration: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_referenced_project_load: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_size_limit: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_solution_searching: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_source_of_project_reference_redirect: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub downlevel_iteration: Option<bool>,
+
     #[serde(rename = "emitBOM")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub emit_bom: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub emit_declaration_only: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub emit_decorator_metadata: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub es_module_interop: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exact_optional_property_types: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub experimental_decorators: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub explain_files: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extended_diagnostics: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub force_consistent_casing_in_file_names: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub generate_cpu_profile: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub import_helpers: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub imports_not_used_as_values: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub incremental: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub inline_source_map: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub inline_sources: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub isolated_modules: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jsx_factory: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jsx_fragment_factory: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jsx_import_source: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jsx: Option<Jsx>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lib: Option<Vec<Lib>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub list_emitted_files: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub list_files: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub map_root: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_node_module_js_depth: Option<u32>,
-    pub module_resolution: Option<ModuleResolution>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub module: Option<Module>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub module_resolution: Option<ModuleResolution>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub new_line: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_emit_helpers: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_emit_on_error: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_emit: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_error_truncation: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_fallthrough_cases_in_switch: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_implicit_any: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_implicit_override: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_implicit_returns: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_implicit_this: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_lib: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_property_access_from_index_signature: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_resolve: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_unchecked_indexed_access: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_unused_locals: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub no_unused_parameters: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub out_dir: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub out_file: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub paths: Option<BTreeMap<String, Vec<String>>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub plugins: Option<Vec<BTreeMap<String, Value>>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_const_enums: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_symlinks: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_value_imports: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_watch_output: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pretty: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub react_namespace: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub remove_comments: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resolve_json_module: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub root_dir: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub root_dirs: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub skip_default_lib_check: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub skip_lib_check: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub source_map: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub source_root: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_bind_call_apply: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_function_types: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_null_checks: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict_property_initialization: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strict: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub strip_internal: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub target: Option<Target>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub trace_resolution: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ts_build_info_file: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub type_roots: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub types: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub use_define_for_class_fields: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub use_unknown_in_catch_variables: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub watch_options: Option<WatchOptions>,
 
+    // Deprecated
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub charset: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub keyof_strings_only: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub no_implicit_use_strict: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub no_strict_generic_checks: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub out: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub suppress_excess_property_errors: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub suppress_implicit_any_index_errors: Option<bool>,
 }
 
 // https://www.typescriptlang.org/tsconfig#watch-options
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WatchOptions {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude_directories: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude_files: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub fallback_polling: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub synchronous_watch_directory: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub watch_directory: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub watch_file: Option<String>,
 }
 
@@ -443,6 +678,7 @@ pub enum Lib {
     Es2021Promise,
     Es2021String,
     Es2021Weakref,
+    Es2022,
     EsNext,
     EsNextArray,
     EsNextAsyncIterable,
@@ -468,11 +704,12 @@ impl<'de> Deserialize<'de> for Lib {
         let s = s.to_uppercase();
 
         let d = match s.as_str() {
-            "DOM.ITERABLE" => Lib::DomIterable,
             "DOM" => Lib::Dom,
+            "DOM.ITERABLE" => Lib::DomIterable,
             "ES5" => Lib::Es5,
             "ES6" => Lib::Es6,
             "ES7" => Lib::Es7,
+            "ES2015" => Lib::Es2015,
             "ES2015.CORE" => Lib::Es2015Core,
             "ES2015.COLLECTION" => Lib::Es2015Collection,
             "ES2015.GENERATOR" => Lib::Es2015Generator,
@@ -480,37 +717,38 @@ impl<'de> Deserialize<'de> for Lib {
             "ES2015.PROMISE" => Lib::Es2015Promise,
             "ES2015.PROXY" => Lib::Es2015Proxy,
             "ES2015.REFLECT" => Lib::Es2015Reflect,
-            "ES2015.SYMBOL.WELLKNOWN" => Lib::Es2015SymbolWellKnown,
             "ES2015.SYMBOL" => Lib::Es2015Symbol,
-            "ES2015" => Lib::Es2015,
-            "ES2016.ARRAY.INCLUDE" => Lib::Es2016ArrayInclude,
+            "ES2015.SYMBOL.WELLKNOWN" => Lib::Es2015SymbolWellKnown,
             "ES2016" => Lib::Es2016,
+            "ES2016.ARRAY.INCLUDE" => Lib::Es2016ArrayInclude,
+            "ES2017" => Lib::Es2017,
             "ES2017.INTL" => Lib::Es2017Intl,
             "ES2017.OBJECT" => Lib::Es2017Object,
             "ES2017.SHAREDMEMORY" => Lib::Es2017SharedMemory,
             "ES2017.STRING" => Lib::Es2017String,
             "ES2017.TYPEDARRAYS" => Lib::Es2017TypedArrays,
-            "ES2017" => Lib::Es2017,
+            "ES2018" => Lib::Es2018,
             "ES2018.INTL" => Lib::Es2018Intl,
             "ES2018.PROMISE" => Lib::Es2018Promise,
             "ES2018.REGEXP" => Lib::Es2018RegExp,
-            "ES2018" => Lib::Es2018,
+            "ES2019" => Lib::Es2019,
             "ES2019.ARRAY" => Lib::Es2019Array,
             "ES2019.OBJECT" => Lib::Es2019Object,
             "ES2019.STRING" => Lib::Es2019String,
             "ES2019.SYMBOL" => Lib::Es2019Symbol,
-            "ES2019" => Lib::Es2019,
+            "ES2020" => Lib::Es2020,
             "ES2020.STRING" => Lib::Es2020String,
             "ES2020.SYMBOL.WELLKNOWN" => Lib::Es2020SymbolWellknown,
+            "ES2021" => Lib::Es2021,
             "ES2021.PROMISE" => Lib::Es2021Promise,
             "ES2021.STRING" => Lib::Es2021String,
             "ES2021.WEAKREF" => Lib::Es2021Weakref,
-            "ES2021" => Lib::Es2021,
+            "ES2022" => Lib::Es2022,
+            "ESNEXT" => Lib::EsNext,
             "ESNEXT.ARRAY" => Lib::EsNextArray,
             "ESNEXT.ASYNCITERABLE" => Lib::EsNextAsyncIterable,
             "ESNEXT.INTL" => Lib::EsNextIntl,
             "ESNEXT.SYMBOL" => Lib::EsNextSymbol,
-            "ESNEXT" => Lib::EsNext,
             "SCRIPTHOST" => Lib::ScriptHost,
             "WEBWORKER" => Lib::WebWorker,
             other => Lib::Other(other.to_string()),
@@ -534,8 +772,8 @@ impl Serialize for Lib {
             Lib::Es2015Promise => "ES2015.PROMISE".to_owned(),
             Lib::Es2015Proxy => "ES2015.PROXY".to_owned(),
             Lib::Es2015Reflect => "ES2015.REFLECT".to_owned(),
-            Lib::Es2015SymbolWellKnown => "ES2015.SYMBOL.WELLKNOWN".to_owned(),
             Lib::Es2015Symbol => "ES2015.SYMBOL".to_owned(),
+            Lib::Es2015SymbolWellKnown => "ES2015.SYMBOL.WELLKNOWN".to_owned(),
             Lib::Es2016ArrayInclude => "ES2016.ARRAY.INCLUDE".to_owned(),
             Lib::Es2017Intl => "ES2017.INTL".to_owned(),
             Lib::Es2017Object => "ES2017.OBJECT".to_owned(),
@@ -568,7 +806,132 @@ impl Serialize for Lib {
 #[cfg(test)]
 mod test {
     use super::*;
+    use assert_fs::prelude::*;
     use moon_utils::test::get_fixtures_dir;
+
+    #[tokio::test]
+    async fn skips_none_when_writing() {
+        let dir = assert_fs::TempDir::new().unwrap();
+        let file = dir.child("tsconfig.json");
+        file.write_str("{}").unwrap();
+
+        let mut tsconfig = TsConfigJson::load(file.path()).await.unwrap();
+        tsconfig.compiler_options = Some(CompilerOptions {
+            composite: Some(true),
+            jsx: Some(Jsx::ReactJsx),
+            ..CompilerOptions::default()
+        });
+        tsconfig.include = Some(moon_utils::string_vec!["**/*"]);
+        tsconfig.save().await.unwrap();
+
+        let expected = serde_json::json!({
+            "compilerOptions": {
+                "composite": true,
+                "jsx": "react-jsx"
+            },
+            "include": ["**/*"]
+        });
+
+        assert_eq!(
+            fs::read_json_string(file.path()).await.unwrap(),
+            serde_json::to_string_pretty(&expected).unwrap(),
+        );
+    }
+
+    #[test]
+    fn serializes_special_fields() {
+        let actual = TsConfigJson {
+            compiler_options: Some(CompilerOptions {
+                module: Some(Module::EsNext),
+                module_resolution: Some(ModuleResolution::Node12),
+                jsx: Some(Jsx::ReactJsxdev),
+                target: Some(Target::Es6),
+                lib: Some(vec![
+                    Lib::Dom,
+                    Lib::Es2015Generator,
+                    Lib::Es2016ArrayInclude,
+                    Lib::Es2017SharedMemory,
+                    Lib::Es2018Intl,
+                    Lib::Es2019Symbol,
+                    Lib::Es2020SymbolWellknown,
+                    Lib::Es2021Weakref,
+                ]),
+                ..CompilerOptions::default()
+            }),
+            ..TsConfigJson::default()
+        };
+
+        let expected = serde_json::json!({
+            "compilerOptions": {
+                "jsx": "react-jsxdev",
+                "lib": [
+                    "dom",
+                    "es2015.generator",
+                    "es2016.array.include",
+                    "es2017.sharedmemory",
+                    "es2018.intl",
+                    "es2019.symbol",
+                    "es2020.symbol.wellknown",
+                    "es2021.weakref",
+                ],
+                "module": "esnext",
+                "moduleResolution": "node12",
+                "target": "es6",
+            },
+        });
+
+        assert_eq!(
+            serde_json::to_string(&actual).unwrap(),
+            serde_json::to_string(&expected).unwrap(),
+        );
+    }
+
+    #[test]
+    fn deserializes_special_fields() {
+        let actual = serde_json::json!({
+            "compilerOptions": {
+                "jsx": "react-native",
+                "lib": [
+                    "dom",
+                    "es2015.collection",
+                    "es2016",
+                    "es2017.typedarrays",
+                    "es2018.promise",
+                    "es2019.string",
+                    "es2020",
+                    "es2021.weakref",
+                ],
+                "module": "es2015",
+                "moduleResolution": "classic",
+                "target": "esnext",
+            },
+        });
+
+        let expected = TsConfigJson {
+            compiler_options: Some(CompilerOptions {
+                jsx: Some(Jsx::ReactNative),
+                lib: Some(vec![
+                    Lib::Dom,
+                    Lib::Es2015Collection,
+                    Lib::Es2016,
+                    Lib::Es2017TypedArrays,
+                    Lib::Es2018Promise,
+                    Lib::Es2019String,
+                    Lib::Es2020,
+                    Lib::Es2021Weakref,
+                ]),
+                module: Some(Module::Es2015),
+                module_resolution: Some(ModuleResolution::Classic),
+                target: Some(Target::EsNext),
+                ..CompilerOptions::default()
+            }),
+            ..TsConfigJson::default()
+        };
+
+        let actual_typed: TsConfigJson = serde_json::from_value(actual).unwrap();
+
+        assert_eq!(actual_typed, expected);
+    }
 
     #[test]
     fn merge_two_configs() {

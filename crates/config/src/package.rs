@@ -161,7 +161,7 @@ impl PackageJson {
     }
 
     pub async fn save(&self) -> Result<(), MoonError> {
-        fs::write_json(&self.path, self).await?;
+        fs::write_json(&self.path, self, true).await?;
 
         Ok(())
     }
@@ -225,31 +225,42 @@ pub enum StringArrayOrObject<T> {
 
 pub type Bin = StringOrArray<BinSet>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Bug {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct DependencyMeta {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub optional: Option<bool>,
 
     // Yarn
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub built: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub unplugged: Option<bool>,
 
     // Pnpm
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub injected: Option<bool>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Directories {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bin: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub man: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct FundingMetadata {
     #[serde(rename = "type")]
     pub type_of: String,
@@ -258,7 +269,7 @@ pub struct FundingMetadata {
 
 pub type Funding = StringArrayOrObject<FundingMetadata>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct LicenseMetadata {
     #[serde(rename = "type")]
     pub type_of: String,
@@ -267,40 +278,56 @@ pub struct LicenseMetadata {
 
 pub type License = StringArrayOrObject<LicenseMetadata>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct PersonMetadata {
     pub name: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
 
 pub type Person = StringOrObject<PersonMetadata>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct PeerDependencyMeta {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub optional: Option<bool>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Pnpm {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub never_built_dependencies: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub overrides: Option<OverridesSet>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub package_extensions: Option<Value>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct RepositoryMetadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub directory: Option<String>,
+
     #[serde(rename = "type")]
     pub type_of: String,
+
     pub url: String,
 }
 
 pub type Repository = StringOrObject<RepositoryMetadata>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct WorkspacesExpanded {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub nohoist: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub packages: Option<Vec<String>>,
 }
 
@@ -309,4 +336,48 @@ pub struct WorkspacesExpanded {
 pub enum Workspaces {
     Array(Vec<String>),
     Object(WorkspacesExpanded),
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use assert_fs::prelude::*;
+
+    #[tokio::test]
+    async fn skips_none_when_writing() {
+        let dir = assert_fs::TempDir::new().unwrap();
+        let file = dir.child("package.json");
+        file.write_str("{}").unwrap();
+
+        let mut package = PackageJson::load(file.path()).await.unwrap();
+        package.name = Some(String::from("hello"));
+        package.description = Some(String::from("world"));
+        package.keywords = Some(moon_utils::string_vec!["a", "b", "c"]);
+        package.save().await.unwrap();
+
+        let expected = serde_json::json!({
+            "description": "world",
+            "keywords": ["a", "b", "c"],
+            "name": "hello",
+        });
+
+        assert_eq!(
+            fs::read_json_string(file.path()).await.unwrap(),
+            serde_json::to_string_pretty(&expected).unwrap(),
+        );
+    }
+
+    // #[tokio::test]
+    // async fn preserves_order_when_de_to_ser() {
+    //     let json = r#"{"name": "hello", "description": "world", "private": true}"#;
+
+    //     let dir = assert_fs::TempDir::new().unwrap();
+    //     let file = dir.child("package.json");
+    //     file.write_str(json).unwrap();
+
+    //     let package = PackageJson::load(file.path()).await.unwrap();
+    //     package.save().await.unwrap();
+
+    //     assert_eq!(fs::read_json_string(file.path()).await.unwrap(), json,);
+    // }
 }

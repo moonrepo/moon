@@ -20,9 +20,15 @@ use std::path::{Path, PathBuf};
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compile_on_save: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compiler_options: Option<CompilerOptions>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<Vec<String>>,
 
@@ -40,12 +46,6 @@ pub struct TsConfigJson {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub type_acquisition: Option<TypeAcquisition>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub compile_on_save: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub compiler_options: Option<CompilerOptions>,
 
     // Unknown fields
     #[serde(flatten)]
@@ -139,7 +139,7 @@ pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
     Ok(json)
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Reference {
     pub path: String,
 
@@ -147,7 +147,7 @@ pub struct Reference {
     pub prepend: Option<bool>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TypeAcquisition {
     pub enable: bool,
@@ -163,7 +163,7 @@ pub struct TypeAcquisition {
 }
 
 // https://www.typescriptlang.org/tsconfig#compilerOptions
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompilerOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -300,10 +300,10 @@ pub struct CompilerOptions {
     pub max_node_module_js_depth: Option<u32>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub module_resolution: Option<ModuleResolution>,
+    pub module: Option<Module>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub module: Option<Module>,
+    pub module_resolution: Option<ModuleResolution>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_line: Option<String>,
@@ -480,7 +480,7 @@ pub struct CompilerOptions {
 }
 
 // https://www.typescriptlang.org/tsconfig#watch-options
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WatchOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -678,6 +678,7 @@ pub enum Lib {
     Es2021Promise,
     Es2021String,
     Es2021Weakref,
+    Es2022,
     EsNext,
     EsNextArray,
     EsNextAsyncIterable,
@@ -703,11 +704,12 @@ impl<'de> Deserialize<'de> for Lib {
         let s = s.to_uppercase();
 
         let d = match s.as_str() {
-            "DOM.ITERABLE" => Lib::DomIterable,
             "DOM" => Lib::Dom,
+            "DOM.ITERABLE" => Lib::DomIterable,
             "ES5" => Lib::Es5,
             "ES6" => Lib::Es6,
             "ES7" => Lib::Es7,
+            "ES2015" => Lib::Es2015,
             "ES2015.CORE" => Lib::Es2015Core,
             "ES2015.COLLECTION" => Lib::Es2015Collection,
             "ES2015.GENERATOR" => Lib::Es2015Generator,
@@ -715,37 +717,38 @@ impl<'de> Deserialize<'de> for Lib {
             "ES2015.PROMISE" => Lib::Es2015Promise,
             "ES2015.PROXY" => Lib::Es2015Proxy,
             "ES2015.REFLECT" => Lib::Es2015Reflect,
-            "ES2015.SYMBOL.WELLKNOWN" => Lib::Es2015SymbolWellKnown,
             "ES2015.SYMBOL" => Lib::Es2015Symbol,
-            "ES2015" => Lib::Es2015,
-            "ES2016.ARRAY.INCLUDE" => Lib::Es2016ArrayInclude,
+            "ES2015.SYMBOL.WELLKNOWN" => Lib::Es2015SymbolWellKnown,
             "ES2016" => Lib::Es2016,
+            "ES2016.ARRAY.INCLUDE" => Lib::Es2016ArrayInclude,
+            "ES2017" => Lib::Es2017,
             "ES2017.INTL" => Lib::Es2017Intl,
             "ES2017.OBJECT" => Lib::Es2017Object,
             "ES2017.SHAREDMEMORY" => Lib::Es2017SharedMemory,
             "ES2017.STRING" => Lib::Es2017String,
             "ES2017.TYPEDARRAYS" => Lib::Es2017TypedArrays,
-            "ES2017" => Lib::Es2017,
+            "ES2018" => Lib::Es2018,
             "ES2018.INTL" => Lib::Es2018Intl,
             "ES2018.PROMISE" => Lib::Es2018Promise,
             "ES2018.REGEXP" => Lib::Es2018RegExp,
-            "ES2018" => Lib::Es2018,
+            "ES2019" => Lib::Es2019,
             "ES2019.ARRAY" => Lib::Es2019Array,
             "ES2019.OBJECT" => Lib::Es2019Object,
             "ES2019.STRING" => Lib::Es2019String,
             "ES2019.SYMBOL" => Lib::Es2019Symbol,
-            "ES2019" => Lib::Es2019,
+            "ES2020" => Lib::Es2020,
             "ES2020.STRING" => Lib::Es2020String,
             "ES2020.SYMBOL.WELLKNOWN" => Lib::Es2020SymbolWellknown,
+            "ES2021" => Lib::Es2021,
             "ES2021.PROMISE" => Lib::Es2021Promise,
             "ES2021.STRING" => Lib::Es2021String,
             "ES2021.WEAKREF" => Lib::Es2021Weakref,
-            "ES2021" => Lib::Es2021,
+            "ES2022" => Lib::Es2022,
+            "ESNEXT" => Lib::EsNext,
             "ESNEXT.ARRAY" => Lib::EsNextArray,
             "ESNEXT.ASYNCITERABLE" => Lib::EsNextAsyncIterable,
             "ESNEXT.INTL" => Lib::EsNextIntl,
             "ESNEXT.SYMBOL" => Lib::EsNextSymbol,
-            "ESNEXT" => Lib::EsNext,
             "SCRIPTHOST" => Lib::ScriptHost,
             "WEBWORKER" => Lib::WebWorker,
             other => Lib::Other(other.to_string()),
@@ -769,8 +772,8 @@ impl Serialize for Lib {
             Lib::Es2015Promise => "ES2015.PROMISE".to_owned(),
             Lib::Es2015Proxy => "ES2015.PROXY".to_owned(),
             Lib::Es2015Reflect => "ES2015.REFLECT".to_owned(),
-            Lib::Es2015SymbolWellKnown => "ES2015.SYMBOL.WELLKNOWN".to_owned(),
             Lib::Es2015Symbol => "ES2015.SYMBOL".to_owned(),
+            Lib::Es2015SymbolWellKnown => "ES2015.SYMBOL.WELLKNOWN".to_owned(),
             Lib::Es2016ArrayInclude => "ES2016.ARRAY.INCLUDE".to_owned(),
             Lib::Es2017Intl => "ES2017.INTL".to_owned(),
             Lib::Es2017Object => "ES2017.OBJECT".to_owned(),
@@ -803,7 +806,132 @@ impl Serialize for Lib {
 #[cfg(test)]
 mod test {
     use super::*;
+    use assert_fs::prelude::*;
     use moon_utils::test::get_fixtures_dir;
+
+    #[tokio::test]
+    async fn skips_none_when_writing() {
+        let dir = assert_fs::TempDir::new().unwrap();
+        let file = dir.child("tsconfig.json");
+        file.write_str("{}").unwrap();
+
+        let mut tsconfig = TsConfigJson::load(file.path()).await.unwrap();
+        tsconfig.compiler_options = Some(CompilerOptions {
+            composite: Some(true),
+            jsx: Some(Jsx::ReactJsx),
+            ..CompilerOptions::default()
+        });
+        tsconfig.include = Some(moon_utils::string_vec!["**/*"]);
+        tsconfig.save().await.unwrap();
+
+        let expected = serde_json::json!({
+            "compilerOptions": {
+                "composite": true,
+                "jsx": "react-jsx"
+            },
+            "include": ["**/*"]
+        });
+
+        assert_eq!(
+            fs::read_json_string(file.path()).await.unwrap(),
+            serde_json::to_string_pretty(&expected).unwrap(),
+        );
+    }
+
+    #[test]
+    fn serializes_special_fields() {
+        let actual = TsConfigJson {
+            compiler_options: Some(CompilerOptions {
+                module: Some(Module::EsNext),
+                module_resolution: Some(ModuleResolution::Node12),
+                jsx: Some(Jsx::ReactJsxdev),
+                target: Some(Target::Es6),
+                lib: Some(vec![
+                    Lib::Dom,
+                    Lib::Es2015Generator,
+                    Lib::Es2016ArrayInclude,
+                    Lib::Es2017SharedMemory,
+                    Lib::Es2018Intl,
+                    Lib::Es2019Symbol,
+                    Lib::Es2020SymbolWellknown,
+                    Lib::Es2021Weakref,
+                ]),
+                ..CompilerOptions::default()
+            }),
+            ..TsConfigJson::default()
+        };
+
+        let expected = serde_json::json!({
+            "compilerOptions": {
+                "jsx": "react-jsxdev",
+                "lib": [
+                    "dom",
+                    "es2015.generator",
+                    "es2016.array.include",
+                    "es2017.sharedmemory",
+                    "es2018.intl",
+                    "es2019.symbol",
+                    "es2020.symbol.wellknown",
+                    "es2021.weakref",
+                ],
+                "module": "esnext",
+                "moduleResolution": "node12",
+                "target": "es6",
+            },
+        });
+
+        assert_eq!(
+            serde_json::to_string(&actual).unwrap(),
+            serde_json::to_string(&expected).unwrap(),
+        );
+    }
+
+    #[test]
+    fn deserializes_special_fields() {
+        let actual = serde_json::json!({
+            "compilerOptions": {
+                "jsx": "react-native",
+                "lib": [
+                    "dom",
+                    "es2015.collection",
+                    "es2016",
+                    "es2017.typedarrays",
+                    "es2018.promise",
+                    "es2019.string",
+                    "es2020",
+                    "es2021.weakref",
+                ],
+                "module": "es2015",
+                "moduleResolution": "classic",
+                "target": "esnext",
+            },
+        });
+
+        let expected = TsConfigJson {
+            compiler_options: Some(CompilerOptions {
+                jsx: Some(Jsx::ReactNative),
+                lib: Some(vec![
+                    Lib::Dom,
+                    Lib::Es2015Collection,
+                    Lib::Es2016,
+                    Lib::Es2017TypedArrays,
+                    Lib::Es2018Promise,
+                    Lib::Es2019String,
+                    Lib::Es2020,
+                    Lib::Es2021Weakref,
+                ]),
+                module: Some(Module::Es2015),
+                module_resolution: Some(ModuleResolution::Classic),
+                target: Some(Target::EsNext),
+                ..CompilerOptions::default()
+            }),
+            ..TsConfigJson::default()
+        };
+
+        let actual_typed: TsConfigJson = serde_json::from_value(actual).unwrap();
+
+        assert_eq!(actual_typed, expected);
+    }
 
     #[test]
     fn merge_two_configs() {

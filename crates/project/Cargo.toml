@@ -18,5 +18,5 @@ serde_json = { version = "1.0", features = ["preserve_order"] }
 thiserror = "1.0"
 
 [dev-dependencies]
-pretty_assertions = "1.0"
+pretty_assertions = "1.1"
 tokio = { version = "1.16", features = ["test-util"] }

@@ -8,13 +8,17 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task;
 
-async fn run_task(workspace: Arc<RwLock<Workspace>>, node: &Node) -> Result<(), WorkspaceError> {
+async fn run_task(
+    workspace: Arc<RwLock<Workspace>>,
+    node: &Node,
+    primary_target: &str,
+) -> Result<(), WorkspaceError> {
     match node {
         Node::InstallNodeDeps => {
             install_node_deps(workspace).await?;
         }
         Node::RunTarget(target_id) => {
-            run_target(workspace, target_id).await?;
+            run_target(workspace, target_id, primary_target).await?;
         }
         Node::SetupToolchain => {
             setup_toolchain(workspace).await?;
@@ -28,6 +32,8 @@ async fn run_task(workspace: Arc<RwLock<Workspace>>, node: &Node) -> Result<(), 
 }
 
 pub struct TaskRunner {
+    primary_target: String,
+
     workspace: Arc<RwLock<Workspace>>,
 }
 
@@ -39,8 +45,23 @@ impl TaskRunner {
         );
 
         TaskRunner {
+            primary_target: String::new(),
             workspace: Arc::new(RwLock::new(workspace)),
         }
+    }
+
+    pub async fn cleanup(&self) -> Result<(), WorkspaceError> {
+        let workspace = self.workspace.read().await;
+
+        // Delete all previously created runfiles
+        trace!(
+            target: "moon:task-runner",
+            "Deleting stale runfiles"
+        );
+
+        workspace.cache.delete_runfiles().await?;
+
+        Ok(())
     }
 
     pub async fn run(&self, graph: DepGraph) -> Result<Vec<TaskResult>, WorkspaceError> {
@@ -48,6 +69,7 @@ impl TaskRunner {
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
+        let primary_target = Arc::new(self.primary_target.clone());
 
         // Clean the runner state *before* running tasks instead of after,
         // so that failing or broken builds can dig into and debug the state!
@@ -76,6 +98,7 @@ impl TaskRunner {
                 let task_count = t + 1;
                 let workspace_clone = Arc::clone(&self.workspace);
                 let graph_clone = Arc::clone(&graph);
+                let primary_target_clone = Arc::clone(&primary_target);
 
                 // TODO - abort parallel threads when an error occurs in a sibling thread
                 task_handles.push(task::spawn(async move {
@@ -90,7 +113,7 @@ impl TaskRunner {
                             color::muted_light(&node.label())
                         );
 
-                        match run_task(workspace_clone, node).await {
+                        match run_task(workspace_clone, node, &primary_target_clone).await {
                             Ok(_) => {
                                 result.pass();
                             }
@@ -133,17 +156,8 @@ impl TaskRunner {
         Ok(results)
     }
 
-    pub async fn cleanup(&self) -> Result<(), WorkspaceError> {
-        let workspace = self.workspace.read().await;
-
-        // Delete all runfiles created during this process
-        trace!(
-            target: "moon:task-runner",
-            "Deleting stale runfiles"
-        );
-
-        workspace.cache.delete_runfiles().await?;
-
-        Ok(())
+    pub fn set_primary_target(&mut self, target: &str) -> &mut Self {
+        self.primary_target = target.to_owned();
+        self
     }
 }

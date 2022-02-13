@@ -14,6 +14,8 @@ tasks:
       - 'build'
       - '--addEngines'
       - '--addExports'
+    deps:
+      - 'runtime:typecheck'
     inputs:
       - '@globs(sources)'
       - 'package.json'
@@ -28,6 +30,7 @@ tasks:
     args:
       - '--build'
       - '--pretty'
+      - '--verbose'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'

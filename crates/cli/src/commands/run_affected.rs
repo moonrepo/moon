@@ -72,12 +72,20 @@ pub async fn run_affected(
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();
-    dep_graph.run_target_if_touched(target, &touched_files, &workspace.projects)?;
+    let is_affected =
+        dep_graph.run_target_if_touched(target, &touched_files, &workspace.projects)?;
 
-    // TODO: If not affected, log a "success message"
+    if is_affected.is_none() {
+        println!("TODO: target not affected");
+
+        return Ok(());
+    }
 
     // Process all tasks in the graph
-    TaskRunner::new(workspace).run(dep_graph).await?;
+    TaskRunner::new(workspace)
+        .set_primary_target(target)
+        .run(dep_graph)
+        .await?;
 
     Ok(())
 }

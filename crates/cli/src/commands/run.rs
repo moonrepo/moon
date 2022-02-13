@@ -8,7 +8,10 @@ pub async fn run(target: &str) -> Result<(), Box<dyn std::error::Error>> {
     dep_graph.run_target(target, &workspace.projects)?;
 
     // Process all tasks in the graph
-    TaskRunner::new(workspace).run(dep_graph).await?;
+    TaskRunner::new(workspace)
+        .set_primary_target(target)
+        .run(dep_graph)
+        .await?;
 
     Ok(())
 }

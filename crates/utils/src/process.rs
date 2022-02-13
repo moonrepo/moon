@@ -70,10 +70,7 @@ pub async fn spawn_command(command: &mut Command) -> Result<Output, MoonError> {
         .stderr(Stdio::piped())
         .stdout(Stdio::piped())
         // Inherit ANSI colors since they're stripped from pipes
-        .env(
-            "FORCE_COLOR",
-            env::var("FORCE_COLOR").unwrap_or_default()),
-        )
+        .env("FORCE_COLOR", env::var("FORCE_COLOR").unwrap_or_default())
         .env("TERM", env::var("TERM").unwrap_or_default())
         .spawn()
         .unwrap();

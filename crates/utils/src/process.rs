@@ -76,8 +76,12 @@ pub async fn spawn_command(command: &mut Command) -> Result<Output, MoonError> {
         .spawn()
         .unwrap();
 
+    // We need to log the child process output to the parent terminal
+    // AND capture stdout/stderr so that we can cache it for future runs.
+    // This doesn't seem to be supported natively by `Stdio`, so I have
+    // this *real ugly* implementation to solve it. There's gotta be a
+    // better way to do this?
     // https://stackoverflow.com/a/49063262
-    // There's gotta be a better way to do this?
     let err = BufReader::new(child.stderr.take().unwrap());
     let out = BufReader::new(child.stdout.take().unwrap());
 

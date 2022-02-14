@@ -105,31 +105,35 @@ impl TaskRunner {
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(task) {
-                        trace!(
-                            target:
-                                &format!("moon:task-runner:batch:{}:{}", batch_count, task_count),
-                            "Running task {}",
-                            color::muted_light(&node.label())
-                        );
+                        let log_target_name =
+                            format!("moon:task-runner:batch:{}:{}", batch_count, task_count);
+                        let log_task_label = color::muted_light(&node.label());
 
-                        match run_task(workspace_clone, node, &primary_target_clone).await {
-                            Ok(_) => {
-                                result.pass();
-                            }
-                            Err(error) => {
-                                result.fail();
+                        trace!(target: &log_target_name, "Running task {}", log_task_label);
 
-                                return Err(error);
-                            }
+                        if let Err(error) =
+                            run_task(workspace_clone, node, &primary_target_clone).await
+                        {
+                            result.fail();
+
+                            trace!(
+                                target: &log_target_name,
+                                "Task {} failed in {:?}",
+                                log_task_label,
+                                result.duration.unwrap()
+                            );
+
+                            return Err(error);
+                        } else {
+                            result.pass();
+
+                            trace!(
+                                target: &log_target_name,
+                                "Ran task {} in {:?}",
+                                log_task_label,
+                                result.duration.unwrap()
+                            );
                         }
-
-                        trace!(
-                            target:
-                                &format!("moon:task-runner:batch:{}:{}", batch_count, task_count),
-                            "Ran task {} in {:?}",
-                            color::muted_light(&node.label()),
-                            result.duration.unwrap()
-                        );
                     } else {
                         result.status = TaskResultStatus::Invalid;
 

@@ -2,11 +2,10 @@ use crate::helpers::safe_exit;
 use crate::output::replace_style_tokens;
 use console::{measure_text_width, Attribute, Style, Term};
 use core::fmt::Debug;
+use moon_logger::color;
 use moon_logger::color::Color;
 use std::env;
 use std::io;
-
-pub use moon_logger::color;
 
 pub enum Label {
     Default,
@@ -46,7 +45,7 @@ impl ExtendedTerm for Term {
             .attr(Attribute::Bold)
             .color256(Color::Black as u8);
 
-        // Doesnt show styles in tests unless we force it
+        // Dont show styles in tests unless we force it
         if env::var("MOON_TEST").is_ok() {
             style = style.force_styling(true);
         }

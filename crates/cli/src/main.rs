@@ -1,8 +1,6 @@
 mod app;
 mod commands;
 mod helpers;
-mod output;
-mod terminal;
 
 use app::{App, Commands, LogLevel};
 use clap::Parser;
@@ -14,9 +12,8 @@ use commands::run_affected::run_affected;
 use commands::setup::setup;
 use commands::teardown::teardown;
 use console::Term;
-use log::LevelFilter;
-use moon_logger::Logger;
-use terminal::ExtendedTerm;
+use moon_logger::{LevelFilter, Logger};
+use moon_terminal::ExtendedTerm;
 
 // This is annoying, but clap requires applying the `ArgEnum`
 // trait onto the enum, which we can't apply to the log package.

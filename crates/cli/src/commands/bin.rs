@@ -1,5 +1,5 @@
-use crate::helpers::safe_exit;
 use clap::ArgEnum;
+use moon_terminal::helpers::safe_exit;
 use moon_toolchain::Tool;
 use moon_workspace::Workspace;
 

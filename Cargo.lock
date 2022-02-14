@@ -972,14 +972,12 @@ dependencies = [
  "indicatif",
  "insta",
  "itertools",
- "lazy_static",
- "log",
  "moon_logger",
  "moon_project",
+ "moon_terminal",
  "moon_toolchain",
  "moon_workspace",
  "predicates",
- "regex",
  "tokio",
 ]
 
@@ -1036,6 +1034,16 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "moon_terminal"
+version = "0.1.0"
+dependencies = [
+ "console",
+ "lazy_static",
+ "moon_logger",
+ "regex",
 ]
 
 [[package]]

@@ -1,18 +1,19 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
+use moon_cache::RunTargetState;
 use moon_config::TaskType;
-use moon_logger::debug;
+use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{get_path_env_var, Tool};
-use moon_utils::process::{exec_command, output_to_string, Output};
+use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::process::Command;
 use tokio::sync::RwLock;
 
-pub async fn create_env_vars(
+async fn create_env_vars(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
@@ -63,13 +64,13 @@ pub async fn create_env_vars(
 ///
 /// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
-async fn run_node_target(
+fn create_node_target_command(
     project: &Project,
     task: &Task,
     node: &NodeTool,
     exec_dir: &Path,
     env_vars: HashMap<String, String>,
-) -> Result<Output, WorkspaceError> {
+) -> Result<Command, WorkspaceError> {
     // Node args
     let package_bin_path = node.find_package_bin_path(&task.command, &project.root)?;
     let mut args = vec![
@@ -81,38 +82,36 @@ async fn run_node_target(
     // Package args
     args.extend(task.args.iter().map(|a| a.as_str()));
 
-    Ok(exec_command(
-        Command::new(node.get_bin_path())
-            .args(&args)
-            .current_dir(&exec_dir)
-            .env("PATH", get_path_env_var(node.get_bin_dir()))
-            .envs(env_vars),
-    )
-    .await?)
+    // Create the command
+    let mut cmd = create_command(node.get_bin_path());
+
+    cmd.args(&args)
+        .current_dir(&exec_dir)
+        .env("PATH", get_path_env_var(node.get_bin_dir()))
+        .envs(env_vars);
+
+    Ok(cmd)
 }
 
-async fn run_shell_target(
+fn create_shell_target_command(
     task: &Task,
     exec_dir: &Path,
     env_vars: HashMap<String, String>,
-) -> Result<Output, WorkspaceError> {
-    Ok(exec_command(
-        Command::new(&task.command)
-            .args(&task.args)
-            .current_dir(&exec_dir)
-            .envs(env_vars),
-    )
-    .await?)
+) -> Command {
+    let mut cmd = create_command(&task.command);
+    cmd.args(&task.args).current_dir(&exec_dir).envs(env_vars);
+    cmd
 }
 
 pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
     target: &str,
-) -> Result<Output, WorkspaceError> {
+    primary_target: &str,
+) -> Result<(), WorkspaceError> {
     debug!(
         target: "moon:task-runner:run-target",
         "Running target {}",
-        target
+        color::id(target)
     );
 
     let workspace = workspace.read().await;
@@ -134,12 +133,26 @@ pub async fn run_target(
     };
 
     let env_vars = create_env_vars(&workspace, &project, task).await?;
-    let output = match task.type_of {
+    let mut command = match task.type_of {
         TaskType::Node => {
-            run_node_target(&project, task, toolchain.get_node(), exec_dir, env_vars).await?
+            create_node_target_command(&project, task, toolchain.get_node(), exec_dir, env_vars)?
         }
-        _ => run_shell_target(task, exec_dir, env_vars).await?,
+        _ => create_shell_target_command(task, exec_dir, env_vars),
     };
+
+    // Run the command as a child process
+    let is_primary = target == primary_target;
+    let output;
+
+    if is_primary {
+        // If this target matches the primary target (the last task to run),
+        // then we want to stream the output directly to the parent (inherit mode).
+        output = spawn_command(&mut command).await?;
+    } else {
+        // Otherwise we run the process in the background and write the output
+        // once it has completed.
+        output = exec_command(&mut command).await?;
+    }
 
     // Update the cache with the result
     cache.item.exit_code = output.status.code().unwrap_or(0);
@@ -148,5 +161,27 @@ pub async fn run_target(
     cache.item.stdout = output_to_string(&output.stdout);
     cache.save().await?;
 
-    Ok(output)
+    handle_cache_item(target, &cache.item, !is_primary)?;
+
+    Ok(())
+}
+
+fn handle_cache_item(target: &str, item: &RunTargetState, log: bool) -> Result<(), WorkspaceError> {
+    // Only log when *not* the primary target, or a cache hit
+    if log {
+        if !item.stderr.is_empty() {
+            eprintln!("{}", item.stderr);
+        }
+
+        if !item.stdout.is_empty() {
+            println!("{}", item.stdout);
+        }
+    }
+
+    // Return an error if the child process failed
+    if item.exit_code != 0 {
+        return Err(WorkspaceError::TaskRunnerFailedTarget(target.to_owned()));
+    }
+
+    Ok(())
 }

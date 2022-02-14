@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::SystemTime;
 
+#[derive(Debug)]
 pub struct CacheItem<T: DeserializeOwned + Serialize> {
     pub item: T,
 

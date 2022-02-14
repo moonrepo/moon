@@ -5,6 +5,7 @@ use crate::tasks::{install_node_deps, run_target, setup_toolchain, sync_project}
 use crate::workspace::Workspace;
 use moon_logger::{color, debug, trace};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tokio::task;
 
@@ -32,6 +33,8 @@ async fn run_task(
 }
 
 pub struct TaskRunner {
+    pub duration: Option<Duration>,
+
     primary_target: String,
 
     workspace: Arc<RwLock<Workspace>>,
@@ -45,6 +48,7 @@ impl TaskRunner {
         );
 
         TaskRunner {
+            duration: None,
             primary_target: String::new(),
             workspace: Arc::new(RwLock::new(workspace)),
         }
@@ -64,7 +68,8 @@ impl TaskRunner {
         Ok(())
     }
 
-    pub async fn run(&self, graph: DepGraph) -> Result<Vec<TaskResult>, WorkspaceError> {
+    pub async fn run(&mut self, graph: DepGraph) -> Result<Vec<TaskResult>, WorkspaceError> {
+        let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
@@ -159,9 +164,11 @@ impl TaskRunner {
             }
         }
 
+        self.duration = Some(start.elapsed());
+
         debug!(
             target: "moon:task-runner",
-            "Finished running {} tasks", node_count
+            "Finished running {} tasks in {:?}", node_count, self.duration.unwrap()
         );
 
         Ok(results)

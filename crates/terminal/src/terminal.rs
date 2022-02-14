@@ -1,5 +1,5 @@
 use crate::helpers::{replace_style_tokens, safe_exit};
-use console::{measure_text_width, Attribute, Style, Term};
+use console::{measure_text_width, style, Attribute, Style, Term};
 use core::fmt::Debug;
 use moon_logger::color;
 use moon_logger::color::Color;
@@ -28,10 +28,6 @@ pub trait ExtendedTerm {
     fn render_error(&self, error: Box<dyn std::error::Error>) -> !;
     fn render_label(&self, kind: Label, message: &str) -> TermWriteResult;
     fn render_list(&self, values: &[String]) -> TermWriteResult;
-
-    // LAYOUT
-
-    fn block(&self, contents: &str, padding: u8) -> TermWriteResult;
 }
 
 impl ExtendedTerm for Term {
@@ -71,13 +67,13 @@ impl ExtendedTerm for Term {
     }
 
     fn render_entry(&self, key: &str, value: &str) -> TermWriteResult {
-        let label = color::muted_light(&format!("{}:", key));
+        let label = color::muted_light(&format!("{}:", style(key).bold()));
 
-        self.write_line(&format!(" {} {}", label, value))
+        self.write_line(&format!("{} {}", label, value))
     }
 
     fn render_entry_list(&self, key: &str, values: &[String]) -> TermWriteResult {
-        let label = color::muted_light(&format!(" {}:", key));
+        let label = color::muted_light(&format!("{}:", style(key).bold()));
 
         self.write_line(&label)?;
         self.render_list(values)?;
@@ -99,14 +95,15 @@ impl ExtendedTerm for Term {
             contents = format!("{} {}", label, &message);
         }
 
-        self.block(&contents, 1).unwrap();
+        self.write_line("").unwrap();
+        self.write_line(&contents).unwrap();
+        self.write_line("").unwrap();
         self.flush().unwrap();
 
         safe_exit(1);
     }
 
     fn render_label(&self, kind: Label, message: &str) -> TermWriteResult {
-        self.write_str(" ")?;
         self.write_line(&self.format_label(kind, message))?;
         self.write_line("")?;
 
@@ -115,31 +112,8 @@ impl ExtendedTerm for Term {
 
     fn render_list(&self, values: &[String]) -> TermWriteResult {
         for value in values {
-            self.write_line(&format!("  {} {}", color::muted("-"), value))?;
+            self.write_line(&format!(" {} {}", color::muted("-"), value))?;
         }
-
-        Ok(())
-    }
-
-    // LAYOUT
-
-    fn block(&self, contents: &str, padding: u8) -> TermWriteResult {
-        if padding == 0 {
-            self.write_line(contents)?;
-
-            return Ok(());
-        }
-
-        let y = String::from("\n").repeat(padding as usize);
-        let x = String::from(" ").repeat(padding as usize);
-
-        self.write_str(&y)?;
-
-        for line in contents.split('\n') {
-            self.write_line(&format!("{}{}{}", x, line, x))?;
-        }
-
-        self.write_str(&y)?;
 
         Ok(())
     }

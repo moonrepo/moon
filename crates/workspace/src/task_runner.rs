@@ -100,7 +100,6 @@ impl TaskRunner {
                 let graph_clone = Arc::clone(&graph);
                 let primary_target_clone = Arc::clone(&primary_target);
 
-                // TODO - abort parallel threads when an error occurs in a sibling thread
                 task_handles.push(task::spawn(async move {
                     let mut result = TaskResult::new(task);
                     let own_graph = graph_clone.read().await;
@@ -123,6 +122,14 @@ impl TaskRunner {
                                 return Err(error);
                             }
                         }
+
+                        trace!(
+                            target:
+                                &format!("moon:task-runner:batch:{}:{}", batch_count, task_count),
+                            "Ran task {} in {:?}",
+                            color::muted_light(&node.label()),
+                            result.duration.unwrap()
+                        );
                     } else {
                         result.status = TaskResultStatus::Invalid;
 

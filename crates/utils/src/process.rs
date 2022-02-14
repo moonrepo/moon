@@ -69,6 +69,7 @@ pub async fn spawn_command(command: &mut Command) -> Result<Output, MoonError> {
     let mut child = command
         .stderr(Stdio::piped())
         .stdout(Stdio::piped())
+        .envs(env::vars())
         // Inherit ANSI colors since they're stripped from pipes
         .env("FORCE_COLOR", env::var("FORCE_COLOR").unwrap_or_default())
         .env("TERM", env::var("TERM").unwrap_or_default())
@@ -76,17 +77,17 @@ pub async fn spawn_command(command: &mut Command) -> Result<Output, MoonError> {
         .unwrap();
 
     // https://stackoverflow.com/a/49063262
+    // There's gotta be a better way to do this?
     let err = BufReader::new(child.stderr.take().unwrap());
     let out = BufReader::new(child.stdout.take().unwrap());
 
     // Spawn additional threads for logging the buffer
-    let mut handles = vec![];
     let stderr = Arc::new(RwLock::new(vec![]));
-    let stderr_clone = Arc::clone(&stderr);
     let stdout = Arc::new(RwLock::new(vec![]));
+    let stderr_clone = Arc::clone(&stderr);
     let stdout_clone = Arc::clone(&stdout);
 
-    handles.push(task::spawn(async move {
+    task::spawn(async move {
         let mut lines = err.lines();
         let mut stderr_write = stderr_clone.write().await;
 
@@ -94,9 +95,9 @@ pub async fn spawn_command(command: &mut Command) -> Result<Output, MoonError> {
             eprintln!("{}", line);
             stderr_write.push(line);
         }
-    }));
+    });
 
-    handles.push(task::spawn(async move {
+    task::spawn(async move {
         let mut lines = out.lines();
         let mut stdout_write = stdout_clone.write().await;
 
@@ -104,11 +105,7 @@ pub async fn spawn_command(command: &mut Command) -> Result<Output, MoonError> {
             println!("{}", line);
             stdout_write.push(line);
         }
-    }));
-
-    for handle in handles {
-        handle.await.unwrap();
-    }
+    });
 
     // Attempt to capture the child output
     let mut output = child.wait_with_output().await.map_err(|e| {

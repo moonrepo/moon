@@ -15,6 +15,9 @@ pub enum WorkspaceError {
     #[error("Task runner failed to run: {0}")]
     TaskRunnerFailure(#[from] tokio::task::JoinError),
 
+    #[error("Target <id>{0}</id> failed to run.")]
+    TaskRunnerFailedTarget(String),
+
     #[error(
         "Unable to determine workspace root. Please create a <path>{}</path> configuration folder.",
         constants::CONFIG_DIRNAME

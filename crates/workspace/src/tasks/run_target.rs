@@ -6,7 +6,7 @@ use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{get_path_env_var, Tool};
-use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command, Output};
+use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -107,7 +107,7 @@ pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
     target: &str,
     primary_target: &str,
-) -> Result<Output, WorkspaceError> {
+) -> Result<(), WorkspaceError> {
     debug!(
         target: "moon:task-runner:run-target",
         "Running target {}",
@@ -155,25 +155,33 @@ pub async fn run_target(
     }
 
     // Update the cache with the result
-    cache.item.last_run_time = cache.now_millis();
     cache.item.exit_code = output.status.code().unwrap_or(0);
+    cache.item.last_run_time = cache.now_millis();
     cache.item.stderr = output_to_string(&output.stderr);
     cache.item.stdout = output_to_string(&output.stdout);
     cache.save().await?;
 
-    if !is_primary {
-        log_cache_item_output(&cache.item);
-    }
+    handle_cache_item(target, &cache.item, !is_primary)?;
 
-    Ok(output)
+    Ok(())
 }
 
-fn log_cache_item_output(item: &RunTargetState) {
-    if !item.stderr.is_empty() {
-        eprintln!("{}", item.stderr);
+fn handle_cache_item(target: &str, item: &RunTargetState, log: bool) -> Result<(), WorkspaceError> {
+    // Only log when *not* the primary target, or a cache hit
+    if log {
+        if !item.stderr.is_empty() {
+            eprintln!("{}", item.stderr);
+        }
+
+        if !item.stdout.is_empty() {
+            println!("{}", item.stdout);
+        }
     }
 
-    if !item.stdout.is_empty() {
-        println!("{}", item.stdout);
+    // Return an error if the child process failed
+    if item.exit_code != 0 {
+        return Err(WorkspaceError::TaskRunnerFailedTarget(target.to_owned()));
     }
+
+    Ok(())
 }

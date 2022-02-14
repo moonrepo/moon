@@ -1,5 +1,4 @@
-use crate::helpers::safe_exit;
-use crate::output::replace_style_tokens;
+use crate::helpers::{replace_style_tokens, safe_exit};
 use console::{measure_text_width, Attribute, Style, Term};
 use core::fmt::Debug;
 use moon_logger::color;

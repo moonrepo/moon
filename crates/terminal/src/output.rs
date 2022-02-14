@@ -1,59 +1,36 @@
-use lazy_static::lazy_static;
+use ansi_term::Style;
 use moon_logger::color;
-use regex::{Captures, Regex};
-use std::path::Path;
 
-lazy_static! {
-    pub static ref STYLE_TOKEN: Regex = Regex::new(r#"<(\w+)>([^</>]+)</(\w+)>"#).unwrap();
+const STEP_CHAR: &str = "▪";
+
+pub fn label_moon() -> String {
+    format!(
+        "{}{}{}{}",
+        color::paint(57, "m"),
+        color::paint(63, "o"),
+        color::paint(69, "◑"),
+        color::paint(75, "n")
+    )
 }
 
-pub fn replace_style_tokens(value: &str) -> String {
-    String::from(STYLE_TOKEN.replace_all(value, |caps: &Captures| {
-        let token = caps.get(1).map_or("", |m| m.as_str());
-        let inner = caps.get(2).map_or("", |m| m.as_str());
-
-        match token {
-            "file_path" => color::file_path(Path::new(inner)),
-            "id" => color::id(inner),
-            "muted" => color::muted_light(inner),
-            "path" => color::path(inner),
-            "shell" => color::shell(inner),
-            "symbol" => color::symbol(inner),
-            "url" => color::url(inner),
-            _ => String::from(inner),
-        }
-    }))
+pub fn label_run_target(target: &str) -> String {
+    format!(
+        "{}{}{}{} {}",
+        color::paint(57, STEP_CHAR),
+        color::paint(63, STEP_CHAR),
+        color::paint(69, STEP_CHAR),
+        color::paint(75, STEP_CHAR),
+        Style::new().bold().paint(target)
+    )
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    mod replace_style_tokens {
-        use super::*;
-
-        #[test]
-        fn renders_ansi() {
-            let list = vec!["file_path", "muted", "id", "path", "shell", "symbol"];
-
-            for token in list {
-                let value = format!("Before <{}>inner</{}> after", token, token);
-
-                assert_ne!(replace_style_tokens(&value), value);
-            }
-
-            assert_eq!(
-                replace_style_tokens("Before <unknown>inner</unknown> after"),
-                "Before inner after"
-            );
-        }
-
-        #[test]
-        fn renders_multiple_ansi() {
-            assert_ne!(
-                replace_style_tokens("<muted>Before</muted> <id>inner</id> <symbol>after</symbol>"),
-                "Before inner after"
-            );
-        }
-    }
+pub fn label_run_target_failed(target: &str) -> String {
+    format!(
+        "{}{}{}{} {}",
+        color::paint(124, STEP_CHAR),
+        color::paint(125, STEP_CHAR),
+        color::paint(126, STEP_CHAR),
+        color::paint(127, STEP_CHAR),
+        Style::new().bold().paint(target)
+    )
 }

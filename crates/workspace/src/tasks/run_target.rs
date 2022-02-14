@@ -4,6 +4,7 @@ use moon_cache::RunTargetState;
 use moon_config::TaskType;
 use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
+use moon_terminal::output::label_run_target;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{get_path_env_var, Tool};
 use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
@@ -114,11 +115,13 @@ pub async fn run_target(
         color::id(target)
     );
 
+    println!("{}", label_run_target(target));
+
     let workspace = workspace.read().await;
     let mut cache = workspace.cache.run_target_state(target).await?;
     let toolchain = &workspace.toolchain;
 
-    // TODO abort early for a cache hit
+    // TODO abort early for a cache hit (also change label)
 
     // Gather the project and task
     let (project_id, task_id) = Target::parse(target)?;
@@ -170,11 +173,11 @@ fn handle_cache_item(target: &str, item: &RunTargetState, log: bool) -> Result<(
     // Only log when *not* the primary target, or a cache hit
     if log {
         if !item.stderr.is_empty() {
-            eprintln!("{}", item.stderr);
+            eprint!("{}", item.stderr);
         }
 
         if !item.stdout.is_empty() {
-            println!("{}", item.stdout);
+            print!("{}", item.stdout);
         }
     }
 

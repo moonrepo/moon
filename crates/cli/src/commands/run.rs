@@ -1,7 +1,6 @@
 use console::Term;
 use humantime::format_duration;
 use moon_logger::color;
-use moon_terminal::output::label_moon;
 use moon_terminal::ExtendedTerm;
 use moon_workspace::{DepGraph, TaskResult, TaskResultStatus, TaskRunner, Workspace};
 use std::time::Duration;
@@ -10,7 +9,6 @@ pub fn render_result_stats(
     results: Vec<TaskResult>,
     duration: Duration,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let total_count = results.len();
     let mut pass_count = 0;
     let mut fail_count = 0;
     let mut invalid_count = 0;
@@ -30,7 +28,6 @@ pub fn render_result_stats(
         }
     }
 
-    let ran_message = format!("Ran {} tasks in {}", total_count, format_duration(duration));
     let mut counts_message = vec![];
 
     if pass_count > 0 {
@@ -45,21 +42,8 @@ pub fn render_result_stats(
         counts_message.push(color::invalid(&format!("{} invalid", invalid_count)));
     }
 
-    let contents = format!(
-        "{}\n{}",
-        ran_message,
-        counts_message.join(&color::muted(", "))
-    );
-
-    // let term = Term::buffered_stdout();
-    // term.write_line("")?;
-    // term.write_line(&contents)?;
-    // term.write_line("")?;
-    // term.flush()?;
-
     let term = Term::buffered_stdout();
     term.write_line("")?;
-    term.write_line(&label_moon())?;
     term.render_entry("Tasks", &counts_message.join(&color::muted(", ")))?;
     term.render_entry(" Time", &format_duration(duration).to_string())?;
     term.write_line("")?;

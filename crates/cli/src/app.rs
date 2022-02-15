@@ -5,6 +5,7 @@ use crate::commands::run_affected::RunStatus;
 use clap::ArgEnum;
 use clap::{AppSettings, Parser, Subcommand};
 use moon_project::TargetID;
+use moon_terminal::output::label_moon;
 
 #[derive(ArgEnum, Clone, Debug)]
 pub enum LogLevel {
@@ -99,7 +100,7 @@ pub enum Commands {
 #[derive(Debug, Parser)]
 #[clap(
     bin_name = "moon",
-    name = "Moon",
+    name = label_moon(),
     about = "Take your monorepo to the moon!",
     version
 )]

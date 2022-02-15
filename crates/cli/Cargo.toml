@@ -6,16 +6,15 @@ edition = "2021"
 [dependencies]
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
+moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_workspace = { path = "../workspace" }
 clap = { version = "3.0.0-rc.9", features = ["derive"] }
 console = "0.15"
 dialoguer = "0.9"
+humantime = "2.1"
 indicatif = "0.16"
 itertools = "0.10"
-lazy_static = "1.4"
-log = "0.4"
-regex = "1.5"
 tokio = { version = "1.16", features = ["full"] }
 
 [dev-dependencies]

@@ -1,13 +1,3 @@
-// https://github.com/clap-rs/clap/blob/master/src/util/mod.rs#L25
-pub fn safe_exit(code: i32) -> ! {
-    use std::io::Write;
-
-    let _ = std::io::stdout().lock().flush();
-    let _ = std::io::stderr().lock().flush();
-
-    std::process::exit(code)
-}
-
 #[cfg(test)]
 pub fn create_test_command(fixture: &str) -> assert_cmd::Command {
     let mut path = std::env::current_dir().unwrap();

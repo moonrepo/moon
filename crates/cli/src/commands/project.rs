@@ -1,6 +1,7 @@
-use crate::terminal::{color, ExtendedTerm, Label};
 use console::Term;
 use itertools::Itertools;
+use moon_logger::color;
+use moon_terminal::{ExtendedTerm, Label};
 use moon_workspace::Workspace;
 use std::env;
 

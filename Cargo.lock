@@ -694,6 +694,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
+
+[[package]]
 name = "hyper"
 version = "0.14.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -969,17 +975,16 @@ dependencies = [
  "clap",
  "console",
  "dialoguer",
+ "humantime",
  "indicatif",
  "insta",
  "itertools",
- "lazy_static",
- "log",
  "moon_logger",
  "moon_project",
+ "moon_terminal",
  "moon_toolchain",
  "moon_workspace",
  "predicates",
- "regex",
  "tokio",
 ]
 
@@ -1039,6 +1044,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_terminal"
+version = "0.1.0"
+dependencies = [
+ "ansi_term",
+ "console",
+ "lazy_static",
+ "moon_logger",
+ "regex",
+]
+
+[[package]]
 name = "moon_toolchain"
 version = "0.1.0"
 dependencies = [
@@ -1087,6 +1103,7 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_project",
+ "moon_terminal",
  "moon_toolchain",
  "moon_utils",
  "pathdiff",

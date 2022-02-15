@@ -9,7 +9,7 @@ use std::path::Path;
 pub enum Color {
     White = 15,
     Black = 16,
-    Green = 34,
+    Green = 35,
     Teal = 36,
     Cyan = 38,
     Blue = 39,
@@ -18,8 +18,8 @@ pub enum Color {
     Red = 161,
     Pink = 183,
     Yellow = 185,
-    Gray = 238,
-    GrayLight = 249,
+    Gray = 239,
+    GrayLight = 248,
 }
 
 pub fn paint(color: u8, value: &str) -> String {

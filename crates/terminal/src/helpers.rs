@@ -7,6 +7,16 @@ lazy_static! {
     pub static ref STYLE_TOKEN: Regex = Regex::new(r#"<(\w+)>([^</>]+)</(\w+)>"#).unwrap();
 }
 
+// https://github.com/clap-rs/clap/blob/master/src/util/mod.rs#L25
+pub fn safe_exit(code: i32) -> ! {
+    use std::io::Write;
+
+    let _ = std::io::stdout().lock().flush();
+    let _ = std::io::stderr().lock().flush();
+
+    std::process::exit(code)
+}
+
 pub fn replace_style_tokens(value: &str) -> String {
     String::from(STYLE_TOKEN.replace_all(value, |caps: &Captures| {
         let token = caps.get(1).map_or("", |m| m.as_str());

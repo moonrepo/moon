@@ -2,7 +2,6 @@ use petgraph::graph::NodeIndex;
 use std::time::{Duration, Instant};
 
 pub enum TaskResultStatus {
-    Cancelled,
     Failed,
     Invalid,
     Passed,

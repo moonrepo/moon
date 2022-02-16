@@ -13,6 +13,10 @@
   "workspaces": [
     "packages/*"
   ],
+  "engines": {
+    "node": ">=12.17.0",
+    "npm": ">=6.13.0"
+  },
   "devDependencies": {
     "@types/node": "^17.0.15",
     "eslint": "^8.8.0",

@@ -6,7 +6,7 @@ export interface RuntimeContext {
 	project: Project;
 	target: string;
 	workspace: {
-		root: string;
+		root: Path;
 	};
 }
 
@@ -26,7 +26,7 @@ export async function getContext(): Promise<RuntimeContext> {
 		},
 		target: env.MOON_RUN_TARGET!,
 		workspace: {
-			root: env.MOON_WORKSPACE_ROOT ?? process.cwd(),
+			root: Path.create(env.MOON_WORKSPACE_ROOT ?? process.cwd()),
 		},
 	};
 }

@@ -15,6 +15,8 @@ dialoguer = "0.9"
 humantime = "2.1"
 indicatif = "0.16"
 itertools = "0.10"
+strum = "0.23"
+strum_macros = "0.23"
 tokio = { version = "1.16", features = ["full"] }
 
 [dev-dependencies]

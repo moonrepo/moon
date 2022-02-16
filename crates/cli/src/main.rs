@@ -7,8 +7,7 @@ use clap::Parser;
 use commands::bin::bin;
 use commands::project::project;
 use commands::project_graph::project_graph;
-use commands::run::run;
-use commands::run_affected::run_affected;
+use commands::run::{run, RunOptions};
 use commands::setup::setup;
 use commands::teardown::teardown;
 use console::Term;
@@ -49,11 +48,19 @@ async fn main() {
         Commands::ProjectGraph { id } => {
             result = project_graph(id).await;
         }
-        Commands::Run { target } => {
-            result = run(target).await;
-        }
-        Commands::RunAffected { target, status } => {
-            result = run_affected(target, status).await;
+        Commands::Run {
+            target,
+            affected,
+            status,
+        } => {
+            result = run(
+                target,
+                RunOptions {
+                    affected: *affected,
+                    status: status.clone().unwrap_or_default(),
+                },
+            )
+            .await;
         }
         Commands::Setup => {
             result = setup().await;

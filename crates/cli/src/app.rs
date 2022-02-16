@@ -1,7 +1,7 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
 use crate::commands::bin::BinTools;
-use crate::commands::run_affected::RunStatus;
+use crate::commands::run::RunStatus;
 use clap::ArgEnum;
 use clap::{AppSettings, Parser, Subcommand};
 use moon_project::TargetID;
@@ -67,16 +67,9 @@ pub enum Commands {
     Run {
         #[clap(help = "Target (project:task) to run")]
         target: TargetID,
-    },
 
-    // moon run-affected [target]
-    #[clap(
-        name = "run-affected",
-        about = "Run a project task if it has been affected by changed files."
-    )]
-    RunAffected {
-        #[clap(help = "Target (project:task) to run")]
-        target: TargetID,
+        #[clap(long, help = "Only run target it affected by changed files")]
+        affected: bool,
 
         #[clap(arg_enum, long, help = "Determine affected files based on this status")]
         status: Option<RunStatus>,

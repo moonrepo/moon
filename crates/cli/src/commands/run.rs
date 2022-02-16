@@ -1,9 +1,62 @@
+use clap::ArgEnum;
 use console::Term;
 use humantime::format_duration;
 use moon_logger::color;
+use moon_project::TouchedFilePaths;
 use moon_terminal::ExtendedTerm;
-use moon_workspace::{DepGraph, TaskResult, TaskResultStatus, TaskRunner, Workspace};
+use moon_workspace::{
+    DepGraph, TaskResult, TaskResultStatus, TaskRunner, Workspace, WorkspaceError,
+};
+use std::collections::HashSet;
+use std::string::ToString;
 use std::time::Duration;
+use strum_macros::Display;
+
+#[derive(ArgEnum, Clone, Debug, Display)]
+pub enum RunStatus {
+    Added,
+    All,
+    Deleted,
+    Modified,
+    Staged,
+    Unstaged,
+    Untracked,
+}
+
+impl Default for RunStatus {
+    fn default() -> Self {
+        RunStatus::All
+    }
+}
+
+pub struct RunOptions {
+    pub affected: bool,
+    pub status: RunStatus,
+}
+
+async fn get_touched_files(
+    workspace: &Workspace,
+    status: &RunStatus,
+) -> Result<TouchedFilePaths, WorkspaceError> {
+    let vcs = workspace.detect_vcs();
+    let mut touched = HashSet::new();
+    let touched_files = vcs.get_touched_files().await?;
+    let files = match status {
+        RunStatus::Added => touched_files.added,
+        RunStatus::All => touched_files.all,
+        RunStatus::Deleted => touched_files.deleted,
+        RunStatus::Modified => touched_files.modified,
+        RunStatus::Staged => touched_files.staged,
+        RunStatus::Unstaged => touched_files.unstaged,
+        RunStatus::Untracked => touched_files.untracked,
+    };
+
+    for file in &files {
+        touched.insert(workspace.root.join(file));
+    }
+
+    Ok(touched)
+}
 
 pub fn render_result_stats(
     results: Vec<TaskResult>,
@@ -52,12 +105,33 @@ pub fn render_result_stats(
     Ok(())
 }
 
-pub async fn run(target: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();
-    dep_graph.run_target(target, &workspace.projects)?;
+
+    if options.affected {
+        let touched_files = get_touched_files(&workspace, &options.status).await?;
+        let is_affected =
+            dep_graph.run_target_if_touched(target, &touched_files, &workspace.projects)?;
+
+        if is_affected.is_none() {
+            if matches!(options.status, RunStatus::All) {
+                println!("Target {} not affected by touched files", color::id(target));
+            } else {
+                println!(
+                    "Target {} not affected by touched files (using status {})",
+                    color::id(target),
+                    color::symbol(&options.status.to_string().to_lowercase())
+                );
+            }
+
+            return Ok(());
+        }
+    } else {
+        dep_graph.run_target(target, &workspace.projects)?;
+    }
 
     // Process all tasks in the graph
     let mut runner = TaskRunner::new(workspace);

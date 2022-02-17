@@ -9,7 +9,7 @@ moon_project = { path = "../project" }
 moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_workspace = { path = "../workspace" }
-clap = { version = "3.0.0-rc.9", features = ["derive"] }
+clap = { version = "3.1", features = ["derive", "wrap_help"] }
 console = "0.15"
 dialoguer = "0.9"
 humantime = "2.1"

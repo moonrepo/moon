@@ -2,8 +2,7 @@
 
 use crate::commands::bin::BinTools;
 use crate::commands::run::RunStatus;
-use clap::ArgEnum;
-use clap::{AppSettings, Parser, Subcommand};
+use clap::{ArgEnum, Parser, Subcommand};
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
 
@@ -23,6 +22,8 @@ impl Default for LogLevel {
     }
 }
 
+const HEADING_AFFECTED: &str = "Affected by changes";
+
 #[derive(Debug, Subcommand)]
 pub enum Commands {
     // moon bin <tool>
@@ -35,6 +36,20 @@ pub enum Commands {
         #[clap(arg_enum, help = "The tool to query")]
         tool: BinTools,
     },
+
+    // moon setup
+    #[clap(
+        name = "setup",
+        about = "Setup the environment by installing all tools."
+    )]
+    Setup,
+
+    // moon teardown
+    #[clap(
+        name = "teardown",
+        about = "Teardown the environment by uninstalling all tools and deleting temp files."
+    )]
+    Teardown,
 
     // moon project <id>
     #[clap(
@@ -68,26 +83,22 @@ pub enum Commands {
         #[clap(help = "List of targets (project:task) to run")]
         targets: Vec<TargetID>,
 
-        #[clap(long, help = "Only run target it affected by changed files")]
+        // Affected
+        #[clap(
+            long,
+            help = "Only run target it affected by changed files",
+            help_heading = HEADING_AFFECTED
+        )]
         affected: bool,
 
-        #[clap(arg_enum, long, help = "Determine affected files based on this status")]
+        #[clap(
+            arg_enum,
+            long,
+            help = "Determine affected files based on this status",
+            help_heading = HEADING_AFFECTED
+        )]
         status: Option<RunStatus>,
     },
-
-    // moon setup
-    #[clap(
-        name = "setup",
-        about = "Setup the environment by installing all tools."
-    )]
-    Setup,
-
-    // moon teardown
-    #[clap(
-        name = "teardown",
-        about = "Teardown the environment by uninstalling all tools and deleting temp files."
-    )]
-    Teardown,
 }
 
 #[derive(Debug, Parser)]
@@ -97,10 +108,13 @@ pub enum Commands {
     about = "Take your monorepo to the moon!",
     version
 )]
-#[clap(global_setting(AppSettings::DisableColoredHelp))]
-#[clap(global_setting(AppSettings::DisableHelpSubcommand))]
-#[clap(global_setting(AppSettings::DontCollapseArgsInUsage))]
-#[clap(global_setting(AppSettings::PropagateVersion))]
+#[clap(
+    disable_colored_help = true,
+    disable_help_subcommand = true,
+    dont_collapse_args_in_usage = true,
+    propagate_version = true,
+    next_line_help = false
+)]
 pub struct App {
     #[clap(arg_enum, long, short = 'L', help = "Lowest log level to output")]
     pub log_level: Option<LogLevel>,

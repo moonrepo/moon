@@ -59,14 +59,14 @@ pub enum Commands {
         id: Option<String>,
     },
 
-    // moon run [target]
+    // moon run [...targets]
     #[clap(
         name = "run",
         about = "Run a project task and all its dependent tasks."
     )]
     Run {
-        #[clap(help = "Target (project:task) to run")]
-        target: TargetID,
+        #[clap(help = "List of targets (project:task) to run")]
+        targets: Vec<TargetID>,
 
         #[clap(long, help = "Only run target it affected by changed files")]
         affected: bool,

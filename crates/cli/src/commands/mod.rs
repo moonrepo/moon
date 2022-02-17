@@ -1,4 +1,5 @@
 pub mod bin;
+pub mod init;
 pub mod project;
 pub mod project_graph;
 pub mod run;

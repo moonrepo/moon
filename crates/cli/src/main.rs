@@ -5,6 +5,7 @@ mod helpers;
 use app::{App, Commands, LogLevel};
 use clap::Parser;
 use commands::bin::bin;
+use commands::init::init;
 use commands::project::project;
 use commands::project_graph::project_graph;
 use commands::run::{run, RunOptions};
@@ -42,8 +43,11 @@ async fn main() {
         Commands::Bin { tool } => {
             result = bin(tool).await;
         }
+        Commands::Init { dest, force } => {
+            result = init(dest, *force).await;
+        }
         Commands::Project { id, json } => {
-            result = project(id, json).await;
+            result = project(id, *json).await;
         }
         Commands::ProjectGraph { id } => {
             result = project_graph(id).await;

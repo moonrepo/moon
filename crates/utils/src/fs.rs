@@ -138,6 +138,14 @@ pub async fn remove_dir_all(path: &Path) -> Result<(), MoonError> {
     Ok(())
 }
 
+pub async fn write(path: &Path, data: impl AsRef<[u8]>) -> Result<(), MoonError> {
+    fs::write(path, data)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    Ok(())
+}
+
 pub async fn write_json<T>(path: &Path, json: &T, pretty: bool) -> Result<(), MoonError>
 where
     T: ?Sized + Serialize,

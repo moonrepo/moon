@@ -2,8 +2,7 @@
 
 use crate::commands::bin::BinTools;
 use crate::commands::run::RunStatus;
-use clap::ArgEnum;
-use clap::{AppSettings, Parser, Subcommand};
+use clap::{ArgEnum, Parser, Subcommand};
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
 
@@ -29,17 +28,33 @@ pub enum Commands {
     #[clap(
         name = "bin",
         about = "Return an absolute path to a tool's binary within the toolchain.",
-        long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value."
+        long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value.",
+        next_help_heading = "Environment"
     )]
     Bin {
         #[clap(arg_enum, help = "The tool to query")]
         tool: BinTools,
     },
 
+    // moon setup
+    #[clap(
+        name = "setup",
+        about = "Setup the environment by installing all tools."
+    )]
+    Setup,
+
+    // moon teardown
+    #[clap(
+        name = "teardown",
+        about = "Teardown the environment by uninstalling all tools and deleting temp files."
+    )]
+    Teardown,
+
     // moon project <id>
     #[clap(
         name = "project",
-        about = "Display information about a single project."
+        about = "Display information about a single project.",
+        next_help_heading = "Projects"
     )]
     Project {
         #[clap(help = "ID of project to display")]
@@ -62,7 +77,8 @@ pub enum Commands {
     // moon run [...targets]
     #[clap(
         name = "run",
-        about = "Run a project task and all its dependent tasks."
+        about = "Run a project task and all its dependent tasks.",
+        next_help_heading = "Tasks"
     )]
     Run {
         #[clap(help = "List of targets (project:task) to run")]
@@ -74,20 +90,6 @@ pub enum Commands {
         #[clap(arg_enum, long, help = "Determine affected files based on this status")]
         status: Option<RunStatus>,
     },
-
-    // moon setup
-    #[clap(
-        name = "setup",
-        about = "Setup the environment by installing all tools."
-    )]
-    Setup,
-
-    // moon teardown
-    #[clap(
-        name = "teardown",
-        about = "Teardown the environment by uninstalling all tools and deleting temp files."
-    )]
-    Teardown,
 }
 
 #[derive(Debug, Parser)]
@@ -97,10 +99,12 @@ pub enum Commands {
     about = "Take your monorepo to the moon!",
     version
 )]
-#[clap(global_setting(AppSettings::DisableColoredHelp))]
-#[clap(global_setting(AppSettings::DisableHelpSubcommand))]
-#[clap(global_setting(AppSettings::DontCollapseArgsInUsage))]
-#[clap(global_setting(AppSettings::PropagateVersion))]
+#[clap(
+    disable_colored_help = true,
+    disable_help_subcommand = true,
+    dont_collapse_args_in_usage = true,
+    propagate_version = true
+)]
 pub struct App {
     #[clap(arg_enum, long, short = 'L', help = "Lowest log level to output")]
     pub log_level: Option<LogLevel>,

@@ -30,8 +30,7 @@ pub enum Commands {
     #[clap(
         name = "bin",
         about = "Return an absolute path to a tool's binary within the toolchain.",
-        long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value.",
-        help_heading = "Group"
+        long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value."
     )]
     Bin {
         #[clap(arg_enum, help = "The tool to query")]

@@ -4,6 +4,7 @@ use crate::task_result::{TaskResult, TaskResultStatus};
 use crate::tasks::{install_node_deps, run_target, setup_toolchain, sync_project};
 use crate::workspace::Workspace;
 use moon_logger::{color, debug, trace};
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
@@ -12,14 +13,14 @@ use tokio::task;
 async fn run_task(
     workspace: Arc<RwLock<Workspace>>,
     node: &Node,
-    primary_target: &str,
+    primary_targets: &HashSet<String>,
 ) -> Result<(), WorkspaceError> {
     match node {
         Node::InstallNodeDeps => {
             install_node_deps(workspace).await?;
         }
         Node::RunTarget(target_id) => {
-            run_target(workspace, target_id, primary_target).await?;
+            run_target(workspace, target_id, primary_targets).await?;
         }
         Node::SetupToolchain => {
             setup_toolchain(workspace).await?;
@@ -35,7 +36,7 @@ async fn run_task(
 pub struct TaskRunner {
     pub duration: Option<Duration>,
 
-    primary_target: String,
+    primary_targets: HashSet<String>,
 
     workspace: Arc<RwLock<Workspace>>,
 }
@@ -49,7 +50,7 @@ impl TaskRunner {
 
         TaskRunner {
             duration: None,
-            primary_target: String::new(),
+            primary_targets: HashSet::new(),
             workspace: Arc::new(RwLock::new(workspace)),
         }
     }
@@ -74,7 +75,7 @@ impl TaskRunner {
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
-        let primary_target = Arc::new(self.primary_target.clone());
+        let primary_targets = Arc::new(self.primary_targets.clone());
 
         // Clean the runner state *before* running tasks instead of after,
         // so that failing or broken builds can dig into and debug the state!
@@ -103,7 +104,7 @@ impl TaskRunner {
                 let task_count = t + 1;
                 let workspace_clone = Arc::clone(&self.workspace);
                 let graph_clone = Arc::clone(&graph);
-                let primary_target_clone = Arc::clone(&primary_target);
+                let primary_targets_clone = Arc::clone(&primary_targets);
 
                 task_handles.push(task::spawn(async move {
                     let mut result = TaskResult::new(task);
@@ -117,7 +118,7 @@ impl TaskRunner {
                         trace!(target: &log_target_name, "Running task {}", log_task_label);
 
                         if let Err(error) =
-                            run_task(workspace_clone, node, &primary_target_clone).await
+                            run_task(workspace_clone, node, &primary_targets_clone).await
                         {
                             result.fail();
 
@@ -174,8 +175,11 @@ impl TaskRunner {
         Ok(results)
     }
 
-    pub fn set_primary_target(&mut self, target: &str) -> &mut Self {
-        self.primary_target = target.to_owned();
+    pub fn set_primary_targets(&mut self, targets: &[String]) -> &mut Self {
+        for target in targets {
+            self.primary_targets.insert(target.to_owned());
+        }
+
         self
     }
 }

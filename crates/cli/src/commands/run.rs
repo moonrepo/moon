@@ -106,7 +106,7 @@ pub fn render_result_stats(
 }
 
 pub async fn run(
-    targets: &Vec<String>,
+    targets: &[String],
     options: RunOptions,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
@@ -128,7 +128,7 @@ pub async fn run(
         }
 
         // Display a message for projects that werent affected
-        if unaffected_targets.len() > 0 {
+        if !unaffected_targets.is_empty() {
             let targets_label = unaffected_targets
                 .iter()
                 .map(|t| color::id(t))
@@ -158,7 +158,7 @@ pub async fn run(
 
     // Process all tasks in the graph
     let mut runner = TaskRunner::new(workspace);
-    let results = runner.set_primary_target(target).run(dep_graph).await?;
+    let results = runner.set_primary_targets(targets).run(dep_graph).await?;
 
     // Render stats about the run
     render_result_stats(results, runner.duration.unwrap())?;

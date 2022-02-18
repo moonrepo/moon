@@ -101,25 +101,29 @@ impl ProjectGraph {
         Ok(graph.node_weight(index).unwrap().clone())
     }
 
-    /// Return a list of project IDs that a project depends on,
-    /// in the priority order in which they are depended on.
-    pub fn get_dependencies_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
+    /// Return a list of direct project IDs that the defined project depends on.
+    pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
         let indices = self.indices.read().expect(READ_ERROR);
         let graph = self.graph.read().expect(READ_ERROR);
 
         let deps = graph
-            .neighbors_directed(*indices.get(id).unwrap(), Direction::Outgoing)
+            .neighbors_directed(*indices.get(&project.id).unwrap(), Direction::Outgoing)
             .map(|idx| graph.node_weight(idx).unwrap().id.clone())
             .collect();
 
         Ok(deps)
     }
 
-    /// Return a list of project IDs that a project depends on,
-    /// in ascending order.
-    pub fn get_sorted_dependencies_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
-        let mut deps = self.get_dependencies_of(id)?;
-        deps.sort();
+    /// Return a list of project IDs that require the defined project.
+    pub fn get_dependents_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
+        let indices = self.indices.read().expect(READ_ERROR);
+        let graph = self.graph.read().expect(READ_ERROR);
+
+        let deps = graph
+            .neighbors_directed(*indices.get(&project.id).unwrap(), Direction::Incoming)
+            .map(|idx| graph.node_weight(idx).unwrap().id.clone())
+            .filter(|id| id != ROOT_NODE_ID)
+            .collect();
 
         Ok(deps)
     }

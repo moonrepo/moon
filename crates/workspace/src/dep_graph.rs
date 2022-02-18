@@ -253,7 +253,7 @@ impl DepGraph {
         );
 
         // Force load project into the graph
-        projects.get(project_id)?;
+        let project = projects.get(project_id)?;
 
         // Sync can be run in parallel while deps are installing
         let node_index = self
@@ -267,7 +267,7 @@ impl DepGraph {
         self.index_cache.insert(project_id.to_owned(), node_index);
 
         // But we need to wait on all dependent nodes
-        for dep_id in projects.get_dependencies_of(project_id)? {
+        for dep_id in projects.get_dependencies_of(&project)? {
             let dep_node_index = self.sync_project(&dep_id, projects)?;
             self.graph.add_edge(node_index, dep_node_index, ());
         }

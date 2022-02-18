@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../config" }
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
 moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
+moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 clap = { version = "3.1", features = ["derive", "wrap_help"] }
 console = "0.15"

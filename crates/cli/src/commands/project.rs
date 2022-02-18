@@ -5,11 +5,11 @@ use moon_terminal::{ExtendedTerm, Label};
 use moon_workspace::Workspace;
 use std::env;
 
-pub async fn project(id: &str, json: &bool) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
     let project = workspace.projects.get(id)?;
 
-    if *json {
+    if json {
         println!("{}", project.to_json());
 
         return Ok(());

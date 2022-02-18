@@ -26,6 +26,19 @@ const HEADING_AFFECTED: &str = "Affected by changes";
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    // moon init
+    #[clap(
+        name = "init",
+        about = "Initialize a new moon repository and scaffold config files."
+    )]
+    Init {
+        #[clap(help = "Destination to initialize in", default_value = ".")]
+        dest: String,
+
+        #[clap(long, help = "Overwrite existing configurations")]
+        force: bool,
+    },
+
     // moon bin <tool>
     #[clap(
         name = "bin",

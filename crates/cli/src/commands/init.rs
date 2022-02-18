@@ -6,13 +6,17 @@ use std::env;
 
 pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Error>> {
     let working_dir = env::current_dir().unwrap();
-    let dest_dir = working_dir.join(dest).canonicalize().unwrap();
+    let dest_dir = if dest == "." {
+        working_dir
+    } else {
+        working_dir.join(dest)
+    };
     let moon_dir = dest_dir.join(CONFIG_DIRNAME);
 
     if moon_dir.exists() && !force {
         println!(
             "Moon has already been initialized in {} (pass {} to overwrite)",
-            color::file_path(&dest_dir),
+            color::file_path(&dest_dir.canonicalize().unwrap()),
             color::shell("--force")
         );
 
@@ -35,7 +39,7 @@ pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Err
 
     println!(
         "Moon has successfully been initialized in {}",
-        color::file_path(&dest_dir),
+        color::file_path(&dest_dir.canonicalize().unwrap()),
     );
 
     Ok(())

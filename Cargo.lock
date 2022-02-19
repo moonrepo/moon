@@ -1045,6 +1045,7 @@ dependencies = [
  "common-path",
  "globset",
  "globwalk",
+ "insta",
  "itertools",
  "moon_config",
  "moon_error",

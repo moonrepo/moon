@@ -8,7 +8,7 @@ use moon_terminal::output::label_run_target;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{get_path_env_var, Tool};
 use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::process::Command;
@@ -108,7 +108,7 @@ fn create_shell_target_command(
 pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
     target: &str,
-    primary_targets: &HashSet<String>,
+    primary_target: &str,
 ) -> Result<(), WorkspaceError> {
     debug!(
         target: "moon:task-runner:run-target",
@@ -145,7 +145,7 @@ pub async fn run_target(
     };
 
     // Run the command as a child process
-    let is_primary = primary_targets.contains(target);
+    let is_primary = primary_target == target;
     let output;
 
     if is_primary {

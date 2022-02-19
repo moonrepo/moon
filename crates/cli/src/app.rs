@@ -94,8 +94,8 @@ pub enum Commands {
         about = "Run a project task and all its dependent tasks."
     )]
     Run {
-        #[clap(help = "List of targets (project:task) to run")]
-        targets: Vec<TargetID>,
+        #[clap(help = "Target (project:task) to run")]
+        target: TargetID,
 
         // Affected
         #[clap(

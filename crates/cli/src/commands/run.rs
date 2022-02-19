@@ -105,10 +105,7 @@ pub fn render_result_stats(
     Ok(())
 }
 
-pub async fn run(
-    targets: &[String],
-    options: RunOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
 
     // Generate a dependency graph for all the targets that need to be ran
@@ -116,49 +113,30 @@ pub async fn run(
 
     if options.affected {
         let touched_files = get_touched_files(&workspace, &options.status).await?;
-        let mut unaffected_targets = HashSet::new();
 
-        for target in targets {
-            if dep_graph
-                .run_target_if_touched(target, &touched_files, &workspace.projects)?
-                .is_none()
-            {
-                unaffected_targets.insert(target);
-            }
-        }
-
-        // Display a message for projects that werent affected
-        if !unaffected_targets.is_empty() {
-            let targets_label = unaffected_targets
-                .iter()
-                .map(|t| color::id(t))
-                .collect::<Vec<_>>()
-                .join(", ");
-
+        if dep_graph
+            .run_target_if_touched(target, &touched_files, &workspace.projects)?
+            .is_none()
+        {
             if matches!(options.status, RunStatus::All) {
-                println!("Targets {} not affected by touched files", targets_label);
+                println!("Target {} not affected by touched files", target);
             } else {
                 println!(
-                    "Targets {} not affected by touched files (using status {})",
-                    targets_label,
+                    "Target {} not affected by touched files (using status {})",
+                    target,
                     color::symbol(&options.status.to_string().to_lowercase())
                 );
             }
-        }
 
-        // Nothing to run, so abort early
-        if unaffected_targets.len() == targets.len() {
             return Ok(());
         }
     } else {
-        for target in targets {
-            dep_graph.run_target(target, &workspace.projects)?;
-        }
+        dep_graph.run_target(target, &workspace.projects)?;
     }
 
     // Process all tasks in the graph
     let mut runner = TaskRunner::new(workspace);
-    let results = runner.set_primary_targets(targets).run(dep_graph).await?;
+    let results = runner.set_primary_target(target).run(dep_graph).await?;
 
     // Render stats about the run
     render_result_stats(results, runner.duration.unwrap())?;

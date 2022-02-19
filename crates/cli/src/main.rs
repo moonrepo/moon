@@ -53,12 +53,12 @@ async fn main() {
             result = project_graph(id).await;
         }
         Commands::Run {
-            targets,
+            target,
             affected,
             status,
         } => {
             result = run(
-                targets,
+                target,
                 RunOptions {
                     affected: *affected,
                     status: status.clone().unwrap_or_default(),

@@ -11,7 +11,7 @@ mod types;
 
 pub use constants::ROOT_NODE_ID;
 pub use errors::ProjectError;
-pub use types::TouchedFilePaths;
+pub use types::*;
 
 // Projects
 pub use moon_config::{ProjectID, ProjectType};

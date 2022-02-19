@@ -62,6 +62,8 @@ pub struct TaskOptionsConfig {
 
     pub merge_deps: Option<TaskMergeStrategy>,
 
+    pub merge_env: Option<TaskMergeStrategy>,
+
     pub merge_inputs: Option<TaskMergeStrategy>,
 
     pub merge_outputs: Option<TaskMergeStrategy>,
@@ -78,6 +80,7 @@ impl Default for TaskOptionsConfig {
         TaskOptionsConfig {
             merge_args: Some(TaskMergeStrategy::default()),
             merge_deps: Some(TaskMergeStrategy::default()),
+            merge_env: Some(TaskMergeStrategy::default()),
             merge_inputs: Some(TaskMergeStrategy::default()),
             merge_outputs: Some(TaskMergeStrategy::default()),
             retry_count: Some(0),

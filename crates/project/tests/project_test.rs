@@ -3,7 +3,7 @@ use moon_config::{
     GlobalProjectConfig, ProjectConfig, ProjectMetadataConfig, ProjectType, TargetID, TaskConfig,
     TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_project::{FileGroup, Project, ProjectError, Target, Task};
+use moon_project::{EnvVars, FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::{BTreeMap, HashMap};
@@ -243,6 +243,7 @@ mod tasks {
             args: None,
             command: Some(command.to_owned()),
             deps: None,
+            env: None,
             inputs: None,
             outputs: None,
             options: None,
@@ -254,6 +255,7 @@ mod tasks {
         TaskOptionsConfig {
             merge_args: Some(strategy.clone()),
             merge_deps: Some(strategy.clone()),
+            merge_env: Some(strategy.clone()),
             merge_inputs: Some(strategy.clone()),
             merge_outputs: Some(strategy),
             retry_count: Some(1),
@@ -266,6 +268,7 @@ mod tasks {
         TaskOptionsConfig {
             merge_args: Some(strategy.clone()),
             merge_deps: Some(strategy.clone()),
+            merge_env: Some(strategy.clone()),
             merge_inputs: Some(strategy.clone()),
             merge_outputs: Some(strategy),
             retry_count: None,
@@ -278,12 +281,20 @@ mod tasks {
         TaskOptionsConfig {
             merge_args: None,
             merge_deps: None,
+            merge_env: None,
             merge_inputs: None,
             merge_outputs: None,
             retry_count: Some(1),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
         }
+    }
+
+    fn stub_global_env_vars() -> EnvVars {
+        HashMap::from([
+            ("GLOBAL".to_owned(), "1".to_owned()),
+            ("KEY".to_owned(), "a".to_owned()),
+        ])
     }
 
     fn create_expanded_task(
@@ -421,6 +432,7 @@ mod tasks {
                         args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
                         deps: Some(string_vec!["a:standard"]),
+                        env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
@@ -445,6 +457,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
                             deps: Some(string_vec!["b:standard"]),
+                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
@@ -465,6 +478,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
                             deps: Some(string_vec!["b:standard"]),
+                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_merged_task_options_config(
@@ -497,6 +511,7 @@ mod tasks {
                         args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
                         deps: Some(string_vec!["a:standard"]),
+                        env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
@@ -521,6 +536,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: None,
                             deps: Some(string_vec!["b:standard"]),
+                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
@@ -541,6 +557,10 @@ mod tasks {
                             args: Some(string_vec!["--a", "--b"]),
                             command: Some(String::from("standard")),
                             deps: Some(string_vec!["a:standard", "b:standard"]),
+                            env: Some(HashMap::from([
+                                ("GLOBAL".to_owned(), "1".to_owned()),
+                                ("KEY".to_owned(), "b".to_owned())
+                            ])),
                             inputs: Some(string_vec!["a.*", "b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: Some(mock_merged_task_options_config(
@@ -573,6 +593,7 @@ mod tasks {
                         args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
                         deps: Some(string_vec!["a:standard"]),
+                        env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
@@ -597,6 +618,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
                             deps: Some(string_vec!["b:standard"]),
+                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
@@ -617,6 +639,10 @@ mod tasks {
                             args: Some(string_vec!["--b", "--a"]),
                             command: Some(String::from("newcmd")),
                             deps: Some(string_vec!["b:standard", "a:standard"]),
+                            env: Some(HashMap::from([
+                                ("GLOBAL".to_owned(), "1".to_owned()),
+                                ("KEY".to_owned(), "a".to_owned())
+                            ])),
                             inputs: Some(string_vec!["b.*", "a.*"]),
                             outputs: Some(string_vec!["b.ts", "a.ts"]),
                             options: Some(mock_merged_task_options_config(
@@ -649,6 +675,7 @@ mod tasks {
                         args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
                         deps: Some(string_vec!["a:standard"]),
+                        env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
@@ -673,11 +700,13 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: None,
                             deps: Some(string_vec!["b:standard"]),
+                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(TaskOptionsConfig {
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
+                                merge_env: Some(TaskMergeStrategy::Replace),
                                 merge_inputs: Some(TaskMergeStrategy::Replace),
                                 merge_outputs: Some(TaskMergeStrategy::Append),
                                 retry_count: None,
@@ -699,11 +728,13 @@ mod tasks {
                             args: Some(string_vec!["--a", "--b"]),
                             command: Some(String::from("standard")),
                             deps: Some(string_vec!["b:standard", "a:standard"]),
+                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: Some(TaskOptionsConfig {
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
+                                merge_env: Some(TaskMergeStrategy::Replace),
                                 merge_inputs: Some(TaskMergeStrategy::Replace),
                                 merge_outputs: Some(TaskMergeStrategy::Append),
                                 retry_count: Some(1),
@@ -750,6 +781,7 @@ mod tasks {
                             ]),
                             command: Some(String::from("test")),
                             deps: None,
+                            env: None,
                             inputs: None,
                             outputs: None,
                             options: None,
@@ -804,6 +836,7 @@ mod tasks {
                             ]),
                             command: Some(String::from("test")),
                             deps: None,
+                            env: None,
                             inputs: None,
                             outputs: None,
                             options: Some(TaskOptionsConfig {
@@ -865,6 +898,7 @@ mod tasks {
                             ]),
                             command: Some(String::from("test")),
                             deps: None,
+                            env: None,
                             inputs: None,
                             outputs: None,
                             options: None,
@@ -910,6 +944,7 @@ mod tasks {
                             args: None,
                             command: Some(String::from("test")),
                             deps: None,
+                            env: None,
                             inputs: Some(string_vec![
                                 "file.ts",
                                 "@dirs(static)",

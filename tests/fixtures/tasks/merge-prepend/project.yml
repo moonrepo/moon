@@ -10,8 +10,11 @@ tasks:
       - b.*
     outputs:
       - b.ts
+    env:
+      KEY: b
     options:
       mergeArgs: prepend
       mergeDeps: prepend
+      mergeEnv: prepend
       mergeInputs: prepend
       mergeOutputs: prepend

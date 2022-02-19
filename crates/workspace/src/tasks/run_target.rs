@@ -88,8 +88,9 @@ fn create_node_target_command(
 
     cmd.args(&args)
         .current_dir(&exec_dir)
-        .env("PATH", get_path_env_var(node.get_bin_dir()))
-        .envs(env_vars);
+        .envs(&task.env)
+        .envs(env_vars)
+        .env("PATH", get_path_env_var(node.get_bin_dir()));
 
     Ok(cmd)
 }

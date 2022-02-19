@@ -9,8 +9,11 @@ tasks:
       - b.*
     outputs:
       - b.ts
+    env:
+      KEY: b
     options:
       mergeArgs: append
       mergeDeps: append
+      mergeEnv: append
       mergeInputs: append
       mergeOutputs: append

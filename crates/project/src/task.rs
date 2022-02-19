@@ -1,6 +1,6 @@
 use crate::errors::ProjectError;
 use crate::token::TokenResolver;
-use crate::types::{ExpandedFiles, TouchedFilePaths};
+use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
 use globset::{Glob, GlobSetBuilder};
 use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
@@ -8,7 +8,7 @@ use moon_config::{
 use moon_logger::{color, debug, trace};
 use moon_utils::fs::is_path_glob;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 fn handle_canonicalize(path: &Path) -> Result<PathBuf, ProjectError> {
@@ -33,6 +33,8 @@ pub struct TaskOptions {
 
     pub merge_deps: TaskMergeStrategy,
 
+    pub merge_env: TaskMergeStrategy,
+
     pub merge_inputs: TaskMergeStrategy,
 
     pub merge_outputs: TaskMergeStrategy,
@@ -52,6 +54,10 @@ impl TaskOptions {
 
         if let Some(merge_deps) = &config.merge_deps {
             self.merge_deps = merge_deps.clone();
+        }
+
+        if let Some(merge_env) = &config.merge_env {
+            self.merge_env = merge_env.clone();
         }
 
         if let Some(merge_inputs) = &config.merge_inputs {
@@ -84,6 +90,8 @@ pub struct Task {
 
     pub deps: Vec<TargetID>,
 
+    pub env: EnvVars,
+
     pub inputs: Vec<FilePathOrGlob>,
 
     #[serde(skip)]
@@ -114,12 +122,14 @@ impl Task {
             args: cloned_config.args.unwrap_or_else(Vec::new),
             command: cloned_config.command.unwrap_or_default(),
             deps: cloned_config.deps.unwrap_or_else(Vec::new),
+            env: cloned_config.env.unwrap_or_else(HashMap::new),
             inputs: cloned_config.inputs.unwrap_or_else(Vec::new),
             input_globs: vec![],
             input_paths: HashSet::new(),
             options: TaskOptions {
                 merge_args: cloned_options.merge_args.unwrap_or_default(),
                 merge_deps: cloned_options.merge_deps.unwrap_or_default(),
+                merge_env: cloned_options.merge_env.unwrap_or_default(),
                 merge_inputs: cloned_options.merge_inputs.unwrap_or_default(),
                 merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
@@ -277,6 +287,10 @@ impl Task {
             self.deps = self.merge_string_vec(&self.deps, deps, &self.options.merge_deps);
         }
 
+        if let Some(env) = &config.env {
+            self.env = self.merge_env_vars(&self.env, env, &self.options.merge_env);
+        }
+
         if let Some(inputs) = &config.inputs {
             self.inputs = self.merge_string_vec(&self.inputs, inputs, &self.options.merge_inputs);
         }
@@ -288,6 +302,27 @@ impl Task {
 
         if let Some(type_of) = &config.type_of {
             self.type_of = type_of.clone();
+        }
+    }
+
+    fn merge_env_vars(
+        &self,
+        base: &EnvVars,
+        next: &EnvVars,
+        strategy: &TaskMergeStrategy,
+    ) -> EnvVars {
+        match strategy {
+            TaskMergeStrategy::Append => {
+                let mut map = base.clone();
+                map.extend(next.clone());
+                map
+            }
+            TaskMergeStrategy::Prepend => {
+                let mut map = next.clone();
+                map.extend(base.clone());
+                map
+            }
+            TaskMergeStrategy::Replace => next.clone(),
         }
     }
 

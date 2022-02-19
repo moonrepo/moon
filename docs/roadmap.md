@@ -1,3 +1,5 @@
+# 0.1.0
+
 ## Projects
 
 - [x] Can define metadata
@@ -33,7 +35,7 @@
 - [x] Dependencies (on other tasks)
   - [ ] Self referencing tasks (`~`)
   - [ ] Deps referencing tasks (`^`)
-- [ ] Environment vars
+- [x] Environment vars
 - [x] Tokens
   - [x] Expands tokens defined in configs
 - [x] Can run from project root or workspace root (using `run_from_workspace_root`)
@@ -48,9 +50,30 @@
 - [x] Streams output when a primary target
 - [x] Buffers output when a non-primary target
 - [x] Bubbles up errors
+- [x] Installs npm dependencies
+- [x] Syncs `package.json` and `tsconfig.json` for all projects
+  - [ ] Writes JSON preserving field order
+
+### CLI
+
+- [x] `init` command to scafflold a new project
+- [x] `project` command for displaying info
+- [x] `project-graph` command for outputting DOT format
+  - [ ] Spin up an interactive website with full project/task data
+- [x] `setup` command for installing tools
+- [x] `teardown` command for uninstalling tools
+- [x] `bin` command to return tool paths
+- [ ] `run` command to run targets
+  - [ ] Args after `--` are passed to the underlying command
+- [ ] `ci` command for smart running affected targets (below)
 
 ## CI
 
+- [ ] Compares PR against default branch
 - [ ] Runs tasks if `outputs` defined or `run_in_ci` is true
 - [ ] Runs dependencies AND dependents if primary project has changed
-- [ ] Compares PR against default branch
+
+# 0.2.0
+
+- hashing
+- caching

@@ -1,5 +1,6 @@
 use moon_workspace::Workspace;
 
+#[allow(dead_code)]
 pub async fn ci() -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
 

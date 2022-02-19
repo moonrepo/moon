@@ -161,7 +161,7 @@ impl DepGraph {
         );
 
         let (project_id, task_id) = Target::parse(target)?;
-        let project = projects.get(&project_id)?;
+        let project = projects.load(&project_id)?;
 
         // We should sync projects *before* running targets
         let project_node = self.sync_project(&project.id, projects)?;
@@ -208,7 +208,7 @@ impl DepGraph {
     ) -> Result<Option<NodeIndex>, WorkspaceError> {
         // Validate project first
         let (project_id, task_id) = Target::parse(target)?;
-        let project = projects.get(&project_id)?;
+        let project = projects.load(&project_id)?;
 
         if !project.is_affected(touched_files) {
             trace!(
@@ -253,7 +253,7 @@ impl DepGraph {
         );
 
         // Force load project into the graph
-        let project = projects.get(project_id)?;
+        let project = projects.load(project_id)?;
 
         // Sync can be run in parallel while deps are installing
         let node_index = self

@@ -243,6 +243,7 @@ mod tasks {
             args: None,
             command: Some(command.to_owned()),
             deps: None,
+            env: None,
             inputs: None,
             outputs: None,
             options: None,
@@ -421,6 +422,7 @@ mod tasks {
                         args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
                         deps: Some(string_vec!["a:standard"]),
+                        env: None,
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
@@ -445,6 +447,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
                             deps: Some(string_vec!["b:standard"]),
+                            env: None,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
@@ -465,6 +468,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
                             deps: Some(string_vec!["b:standard"]),
+                            env: None,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_merged_task_options_config(
@@ -497,6 +501,7 @@ mod tasks {
                         args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
                         deps: Some(string_vec!["a:standard"]),
+                        env: None,
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
@@ -521,6 +526,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: None,
                             deps: Some(string_vec!["b:standard"]),
+                            env: None,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
@@ -541,6 +547,7 @@ mod tasks {
                             args: Some(string_vec!["--a", "--b"]),
                             command: Some(String::from("standard")),
                             deps: Some(string_vec!["a:standard", "b:standard"]),
+                            env: None,
                             inputs: Some(string_vec!["a.*", "b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: Some(mock_merged_task_options_config(
@@ -573,6 +580,7 @@ mod tasks {
                         args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
                         deps: Some(string_vec!["a:standard"]),
+                        env: None,
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
@@ -597,6 +605,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: Some(String::from("newcmd")),
                             deps: Some(string_vec!["b:standard"]),
+                            env: None,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(mock_local_task_options_config(
@@ -617,6 +626,7 @@ mod tasks {
                             args: Some(string_vec!["--b", "--a"]),
                             command: Some(String::from("newcmd")),
                             deps: Some(string_vec!["b:standard", "a:standard"]),
+                            env: None,
                             inputs: Some(string_vec!["b.*", "a.*"]),
                             outputs: Some(string_vec!["b.ts", "a.ts"]),
                             options: Some(mock_merged_task_options_config(
@@ -649,6 +659,7 @@ mod tasks {
                         args: Some(string_vec!["--a"]),
                         command: Some(String::from("standard")),
                         deps: Some(string_vec!["a:standard"]),
+                        env: None,
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: Some(stub_global_task_options_config()),
@@ -673,6 +684,7 @@ mod tasks {
                             args: Some(string_vec!["--b"]),
                             command: None,
                             deps: Some(string_vec!["b:standard"]),
+                            env: None,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: Some(TaskOptionsConfig {
@@ -699,6 +711,7 @@ mod tasks {
                             args: Some(string_vec!["--a", "--b"]),
                             command: Some(String::from("standard")),
                             deps: Some(string_vec!["b:standard", "a:standard"]),
+                            env: None,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: Some(TaskOptionsConfig {
@@ -750,6 +763,7 @@ mod tasks {
                             ]),
                             command: Some(String::from("test")),
                             deps: None,
+                            env: None,
                             inputs: None,
                             outputs: None,
                             options: None,
@@ -804,6 +818,7 @@ mod tasks {
                             ]),
                             command: Some(String::from("test")),
                             deps: None,
+                            env: None,
                             inputs: None,
                             outputs: None,
                             options: Some(TaskOptionsConfig {
@@ -865,6 +880,7 @@ mod tasks {
                             ]),
                             command: Some(String::from("test")),
                             deps: None,
+                            env: None,
                             inputs: None,
                             outputs: None,
                             options: None,
@@ -910,6 +926,7 @@ mod tasks {
                             args: None,
                             command: Some(String::from("test")),
                             deps: None,
+                            env: None,
                             inputs: Some(string_vec![
                                 "file.ts",
                                 "@dirs(static)",

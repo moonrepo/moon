@@ -1,6 +1,7 @@
 use crate::types::{FilePath, FilePathOrGlob, TargetID};
 use crate::validators::{validate_child_or_root_path, validate_target};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use validator::{Validate, ValidationError};
 
 fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
@@ -95,6 +96,8 @@ pub struct TaskConfig {
     #[validate(custom = "validate_deps")]
     pub deps: Option<Vec<TargetID>>,
 
+    pub env: Option<HashMap<String, String>>,
+
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<FilePathOrGlob>>,
 
@@ -114,6 +117,7 @@ impl Default for TaskConfig {
             args: None,
             command: None,
             deps: None,
+            env: None,
             inputs: None,
             options: Some(TaskOptionsConfig::default()),
             outputs: None,
@@ -273,6 +277,49 @@ deps:
         //                 Ok(())
         //             });
         //         }
+    }
+
+    mod env {
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `env`. Expected a map type, received string \"abc\"."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+env: abc
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `env.KEY`. Expected a string type, received unsigned int `123`."
+        )]
+        fn invalid_value_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+env:
+  KEY: 123
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
     }
 
     mod inputs {

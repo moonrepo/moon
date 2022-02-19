@@ -264,6 +264,7 @@ tasks:
                                 args: Some(vec![".".to_owned()]),
                                 command: Some("eslint".to_owned()),
                                 deps: None,
+                                env: None,
                                 inputs: None,
                                 options: None,
                                 outputs: None,

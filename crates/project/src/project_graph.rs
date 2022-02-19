@@ -80,7 +80,7 @@ impl ProjectGraph {
     /// has not been loaded, it will be loaded and inserted into the
     /// project graph. If the project does not exist or has been
     /// misconfigured, an error will be returned.
-    pub fn get(&self, id: &str) -> Result<Project, ProjectError> {
+    pub fn load(&self, id: &str) -> Result<Project, ProjectError> {
         // Check if the project already exists in read-only mode,
         // so that it may be dropped immediately after!
         {
@@ -96,30 +96,34 @@ impl ProjectGraph {
         // Otherwise we need to load the project in write mode
         let mut indices = self.indices.write().expect(WRITE_ERROR);
         let mut graph = self.graph.write().expect(WRITE_ERROR);
-        let index = self.load(id, &mut indices, &mut graph)?;
+        let index = self.internal_load(id, &mut indices, &mut graph)?;
 
         Ok(graph.node_weight(index).unwrap().clone())
     }
 
-    /// Return a list of project IDs that a project depends on,
-    /// in the priority order in which they are depended on.
-    pub fn get_dependencies_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
+    /// Return a list of direct project IDs that the defined project depends on.
+    pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
         let indices = self.indices.read().expect(READ_ERROR);
         let graph = self.graph.read().expect(READ_ERROR);
 
         let deps = graph
-            .neighbors_directed(*indices.get(id).unwrap(), Direction::Outgoing)
+            .neighbors_directed(*indices.get(&project.id).unwrap(), Direction::Outgoing)
             .map(|idx| graph.node_weight(idx).unwrap().id.clone())
             .collect();
 
         Ok(deps)
     }
 
-    /// Return a list of project IDs that a project depends on,
-    /// in ascending order.
-    pub fn get_sorted_dependencies_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
-        let mut deps = self.get_dependencies_of(id)?;
-        deps.sort();
+    /// Return a list of project IDs that require the defined project.
+    pub fn get_dependents_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
+        let indices = self.indices.read().expect(READ_ERROR);
+        let graph = self.graph.read().expect(READ_ERROR);
+
+        let deps = graph
+            .neighbors_directed(*indices.get(&project.id).unwrap(), Direction::Incoming)
+            .map(|idx| graph.node_weight(idx).unwrap().id.clone())
+            .filter(|id| id != ROOT_NODE_ID)
+            .collect();
 
         Ok(deps)
     }
@@ -164,7 +168,7 @@ impl ProjectGraph {
 
     /// Internal method for lazily loading a project and its
     /// dependencies into the graph.
-    fn load(
+    fn internal_load(
         &self,
         id: &str,
         indices: &mut RwLockWriteGuard<IndicesType>,
@@ -210,7 +214,7 @@ impl ProjectGraph {
             );
 
             for dep_id in depends_on {
-                let dep_index = self.load(dep_id.as_str(), indices, graph)?;
+                let dep_index = self.internal_load(dep_id.as_str(), indices, graph)?;
                 graph.add_edge(node_index, dep_index, ());
             }
         }

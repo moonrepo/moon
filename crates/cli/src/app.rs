@@ -80,7 +80,8 @@ pub enum Commands {
     // moon project-graph [id]
     #[clap(
         name = "project-graph",
-        about = "Display a graph of projects in DOT format."
+        about = "Display a graph of projects in DOT format.",
+        alias = "graph"
     )]
     ProjectGraph {
         #[clap(help = "ID of project to *only* graph")]

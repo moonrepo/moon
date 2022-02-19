@@ -5,10 +5,10 @@ pub async fn project_graph(id: &Option<String>) -> Result<(), Box<dyn std::error
 
     // Force load projects into the graph
     if let Some(pid) = id {
-        workspace.projects.get(pid)?;
+        workspace.projects.load(pid)?;
     } else {
         for pid in workspace.projects.ids() {
-            workspace.projects.get(&pid)?;
+            workspace.projects.load(&pid)?;
         }
     }
 

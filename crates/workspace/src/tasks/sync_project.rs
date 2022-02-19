@@ -11,7 +11,7 @@ pub async fn sync_project(
     project_id: &str,
 ) -> Result<(), WorkspaceError> {
     let workspace = workspace.read().await;
-    let project = workspace.projects.get(project_id)?;
+    let project = workspace.projects.load(project_id)?;
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();
@@ -38,7 +38,7 @@ pub async fn sync_project(
     let manager = workspace.toolchain.get_node_package_manager();
 
     for dep_id in project.get_dependencies() {
-        let dep_project = workspace.projects.get(&dep_id)?;
+        let dep_project = workspace.projects.load(&dep_id)?;
 
         // Update `dependencies` within `tsconfig.json`
         if node_config

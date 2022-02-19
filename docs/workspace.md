@@ -19,6 +19,7 @@
     - [tasks](#tasks)
       - [args](#args)
       - [deps](#deps)
+      - [env](#env)
       - [inputs](#inputs)
       - [outputs](#outputs)
       - [options](#options)
@@ -327,6 +328,19 @@ tasks:
       - 'hooks:build'
 ```
 
+##### env
+
+The optional `env` param is map of strings that are passed as environment variables when running the
+command.
+
+```yaml
+tasks:
+  build:
+    command: 'webpack'
+    env:
+      NODE_ENV: 'production'
+```
+
 ##### inputs
 
 The optional `inputs` param is a list of file paths/globs that are used to calculate whether to
@@ -377,12 +391,14 @@ task and its execution. The following fields can be provided, with merge fields 
   "append".
 - `mergeDeps` (`TaskMergeStrategy`) - The strategy to use when merging the `deps` list. Defaults to
   "append".
+- `mergeEnv` (`TaskMergeStrategy`) - The strategy to use when merging the `env` map. Defaults to
+  "append".
 - `mergeInputs` (`TaskMergeStrategy`) - The strategy to use when merging the `inputs` list. Defaults
   to "append".
 - `mergeOutputs` (`TaskMergeStrategy`) - The strategy to use when merging the `outputs` list.
   Defaults to "append".
-- `retryCount` (`number`) - The amount of times to task execution will retry when it fails. Defaults
-  to `0`.
+- `retryCount` (`number`) - The amount of times the task execution will retry when it fails.
+  Defaults to `0`.
 - `runInCi` (`boolean`) - Whether to run the task automatically in a CI pipeline (when affected by
   modified files). Defaults to `true`, and is _always_ true when a task defines `outputs`.
 - `runFromWorkspaceRoot` (`boolean`) - Whether to use the workspace root as the working directory

@@ -25,3 +25,8 @@ tokio = { version = "1.16", features = ["full"] }
 assert_cmd = "2.0"
 insta = "1.8"
 predicates = "2.0"
+
+[[bin]]
+name = "moon"
+path = "src/main.rs"
+required-features = ["cli"]

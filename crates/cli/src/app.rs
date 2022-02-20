@@ -112,6 +112,9 @@ pub enum Commands {
             help_heading = HEADING_AFFECTED
         )]
         status: Option<RunStatus>,
+
+        #[clap(last = true)]
+        passthrough: Vec<String>,
     },
 }
 

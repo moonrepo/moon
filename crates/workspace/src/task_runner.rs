@@ -35,6 +35,8 @@ async fn run_task(
 pub struct TaskRunner {
     pub duration: Option<Duration>,
 
+    passthrough_args: Vec<String>,
+
     primary_target: String,
 
     workspace: Arc<RwLock<Workspace>>,
@@ -49,6 +51,7 @@ impl TaskRunner {
 
         TaskRunner {
             duration: None,
+            passthrough_args: Vec::new(),
             primary_target: String::new(),
             workspace: Arc::new(RwLock::new(workspace)),
         }
@@ -172,6 +175,11 @@ impl TaskRunner {
         );
 
         Ok(results)
+    }
+
+    pub fn set_passthrough_args(&mut self, args: Vec<String>) -> &mut Self {
+        self.passthrough_args = args;
+        self
     }
 
     pub fn set_primary_target(&mut self, target: &str) -> &mut Self {

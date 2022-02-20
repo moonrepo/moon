@@ -109,6 +109,7 @@ pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
     target: &str,
     primary_target: &str,
+    passthrough_args: &[String],
 ) -> Result<(), WorkspaceError> {
     debug!(
         target: "moon:task-runner:run-target",
@@ -122,9 +123,10 @@ pub async fn run_target(
     let mut cache = workspace.cache.run_target_state(target).await?;
     let toolchain = &workspace.toolchain;
 
-    // TODO abort early for a cache hit (also change label)
+    // TODO abort early for a cache hit
 
     // Gather the project and task
+    let is_primary = primary_target == target;
     let (project_id, task_id) = Target::parse(target)?;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
@@ -144,8 +146,12 @@ pub async fn run_target(
         _ => create_shell_target_command(task, exec_dir, env_vars),
     };
 
+    // Append additional passthrough args (after `--`)
+    if is_primary && !passthrough_args.is_empty() {
+        command.args(passthrough_args);
+    }
+
     // Run the command as a child process
-    let is_primary = primary_target == target;
     let output;
 
     if is_primary {

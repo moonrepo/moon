@@ -1,4 +1,6 @@
-name: release
+# https://doc.rust-lang.org/nightly/rustc/platform-support.html
+
+name: Release
 on:
   push:
     branches:
@@ -22,20 +24,19 @@ jobs:
       image: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v2
-      - name: Install Node.JS x64
+      - name: Install Node.JS
         uses: actions/setup-node@v2
         with:
-          architecture: x64
           cache: yarn
           check-latest: true
           node-version: 16
-      - name: Install Node.JS x86
-        uses: actions/setup-node@v2
-        with:
-          architecture: x86
-          cache: yarn
-          check-latest: true
-          node-version: 16
+      # - name: Install Node.JS x86
+      #   uses: actions/setup-node@v2
+      #   with:
+      #     architecture: x86
+      #     cache: yarn
+      #     check-latest: true
+      #     node-version: 16
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:

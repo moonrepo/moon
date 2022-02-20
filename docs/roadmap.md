@@ -64,7 +64,8 @@
 - [x] `teardown` command for uninstalling tools
 - [x] `bin` command to return tool paths
 - [ ] `run` command to run targets
-  - [ ] Args after `--` are passed to the underlying command
+  - [x] Args after `--` are passed to the underlying command
+  - [ ] Only run on affected changes
 - [ ] `ci` command for smart running affected targets (below)
 
 ## CI

@@ -56,12 +56,14 @@ async fn main() {
             target,
             affected,
             status,
+            passthrough,
         } => {
             result = run(
                 target,
                 RunOptions {
                     affected: *affected,
                     status: status.clone().unwrap_or_default(),
+                    passthrough: passthrough.clone(),
                 },
             )
             .await;

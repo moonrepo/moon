@@ -32,6 +32,7 @@ impl Default for RunStatus {
 pub struct RunOptions {
     pub affected: bool,
     pub status: RunStatus,
+    pub passthrough: Vec<String>,
 }
 
 async fn get_touched_files(
@@ -136,7 +137,12 @@ pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::e
 
     // Process all tasks in the graph
     let mut runner = TaskRunner::new(workspace);
-    let results = runner.set_primary_target(target).run(dep_graph).await?;
+
+    let results = runner
+        .set_passthrough_args(options.passthrough)
+        .set_primary_target(target)
+        .run(dep_graph)
+        .await?;
 
     // Render stats about the run
     render_result_stats(results, runner.duration.unwrap())?;

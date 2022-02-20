@@ -13,13 +13,14 @@ async fn run_task(
     workspace: Arc<RwLock<Workspace>>,
     node: &Node,
     primary_target: &str,
+    passthrough_args: &[String],
 ) -> Result<(), WorkspaceError> {
     match node {
         Node::InstallNodeDeps => {
             install_node_deps(workspace).await?;
         }
         Node::RunTarget(target_id) => {
-            run_target(workspace, target_id, primary_target).await?;
+            run_target(workspace, target_id, primary_target, passthrough_args).await?;
         }
         Node::SetupToolchain => {
             setup_toolchain(workspace).await?;
@@ -35,6 +36,8 @@ async fn run_task(
 pub struct TaskRunner {
     pub duration: Option<Duration>,
 
+    passthrough_args: Vec<String>,
+
     primary_target: String,
 
     workspace: Arc<RwLock<Workspace>>,
@@ -49,6 +52,7 @@ impl TaskRunner {
 
         TaskRunner {
             duration: None,
+            passthrough_args: Vec::new(),
             primary_target: String::new(),
             workspace: Arc::new(RwLock::new(workspace)),
         }
@@ -74,6 +78,7 @@ impl TaskRunner {
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
+        let passthrough_args = Arc::new(self.passthrough_args.clone());
         let primary_target = Arc::new(self.primary_target.clone());
 
         // Clean the runner state *before* running tasks instead of after,
@@ -103,6 +108,7 @@ impl TaskRunner {
                 let task_count = t + 1;
                 let workspace_clone = Arc::clone(&self.workspace);
                 let graph_clone = Arc::clone(&graph);
+                let passthrough_args_clone = Arc::clone(&passthrough_args);
                 let primary_target_clone = Arc::clone(&primary_target);
 
                 task_handles.push(task::spawn(async move {
@@ -116,8 +122,13 @@ impl TaskRunner {
 
                         trace!(target: &log_target_name, "Running task {}", log_task_label);
 
-                        if let Err(error) =
-                            run_task(workspace_clone, node, &primary_target_clone).await
+                        if let Err(error) = run_task(
+                            workspace_clone,
+                            node,
+                            &primary_target_clone,
+                            &passthrough_args_clone,
+                        )
+                        .await
                         {
                             result.fail();
 
@@ -172,6 +183,11 @@ impl TaskRunner {
         );
 
         Ok(results)
+    }
+
+    pub fn set_passthrough_args(&mut self, args: Vec<String>) -> &mut Self {
+        self.passthrough_args = args;
+        self
     }
 
     pub fn set_primary_target(&mut self, target: &str) -> &mut Self {

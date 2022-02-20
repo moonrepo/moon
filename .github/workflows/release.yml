@@ -46,7 +46,7 @@ jobs:
       - name: Build binary
         run: |
           rustup target add ${{ matrix.target }}
-          cargo build --release --features cli --target ${{ matrix.target }}
+          cargo build --release --target ${{ matrix.target }}
           mv target/${{ matrix.target }}/release/moon moon
       - name: Strip debug symbols # https://github.com/rust-lang/rust/issues/46034
         if: ${{ matrix.strip }}

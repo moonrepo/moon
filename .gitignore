@@ -28,4 +28,4 @@ umd/
 
 # Moon
 .moon/cache
-packages/cli/moon
+packages/*/moon

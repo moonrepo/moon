@@ -4,6 +4,7 @@
   "packageManager": "yarn@3.1.1",
   "scripts": {
     "build": "packemon build --addEngines --addExports",
+    "build:cli": "node ./scripts/buildBinary.mjs",
     "pack": "NODE_ENV=production yarn run packemon pack --addEngines --declaration=standard",
     "format": "prettier --write ./packages",
     "test": "jest --passWithNoTests",
@@ -11,9 +12,10 @@
     "type": "tsc --build",
     "artifacts": "napi artifacts",
     "compile": "yarn run compile:debug --release",
-    "compile:debug": "napi build --platform --cargo-cwd ./crates/core --js-package-name @moonrepo/core --js ./packages/cli/index.js --dts ./packages/cli/index.d.ts",
+    "compile:debug": "napi build --platform --features cli --cargo-cwd ./crates/cli --js-package-name @moonrepo/core --js ./packages/cli/index.js --dts ./packages/cli/index.d.ts",
     "prepublishOnly": "napi prepublish -t npm",
-    "version": "napi version"
+    "version": "napi version",
+    "cli": "moon"
   },
   "workspaces": [
     "packages/*"
@@ -23,10 +25,12 @@
     "npm": ">=6.13.0"
   },
   "devDependencies": {
+    "@moonrepo/cli": "workspace:*",
     "@napi-rs/cli": "^2.4.4",
     "@types/node": "^17.0.15",
     "eslint": "^8.8.0",
     "eslint-config-beemo": "^1.2.2",
+    "execa": "^6.1.0",
     "jest": "^27.4.7",
     "jest-preset-beemo": "^1.1.5",
     "packemon": "^1.11.1",

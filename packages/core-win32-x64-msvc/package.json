@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/core-win32-x64-msvc",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Windows binary for Moon.",
   "keywords": [
     "moon",
@@ -15,7 +15,6 @@
   "cpu": [
     "x64"
   ],
-  "main": "moon.win32-x64-msvc.node",
   "author": "Miles Johnson",
   "license": "MIT",
   "repository": {

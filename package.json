@@ -10,8 +10,8 @@
     "lint": "eslint --cache --color --fix --ext .ts,.tsx ./packages",
     "type": "tsc --build",
     "artifacts": "napi artifacts",
-    "compile": "napi build --platform --release",
-    "compile:debug": "napi build --platform",
+    "compile": "yarn run compile:debug --release",
+    "compile:debug": "napi build --platform --cargo-cwd crates/node",
     "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version"
   },

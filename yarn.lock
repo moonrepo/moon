@@ -1949,15 +1949,21 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@moonrepo/cli@workspace:packages/cli"
   dependencies:
+    "@moonrepo/core-darwin-x64": ^0.1.0
     "@moonrepo/core-linux-x64-gnu": ^0.1.0
+    "@moonrepo/core-linux-x64-musl": ^0.1.0
     detect-libc: ^2.0.1
   dependenciesMeta:
+    "@moonrepo/core-darwin-x64":
+      optional: true
     "@moonrepo/core-linux-x64-gnu":
+      optional: true
+    "@moonrepo/core-linux-x64-musl":
       optional: true
   languageName: unknown
   linkType: soft
 
-"@moonrepo/core-darwin-x64@workspace:packages/core-darwin-x64":
+"@moonrepo/core-darwin-x64@^0.1.0, @moonrepo/core-darwin-x64@workspace:packages/core-darwin-x64":
   version: 0.0.0-use.local
   resolution: "@moonrepo/core-darwin-x64@workspace:packages/core-darwin-x64"
   languageName: unknown
@@ -1969,7 +1975,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@moonrepo/core-linux-x64-musl@workspace:packages/core-linux-x64-musl":
+"@moonrepo/core-linux-x64-musl@^0.1.0, @moonrepo/core-linux-x64-musl@workspace:packages/core-linux-x64-musl":
   version: 0.0.0-use.local
   resolution: "@moonrepo/core-linux-x64-musl@workspace:packages/core-linux-x64-musl"
   languageName: unknown

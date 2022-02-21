@@ -1,5 +1,5 @@
 [package]
-name = "moon_node"
+name = "moon"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,9 +7,8 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-moon_cli = { path = "../cli" }
-napi = { version = "2.1", default-features = false, features = ["napi4"] }
-napi-derive = "2.1"
+# moon_cli = { path = "../cli" }
+napi = { version = "2.1", features = ["full"] }
 
 [build-dependencies]
 napi-build = "1.2"

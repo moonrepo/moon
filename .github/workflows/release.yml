@@ -10,25 +10,75 @@ on:
       - v*
   pull_request:
 jobs:
+  build-macos-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: macos-latest
+            target: x86_64-apple-darwin
+            arch: x64
+            binary: moon
+            strip: strip -x
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+            binary: moon.exe
+    name: Stable - ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          architecture: ${{ matrix.arch }}
+          cache: yarn
+          check-latest: true
+          node-version: 16
+      - uses: actions-rs/toolchain@v1
+        with:
+          override: true
+          profile: minimal
+          target: ${{ matrix.target }}
+          toolchain: stable
+      - name: Generate lockfile
+        uses: actions-rs/cargo@v1
+        with:
+          command: generate-lockfile
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/registry
+          key: ${{ matrix.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache cargo index
+        uses: actions/cache@v2
+        with:
+          path: ~/.cargo/git
+          key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
+      - name: Build binary
+        run: node ./scripts/buildBinary.mjs
+        shell: bash
+        env:
+          BINARY: ${{ matrix.binary }}
+          TARGET: ${{ matrix.target }}
+      - name: Strip debug symbols
+        if: ${{ matrix.strip }}
+        run: ${{ matrix.strip }} ${{ matrix.binary }}
+      - name: Install dependencies
+        run: yarn install
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: binary-${{ matrix.target }}
+          path: ${{ matrix.binary }}
+          if-no-files-found: error
+
   build:
     strategy:
       fail-fast: false
       matrix:
         settings:
-          # MacOS
-          - host: macos-latest
-            target: x86_64-apple-darwin
-            architecture: x64
-            build: node ./scripts/buildBinary.mjs
-            artifacts: moon
-
-          # Windows
-          - host: windows-latest
-            target: x86_64-pc-windows-msvc
-            architecture: x64
-            build: node ./scripts/buildBinary.mjs
-            artifacts: moon.exe
-
           # Linux GNU
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -52,7 +102,6 @@ jobs:
               ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder node
               ./scripts/buildBinary.mjs
             artifacts: moon
-
     name: Stable - ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
     steps:
@@ -102,41 +151,38 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: bindings-${{ matrix.settings.target }}
+          name: binary-${{ matrix.settings.target }}
           path: ${{ matrix.settings.artifacts }}
           if-no-files-found: error
 
-  test-macos-windows-binding:
-    name: Test ${{ matrix.settings.target }} - node@${{ matrix.node }}
-    needs:
-      - build
+  test-macos:
     strategy:
       fail-fast: false
       matrix:
         settings:
-          - host: windows-latest
-            target: x86_64-pc-windows-msvc
-        node:
-          - '12'
-          - '14'
-          - '16'
+          - host: macos-latest
+            target: x86_64-apple-darwin
+        node: [12, 14, 16]
+    needs:
+      - build-macos-windows
+    name: Test ${{ matrix.settings.target }} - node@${{ matrix.node }}
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node }}
-          check-latest: true
           cache: yarn
+          check-latest: true
+          node-version: ${{ matrix.node }}
       - name: Install dependencies
         run: yarn install
       - name: List packages
-        run: ls -R ./packages/core-darwin-* ./packages/core-win32-*
+        run: ls -R ./packages/core-darwin-*
         shell: bash
-      - name: Test bindings
+      - name: Test binary
         run: yarn test
 
-  test-linux-x64-gnu-binding:
+  test-linux-x64-gnu:
     name: Test linux-x64-gnu - node@${{ matrix.node }}
     needs:
       - build
@@ -160,10 +206,10 @@ jobs:
       - name: List packages
         run: ls -R ./packages/core-linux-x64-gnu
         shell: bash
-      - name: Test bindings
+      - name: Test binary
         run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
 
-  test-linux-x64-musl-binding:
+  test-linux-x64-musl:
     name: Test x86_64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
@@ -187,16 +233,16 @@ jobs:
       - name: List packages
         run: ls -R ./packages/core-linux-x64-musl
         shell: bash
-      - name: Test bindings
+      - name: Test binary
         run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test
 
   publish:
     name: Publish
     runs-on: ubuntu-latest
     needs:
-      - test-macos-windows-binding
-      - test-linux-x64-gnu-binding
-      - test-linux-x64-musl-binding
+      - test-macos
+      - test-linux-x64-gnu
+      - test-linux-x64-musl
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2

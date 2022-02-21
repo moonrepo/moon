@@ -29,3 +29,5 @@ umd/
 # Moon
 .moon/cache
 packages/*/moon
+/moon
+/moon.exe

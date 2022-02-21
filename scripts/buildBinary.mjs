@@ -5,8 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 const ROOT = process.cwd();
-const BINARY = process.platform === 'win32' ? 'moon.exe' : 'moon';
-const { TARGET } = process.env;
+const { BINARY = 'moon', TARGET } = process.env;
 
 if (!TARGET) {
 	throw new Error('TARGET required for building.');
@@ -36,12 +35,17 @@ const targetToPackage = {
 };
 
 if (targetToPackage[TARGET]) {
-	const artifactPath = path.join(ROOT, `artifacts/bindings-${TARGET}`, BINARY);
+	const artifactPath = path.join(ROOT, `artifacts/binary-${TARGET}`, BINARY);
 	const targetPath = path.join(ROOT, 'target', TARGET, 'release', BINARY);
-	const binPath = path.join(ROOT, 'packages', targetToPackage[TARGET], 'moon');
+	const srcPath = fs.existsSync(artifactPath) ? artifactPath : targetPath;
+	const binPath = path.join(ROOT, 'packages', targetToPackage[TARGET], BINARY);
 
-	await fs.promises.copyFile(fs.existsSync(artifactPath) ? artifactPath : targetPath, binPath);
+	// Copy into target core package
+	await fs.promises.copyFile(srcPath, binPath);
 	await fs.promises.chmod(binPath, 0o755);
+
+	// Copy into root so that it can be uploaded as an artifact
+	await fs.promises.copyFile(srcPath, path.join(ROOT, BINARY));
 } else {
 	throw new Error(`Unsupported target "${TARGET}".`);
 }

@@ -8,6 +8,14 @@
     "cli",
     "core"
   ],
+  "os": [
+    "linux",
+    "win32",
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "author": "Miles Johnson",
   "license": "MIT",
   "type": "module",
@@ -19,14 +27,13 @@
     "url": "https://github.com/milesj/moon",
     "directory": "packages/cli"
   },
-  "scripts": {
-    "build": "napi build --release",
-    "build:debug": "napi build"
-  },
   "napi": {
     "name": "moon",
     "triples": {
+      "default": false,
       "additional": [
+        "x86_64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
         "x86_64-unknown-linux-musl"
       ]
     }
@@ -35,7 +42,9 @@
     "detect-libc": "^2.0.1"
   },
   "optionalDependencies": {
-    "@moonrepo/core-linux-x64-gnu": "^0.1.0"
+    "@moonrepo/core-darwin-x64": "^0.1.0",
+    "@moonrepo/core-linux-x64-gnu": "^0.1.0",
+    "@moonrepo/core-linux-x64-musl": "^0.1.0"
   },
   "packemon": {
     "format": "mjs",
@@ -44,7 +53,12 @@
   },
   "files": [
     "*.node",
+    "dts/**/*.d.ts",
     "mjs/**/*.{mjs,map}",
     "src/**/*.{ts,tsx,json}"
-  ]
+  ],
+  "engines": {
+    "node": ">=12.17.0",
+    "npm": ">=6.13.0"
+  }
 }

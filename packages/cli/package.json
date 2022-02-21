@@ -18,7 +18,6 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
-  "type": "module",
   "bin": {
     "moon": "moon"
   },
@@ -28,7 +27,7 @@
     "directory": "packages/cli"
   },
   "scripts": {
-    "postinstall": "node ./postinstall.mjs"
+    "postinstall": "node ./postinstall.js"
   },
   "dependencies": {
     "detect-libc": "^2.0.1"

@@ -1,8 +1,8 @@
 // Based on the great parcel-css
 // https://github.com/parcel-bundler/parcel-css/blob/master/cli/postinstall.js
 
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 const parts = [process.platform, process.arch];
 
@@ -39,10 +39,10 @@ try {
 }
 
 try {
-	await fs.promises.link(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
+	fs.linkSync(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
 } catch {
 	try {
-		await fs.promises.copyFile(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
+		fs.copyFileSync(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
 	} catch {
 		throw new Error('Failed to find "moon" binary.');
 	}

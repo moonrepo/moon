@@ -1,0 +1,15 @@
+[package]
+name = "moon_node"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+moon_cli = { path = "../cli" }
+napi = "2"
+napi-derive = "2"
+
+[build-dependencies]
+napi-build = "1"

@@ -1,0 +1,32 @@
+{
+  "name": "@moonrepo/core-linux-x64-gnu",
+  "version": "0.1.0",
+  "description": "Linux binary for Moon.",
+  "keywords": [
+    "moon",
+    "repo",
+    "linux",
+    "x64",
+    "gnu"
+  ],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "moon.linux-x64-gnu.node",
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/milesj/moon",
+    "directory": "packages/cli"
+  },
+  "engines": {
+    "node": ">=12.17.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

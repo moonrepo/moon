@@ -1,0 +1,35 @@
+{
+  "name": "@moonrepo/cli",
+  "version": "0.1.0",
+  "description": "Moon command line and core system.",
+  "keywords": [
+    "moon",
+    "repo",
+    "cli",
+    "core"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "main": "./lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/milesj/moon",
+    "directory": "packages/cli"
+  },
+  "scripts": {
+    "build": "napi build --release",
+    "build:debug": "napi build"
+  },
+  "napi": {
+    "name": "moon"
+  },
+  "dependencies": {
+    "detect-libc": "^2.0.1"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.4.4"
+  },
+  "optionalDependencies": {
+    "@moonrepo/core-linux-x64-gnu": "^0.1.0"
+  }
+}

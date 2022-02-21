@@ -24,21 +24,12 @@ jobs:
       image: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v2
-      - name: Install Node.JS
-        uses: actions/setup-node@v2
+      - uses: actions/setup-node@v2
         with:
           cache: yarn
           check-latest: true
           node-version: 16
-      # - name: Install Node.JS x86
-      #   uses: actions/setup-node@v2
-      #   with:
-      #     architecture: x86
-      #     cache: yarn
-      #     check-latest: true
-      #     node-version: 16
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1
         with:
           override: true
           profile: minimal

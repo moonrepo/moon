@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/runtime",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Task runner and runtime utilities.",
   "keywords": [
     "moon",

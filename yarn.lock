@@ -1945,6 +1945,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@moonrepo/cli@workspace:packages/cli":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/cli@workspace:packages/cli"
+  dependencies:
+    "@moonrepo/core-linux-x64-gnu": ^0.1.0
+    "@napi-rs/cli": ^2.4.4
+    detect-libc: ^2.0.1
+  dependenciesMeta:
+    "@moonrepo/core-linux-x64-gnu":
+      optional: true
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-linux-x64-gnu@^0.1.0, @moonrepo/core-linux-x64-gnu@workspace:packages/core-linux-x64-gnu":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-linux-x64-gnu@workspace:packages/core-linux-x64-gnu"
+  languageName: unknown
+  linkType: soft
+
 "@moonrepo/runtime@workspace:packages/runtime":
   version: 0.0.0-use.local
   resolution: "@moonrepo/runtime@workspace:packages/runtime"
@@ -1952,6 +1971,15 @@ __metadata:
     "@boost/common": ^3.2.1
   languageName: unknown
   linkType: soft
+
+"@napi-rs/cli@npm:^2.4.4":
+  version: 2.4.4
+  resolution: "@napi-rs/cli@npm:2.4.4"
+  bin:
+    napi: scripts/index.js
+  checksum: 209affb9a7ecf80389692b7878c458f28504140c1846b05091d99cb6dfe21da44ec7a2c4caf8ff8f83b87cb87f52e50382a011fd9896b48aff67d35c52471917
+  languageName: node
+  linkType: hard
 
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
@@ -3484,6 +3512,13 @@ __metadata:
   version: 1.1.2
   resolution: "depd@npm:1.1.2"
   checksum: 6b406620d269619852885ce15965272b829df6f409724415e0002c8632ab6a8c0a08ec1f0bd2add05dc7bd7507606f7e2cc034fa24224ab829580040b835ecd9
+  languageName: node
+  linkType: hard
+
+"detect-libc@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "detect-libc@npm:2.0.1"
+  checksum: ccb05fcabbb555beb544d48080179c18523a343face9ee4e1a86605a8715b4169f94d663c21a03c310ac824592f2ba9a5270218819bb411ad7be578a527593d7
   languageName: node
   linkType: hard
 

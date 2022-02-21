@@ -11,7 +11,7 @@
     "type": "tsc --build",
     "artifacts": "napi artifacts",
     "compile": "yarn run compile:debug --release",
-    "compile:debug": "napi build --platform --cargo-cwd ./crates/node --js-package-name @moonrepo/core --js ./packages/cli/index.js --dts ./packages/cli/index.d.ts",
+    "compile:debug": "napi build --platform --cargo-cwd ./crates/core --js-package-name @moonrepo/core --js ./packages/cli/index.js --dts ./packages/cli/index.d.ts",
     "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version"
   },
@@ -34,5 +34,16 @@
     "prettier-config-beemo": "^1.0.1",
     "tsconfig-beemo": "^1.0.1",
     "typescript": "^4.5.5"
+  },
+  "napi": {
+    "name": "moon",
+    "triples": {
+      "default": false,
+      "additional": [
+        "x86_64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-linux-musl"
+      ]
+    }
   }
 }

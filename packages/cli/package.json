@@ -27,17 +27,6 @@
     "url": "https://github.com/milesj/moon",
     "directory": "packages/cli"
   },
-  "napi": {
-    "name": "moon",
-    "triples": {
-      "default": false,
-      "additional": [
-        "x86_64-apple-darwin",
-        "x86_64-unknown-linux-gnu",
-        "x86_64-unknown-linux-musl"
-      ]
-    }
-  },
   "dependencies": {
     "detect-libc": "^2.0.1"
   },

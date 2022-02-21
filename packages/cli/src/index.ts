@@ -38,12 +38,13 @@ if (platform === 'linux') {
 	parts.push('msvc');
 }
 
-export default (() => {
-	const name = parts.join('-');
+export const BIN = 'moon';
+export const TARGET = parts.join('-');
 
+export default (() => {
 	try {
-		return require(`@moonrepo/core-${name}`);
+		return require(`@moonrepo/core-${TARGET}`);
 	} catch {
-		return require(`./moon.${name}.node`);
+		return require(`./moon.${TARGET}.node`);
 	}
 })();

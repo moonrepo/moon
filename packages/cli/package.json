@@ -10,7 +10,10 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
-  "main": "./lib/index.js",
+  "type": "module",
+  "main": "./mjs/index.mjs",
+  "module": "./mjs/index.mjs",
+  "types": "./dts/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/milesj/moon",
@@ -31,5 +34,15 @@
   },
   "optionalDependencies": {
     "@moonrepo/core-linux-x64-gnu": "^0.1.0"
-  }
+  },
+  "packemon": {
+    "format": "mjs",
+    "platform": "node",
+    "bundle": true
+  },
+  "files": [
+    "*.node",
+    "mjs/**/*.{mjs,map}",
+    "src/**/*.{ts,tsx,json}"
+  ]
 }

@@ -7,9 +7,9 @@ const path = require('path');
 const parts = [process.platform, process.arch];
 
 if (process.platform === 'linux') {
-	const { MUSL, family } = require('detect-libc');
+	const { MUSL, familySync } = require('detect-libc');
 
-	if ((await family()) === MUSL) {
+	if (familySync() === MUSL) {
 		parts.push('musl');
 	} else if (process.arch === 'arm') {
 		parts.push('gnueabihf');
@@ -21,11 +21,11 @@ if (process.platform === 'linux') {
 }
 
 const binary = process.platform === 'win32' ? 'moon.exe' : 'moon';
-const target = parts.join('-');
+const triple = parts.join('-');
 let pkgPath;
 
 try {
-	pkgPath = path.dirname(require.resolve(`@moonrepo/core-${target}/package.json`));
+	pkgPath = path.dirname(require.resolve(`@moonrepo/core-${triple}/package.json`));
 
 	if (!fs.existsSync(path.join(pkgPath, binary))) {
 		throw new Error('Target not built.');

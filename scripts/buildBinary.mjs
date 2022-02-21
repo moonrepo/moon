@@ -1,4 +1,6 @@
-import { execa } from 'execa';
+// We cant use npm dependencies as these scripts run before `yarn install`
+
+import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 
@@ -13,8 +15,19 @@ if (!TARGET) {
 const args = process.argv.slice(2);
 
 // Build the binary with the provided target
-await execa('cargo', ['build', '--release', '--features', 'cli', '--target', TARGET, ...args], {
-	stdio: 'inherit',
+await new Promise((resolve, reject) => {
+	const child = spawn(
+		'cargo',
+		['build', '--release', '--features', 'cli', '--target', TARGET, ...args],
+		{
+			stdio: 'inherit',
+			cwd: ROOT,
+			shell: true,
+		},
+	);
+
+	child.on('error', reject);
+	child.on('close', resolve);
 });
 
 // Copy the binary to the package

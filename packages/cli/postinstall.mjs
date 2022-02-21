@@ -7,9 +7,9 @@ import path from 'path';
 const parts = [process.platform, process.arch];
 
 if (process.platform === 'linux') {
-	const { MUSL, familySync } = require('detect-libc');
+	const { MUSL, family } = require('detect-libc');
 
-	if (familySync() === MUSL) {
+	if ((await family()) === MUSL) {
 		parts.push('musl');
 	} else if (process.arch === 'arm') {
 		parts.push('gnueabihf');
@@ -22,7 +22,7 @@ if (process.platform === 'linux') {
 
 const binary = process.platform === 'win32' ? 'moon.exe' : 'moon';
 const target = parts.join('-');
-let pkgPath: string;
+let pkgPath;
 
 try {
 	pkgPath = path.dirname(require.resolve(`@moonrepo/core-${target}/package.json`));
@@ -39,11 +39,11 @@ try {
 }
 
 try {
-	fs.linkSync(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
+	await fs.promises.link(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
 } catch {
 	try {
-		fs.copyFileSync(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
+		await fs.promises.copyFile(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
 	} catch {
-		throw new Error('Failed to find moon binary.');
+		throw new Error('Failed to find "moon" binary.');
 	}
 }

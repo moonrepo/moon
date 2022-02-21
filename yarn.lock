@@ -1960,6 +1960,8 @@ __metadata:
       optional: true
     "@moonrepo/core-linux-x64-musl":
       optional: true
+  bin:
+    moon: moon
   languageName: unknown
   linkType: soft
 

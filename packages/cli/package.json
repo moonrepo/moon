@@ -18,14 +18,17 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
-  "type": "module",
-  "main": "./mjs/index.mjs",
-  "module": "./mjs/index.mjs",
-  "types": "./dts/index.d.ts",
+  "main": "./lib/index.js",
+  "bin": {
+    "moon": "moon"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/milesj/moon",
     "directory": "packages/cli"
+  },
+  "scripts": {
+    "postinstall": "node ./lib/postinstall.js"
   },
   "dependencies": {
     "detect-libc": "^2.0.1"
@@ -36,18 +39,28 @@
     "@moonrepo/core-linux-x64-musl": "^0.1.0"
   },
   "packemon": {
-    "format": "mjs",
-    "platform": "node",
-    "bundle": true
+    "format": "lib",
+    "platform": "node"
   },
   "files": [
     "*.node",
     "dts/**/*.d.ts",
-    "mjs/**/*.{mjs,map}",
+    "lib/**/*.{js,map}",
+    "moon",
+    "moon.exe",
     "src/**/*.{ts,tsx,json}"
   ],
   "engines": {
     "node": ">=12.17.0",
     "npm": ">=6.13.0"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./*": {
+      "node": "./lib/*.js"
+    },
+    ".": {
+      "node": "./lib/index.js"
+    }
   }
 }

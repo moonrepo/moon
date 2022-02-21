@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 [dependencies]
 # moon_cli = { path = "../cli" }
 napi = { version = "2.1", features = ["full"] }
+napi-derive = { version = "2.1", features = ["full"] }
 
 [build-dependencies]
 napi-build = "1.2"

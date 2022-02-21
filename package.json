@@ -11,7 +11,7 @@
     "type": "tsc --build",
     "artifacts": "napi artifacts",
     "compile": "yarn run compile:debug --release",
-    "compile:debug": "napi build --platform --cargo-cwd crates/node",
+    "compile:debug": "napi build --platform --cargo-cwd ./crates/node --js-package-name @moonrepo/core --js ./packages/cli/index.js --dts ./packages/cli/index.d.ts",
     "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version"
   },

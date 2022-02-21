@@ -12,7 +12,6 @@ on:
   pull_request:
 jobs:
   build:
-    if: "!contains(github.event.head_commit.message, 'skip ci')"
     strategy:
       fail-fast: false
       matrix:
@@ -22,11 +21,15 @@ jobs:
             target: x86_64-apple-darwin
             architecture: x64
             build: node ./scripts/buildBinary.mjs
+            artifacts: moon
+
           # Windows
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             architecture: x64
             build: node ./scripts/buildBinary.mjs
+            artifacts: moon.exe
+
           # Linux GNU
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -36,6 +39,8 @@ jobs:
               docker tag $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-debian builder
             build: |
               docker run --rm -e TARGET -v ~/.cargo/git:/root/.cargo/git -v ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder node ./scripts/buildBinary.mjs
+            artifacts: moon
+
           # Linux MUSL
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
@@ -47,6 +52,8 @@ jobs:
               docker run --rm -e TARGET -v ~/.cargo/git:/root/.cargo/git -v
               ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder node
               ./scripts/buildBinary.mjs
+            artifacts: moon
+
     name: Stable - ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
     steps:
@@ -63,7 +70,7 @@ jobs:
           profile: minimal
           target: ${{ matrix.settings.target }}
           toolchain: stable
-      - name: Generate Cargo.lock
+      - name: Generate lockfile
         uses: actions-rs/cargo@v1
         with:
           command: generate-lockfile
@@ -83,13 +90,9 @@ jobs:
             }}
       - name: Pull latest image
         run: ${{ matrix.settings.docker }}
+        if: ${{ matrix.settings.docker }}
         env:
           DOCKER_REGISTRY_URL: ghcr.io
-        if: ${{ matrix.settings.docker }}
-      - name: Setup toolchain
-        run: ${{ matrix.settings.setup }}
-        if: ${{ matrix.settings.setup }}
-        shell: bash
       - name: Build binary
         run: ${{ matrix.settings.build }}
         shell: bash
@@ -101,14 +104,11 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: |
-            *.node
-            moon.exe
-            moon
+          path: ${{ matrix.settings.artifact }}
           if-no-files-found: error
 
   test-macos-windows-binding:
-    name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
+    name: Test ${{ matrix.settings.target }} - node@${{ matrix.node }}
     needs:
       - build
     strategy:
@@ -143,7 +143,7 @@ jobs:
         run: yarn test
 
   test-linux-x64-gnu-binding:
-    name: Test bindings on linux-x64-gnu - node@${{ matrix.node }}
+    name: Test linux-x64-gnu - node@${{ matrix.node }}
     needs:
       - build
     strategy:
@@ -175,7 +175,7 @@ jobs:
         run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
 
   test-linux-x64-musl-binding:
-    name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
+    name: Test x86_64-unknown-linux-musl - node@${{ matrix.node }}
     needs:
       - build
     strategy:
@@ -229,7 +229,7 @@ jobs:
       - name: Move artifacts
         run: yarn artifacts
       - name: List packages
-        run: ls -R ./npm
+        run: ls -R ./packages
         shell: bash
       # - name: Publish
       #   run: |

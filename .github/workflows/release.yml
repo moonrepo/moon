@@ -92,13 +92,13 @@ jobs:
         run: ${{ matrix.settings.setup }}
         if: ${{ matrix.settings.setup }}
         shell: bash
-      - name: Install dependencies
-        run: yarn install
       - name: Build binary
         run: ${{ matrix.settings.build }}
         shell: bash
         env:
           TARGET: ${{ matrix.settings.target }}
+      - name: Install dependencies
+        run: yarn install
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:

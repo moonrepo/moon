@@ -44,6 +44,7 @@ try {
 	try {
 		fs.copyFileSync(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
 	} catch {
-		throw new Error('Failed to find "moon" binary.');
+		console.error('Failed to find "moon" binary.');
+		process.exit(1);
 	}
 }

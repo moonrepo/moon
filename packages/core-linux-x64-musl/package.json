@@ -15,6 +15,9 @@
   "cpu": [
     "x64"
   ],
+  "libc": [
+    "musl"
+  ],
   "author": "Miles Johnson",
   "license": "MIT",
   "repository": {

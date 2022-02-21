@@ -1,7 +1,7 @@
 {
   "name": "moon",
   "private": true,
-  "packageManager": "yarn@3.1.1",
+  "packageManager": "yarn@3.2.0",
   "scripts": {
     "build": "packemon build --addEngines --addExports",
     "build:cli": "node ./scripts/buildBinary.mjs",

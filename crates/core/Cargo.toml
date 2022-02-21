@@ -7,9 +7,10 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# moon_cli = { path = "../cli" }
+moon_cli = { path = "../cli" }
 napi = { version = "2.1", features = ["full"] }
 napi-derive = { version = "2.1", features = ["full"] }
+tokio = { version = "1.16", features = ["full"] }
 
 [build-dependencies]
 napi-build = "1.2"

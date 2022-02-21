@@ -977,9 +977,11 @@ dependencies = [
 name = "moon"
 version = "0.1.0"
 dependencies = [
+ "moon_cli",
  "napi",
  "napi-build",
  "napi-derive",
+ "tokio",
 ]
 
 [[package]]

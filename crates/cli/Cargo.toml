@@ -3,6 +3,16 @@ name = "moon_cli"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "moon"
+path = "src/main.rs"
+required-features = ["cli"]
+
+[lib]
+name = "moon_cli"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
 [dependencies]
 moon_config = { path = "../config" }
 moon_logger = { path = "../logger" }
@@ -26,6 +36,10 @@ assert_cmd = "2.0"
 insta = "1.8"
 predicates = "2.0"
 
-[[bin]]
-name = "moon"
-path = "src/main.rs"
+[features]
+default = []
+cli = []
+
+[profile.release]
+codegen-units = 1
+panic = 'abort'

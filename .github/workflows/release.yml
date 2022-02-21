@@ -1,6 +1,5 @@
 name: Release
 env:
-  DEBUG: napi:*
   APP_NAME: moon
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 on:
@@ -104,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: ${{ matrix.settings.artifact }}
+          path: ${{ matrix.settings.artifacts }}
           if-no-files-found: error
 
   test-macos-windows-binding:
@@ -131,13 +130,8 @@ jobs:
           cache: yarn
       - name: Install dependencies
         run: yarn install
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: bindings-${{ matrix.settings.target }}
-          path: .
       - name: List packages
-        run: ls -R .
+        run: ls -R ./packages/core-darwin-* ./packages/core-win32-*
         shell: bash
       - name: Test bindings
         run: yarn test
@@ -163,13 +157,8 @@ jobs:
           cache: yarn
       - name: Install dependencies
         run: yarn install
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: bindings-x86_64-unknown-linux-gnu
-          path: .
       - name: List packages
-        run: ls -R .
+        run: ls -R ./packages/core-linux-x64-gnu
         shell: bash
       - name: Test bindings
         run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-slim yarn test
@@ -195,13 +184,8 @@ jobs:
           cache: yarn
       - name: Install dependencies
         run: yarn install
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: bindings-x86_64-unknown-linux-musl
-          path: .
       - name: List packages
-        run: ls -R .
+        run: ls -R ./packages/core-linux-x64-musl
         shell: bash
       - name: Test bindings
         run: docker run --rm -v $(pwd):/build -w /build node:${{ matrix.node }}-alpine yarn test

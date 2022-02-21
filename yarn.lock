@@ -1997,15 +1997,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@napi-rs/cli@npm:^2.4.4":
-  version: 2.4.4
-  resolution: "@napi-rs/cli@npm:2.4.4"
-  bin:
-    napi: scripts/index.js
-  checksum: 209affb9a7ecf80389692b7878c458f28504140c1846b05091d99cb6dfe21da44ec7a2c4caf8ff8f83b87cb87f52e50382a011fd9896b48aff67d35c52471917
-  languageName: node
-  linkType: hard
-
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -6288,7 +6279,6 @@ __metadata:
   resolution: "moon@workspace:."
   dependencies:
     "@moonrepo/cli": "workspace:*"
-    "@napi-rs/cli": ^2.4.4
     "@types/node": ^17.0.15
     eslint: ^8.8.0
     eslint-config-beemo: ^1.2.2

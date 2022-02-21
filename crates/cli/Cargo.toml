@@ -6,7 +6,6 @@ edition = "2021"
 [[bin]]
 name = "moon"
 path = "src/main.rs"
-required-features = ["cli"]
 
 [lib]
 name = "moon_cli"
@@ -35,11 +34,3 @@ tokio = { version = "1.16", features = ["full"] }
 assert_cmd = "2.0"
 insta = "1.8"
 predicates = "2.0"
-
-[features]
-default = []
-cli = []
-
-[profile.release]
-codegen-units = 1
-panic = 'abort'

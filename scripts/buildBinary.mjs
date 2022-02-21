@@ -17,15 +17,11 @@ const args = process.argv.slice(2);
 
 // Build the binary with the provided target
 await new Promise((resolve, reject) => {
-	const child = spawn(
-		'cargo',
-		['build', '--release', '--features', 'cli', '--target', TARGET, ...args],
-		{
-			stdio: 'inherit',
-			cwd: ROOT,
-			shell: true,
-		},
-	);
+	const child = spawn('cargo', ['build', '--release', '--target', TARGET, ...args], {
+		stdio: 'inherit',
+		cwd: ROOT,
+		shell: true,
+	});
 
 	child.on('error', reject);
 	child.on('close', resolve);

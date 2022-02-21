@@ -8,8 +8,11 @@ crate-type = ["cdylib"]
 
 [dependencies]
 moon_cli = { path = "../cli" }
-napi = "2"
-napi-derive = "2"
+napi = { version = "2.1", default-features = false, features = ["napi4"] }
+napi-derive = "2.1"
 
 [build-dependencies]
-napi-build = "1"
+napi-build = "1.2"
+
+[profile.release]
+lto = true

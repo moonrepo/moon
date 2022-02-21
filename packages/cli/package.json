@@ -29,9 +29,6 @@
   "dependencies": {
     "detect-libc": "^2.0.1"
   },
-  "devDependencies": {
-    "@napi-rs/cli": "^2.4.4"
-  },
   "optionalDependencies": {
     "@moonrepo/core-linux-x64-gnu": "^0.1.0"
   },

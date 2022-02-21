@@ -1950,7 +1950,6 @@ __metadata:
   resolution: "@moonrepo/cli@workspace:packages/cli"
   dependencies:
     "@moonrepo/core-linux-x64-gnu": ^0.1.0
-    "@napi-rs/cli": ^2.4.4
     detect-libc: ^2.0.1
   dependenciesMeta:
     "@moonrepo/core-linux-x64-gnu":
@@ -6262,6 +6261,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "moon@workspace:."
   dependencies:
+    "@napi-rs/cli": ^2.4.4
     "@types/node": ^17.0.15
     eslint: ^8.8.0
     eslint-config-beemo: ^1.2.2

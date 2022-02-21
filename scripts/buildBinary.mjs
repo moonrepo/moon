@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 const ROOT = process.cwd();
+const BINARY = process.platform === 'win32' ? 'moon.exe' : 'moon';
 const { TARGET } = process.env;
 
 if (!TARGET) {
@@ -39,10 +40,12 @@ const targetToPackage = {
 };
 
 if (targetToPackage[TARGET]) {
-	await fs.promises.copyFile(
-		path.join(ROOT, 'target', TARGET, 'release/moon'),
-		path.join(ROOT, 'packages', targetToPackage[TARGET], 'moon'),
-	);
+	const artifactPath = path.join(ROOT, `artifacts/bindings-${TARGET}`, BINARY);
+	const targetPath = path.join(ROOT, 'target', TARGET, 'release', BINARY);
+	const binPath = path.join(ROOT, 'packages', targetToPackage[TARGET], 'moon');
+
+	await fs.promises.copyFile(fs.existsSync(artifactPath) ? artifactPath : targetPath, binPath);
+	await fs.promises.chmod(binPath, 0o755);
 } else {
 	throw new Error(`Unsupported target "${TARGET}".`);
 }

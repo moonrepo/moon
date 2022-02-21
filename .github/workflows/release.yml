@@ -21,14 +21,12 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             architecture: x64
-            build: |
-              node ./scripts/buildBinary.mjs
-              strip -x *.node
+            build: node ./scripts/buildBinary.mjs
           # Windows
           - host: windows-latest
-            build: node ./scripts/buildBinary.mjs
             target: x86_64-pc-windows-msvc
             architecture: x64
+            build: node ./scripts/buildBinary.mjs
           # Linux GNU
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -37,7 +35,7 @@ jobs:
               docker pull $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-debian
               docker tag $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-debian builder
             build: |
-              docker run --rm -v ~/.cargo/git:/root/.cargo/git -v ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder node ./scripts/buildBinary.mjs && strip *.node
+              docker run --rm -e TARGET -v ~/.cargo/git:/root/.cargo/git -v ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder node ./scripts/buildBinary.mjs
           # Linux MUSL
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
@@ -46,9 +44,9 @@ jobs:
               docker pull $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-alpine
               docker tag $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-alpine builder
             build:
-              docker run --rm -v ~/.cargo/git:/root/.cargo/git -v
+              docker run --rm -e TARGET -v ~/.cargo/git:/root/.cargo/git -v
               ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder node
-              ./scripts/buildBinary.mjs && strip *.node
+              ./scripts/buildBinary.mjs
     name: Stable - ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
     steps:
@@ -99,11 +97,14 @@ jobs:
           TARGET: ${{ matrix.settings.target }}
       - name: Install dependencies
         run: yarn install
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: ${{ env.APP_NAME }}.*.node
+          path: |
+            *.node
+            moon.exe
+            moon
           if-no-files-found: error
 
   test-macos-windows-binding:

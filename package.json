@@ -8,7 +8,12 @@
     "format": "prettier --write ./packages",
     "test": "jest --passWithNoTests",
     "lint": "eslint --cache --color --fix --ext .ts,.tsx ./packages",
-    "type": "tsc --build"
+    "type": "tsc --build",
+    "artifacts": "napi artifacts",
+    "compile": "napi build --platform --release",
+    "compile:debug": "napi build --platform",
+    "prepublishOnly": "napi prepublish -t npm",
+    "version": "napi version"
   },
   "workspaces": [
     "packages/*"

@@ -24,7 +24,12 @@
     "build:debug": "napi build"
   },
   "napi": {
-    "name": "moon"
+    "name": "moon",
+    "triples": {
+      "additional": [
+        "x86_64-unknown-linux-musl"
+      ]
+    }
   },
   "dependencies": {
     "detect-libc": "^2.0.1"

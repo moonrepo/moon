@@ -1,0 +1,32 @@
+{
+  "name": "@moonrepo/core-darwin-x64",
+  "version": "0.1.0",
+  "description": "MacOS binary for Moon.",
+  "keywords": [
+    "moon",
+    "repo",
+    "macos",
+    "darwin",
+    "x64"
+  ],
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "moon.darwin-x64.node",
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/milesj/moon",
+    "directory": "packages/cli"
+  },
+  "engines": {
+    "node": ">=12.17.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1957,9 +1957,27 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@moonrepo/core-darwin-x64@workspace:packages/core-darwin-x64":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-darwin-x64@workspace:packages/core-darwin-x64"
+  languageName: unknown
+  linkType: soft
+
 "@moonrepo/core-linux-x64-gnu@^0.1.0, @moonrepo/core-linux-x64-gnu@workspace:packages/core-linux-x64-gnu":
   version: 0.0.0-use.local
   resolution: "@moonrepo/core-linux-x64-gnu@workspace:packages/core-linux-x64-gnu"
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-linux-x64-musl@workspace:packages/core-linux-x64-musl":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-linux-x64-musl@workspace:packages/core-linux-x64-musl"
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-win32-x64-msvc@workspace:packages/core-win32-x64-msvc":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-win32-x64-msvc@workspace:packages/core-win32-x64-msvc"
   languageName: unknown
   linkType: soft
 

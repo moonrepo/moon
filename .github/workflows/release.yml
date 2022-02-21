@@ -97,6 +97,8 @@ jobs:
       - name: Build binary
         run: ${{ matrix.settings.build }}
         shell: bash
+        env:
+          TARGET: ${{ matrix.settings.target }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:

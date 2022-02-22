@@ -82,12 +82,12 @@ jobs:
             binary: moon
             strip: strip
             image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            arch: x64
-            binary: moon
-            strip: strip
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          # - host: ubuntu-latest
+          #   target: x86_64-unknown-linux-musl
+          #   arch: x64
+          #   binary: moon
+          #   strip: strip
+          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
     name: Stable - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
     container:
@@ -125,7 +125,7 @@ jobs:
       - name: Add target
         run: rustup target add ${{ matrix.target }}
       - name: Build binary
-        run: ls . && node -v && node ./scripts/buildBinary.mjs
+        run: node ./scripts/buildBinary.mjs
         shell: bash
         env:
           BINARY: ${{ matrix.binary }}
@@ -185,9 +185,9 @@ jobs:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          # - host: ubuntu-latest
+          #   target: x86_64-unknown-linux-musl
+          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
         node: [12, 14, 16]
     needs:
       - build-linux
@@ -240,7 +240,7 @@ jobs:
         run: node ./scripts/syncArtifacts.mjs
         shell: bash
       - name: List packages
-        run: ls -R ./packages
+        run: ls -R ./packages/*
         shell: bash
       # - name: Publish
       #   run: |

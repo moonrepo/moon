@@ -81,6 +81,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             arch: x64
             binary: moon
+            strip: strip
             image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
@@ -97,8 +98,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           architecture: ${{ matrix.arch }}
-          cache: yarn
-          check-latest: true
           node-version: 16
       - uses: actions-rs/toolchain@v1
         with:
@@ -169,16 +168,17 @@ jobs:
       - name: Sync artifact binaries
         run: node ./scripts/syncArtifacts.mjs
         shell: bash
-        env:
-          BINARY: ${{ matrix.binary }}
-          TARGET: ${{ matrix.target }}
       - name: Install dependencies
         run: yarn install
       - name: List packages
         run: ls -R ./packages/core-darwin-* ./packages/core-win32-*
         shell: bash
       - name: Test binary
-        run: yarn run cli --help
+        run: node ./scripts/testBinary.mjs
+        shell: bash
+        env:
+          BINARY: ${{ matrix.binary }}
+          TARGET: ${{ matrix.target }}
 
   publish:
     name: Publish
@@ -198,8 +198,9 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: artifacts
-      - name: Move artifacts
-        run: yarn artifacts
+      - name: Sync artifact binaries
+        run: node ./scripts/syncArtifacts.mjs
+        shell: bash
       - name: List packages
         run: ls -R ./packages
         shell: bash

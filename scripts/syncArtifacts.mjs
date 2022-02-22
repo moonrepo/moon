@@ -1,15 +1,26 @@
 import fs from 'fs';
-import { getPackageFromTarget, getPath } from './helpers.mjs';
+import { BINARY, getPackageFromTarget, getPath } from './helpers.mjs';
 
-const { BINARY = 'moon', TARGET } = process.env;
+async function syncArtifacts() {
+	const targetDirs = await fs.promises.readdir(getPath('artifacts'));
 
-if (!TARGET) {
-	throw new Error('TARGET required for syncing artifacts.');
+	await Promise.all(
+		targetDirs.map(async (targetDir) => {
+			const artifactPath = getPath('artifacts', targetDir, BINARY);
+			const binaryPath = getPath(
+				'packages',
+				getPackageFromTarget(targetDir.replace('binary-')),
+				BINARY,
+			);
+
+			// Copy the artifact binary into the target core package
+			await fs.promises.copyFile(artifactPath, binaryPath);
+			await fs.promises.chmod(binaryPath, 0o755);
+		}),
+	);
 }
 
-// Copy the artifact binary into the target core package
-const artifactPath = getPath(`artifacts/binary-${TARGET}`, BINARY);
-const binaryPath = getPath('packages', getPackageFromTarget(TARGET), BINARY);
-
-await fs.promises.copyFile(artifactPath, binaryPath);
-await fs.promises.chmod(binaryPath, 0o755);
+syncArtifacts().catch((error) => {
+	console.error(error);
+	process.exit(1);
+});

@@ -1,6 +1,11 @@
 import path from 'path';
 
-const ROOT = process.cwd();
+export const ROOT = process.cwd();
+export const { BINARY = process.platform === 'win32' ? 'moon.exe' : 'moon', TARGET } = process.env;
+
+if (!TARGET) {
+	throw new Error('TARGET environment variable required.');
+}
 
 const targetToPackage = {
 	'x86_64-apple-darwin': 'core-darwin-x64',
@@ -9,7 +14,7 @@ const targetToPackage = {
 	'x86_64-unknown-linux-musl': 'core-linux-x64-musl',
 };
 
-export function getPackageFromTarget(target) {
+export function getPackageFromTarget(target = TARGET) {
 	if (targetToPackage[target]) {
 		return targetToPackage[target];
 	}

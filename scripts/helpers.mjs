@@ -3,10 +3,6 @@ import path from 'path';
 export const ROOT = process.cwd();
 export const { BINARY = process.platform === 'win32' ? 'moon.exe' : 'moon', TARGET } = process.env;
 
-if (!TARGET) {
-	throw new Error('TARGET environment variable required.');
-}
-
 const targetToPackage = {
 	'x86_64-apple-darwin': 'core-darwin-x64',
 	'x86_64-pc-windows-msvc': 'core-win32-x64-msvc',

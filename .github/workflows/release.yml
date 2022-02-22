@@ -65,8 +65,6 @@ jobs:
       - name: Strip debug symbols
         if: ${{ matrix.strip }}
         run: ${{ matrix.strip }} ${{ matrix.binary }}
-      - name: Install dependencies
-        run: yarn install
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -74,41 +72,31 @@ jobs:
           path: ${{ matrix.binary }}
           if-no-files-found: error
 
-  build:
+  build-linux:
     strategy:
       fail-fast: false
       matrix:
-        settings:
-          # Linux GNU
+        include:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            architecture: x64
-            docker: |
-              docker pull $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-debian
-              docker tag $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-debian builder
-            build: |
-              docker run --rm -e TARGET -v ~/.cargo/git:/root/.cargo/git -v ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder node ./scripts/buildBinary.mjs
-            artifacts: moon
-
-          # Linux MUSL
+            arch: x64
+            binary: moon
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            architecture: x64
-            docker: |
-              docker pull $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-alpine
-              docker tag $DOCKER_REGISTRY_URL/napi-rs/napi-rs/nodejs-rust:lts-alpine builder
-            build:
-              docker run --rm -e TARGET -v ~/.cargo/git:/root/.cargo/git -v
-              ~/.cargo/registry:/root/.cargo/registry -v $(pwd):/build -w /build builder node
-              ./scripts/buildBinary.mjs
-            artifacts: moon
-    name: Stable - ${{ matrix.settings.target }}
-    runs-on: ${{ matrix.settings.host }}
+            arch: x64
+            binary: moon
+            strip: strip
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+    name: Stable - ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}
+    container:
+      image: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          architecture: ${{ matrix.settings.architecture }}
+          architecture: ${{ matrix.arch }}
           cache: yarn
           check-latest: true
           node-version: 16
@@ -116,7 +104,7 @@ jobs:
         with:
           override: true
           profile: minimal
-          target: ${{ matrix.settings.target }}
+          target: ${{ matrix.target }}
           toolchain: stable
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
@@ -126,46 +114,46 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cargo/registry
-          key:
-            ${{ matrix.settings.target }}-node@16-cargo-registry-trimmed-${{
-            hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache cargo index
         uses: actions/cache@v2
         with:
           path: ~/.cargo/git
-          key:
-            ${{ matrix.settings.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock')
-            }}
-      - name: Pull latest image
-        run: ${{ matrix.settings.docker }}
-        if: ${{ matrix.settings.docker }}
-        env:
-          DOCKER_REGISTRY_URL: ghcr.io
+          key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
+      - name: Setup cross compile toolchain
+        if: ${{ matrix.setup }}
+        run: ${{ matrix.setup }}
+      - name: Add target
+        run: rustup target add ${{ matrix.target }}
       - name: Build binary
-        run: ${{ matrix.settings.build }}
+        run: node ./scripts/buildBinary.mjs
         shell: bash
         env:
-          TARGET: ${{ matrix.settings.target }}
-      - name: Install dependencies
-        run: yarn install
-      - name: Upload artifacts
+          BINARY: ${{ matrix.binary }}
+          TARGET: ${{ matrix.target }}
+      - name: Strip debug symbols
+        if: ${{ matrix.strip }}
+        run: ${{ matrix.strip }} ${{ matrix.binary }}
+      - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: binary-${{ matrix.settings.target }}
-          path: ${{ matrix.settings.artifacts }}
+          name: binary-${{ matrix.target }}
+          path: ${{ matrix.binary }}
           if-no-files-found: error
 
-  test-macos:
+  test-macos-windows:
     strategy:
       fail-fast: false
       matrix:
         settings:
           - host: macos-latest
             target: x86_64-apple-darwin
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
         node: [12, 14, 16]
     needs:
       - build-macos-windows
-    name: Test ${{ matrix.settings.target }} - node@${{ matrix.node }}
+    name: Test ${{ matrix.settings.target }} - Node@${{ matrix.node }}
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v2
@@ -174,13 +162,23 @@ jobs:
           cache: yarn
           check-latest: true
           node-version: ${{ matrix.node }}
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      - name: Sync artifact binaries
+        run: node ./scripts/syncArtifacts.mjs
+        shell: bash
+        env:
+          BINARY: ${{ matrix.binary }}
+          TARGET: ${{ matrix.target }}
       - name: Install dependencies
         run: yarn install
       - name: List packages
-        run: ls -R ./packages/core-darwin-*
+        run: ls -R ./packages/core-darwin-* ./packages/core-win32-*
         shell: bash
       - name: Test binary
-        run: yarn test
+        run: yarn run cli --help
 
   test-linux-x64-gnu:
     name: Test linux-x64-gnu - node@${{ matrix.node }}
@@ -252,7 +250,7 @@ jobs:
           cache: yarn
       - name: Install dependencies
         run: yarn install
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v2
         with:
           path: artifacts

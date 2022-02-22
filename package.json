@@ -4,7 +4,6 @@
   "packageManager": "yarn@3.2.0",
   "scripts": {
     "build": "packemon build --addEngines --addExports",
-    "build:cli": "node ./scripts/buildBinary.mjs",
     "pack": "NODE_ENV=production yarn run packemon pack --addEngines --declaration=standard",
     "format": "prettier --write ./packages",
     "test": "jest --passWithNoTests",

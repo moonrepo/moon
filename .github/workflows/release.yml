@@ -92,8 +92,7 @@ jobs:
     runs-on: ${{ matrix.host }}
     container:
       image: ${{ matrix.image }}
-      options:
-        pull: always
+      options: --pull always
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2

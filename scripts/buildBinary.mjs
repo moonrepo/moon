@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import fs from 'fs';
-import { BINARY, TARGET, getPackageFromTarget, getPath } from './helpers.mjs';
+import { BINARY, getPackageFromTarget, getPath, TARGET } from './helpers.mjs';
 
 async function buildBinary() {
 	// Allow arbitrary args to be passed through
@@ -9,9 +9,9 @@ async function buildBinary() {
 	// Build the binary with the provided target
 	await new Promise((resolve, reject) => {
 		const child = spawn('cargo', ['build', '--release', '--target', TARGET, ...args], {
-			stdio: 'inherit',
 			cwd: process.cwd(),
 			shell: true,
+			stdio: 'inherit',
 		});
 
 		child.on('error', reject);
@@ -32,5 +32,5 @@ async function buildBinary() {
 
 buildBinary().catch((error) => {
 	console.error(error);
-	process.exit(1);
+	process.exitCode = 1;
 });

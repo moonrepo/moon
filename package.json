@@ -7,7 +7,7 @@
     "pack": "NODE_ENV=production yarn run packemon pack --addEngines --declaration=standard",
     "format": "prettier --write ./packages",
     "test": "jest --passWithNoTests",
-    "lint": "eslint --cache --color --fix --ext .ts,.tsx ./packages",
+    "lint": "eslint --cache --color --fix --ext .ts,.tsx,.mjs ./packages ./scripts",
     "type": "tsc --build",
     "cli": "moon"
   },

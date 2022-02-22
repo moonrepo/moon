@@ -125,7 +125,7 @@ jobs:
       - name: Add target
         run: rustup target add ${{ matrix.target }}
       - name: Build binary
-        run: node ./scripts/buildBinary.mjs
+        run: ls . && node -v && node ./scripts/buildBinary.mjs
         shell: bash
         env:
           BINARY: ${{ matrix.binary }}

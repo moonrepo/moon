@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { BINARY, TARGET, getPackageFromTarget, getPath } from './helpers.mjs';
+import { BINARY, getPackageFromTarget, getPath } from './helpers.mjs';
 
 // We cant test the binary through yarn: https://github.com/yarnpkg/berry/issues/4146
 // So we must execute it directly as a child process.
@@ -9,9 +9,9 @@ async function testBinary() {
 
 	await new Promise((resolve, reject) => {
 		const child = spawn(binaryPath, ['--help'], {
-			stdio: 'inherit',
 			cwd: process.cwd(),
 			shell: true,
+			stdio: 'inherit',
 		});
 
 		child.on('error', reject);
@@ -21,5 +21,5 @@ async function testBinary() {
 
 testBinary().catch((error) => {
 	console.error(error);
-	process.exit(1);
+	process.exitCode = 1;
 });

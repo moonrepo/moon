@@ -171,7 +171,7 @@ jobs:
       - name: Install dependencies
         run: yarn install
       - name: List packages
-        run: ls -R ./packages/core-darwin-* ./packages/core-win32-*
+        run: ls -R ./packages/core-macos-* ./packages/core-windows-*
         shell: bash
       - name: Test binary
         run: node ./scripts/testBinary.mjs

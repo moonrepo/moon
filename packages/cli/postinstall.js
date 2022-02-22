@@ -4,7 +4,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const parts = [process.platform, process.arch];
+const platform =
+	process.platform === 'win32'
+		? 'windows'
+		: process.platform === 'darwin'
+		? 'macos'
+		: process.platform;
+const parts = [platform, process.arch];
 
 if (process.platform === 'linux') {
 	const { MUSL, familySync } = require('detect-libc');

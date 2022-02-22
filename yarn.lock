@@ -1949,25 +1949,19 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@moonrepo/cli@workspace:packages/cli"
   dependencies:
-    "@moonrepo/core-darwin-x64": ^0.0.1
     "@moonrepo/core-linux-x64-gnu": ^0.0.1
     "@moonrepo/core-linux-x64-musl": ^0.0.1
+    "@moonrepo/core-macos-x64": ^0.0.1
     detect-libc: ^2.0.1
   dependenciesMeta:
-    "@moonrepo/core-darwin-x64":
-      optional: true
     "@moonrepo/core-linux-x64-gnu":
       optional: true
     "@moonrepo/core-linux-x64-musl":
       optional: true
+    "@moonrepo/core-macos-x64":
+      optional: true
   bin:
     moon: moon
-  languageName: unknown
-  linkType: soft
-
-"@moonrepo/core-darwin-x64@^0.0.1, @moonrepo/core-darwin-x64@workspace:packages/core-darwin-x64":
-  version: 0.0.0-use.local
-  resolution: "@moonrepo/core-darwin-x64@workspace:packages/core-darwin-x64"
   languageName: unknown
   linkType: soft
 
@@ -1983,9 +1977,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@moonrepo/core-win32-x64-msvc@workspace:packages/core-win32-x64-msvc":
+"@moonrepo/core-macos-x64@^0.0.1, @moonrepo/core-macos-x64@workspace:packages/core-macos-x64":
   version: 0.0.0-use.local
-  resolution: "@moonrepo/core-win32-x64-msvc@workspace:packages/core-win32-x64-msvc"
+  resolution: "@moonrepo/core-macos-x64@workspace:packages/core-macos-x64"
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc"
   languageName: unknown
   linkType: soft
 

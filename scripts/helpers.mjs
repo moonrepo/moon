@@ -1,7 +1,8 @@
 import path from 'path';
 
 export const ROOT = process.cwd();
-export const { BINARY = process.platform === 'win32' ? 'moon.exe' : 'moon', TARGET } = process.env;
+export const { BINARY = process.platform === 'win32' ? 'moon.exe' : 'moon', TARGET = '' } =
+	process.env;
 
 const targetToPackage = {
 	'x86_64-apple-darwin': 'core-darwin-x64',

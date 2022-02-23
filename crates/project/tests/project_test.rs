@@ -7,6 +7,7 @@ use moon_project::{EnvVars, FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::{BTreeMap, HashMap};
+use std::env;
 use std::path::Path;
 
 fn mock_file_groups() -> HashMap<String, FileGroup> {
@@ -236,6 +237,7 @@ mod tasks {
     use moon_project::test::{
         create_expanded_task as create_expanded_task_internal, create_file_groups_config,
     };
+    use moon_utils::test::wrap_glob;
     use pretty_assertions::assert_eq;
 
     fn mock_task_config(command: &str) -> TaskConfig {
@@ -794,20 +796,37 @@ mod tasks {
 
             assert_eq!(
                 *project.tasks.get("test").unwrap().args,
-                vec![
-                    "--dirs",
-                    "./dir",
-                    "./dir/subdir",
-                    "--files",
-                    "./file.ts",
-                    "./dir/other.tsx",
-                    "./dir/subdir/another.ts",
-                    "--globs",
-                    "./**/*.{ts,tsx}",
-                    "./*.js",
-                    "--root",
-                    "./dir",
-                ],
+                if env::consts::OS == "windows" {
+                    vec![
+                        "--dirs",
+                        ".\\dir",
+                        ".\\dir\\subdir",
+                        "--files",
+                        ".\\file.ts",
+                        ".\\dir\\other.tsx",
+                        ".\\dir\\subdir\\another.ts",
+                        "--globs",
+                        ".\\**\\*.{ts,tsx}",
+                        ".\\*.js",
+                        "--root",
+                        ".\\dir",
+                    ]
+                } else {
+                    vec![
+                        "--dirs",
+                        "./dir",
+                        "./dir/subdir",
+                        "--files",
+                        "./file.ts",
+                        "./dir/other.tsx",
+                        "./dir/subdir/another.ts",
+                        "--globs",
+                        "./**/*.{ts,tsx}",
+                        "./*.js",
+                        "--root",
+                        "./dir",
+                    ]
+                },
             )
         }
 
@@ -918,7 +937,12 @@ mod tasks {
                     "--proot",
                     project_root.to_str().unwrap(),
                     "--psource",
-                    "foo/base/files-and-dirs",
+                    // This is wonky but also still valid
+                    if env::consts::OS == "windows" {
+                        "foo/base\\files-and-dirs"
+                    } else {
+                        "foo/base/files-and-dirs"
+                    },
                     "--target",
                     "foo/id:test/bar",
                     "--tid=test",
@@ -967,8 +991,8 @@ mod tasks {
             assert_eq!(
                 task.input_globs,
                 vec![
-                    project_root.join("**/*.{ts,tsx}").to_string_lossy(),
-                    project_root.join("*.js").to_string_lossy()
+                    wrap_glob(&project_root.join("**/*.{ts,tsx}")).to_string_lossy(),
+                    wrap_glob(&project_root.join("*.js")).to_string_lossy()
                 ],
             );
 

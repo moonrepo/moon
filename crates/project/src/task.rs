@@ -6,7 +6,7 @@ use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug, trace};
-use moon_utils::fs::is_path_glob;
+use moon_utils::fs;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -176,7 +176,8 @@ impl Task {
                     if run_in_project && resolved_arg.starts_with(token_resolver.data.project_root)
                     {
                         args.push(format!(
-                            "./{}",
+                            ".{}{}",
+                            std::path::MAIN_SEPARATOR,
                             resolved_arg
                                 .strip_prefix(token_resolver.data.project_root)
                                 .unwrap()
@@ -209,8 +210,8 @@ impl Task {
         for input in &token_resolver.resolve(&self.inputs, None)? {
             // Globs are separate from paths as we can't canonicalize it,
             // and we need them to be absolute for it to match correctly.
-            if is_path_glob(input) {
-                self.input_globs.push(String::from(input.to_string_lossy()));
+            if fs::is_path_glob(input) {
+                self.input_globs.push(fs::normalize_glob(&input));
             } else {
                 self.input_paths.insert(handle_canonicalize(input)?);
             }
@@ -228,7 +229,7 @@ impl Task {
         );
 
         for output in &token_resolver.resolve(&self.outputs, None)? {
-            if is_path_glob(output) {
+            if fs::is_path_glob(output) {
                 return Err(ProjectError::NoOutputGlob(
                     output.to_owned(),
                     self.target.clone(),
@@ -260,8 +261,24 @@ impl Task {
         let globs = glob_builder.build()?;
 
         for file in touched_files {
-            if self.input_paths.contains(file) || globs.is_match(file) {
+            if self.input_paths.contains(file) {
                 return Ok(true);
+            }
+
+            // globset doesnt match against inputs that use backwards slashes
+            // https://github.com/BurntSushi/ripgrep/issues/2001
+            #[cfg(windows)]
+            {
+                if globs.is_match(&PathBuf::from(fs::normalize_glob(file))) {
+                    return Ok(true);
+                }
+            }
+
+            #[cfg(not(windows))]
+            {
+                if globs.is_match(file) {
+                    return Ok(true);
+                }
             }
         }
 

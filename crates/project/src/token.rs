@@ -434,7 +434,7 @@ mod tests {
     use crate::test::{create_expanded_task, create_file_groups};
     use moon_config::TaskConfig;
     use moon_utils::string_vec;
-    use moon_utils::test::get_fixtures_dir;
+    use moon_utils::test::{get_fixtures_dir, wrap_glob};
     use std::path::PathBuf;
 
     fn get_workspace_root() -> PathBuf {
@@ -741,7 +741,7 @@ mod tests {
                 resolver
                     .resolve(&string_vec!["@in(0)"], Some(&task))
                     .unwrap(),
-                vec![project_root.join("src/**/*")],
+                vec![wrap_glob(&project_root.join("src/**/*"))],
             );
         }
 

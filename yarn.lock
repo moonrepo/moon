@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 6
+  version: 5
   cacheKey: 8
 
 "@babel/code-frame@npm:^7.0.0, @babel/code-frame@npm:^7.12.13, @babel/code-frame@npm:^7.16.7":
@@ -1952,6 +1952,7 @@ __metadata:
     "@moonrepo/core-linux-x64-gnu": ^0.0.1
     "@moonrepo/core-linux-x64-musl": ^0.0.1
     "@moonrepo/core-macos-x64": ^0.0.1
+    "@moonrepo/core-windows-x64-msvc": ^0.0.1
     detect-libc: ^2.0.1
   dependenciesMeta:
     "@moonrepo/core-linux-x64-gnu":
@@ -1959,6 +1960,8 @@ __metadata:
     "@moonrepo/core-linux-x64-musl":
       optional: true
     "@moonrepo/core-macos-x64":
+      optional: true
+    "@moonrepo/core-windows-x64-msvc":
       optional: true
   bin:
     moon: moon
@@ -1983,7 +1986,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc":
+"@moonrepo/core-windows-x64-msvc@^0.0.1, @moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc":
   version: 0.0.0-use.local
   resolution: "@moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc"
   languageName: unknown
@@ -8101,11 +8104,11 @@ __metadata:
 
 "typescript@patch:typescript@^4.5.5#~builtin<compat/typescript>, typescript@patch:typescript@~4.5.2#~builtin<compat/typescript>":
   version: 4.5.5
-  resolution: "typescript@patch:typescript@npm%3A4.5.5#~builtin<compat/typescript>::version=4.5.5&hash=bda367"
+  resolution: "typescript@patch:typescript@npm%3A4.5.5#~builtin<compat/typescript>::version=4.5.5&hash=493e53"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 858c61fa63f7274ca4aaaffeced854d550bf416cff6e558c4884041b3311fb662f476f167cf5c9f8680c607239797e26a2ee0bcc6467fbc05bfcb218e1c6c671
+  checksum: c05c318d79c690f101d7ffb34cd6c7d6bbd884d3af9cefe7749ad0cd6be43c7082f098280982ca945dcba23fde34a08fed9602bb26540936baf8c0520727d3ba
   languageName: node
   linkType: hard
 

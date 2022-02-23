@@ -211,7 +211,7 @@ impl Task {
             // Globs are separate from paths as we can't canonicalize it,
             // and we need them to be absolute for it to match correctly.
             if fs::is_path_glob(input) {
-                self.input_globs.push(fs::normalize_glob(&input));
+                self.input_globs.push(fs::normalize_glob(input));
             } else {
                 self.input_paths.insert(handle_canonicalize(input)?);
             }

@@ -2,7 +2,7 @@ node:
   version: '16.13.2'
   packageManager: 'yarn'
   yarn:
-    version: '3.1.1'
+    version: '3.2.0'
 
 projects:
   runtime: 'packages/runtime'

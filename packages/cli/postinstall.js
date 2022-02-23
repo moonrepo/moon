@@ -45,10 +45,10 @@ try {
 }
 
 try {
-	fs.linkSync(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
+	fs.linkSync(path.join(pkgPath, binary), path.join(__dirname, binary));
 } catch {
 	try {
-		fs.copyFileSync(path.join(pkgPath, binary), path.join(__dirname, '..', binary));
+		fs.copyFileSync(path.join(pkgPath, binary), path.join(__dirname, binary));
 	} catch {
 		console.error('Failed to find "moon" binary.');
 		// process.exit(1);

@@ -98,6 +98,17 @@ pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?)
 }
 
+pub fn normalize_glob(path: &Path) -> String {
+    // Always use forward slashes for globs
+    let glob = path.to_string_lossy().replace("\\", "/");
+
+    if std::env::consts::OS == "windows" {
+        return glob.replace("//?/", ""); // Is this needed for globs?
+    }
+
+    glob
+}
+
 pub async fn read_json<T>(path: &Path) -> Result<T, MoonError>
 where
     T: DeserializeOwned,

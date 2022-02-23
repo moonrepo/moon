@@ -100,11 +100,10 @@ pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
 
 pub fn normalize_glob(path: &Path) -> String {
     // Always use forward slashes for globs
-    let mut glob = path.to_string_lossy().replace("\\", "/");
+    let glob = path.to_string_lossy().replace("\\", "/");
 
-    #[cfg(windows)]
     if std::env::consts::OS == "windows" {
-        glob = glob.replace("//?/", ""); // Is this needed for globs?
+        return glob.replace("//?/", ""); // Is this needed for globs?
     }
 
     glob

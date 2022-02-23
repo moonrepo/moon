@@ -4,7 +4,7 @@ pub fn create_test_command(fixture: &str) -> assert_cmd::Command {
     path.push("../../tests/fixtures");
     path.push(fixture);
 
-    let mut cmd = assert_cmd::Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
     cmd.current_dir(path.canonicalize().unwrap());
     cmd.env("MOON_TEST", "true");
     cmd

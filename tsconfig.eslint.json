@@ -1,8 +1,12 @@
 {
   "extends": "./tsconfig.options.json",
-  "include":[
+  "parserOptions": {
+    "extraFileExtensions": [".mjs"]
+  },
+  "include": [
     "packages/*/src/**/*",
     "packages/*/tests/**/*",
-    "packages/*/types/**/*"
+    "packages/*/types/**/*",
+    "scripts/**/*"
   ]
 }

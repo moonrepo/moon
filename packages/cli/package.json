@@ -1,0 +1,43 @@
+{
+  "name": "@moonrepo/cli",
+  "version": "0.0.1",
+  "description": "Moon command line and core system.",
+  "keywords": [
+    "moon",
+    "repo",
+    "cli",
+    "core"
+  ],
+  "os": [
+    "linux",
+    "win32",
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "bin": {
+    "moon": "moon"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/milesj/moon",
+    "directory": "packages/cli"
+  },
+  "scripts": {
+    "postinstall": "node ./postinstall.js"
+  },
+  "dependencies": {
+    "detect-libc": "^2.0.1"
+  },
+  "optionalDependencies": {
+    "@moonrepo/core-linux-x64-gnu": "^0.0.1",
+    "@moonrepo/core-linux-x64-musl": "^0.0.1",
+    "@moonrepo/core-macos-x64": "^0.0.1"
+  },
+  "engines": {
+    "node": ">=12.17.0"
+  }
+}

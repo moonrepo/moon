@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 5
+  version: 6
   cacheKey: 8
 
 "@babel/code-frame@npm:^7.0.0, @babel/code-frame@npm:^7.12.13, @babel/code-frame@npm:^7.16.7":
@@ -1945,6 +1945,50 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@moonrepo/cli@workspace:*, @moonrepo/cli@workspace:packages/cli":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/cli@workspace:packages/cli"
+  dependencies:
+    "@moonrepo/core-linux-x64-gnu": ^0.0.1
+    "@moonrepo/core-linux-x64-musl": ^0.0.1
+    "@moonrepo/core-macos-x64": ^0.0.1
+    detect-libc: ^2.0.1
+  dependenciesMeta:
+    "@moonrepo/core-linux-x64-gnu":
+      optional: true
+    "@moonrepo/core-linux-x64-musl":
+      optional: true
+    "@moonrepo/core-macos-x64":
+      optional: true
+  bin:
+    moon: moon
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-linux-x64-gnu@^0.0.1, @moonrepo/core-linux-x64-gnu@workspace:packages/core-linux-x64-gnu":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-linux-x64-gnu@workspace:packages/core-linux-x64-gnu"
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-linux-x64-musl@^0.0.1, @moonrepo/core-linux-x64-musl@workspace:packages/core-linux-x64-musl":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-linux-x64-musl@workspace:packages/core-linux-x64-musl"
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-macos-x64@^0.0.1, @moonrepo/core-macos-x64@workspace:packages/core-macos-x64":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-macos-x64@workspace:packages/core-macos-x64"
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc"
+  languageName: unknown
+  linkType: soft
+
 "@moonrepo/runtime@workspace:packages/runtime":
   version: 0.0.0-use.local
   resolution: "@moonrepo/runtime@workspace:packages/runtime"
@@ -3484,6 +3528,13 @@ __metadata:
   version: 1.1.2
   resolution: "depd@npm:1.1.2"
   checksum: 6b406620d269619852885ce15965272b829df6f409724415e0002c8632ab6a8c0a08ec1f0bd2add05dc7bd7507606f7e2cc034fa24224ab829580040b835ecd9
+  languageName: node
+  linkType: hard
+
+"detect-libc@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "detect-libc@npm:2.0.1"
+  checksum: ccb05fcabbb555beb544d48080179c18523a343face9ee4e1a86605a8715b4169f94d663c21a03c310ac824592f2ba9a5270218819bb411ad7be578a527593d7
   languageName: node
   linkType: hard
 
@@ -6227,6 +6278,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "moon@workspace:."
   dependencies:
+    "@moonrepo/cli": "workspace:*"
     "@types/node": ^17.0.15
     eslint: ^8.8.0
     eslint-config-beemo: ^1.2.2
@@ -7465,9 +7517,9 @@ __metadata:
   linkType: hard
 
 "signal-exit@npm:^3.0.0, signal-exit@npm:^3.0.2, signal-exit@npm:^3.0.3":
-  version: 3.0.6
-  resolution: "signal-exit@npm:3.0.6"
-  checksum: b819ac81ba757af559dad0804233ae31bf6f054591cd8a671e9cbcf09f21c72ec3076fe87d1e04861f5b33b47d63f0694b568de99c99cd733ee2060515beb6d5
+  version: 3.0.7
+  resolution: "signal-exit@npm:3.0.7"
+  checksum: a2f098f247adc367dffc27845853e9959b9e88b01cb301658cfe4194352d8d2bb32e18467c786a7fe15f1d44b233ea35633d076d5e737870b7139949d1ab6318
   languageName: node
   linkType: hard
 
@@ -8049,11 +8101,11 @@ __metadata:
 
 "typescript@patch:typescript@^4.5.5#~builtin<compat/typescript>, typescript@patch:typescript@~4.5.2#~builtin<compat/typescript>":
   version: 4.5.5
-  resolution: "typescript@patch:typescript@npm%3A4.5.5#~builtin<compat/typescript>::version=4.5.5&hash=493e53"
+  resolution: "typescript@patch:typescript@npm%3A4.5.5#~builtin<compat/typescript>::version=4.5.5&hash=bda367"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: c05c318d79c690f101d7ffb34cd6c7d6bbd884d3af9cefe7749ad0cd6be43c7082f098280982ca945dcba23fde34a08fed9602bb26540936baf8c0520727d3ba
+  checksum: 858c61fa63f7274ca4aaaffeced854d550bf416cff6e558c4884041b3311fb662f476f167cf5c9f8680c607239797e26a2ee0bcc6467fbc05bfcb218e1c6c671
   languageName: node
   linkType: hard
 

@@ -3,6 +3,15 @@ name = "moon_cli"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "moon"
+path = "src/main.rs"
+
+[lib]
+name = "moon_cli"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
 [dependencies]
 moon_config = { path = "../config" }
 moon_logger = { path = "../logger" }

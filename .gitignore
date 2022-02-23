@@ -1,4 +1,5 @@
 /target
+node_modules/
 
 # Yarn
 .yarn/*
@@ -27,3 +28,6 @@ umd/
 
 # Moon
 .moon/cache
+packages/*/moon
+/moon
+/moon.exe

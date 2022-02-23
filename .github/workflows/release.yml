@@ -13,8 +13,8 @@ on:
     tags:
       - v*
   pull_request:
-  # Test every night to ensure builds are good
   schedule:
+    # Test every night to ensure builds are good
     - cron: '0 10 * * *' # 2am PT, 10am UTC
 
 jobs:
@@ -39,6 +39,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           architecture: ${{ matrix.arch }}
+          cache: yarn
           check-latest: true
           node-version: 16
       - uses: actions-rs/toolchain@v1
@@ -106,6 +107,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           architecture: ${{ matrix.arch }}
+          cache: yarn
           node-version: 16
       - uses: actions-rs/toolchain@v1
         with:
@@ -166,6 +168,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
+          cache: yarn
           node-version: ${{ matrix.node }}
       - name: Download artifacts
         uses: actions/download-artifact@v2
@@ -208,6 +211,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
+          cache: yarn
           node-version: ${{ matrix.node }}
       - name: Download artifacts
         uses: actions/download-artifact@v2
@@ -238,6 +242,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
+          cache: yarn
           node-version: 16
       - name: Install dependencies
         run: yarn install

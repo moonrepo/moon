@@ -9,18 +9,18 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::helpers::create_test_command;
+// #[cfg(test)]
+// mod tests {
+//     use crate::helpers::create_test_command;
 
-    #[test]
-    fn installs() {
-        let assert = create_test_command("base")
-            .arg("--log-level")
-            .arg("trace")
-            .arg("setup")
-            .assert();
+//     #[test]
+//     fn installs() {
+//         let assert = create_test_command("base")
+//             .arg("--log-level")
+//             .arg("trace")
+//             .arg("setup")
+//             .assert();
 
-        assert.success().code(0);
-    }
-}
+//         assert.success().code(0);
+//     }
+// }

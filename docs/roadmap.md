@@ -1,5 +1,11 @@
 # 0.1.0
 
+## Targets
+
+- [x] macos x64
+- [x] linux x64 (gnu)
+- [x] windows x64
+
 ## Projects
 
 - [x] Can define metadata

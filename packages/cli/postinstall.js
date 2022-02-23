@@ -13,9 +13,9 @@ const platform =
 const parts = [platform, process.arch];
 
 if (process.platform === 'linux') {
-	const { MUSL, familySync } = require('detect-libc');
+	const { familySync } = require('detect-libc');
 
-	if (familySync() === MUSL) {
+	if (familySync() === 'musl') {
 		parts.push('musl');
 	} else if (process.arch === 'arm') {
 		parts.push('gnueabihf');
@@ -37,10 +37,10 @@ try {
 		throw new Error('Target not built.');
 	}
 } catch {
-	pkgPath = path.join(__dirname, '../../../target/release');
+	pkgPath = path.join(__dirname, '../../target/release');
 
 	if (!fs.existsSync(path.join(pkgPath, binary))) {
-		pkgPath = path.join(__dirname, '../../../target/debug');
+		pkgPath = path.join(__dirname, '../../target/debug');
 	}
 }
 

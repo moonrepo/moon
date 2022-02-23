@@ -18,7 +18,7 @@ impl Logger {
 
         #[cfg(windows)]
         if std::env::consts::OS == "windows" {
-            ansi_term::enable_ansi_support();
+            ansi_term::enable_ansi_support().unwrap();
         }
 
         Dispatch::new()

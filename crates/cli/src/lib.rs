@@ -54,6 +54,7 @@ pub async fn run_cli() {
         Commands::Run {
             target,
             affected,
+            local,
             status,
             passthrough,
         } => {
@@ -61,6 +62,7 @@ pub async fn run_cli() {
                 target,
                 RunOptions {
                     affected: *affected,
+                    local: *local,
                     status: status.clone().unwrap_or_default(),
                     passthrough: passthrough.clone(),
                 },

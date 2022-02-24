@@ -106,6 +106,13 @@ pub enum Commands {
         affected: bool,
 
         #[clap(
+            long,
+            help = "Determine affected from local changes instead of comparing against default branch",
+            help_heading = HEADING_AFFECTED
+        )]
+        local: bool,
+
+        #[clap(
             arg_enum,
             long,
             help = "Determine affected files based on this status",
@@ -113,6 +120,7 @@ pub enum Commands {
         )]
         status: Option<RunStatus>,
 
+        // Passthrough args (after --)
         #[clap(last = true)]
         passthrough: Vec<String>,
     },

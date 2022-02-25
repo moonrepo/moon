@@ -42,8 +42,14 @@ async fn get_touched_files(
     local: bool,
 ) -> Result<TouchedFilePaths, WorkspaceError> {
     let vcs = workspace.detect_vcs();
-    let mut touched = HashSet::new();
-    let touched_files = vcs.get_touched_files().await?;
+
+    let touched_files = if local {
+        vcs.get_touched_files().await?
+    } else {
+        vcs.get_touched_files_against_branch(&vcs.get_local_branch().await?)
+            .await?
+    };
+
     let files = match status {
         RunStatus::Added => touched_files.added,
         RunStatus::All => touched_files.all,
@@ -53,6 +59,8 @@ async fn get_touched_files(
         RunStatus::Unstaged => touched_files.unstaged,
         RunStatus::Untracked => touched_files.untracked,
     };
+
+    let mut touched = HashSet::new();
 
     for file in &files {
         touched.insert(workspace.root.join(file));

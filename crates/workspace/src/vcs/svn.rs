@@ -3,17 +3,20 @@ use async_trait::async_trait;
 use moon_utils::process::{create_command, exec_command_capture_stdout};
 use regex::Regex;
 use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 // TODO: This code hasn't been tested yet and may not be accurate!
 
 pub struct Svn {
     default_branch: String,
+    working_dir: PathBuf,
 }
 
 impl Svn {
-    pub fn new(default_branch: &str) -> Self {
+    pub fn new(default_branch: &str, working_dir: &Path) -> Self {
         Svn {
             default_branch: String::from(default_branch),
+            working_dir: working_dir.to_path_buf(),
         }
     }
 
@@ -28,7 +31,7 @@ impl Svn {
     }
 
     async fn get_hash_for_rev(&self, rev: &str) -> VcsResult<String> {
-        let output = self.run_command(vec!["info", "-r", rev]).await?;
+        let output = self.run_command(vec!["info", "-r", rev], true).await?;
 
         Ok(self.extract_line_from_info("Revision:", &output))
     }
@@ -38,7 +41,7 @@ impl Svn {
 #[async_trait]
 impl Vcs for Svn {
     async fn get_local_branch(&self) -> VcsResult<String> {
-        let output = self.run_command(vec!["info"]).await?;
+        let output = self.run_command(vec!["info"], false).await?;
         let url = self.extract_line_from_info("URL:", &output);
         let pattern = Regex::new("branches/([^/]+)").unwrap();
 
@@ -68,7 +71,7 @@ impl Vcs for Svn {
 
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
-        let output = self.run_command(vec!["status", "wc"]).await?;
+        let output = self.run_command(vec!["status", "wc"], false).await?;
 
         if output.is_empty() {
             return Ok(TouchedFiles::default());
@@ -126,7 +129,23 @@ impl Vcs for Svn {
         })
     }
 
-    async fn run_command(&self, args: Vec<&str>) -> VcsResult<String> {
-        Ok(exec_command_capture_stdout(create_command("svn").args(args)).await?)
+    // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
+    async fn get_touched_files_against_branch(&self, branch: &str) -> VcsResult<TouchedFiles> {
+        Ok(TouchedFiles::default())
+    }
+
+    async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {
+        let output = exec_command_capture_stdout(
+            create_command("svn")
+                .args(args)
+                .current_dir(&self.working_dir),
+        )
+        .await?;
+
+        if trim {
+            return Ok(output.trim().to_owned());
+        }
+
+        Ok(output)
     }
 }

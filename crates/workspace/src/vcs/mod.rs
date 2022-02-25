@@ -7,6 +7,7 @@ use git::Git;
 use moon_config::{VcsManager as VM, WorkspaceConfig};
 use moon_logger::{color, debug};
 use std::collections::HashSet;
+use std::path::Path;
 use svn::Svn;
 
 pub type VcsResult<T> = Result<T, WorkspaceError>;
@@ -32,13 +33,14 @@ pub trait Vcs {
     fn get_default_branch(&self) -> &str;
     async fn get_default_branch_hash(&self) -> VcsResult<String>;
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;
-    async fn run_command(&self, args: Vec<&str>) -> VcsResult<String>;
+    async fn get_touched_files_against_branch(&self, branch: &str) -> VcsResult<TouchedFiles>;
+    async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String>;
 }
 
 pub struct VcsManager {}
 
 impl VcsManager {
-    pub fn load(config: &WorkspaceConfig) -> Box<dyn Vcs> {
+    pub fn load(config: &WorkspaceConfig, working_dir: &Path) -> Box<dyn Vcs> {
         let vcs_config = config.vcs.as_ref().unwrap();
         let manager = vcs_config.manager.as_ref().unwrap();
         let default_branch = vcs_config.default_branch.as_ref().unwrap().as_str();
@@ -50,8 +52,8 @@ impl VcsManager {
         );
 
         match manager {
-            VM::Svn => Box::new(Svn::new(default_branch)),
-            _ => Box::new(Git::new(default_branch)),
+            VM::Svn => Box::new(Svn::new(default_branch, working_dir)),
+            _ => Box::new(Git::new(default_branch, working_dir)),
         }
     }
 }

@@ -1,45 +1,29 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use moon_utils::process::{create_command, exec_command_capture_stdout};
+use regex::Regex;
 use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 pub struct Git {
     default_branch: String,
+    working_dir: PathBuf,
 }
 
 impl Git {
-    pub fn new(default_branch: &str) -> Self {
+    pub fn new(default_branch: &str, working_dir: &Path) -> Self {
         Git {
             default_branch: String::from(default_branch),
+            working_dir: working_dir.to_path_buf(),
         }
     }
-}
 
-#[async_trait]
-impl Vcs for Git {
-    async fn get_local_branch(&self) -> VcsResult<String> {
-        self.run_command(vec!["branch", "--show-current"]).await
-    }
-
-    async fn get_local_branch_hash(&self) -> VcsResult<String> {
-        self.run_command(vec!["rev-parse", "HEAD"]).await
-    }
-
-    fn get_default_branch(&self) -> &str {
-        &self.default_branch
-    }
-
-    async fn get_default_branch_hash(&self) -> VcsResult<String> {
-        self.run_command(vec!["rev-parse", &self.default_branch])
-            .await
-    }
-
-    // https://git-scm.com/docs/git-status#_short_format
-    async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
-        let output = self.run_command(vec!["status", "-s", "-u"]).await?;
-
+    fn process_touched_files<F: Fn(String) -> (char, char, String)>(
+        output: String,
+        extract: F,
+    ) -> TouchedFiles {
         if output.is_empty() {
-            return Ok(TouchedFiles::default());
+            return TouchedFiles::default();
         }
 
         let mut added = HashSet::new();
@@ -49,24 +33,15 @@ impl Vcs for Git {
         let mut staged = HashSet::new();
         let mut unstaged = HashSet::new();
         let mut all = HashSet::new();
+        let spaces_regex = Regex::new(r"\s+").unwrap();
 
         for line in output.split('\n') {
             if line.is_empty() {
                 continue;
             }
 
-            let mut chars = line.chars();
-            let x = chars.next().unwrap_or_default();
-            let y = chars.next().unwrap_or_default();
-            let mut file = &line[3..];
-
-            // Copied files contain 2 file paths: ORIG -> NEW
-            if let Some(index) = file.find("->") {
-                file = &file[index + 1..];
-            }
-
-            // Convert to a normal string
-            let file = file.to_owned();
+            let clean_line = String::from(spaces_regex.replace_all(line, " "));
+            let (x, y, file) = extract(clean_line);
 
             match x {
                 'A' | 'C' => {
@@ -106,7 +81,7 @@ impl Vcs for Git {
             all.insert(file.clone());
         }
 
-        Ok(TouchedFiles {
+        TouchedFiles {
             added,
             all,
             deleted,
@@ -114,10 +89,98 @@ impl Vcs for Git {
             staged,
             unstaged,
             untracked,
-        })
+        }
+    }
+}
+
+#[async_trait]
+impl Vcs for Git {
+    async fn get_local_branch(&self) -> VcsResult<String> {
+        self.run_command(vec!["branch", "--show-current"], true)
+            .await
     }
 
-    async fn run_command(&self, args: Vec<&str>) -> VcsResult<String> {
-        Ok(exec_command_capture_stdout(create_command("git").args(args)).await?)
+    async fn get_local_branch_hash(&self) -> VcsResult<String> {
+        self.run_command(vec!["rev-parse", "HEAD"], true).await
+    }
+
+    fn get_default_branch(&self) -> &str {
+        &self.default_branch
+    }
+
+    async fn get_default_branch_hash(&self) -> VcsResult<String> {
+        self.run_command(vec!["rev-parse", &self.default_branch], true)
+            .await
+    }
+
+    // https://git-scm.com/docs/git-status#_short_format
+    async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
+        let output = self
+            .run_command(
+                vec!["-c", "color.status=false", "status", "-s", "-u"],
+                false,
+            )
+            .await?;
+
+        Ok(Git::process_touched_files(output, |line| {
+            let mut chars = line.chars();
+            let x = chars.next().unwrap_or_default();
+            let y = chars.next().unwrap_or_default();
+            let mut file = &line[3..];
+
+            if let Some(index) = file.find("->") {
+                file = &file[index + 1..];
+            }
+
+            (x, y, file.to_owned())
+        }))
+    }
+
+    // https://git-scm.com/docs/git-status#_short_format
+    async fn get_touched_files_against_branch(&self, branch: &str) -> VcsResult<TouchedFiles> {
+        let output = self
+            .run_command(
+                vec![
+                    "--no-pager",
+                    "diff",
+                    "--name-status",
+                    "--no-color",
+                    "--relative",
+                    &self.default_branch,
+                    branch,
+                ],
+                false,
+            )
+            .await?;
+
+        println!("get_touched_files_against_branch = {:#?}", output);
+
+        // git diff = X file/path [copied/file]
+        Ok(Git::process_touched_files(output, |line| {
+            let parts = line.split(' ').collect::<Vec<&str>>();
+            let status = parts[0].chars().next().unwrap();
+            let mut file = parts[1];
+
+            if let Some(copied_file) = parts.get(2) {
+                file = copied_file;
+            }
+
+            (status as char, ' ', file.to_owned())
+        }))
+    }
+
+    async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {
+        let output = exec_command_capture_stdout(
+            create_command("git")
+                .args(args)
+                .current_dir(&self.working_dir),
+        )
+        .await?;
+
+        if trim {
+            return Ok(output.trim().to_owned());
+        }
+
+        Ok(output)
     }
 }

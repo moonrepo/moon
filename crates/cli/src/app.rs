@@ -121,7 +121,10 @@ pub enum Commands {
         status: Option<RunStatus>,
 
         // Passthrough args (after --)
-        #[clap(last = true)]
+        #[clap(
+            last = true,
+            help = "Arguments to pass through to the underlying command"
+        )]
         passthrough: Vec<String>,
     },
 }

@@ -122,6 +122,7 @@ impl Vcs for Git {
             )
             .await?;
 
+        // XY file/path [-> copied/file]
         Ok(Git::process_touched_files(output, |line| {
             let mut chars = line.chars();
             let x = chars.next().unwrap_or_default();
@@ -153,9 +154,7 @@ impl Vcs for Git {
             )
             .await?;
 
-        println!("get_touched_files_against_branch = {:#?}", output);
-
-        // git diff = X file/path [copied/file]
+        // X file/path [copied/file]
         Ok(Git::process_touched_files(output, |line| {
             let parts = line.split(' ').collect::<Vec<&str>>();
             let status = parts[0].chars().next().unwrap();

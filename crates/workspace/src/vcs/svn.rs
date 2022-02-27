@@ -35,6 +35,67 @@ impl Svn {
 
         Ok(self.extract_line_from_info("Revision:", &output))
     }
+
+    fn process_touched_files(output: String) -> TouchedFiles {
+        if output.is_empty() {
+            return TouchedFiles::default();
+        }
+
+        let mut added = HashSet::new();
+        let mut deleted = HashSet::new();
+        let mut modified = HashSet::new();
+        let mut untracked = HashSet::new();
+        let mut staged = HashSet::new();
+        let unstaged = HashSet::new();
+        let mut all = HashSet::new();
+
+        for line in output.split('\n') {
+            if line.is_empty() {
+                continue;
+            }
+
+            let mut chars = line.chars();
+            let x = chars.next().unwrap_or_default();
+            let y = chars.next().unwrap_or_default();
+            let file = String::from(&line[8..]);
+
+            match x {
+                'A' | 'C' => {
+                    added.insert(file.clone());
+                }
+                'D' => {
+                    deleted.insert(file.clone());
+                }
+                'M' | 'R' => {
+                    modified.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                '?' => {
+                    untracked.insert(file.clone());
+                }
+                _ => {}
+            }
+
+            if y == 'M' {
+                modified.insert(file.clone());
+            }
+
+            all.insert(file.clone());
+
+            // svn files are always staged by default
+            staged.insert(file.clone());
+        }
+
+        TouchedFiles {
+            added,
+            all,
+            deleted,
+            modified,
+            staged,
+            unstaged, // svn has no concept for this
+            untracked,
+        }
+    }
 }
 
 // https://edoras.sdsu.edu/doc/svn-book-html-chunk/svn.ref.svn.c.info.html
@@ -73,65 +134,27 @@ impl Vcs for Svn {
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self.run_command(vec!["status", "wc"], false).await?;
 
-        if output.is_empty() {
-            return Ok(TouchedFiles::default());
-        }
-
-        let mut added = HashSet::new();
-        let mut deleted = HashSet::new();
-        let mut modified = HashSet::new();
-        let mut untracked = HashSet::new();
-        let mut staged = HashSet::new();
-        let unstaged = HashSet::new();
-        let mut all = HashSet::new();
-
-        for line in output.split('\n') {
-            let mut chars = line.chars();
-            let c1 = chars.next().unwrap_or_default();
-            let c2 = chars.next().unwrap_or_default();
-            let file = String::from(&line[8..]);
-
-            match c1 {
-                'A' | 'C' => {
-                    added.insert(file.clone());
-                }
-                'D' => {
-                    deleted.insert(file.clone());
-                }
-                'M' | 'R' => {
-                    modified.insert(file.clone());
-                    staged.insert(file.clone());
-                }
-                '?' => {
-                    untracked.insert(file.clone());
-                }
-                _ => {}
-            }
-
-            if c2 == 'M' {
-                modified.insert(file.clone());
-            }
-
-            all.insert(file.clone());
-
-            // svn files are always staged by default
-            staged.insert(file.clone());
-        }
-
-        Ok(TouchedFiles {
-            added,
-            all,
-            deleted,
-            modified,
-            staged,
-            unstaged, // svn has no concept for this
-            untracked,
-        })
+        Ok(Svn::process_touched_files(output))
     }
 
-    // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
-    async fn get_touched_files_against_branch(&self, branch: &str) -> VcsResult<TouchedFiles> {
-        Ok(TouchedFiles::default())
+    // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.diff.html
+    async fn get_touched_files_against_branch(&self, _branch: &str) -> VcsResult<TouchedFiles> {
+        let trunk_rev = self.get_default_branch_hash().await?;
+        let branch_rev = self.get_local_branch_hash().await?;
+
+        let output = self
+            .run_command(
+                vec![
+                    "diff",
+                    "-r",
+                    &format!("{}:{}", trunk_rev, branch_rev),
+                    "--summarize",
+                ],
+                false,
+            )
+            .await?;
+
+        Ok(Svn::process_touched_files(output))
     }
 
     async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {

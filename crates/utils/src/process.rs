@@ -51,10 +51,19 @@ pub async fn exec_command(command: &mut Command) -> Result<Output, MoonError> {
     log_command_info(command);
 
     let output = command.output();
-
-    Ok(output.await.map_err(|e| {
+    let output = output.await.map_err(|e| {
         map_io_to_process_error(e, command.as_std().get_program().to_str().unwrap())
-    })?)
+    })?;
+
+    handle_nonzero_status(command, &output)?;
+
+    Ok(output)
+}
+
+pub async fn exec_command_capture_stderr(command: &mut Command) -> Result<String, MoonError> {
+    let output = exec_command(command).await?;
+
+    Ok(output_to_string(&output.stderr))
 }
 
 pub async fn exec_command_capture_stdout(command: &mut Command) -> Result<String, MoonError> {
@@ -124,9 +133,40 @@ pub async fn spawn_command(command: &mut Command) -> Result<Output, MoonError> {
         output.stdout = stdout.read().await.join("").into_bytes();
     }
 
+    handle_nonzero_status(command, &output)?;
+
     Ok(output)
 }
 
 pub fn output_to_string(data: &[u8]) -> String {
     String::from_utf8(data.to_vec()).unwrap_or_default()
+}
+
+fn handle_nonzero_status(command: &mut Command, output: &Output) -> Result<(), MoonError> {
+    if !output.status.success() {
+        let bin_name = command
+            .as_std()
+            .get_program()
+            .to_str()
+            .unwrap_or("<unknown>");
+
+        match output.status.code() {
+            Some(code) => {
+                return Err(MoonError::ProcessNonZero(
+                    bin_name.to_owned(),
+                    code,
+                    output_to_string(&output.stderr), // Always correct?
+                ));
+            }
+            None => {
+                return Err(MoonError::ProcessNonZero(
+                    bin_name.to_owned(),
+                    -1,
+                    String::from("Process terminated by signal."),
+                ))
+            }
+        };
+    }
+
+    Ok(())
 }

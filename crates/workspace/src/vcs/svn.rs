@@ -3,17 +3,20 @@ use async_trait::async_trait;
 use moon_utils::process::{create_command, exec_command_capture_stdout};
 use regex::Regex;
 use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 // TODO: This code hasn't been tested yet and may not be accurate!
 
 pub struct Svn {
     default_branch: String,
+    working_dir: PathBuf,
 }
 
 impl Svn {
-    pub fn new(default_branch: &str) -> Self {
+    pub fn new(default_branch: &str, working_dir: &Path) -> Self {
         Svn {
             default_branch: String::from(default_branch),
+            working_dir: working_dir.to_path_buf(),
         }
     }
 
@@ -28,9 +31,70 @@ impl Svn {
     }
 
     async fn get_hash_for_rev(&self, rev: &str) -> VcsResult<String> {
-        let output = self.run_command(vec!["info", "-r", rev]).await?;
+        let output = self.run_command(vec!["info", "-r", rev], true).await?;
 
         Ok(self.extract_line_from_info("Revision:", &output))
+    }
+
+    fn process_touched_files(output: String) -> TouchedFiles {
+        if output.is_empty() {
+            return TouchedFiles::default();
+        }
+
+        let mut added = HashSet::new();
+        let mut deleted = HashSet::new();
+        let mut modified = HashSet::new();
+        let mut untracked = HashSet::new();
+        let mut staged = HashSet::new();
+        let unstaged = HashSet::new();
+        let mut all = HashSet::new();
+
+        for line in output.split('\n') {
+            if line.is_empty() {
+                continue;
+            }
+
+            let mut chars = line.chars();
+            let x = chars.next().unwrap_or_default();
+            let y = chars.next().unwrap_or_default();
+            let file = String::from(&line[8..]);
+
+            match x {
+                'A' | 'C' => {
+                    added.insert(file.clone());
+                }
+                'D' => {
+                    deleted.insert(file.clone());
+                }
+                'M' | 'R' => {
+                    modified.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                '?' => {
+                    untracked.insert(file.clone());
+                }
+                _ => {}
+            }
+
+            if y == 'M' {
+                modified.insert(file.clone());
+            }
+
+            all.insert(file.clone());
+
+            // svn files are always staged by default
+            staged.insert(file.clone());
+        }
+
+        TouchedFiles {
+            added,
+            all,
+            deleted,
+            modified,
+            staged,
+            unstaged, // svn has no concept for this
+            untracked,
+        }
     }
 }
 
@@ -38,7 +102,7 @@ impl Svn {
 #[async_trait]
 impl Vcs for Svn {
     async fn get_local_branch(&self) -> VcsResult<String> {
-        let output = self.run_command(vec!["info"]).await?;
+        let output = self.run_command(vec!["info"], false).await?;
         let url = self.extract_line_from_info("URL:", &output);
         let pattern = Regex::new("branches/([^/]+)").unwrap();
 
@@ -68,65 +132,43 @@ impl Vcs for Svn {
 
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
-        let output = self.run_command(vec!["status", "wc"]).await?;
+        let output = self.run_command(vec!["status", "wc"], false).await?;
 
-        if output.is_empty() {
-            return Ok(TouchedFiles::default());
-        }
-
-        let mut added = HashSet::new();
-        let mut deleted = HashSet::new();
-        let mut modified = HashSet::new();
-        let mut untracked = HashSet::new();
-        let mut staged = HashSet::new();
-        let unstaged = HashSet::new();
-        let mut all = HashSet::new();
-
-        for line in output.split('\n') {
-            let mut chars = line.chars();
-            let c1 = chars.next().unwrap_or_default();
-            let c2 = chars.next().unwrap_or_default();
-            let file = String::from(&line[8..]);
-
-            match c1 {
-                'A' | 'C' => {
-                    added.insert(file.clone());
-                }
-                'D' => {
-                    deleted.insert(file.clone());
-                }
-                'M' | 'R' => {
-                    modified.insert(file.clone());
-                    staged.insert(file.clone());
-                }
-                '?' => {
-                    untracked.insert(file.clone());
-                }
-                _ => {}
-            }
-
-            if c2 == 'M' {
-                modified.insert(file.clone());
-            }
-
-            all.insert(file.clone());
-
-            // svn files are always staged by default
-            staged.insert(file.clone());
-        }
-
-        Ok(TouchedFiles {
-            added,
-            all,
-            deleted,
-            modified,
-            staged,
-            unstaged, // svn has no concept for this
-            untracked,
-        })
+        Ok(Svn::process_touched_files(output))
     }
 
-    async fn run_command(&self, args: Vec<&str>) -> VcsResult<String> {
-        Ok(exec_command_capture_stdout(create_command("svn").args(args)).await?)
+    // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.diff.html
+    async fn get_touched_files_against_branch(&self, _branch: &str) -> VcsResult<TouchedFiles> {
+        let trunk_rev = self.get_default_branch_hash().await?;
+        let branch_rev = self.get_local_branch_hash().await?;
+
+        let output = self
+            .run_command(
+                vec![
+                    "diff",
+                    "-r",
+                    &format!("{}:{}", trunk_rev, branch_rev),
+                    "--summarize",
+                ],
+                false,
+            )
+            .await?;
+
+        Ok(Svn::process_touched_files(output))
+    }
+
+    async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {
+        let output = exec_command_capture_stdout(
+            create_command("svn")
+                .args(args)
+                .current_dir(&self.working_dir),
+        )
+        .await?;
+
+        if trim {
+            return Ok(output.trim().to_owned());
+        }
+
+        Ok(output)
     }
 }

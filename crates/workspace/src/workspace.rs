@@ -147,7 +147,7 @@ impl Workspace {
 
     /// Detect the version control system currently being used.
     pub fn detect_vcs(&self) -> Box<dyn Vcs> {
-        VcsManager::load(&self.config)
+        VcsManager::load(&self.config, &self.working_dir)
     }
 
     /// Load and parse the root `package.json`.

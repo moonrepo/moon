@@ -1,5 +1,6 @@
 use crate::items::{CacheItem, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
+use moon_config::constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_utils::fs;
 use serde::de::DeserializeOwned;
@@ -8,16 +9,23 @@ use std::path::{Path, PathBuf};
 
 pub struct CacheEngine {
     /// The `.moon/cache` directory relative to workspace root.
+    /// Contains cached items pertaining to runs and processes.
     pub dir: PathBuf,
+
+    /// The `.moon/out` directory relative to workspace root.
+    /// Contains project outputs from configured tasks.
+    pub out: PathBuf,
 }
 
 impl CacheEngine {
     pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
-        let dir = workspace_root.join(".moon/cache");
+        let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
+        let out = workspace_root.join(CONFIG_DIRNAME).join("out");
 
         fs::create_dir_all(&dir).await?;
+        fs::create_dir_all(&out).await?;
 
-        Ok(CacheEngine { dir })
+        Ok(CacheEngine { dir, out })
     }
 
     pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
@@ -28,11 +36,10 @@ impl CacheEngine {
 
     pub async fn runfile<T: DeserializeOwned + Serialize>(
         &self,
-        path: &str,
         id: &str,
         data: &T,
     ) -> Result<CacheRunfile, MoonError> {
-        let path: PathBuf = ["runfiles", path, &format!("{}.json", id)].iter().collect();
+        let path: PathBuf = [id, "runfile.json"].iter().collect();
 
         Ok(CacheRunfile::load(self.dir.join(path), data).await?)
     }
@@ -41,7 +48,7 @@ impl CacheEngine {
         &self,
         target: &str,
     ) -> Result<CacheItem<RunTargetState>, MoonError> {
-        let path: PathBuf = ["runs", &target.replace(':', "/"), "lastState.json"]
+        let path: PathBuf = [&target.replace(':', "/"), "lastRunState.json"]
             .iter()
             .collect();
 
@@ -80,6 +87,7 @@ mod tests {
             CacheEngine::create(dir.path()).await.unwrap();
 
             assert!(dir.path().join(".moon/cache").exists());
+            assert!(dir.path().join(".moon/out").exists());
 
             dir.close().unwrap();
         }
@@ -113,15 +121,12 @@ mod tests {
         async fn creates_runfile_on_call() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let runfile = cache
-                .runfile("tests", "123", &"content".to_owned())
-                .await
-                .unwrap();
+            let runfile = cache.runfile("123", &"content".to_owned()).await.unwrap();
 
             assert!(runfile.path.exists());
 
             assert_eq!(
-                fs::read_to_string(dir.path().join(".moon/cache/runfiles/tests/123.json")).unwrap(),
+                fs::read_to_string(dir.path().join(".moon/cache/123/runfile.json")).unwrap(),
                 "\"content\""
             );
 
@@ -148,7 +153,7 @@ mod tests {
         async fn loads_cache_if_it_exists() {
             let dir = assert_fs::TempDir::new().unwrap();
 
-            dir.child(".moon/cache/runs/foo/bar/lastState.json")
+            dir.child(".moon/cache/foo/bar/lastRunState.json")
                 .write_str(r#"{"exitCode":123,"lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
                 .unwrap();
 

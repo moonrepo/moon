@@ -177,7 +177,7 @@ impl<'a> TokenResolver<'a> {
                     results.push(resolved_value);
                 }
             } else if self.has_token_var(value) {
-                // Vars now allowed here
+                // Vars not allowed here
                 TokenType::Var(String::new()).check_context(&self.context)?;
             } else {
                 results.push(expand_root_path(

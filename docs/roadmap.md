@@ -39,8 +39,6 @@
   - [ ] Write outputs to `.moon/out`
   - [ ] Symlink/copy outputs back to project dir
 - [x] Dependencies (on other tasks)
-  - [ ] Self referencing tasks (`~`)
-  - [ ] Deps referencing tasks (`^`)
 - [x] Environment vars
 - [x] Tokens
   - [x] Expands tokens defined in configs
@@ -60,7 +58,7 @@
 - [x] Syncs `package.json` and `tsconfig.json` for all projects
   - [ ] Writes JSON preserving field order
 
-### CLI
+## CLI
 
 - [x] `init` command to scafflold a new project
 - [x] `project` command for displaying info
@@ -84,3 +82,12 @@
 
 - hashing
 - caching
+
+## Tasks
+
+- [ ] Self referencing targets (`~`)
+- [ ] Deps referencing targets (`^`)
+
+## CLI
+
+- [ ] All projects for target (`*`)

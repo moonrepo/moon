@@ -44,7 +44,7 @@ async fn create_env_vars(
     );
 
     // Store runtime data on the file system so that downstream commands can utilize it
-    let runfile = workspace.cache.runfile(&project.id, project).await?;
+    let runfile = workspace.cache.create_runfile(&project.id, project).await?;
 
     env_vars.insert(
         "MOON_PROJECT_RUNFILE".to_owned(),

@@ -28,13 +28,7 @@ impl CacheEngine {
         Ok(CacheEngine { dir, out })
     }
 
-    pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
-        fs::remove_dir_all(&self.dir.join("runfiles")).await?;
-
-        Ok(())
-    }
-
-    pub async fn runfile<T: DeserializeOwned + Serialize>(
+    pub async fn create_runfile<T: DeserializeOwned + Serialize>(
         &self,
         id: &str,
         data: &T,
@@ -42,6 +36,20 @@ impl CacheEngine {
         let path: PathBuf = [id, "runfile.json"].iter().collect();
 
         Ok(CacheRunfile::load(self.dir.join(path), data).await?)
+    }
+
+    pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
+        let entries = fs::read_dir(&self.dir).await?;
+
+        for entry in entries {
+            let path = entry.path();
+
+            if path.is_dir() {
+                fs::remove_file(&path.join("runfile.json")).await?;
+            }
+        }
+
+        Ok(())
     }
 
     pub async fn run_target_state(
@@ -99,29 +107,40 @@ mod tests {
         #[tokio::test]
         async fn deletes_dir() {
             let dir = assert_fs::TempDir::new().unwrap();
-
-            dir.child(".moon/cache/runfiles").create_dir_all().unwrap();
-
             let cache = CacheEngine::create(dir.path()).await.unwrap();
 
-            assert!(dir.path().join(".moon/cache/runfiles").exists());
+            let runfile1 = cache
+                .create_runfile("123", &"content".to_owned())
+                .await
+                .unwrap();
+            let runfile2 = cache
+                .create_runfile("456", &"content".to_owned())
+                .await
+                .unwrap();
+
+            assert!(runfile1.path.exists());
+            assert!(runfile2.path.exists());
 
             cache.delete_runfiles().await.unwrap();
 
-            assert!(!dir.path().join(".moon/cache/runfiles").exists());
+            assert!(!runfile1.path.exists());
+            assert!(!runfile2.path.exists());
 
             dir.close().unwrap();
         }
     }
 
-    mod runfile {
+    mod create_runfile {
         use super::*;
 
         #[tokio::test]
         async fn creates_runfile_on_call() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let runfile = cache.runfile("123", &"content".to_owned()).await.unwrap();
+            let runfile = cache
+                .create_runfile("123", &"content".to_owned())
+                .await
+                .unwrap();
 
             assert!(runfile.path.exists());
 

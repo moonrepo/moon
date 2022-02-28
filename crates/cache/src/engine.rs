@@ -28,6 +28,32 @@ impl CacheEngine {
         Ok(CacheEngine { dir, out })
     }
 
+    pub async fn cache_run_target_state(
+        &self,
+        target: &str,
+    ) -> Result<CacheItem<RunTargetState>, MoonError> {
+        let path: PathBuf = [&target.replace(':', "/"), "lastRunState.json"]
+            .iter()
+            .collect();
+
+        Ok(CacheItem::load(
+            self.dir.join(path),
+            RunTargetState {
+                target: String::from(target),
+                ..RunTargetState::default()
+            },
+        )
+        .await?)
+    }
+
+    pub async fn cache_workspace_state(&self) -> Result<CacheItem<WorkspaceState>, MoonError> {
+        Ok(CacheItem::load(
+            self.dir.join("workspaceState.json"),
+            WorkspaceState::default(),
+        )
+        .await?)
+    }
+
     pub async fn create_runfile<T: DeserializeOwned + Serialize>(
         &self,
         id: &str,
@@ -50,32 +76,6 @@ impl CacheEngine {
         }
 
         Ok(())
-    }
-
-    pub async fn run_target_state(
-        &self,
-        target: &str,
-    ) -> Result<CacheItem<RunTargetState>, MoonError> {
-        let path: PathBuf = [&target.replace(':', "/"), "lastRunState.json"]
-            .iter()
-            .collect();
-
-        Ok(CacheItem::load(
-            self.dir.join(path),
-            RunTargetState {
-                target: String::from(target),
-                ..RunTargetState::default()
-            },
-        )
-        .await?)
-    }
-
-    pub async fn workspace_state(&self) -> Result<CacheItem<WorkspaceState>, MoonError> {
-        Ok(CacheItem::load(
-            self.dir.join("workspaceState.json"),
-            WorkspaceState::default(),
-        )
-        .await?)
     }
 }
 
@@ -153,14 +153,14 @@ mod tests {
         }
     }
 
-    mod run_target_state {
+    mod cache_run_target_state {
         use super::*;
 
         #[tokio::test]
         async fn creates_parent_dir_on_call() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let item = cache.run_target_state("foo:bar").await.unwrap();
+            let item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
             assert!(!item.path.exists());
             assert!(item.path.parent().unwrap().exists());
@@ -177,7 +177,7 @@ mod tests {
                 .unwrap();
 
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let item = cache.run_target_state("foo:bar").await.unwrap();
+            let item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
             assert_eq!(
                 item.item,
@@ -195,7 +195,7 @@ mod tests {
         async fn saves_to_cache() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let mut item = cache.run_target_state("foo:bar").await.unwrap();
+            let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
             item.item.exit_code = 123;
             item.save().await.unwrap();
@@ -209,14 +209,14 @@ mod tests {
         }
     }
 
-    mod workspace_state {
+    mod cache_workspace_state {
         use super::*;
 
         #[tokio::test]
         async fn creates_parent_dir_on_call() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let item = cache.workspace_state().await.unwrap();
+            let item = cache.cache_workspace_state().await.unwrap();
 
             assert!(!item.path.exists());
             assert!(item.path.parent().unwrap().exists());
@@ -233,7 +233,7 @@ mod tests {
                 .unwrap();
 
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let item = cache.workspace_state().await.unwrap();
+            let item = cache.cache_workspace_state().await.unwrap();
 
             assert_eq!(
                 item.item,
@@ -249,7 +249,7 @@ mod tests {
         async fn saves_to_cache() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let mut item = cache.workspace_state().await.unwrap();
+            let mut item = cache.cache_workspace_state().await.unwrap();
 
             item.item.last_node_install_time = 123;
             item.save().await.unwrap();

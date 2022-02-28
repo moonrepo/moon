@@ -117,7 +117,7 @@ pub async fn run_target(
     println!("{}", label_run_target(target));
 
     let workspace = workspace.read().await;
-    let mut cache = workspace.cache.run_target_state(target).await?;
+    let mut cache = workspace.cache.cache_run_target_state(target).await?;
     let toolchain = &workspace.toolchain;
 
     // TODO abort early for a cache hit

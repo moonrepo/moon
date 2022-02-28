@@ -12,7 +12,7 @@ pub enum MoonError {
     #[error("File system failure for <file_path>{0}</file_path>: {1}")]
     FileSystem(PathBuf, #[source] IoError),
 
-    #[error("Failed to create a hardlink from <file_path>{0}</file_path> to <file_path>{1}</file_path>.")]
+    #[error("Failed to create a hard link from <file_path>{0}</file_path> to <file_path>{1}</file_path>.")]
     HardLink(PathBuf, PathBuf),
 
     #[error("Failed to parse <file_path>{0}</file_path>: {1}")]

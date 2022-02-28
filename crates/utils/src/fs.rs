@@ -156,16 +156,12 @@ pub fn normalize_glob(path: &Path) -> String {
 }
 
 pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
-    let mut entries = fs::read_dir(path)
-        .await
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+    let handle_error = |e| map_io_to_fs_error(e, path.to_path_buf());
+
+    let mut entries = fs::read_dir(path).await.map_err(handle_error)?;
     let mut results = vec![];
 
-    while let Some(entry) = entries
-        .next_entry()
-        .await
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?
-    {
+    while let Some(entry) = entries.next_entry().await.map_err(handle_error)? {
         results.push(entry);
     }
 

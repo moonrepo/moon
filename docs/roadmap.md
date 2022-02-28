@@ -1,5 +1,8 @@
 # 0.1.0
 
+- [ ] website
+  - [ ] getting started
+
 ## Targets
 
 - [x] macos x64
@@ -36,11 +39,9 @@
   - [x] Relative paths
   - [x] Workspace relative paths
 - [x] Outputs
-  - [ ] Write outputs to `.moon/out`
-  - [ ] Symlink/copy outputs back to project dir
+  - [x] Write outputs to `.moon/out`
+  - [x] Symlink/copy outputs back to project dir
 - [x] Dependencies (on other tasks)
-  - [ ] Self referencing tasks (`~`)
-  - [ ] Deps referencing tasks (`^`)
 - [x] Environment vars
 - [x] Tokens
   - [x] Expands tokens defined in configs
@@ -60,18 +61,17 @@
 - [x] Syncs `package.json` and `tsconfig.json` for all projects
   - [ ] Writes JSON preserving field order
 
-### CLI
+## CLI
 
 - [x] `init` command to scafflold a new project
 - [x] `project` command for displaying info
 - [x] `project-graph` command for outputting DOT format
-  - [ ] Spin up an interactive website with full project/task data
 - [x] `setup` command for installing tools
 - [x] `teardown` command for uninstalling tools
 - [x] `bin` command to return tool paths
-- [ ] `run` command to run targets
+- [x] `run` command to run targets
   - [x] Args after `--` are passed to the underlying command
-  - [ ] Only run on affected changes
+  - [x] Only run on affected changes
 - [ ] `ci` command for smart running affected targets (below)
 
 ## CI
@@ -84,3 +84,15 @@
 
 - hashing
 - caching
+
+## Tasks
+
+- [ ] Self referencing targets (`~`)
+- [ ] Deps referencing targets (`^`)
+
+## CLI
+
+- [ ] `run`
+  - [ ] All projects for target (`*`)
+- [ ] `graph`
+  - [ ] Spin up an interactive website with full project/task data

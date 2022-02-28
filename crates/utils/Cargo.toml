@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
+async-recursion = "1.0"
 dirs = "4.0"
 json_comments = "0.2"
 lazy_static = "1.4"

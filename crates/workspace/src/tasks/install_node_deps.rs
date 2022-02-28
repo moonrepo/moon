@@ -10,7 +10,7 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
     let workspace = workspace.read().await;
     let toolchain = &workspace.toolchain;
     let manager = toolchain.get_node_package_manager();
-    let mut cache = workspace.cache.workspace_state().await?;
+    let mut cache = workspace.cache.cache_workspace_state().await?;
 
     // Get the last modified time of the root lockfile
     let lockfile = workspace.root.join(manager.get_lockfile_name());

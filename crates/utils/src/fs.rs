@@ -1,3 +1,4 @@
+use async_recursion::async_recursion;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
@@ -92,6 +93,51 @@ pub fn is_path_glob(path: &Path) -> bool {
     is_glob(&path.to_string_lossy())
 }
 
+pub async fn link_file(from_root: &Path, from: &Path, to_root: &Path) -> Result<(), MoonError> {
+    let to = to_root.join(from.strip_prefix(from_root).unwrap());
+
+    // Hardlink has already been created
+    if to.exists() {
+        return Ok(());
+    }
+
+    let to_dir = to.parent().unwrap();
+
+    if to_dir != to_root {
+        create_dir_all(to_dir).await?;
+    }
+
+    fs::hard_link(from, &to)
+        .await
+        .map_err(|_| MoonError::HardLink(from.to_path_buf(), to.clone()))?;
+
+    Ok(())
+}
+
+#[async_recursion]
+pub async fn link_dir(from_root: &Path, from: &Path, to_root: &Path) -> Result<(), MoonError> {
+    let entries = read_dir(from).await?;
+    let mut dirs = vec![];
+
+    // Link files before dirs incase an error occurs
+    for entry in entries {
+        let path = entry.path();
+
+        if path.is_file() {
+            link_file(from_root, &path, to_root).await?;
+        } else {
+            dirs.push(path);
+        }
+    }
+
+    // Link dirs in sequence for the same reason
+    for dir in dirs {
+        link_dir(from_root, &dir, to_root).await?;
+    }
+
+    Ok(())
+}
+
 pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
     Ok(fs::metadata(path)
         .await
@@ -107,6 +153,19 @@ pub fn normalize_glob(path: &Path) -> String {
     }
 
     glob
+}
+
+pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
+    let handle_error = |e| map_io_to_fs_error(e, path.to_path_buf());
+
+    let mut entries = fs::read_dir(path).await.map_err(handle_error)?;
+    let mut results = vec![];
+
+    while let Some(entry) = entries.next_entry().await.map_err(handle_error)? {
+        results.push(entry);
+    }
+
+    Ok(results)
 }
 
 pub async fn read_json<T>(path: &Path) -> Result<T, MoonError>

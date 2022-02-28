@@ -83,6 +83,7 @@ impl TaskOptions {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Task {
     pub args: Vec<String>,
 
@@ -94,17 +95,14 @@ pub struct Task {
 
     pub inputs: Vec<FilePathOrGlob>,
 
-    #[serde(skip)]
     pub input_globs: Vec<FilePathOrGlob>,
 
-    #[serde(skip)]
     pub input_paths: ExpandedFiles,
 
     pub options: TaskOptions,
 
     pub outputs: Vec<FilePath>,
 
-    #[serde(skip)]
     pub output_paths: ExpandedFiles,
 
     pub target: TargetID,

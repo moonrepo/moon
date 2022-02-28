@@ -44,10 +44,7 @@ async fn create_env_vars(
     );
 
     // Store runtime data on the file system so that downstream commands can utilize it
-    let runfile = workspace
-        .cache
-        .runfile("projects", &project.id, project)
-        .await?;
+    let runfile = workspace.cache.create_runfile(&project.id, project).await?;
 
     env_vars.insert(
         "MOON_PROJECT_RUNFILE".to_owned(),
@@ -120,7 +117,7 @@ pub async fn run_target(
     println!("{}", label_run_target(target));
 
     let workspace = workspace.read().await;
-    let mut cache = workspace.cache.run_target_state(target).await?;
+    let mut cache = workspace.cache.cache_run_target_state(target).await?;
     let toolchain = &workspace.toolchain;
 
     // TODO abort early for a cache hit
@@ -162,6 +159,17 @@ pub async fn run_target(
         // Otherwise we run the process in the background and write the output
         // once it has completed.
         output = exec_command(&mut command).await?;
+    }
+
+    // Hard link outputs to the `.moon/out` folder and to the cloud,
+    // so that subsequent builds are faster, and any local outputs
+    // can be rehydrated easily.
+    for output in &task.output_paths {
+        workspace
+            .cache
+            // TODO hash
+            .link_task_output_to_out(&project_id, "abc123", &project.root, output)
+            .await?;
     }
 
     // Update the cache with the result

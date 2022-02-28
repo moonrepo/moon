@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../config"}
 moon_error = { path = "../error"}
 moon_utils = { path = "../utils"}
 serde = { version = "1.0", features = ["derive"] }

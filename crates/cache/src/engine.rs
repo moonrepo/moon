@@ -56,10 +56,10 @@ impl CacheEngine {
 
     pub async fn create_runfile<T: DeserializeOwned + Serialize>(
         &self,
-        id: &str,
+        project_id: &str,
         data: &T,
     ) -> Result<CacheRunfile, MoonError> {
-        let path: PathBuf = [id, "runfile.json"].iter().collect();
+        let path: PathBuf = [project_id, "runfile.json"].iter().collect();
 
         Ok(CacheRunfile::load(self.dir.join(path), data).await?)
     }
@@ -73,6 +73,26 @@ impl CacheEngine {
             if path.is_dir() {
                 fs::remove_file(&path.join("runfile.json")).await?;
             }
+        }
+
+        Ok(())
+    }
+
+    pub async fn link_task_output_to_out(
+        &self,
+        project_id: &str,
+        hash: &str,
+        source_root: &Path,
+        source_path: &Path,
+    ) -> Result<(), MoonError> {
+        let dest_root = self.out.join(project_id).join(hash);
+
+        fs::create_dir_all(&dest_root).await?;
+
+        if source_path.is_file() {
+            fs::link_file(source_root, source_path, &dest_root).await?;
+        } else {
+            fs::link_dir(source_root, source_path, &dest_root).await?;
         }
 
         Ok(())

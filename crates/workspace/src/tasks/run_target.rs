@@ -161,6 +161,17 @@ pub async fn run_target(
         output = exec_command(&mut command).await?;
     }
 
+    // Hard link outputs to the `.moon/out` folder and to the cloud,
+    // so that subsequent builds are faster, and any local outputs
+    // can be rehydrated easily.
+    for output in &task.output_paths {
+        workspace
+            .cache
+            // TODO hash
+            .link_task_output_to_out(&project_id, "abc123", &project.root, output)
+            .await?;
+    }
+
     // Update the cache with the result
     cache.item.exit_code = output.status.code().unwrap_or(0);
     cache.item.last_run_time = cache.now_millis();

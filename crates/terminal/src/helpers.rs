@@ -4,7 +4,7 @@ use regex::{Captures, Regex};
 use std::path::Path;
 
 lazy_static! {
-    pub static ref STYLE_TOKEN: Regex = Regex::new(r#"<(\w+)>([^</>]+)</(\w+)>"#).unwrap();
+    pub static ref STYLE_TOKEN: Regex = Regex::new(r#"<(\w+)>([^<>]+)</(\w+)>"#).unwrap();
 }
 
 // https://github.com/clap-rs/clap/blob/master/src/util/mod.rs#L25

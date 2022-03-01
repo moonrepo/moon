@@ -604,6 +604,7 @@ pub enum Target {
     Es2019,
     Es2020,
     Es2021,
+    Es2022,
     EsNext,
     Other(String),
 }
@@ -628,6 +629,7 @@ impl<'de> Deserialize<'de> for Target {
             "ES2019" => Target::Es2019,
             "ES2020" => Target::Es2020,
             "ES2021" => Target::Es2021,
+            "ES2022" => Target::Es2022,
             "ESNEXT" => Target::EsNext,
             other => Target::Other(other.to_string()),
         };

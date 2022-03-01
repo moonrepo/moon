@@ -70,40 +70,62 @@ fn create_node_target_command(
     project: &Project,
     task: &Task,
     node: &NodeTool,
-    exec_dir: &Path,
-    env_vars: HashMap<String, String>,
 ) -> Result<Command, WorkspaceError> {
-    // Node args
-    let package_bin_path = node.find_package_bin_path(&task.command, &project.root)?;
+    // Node binary args
     let mut args = vec![
         // "--inspect", // Enable node inspector
         "--preserve-symlinks",
-        package_bin_path.to_str().unwrap(),
+        "--title",
+        &task.target,
+        "--unhandled-rejections",
+        "throw",
     ];
 
-    // Package args
+    // Package binary args
+    let package_bin_path = node.find_package_bin_path(&task.command, &project.root)?;
+
+    args.push(package_bin_path.to_str().unwrap());
     args.extend(task.args.iter().map(|a| a.as_str()));
 
     // Create the command
     let mut cmd = create_command(node.get_bin_path());
 
     cmd.args(&args)
-        .current_dir(&exec_dir)
         .envs(&task.env)
-        .envs(env_vars)
         .env("PATH", get_path_env_var(node.get_bin_dir()));
 
     Ok(cmd)
 }
 
-fn create_shell_target_command(
-    task: &Task,
-    exec_dir: &Path,
-    env_vars: HashMap<String, String>,
-) -> Command {
+fn create_shell_target_command(task: &Task) -> Command {
     let mut cmd = create_command(&task.command);
-    cmd.args(&task.args).current_dir(&exec_dir).envs(env_vars);
+    cmd.args(&task.args);
     cmd
+}
+
+async fn create_target_command(
+    workspace: &Workspace,
+    project: &Project,
+    task: &Task,
+) -> Result<Command, WorkspaceError> {
+    let toolchain = &workspace.toolchain;
+
+    let exec_dir = if task.options.run_from_workspace_root {
+        &workspace.root
+    } else {
+        &project.root
+    };
+
+    let env_vars = create_env_vars(workspace, project, task).await?;
+
+    let mut command = match task.type_of {
+        TaskType::Node => create_node_target_command(project, task, toolchain.get_node())?,
+        _ => create_shell_target_command(task),
+    };
+
+    command.current_dir(&exec_dir).envs(env_vars);
+
+    Ok(command)
 }
 
 pub async fn run_target(
@@ -120,7 +142,6 @@ pub async fn run_target(
 
     let workspace = workspace.read().await;
     let mut cache = workspace.cache.cache_run_target_state(target).await?;
-    let toolchain = &workspace.toolchain;
 
     // TODO abort early for a cache hit
 
@@ -131,21 +152,8 @@ pub async fn run_target(
     let task = project.get_task(&task_id)?;
 
     // Build the command to run based on the task
-    let exec_dir = if task.options.run_from_workspace_root {
-        &workspace.root
-    } else {
-        &project.root
-    };
+    let mut command = create_target_command(&workspace, &project, task).await?;
 
-    let env_vars = create_env_vars(&workspace, &project, task).await?;
-    let mut command = match task.type_of {
-        TaskType::Node => {
-            create_node_target_command(&project, task, toolchain.get_node(), exec_dir, env_vars)?
-        }
-        _ => create_shell_target_command(task, exec_dir, env_vars),
-    };
-
-    // Append additional passthrough args (after `--`)
     if is_primary && !passthrough_args.is_empty() {
         command.args(passthrough_args);
     }
@@ -188,6 +196,13 @@ pub async fn run_target(
                     return Err(WorkspaceError::TaskRunnerFailedTarget(target.to_owned()));
                 } else {
                     attempt += 1;
+
+                    debug!(
+                        target: "moon:task-runner:run-target",
+                        "Target {} failed, running again with attempt {}",
+                        color::id(target),
+                        attempt
+                    );
                 }
             }
         }

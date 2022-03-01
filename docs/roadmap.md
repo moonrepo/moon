@@ -90,6 +90,10 @@
 - [ ] Self referencing targets (`~`)
 - [ ] Deps referencing targets (`^`)
 
+## Task runner
+
+- [ ] Add a debug layer so that the node processes can be inspected
+
 ## CLI
 
 - [ ] `run`

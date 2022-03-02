@@ -17,7 +17,7 @@ pub async fn sync_project(
     let node_config = workspace.config.node.as_ref().unwrap();
     let typescript_config = workspace.config.typescript.as_ref().unwrap();
     let tsconfig_root_name = typescript_config.root_config_file_name.as_ref().unwrap();
-    let tsconfig_branch_name = typescript_config.root_config_file_name.as_ref().unwrap();
+    let tsconfig_branch_name = typescript_config.project_config_file_name.as_ref().unwrap();
 
     if typescript_config.sync_project_references.unwrap_or(true) {
         if let Some(mut tsconfig) = workspace.load_tsconfig_json(tsconfig_root_name).await? {

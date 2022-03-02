@@ -11,6 +11,8 @@
       - [dedupeOnInstall](#dedupeoninstall)
       - [syncProjectWorkspaceDependencies](#syncprojectworkspacedependencies)
     - [typescript](#typescript)
+      - [projectConfigFileName](#projectconfigfilename)
+      - [rootConfigFileName](#rootconfigfilename)
       - [syncProjectReferences](#syncprojectreferences)
     - [vcs](#vcs)
       - [manager](#manager)

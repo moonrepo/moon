@@ -173,6 +173,26 @@ Would result in the following `dependencies` within a project's `package.json`.
 The `typescript` setting configures how Moon interacts with and utilizes TypeScript within the
 workspace.
 
+##### projectConfigFileName
+
+The `projectConfigFileName` setting defines the name of the `tsconfig.json` found in the project
+root. We utilize this setting when syncing project references between projects.
+
+```yaml
+typescript:
+  projectConfigFileName: 'tsconfig.build.json'
+```
+
+##### rootConfigFileName
+
+The `rootConfigFileName` setting defines the name of the `tsconfig.json` found in the workspace
+root. We utilize this setting when syncing projects as references.
+
+```yaml
+typescript:
+  rootConfigFileName: 'tsconfig.projects.json'
+```
+
 ##### syncProjectReferences
 
 The `syncProjectReferences` setting will sync the `dependsOn` setting within a project's

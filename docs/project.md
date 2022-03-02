@@ -175,3 +175,5 @@ A Moon project _does not require_ TypeScript or a `tsconfig.json`, but when one 
 following functionality is enabled.
 
 - Depended on projects (`dependsOn`) are mapped as TypeScript project references (when applicable).
+
+> File name can be customized with the `typescript.projectConfigFileName` setting.

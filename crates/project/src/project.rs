@@ -277,13 +277,16 @@ impl Project {
     }
 
     /// Load and parse the package's `tsconfig.json` if it exists.
-    pub async fn load_tsconfig_json(&self) -> Result<Option<TsConfigJson>, ProjectError> {
-        let tsconfig_path = self.root.join("tsconfig.json");
+    pub async fn load_tsconfig_json(
+        &self,
+        tsconfig_name: &str,
+    ) -> Result<Option<TsConfigJson>, ProjectError> {
+        let tsconfig_path = self.root.join(tsconfig_name);
 
         trace!(
             target: "moon:project",
             "Attempting to find {} in {}",
-            color::path("tsconfig.json"),
+            color::path(tsconfig_name),
             color::file_path(&self.root),
         );
 
@@ -292,6 +295,7 @@ impl Project {
                 Ok(cfg) => Ok(Some(cfg)),
                 Err(error) => Err(ProjectError::InvalidTsConfigJson(
                     String::from(&self.source),
+                    String::from(tsconfig_name),
                     error.to_string(),
                 )),
             };

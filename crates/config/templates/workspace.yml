@@ -26,6 +26,12 @@ node:
 
 # OPTIONAL: Configures how Moon integrates with TypeScript.
 typescript:
+  # OPTIONAL: Name of `tsconfig.json` file in project root.
+  projectConfigFileName: 'tsconfig.json',
+
+  # OPTIONAL: Name of `tsconfig.json` file in workspace root.
+  rootConfigFileName: 'tsconfig.json',
+
   # OPTIONAL: Sync a project's `dependsOn` as TypeScript project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
   syncProjectReferences: true,

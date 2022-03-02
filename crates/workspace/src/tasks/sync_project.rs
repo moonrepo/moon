@@ -16,15 +16,17 @@ pub async fn sync_project(
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();
     let typescript_config = workspace.config.typescript.as_ref().unwrap();
+    let tsconfig_root_name = typescript_config.root_config_file_name.as_ref().unwrap();
+    let tsconfig_branch_name = typescript_config.root_config_file_name.as_ref().unwrap();
 
     if typescript_config.sync_project_references.unwrap_or(true) {
-        if let Some(mut tsconfig) = workspace.load_tsconfig_json().await? {
-            if tsconfig.add_project_ref(project.source.to_owned()) {
+        if let Some(mut tsconfig) = workspace.load_tsconfig_json(tsconfig_root_name).await? {
+            if tsconfig.add_project_ref(&project.source, tsconfig_branch_name) {
                 debug!(
                     target: "moon:task-runner:sync-project",
                     "Syncing {} as a project reference to the root {}",
                     color::id(project_id),
-                    color::path("tsconfig.json")
+                    color::path(tsconfig_root_name)
                 );
 
                 tsconfig.save().await?;
@@ -70,20 +72,20 @@ pub async fn sync_project(
 
         // Update `references` within `tsconfig.json`
         if typescript_config.sync_project_references.unwrap_or(true) {
-            if let Some(mut tsconfig) = project.load_tsconfig_json().await? {
+            if let Some(mut tsconfig) = project.load_tsconfig_json(tsconfig_branch_name).await? {
                 let dep_ref_path = String::from(
                     diff_paths(&project.root, &dep_project.root)
                         .unwrap_or_else(|| PathBuf::from("."))
                         .to_string_lossy(),
                 );
 
-                if tsconfig.add_project_ref(dep_ref_path) {
+                if tsconfig.add_project_ref(&dep_ref_path, tsconfig_branch_name) {
                     debug!(
                         target: "moon:task-runner:sync-project",
                         "Syncing {} as a project reference to {}'s {}",
                         color::id(&dep_id),
                         color::id(project_id),
-                        color::path("tsconfig.json")
+                        color::path(tsconfig_branch_name)
                     );
 
                     tsconfig.save().await?;

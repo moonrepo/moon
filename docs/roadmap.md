@@ -76,8 +76,8 @@
 
 ## CI
 
-- [ ] Compares PR against default branch
-- [ ] Runs tasks if `outputs` defined or `run_in_ci` is true
+- [x] Compares PR against default branch
+- [x] Runs tasks if `outputs` defined or `run_in_ci` is true
 - [ ] Runs dependencies AND dependents if primary project has changed
 
 # 0.2.0

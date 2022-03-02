@@ -45,7 +45,7 @@ impl Logger {
                 out.finish(format_args!(
                     "{} {} {}",
                     color::muted(&current_timestamp.format(date_format).to_string()),
-                    color::target(record.target()),
+                    color::log_target(record.target()),
                     message
                 ));
             })

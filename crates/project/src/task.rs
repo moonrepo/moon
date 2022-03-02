@@ -143,7 +143,7 @@ impl Task {
         debug!(
             target: "moon:project:task",
             "Creating task {} for command {}",
-            color::id(&target),
+            color::target(&target),
             color::shell(&task.command)
         );
 
@@ -155,7 +155,7 @@ impl Task {
         trace!(
             target: "moon:project:task",
             "Expanding args for task {}",
-            color::id(&self.target),
+            color::target(&self.target),
         );
 
         let mut args: Vec<String> = vec![];
@@ -202,7 +202,7 @@ impl Task {
         trace!(
             target: "moon:project:task",
             "Expanding inputs for task {}",
-            color::id(&self.target),
+            color::target(&self.target),
         );
 
         for input in &token_resolver.resolve(&self.inputs, None)? {
@@ -223,7 +223,7 @@ impl Task {
         trace!(
             target: "moon:project:task",
             "Expanding outputs for task {}",
-            color::id(&self.target),
+            color::target(&self.target),
         );
 
         for output in &token_resolver.resolve(&self.outputs, None)? {

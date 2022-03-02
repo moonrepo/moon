@@ -74,8 +74,12 @@ pub fn id(value: &str) -> String {
     paint(Color::Purple as u8, value)
 }
 
-// Based on https://github.com/debug-js/debug/blob/master/src/common.js#L41
 pub fn target(value: &str) -> String {
+    paint(Color::Blue as u8, value)
+}
+
+// Based on https://github.com/debug-js/debug/blob/master/src/common.js#L41
+pub fn log_target(value: &str) -> String {
     if no_color() {
         return value.to_owned();
     }

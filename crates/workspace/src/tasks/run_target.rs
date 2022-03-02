@@ -198,7 +198,7 @@ pub async fn run_target(
                     debug!(
                         target: TARGET,
                         "Target {} failed, running again with attempt {}",
-                        color::id(target),
+                        color::target(target),
                         attempt
                     );
                 }

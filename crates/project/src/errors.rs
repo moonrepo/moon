@@ -17,7 +17,9 @@ pub enum ProjectError {
     #[error("Failed to parse and open <path>{0}/package.json</path>: {1}")]
     InvalidPackageJson(String, String),
 
-    #[error("Invalid target <id>{0}</id>, must be in the format of \"project_id:task_id\".")]
+    #[error(
+        "Invalid target <target>{0}</target>, must be in the format of \"project_id:task_id\"."
+    )]
     InvalidTargetFormat(String),
 
     #[error("Failed to parse and open <path>{0}/{1}</path>: {2}")]
@@ -35,7 +37,7 @@ pub enum ProjectError {
     MissingProject(String),
 
     #[error(
-        "Task outputs do not support file globs. Found <file_path>{0}</file_path> in <id>{1}<id>."
+        "Task outputs do not support file globs. Found <file_path>{0}</file_path> in <target>{1}</target>."
     )]
     NoOutputGlob(PathBuf, String),
 

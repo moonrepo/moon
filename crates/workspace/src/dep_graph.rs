@@ -156,7 +156,7 @@ impl DepGraph {
         trace!(
             target: TARGET,
             "Target {} does not exist in the dependency graph, inserting",
-            color::id(target),
+            color::target(target),
         );
 
         let (project_id, task_id) = Target::parse(target)?;
@@ -187,7 +187,7 @@ impl DepGraph {
                 target: TARGET,
                 "Adding dependencies {} from target {}",
                 dep_names.join(", "),
-                color::id(target),
+                color::target(target),
             );
 
             for dep_target in &task.deps {

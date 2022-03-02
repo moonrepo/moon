@@ -46,7 +46,7 @@ async fn get_touched_files(
     let touched_files = if local {
         vcs.get_touched_files().await?
     } else {
-        vcs.get_touched_files_against_branch(&vcs.get_local_branch().await?)
+        vcs.get_touched_files_against_branch(&vcs.get_local_branch().await?, 0)
             .await?
     };
 

@@ -138,9 +138,18 @@ impl Vcs for Svn {
     }
 
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.diff.html
-    async fn get_touched_files_against_branch(&self, _branch: &str) -> VcsResult<TouchedFiles> {
-        let trunk_rev = self.get_default_branch_hash().await?;
+    async fn get_touched_files_against_branch(
+        &self,
+        _branch: &str,
+        back_revision_count: u8,
+    ) -> VcsResult<TouchedFiles> {
+        let mut trunk_rev: usize = self.get_default_branch_hash().await?.parse().unwrap();
         let branch_rev = self.get_local_branch_hash().await?;
+
+        // TODO this is definitely wrong, revisit
+        if back_revision_count > 0 {
+            trunk_rev -= back_revision_count as usize;
+        }
 
         let output = self
             .run_command(
@@ -155,6 +164,10 @@ impl Vcs for Svn {
             .await?;
 
         Ok(Svn::process_touched_files(output))
+    }
+
+    fn is_default_branch(&self, branch: &str) -> bool {
+        self.default_branch == branch
     }
 
     async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {

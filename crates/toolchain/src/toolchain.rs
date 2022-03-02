@@ -137,8 +137,6 @@ impl Toolchain {
 
         self.load_tool(node).await?;
 
-        root_package.add_engine("node", &node.config.version);
-
         // Enable corepack before intalling package managers (when available)
         if using_corepack {
             debug!(

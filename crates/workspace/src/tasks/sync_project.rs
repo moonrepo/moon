@@ -6,6 +6,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+const TARGET: &str = "moon:task-runner:sync-project";
+
 pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
@@ -23,7 +25,7 @@ pub async fn sync_project(
         if let Some(mut tsconfig) = workspace.load_tsconfig_json(tsconfig_root_name).await? {
             if tsconfig.add_project_ref(&project.source, tsconfig_branch_name) {
                 debug!(
-                    target: "moon:task-runner:sync-project",
+                    target: TARGET,
                     "Syncing {} as a project reference to the root {}",
                     color::id(project_id),
                     color::path(tsconfig_root_name)
@@ -58,7 +60,7 @@ pub async fn sync_project(
                     )
                 {
                     debug!(
-                        target: "moon:task-runner:sync-project",
+                        target: TARGET,
                         "Syncing {} as a dependency to {}'s {}",
                         color::id(&dep_id),
                         color::id(project_id),
@@ -81,7 +83,7 @@ pub async fn sync_project(
 
                 if tsconfig.add_project_ref(&dep_ref_path, tsconfig_branch_name) {
                     debug!(
-                        target: "moon:task-runner:sync-project",
+                        target: TARGET,
                         "Syncing {} as a project reference to {}'s {}",
                         color::id(&dep_id),
                         color::id(project_id),

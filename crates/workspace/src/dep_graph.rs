@@ -9,6 +9,8 @@ use std::collections::{HashMap, HashSet};
 
 pub use petgraph::graph::NodeIndex;
 
+const TARGET: &str = "moon:dep-graph";
+
 pub enum Node {
     InstallNodeDeps,
     RunTarget(String), // target id
@@ -48,10 +50,7 @@ pub struct DepGraph {
 
 impl DepGraph {
     pub fn default() -> Self {
-        debug!(
-            target: "moon:dep-graph",
-            "Creating dependency graph",
-        );
+        debug!(target: TARGET, "Creating dependency graph",);
 
         let mut graph: GraphType = Graph::new();
 
@@ -155,7 +154,7 @@ impl DepGraph {
         }
 
         trace!(
-            target: "moon:dep-graph",
+            target: TARGET,
             "Target {} does not exist in the dependency graph, inserting",
             color::id(target),
         );
@@ -185,7 +184,7 @@ impl DepGraph {
                 .collect();
 
             trace!(
-                target: "moon:dep-graph",
+                target: TARGET,
                 "Adding dependencies {} from target {}",
                 dep_names.join(", "),
                 color::id(target),
@@ -212,7 +211,7 @@ impl DepGraph {
 
         if !project.is_affected(touched_files) {
             trace!(
-                target: "moon:dep-graph",
+                target: TARGET,
                 "Project {} not affected based on touched files, skipping",
                 color::id(&project_id),
             );
@@ -225,7 +224,7 @@ impl DepGraph {
 
         if !task.is_affected(touched_files)? {
             trace!(
-                target: "moon:dep-graph",
+                target: TARGET,
                 "Project {} task {} not affected based on touched files, skipping",
                 color::id(&project_id),
                 color::id(&task_id),
@@ -247,7 +246,7 @@ impl DepGraph {
         }
 
         trace!(
-            target: "moon:dep-graph",
+            target: TARGET,
             "Syncing project {} configs and dependencies",
             color::id(project_id),
         );

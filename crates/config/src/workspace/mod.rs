@@ -294,6 +294,27 @@ projects:
                 Ok(())
             });
         }
+
+        #[test]
+        fn inherits_from_env_var() {
+            std::env::set_var("MOON_NODE_VERSION", "4.5.6");
+
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+    version: '16.13.0'
+projects: {}"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(config.node.unwrap().version, String::from("4.5.6"),);
+
+                Ok(())
+            });
+        }
     }
 
     mod npm {
@@ -335,6 +356,32 @@ projects:
                 )?;
 
                 super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn inherits_from_env_var() {
+            std::env::set_var("MOON_NPM_VERSION", "4.5.6");
+
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+    version: '16.13.0'
+    npm:
+        version: '1.2.3'
+projects: {}"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config.node.unwrap().npm.unwrap().version,
+                    String::from("4.5.6"),
+                );
 
                 Ok(())
             });
@@ -384,6 +431,33 @@ projects:
                 Ok(())
             });
         }
+
+        #[test]
+        fn inherits_from_env_var() {
+            std::env::set_var("MOON_PNPM_VERSION", "4.5.6");
+
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+    version: '16.13.0'
+    packageManager: 'pnpm'
+    pnpm:
+        version: '1.2.3'
+projects: {}"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config.node.unwrap().pnpm.unwrap().version,
+                    String::from("4.5.6"),
+                );
+
+                Ok(())
+            });
+        }
     }
 
     mod yarn {
@@ -425,6 +499,33 @@ projects:
                 )?;
 
                 super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn inherits_from_env_var() {
+            std::env::set_var("MOON_YARN_VERSION", "4.5.6");
+
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+node:
+    version: '16.13.0'
+    packageManager: 'yarn'
+    yarn:
+        version: '1.2.3'
+projects: {}"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config.node.unwrap().yarn.unwrap().version,
+                    String::from("4.5.6"),
+                );
 
                 Ok(())
             });

@@ -1,11 +1,12 @@
 use crate::validators::validate_semver_version;
 use serde::{Deserialize, Serialize};
+use std::env;
 use validator::{Validate, ValidationError};
 
-const NODE_VERSION: &str = "16.13.2";
-const NPM_VERSION: &str = "8.1.2";
-const PNPM_VERSION: &str = "6.29.1";
-const YARN_VERSION: &str = "3.1.1";
+const NODE_VERSION: &str = "16.14.0";
+const NPM_VERSION: &str = "8.3.1";
+const PNPM_VERSION: &str = "6.32.2";
+const YARN_VERSION: &str = "3.2.0";
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.version", value)
@@ -40,7 +41,7 @@ pub struct NpmConfig {
 impl Default for NpmConfig {
     fn default() -> Self {
         NpmConfig {
-            version: String::from(NPM_VERSION),
+            version: env::var("MOON_NPM_VERSION").unwrap_or_else(|_| NPM_VERSION.to_owned()),
         }
     }
 }
@@ -54,7 +55,7 @@ pub struct PnpmConfig {
 impl Default for PnpmConfig {
     fn default() -> Self {
         PnpmConfig {
-            version: String::from(PNPM_VERSION),
+            version: env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| PNPM_VERSION.to_owned()),
         }
     }
 }
@@ -68,7 +69,7 @@ pub struct YarnConfig {
 impl Default for YarnConfig {
     fn default() -> Self {
         YarnConfig {
-            version: String::from(YARN_VERSION),
+            version: env::var("MOON_YARN_VERSION").unwrap_or_else(|_| YARN_VERSION.to_owned()),
         }
     }
 }
@@ -107,7 +108,7 @@ impl Default for NodeConfig {
             pnpm: None,
             sync_project_workspace_dependencies: Some(true),
             sync_typescript_project_references: Some(true),
-            version: String::from(NODE_VERSION),
+            version: env::var("MOON_NODE_VERSION").unwrap_or_else(|_| NODE_VERSION.to_owned()),
             yarn: None,
         }
     }

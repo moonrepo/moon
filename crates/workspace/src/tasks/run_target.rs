@@ -14,6 +14,8 @@ use std::sync::Arc;
 use tokio::process::Command;
 use tokio::sync::RwLock;
 
+const TARGET: &str = "moon:task-runner:run-target";
+
 async fn create_env_vars(
     workspace: &Workspace,
     project: &Project,
@@ -134,11 +136,7 @@ pub async fn run_target(
     primary_target: &str,
     passthrough_args: &[String],
 ) -> Result<(), WorkspaceError> {
-    debug!(
-        target: "moon:task-runner:run-target",
-        "Running target {}",
-        color::id(target)
-    );
+    debug!(target: TARGET, "Running target {}", color::id(target));
 
     let workspace = workspace.read().await;
     let mut cache = workspace.cache.cache_run_target_state(target).await?;
@@ -198,7 +196,7 @@ pub async fn run_target(
                     attempt += 1;
 
                     debug!(
-                        target: "moon:task-runner:run-target",
+                        target: TARGET,
                         "Target {} failed, running again with attempt {}",
                         color::id(target),
                         attempt

@@ -44,7 +44,7 @@ pub enum VersionManager {
 }
 
 impl VersionManager {
-    pub fn get_rc_file_name(&self) -> String {
+    pub fn get_config_file_name(&self) -> String {
         match self {
             VersionManager::NodeEnv => String::from(".node-version"),
             VersionManager::Nvm => String::from(".nvmrc"),

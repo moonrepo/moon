@@ -28,7 +28,7 @@ node:
   syncProjectWorkspaceDependencies: true
 
   # OPTIONAL: Sync `node.version` to a 3rd-party version manager's config file.
-  # Accepts "nodeenv", "nvm", or none.
+  # Accepts "nodeenv" (.node-version), "nvm" (.nvmrc), or none.
   # syncVersionManagerConfig: 'nvm'
 
 # OPTIONAL: Configures how Moon integrates with TypeScript.

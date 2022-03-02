@@ -139,7 +139,7 @@ node:
 ```
 
 For example, say our Node.js version is "16.14.0", and when we execute a run process through the
-`moon` binary, it will update the `package.json` with the following. We pin a fixed version to
+`moon` binary, it will update the root `package.json` with the below. We pin a fixed version to
 ensure other Node.js processes outside of our toolchain are utilizing the same version.
 
 ```jsonc
@@ -198,7 +198,7 @@ Would result in the following `dependencies` within a project's `package.json`.
 ##### syncVersionManagerConfig
 
 The `syncVersionManagerConfig` setting syncs the currently configured [Node.js version](#version) to
-a third-party version manager's config/rc file. Supports `nodeenv` (saves to `.node-version`), `nvm`
+a 3rd-party version manager's config/rc file. Supports `nodeenv` (syncs to `.node-version`), `nvm`
 (syncs to `.nvmrc`), or none (default).
 
 ```yaml

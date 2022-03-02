@@ -31,7 +31,7 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
         }
 
         if let Some(version_manager) = &node_config.sync_version_manager_config {
-            let rc_name = version_manager.get_rc_file_name();
+            let rc_name = version_manager.get_config_file_name();
             let rc_path = workspace.root.join(&rc_name);
 
             fs::write(&rc_path, &node_config.version).await?;

@@ -9,6 +9,8 @@ use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tokio::task;
 
+const TARGET: &str = "moon:task-runner";
+
 async fn run_task(
     workspace: Arc<RwLock<Workspace>>,
     node: &Node,
@@ -45,10 +47,7 @@ pub struct TaskRunner {
 
 impl TaskRunner {
     pub fn new(workspace: Workspace) -> Self {
-        debug!(
-            target: "moon:task-runner",
-            "Creating task runner",
-        );
+        debug!(target: TARGET, "Creating task runner",);
 
         TaskRunner {
             duration: None,
@@ -62,10 +61,7 @@ impl TaskRunner {
         let workspace = self.workspace.read().await;
 
         // Delete all previously created runfiles
-        trace!(
-            target: "moon:task-runner",
-            "Deleting stale runfiles"
-        );
+        trace!(target: TARGET, "Deleting stale runfiles");
 
         workspace.cache.delete_runfiles().await?;
 
@@ -86,7 +82,7 @@ impl TaskRunner {
         self.cleanup().await?;
 
         debug!(
-            target: "moon:task-runner",
+            target: TARGET,
             "Running {} tasks across {} batches", node_count, batches_count
         );
 
@@ -97,7 +93,7 @@ impl TaskRunner {
             let tasks_count = batch.len();
 
             trace!(
-                target: &format!("moon:task-runner:batch:{}", batch_count),
+                target: &format!("{}:batch:{}", TARGET, batch_count),
                 "Running {} tasks",
                 tasks_count
             );
@@ -117,7 +113,7 @@ impl TaskRunner {
 
                     if let Some(node) = own_graph.get_node_from_index(task) {
                         let log_target_name =
-                            format!("moon:task-runner:batch:{}:{}", batch_count, task_count);
+                            format!("{}:batch:{}:{}", TARGET, batch_count, task_count);
                         let log_task_label = color::muted_light(&node.label());
 
                         trace!(target: &log_target_name, "Running task {}", log_task_label);
@@ -178,8 +174,10 @@ impl TaskRunner {
         self.duration = Some(start.elapsed());
 
         debug!(
-            target: "moon:task-runner",
-            "Finished running {} tasks in {:?}", node_count, self.duration.unwrap()
+            target: TARGET,
+            "Finished running {} tasks in {:?}",
+            node_count,
+            self.duration.unwrap()
         );
 
         Ok(results)

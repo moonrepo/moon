@@ -90,6 +90,8 @@ node:
   version: '16.13.0'
 ```
 
+> Version can be overridden with the `MOON_NODE_VERSION` environment variable.
+
 ##### packageManager
 
 This setting defines which package manager to utilize within the workspace. Supports `npm`
@@ -117,6 +119,9 @@ node:
   yarn:
     version: '3.1.0'
 ```
+
+> Version can be overridden with the `MOON_NPM_VERSION`, `MOON_PNPM_VERSION`, or
+> `MOON_YARN_VERSION`, environment variables.
 
 ##### dedupeOnInstall
 

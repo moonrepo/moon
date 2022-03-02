@@ -54,6 +54,7 @@ impl NpmTool {
         exec_command(
             create_command(self.get_bin_path())
                 .args(["install", "-g", &package])
+                .env("PATH", get_path_env_var(self.get_bin_dir()))
                 .current_dir(&self.install_dir),
         )
         .await?;
@@ -81,6 +82,16 @@ impl Tool for NpmTool {
         if self.bin_path.exists() {
             let version = self.get_installed_version().await?;
 
+            if self.config.version == "inherit" {
+                debug!(
+                    target: "moon:toolchain:npm",
+                    "Using the version ({}) that came bundled with Node.js",
+                    version
+                );
+
+                return Ok(true);
+            }
+
             if version == self.config.version {
                 debug!(
                     target: "moon:toolchain:npm",
@@ -101,6 +112,10 @@ impl Tool for NpmTool {
     }
 
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        if self.config.version == "inherit" {
+            return Ok(());
+        }
+
         let package = format!("npm@{}", self.config.version);
 
         if toolchain.get_node().is_corepack_aware() {

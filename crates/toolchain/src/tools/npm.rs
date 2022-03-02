@@ -54,6 +54,7 @@ impl NpmTool {
         exec_command(
             create_command(self.get_bin_path())
                 .args(["install", "-g", &package])
+                .env("PATH", get_path_env_var(self.get_bin_dir()))
                 .current_dir(&self.install_dir),
         )
         .await?;

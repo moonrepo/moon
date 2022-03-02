@@ -15,6 +15,7 @@ use figment::{
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::env;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
 pub use vcs::{VcsConfig, VcsManager};
@@ -73,7 +74,7 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
-        let config: WorkspaceConfig = match Figment::from(WorkspaceConfig::default())
+        let mut config: WorkspaceConfig = match Figment::from(WorkspaceConfig::default())
             .merge(Yaml::file(path))
             .extract()
         {
@@ -83,6 +84,31 @@ impl WorkspaceConfig {
 
         if let Err(errors) = config.validate() {
             return Err(errors);
+        }
+
+        // Versions from env vars should take precedence
+        if let Some(node_config) = &mut config.node {
+            if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
+                node_config.version = node_version;
+            }
+
+            if let Ok(npm_version) = env::var("MOON_NPM_VERSION") {
+                if let Some(npm_config) = &mut node_config.npm {
+                    npm_config.version = npm_version;
+                }
+            }
+
+            if let Ok(pnpm_version) = env::var("MOON_PNPM_VERSION") {
+                if let Some(pnpm_config) = &mut node_config.pnpm {
+                    pnpm_config.version = pnpm_version;
+                }
+            }
+
+            if let Ok(yarn_version) = env::var("MOON_YARN_VERSION") {
+                if let Some(yarn_config) = &mut node_config.yarn {
+                    yarn_config.version = yarn_version;
+                }
+            }
         }
 
         Ok(config)

@@ -14,7 +14,11 @@ pub fn is_ci() -> bool {
 }
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
-    let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"])).await?;
+    let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"]).env(
+        "PATH",
+        get_path_env_var(bin.parent().unwrap().to_path_buf()),
+    ))
+    .await?;
 
     version = version.trim().to_owned();
 

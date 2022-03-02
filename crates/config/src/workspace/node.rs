@@ -81,6 +81,8 @@ impl Default for YarnConfig {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
+    pub add_engines_constraint: Option<bool>,
+
     pub dedupe_on_install: Option<bool>,
 
     #[validate]
@@ -103,6 +105,7 @@ pub struct NodeConfig {
 impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
+            add_engines_constraint: Some(true),
             dedupe_on_install: Some(true),
             npm: Some(NpmConfig::default()),
             package_manager: Some(PackageManager::Npm),

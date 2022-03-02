@@ -1,7 +1,7 @@
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
 use moon_error::map_io_to_fs_error;
-use moon_logger::debug;
+use moon_logger::{color, debug};
 use moon_utils::fs;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -55,6 +55,29 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
             target: "moon:task-runner:install-node-deps",
             "Lockfile has not changed since last install, skipping Node.js dependencies",
         );
+    }
+
+    // Update other artifacts based on node settings
+    if let Some(node_config) = &workspace.config.node {
+        let mut root_package = workspace.load_package_json().await?;
+        let mut modify_count = 0;
+
+        if node_config.add_engines_constraint.unwrap_or(true)
+            && root_package.add_engine("node", &node_config.version)
+        {
+            modify_count += 1;
+
+            debug!(
+                target: "moon:task-runner:install-node-deps",
+                "Adding engines version constraint to root {}",
+                color::path("package.json")
+            );
+        }
+
+        // Only save if its been modified
+        if modify_count > 0 {
+            root_package.save().await?;
+        }
     }
 
     Ok(())

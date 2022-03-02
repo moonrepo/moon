@@ -184,12 +184,20 @@ impl PackageJson {
         true
     }
 
-    pub fn add_engine(&mut self, engine: &str, range: &str) {
+    /// Add a version range to the `engines` field and return true if
+    /// the new value is different from the old value.
+    pub fn add_engine(&mut self, engine: &str, range: &str) -> bool {
         if let Some(engines) = &mut self.engines {
+            if engines.contains_key(engine) && engines.get(engine).unwrap() == range {
+                return false;
+            }
+
             engines.insert(engine.to_owned(), range.to_owned());
         } else {
             self.engines = Some(BTreeMap::from([(engine.to_owned(), range.to_owned())]));
         }
+
+        true
     }
 }
 

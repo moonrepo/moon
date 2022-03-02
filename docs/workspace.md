@@ -8,6 +8,7 @@
       - [packageManager](#packagemanager)
       - [npm, pnpm, yarn](#npm-pnpm-yarn)
         - [version](#version-1)
+      - [addEnginesConstraint](#addenginesconstraint)
       - [dedupeOnInstall](#dedupeoninstall)
       - [syncProjectWorkspaceDependencies](#syncprojectworkspacedependencies)
     - [typescript](#typescript)
@@ -126,6 +127,29 @@ node:
 > Version can be overridden with the `MOON_NPM_VERSION`, `MOON_PNPM_VERSION`, or
 > `MOON_YARN_VERSION`, environment variables.
 
+##### addEnginesConstraint
+
+The `addEnginesConstraint` setting will inject the currently configured [Node.js version](#version)
+as a constraint to the root `package.json` `engines` field. Defaults to `true`.
+
+```yaml
+node:
+  addEnginesConstraint: true
+```
+
+For example, say our Node.js version is "16.14.0", and when we execute a run process through the
+`moon` binary, it will update the `package.json` with the following. We pin a fixed version to
+ensure other Node.js processes outside of our toolchain are utilizing the same version.
+
+```jsonc
+{
+	// ...
+	"engines": {
+		"node": "16.14.0"
+	}
+}
+```
+
 ##### dedupeOnInstall
 
 The `dedupeOnInstall` setting will dedupe dependencies after they have been installed, in an effort
@@ -178,7 +202,8 @@ workspace.
 ##### projectConfigFileName
 
 The `projectConfigFileName` setting defines the name of the `tsconfig.json` found in the project
-root. We utilize this setting when syncing project references between projects.
+root. We utilize this setting when syncing project references between projects. Defaults to
+`tsconfig.json`.
 
 ```yaml
 typescript:
@@ -188,7 +213,7 @@ typescript:
 ##### rootConfigFileName
 
 The `rootConfigFileName` setting defines the name of the `tsconfig.json` found in the workspace
-root. We utilize this setting when syncing projects as references.
+root. We utilize this setting when syncing projects as references. Defaults to `tsconfig.json`.
 
 ```yaml
 typescript:

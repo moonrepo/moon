@@ -74,14 +74,24 @@ impl TsConfigJson {
         Ok(cfg)
     }
 
-    pub fn add_project_ref(&mut self, path: String) -> bool {
+    pub fn add_project_ref(&mut self, base_path: &str, tsconfig_name: &str) -> bool {
+        // File name is optional when using standard naming
+        let path = if tsconfig_name == "tsconfig.json" {
+            base_path.to_owned()
+        } else {
+            format!("{}/{}", base_path, tsconfig_name)
+        };
+
         let mut references = match &self.references {
             Some(refs) => refs.clone(),
             None => Vec::<Reference>::new(),
         };
 
         // Check if the reference already exists
-        if references.iter().any(|r| r.path == path) {
+        if references
+            .iter()
+            .any(|r| r.path == path || r.path == base_path)
+        {
             return false;
         }
 

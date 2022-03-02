@@ -20,8 +20,8 @@ pub enum ProjectError {
     #[error("Invalid target <id>{0}</id>, must be in the format of \"project_id:task_id\".")]
     InvalidTargetFormat(String),
 
-    #[error("Failed to parse and open <path>{0}/tsconfig.json</path>: {1}")]
-    InvalidTsConfigJson(String, String),
+    #[error("Failed to parse and open <path>{0}/{1}</path>: {2}")]
+    InvalidTsConfigJson(String, String, String),
 
     #[error(
         "Invalid or missing file <file_path>{0}</file_path>, must be a valid UTF-8 file path."

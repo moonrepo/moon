@@ -10,7 +10,10 @@
         - [version](#version-1)
       - [dedupeOnInstall](#dedupeoninstall)
       - [syncProjectWorkspaceDependencies](#syncprojectworkspacedependencies)
-      - [syncTypeScriptProjectReferences](#synctypescriptprojectreferences)
+    - [typescript](#typescript)
+      - [projectConfigFileName](#projectconfigfilename)
+      - [rootConfigFileName](#rootconfigfilename)
+      - [syncProjectReferences](#syncprojectreferences)
     - [vcs](#vcs)
       - [manager](#manager)
       - [defaultBranch](#defaultbranch)
@@ -167,15 +170,40 @@ Would result in the following `dependencies` within a project's `package.json`.
 }
 ```
 
-##### syncTypeScriptProjectReferences
+#### typescript
 
-The `syncTypeScriptProjectReferences` setting will sync the `dependsOn` setting within a project's
-`project.yml` as project references within the project's `tsconfig.json`, and the workspace root
+The `typescript` setting configures how Moon interacts with and utilizes TypeScript within the
+workspace.
+
+##### projectConfigFileName
+
+The `projectConfigFileName` setting defines the name of the `tsconfig.json` found in the project
+root. We utilize this setting when syncing project references between projects.
+
+```yaml
+typescript:
+  projectConfigFileName: 'tsconfig.build.json'
+```
+
+##### rootConfigFileName
+
+The `rootConfigFileName` setting defines the name of the `tsconfig.json` found in the workspace
+root. We utilize this setting when syncing projects as references.
+
+```yaml
+typescript:
+  rootConfigFileName: 'tsconfig.projects.json'
+```
+
+##### syncProjectReferences
+
+The `syncProjectReferences` setting will sync the `dependsOn` setting within a project's
+`project.yml` as project references within that project's `tsconfig.json`, and the workspace root
 `tsconfig.json`. Defaults to `true`.
 
 ```yaml
-node:
-  syncTypeScriptProjectReferences: true
+typescript:
+  syncProjectReferences: true
 ```
 
 A quick example on how this works. Given the following `dependsOn`:
@@ -201,9 +229,9 @@ Would result in the following `references` within both `tsconfig.json`s.
 
 #### vcs
 
-Configures the version control system to utilize within the workspace (and repository). A VCS is
-required for determining touched (added, modified, etc) files, calculating file hashes, computing
-affected files, and much more.
+The `vcs` setting configures the version control system to utilize within the workspace (and
+repository). A VCS is required for determining touched (added, modified, etc) files, calculating
+file hashes, computing affected files, and much more.
 
 ##### manager
 
@@ -276,12 +304,12 @@ of task parameters. A `command` parameter is _required_ for each task.
 
 ```yaml
 tasks:
-  test:
-    command: 'jest'
-  lint:
-    command: 'eslint'
   build:
     command: 'webpack'
+  lint:
+    command: 'eslint'
+  test:
+    command: 'jest'
   typecheck:
     command: 'tsc'
 ```

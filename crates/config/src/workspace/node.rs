@@ -36,6 +36,22 @@ pub enum PackageManager {
     Yarn,
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VersionManager {
+    NodeEnv,
+    Nvm,
+}
+
+impl VersionManager {
+    pub fn get_rc_file_name(&self) -> String {
+        match self {
+            VersionManager::NodeEnv => String::from(".node-version"),
+            VersionManager::Nvm => String::from(".nvmrc"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct NpmConfig {
     #[validate(custom = "validate_npm_version")]
@@ -95,6 +111,8 @@ pub struct NodeConfig {
 
     pub sync_project_workspace_dependencies: Option<bool>,
 
+    pub sync_version_manager_config: Option<VersionManager>,
+
     #[validate(custom = "validate_node_version")]
     pub version: String,
 
@@ -111,6 +129,7 @@ impl Default for NodeConfig {
             package_manager: Some(PackageManager::Npm),
             pnpm: None,
             sync_project_workspace_dependencies: Some(true),
+            sync_version_manager_config: None,
             version: env::var("MOON_NODE_VERSION").unwrap_or_else(|_| NODE_VERSION.to_owned()),
             yarn: None,
         }

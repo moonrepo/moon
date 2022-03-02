@@ -17,7 +17,7 @@ node:
   # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".
   packageManager: 'npm'
 
-  # OPTIONAL: Inject `node.version` as a constaint in the root `package.json` `engines`.
+  # OPTIONAL: Add `node.version` as a constaint in the root `package.json` `engines`.
   addEnginesConstraint: true
 
   # OPTIONAL: Dedupe dependencies after installing them.
@@ -26,6 +26,10 @@ node:
   # OPTIONAL: Sync a project's `dependsOn` as normal dependencies within the project's
   # `package.json`. Will use "workspace:*" ranges when available in the package manager.
   syncProjectWorkspaceDependencies: true
+
+  # OPTIONAL: Sync `node.version` to a 3rd-party version manager's config file.
+  # Accepts "nodeenv", "nvm", or none.
+  # syncVersionManagerConfig: 'nvm'
 
 # OPTIONAL: Configures how Moon integrates with TypeScript.
 typescript:

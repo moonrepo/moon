@@ -11,6 +11,7 @@
       - [addEnginesConstraint](#addenginesconstraint)
       - [dedupeOnInstall](#dedupeoninstall)
       - [syncProjectWorkspaceDependencies](#syncprojectworkspacedependencies)
+      - [syncVersionManagerConfig](#syncversionmanagerconfig)
     - [typescript](#typescript)
       - [projectConfigFileName](#projectconfigfilename)
       - [rootConfigFileName](#rootconfigfilename)
@@ -177,8 +178,8 @@ A quick example on how this works. Given the following `dependsOn`:
 
 ```yaml
 dependsOn:
-  - design-system
-  - react-utils
+  - 'design-system'
+  - 'react-utils'
 ```
 
 Would result in the following `dependencies` within a project's `package.json`.
@@ -193,6 +194,20 @@ Would result in the following `dependencies` within a project's `package.json`.
 	}
 }
 ```
+
+##### syncVersionManagerConfig
+
+The `syncVersionManagerConfig` setting syncs the currently configured [Node.js version](#version) to
+a third-party version manager's config/rc file. Supports `nodeenv` (saves to `.node-version`), `nvm`
+(syncs to `.nvmrc`), or none (default).
+
+```yaml
+node:
+  syncVersionManagerConfig: 'nvm'
+```
+
+This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
+the same version, which is a very common practice when managing dependencies.
 
 #### typescript
 

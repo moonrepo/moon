@@ -53,7 +53,7 @@
   - [x] Groups into batches and parallelizes
   - [x] Runs in a thread pool (via tokio)
 - [x] Runs task based on `type`
-- [ ] Retries when failed (using `retry_count`)
+- [x] Retries when failed (using `retry_count`)
 - [x] Streams output when a primary target
 - [x] Buffers output when a non-primary target
 - [x] Bubbles up errors
@@ -84,6 +84,11 @@
 
 - hashing
 - caching
+
+## Targets
+
+- [ ] macos arm/m1
+- [ ] linux x64 (musl)
 
 ## Tasks
 

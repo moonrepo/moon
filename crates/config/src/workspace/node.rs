@@ -93,9 +93,6 @@ pub struct NodeConfig {
 
     pub sync_project_workspace_dependencies: Option<bool>,
 
-    #[serde(rename = "syncTypeScriptProjectReferences")]
-    pub sync_typescript_project_references: Option<bool>,
-
     #[validate(custom = "validate_node_version")]
     pub version: String,
 
@@ -111,7 +108,6 @@ impl Default for NodeConfig {
             package_manager: Some(PackageManager::Npm),
             pnpm: None,
             sync_project_workspace_dependencies: Some(true),
-            sync_typescript_project_references: Some(true),
             version: env::var("MOON_NODE_VERSION").unwrap_or_else(|_| NODE_VERSION.to_owned()),
             yarn: None,
         }

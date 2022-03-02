@@ -24,9 +24,11 @@ node:
   # `package.json`. Will use "workspace:*" ranges when available in the package manager.
   syncProjectWorkspaceDependencies: true
 
+# OPTIONAL: Configures how Moon integrates with TypeScript.
+typescript:
   # OPTIONAL: Sync a project's `dependsOn` as TypeScript project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
-  syncTypeScriptProjectReferences: true,
+  syncProjectReferences: true,
 
 # OPTIONAL: Configures the version control system to utilize within the workspace. A VCS
 # is required for determining touched (added, modified, etc) files, calculating file hashes,

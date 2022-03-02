@@ -1,6 +1,7 @@
 // .moon/workspace.yml
 
 mod node;
+mod typescript;
 mod vcs;
 
 use crate::constants;
@@ -17,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
+pub use typescript::TypeScriptConfig;
 use validator::{Validate, ValidationError, ValidationErrors};
 pub use vcs::{VcsConfig, VcsManager};
 
@@ -45,6 +47,9 @@ pub struct WorkspaceConfig {
     pub projects: HashMap<String, FilePath>,
 
     #[validate]
+    pub typescript: Option<TypeScriptConfig>,
+
+    #[validate]
     pub vcs: Option<VcsConfig>,
 }
 
@@ -53,6 +58,7 @@ impl Default for WorkspaceConfig {
         WorkspaceConfig {
             node: Some(NodeConfig::default()),
             projects: HashMap::new(),
+            typescript: Some(TypeScriptConfig::default()),
             vcs: Some(VcsConfig::default()),
         }
     }
@@ -139,6 +145,7 @@ mod tests {
                 WorkspaceConfig {
                     node: Some(NodeConfig::default()),
                     projects: HashMap::new(),
+                    typescript: Some(TypeScriptConfig::default()),
                     vcs: Some(VcsConfig::default()),
                 }
             );
@@ -171,6 +178,7 @@ node:
                             ..NodeConfig::default()
                         }),
                         projects: HashMap::new(),
+                        typescript: Some(TypeScriptConfig::default()),
                         vcs: Some(VcsConfig::default()),
                     }
                 );
@@ -637,6 +645,7 @@ vcs:
                     WorkspaceConfig {
                         node: Some(NodeConfig::default()),
                         projects: HashMap::new(),
+                        typescript: Some(TypeScriptConfig::default()),
                         vcs: Some(VcsConfig {
                             manager: Some(VcsManager::Svn),
                             ..VcsConfig::default()

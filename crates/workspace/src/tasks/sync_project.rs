@@ -15,11 +15,9 @@ pub async fn sync_project(
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = workspace.config.node.as_ref().unwrap();
+    let typescript_config = workspace.config.typescript.as_ref().unwrap();
 
-    if node_config
-        .sync_typescript_project_references
-        .unwrap_or(true)
-    {
+    if typescript_config.sync_project_references.unwrap_or(true) {
         if let Some(mut tsconfig) = workspace.load_tsconfig_json().await? {
             if tsconfig.add_project_ref(project.source.to_owned()) {
                 debug!(
@@ -71,10 +69,7 @@ pub async fn sync_project(
         }
 
         // Update `references` within `tsconfig.json`
-        if node_config
-            .sync_typescript_project_references
-            .unwrap_or(true)
-        {
+        if typescript_config.sync_project_references.unwrap_or(true) {
             if let Some(mut tsconfig) = project.load_tsconfig_json().await? {
                 let dep_ref_path = String::from(
                     diff_paths(&project.root, &dep_project.root)

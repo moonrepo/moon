@@ -120,6 +120,8 @@ impl TaskRunner {
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(task) {
+                        result.label = Some(node.label());
+
                         let log_target_name =
                             format!("{}:batch:{}:{}", TARGET, batch_count, task_count);
                         let log_task_label = color::muted_light(&node.label());
@@ -168,9 +170,7 @@ impl TaskRunner {
                 match handle.await {
                     Ok(Ok(result)) => {
                         if self.bail && result.error.is_some() {
-                            return Err(WorkspaceError::TaskRunnerFailure(
-                                result.error.unwrap().to_string(),
-                            ));
+                            return Err(WorkspaceError::TaskRunnerFailure(result.error.unwrap()));
                         }
 
                         results.push(result);

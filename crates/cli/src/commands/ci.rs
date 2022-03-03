@@ -1,9 +1,14 @@
+use crate::commands::run::render_result_stats;
+use console::Term;
+use humantime::format_duration;
 use itertools::Itertools;
 use moon_logger::{color, debug};
 use moon_project::{Target, TargetID, TouchedFilePaths};
+use moon_terminal::helpers::safe_exit;
+use moon_terminal::output;
 use moon_utils::is_ci;
 use moon_workspace::DepGraph;
-use moon_workspace::{Workspace, WorkspaceError};
+use moon_workspace::{TaskRunner, Workspace, WorkspaceError};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -176,6 +181,44 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
 
     let targets = distribute_targets_across_jobs(&options, targets);
     let dep_graph = generate_dep_graph(&workspace, &targets)?;
+
+    // Process all tasks in the graph
+    print_header("Running all targets");
+
+    let mut runner = TaskRunner::new(workspace);
+    let results = runner.run(dep_graph).await?;
+
+    // Print out the results and exit if an error occurs
+    let mut error_count = 0;
+    let term = Term::buffered_stdout();
+
+    print_header("Results");
+
+    for result in &results {
+        let mut meta = vec![format_duration(result.duration.unwrap()).to_string()];
+
+        if result.exit_code > 0 {
+            meta.push(format!("exit code {}", result.exit_code));
+        }
+
+        term.write_line(&format!(
+            "{} {}\n",
+            output::bold(result.label.as_ref().unwrap()),
+            color::muted(&format!("({})", meta.join(", ")))
+        ))?;
+
+        if let Some(error) = &result.error {
+            error_count += 1;
+            term.write_line(&format!("  {}", color::muted_light(error)))?;
+        }
+    }
+
+    term.flush()?;
+    render_result_stats(results, runner.duration.unwrap())?;
+
+    if error_count > 0 {
+        safe_exit(1);
+    }
 
     Ok(())
 }

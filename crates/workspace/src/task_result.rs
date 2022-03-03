@@ -15,6 +15,8 @@ pub struct TaskResult {
 
     pub exit_code: i8,
 
+    pub label: Option<String>,
+
     pub node_index: NodeIndex,
 
     pub start_time: Instant,
@@ -32,6 +34,7 @@ impl TaskResult {
             duration: None,
             error: None,
             exit_code: -1,
+            label: None,
             node_index,
             start_time: Instant::now(),
             status: TaskResultStatus::Running,

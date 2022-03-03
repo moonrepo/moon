@@ -149,6 +149,7 @@ pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::e
     let mut runner = TaskRunner::new(workspace);
 
     let results = runner
+        .bail_on_error()
         .set_passthrough_args(options.passthrough)
         .set_primary_target(target)
         .run(dep_graph)

@@ -33,10 +33,16 @@ pub trait Vcs {
     fn get_default_branch(&self) -> &str;
     async fn get_default_branch_hash(&self) -> VcsResult<String>;
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;
-    async fn get_touched_files_against_branch(
+
+    async fn get_touched_files_against_previous_revision(
         &self,
-        branch: &str,
-        back_revision_count: u8,
+        revision: &str,
+    ) -> VcsResult<TouchedFiles>;
+
+    async fn get_touched_files_between_revisions(
+        &self,
+        base_revision: &str,
+        revision: &str,
     ) -> VcsResult<TouchedFiles>;
 
     /// Return true if the provided branch matches the default branch.

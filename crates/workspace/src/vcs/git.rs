@@ -137,18 +137,20 @@ impl Vcs for Git {
         }))
     }
 
-    // https://git-scm.com/docs/git-status#_short_format
-    async fn get_touched_files_against_branch(
+    async fn get_touched_files_against_previous_revision(
         &self,
-        branch: &str,
-        back_revision_count: u8,
+        revision: &str,
     ) -> VcsResult<TouchedFiles> {
-        let base_branch = if back_revision_count == 0 {
-            self.default_branch.to_owned()
-        } else {
-            format!("{}~{}", self.default_branch, back_revision_count)
-        };
+        Ok(self
+            .get_touched_files_between_revisions(&format!("{}~1", revision), revision)
+            .await?)
+    }
 
+    async fn get_touched_files_between_revisions(
+        &self,
+        base_revision: &str,
+        revision: &str,
+    ) -> VcsResult<TouchedFiles> {
         let output = self
             .run_command(
                 vec![
@@ -157,8 +159,8 @@ impl Vcs for Git {
                     "--name-status",
                     "--no-color",
                     "--relative",
-                    &base_branch,
-                    branch,
+                    base_revision,
+                    revision,
                 ],
                 false,
             )

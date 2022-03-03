@@ -40,13 +40,16 @@ async fn gather_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths,
     print_header("Gathering touched files");
 
     let vcs = workspace.detect_vcs();
+    let default_branch = vcs.get_default_branch();
     let branch = vcs.get_local_branch().await?;
     let touched_files_map = if vcs.is_default_branch(&branch) {
-        // On master/main, so compare against master -1 commit
-        vcs.get_touched_files_against_branch("HEAD", 1).await?
+        // On master, so compare against master -1 commit
+        vcs.get_touched_files_against_previous_revision(&default_branch)
+            .await?
     } else {
-        // On a branch, so compare branch against master/main
-        vcs.get_touched_files_against_branch(&branch, 0).await?
+        // On a branch, so compare branch against master
+        vcs.get_touched_files_between_revisions(&default_branch, &branch)
+            .await?
     };
 
     let mut touched_files_to_print = vec![];

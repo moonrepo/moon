@@ -100,6 +100,12 @@ pub enum Commands {
         rename_all = "camelCase"
     )]
     Ci {
+        #[clap(long, help = "Base branch, commit, or revision to compare against")]
+        base: Option<String>,
+
+        #[clap(long, help = "Current branch, commit, or revision to compare with")]
+        head: Option<String>,
+
         #[clap(long, help = "Index of the current job", help_heading = HEADING_PARALLELISM)]
         job: Option<usize>,
 

@@ -43,8 +43,15 @@ pub async fn run_cli() {
         Commands::Bin { tool } => {
             result = bin(tool).await;
         }
-        Commands::Ci { job, job_total } => {
+        Commands::Ci {
+            base,
+            head,
+            job,
+            job_total,
+        } => {
             result = ci(CiOptions {
+                base: base.clone(),
+                head: head.clone(),
                 job: *job,
                 job_total: *job_total,
             })

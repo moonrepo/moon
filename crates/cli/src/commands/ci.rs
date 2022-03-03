@@ -36,19 +36,30 @@ fn print_targets(targets: &TargetList) {
 }
 
 /// Gather a list of files that have been modified between branches.
-async fn gather_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, WorkspaceError> {
+async fn gather_touched_files(
+    workspace: &Workspace,
+    options: &CiOptions,
+) -> Result<TouchedFilePaths, WorkspaceError> {
     print_header("Gathering touched files");
 
     let vcs = workspace.detect_vcs();
     let default_branch = vcs.get_default_branch();
-    let branch = vcs.get_local_branch().await?;
-    let touched_files_map = if vcs.is_default_branch(&branch) {
-        // On master, so compare against master -1 commit
-        vcs.get_touched_files_against_previous_revision(&default_branch)
+    let current_branch = vcs.get_local_branch().await?;
+
+    // On default branch, so compare against self -1 revision
+    let touched_files_map = if vcs.is_default_branch(&current_branch) {
+        vcs.get_touched_files_against_previous_revision(default_branch)
             .await?
+
+        // On a branch, so compare branch against default branch
     } else {
-        // On a branch, so compare branch against master
-        vcs.get_touched_files_between_revisions(&default_branch, &branch)
+        let base = options
+            .base
+            .clone()
+            .unwrap_or_else(|| default_branch.to_owned());
+        let head = options.head.clone().unwrap_or_else(|| String::from("HEAD"));
+
+        vcs.get_touched_files_between_revisions(&base, &head)
             .await?
     };
 
@@ -169,13 +180,15 @@ fn generate_dep_graph(
 }
 
 pub struct CiOptions {
+    pub base: Option<String>,
+    pub head: Option<String>,
     pub job: Option<usize>,
     pub job_total: Option<usize>,
 }
 
 pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
-    let touched_files = gather_touched_files(&workspace).await?;
+    let touched_files = gather_touched_files(&workspace, &options).await?;
     let targets = gather_runnable_targets(&workspace, &touched_files)?;
 
     if targets.is_empty() {

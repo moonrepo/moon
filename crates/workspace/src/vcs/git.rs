@@ -141,8 +141,14 @@ impl Vcs for Git {
         &self,
         revision: &str,
     ) -> VcsResult<TouchedFiles> {
+        let rev = if self.is_default_branch(revision) {
+            "HEAD"
+        } else {
+            revision
+        };
+
         Ok(self
-            .get_touched_files_between_revisions(&format!("{}~1", revision), revision)
+            .get_touched_files_between_revisions(&format!("{}~1", rev), rev)
             .await?)
     }
 

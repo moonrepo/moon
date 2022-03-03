@@ -147,7 +147,11 @@ fn generate_dep_graph(
     let mut dep_graph = DepGraph::default();
 
     for target in targets {
+        // Run the target and its dependencies
         dep_graph.run_target(target, &workspace.projects)?;
+
+        // And also run its dependents to ensure consumers still work correctly
+        dep_graph.run_target_dependents(target, &workspace.projects)?;
     }
 
     println!("Target count: {}", targets.len());

@@ -9,10 +9,6 @@ use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
 
-pub fn is_ci() -> bool {
-    env::var("CI").is_ok()
-}
-
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"]).env(
         "PATH",

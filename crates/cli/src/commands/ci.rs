@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use moon_logger::{color, debug};
 use moon_project::{Target, TargetID, TouchedFilePaths};
+use moon_utils::is_ci;
 use moon_workspace::DepGraph;
 use moon_workspace::{Workspace, WorkspaceError};
 use std::collections::HashSet;
@@ -10,6 +11,12 @@ type TargetList = Vec<TargetID>;
 
 const TARGET: &str = "moon:ci";
 
+fn print_header(title: &str) {
+    let prefix = if is_ci() { "--- " } else { "" };
+
+    println!("{}{}", prefix, title);
+}
+
 fn print_targets(targets: &TargetList) {
     let mut targets_to_print = targets.clone();
     targets_to_print.sort();
@@ -18,14 +25,14 @@ fn print_targets(targets: &TargetList) {
         "{}",
         targets_to_print
             .iter()
-            .map(|t| format!("    {}", color::target(t)))
+            .map(|t| format!("  {}", color::target(t)))
             .join("\n")
     );
 }
 
 /// Gather a list of files that have been modified between branches.
 async fn gather_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, WorkspaceError> {
-    println!("--- Gathering touched files");
+    print_header("Gathering touched files");
 
     let vcs = workspace.detect_vcs();
     let branch = vcs.get_local_branch().await?;
@@ -42,7 +49,7 @@ async fn gather_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths,
         .all
         .iter()
         .map(|f| {
-            touched_files_to_print.push(format!("    {}", color::path(f)));
+            touched_files_to_print.push(format!("  {}", color::path(f)));
             workspace.root.join(f)
         })
         .collect();
@@ -59,7 +66,7 @@ fn gather_runnable_targets(
     workspace: &Workspace,
     touched_files: &TouchedFilePaths,
 ) -> Result<TargetList, WorkspaceError> {
-    println!("--- Gathering runnable targets");
+    print_header("Gathering runnable targets");
 
     let mut targets = vec![];
 
@@ -88,7 +95,10 @@ fn gather_runnable_targets(
     }
 
     if targets.is_empty() {
-        println!("No targets to run based on touched files");
+        println!(
+            "{}",
+            color::invalid("No targets to run based on touched files")
+        );
     } else {
         print_targets(&targets);
     }
@@ -107,11 +117,7 @@ fn distribute_targets_across_jobs(options: &CiOptions, targets: TargetList) -> T
     let batch_size = targets.len() / job_total;
     let batched_targets;
 
-    println!(
-        "--- Distributing targets across jobs ({} / {})",
-        job_index + 1,
-        job_total
-    );
+    print_header("Distributing targets across jobs");
     println!("Job index: {}", job_index);
     println!("Job total: {}", job_index);
     println!("Batch size: {}", batch_size);
@@ -136,7 +142,7 @@ fn generate_dep_graph(
     workspace: &Workspace,
     targets: &TargetList,
 ) -> Result<DepGraph, WorkspaceError> {
-    println!("--- Generating dependency and task graphs");
+    print_header("Generating dependency and task graphs");
 
     let mut dep_graph = DepGraph::default();
 

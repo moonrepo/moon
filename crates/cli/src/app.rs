@@ -96,7 +96,8 @@ pub enum Commands {
     // JOBS
     #[clap(
         name = "ci",
-        about = "Run all affected projects and tasks in a CI environment."
+        about = "Run all affected projects and tasks in a CI environment.",
+        rename_all = "camelCase"
     )]
     Ci {
         #[clap(long, help = "Index of the current job", help_heading = HEADING_PARALLELISM)]
@@ -159,7 +160,8 @@ pub enum Commands {
     disable_help_subcommand = true,
     dont_collapse_args_in_usage = true,
     propagate_version = true,
-    next_line_help = false
+    next_line_help = false,
+    rename_all = "camelCase"
 )]
 pub struct App {
     #[clap(arg_enum, long, short = 'L', help = "Lowest log level to output")]

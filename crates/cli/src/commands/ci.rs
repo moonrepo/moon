@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use moon_logger::{color, debug};
 use moon_project::{Target, TargetID, TouchedFilePaths};
 use moon_workspace::DepGraph;
@@ -10,12 +11,14 @@ type TargetList = Vec<TargetID>;
 const TARGET: &str = "moon:ci";
 
 fn print_targets(targets: &TargetList) {
+    let mut targets_to_print = targets.clone();
+    targets_to_print.sort();
+
     println!(
         "{}",
-        targets
+        targets_to_print
             .iter()
             .map(|t| format!("    {}", color::target(t)))
-            .collect::<Vec<String>>()
             .join("\n")
     );
 }
@@ -33,20 +36,20 @@ async fn gather_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths,
         // On a branch, so compare branch against master/main
         vcs.get_touched_files_against_branch(&branch, 0).await?
     };
+
+    let mut touched_files_to_print = vec![];
     let touched_files: HashSet<PathBuf> = touched_files_map
         .all
         .iter()
-        .map(|f| workspace.root.join(f))
+        .map(|f| {
+            touched_files_to_print.push(format!("    {}", color::path(f)));
+            workspace.root.join(f)
+        })
         .collect();
 
-    println!(
-        "{}",
-        touched_files
-            .iter()
-            .map(|f| format!("    {}", color::file_path(f)))
-            .collect::<Vec<String>>()
-            .join("\n")
-    );
+    touched_files_to_print.sort();
+
+    println!("{}", touched_files_to_print.join("\n"));
 
     Ok(touched_files)
 }

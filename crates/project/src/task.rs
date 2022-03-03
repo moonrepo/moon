@@ -320,6 +320,10 @@ impl Task {
         }
     }
 
+    pub fn should_run_in_ci(&self) -> bool {
+        !self.outputs.is_empty() || self.options.run_in_ci
+    }
+
     fn merge_env_vars(
         &self,
         base: &EnvVars,

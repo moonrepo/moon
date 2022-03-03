@@ -1,18 +1,30 @@
 use moon_logger::{color, debug};
-use moon_project::Target;
+use moon_project::{Target, TargetID, TouchedFilePaths};
 use moon_workspace::DepGraph;
-use moon_workspace::Workspace;
+use moon_workspace::{Workspace, WorkspaceError};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
+type TargetList = Vec<TargetID>;
+
 const TARGET: &str = "moon:ci";
 
-#[allow(dead_code)]
-pub async fn ci() -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
-    let vcs = workspace.detect_vcs();
+fn print_targets(targets: &TargetList) {
+    println!(
+        "{}",
+        targets
+            .iter()
+            .map(|t| format!("    {}", color::target(t)))
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
+}
 
-    // Gather a list of files that have been modified between branches
+/// Gather a list of files that have been modified between branches.
+async fn gather_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, WorkspaceError> {
+    println!("--- Gathering touched files");
+
+    let vcs = workspace.detect_vcs();
     let branch = vcs.get_local_branch().await?;
     let touched_files_map = if vcs.is_default_branch(&branch) {
         // On master/main, so compare against master -1 commit
@@ -27,19 +39,41 @@ pub async fn ci() -> Result<(), Box<dyn std::error::Error>> {
         .map(|f| workspace.root.join(f))
         .collect();
 
-    // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_graph = DepGraph::default();
+    println!(
+        "{}",
+        touched_files
+            .iter()
+            .map(|f| format!("    {}", color::file_path(f)))
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
+
+    Ok(touched_files)
+}
+
+/// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
+fn gather_runnable_targets(
+    workspace: &Workspace,
+    touched_files: &TouchedFilePaths,
+) -> Result<TargetList, WorkspaceError> {
+    println!("--- Gathering runnable targets");
+
+    let mut targets = vec![];
 
     for project_id in workspace.projects.ids() {
         let project = workspace.projects.load(&project_id)?;
 
-        for (task_id, task) in project.tasks {
-            let target = Target::format(&project_id, &task_id)?;
+        if !project.is_affected(touched_files) {
+            continue;
+        }
 
-            // Besides touched files, we should only run a target if they
-            // have outputs, or the `run_in_ci` option is true
-            if !task.outputs.is_empty() || task.options.run_in_ci {
-                dep_graph.run_target_if_touched(&target, &touched_files, &workspace.projects)?;
+        for (task_id, task) in &project.tasks {
+            let target = Target::format(&project_id, task_id)?;
+
+            if task.should_run_in_ci() {
+                if task.is_affected(touched_files)? {
+                    targets.push(target);
+                }
             } else {
                 debug!(
                     target: TARGET,
@@ -49,6 +83,86 @@ pub async fn ci() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
+
+    if targets.is_empty() {
+        println!("No targets to run based on touched files");
+    } else {
+        print_targets(&targets);
+    }
+
+    Ok(targets)
+}
+
+/// Distribute targets across jobs if parallelism is enabled.
+fn distribute_targets_across_jobs(options: &CiOptions, targets: TargetList) -> TargetList {
+    if options.job.is_none() || options.job_total.is_none() {
+        return targets;
+    }
+
+    let job_index = options.job.unwrap();
+    let job_total = options.job_total.unwrap();
+    let batch_size = targets.len() / job_total;
+    let batched_targets;
+
+    println!(
+        "--- Distributing targets across jobs ({} / {})",
+        job_index + 1,
+        job_total
+    );
+    println!("Job index: {}", job_index);
+    println!("Job total: {}", job_index);
+    println!("Batch size: {}", batch_size);
+    println!("Batched targets:");
+
+    if job_index == 0 {
+        batched_targets = targets[0..batch_size].to_vec();
+    } else if job_index == job_total - 1 {
+        batched_targets = targets[(batch_size * job_index)..].to_vec();
+    } else {
+        batched_targets =
+            targets[(batch_size * job_index)..(batch_size * (job_index + 1))].to_vec();
+    }
+
+    print_targets(&batched_targets);
+
+    batched_targets
+}
+
+/// Generate a dependency graph with the runnable targets.
+fn generate_dep_graph(
+    workspace: &Workspace,
+    targets: &TargetList,
+) -> Result<DepGraph, WorkspaceError> {
+    println!("--- Generating dependency and task graphs");
+
+    let mut dep_graph = DepGraph::default();
+
+    for target in targets {
+        dep_graph.run_target(target, &workspace.projects)?;
+    }
+
+    println!("Target count: {}", targets.len());
+    println!("Node count: {}", dep_graph.graph.node_count());
+
+    Ok(dep_graph)
+}
+
+pub struct CiOptions {
+    pub job: Option<usize>,
+    pub job_total: Option<usize>,
+}
+
+pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
+    let workspace = Workspace::load().await?;
+    let touched_files = gather_touched_files(&workspace).await?;
+    let targets = gather_runnable_targets(&workspace, &touched_files)?;
+
+    if targets.is_empty() {
+        return Ok(());
+    }
+
+    let targets = distribute_targets_across_jobs(&options, targets);
+    let dep_graph = generate_dep_graph(&workspace, &targets)?;
 
     Ok(())
 }

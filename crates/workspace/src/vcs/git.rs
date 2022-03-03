@@ -179,11 +179,15 @@ impl Vcs for Git {
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {
+        if self.default_branch == branch {
+            return true;
+        }
+
         if self.default_branch.contains('/') {
             return self.default_branch.ends_with(&format!("/{}", branch));
         }
 
-        self.default_branch == branch
+        false
     }
 
     async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {

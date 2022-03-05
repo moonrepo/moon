@@ -89,6 +89,13 @@ fn gather_runnable_targets(
     let mut targets = vec![];
     let globally_affected = workspace.projects.is_globally_affected(touched_files);
 
+    if globally_affected {
+        debug!(
+            target: TARGET,
+            "Moon files touched, marking all targets as affected",
+        );
+    }
+
     for project_id in workspace.projects.ids() {
         let project = workspace.projects.load(&project_id)?;
 

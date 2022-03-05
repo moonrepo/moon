@@ -233,6 +233,13 @@ impl DepGraph {
     ) -> Result<Option<NodeIndex>, WorkspaceError> {
         let globally_affected = projects.is_globally_affected(touched_files);
 
+        if globally_affected {
+            trace!(
+                target: TARGET,
+                "Moon files touched, marking all targets as affected",
+            );
+        }
+
         // Validate project first
         let (project_id, task_id) = Target::parse(target)?;
         let project = projects.load(&project_id)?;

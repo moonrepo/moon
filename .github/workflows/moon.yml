@@ -23,4 +23,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: run
-          args: -- --logLevel trace ci
+          args: -- --logLevel trace ci --base $GITHUB_BASE_REF

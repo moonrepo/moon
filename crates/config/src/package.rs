@@ -1,5 +1,6 @@
 // package.json
 
+use json;
 use moon_error::MoonError;
 use moon_utils::fs;
 use serde::{Deserialize, Serialize};
@@ -149,6 +150,9 @@ pub struct PackageJson {
 
     // Non-standard
     #[serde(skip)]
+    pub dirty: bool,
+
+    #[serde(skip)]
     pub path: PathBuf,
 }
 
@@ -161,11 +165,16 @@ impl PackageJson {
     }
 
     pub async fn save(&self) -> Result<(), MoonError> {
-        fs::write_json(&self.path, self, true).await?;
+        if self.dirty {
+            write_preserved_json(&self.path, self).await?;
+        }
 
         Ok(())
     }
 
+    /// Add a package and version range to the `dependencies` field.
+    /// If `is_missing` is true, only add if it doesn't already exist.
+    /// Return true if the new value is different from the old value.
     pub fn add_dependency(&mut self, name: String, range: String, if_missing: bool) -> bool {
         let mut dependencies = match &self.dependencies {
             Some(deps) => deps.clone(),
@@ -179,13 +188,14 @@ impl PackageJson {
 
         dependencies.insert(name, range);
 
+        self.dirty = true;
         self.dependencies = Some(dependencies);
 
         true
     }
 
-    /// Add a version range to the `engines` field and return true if
-    /// the new value is different from the old value.
+    /// Add a version range to the `engines` field.
+    /// Return true if the new value is different from the old value.
     pub fn add_engine(&mut self, engine: &str, range: &str) -> bool {
         if let Some(engines) = &mut self.engines {
             if engines.contains_key(engine) && engines.get(engine).unwrap() == range {
@@ -196,6 +206,21 @@ impl PackageJson {
         } else {
             self.engines = Some(BTreeMap::from([(engine.to_owned(), range.to_owned())]));
         }
+
+        self.dirty = true;
+
+        true
+    }
+
+    /// Set the `packageManager` field.
+    /// Return true if the new value is different from the old value.
+    pub fn set_package_manager(&mut self, value: &str) -> bool {
+        if self.package_manager.is_some() && self.package_manager.as_ref().unwrap() == value {
+            return false;
+        }
+
+        self.dirty = true;
+        self.package_manager = Some(value.to_owned());
 
         true
     }
@@ -346,46 +371,77 @@ pub enum Workspaces {
     Object(WorkspacesExpanded),
 }
 
+// https://github.com/serde-rs/json/issues/858
+// `serde-json` does NOT preserve original order when serializing the struct,
+// so we need to hack around this by using the `json` crate and manually
+// making the changes. For this to work correctly, we need to read the json
+// file again and parse it with `json`, then stringify it with `json`.
+async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
+    let contents = fs::read_json_string(path).await?;
+    let mut data = json::parse(&contents).unwrap();
+
+    // We only need to set fields that we modify within Moon,
+    // otherwise it's a ton of overhead and maintenance!
+    if let Some(dependencies) = &package.dependencies {
+        data["dependencies"] = json::from(dependencies.clone());
+    }
+
+    if let Some(engines) = &package.engines {
+        data["engines"] = json::from(engines.clone());
+    }
+
+    if let Some(package_manager) = &package.package_manager {
+        data["packageManager"] = json::from(package_manager.clone());
+    }
+
+    let mut data = json::stringify_pretty(data, 2);
+    data += "\n"; // Always add trailing newline
+
+    fs::write(path, data).await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     use assert_fs::prelude::*;
 
-    #[tokio::test]
-    async fn skips_none_when_writing() {
-        let dir = assert_fs::TempDir::new().unwrap();
-        let file = dir.child("package.json");
-        file.write_str("{}").unwrap();
-
-        let mut package = PackageJson::load(file.path()).await.unwrap();
-        package.name = Some(String::from("hello"));
-        package.description = Some(String::from("world"));
-        package.keywords = Some(moon_utils::string_vec!["a", "b", "c"]);
-        package.save().await.unwrap();
-
-        let expected = serde_json::json!({
-            "description": "world",
-            "keywords": ["a", "b", "c"],
-            "name": "hello",
-        });
-
-        assert_eq!(
-            fs::read_json_string(file.path()).await.unwrap(),
-            serde_json::to_string_pretty(&expected).unwrap(),
-        );
-    }
-
     // #[tokio::test]
-    // async fn preserves_order_when_de_to_ser() {
-    //     let json = r#"{"name": "hello", "description": "world", "private": true}"#;
-
+    // async fn skips_none_when_writing() {
     //     let dir = assert_fs::TempDir::new().unwrap();
     //     let file = dir.child("package.json");
-    //     file.write_str(json).unwrap();
+    //     file.write_str("{}").unwrap();
 
-    //     let package = PackageJson::load(file.path()).await.unwrap();
+    //     let mut package = PackageJson::load(file.path()).await.unwrap();
+    //     package.name = Some(String::from("hello"));
+    //     package.description = Some(String::from("world"));
+    //     package.keywords = Some(moon_utils::string_vec!["a", "b", "c"]);
     //     package.save().await.unwrap();
 
-    //     assert_eq!(fs::read_json_string(file.path()).await.unwrap(), json,);
+    //     let expected = serde_json::json!({
+    //         "description": "world",
+    //         "keywords": ["a", "b", "c"],
+    //         "name": "hello",
+    //     });
+
+    //     assert_eq!(
+    //         fs::read_json_string(file.path()).await.unwrap(),
+    //         serde_json::to_string_pretty(&expected).unwrap(),
+    //     );
     // }
+
+    #[tokio::test]
+    async fn preserves_order_when_de_to_ser() {
+        let json = r#"{"name": "hello", "description": "world", "private": true}"#;
+
+        let dir = assert_fs::TempDir::new().unwrap();
+        let file = dir.child("package.json");
+        file.write_str(json).unwrap();
+
+        let package = PackageJson::load(file.path()).await.unwrap();
+        package.save().await.unwrap();
+
+        assert_eq!(fs::read_json_string(file.path()).await.unwrap(), json,);
+    }
 }

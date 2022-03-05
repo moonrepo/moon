@@ -15,8 +15,7 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=12.17.0",
-    "npm": ">=6.13.0"
+    "node": ">=12.17.0"
   },
   "devDependencies": {
     "@moonrepo/cli": "workspace:*",

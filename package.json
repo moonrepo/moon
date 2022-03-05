@@ -14,9 +14,6 @@
   "workspaces": [
     "packages/*"
   ],
-  "engines": {
-    "node": "16.14.0"
-  },
   "devDependencies": {
     "@moonrepo/cli": "workspace:*",
     "@types/node": "^17.0.15",

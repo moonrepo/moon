@@ -1,7 +1,9 @@
 use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::project::Project;
+use crate::types::TouchedFilePaths;
 use itertools::Itertools;
+use moon_config::constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_config::{GlobalProjectConfig, ProjectID};
 use moon_logger::{color, debug, trace};
 use petgraph::dot::{Config, Dot};
@@ -126,6 +128,21 @@ impl ProjectGraph {
             .collect();
 
         Ok(deps)
+    }
+
+    /// Return true if global config files have been touched.
+    pub fn is_globally_affected(&self, touched_files: &TouchedFilePaths) -> bool {
+        let cfg_dir = self.workspace_root.join(CONFIG_DIRNAME);
+
+        if touched_files.contains(&cfg_dir.join(CONFIG_WORKSPACE_FILENAME)) {
+            return true;
+        }
+
+        if touched_files.contains(&cfg_dir.join(CONFIG_PROJECT_FILENAME)) {
+            return true;
+        }
+
+        false
     }
 
     /// Format as a DOT string.

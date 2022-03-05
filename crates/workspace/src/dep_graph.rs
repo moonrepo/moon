@@ -231,11 +231,20 @@ impl DepGraph {
         touched_files: &TouchedFilePaths,
         projects: &ProjectGraph,
     ) -> Result<Option<NodeIndex>, WorkspaceError> {
+        let globally_affected = projects.is_globally_affected(touched_files);
+
+        if globally_affected {
+            trace!(
+                target: TARGET,
+                "Moon files touched, marking all targets as affected",
+            );
+        }
+
         // Validate project first
         let (project_id, task_id) = Target::parse(target)?;
         let project = projects.load(&project_id)?;
 
-        if !project.is_affected(touched_files) {
+        if !globally_affected && !project.is_affected(touched_files) {
             trace!(
                 target: TARGET,
                 "Project {} not affected based on touched files, skipping",
@@ -248,7 +257,7 @@ impl DepGraph {
         // Validate task exists for project
         let task = project.get_task(&task_id)?;
 
-        if !task.is_affected(touched_files)? {
+        if !globally_affected && !task.is_affected(touched_files)? {
             trace!(
                 target: TARGET,
                 "Project {} task {} not affected based on touched files, skipping",

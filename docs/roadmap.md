@@ -72,7 +72,7 @@
 - [x] `run` command to run targets
   - [x] Args after `--` are passed to the underlying command
   - [x] Only run on affected changes
-- [ ] `ci` command for smart running affected targets (below)
+- [x] `ci` command for smart running affected targets (below)
 
 ## CI
 

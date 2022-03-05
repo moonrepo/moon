@@ -94,6 +94,8 @@ pub enum Commands {
     },
 
     // JOBS
+
+    // moon ci
     #[clap(
         name = "ci",
         about = "Run all affected projects and tasks in a CI environment.",

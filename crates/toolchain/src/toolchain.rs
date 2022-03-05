@@ -152,8 +152,9 @@ impl Toolchain {
 
         // Install pnpm *after* setting the corepack package manager
         if let Some(pnpm) = &self.pnpm {
-            if using_corepack {
-                root_package.package_manager = Some(format!("pnpm@{}", pnpm.config.version));
+            let pnpm_version = format!("pnpm@{}", pnpm.config.version);
+
+            if using_corepack && root_package.set_package_manager(&pnpm_version) {
                 root_package.save().await?;
             }
 
@@ -162,8 +163,9 @@ impl Toolchain {
 
         // Install yarn *after* setting the corepack package manager
         if let Some(yarn) = &self.yarn {
-            if using_corepack {
-                root_package.package_manager = Some(format!("yarn@{}", yarn.config.version));
+            let yarn_version = format!("yarn@{}", yarn.config.version);
+
+            if using_corepack && root_package.set_package_manager(&yarn_version) {
                 root_package.save().await?;
             }
 

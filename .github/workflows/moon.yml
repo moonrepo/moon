@@ -18,6 +18,16 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.yarn/cache
+            ./.yarn/install-state.gz
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+      - uses: actions/cache@v2
+        with:
+          path: ~/.moon/tools
+          key: ${{ runner.os }}-moon
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: 1.58.0

@@ -137,8 +137,26 @@ impl Vcs for Git {
         }))
     }
 
-    // https://git-scm.com/docs/git-status#_short_format
-    async fn get_touched_files_against_branch(&self, branch: &str) -> VcsResult<TouchedFiles> {
+    async fn get_touched_files_against_previous_revision(
+        &self,
+        revision: &str,
+    ) -> VcsResult<TouchedFiles> {
+        let rev = if self.is_default_branch(revision) {
+            "HEAD"
+        } else {
+            revision
+        };
+
+        Ok(self
+            .get_touched_files_between_revisions(&format!("{}~1", rev), rev)
+            .await?)
+    }
+
+    async fn get_touched_files_between_revisions(
+        &self,
+        base_revision: &str,
+        revision: &str,
+    ) -> VcsResult<TouchedFiles> {
         let output = self
             .run_command(
                 vec![
@@ -147,8 +165,8 @@ impl Vcs for Git {
                     "--name-status",
                     "--no-color",
                     "--relative",
-                    &self.default_branch,
-                    branch,
+                    base_revision,
+                    revision,
                 ],
                 false,
             )
@@ -166,6 +184,18 @@ impl Vcs for Git {
 
             (status as char, ' ', file.to_owned())
         }))
+    }
+
+    fn is_default_branch(&self, branch: &str) -> bool {
+        if self.default_branch == branch {
+            return true;
+        }
+
+        if self.default_branch.contains('/') {
+            return self.default_branch.ends_with(&format!("/{}", branch));
+        }
+
+        false
     }
 
     async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {

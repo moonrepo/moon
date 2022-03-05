@@ -7,6 +7,10 @@
 - [Projects](#projects)
   - [`project`](#project)
   - [`project-graph`](#project-graph)
+- [Jobs](#jobs)
+  - [`ci`](#ci)
+    - [Revision comparison](#revision-comparison)
+    - [Parallelism](#parallelism)
 
 ## Environment
 
@@ -77,3 +81,48 @@ $ moon project-graph > graph.dot
 
 > A project ID can be passed to focus the graph to only that project and it's dependencies. For
 > example, `moon project-graph web`.
+
+## Jobs
+
+### `ci`
+
+The `ci` command is a special command that should be ran in a continuous integration (CI)
+environment, as it does all the heavy lifting necessary for effectively running jobs. It achieves
+this by doing the following:
+
+- Determines touched files by comparing the current HEAD against the base.
+- Determines all targets (project + tasks) that need to run based on touched files.
+- Additionally runs affected targets dependencies _and_ dependents.
+- Generates a task and dependency graph.
+- Installs the toolchain, Node.js, and npm dependencies.
+- Runs all tasks within the graph using a thread pool.
+- Displays stats about all passing, failed, and invalid tasks.
+
+```shell
+$ moon ci
+```
+
+#### Revision comparison
+
+By default the command will compare the current branches HEAD against the base revision, which is
+typically the configured `vcs.defaultBranch` (master, main, trunk, etc). Both of these can be
+customized with the `--base` and `--head` options respectively.
+
+```shell
+$ moon ci --base another-branch --head <SHA>
+```
+
+#### Parallelism
+
+If your CI environment supports splitting up tasks across multiple jobs, then you can utilize Moon's
+built in parallelism, by passing `--jobTotal` and `--job` options. The `--jobTotal` option is an
+integer of the total number of jobs available, and `--job` is the current index (0 based) amongst
+the total.
+
+When these options are passed, Moon will only run affected targets based on the current job slice.
+
+```shell
+$ moon ci --job 1 --jobTotal 5
+```
+
+> Your CI environment may provide environment variables for these 2 values.

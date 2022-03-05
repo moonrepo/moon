@@ -14,8 +14,6 @@ tasks:
       - 'build'
       - '--addEngines'
       - '--addExports'
-    deps:
-      - 'runtime:typecheck'
     inputs:
       - '@globs(sources)'
       - 'package.json'
@@ -24,6 +22,66 @@ tasks:
     outputs:
       - 'dts'
       - 'mjs'
+
+  format:
+    command: 'prettier'
+    args:
+      - '--check'
+      - '--config'
+      - '@in(3)'
+      - '--ignore-path'
+      - '@in(2)'
+      - '--no-error-on-unmatched-pattern'
+      - '.'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '/.prettierignore'
+      - '/prettier.config.js'
+
+  lint:
+    command: 'eslint'
+    args:
+      - '--cache'
+      - '--cache-location'
+      - '.eslintcache'
+      - '--color'
+      - '--ext'
+      - '.ts,.tsx'
+      - '--fix'
+      - '--ignore-path'
+      - '@in(4)'
+      - '--exit-on-fatal-error'
+      - '--no-error-on-unmatched-pattern'
+      - '--report-unused-disable-directives'
+      - '.'
+    deps:
+      - 'runtime:typecheck'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'package.json'
+      - 'tsconfig.json'
+      - '/.eslintignore'
+      - '/.eslintrc.js'
+      - '/package.json'
+      - '/tsconfig.eslint.json'
+
+  test:
+    command: 'jest'
+    args:
+      - '--cache'
+      - '--color'
+      - '--preset'
+      - 'jest-preset-beemo'
+      - '--passWithNoTests'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'package.json'
+      - 'jest.config.js'
+    outputs:
+      - 'dts'
 
   typecheck:
     command: 'tsc'

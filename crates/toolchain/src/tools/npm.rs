@@ -1,10 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_version, get_path_env_var, is_ci};
+use crate::helpers::{get_bin_version, get_path_env_var};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_logger::{color, debug, trace};
+use moon_utils::is_ci;
 use moon_utils::process::{create_command, exec_command, Output};
 use std::env::consts;
 use std::path::PathBuf;

@@ -156,7 +156,7 @@ impl DepGraph {
         trace!(
             target: TARGET,
             "Target {} does not exist in the dependency graph, inserting",
-            color::id(target),
+            color::target(target),
         );
 
         let (project_id, task_id) = Target::parse(target)?;
@@ -187,7 +187,7 @@ impl DepGraph {
                 target: TARGET,
                 "Adding dependencies {} from target {}",
                 dep_names.join(", "),
-                color::id(target),
+                color::target(target),
             );
 
             for dep_target in &task.deps {
@@ -197,6 +197,32 @@ impl DepGraph {
         }
 
         Ok(node)
+    }
+
+    pub fn run_target_dependents(
+        &mut self,
+        target: &str,
+        projects: &ProjectGraph,
+    ) -> Result<(), WorkspaceError> {
+        trace!(
+            target: TARGET,
+            "Adding dependents to run for target {}",
+            color::target(target),
+        );
+
+        let (project_id, task_id) = Target::parse(target)?;
+        let project = projects.load(&project_id)?;
+        let dependents = projects.get_dependents_of(&project)?;
+
+        for dependent_id in dependents {
+            let dependent = projects.load(&dependent_id)?;
+
+            if dependent.tasks.contains_key(&task_id) {
+                self.run_target(&Target::format(&dependent_id, &task_id)?, projects)?;
+            }
+        }
+
+        Ok(())
     }
 
     pub fn run_target_if_touched(
@@ -284,7 +310,7 @@ impl DepGraph {
     fn detect_cycle(&self) -> Result<(), WorkspaceError> {
         use petgraph::algo::kosaraju_scc;
 
-        // Not exactly accurate, revisit!!!
+        // TODO: Not exactly accurate, revisit!!!
         let scc = kosaraju_scc(&self.graph);
         let cycle = scc
             .last()

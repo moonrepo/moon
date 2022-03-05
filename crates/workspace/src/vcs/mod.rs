@@ -28,12 +28,38 @@ pub struct TouchedFiles {
 
 #[async_trait]
 pub trait Vcs {
+    /// Get the local checkout branch name.
     async fn get_local_branch(&self) -> VcsResult<String>;
+
+    /// Get the revision hash/number of the local branch's HEAD.
     async fn get_local_branch_hash(&self) -> VcsResult<String>;
+
+    /// Get the upstream checkout default name. Typically master/main on git, and trunk on svn.
     fn get_default_branch(&self) -> &str;
+
+    /// Get the revision hash/number of the default branch's HEAD.
     async fn get_default_branch_hash(&self) -> VcsResult<String>;
+
+    /// Determine touched files from the local index / working tree.
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;
-    async fn get_touched_files_against_branch(&self, branch: &str) -> VcsResult<TouchedFiles>;
+
+    /// Determine touched files between a revision and it's self -1 revision.
+    async fn get_touched_files_against_previous_revision(
+        &self,
+        revision: &str,
+    ) -> VcsResult<TouchedFiles>;
+
+    /// Determine touched files between 2 revisions.
+    async fn get_touched_files_between_revisions(
+        &self,
+        base_revision: &str,
+        revision: &str,
+    ) -> VcsResult<TouchedFiles>;
+
+    /// Return true if the provided branch matches the default branch.
+    fn is_default_branch(&self, branch: &str) -> bool;
+
+    /// Execute the underlying vcs binary.
     async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String>;
 }
 

@@ -11,7 +11,11 @@ pub enum TaskResultStatus {
 pub struct TaskResult {
     pub duration: Option<Duration>,
 
+    pub error: Option<String>,
+
     pub exit_code: i8,
+
+    pub label: Option<String>,
 
     pub node_index: NodeIndex,
 
@@ -28,7 +32,9 @@ impl TaskResult {
     pub fn new(node_index: NodeIndex) -> Self {
         TaskResult {
             duration: None,
+            error: None,
             exit_code: -1,
+            label: None,
             node_index,
             start_time: Instant::now(),
             status: TaskResultStatus::Running,
@@ -42,7 +48,8 @@ impl TaskResult {
         self.duration = Some(self.start_time.elapsed());
     }
 
-    pub fn fail(&mut self) {
+    pub fn fail(&mut self, error: String) {
+        self.error = Some(error);
         self.status = TaskResultStatus::Failed;
         self.duration = Some(self.start_time.elapsed());
     }

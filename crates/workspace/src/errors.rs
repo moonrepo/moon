@@ -13,9 +13,9 @@ pub enum WorkspaceError {
     DepGraphUnknownNode(usize),
 
     #[error("Task runner failed to run: {0}")]
-    TaskRunnerFailure(#[from] tokio::task::JoinError),
+    TaskRunnerFailure(String),
 
-    #[error("Target <id>{0}</id> failed to run.")]
+    #[error("Target <target>{0}</target> failed to run.")]
     TaskRunnerFailedTarget(String),
 
     #[error(

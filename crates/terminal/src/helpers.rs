@@ -27,6 +27,7 @@ pub fn replace_style_tokens(value: &str) -> String {
             "id" => color::id(inner),
             "muted" => color::muted_light(inner),
             "path" => color::path(inner),
+            "target" => color::target(inner),
             "shell" => color::shell(inner),
             "symbol" => color::symbol(inner),
             "url" => color::url(inner),

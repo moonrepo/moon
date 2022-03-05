@@ -34,3 +34,7 @@ pub fn label_run_target_failed(target: &str) -> String {
         style(target).bold()
     )
 }
+
+pub fn bold(value: &str) -> String {
+    format!("{}", style(value).bold())
+}

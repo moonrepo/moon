@@ -9,22 +9,6 @@ use moon_logger::{color, debug, trace};
 use moon_utils::fs;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
-
-fn handle_canonicalize(path: &Path) -> Result<PathBuf, ProjectError> {
-    match path.canonicalize() {
-        Ok(p) => Ok(p),
-        Err(e) => {
-            // println!("{:#?}", e);
-
-            if e.kind() == std::io::ErrorKind::NotFound {
-                return Err(ProjectError::MissingFile(path.to_path_buf()));
-            }
-
-            Err(ProjectError::InvalidUtf8File(path.to_path_buf()))
-        }
-    }
-}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -143,7 +127,7 @@ impl Task {
         debug!(
             target: "moon:project:task",
             "Creating task {} for command {}",
-            color::id(&target),
+            color::target(&target),
             color::shell(&task.command)
         );
 
@@ -155,7 +139,7 @@ impl Task {
         trace!(
             target: "moon:project:task",
             "Expanding args for task {}",
-            color::id(&self.target),
+            color::target(&self.target),
         );
 
         let mut args: Vec<String> = vec![];
@@ -202,16 +186,15 @@ impl Task {
         trace!(
             target: "moon:project:task",
             "Expanding inputs for task {}",
-            color::id(&self.target),
+            color::target(&self.target),
         );
 
         for input in &token_resolver.resolve(&self.inputs, None)? {
-            // Globs are separate from paths as we can't canonicalize it,
-            // and we need them to be absolute for it to match correctly.
+            // We cant canonicalize here as these inputs may not exist!
             if fs::is_path_glob(input) {
                 self.input_globs.push(fs::normalize_glob(input));
             } else {
-                self.input_paths.insert(handle_canonicalize(input)?);
+                self.input_paths.insert(fs::normalize(input));
             }
         }
 
@@ -223,7 +206,7 @@ impl Task {
         trace!(
             target: "moon:project:task",
             "Expanding outputs for task {}",
-            color::id(&self.target),
+            color::target(&self.target),
         );
 
         for output in &token_resolver.resolve(&self.outputs, None)? {
@@ -233,9 +216,7 @@ impl Task {
                     self.target.clone(),
                 ));
             } else {
-                // Dont canonicalize as it checks if the file exists,
-                // which is something we *do not* want for outputs!
-                self.output_paths.insert(output.clone());
+                self.output_paths.insert(fs::normalize(output));
             }
         }
 
@@ -267,6 +248,8 @@ impl Task {
             // https://github.com/BurntSushi/ripgrep/issues/2001
             #[cfg(windows)]
             {
+                use std::path::PathBuf;
+
                 if globs.is_match(&PathBuf::from(fs::normalize_glob(file))) {
                     return Ok(true);
                 }
@@ -318,6 +301,10 @@ impl Task {
         if let Some(type_of) = &config.type_of {
             self.type_of = type_of.clone();
         }
+    }
+
+    pub fn should_run_in_ci(&self) -> bool {
+        !self.outputs.is_empty() || self.options.run_in_ci
     }
 
     fn merge_env_vars(
@@ -500,27 +487,6 @@ mod tests {
                 &project_root,
                 Some(TaskConfig {
                     inputs: Some(string_vec!["file.ts", "src/*"]),
-                    ..TaskConfig::default()
-                }),
-            )
-            .unwrap();
-
-            let mut set = HashSet::new();
-            set.insert(project_root.join("another.rs"));
-
-            assert!(!task.is_affected(&set).unwrap());
-        }
-
-        #[test]
-        #[should_panic(expected = "MissingFile")]
-        fn panics_for_missing_file() {
-            let workspace_root = get_fixtures_dir("base");
-            let project_root = workspace_root.join("files-and-dirs");
-            let task = create_expanded_task(
-                &workspace_root,
-                &project_root,
-                Some(TaskConfig {
-                    inputs: Some(string_vec!["missing.ts"]),
                     ..TaskConfig::default()
                 }),
             )

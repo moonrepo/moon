@@ -1,9 +1,9 @@
 use clap::ArgEnum;
 use console::Term;
-use humantime::format_duration;
 use moon_logger::color;
 use moon_project::TouchedFilePaths;
 use moon_terminal::ExtendedTerm;
+use moon_utils::time;
 use moon_workspace::{
     DepGraph, TaskResult, TaskResultStatus, TaskRunner, Workspace, WorkspaceError,
 };
@@ -46,7 +46,7 @@ async fn get_touched_files(
     let touched_files = if local {
         vcs.get_touched_files().await?
     } else {
-        vcs.get_touched_files_against_branch(&vcs.get_local_branch().await?)
+        vcs.get_touched_files_between_revisions(vcs.get_default_branch(), "HEAD")
             .await?
     };
 
@@ -109,7 +109,7 @@ pub fn render_result_stats(
     let term = Term::buffered_stdout();
     term.write_line("")?;
     term.render_entry("Tasks", &counts_message.join(&color::muted(", ")))?;
-    term.render_entry(" Time", &format_duration(duration).to_string())?;
+    term.render_entry(" Time", &time::elapsed(duration))?;
     term.write_line("")?;
     term.flush()?;
 
@@ -149,6 +149,7 @@ pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::e
     let mut runner = TaskRunner::new(workspace);
 
     let results = runner
+        .bail_on_error()
         .set_passthrough_args(options.passthrough)
         .set_primary_target(target)
         .run(dep_graph)

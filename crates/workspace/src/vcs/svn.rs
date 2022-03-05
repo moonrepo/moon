@@ -30,8 +30,8 @@ impl Svn {
         String::new()
     }
 
-    async fn get_hash_for_rev(&self, rev: &str) -> VcsResult<String> {
-        let output = self.run_command(vec!["info", "-r", rev], true).await?;
+    async fn get_hash_for_revision(&self, revision: &str) -> VcsResult<String> {
+        let output = self.run_command(vec!["info", "-r", revision], true).await?;
 
         Ok(self.extract_line_from_info("Revision:", &output))
     }
@@ -119,7 +119,7 @@ impl Vcs for Svn {
     }
 
     async fn get_local_branch_hash(&self) -> VcsResult<String> {
-        Ok(self.get_hash_for_rev("BASE").await?)
+        Ok(self.get_hash_for_revision("BASE").await?)
     }
 
     fn get_default_branch(&self) -> &str {
@@ -127,7 +127,7 @@ impl Vcs for Svn {
     }
 
     async fn get_default_branch_hash(&self) -> VcsResult<String> {
-        Ok(self.get_hash_for_rev("HEAD").await?)
+        Ok(self.get_hash_for_revision("HEAD").await?)
     }
 
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
@@ -137,17 +137,30 @@ impl Vcs for Svn {
         Ok(Svn::process_touched_files(output))
     }
 
-    // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.diff.html
-    async fn get_touched_files_against_branch(&self, _branch: &str) -> VcsResult<TouchedFiles> {
-        let trunk_rev = self.get_default_branch_hash().await?;
-        let branch_rev = self.get_local_branch_hash().await?;
+    async fn get_touched_files_against_previous_revision(
+        &self,
+        revision: &str,
+    ) -> VcsResult<TouchedFiles> {
+        let number: usize = self.get_hash_for_revision(revision).await?.parse().unwrap();
 
+        // TODO: this is definitely not right...
+        Ok(self
+            .get_touched_files_between_revisions(&(number - 1).to_string(), &(number).to_string())
+            .await?)
+    }
+
+    // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.diff.html
+    async fn get_touched_files_between_revisions(
+        &self,
+        base_revision: &str,
+        revision: &str,
+    ) -> VcsResult<TouchedFiles> {
         let output = self
             .run_command(
                 vec![
                     "diff",
                     "-r",
-                    &format!("{}:{}", trunk_rev, branch_rev),
+                    &format!("{}:{}", base_revision, revision),
                     "--summarize",
                 ],
                 false,
@@ -155,6 +168,10 @@ impl Vcs for Svn {
             .await?;
 
         Ok(Svn::process_touched_files(output))
+    }
+
+    fn is_default_branch(&self, branch: &str) -> bool {
+        self.default_branch == branch
     }
 
     async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {

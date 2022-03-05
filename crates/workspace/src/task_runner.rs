@@ -36,6 +36,8 @@ async fn run_task(
 }
 
 pub struct TaskRunner {
+    bail: bool,
+
     pub duration: Option<Duration>,
 
     passthrough_args: Vec<String>,
@@ -50,11 +52,17 @@ impl TaskRunner {
         debug!(target: TARGET, "Creating task runner",);
 
         TaskRunner {
+            bail: false,
             duration: None,
             passthrough_args: Vec::new(),
             primary_target: String::new(),
             workspace: Arc::new(RwLock::new(workspace)),
         }
+    }
+
+    pub fn bail_on_error(&mut self) -> &mut Self {
+        self.bail = true;
+        self
     }
 
     pub async fn cleanup(&self) -> Result<(), WorkspaceError> {
@@ -112,6 +120,8 @@ impl TaskRunner {
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(task) {
+                        result.label = Some(node.label());
+
                         let log_target_name =
                             format!("{}:batch:{}:{}", TARGET, batch_count, task_count);
                         let log_task_label = color::muted_light(&node.label());
@@ -126,7 +136,7 @@ impl TaskRunner {
                         )
                         .await
                         {
-                            result.fail();
+                            result.fail(error.to_string());
 
                             trace!(
                                 target: &log_target_name,
@@ -134,8 +144,6 @@ impl TaskRunner {
                                 log_task_label,
                                 result.duration.unwrap()
                             );
-
-                            return Err(error);
                         } else {
                             result.pass();
 
@@ -160,12 +168,18 @@ impl TaskRunner {
             // while also handling and propagating errors
             for handle in task_handles {
                 match handle.await {
-                    Ok(Ok(result)) => results.push(result),
+                    Ok(Ok(result)) => {
+                        if self.bail && result.error.is_some() {
+                            return Err(WorkspaceError::TaskRunnerFailure(result.error.unwrap()));
+                        }
+
+                        results.push(result);
+                    }
                     Ok(Err(e)) => {
                         return Err(e);
                     }
                     Err(e) => {
-                        return Err(WorkspaceError::TaskRunnerFailure(e));
+                        return Err(WorkspaceError::TaskRunnerFailure(e.to_string()));
                     }
                 }
             }

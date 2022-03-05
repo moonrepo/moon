@@ -72,13 +72,13 @@
 - [x] `run` command to run targets
   - [x] Args after `--` are passed to the underlying command
   - [x] Only run on affected changes
-- [ ] `ci` command for smart running affected targets (below)
+- [x] `ci` command for smart running affected targets (below)
 
 ## CI
 
-- [ ] Compares PR against default branch
-- [ ] Runs tasks if `outputs` defined or `run_in_ci` is true
-- [ ] Runs dependencies AND dependents if primary project has changed
+- [x] Compares PR against default branch
+- [x] Runs tasks if `outputs` defined or `run_in_ci` is true
+- [x] Runs dependencies AND dependents
 
 # 0.2.0
 
@@ -94,6 +94,7 @@
 
 - [ ] Self referencing targets (`~`)
 - [ ] Deps referencing targets (`^`)
+- [ ] Add `@cache` token
 
 ## Task runner
 

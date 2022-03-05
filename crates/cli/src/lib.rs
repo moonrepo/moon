@@ -3,6 +3,7 @@ mod commands;
 mod helpers;
 
 use crate::commands::bin::bin;
+use crate::commands::ci::{ci, CiOptions};
 use crate::commands::init::init;
 use crate::commands::project::project;
 use crate::commands::project_graph::project_graph;
@@ -41,6 +42,20 @@ pub async fn run_cli() {
     match &args.command {
         Commands::Bin { tool } => {
             result = bin(tool).await;
+        }
+        Commands::Ci {
+            base,
+            head,
+            job,
+            job_total,
+        } => {
+            result = ci(CiOptions {
+                base: base.clone(),
+                head: head.clone(),
+                job: *job,
+                job_total: *job_total,
+            })
+            .await;
         }
         Commands::Init { dest, force } => {
             result = init(dest, *force).await;

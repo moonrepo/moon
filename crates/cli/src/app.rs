@@ -23,9 +23,12 @@ impl Default for LogLevel {
 }
 
 const HEADING_AFFECTED: &str = "Affected by changes";
+const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    // ENVIRONMENT
+
     // moon init
     #[clap(
         name = "init",
@@ -64,6 +67,8 @@ pub enum Commands {
     )]
     Teardown,
 
+    // PROJECTS
+
     // moon project <id>
     #[clap(
         name = "project",
@@ -86,6 +91,28 @@ pub enum Commands {
     ProjectGraph {
         #[clap(help = "ID of project to *only* graph")]
         id: Option<String>,
+    },
+
+    // JOBS
+
+    // moon ci
+    #[clap(
+        name = "ci",
+        about = "Run all affected projects and tasks in a CI environment.",
+        rename_all = "camelCase"
+    )]
+    Ci {
+        #[clap(long, help = "Base branch, commit, or revision to compare against")]
+        base: Option<String>,
+
+        #[clap(long, help = "Current branch, commit, or revision to compare with")]
+        head: Option<String>,
+
+        #[clap(long, help = "Index of the current job", help_heading = HEADING_PARALLELISM)]
+        job: Option<usize>,
+
+        #[clap(long, help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
+        job_total: Option<usize>,
     },
 
     // moon run [...targets]
@@ -141,7 +168,8 @@ pub enum Commands {
     disable_help_subcommand = true,
     dont_collapse_args_in_usage = true,
     propagate_version = true,
-    next_line_help = false
+    next_line_help = false,
+    rename_all = "camelCase"
 )]
 pub struct App {
     #[clap(arg_enum, long, short = 'L', help = "Lowest log level to output")]

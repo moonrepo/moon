@@ -23,7 +23,6 @@ moon_workspace = { path = "../workspace" }
 clap = { version = "3.1", features = ["derive", "wrap_help"] }
 console = "0.15"
 dialoguer = "0.9"
-humantime = "2.1"
 indicatif = "0.16"
 itertools = "0.10"
 strum = "0.23"

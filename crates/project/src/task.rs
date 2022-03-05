@@ -248,6 +248,8 @@ impl Task {
             // https://github.com/BurntSushi/ripgrep/issues/2001
             #[cfg(windows)]
             {
+                use std::path::PathBuf;
+
                 if globs.is_match(&PathBuf::from(fs::normalize_glob(file))) {
                     return Ok(true);
                 }

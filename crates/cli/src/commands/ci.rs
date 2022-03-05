@@ -1,14 +1,13 @@
 use crate::commands::run::render_result_stats;
 use console::Term;
-use humantime::format_duration;
 use itertools::Itertools;
 use moon_logger::{color, debug};
 use moon_project::{Target, TargetID, TouchedFilePaths};
 use moon_terminal::helpers::safe_exit;
 use moon_terminal::output;
-use moon_utils::is_ci;
+use moon_utils::{is_ci, time};
 use moon_workspace::DepGraph;
-use moon_workspace::{TaskRunner, Workspace, WorkspaceError};
+use moon_workspace::{TaskResultStatus, TaskRunner, Workspace, WorkspaceError};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -211,14 +210,22 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     print_header("Results");
 
     for result in &results {
-        let mut meta = vec![format_duration(result.duration.unwrap()).to_string()];
+        let status = match result.status {
+            TaskResultStatus::Passed => color::success("pass"),
+            TaskResultStatus::Failed => color::failure("fail"),
+            TaskResultStatus::Invalid => color::invalid("skip"),
+            _ => color::muted_light("oops"),
+        };
+
+        let mut meta = vec![time::elapsed(result.duration.unwrap())];
 
         if result.exit_code > 0 {
             meta.push(format!("exit code {}", result.exit_code));
         }
 
         term.write_line(&format!(
-            "{} {}\n",
+            "{} {} {}",
+            status,
             output::bold(result.label.as_ref().unwrap()),
             color::muted(&format!("({})", meta.join(", ")))
         ))?;

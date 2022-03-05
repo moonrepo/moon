@@ -1,9 +1,9 @@
 use clap::ArgEnum;
 use console::Term;
-use humantime::format_duration;
 use moon_logger::color;
 use moon_project::TouchedFilePaths;
 use moon_terminal::ExtendedTerm;
+use moon_utils::time;
 use moon_workspace::{
     DepGraph, TaskResult, TaskResultStatus, TaskRunner, Workspace, WorkspaceError,
 };
@@ -109,7 +109,7 @@ pub fn render_result_stats(
     let term = Term::buffered_stdout();
     term.write_line("")?;
     term.render_entry("Tasks", &counts_message.join(&color::muted(", ")))?;
-    term.render_entry(" Time", &format_duration(duration).to_string())?;
+    term.render_entry(" Time", &time::elapsed(duration))?;
     term.write_line("")?;
     term.flush()?;
 

@@ -2,6 +2,7 @@ pub mod fs;
 pub mod process;
 pub mod regex;
 pub mod test;
+pub mod time;
 
 use std::env;
 

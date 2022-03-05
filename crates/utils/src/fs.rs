@@ -1,6 +1,7 @@
 use async_recursion::async_recursion;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
+use path_clean::PathClean;
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -142,6 +143,10 @@ pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
     Ok(fs::metadata(path)
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?)
+}
+
+pub fn normalize(path: &Path) -> PathBuf {
+    path.to_path_buf().clean()
 }
 
 pub fn normalize_glob(path: &Path) -> String {

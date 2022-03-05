@@ -94,6 +94,7 @@
 
 - [ ] Self referencing targets (`~`)
 - [ ] Deps referencing targets (`^`)
+- [ ] Add `@cache` token
 
 ## Task runner
 

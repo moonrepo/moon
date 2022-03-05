@@ -25,14 +25,6 @@ pub enum ProjectError {
     #[error("Failed to parse and open <path>{0}/{1}</path>: {2}")]
     InvalidTsConfigJson(String, String, String),
 
-    #[error(
-        "Invalid or missing file <file_path>{0}</file_path>, must be a valid UTF-8 file path."
-    )]
-    InvalidUtf8File(PathBuf),
-
-    #[error("No file exists at path <file_path>{0}</file_path>.")]
-    MissingFile(PathBuf),
-
     #[error("No project exists at path <path>{0}</path>.")]
     MissingProject(String),
 

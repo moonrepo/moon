@@ -9,22 +9,6 @@ use moon_logger::{color, debug, trace};
 use moon_utils::fs;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::path::{Path, PathBuf};
-
-fn handle_canonicalize(path: &Path) -> Result<PathBuf, ProjectError> {
-    match path.canonicalize() {
-        Ok(p) => Ok(p),
-        Err(e) => {
-            // println!("{:#?}", e);
-
-            if e.kind() == std::io::ErrorKind::NotFound {
-                return Err(ProjectError::MissingFile(path.to_path_buf()));
-            }
-
-            Err(ProjectError::InvalidUtf8File(path.to_path_buf()))
-        }
-    }
-}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -206,12 +190,11 @@ impl Task {
         );
 
         for input in &token_resolver.resolve(&self.inputs, None)? {
-            // Globs are separate from paths as we can't canonicalize it,
-            // and we need them to be absolute for it to match correctly.
+            // We cant canonicalize here as these inputs may not exist!
             if fs::is_path_glob(input) {
                 self.input_globs.push(fs::normalize_glob(input));
             } else {
-                self.input_paths.insert(handle_canonicalize(input)?);
+                self.input_paths.insert(fs::normalize(input));
             }
         }
 
@@ -233,9 +216,7 @@ impl Task {
                     self.target.clone(),
                 ));
             } else {
-                // Dont canonicalize as it checks if the file exists,
-                // which is something we *do not* want for outputs!
-                self.output_paths.insert(output.clone());
+                self.output_paths.insert(fs::normalize(output));
             }
         }
 
@@ -504,27 +485,6 @@ mod tests {
                 &project_root,
                 Some(TaskConfig {
                     inputs: Some(string_vec!["file.ts", "src/*"]),
-                    ..TaskConfig::default()
-                }),
-            )
-            .unwrap();
-
-            let mut set = HashSet::new();
-            set.insert(project_root.join("another.rs"));
-
-            assert!(!task.is_affected(&set).unwrap());
-        }
-
-        #[test]
-        #[should_panic(expected = "MissingFile")]
-        fn panics_for_missing_file() {
-            let workspace_root = get_fixtures_dir("base");
-            let project_root = workspace_root.join("files-and-dirs");
-            let task = create_expanded_task(
-                &workspace_root,
-                &project_root,
-                Some(TaskConfig {
-                    inputs: Some(string_vec!["missing.ts"]),
                     ..TaskConfig::default()
                 }),
             )

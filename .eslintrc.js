@@ -1,6 +1,10 @@
 module.exports = {
 	root: true,
 	extends: ['beemo', 'beemo/node'],
+	parserOptions: {
+		project: 'tsconfig.eslint.json',
+		tsconfigRootDir: __dirname,
+	},
 	overrides: [
 		{
 			files: ['scripts/**/*'],

@@ -59,7 +59,7 @@
 - [x] Bubbles up errors
 - [x] Installs npm dependencies
 - [x] Syncs `package.json` and `tsconfig.json` for all projects
-  - [ ] Writes JSON preserving field order
+  - [x] Writes JSON preserving field order
 
 ## CLI
 

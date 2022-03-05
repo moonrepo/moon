@@ -864,7 +864,7 @@ async fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(),
 #[cfg(test)]
 mod test {
     use super::*;
-    use assert_fs::prelude::*;
+    // use assert_fs::prelude::*;
     use moon_utils::test::get_fixtures_dir;
 
     // #[tokio::test]

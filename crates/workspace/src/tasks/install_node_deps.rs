@@ -66,7 +66,7 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
         manager.install_dependencies(toolchain).await?;
 
         if let Some(node_config) = &workspace.config.node {
-            if node_config.dedupe_on_install.unwrap_or(true) {
+            if node_config.dedupe_on_lockfile_change.unwrap_or(true) {
                 debug!(target: TARGET, "Dedupeing dependencies",);
 
                 manager.dedupe_dependencies(toolchain).await?;

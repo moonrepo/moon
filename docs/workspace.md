@@ -9,7 +9,7 @@
       - [npm, pnpm, yarn](#npm-pnpm-yarn)
         - [version](#version-1)
       - [addEnginesConstraint](#addenginesconstraint)
-      - [dedupeOnInstall](#dedupeoninstall)
+      - [dedupeOnLockfileChange](#dedupeoninstall)
       - [syncProjectWorkspaceDependencies](#syncprojectworkspacedependencies)
       - [syncVersionManagerConfig](#syncversionmanagerconfig)
     - [typescript](#typescript)
@@ -151,14 +151,14 @@ ensure other Node.js processes outside of our toolchain are utilizing the same v
 }
 ```
 
-##### dedupeOnInstall
+##### dedupeOnLockfileChange
 
-The `dedupeOnInstall` setting will dedupe dependencies after they have been installed, in an effort
+The `dedupeOnLockfileChange` setting will dedupe dependencies after they have been installed, in an effort
 to keep the workspace tree as clean and lean as possible. Defaults to `true`.
 
 ```yaml
 node:
-  dedupeOnInstall: true
+  dedupeOnLockfileChange: true
 ```
 
 ##### syncProjectWorkspaceDependencies

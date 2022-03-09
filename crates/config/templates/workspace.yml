@@ -20,8 +20,8 @@ node:
   # OPTIONAL: Add `node.version` as a constaint in the root `package.json` `engines`.
   addEnginesConstraint: true
 
-  # OPTIONAL: Dedupe dependencies after installing them.
-  dedupeOnInstall: true
+  # OPTIONAL: Dedupe dependencies after the lockfile has changed.
+  dedupeOnLockfileChange: true
 
   # OPTIONAL: Sync a project's `dependsOn` as normal dependencies within the project's
   # `package.json`. Will use "workspace:*" ranges when available in the package manager.

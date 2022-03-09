@@ -80,6 +80,7 @@ fn empty_config() {
                 file_groups: HashMap::new(),
                 project: None,
                 tasks: HashMap::new(),
+                workspace: None,
             }),
             root: workspace_root.join("projects/empty-config"),
             file_groups: mock_file_groups(),
@@ -117,6 +118,7 @@ fn basic_config() {
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 project: None,
                 tasks: HashMap::new(),
+                workspace: None,
             }),
             root: project_root,
             file_groups,
@@ -153,6 +155,7 @@ fn advanced_config() {
                     channel: String::from("#batcave"),
                 }),
                 tasks: HashMap::new(),
+                workspace: None,
             }),
             root: workspace_root.join("projects/advanced"),
             file_groups: mock_file_groups(),
@@ -185,6 +188,7 @@ fn overrides_global_file_groups() {
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 project: None,
                 tasks: HashMap::new(),
+                workspace: None,
             }),
             root: workspace_root.join("projects/basic"),
             file_groups: HashMap::from([(
@@ -319,6 +323,7 @@ mod tasks {
                     file_groups: HashMap::new(),
                     project: None,
                     tasks: HashMap::new(),
+                    workspace: None,
                 }),
                 root: workspace_root
                     .join("tasks/no-tasks")
@@ -363,6 +368,7 @@ mod tasks {
                         (String::from("test"), mock_task_config("jest"),),
                         (String::from("lint"), mock_task_config("eslint"),)
                     ]),
+                    workspace: None,
                 }),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -442,6 +448,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
+                    workspace: None,
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -517,6 +524,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
+                    workspace: None,
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -595,6 +603,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
+                    workspace: None,
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -682,6 +691,7 @@ mod tasks {
                             type_of: TaskType::Node,
                         }
                     )]),
+                    workspace: None,
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),

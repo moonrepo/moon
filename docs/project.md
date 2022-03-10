@@ -13,6 +13,11 @@
     - [dependsOn](#dependson)
     - [fileGroups](#filegroups)
     - [tasks](#tasks)
+    - [workspace](#workspace)
+      - [inheritedTasks](#inheritedTasks)
+        - [exclude](#exclude)
+        - [include](#include)
+        - [rename](#rename)
   - [`package.json`](#packagejson)
   - [`tsconfig.json`](#tsconfigjson)
 
@@ -159,6 +164,71 @@ tasks:
 
 > Multiple [strategies](./task.md#merge-strategies) exist when merging tasks, so choose the one
 > that's best for you!
+
+#### workspace
+
+The optional `workspace` setting dictates how a project interacts with settings at the
+workspace-level.
+
+##### inheritedTasks
+
+Provides a layer of control when inheriting tasks from the
+[global project config](./workspace.md#projectyml).
+
+###### exclude
+
+The optional `exclude` setting permits a project to exclude specific tasks from being inherited. It
+accepts a list of strings, where each string is the ID of a global task to exclude.
+
+```yaml
+workspace:
+  inheritedTasks:
+    # Exclude the inherited `test` task for this project
+    exclude: [test]
+```
+
+> Exclusion is applied after inclusion and before renaming.
+
+###### include
+
+The optional `include` setting permits a project to _only_ include specific inherited tasks (works
+like an allow/white list). It accepts a list of strings, where each string is the ID of a global
+task to include.
+
+When this field is not defined, the project will inherit all tasks from the global project config.
+
+```yaml
+workspace:
+  inheritedTasks:
+    # Include *no* tasks (works like a full exclude)
+    include: []
+
+    # Only include the `lint` and `test` tasks for this project
+    include:
+      - 'lint'
+      - 'test'
+```
+
+> Inclusion is applied before exclusion and renaming.
+
+###### rename
+
+The optional `rename` settings permits a project to rename the inherited task within the current
+project. It accepts a map of strings, where the key is the original ID (found in the global project
+config), and the value is the new ID to use.
+
+For example, say we have 2 tasks in the global project config called `buildPackage` and
+`buildApplication`, but we only need 1, and since we're an application, we should omit and rename.
+
+```yaml
+workspace:
+  inheritedTasks:
+    exclude: ['buildPackage']
+    rename:
+      buildApplication: 'build'
+```
+
+> Renaming occurs after inclusion and exclusion.
 
 ### `package.json`
 

@@ -75,13 +75,7 @@ fn empty_config() {
         project,
         Project {
             id: String::from("empty-config"),
-            config: Some(ProjectConfig {
-                depends_on: vec![],
-                file_groups: HashMap::new(),
-                project: None,
-                tasks: HashMap::new(),
-                workspace: None,
-            }),
+            config: Some(ProjectConfig::default()),
             root: workspace_root.join("projects/empty-config"),
             file_groups: mock_file_groups(),
             source: String::from("projects/empty-config"),
@@ -116,9 +110,7 @@ fn basic_config() {
             config: Some(ProjectConfig {
                 depends_on: string_vec!["noConfig"],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
-                project: None,
-                tasks: HashMap::new(),
-                workspace: None,
+                ..ProjectConfig::default()
             }),
             root: project_root,
             file_groups,
@@ -144,8 +136,6 @@ fn advanced_config() {
         Project {
             id: String::from("advanced"),
             config: Some(ProjectConfig {
-                depends_on: vec![],
-                file_groups: HashMap::new(),
                 project: Some(ProjectMetadataConfig {
                     type_of: ProjectType::Library,
                     name: String::from("Advanced"),
@@ -154,8 +144,7 @@ fn advanced_config() {
                     maintainers: string_vec!["Bruce Wayne"],
                     channel: String::from("#batcave"),
                 }),
-                tasks: HashMap::new(),
-                workspace: None,
+                ..ProjectConfig::default()
             }),
             root: workspace_root.join("projects/advanced"),
             file_groups: mock_file_groups(),
@@ -186,9 +175,7 @@ fn overrides_global_file_groups() {
             config: Some(ProjectConfig {
                 depends_on: string_vec!["noConfig"],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
-                project: None,
-                tasks: HashMap::new(),
-                workspace: None,
+                ..ProjectConfig::default()
             }),
             root: workspace_root.join("projects/basic"),
             file_groups: HashMap::from([(
@@ -318,13 +305,7 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
-                    tasks: HashMap::new(),
-                    workspace: None,
-                }),
+                config: Some(ProjectConfig::default()),
                 root: workspace_root
                     .join("tasks/no-tasks")
                     .canonicalize()
@@ -361,14 +342,11 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([
                         (String::from("test"), mock_task_config("jest"),),
                         (String::from("lint"), mock_task_config("eslint"),)
                     ]),
-                    workspace: None,
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -432,9 +410,6 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -448,7 +423,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
-                    workspace: None,
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -508,9 +483,6 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -524,7 +496,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
-                    workspace: None,
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -587,9 +559,6 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -603,7 +572,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
-                    workspace: None,
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -666,9 +635,6 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -691,7 +657,7 @@ mod tasks {
                             type_of: TaskType::Node,
                         }
                     )]),
-                    workspace: None,
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),

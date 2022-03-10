@@ -84,18 +84,22 @@ pub struct ProjectMetadataConfig {
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
-    pub exclude Option<Vec<TaskID>>,
+    #[serde(default)]
+    pub exclude: Vec<TaskID>,
 
-    pub include: Option<Vec<TaskID>>,
+    #[serde(default)]
+    pub include: Vec<TaskID>,
 
-    pub rename: Option<HashMap<TaskID, TaskID>>;
+    #[serde(default)]
+    pub rename: HashMap<TaskID, TaskID>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
+    #[serde(default)]
     #[validate]
-    pub inherited_tasks: Option<ProjectWorkspaceInheritedTasksConfig>,
+    pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
@@ -545,7 +549,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `workspace.inheritedTasks`. Expected a sequence type, received unsigned int `123`."
+            expected = "Invalid field `workspace.inheritedTasks`. Expected struct ProjectWorkspaceInheritedTasksConfig type, received unsigned int `123`."
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -554,6 +558,26 @@ project:
                     r#"
 workspace:
     inheritedTasks: 123"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `workspace.inheritedTasks.include`. Expected a sequence type, received string \"abc\"."
+        )]
+        fn invalid_nested_value_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+workspace:
+    inheritedTasks:
+        include: abc"#,
                 )?;
 
                 super::load_jailed_config()?;

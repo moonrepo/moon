@@ -361,10 +361,7 @@ mod tests {
 
     fn create_tasks_project_graph() -> ProjectGraph {
         let global_config = GlobalProjectConfig {
-            file_groups: Some(HashMap::from([(
-                "sources".to_owned(),
-                vec!["src/**/*".to_owned()],
-            )])),
+            file_groups: HashMap::from([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
             ..GlobalProjectConfig::default()
         };
 

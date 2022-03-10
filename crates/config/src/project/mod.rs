@@ -83,20 +83,22 @@ pub struct ProjectMetadataConfig {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectConfig {
-    #[serde(rename = "dependsOn")]
-    pub depends_on: Option<Vec<ProjectID>>,
+    #[serde(default)]
+    pub depends_on: Vec<ProjectID>,
 
-    #[serde(rename = "fileGroups")]
+    #[serde(default)]
     #[validate(custom = "validate_file_groups")]
-    pub file_groups: Option<FileGroups>,
+    pub file_groups: FileGroups,
 
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
+    #[serde(default)]
     #[validate(custom = "validate_tasks")]
     #[validate]
-    pub tasks: Option<HashMap<String, TaskConfig>>,
+    pub tasks: HashMap<String, TaskConfig>,
 }
 
 impl Provider for ProjectConfig {
@@ -174,10 +176,10 @@ fileGroups:
             assert_eq!(
                 config,
                 ProjectConfig {
-                    file_groups: Some(HashMap::from([(
+                    file_groups: HashMap::from([(
                         String::from("sources"),
                         string_vec!["src/**/*"]
-                    )])),
+                    )]),
                     ..ProjectConfig::default()
                 }
             );
@@ -259,7 +261,7 @@ tasks:
                 assert_eq!(
                     config,
                     ProjectConfig {
-                        tasks: Some(HashMap::from([(
+                        tasks: HashMap::from([(
                             String::from("lint"),
                             TaskConfig {
                                 args: Some(vec![".".to_owned()]),
@@ -271,7 +273,7 @@ tasks:
                                 outputs: None,
                                 type_of: None
                             }
-                        )])),
+                        )]),
                         ..ProjectConfig::default()
                     }
                 );

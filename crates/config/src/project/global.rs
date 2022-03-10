@@ -43,14 +43,16 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct GlobalProjectConfig {
-    #[serde(rename = "fileGroups")]
+    #[serde(default)]
     #[validate(custom = "validate_file_groups")]
-    pub file_groups: Option<FileGroups>,
+    pub file_groups: FileGroups,
 
+    #[serde(default)]
     #[validate(custom = "validate_tasks")]
     #[validate]
-    pub tasks: Option<HashMap<String, TaskConfig>>,
+    pub tasks: HashMap<String, TaskConfig>,
 }
 
 impl Provider for GlobalProjectConfig {
@@ -121,11 +123,11 @@ fileGroups:
             assert_eq!(
                 config,
                 GlobalProjectConfig {
-                    file_groups: Some(HashMap::from([(
+                    file_groups: HashMap::from([(
                         String::from("sources"),
                         string_vec!["src/**/*"]
-                    )])),
-                    tasks: None,
+                    )]),
+                    tasks: HashMap::new(),
                 }
             );
 

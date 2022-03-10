@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "yarn@3.2.0",
   "scripts": {
-    "docs": "cd website && yarn run start",
+    "docs": "yarn moon run website:start",
     "version:apply": "node ./scripts/version/applyAndTagVersions.mjs",
     "version:bump": "yarn version check --interactive",
     "version:bump:bin": "bash ./scripts/version/bumpBinaryVersions.sh",

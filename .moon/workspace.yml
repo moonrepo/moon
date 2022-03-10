@@ -9,3 +9,4 @@ node:
 
 projects:
   runtime: 'packages/runtime'
+  website: 'website'

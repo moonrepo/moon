@@ -9,6 +9,7 @@ dts/
 esm/
 lib/
 mjs/
+node_modules/
 umd/
 
 # Node.js formats differently

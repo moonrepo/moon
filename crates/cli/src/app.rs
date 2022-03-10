@@ -127,14 +127,14 @@ pub enum Commands {
         // Affected
         #[clap(
             long,
-            help = "Only run target it affected by changed files",
+            help = "Only run target if affected by changed files",
             help_heading = HEADING_AFFECTED
         )]
         affected: bool,
 
         #[clap(
             long,
-            help = "Determine affected from local changes instead of comparing against default branch",
+            help = "Determine affected from local changes instead of comparing against a base",
             help_heading = HEADING_AFFECTED
         )]
         local: bool,
@@ -142,7 +142,7 @@ pub enum Commands {
         #[clap(
             arg_enum,
             long,
-            help = "Determine affected files based on this status",
+            help = "Filter affected files based on a change status",
             help_heading = HEADING_AFFECTED
         )]
         status: Option<RunStatus>,

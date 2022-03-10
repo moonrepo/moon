@@ -1,0 +1,9 @@
+tasks:
+  foo:
+    args:
+      - renamed-and-merge-foo
+
+workspace:
+  inheritedTasks:
+    rename:
+      a: foo

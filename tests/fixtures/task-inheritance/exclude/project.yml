@@ -1,0 +1,3 @@
+workspace:
+  inheritedTasks:
+    exclude: [a, c]

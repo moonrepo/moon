@@ -1,0 +1,6 @@
+workspace:
+  inheritedTasks:
+    rename:
+      a: foo
+      b: bar
+      c: baz

@@ -75,12 +75,7 @@ fn empty_config() {
         project,
         Project {
             id: String::from("empty-config"),
-            config: Some(ProjectConfig {
-                depends_on: vec![],
-                file_groups: HashMap::new(),
-                project: None,
-                tasks: HashMap::new(),
-            }),
+            config: Some(ProjectConfig::default()),
             root: workspace_root.join("projects/empty-config"),
             file_groups: mock_file_groups(),
             source: String::from("projects/empty-config"),
@@ -115,8 +110,7 @@ fn basic_config() {
             config: Some(ProjectConfig {
                 depends_on: string_vec!["noConfig"],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
-                project: None,
-                tasks: HashMap::new(),
+                ..ProjectConfig::default()
             }),
             root: project_root,
             file_groups,
@@ -142,8 +136,6 @@ fn advanced_config() {
         Project {
             id: String::from("advanced"),
             config: Some(ProjectConfig {
-                depends_on: vec![],
-                file_groups: HashMap::new(),
                 project: Some(ProjectMetadataConfig {
                     type_of: ProjectType::Library,
                     name: String::from("Advanced"),
@@ -152,7 +144,7 @@ fn advanced_config() {
                     maintainers: string_vec!["Bruce Wayne"],
                     channel: String::from("#batcave"),
                 }),
-                tasks: HashMap::new(),
+                ..ProjectConfig::default()
             }),
             root: workspace_root.join("projects/advanced"),
             file_groups: mock_file_groups(),
@@ -183,8 +175,7 @@ fn overrides_global_file_groups() {
             config: Some(ProjectConfig {
                 depends_on: string_vec!["noConfig"],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
-                project: None,
-                tasks: HashMap::new(),
+                ..ProjectConfig::default()
             }),
             root: workspace_root.join("projects/basic"),
             file_groups: HashMap::from([(
@@ -314,12 +305,7 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
-                    tasks: HashMap::new(),
-                }),
+                config: Some(ProjectConfig::default()),
                 root: workspace_root
                     .join("tasks/no-tasks")
                     .canonicalize()
@@ -356,13 +342,11 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([
                         (String::from("test"), mock_task_config("jest"),),
                         (String::from("lint"), mock_task_config("eslint"),)
                     ]),
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -426,9 +410,6 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -442,6 +423,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -501,9 +483,6 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -517,6 +496,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -579,9 +559,6 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -595,6 +572,7 @@ mod tasks {
                             type_of: TaskType::Shell,
                         }
                     )]),
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -657,9 +635,6 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
-                    depends_on: vec![],
-                    file_groups: HashMap::new(),
-                    project: None,
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -682,6 +657,7 @@ mod tasks {
                             type_of: TaskType::Node,
                         }
                     )]),
+                    ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 file_groups: HashMap::new(),
@@ -958,6 +934,180 @@ mod tasks {
             );
 
             assert_eq!(a, b);
+        }
+    }
+}
+
+mod workspace {
+    use super::*;
+    use moon_project::test::create_expanded_task;
+
+    mod inherited_tasks {
+        use super::*;
+
+        fn mock_global_project_config() -> GlobalProjectConfig {
+            GlobalProjectConfig {
+                file_groups: HashMap::new(),
+                tasks: HashMap::from([
+                    (
+                        String::from("a"),
+                        TaskConfig {
+                            command: Some(String::from("a")),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                    (
+                        String::from("b"),
+                        TaskConfig {
+                            command: Some(String::from("b")),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                    (
+                        String::from("c"),
+                        TaskConfig {
+                            command: Some(String::from("c")),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                ]),
+            }
+        }
+
+        fn get_project_task_ids(project: Project) -> Vec<String> {
+            let mut ids = project.tasks.into_keys().collect::<Vec<String>>();
+            ids.sort();
+            ids
+        }
+
+        #[test]
+        fn include() {
+            let project = Project::new(
+                "id",
+                "include",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["a", "c"])
+        }
+
+        #[test]
+        fn include_none() {
+            let project = Project::new(
+                "id",
+                "include-none",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec![])
+        }
+
+        #[test]
+        fn exclude() {
+            let project = Project::new(
+                "id",
+                "exclude",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["b"])
+        }
+
+        #[test]
+        fn exclude_all() {
+            let project = Project::new(
+                "id",
+                "exclude-all",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec![])
+        }
+
+        #[test]
+        fn exclude_none() {
+            let project = Project::new(
+                "id",
+                "exclude-none",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["a", "b", "c"])
+        }
+
+        #[test]
+        fn rename() {
+            let project = Project::new(
+                "id",
+                "rename",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                get_project_task_ids(project),
+                string_vec!["bar", "baz", "foo"]
+            )
+        }
+
+        #[test]
+        fn rename_merge() {
+            let workspace_root = get_fixtures_dir("task-inheritance");
+            let project = Project::new(
+                "id",
+                "rename-merge",
+                &workspace_root,
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            let mut task =
+                create_expanded_task(&workspace_root, &workspace_root.join("rename-merge"), None)
+                    .unwrap();
+            task.target = "id:foo".to_owned();
+            task.command = "a".to_owned();
+            task.args.push("renamed-and-merge-foo".to_owned());
+
+            assert_eq!(*project.get_task("foo").unwrap(), task);
+
+            assert_eq!(get_project_task_ids(project), string_vec!["b", "c", "foo"]);
+        }
+
+        #[test]
+        fn include_exclude() {
+            let project = Project::new(
+                "id",
+                "include-exclude",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["a"])
+        }
+
+        #[test]
+        fn include_exclude_rename() {
+            let project = Project::new(
+                "id",
+                "include-exclude-rename",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["only"])
         }
     }
 }

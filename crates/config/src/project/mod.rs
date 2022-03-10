@@ -5,7 +5,7 @@ pub mod task;
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
-use crate::types::{FileGroups, ProjectID};
+use crate::types::{FileGroups, ProjectID, TaskID};
 use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
@@ -83,6 +83,24 @@ pub struct ProjectMetadataConfig {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+pub struct ProjectWorkspaceInheritedTasksConfig {
+    pub exclude: Option<Vec<TaskID>>,
+
+    pub include: Option<Vec<TaskID>>,
+
+    #[serde(default)]
+    pub rename: HashMap<TaskID, TaskID>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectWorkspaceConfig {
+    #[serde(default)]
+    #[validate]
+    pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectConfig {
     #[serde(default)]
@@ -99,6 +117,10 @@ pub struct ProjectConfig {
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: HashMap<String, TaskConfig>,
+
+    #[serde(default)]
+    #[validate]
+    pub workspace: ProjectWorkspaceConfig,
 }
 
 impl Provider for ProjectConfig {
@@ -499,6 +521,61 @@ project:
     owner: ''
     maintainers: []
     channel: name"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+    }
+
+    mod workspace {
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `workspace`. Expected struct ProjectWorkspaceConfig type, received unsigned int `123`."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "workspace: 123")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `workspace.inheritedTasks`. Expected struct ProjectWorkspaceInheritedTasksConfig type, received unsigned int `123`."
+        )]
+        fn invalid_value_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+workspace:
+    inheritedTasks: 123"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field `workspace.inheritedTasks.include`. Expected a sequence type, received string \"abc\"."
+        )]
+        fn invalid_nested_value_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+workspace:
+    inheritedTasks:
+        include: abc"#,
                 )?;
 
                 super::load_jailed_config()?;

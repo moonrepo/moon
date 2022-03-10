@@ -103,7 +103,7 @@ pub struct ProjectConfig {
 
 impl Provider for ProjectConfig {
     fn metadata(&self) -> Metadata {
-        Metadata::named(constants::CONFIG_PROJECT_FILENAME)
+        Metadata::named("Project config").source(constants::CONFIG_PROJECT_FILENAME)
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {

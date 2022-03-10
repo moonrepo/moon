@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use validator::{Validate, ValidationError};
 
+// These structs utilize optional fields so that we can handle merging effectively,
+// as we need a way to skip "undefined" values. So don't use serde defaults here.
+
 fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
         validate_target(&format!("deps[{}]", index), item)?;
@@ -90,7 +93,7 @@ impl Default for TaskOptionsConfig {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct TaskConfig {
     pub args: Option<Vec<String>>,
 
@@ -104,29 +107,16 @@ pub struct TaskConfig {
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<FilePathOrGlob>>,
 
+    #[serde(default)]
     #[validate]
-    pub options: Option<TaskOptionsConfig>,
+    pub options: TaskOptionsConfig,
 
     #[validate(custom = "validate_outputs")]
     pub outputs: Option<Vec<FilePath>>,
 
+    #[serde(default)]
     #[serde(rename = "type")]
-    pub type_of: Option<TaskType>,
-}
-
-impl Default for TaskConfig {
-    fn default() -> Self {
-        TaskConfig {
-            args: None,
-            command: None,
-            deps: None,
-            env: None,
-            inputs: None,
-            options: Some(TaskOptionsConfig::default()),
-            outputs: None,
-            type_of: Some(TaskType::default()),
-        }
-    }
+    pub type_of: TaskType,
 }
 
 #[cfg(test)]

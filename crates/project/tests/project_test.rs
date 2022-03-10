@@ -230,14 +230,8 @@ mod tasks {
 
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {
-            args: None,
             command: Some(command.to_owned()),
-            deps: None,
-            env: None,
-            inputs: None,
-            outputs: None,
-            options: None,
-            type_of: None,
+            ..TaskConfig::default()
         }
     }
 
@@ -419,8 +413,8 @@ mod tasks {
                         env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
-                        options: Some(stub_global_task_options_config()),
-                        type_of: None,
+                        options: stub_global_task_options_config(),
+                        type_of: TaskType::Node,
                     },
                 )]),
             },
@@ -444,10 +438,8 @@ mod tasks {
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
-                            options: Some(mock_local_task_options_config(
-                                TaskMergeStrategy::Replace
-                            )),
-                            type_of: Some(TaskType::Shell),
+                            options: mock_local_task_options_config(TaskMergeStrategy::Replace),
+                            type_of: TaskType::Shell,
                         }
                     )]),
                 }),
@@ -465,10 +457,8 @@ mod tasks {
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
-                            options: Some(mock_merged_task_options_config(
-                                TaskMergeStrategy::Replace
-                            )),
-                            type_of: Some(TaskType::Shell),
+                            options: mock_merged_task_options_config(TaskMergeStrategy::Replace),
+                            type_of: TaskType::Shell,
                         },
                         &workspace_root,
                         project_source
@@ -498,8 +488,8 @@ mod tasks {
                         env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
-                        options: Some(stub_global_task_options_config()),
-                        type_of: None,
+                        options: stub_global_task_options_config(),
+                        type_of: TaskType::Node,
                     },
                 )]),
             },
@@ -523,10 +513,8 @@ mod tasks {
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
-                            options: Some(mock_local_task_options_config(
-                                TaskMergeStrategy::Append
-                            )),
-                            type_of: Some(TaskType::Shell),
+                            options: mock_local_task_options_config(TaskMergeStrategy::Append),
+                            type_of: TaskType::Shell,
                         }
                     )]),
                 }),
@@ -547,10 +535,8 @@ mod tasks {
                             ])),
                             inputs: Some(string_vec!["a.*", "b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
-                            options: Some(mock_merged_task_options_config(
-                                TaskMergeStrategy::Append
-                            )),
-                            type_of: Some(TaskType::Shell),
+                            options: mock_merged_task_options_config(TaskMergeStrategy::Append),
+                            type_of: TaskType::Shell,
                         },
                         &workspace_root,
                         project_source
@@ -580,8 +566,8 @@ mod tasks {
                         env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
-                        options: Some(stub_global_task_options_config()),
-                        type_of: None,
+                        options: stub_global_task_options_config(),
+                        type_of: TaskType::Node,
                     },
                 )]),
             },
@@ -605,10 +591,8 @@ mod tasks {
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
-                            options: Some(mock_local_task_options_config(
-                                TaskMergeStrategy::Prepend
-                            )),
-                            type_of: Some(TaskType::Shell),
+                            options: mock_local_task_options_config(TaskMergeStrategy::Prepend),
+                            type_of: TaskType::Shell,
                         }
                     )]),
                 }),
@@ -629,10 +613,8 @@ mod tasks {
                             ])),
                             inputs: Some(string_vec!["b.*", "a.*"]),
                             outputs: Some(string_vec!["b.ts", "a.ts"]),
-                            options: Some(mock_merged_task_options_config(
-                                TaskMergeStrategy::Prepend
-                            )),
-                            type_of: Some(TaskType::Shell),
+                            options: mock_merged_task_options_config(TaskMergeStrategy::Prepend),
+                            type_of: TaskType::Shell,
                         },
                         &workspace_root,
                         project_source
@@ -662,8 +644,8 @@ mod tasks {
                         env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
-                        options: Some(stub_global_task_options_config()),
-                        type_of: None,
+                        options: stub_global_task_options_config(),
+                        type_of: TaskType::Node,
                     },
                 )]),
             },
@@ -687,7 +669,7 @@ mod tasks {
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
-                            options: Some(TaskOptionsConfig {
+                            options: TaskOptionsConfig {
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
                                 merge_env: Some(TaskMergeStrategy::Replace),
@@ -696,8 +678,8 @@ mod tasks {
                                 retry_count: None,
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
-                            }),
-                            type_of: None,
+                            },
+                            type_of: TaskType::Node,
                         }
                     )]),
                 }),
@@ -715,7 +697,7 @@ mod tasks {
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
-                            options: Some(TaskOptionsConfig {
+                            options: TaskOptionsConfig {
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
                                 merge_env: Some(TaskMergeStrategy::Replace),
@@ -724,8 +706,8 @@ mod tasks {
                                 retry_count: Some(1),
                                 run_in_ci: Some(true),
                                 run_from_workspace_root: None,
-                            }),
-                            type_of: Some(TaskType::Node),
+                            },
+                            type_of: TaskType::Node,
                         },
                         &workspace_root,
                         project_source
@@ -764,12 +746,7 @@ mod tasks {
                                 "@root(static)",
                             ]),
                             command: Some(String::from("test")),
-                            deps: None,
-                            env: None,
-                            inputs: None,
-                            outputs: None,
-                            options: None,
-                            type_of: None,
+                            ..TaskConfig::default()
                         },
                     )]),
                 },
@@ -836,15 +813,11 @@ mod tasks {
                                 "@root(static)",
                             ]),
                             command: Some(String::from("test")),
-                            deps: None,
-                            env: None,
-                            inputs: None,
-                            outputs: None,
-                            options: Some(TaskOptionsConfig {
+                            options: TaskOptionsConfig {
                                 run_from_workspace_root: Some(true),
                                 ..TaskOptionsConfig::default()
-                            }),
-                            type_of: None,
+                            },
+                            ..TaskConfig::default()
                         },
                     )]),
                 },
@@ -898,12 +871,7 @@ mod tasks {
                                 "$workspaceRoot" // Alone
                             ]),
                             command: Some(String::from("test")),
-                            deps: None,
-                            env: None,
-                            inputs: None,
-                            outputs: None,
-                            options: None,
-                            type_of: None,
+                            ..TaskConfig::default()
                         },
                     )]),
                 },
@@ -947,10 +915,7 @@ mod tasks {
                     tasks: HashMap::from([(
                         String::from("test"),
                         TaskConfig {
-                            args: None,
                             command: Some(String::from("test")),
-                            deps: None,
-                            env: None,
                             inputs: Some(string_vec![
                                 "file.ts",
                                 "@dirs(static)",
@@ -959,9 +924,7 @@ mod tasks {
                                 "@root(static)",
                                 "/package.json",
                             ]),
-                            outputs: None,
-                            options: None,
-                            type_of: None,
+                            ..TaskConfig::default()
                         },
                     )]),
                 },

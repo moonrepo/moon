@@ -84,11 +84,9 @@ pub struct ProjectMetadataConfig {
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
-    #[serde(default)]
-    pub exclude: Vec<TaskID>,
+    pub exclude: Option<Vec<TaskID>>,
 
-    #[serde(default)]
-    pub include: Vec<TaskID>,
+    pub include: Option<Vec<TaskID>>,
 
     #[serde(default)]
     pub rename: HashMap<TaskID, TaskID>,

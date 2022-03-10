@@ -10,7 +10,7 @@ use moon_config::tsconfig::TsConfigJson;
 use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
 use moon_logger::{color, debug, trace};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 pub type FileGroupsMap = HashMap<String, FileGroup>;
@@ -90,13 +90,54 @@ fn create_tasks_from_config(
     file_groups: &FileGroupsMap,
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
-    let local_config = config.clone().unwrap_or_default();
 
-    // Add global tasks first
+    // Gather inheritance configs
+    let mut include_all = true;
+    let mut include: HashSet<TaskID> = HashSet::new();
+    let mut exclude: HashSet<TaskID> = HashSet::new();
+    let mut rename: HashMap<TaskID, TaskID> = HashMap::new();
+
+    if let Some(local_config) = config {
+        rename = local_config.workspace.inherited_tasks.rename.clone();
+
+        if let Some(include_config) = &local_config.workspace.inherited_tasks.include {
+            include_all = false;
+            include.extend(include_config.clone());
+        }
+
+        if let Some(exclude_config) = &local_config.workspace.inherited_tasks.exclude {
+            exclude.extend(exclude_config.clone());
+        }
+    }
+
+    // Add global tasks first while taking inheritance config into account
     for (task_id, task_config) in &global_config.tasks {
+        // None = Include all
+        // [] = Include none
+        // ["a"] = Include "a"
+        if !include_all {
+            if include.is_empty() {
+                break;
+            } else if !include.contains(task_id) {
+                continue;
+            }
+        }
+
+        // None, [] = Exclude none
+        // ["a"] = Exclude "a"
+        if !exclude.is_empty() && exclude.contains(task_id) {
+            continue;
+        }
+
+        let task_name = if rename.contains_key(task_id) {
+            rename.get(task_id).unwrap()
+        } else {
+            task_id
+        };
+
         tasks.insert(
-            task_id.clone(),
-            Task::from_config(Target::format(project_id, task_id)?, task_config),
+            task_name.to_owned(),
+            Task::from_config(Target::format(project_id, task_name)?, task_config),
         );
     }
 

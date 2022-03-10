@@ -1,8 +1,7 @@
 /* eslint-disable sort-keys */
-
 // @ts-check
-// Note: type annotations allow type checking and IDEs autocompletion
 
+const path = require('path');
 const lightCodeTheme = require('prism-react-renderer/themes/github');
 const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
@@ -62,6 +61,11 @@ const config = {
 					// 	position: 'left',
 					// },
 					{
+						to: 'api',
+						label: 'Packages',
+						position: 'left',
+					},
+					{
 						href: 'https://github.com/milesj/moon',
 						label: 'GitHub',
 						position: 'right',
@@ -78,6 +82,18 @@ const config = {
 				darkTheme: darkCodeTheme,
 			},
 		}),
+
+	plugins: [
+		[
+			'docusaurus-plugin-typedoc-api',
+			{
+				projectRoot: path.join(__dirname, '..'),
+				packages: ['packages/runtime'],
+				minimal: true,
+				readme: true,
+			},
+		],
+	],
 };
 
 module.exports = config;

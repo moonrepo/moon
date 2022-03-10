@@ -82,12 +82,20 @@ pub struct ProjectMetadataConfig {
     pub channel: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+pub struct ProjectWorkspaceInheritedTasksConfig {
+    pub exclude Option<Vec<TaskID>>,
+
+    pub include: Option<Vec<TaskID>>,
+
+    pub rename: Option<HashMap<TaskID, TaskID>>;
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
-    pub exclude_tasks: Option<Vec<TaskID>>,
-
-    pub include_tasks: Option<Vec<TaskID>>,
+    #[validate]
+    pub inherited_tasks: Option<ProjectWorkspaceInheritedTasksConfig>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
@@ -537,7 +545,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `workspace.includeTasks`. Expected a sequence type, received unsigned int `123`."
+            expected = "Invalid field `workspace.inheritedTasks`. Expected a sequence type, received unsigned int `123`."
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -545,7 +553,7 @@ project:
                     super::constants::CONFIG_PROJECT_FILENAME,
                     r#"
 workspace:
-    includeTasks: 123"#,
+    inheritedTasks: 123"#,
                 )?;
 
                 super::load_jailed_config()?;

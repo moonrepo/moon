@@ -90,6 +90,7 @@ fn create_tasks_from_config(
     file_groups: &FileGroupsMap,
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
+    let local_config = config.clone().unwrap_or_default();
 
     // Add global tasks first
     for (task_id, task_config) in &global_config.tasks {

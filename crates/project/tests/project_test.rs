@@ -937,3 +937,177 @@ mod tasks {
         }
     }
 }
+
+mod workspace {
+    use super::*;
+    use moon_project::test::create_expanded_task;
+
+    mod inherited_tasks {
+        use super::*;
+
+        fn mock_global_project_config() -> GlobalProjectConfig {
+            GlobalProjectConfig {
+                file_groups: HashMap::new(),
+                tasks: HashMap::from([
+                    (
+                        String::from("a"),
+                        TaskConfig {
+                            command: Some(String::from("a")),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                    (
+                        String::from("b"),
+                        TaskConfig {
+                            command: Some(String::from("b")),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                    (
+                        String::from("c"),
+                        TaskConfig {
+                            command: Some(String::from("c")),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                ]),
+            }
+        }
+
+        fn get_project_task_ids(project: Project) -> Vec<String> {
+            let mut ids = project.tasks.into_keys().collect::<Vec<String>>();
+            ids.sort();
+            ids
+        }
+
+        #[test]
+        fn include() {
+            let project = Project::new(
+                "id",
+                "include",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["a", "c"])
+        }
+
+        #[test]
+        fn include_none() {
+            let project = Project::new(
+                "id",
+                "include-none",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec![])
+        }
+
+        #[test]
+        fn exclude() {
+            let project = Project::new(
+                "id",
+                "exclude",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["b"])
+        }
+
+        #[test]
+        fn exclude_all() {
+            let project = Project::new(
+                "id",
+                "exclude-all",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec![])
+        }
+
+        #[test]
+        fn exclude_none() {
+            let project = Project::new(
+                "id",
+                "exclude-none",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["a", "b", "c"])
+        }
+
+        #[test]
+        fn rename() {
+            let project = Project::new(
+                "id",
+                "rename",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                get_project_task_ids(project),
+                string_vec!["bar", "baz", "foo"]
+            )
+        }
+
+        #[test]
+        fn rename_merge() {
+            let workspace_root = get_fixtures_dir("task-inheritance");
+            let project = Project::new(
+                "id",
+                "rename-merge",
+                &workspace_root,
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            let mut task =
+                create_expanded_task(&workspace_root, &workspace_root.join("rename-merge"), None)
+                    .unwrap();
+            task.target = "id:foo".to_owned();
+            task.command = "a".to_owned();
+            task.args.push("renamed-and-merge-foo".to_owned());
+
+            assert_eq!(*project.get_task("foo").unwrap(), task);
+
+            assert_eq!(get_project_task_ids(project), string_vec!["b", "c", "foo"]);
+        }
+
+        #[test]
+        fn include_exclude() {
+            let project = Project::new(
+                "id",
+                "include-exclude",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["a"])
+        }
+
+        #[test]
+        fn include_exclude_rename() {
+            let project = Project::new(
+                "id",
+                "include-exclude-rename",
+                &get_fixtures_dir("task-inheritance"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(get_project_task_ids(project), string_vec!["only"])
+        }
+    }
+}

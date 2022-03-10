@@ -1,0 +1,3 @@
+workspace:
+  inheritedTasks:
+    include: [a, c]

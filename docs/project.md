@@ -184,7 +184,7 @@ accepts a list of strings, where each string is the ID of a global task to exclu
 workspace:
   inheritedTasks:
     # Exclude the inherited `test` task for this project
-    exclude: [test]
+    exclude: ['test']
 ```
 
 > Exclusion is applied after inclusion and before renaming.
@@ -213,7 +213,7 @@ workspace:
 
 ###### rename
 
-The optional `rename` settings permits a project to rename the inherited task within the current
+The optional `rename` setting permits a project to rename the inherited task within the current
 project. It accepts a map of strings, where the key is the original ID (found in the global project
 config), and the value is the new ID to use.
 

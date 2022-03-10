@@ -9,7 +9,7 @@ use crate::types::{FileGroups, ProjectID};
 use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
 use serde::{Deserialize, Serialize};
@@ -105,7 +105,7 @@ impl Provider for ProjectConfig {
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        figment::providers::Serialized::defaults(ProjectConfig::default()).data()
+        Serialized::defaults(ProjectConfig::default()).data()
     }
 
     fn profile(&self) -> Option<Profile> {
@@ -115,13 +115,14 @@ impl Provider for ProjectConfig {
 
 impl ProjectConfig {
     pub fn load(path: &Path) -> Result<ProjectConfig, ValidationErrors> {
-        let config: ProjectConfig = match Figment::from(ProjectConfig::default())
-            .merge(Yaml::file(path))
-            .extract()
-        {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+        let config: ProjectConfig =
+            match Figment::from(Serialized::defaults(ProjectConfig::default()))
+                .merge(Yaml::file(path))
+                .extract()
+            {
+                Ok(cfg) => cfg,
+                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+            };
 
         if let Err(errors) = config.validate() {
             return Err(errors);

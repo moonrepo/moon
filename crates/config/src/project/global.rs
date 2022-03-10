@@ -7,7 +7,7 @@ use crate::types::FileGroups;
 use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
 use serde::{Deserialize, Serialize};
@@ -55,11 +55,15 @@ pub struct GlobalProjectConfig {
 
 impl Provider for GlobalProjectConfig {
     fn metadata(&self) -> Metadata {
-        Metadata::named(constants::CONFIG_PROJECT_FILENAME)
+        Metadata::named("Global project config").source(format!(
+            "{}/{}",
+            constants::CONFIG_DIRNAME,
+            constants::CONFIG_PROJECT_FILENAME
+        ))
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        figment::providers::Serialized::defaults(GlobalProjectConfig::default()).data()
+        Serialized::defaults(GlobalProjectConfig::default()).data()
     }
 
     fn profile(&self) -> Option<Profile> {
@@ -69,13 +73,14 @@ impl Provider for GlobalProjectConfig {
 
 impl GlobalProjectConfig {
     pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ValidationErrors> {
-        let config: GlobalProjectConfig = match Figment::from(GlobalProjectConfig::default())
-            .merge(Yaml::file(path))
-            .extract()
-        {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+        let config: GlobalProjectConfig =
+            match Figment::from(Serialized::defaults(GlobalProjectConfig::default()))
+                .merge(Yaml::file(path))
+                .extract()
+            {
+                Ok(cfg) => cfg,
+                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+            };
 
         // Validate the fields before continuing
         if let Err(errors) = config.validate() {

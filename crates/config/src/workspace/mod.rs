@@ -10,7 +10,7 @@ use crate::types::FilePath;
 use crate::validators::{validate_child_relative_path, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
@@ -66,11 +66,15 @@ impl Default for WorkspaceConfig {
 
 impl Provider for WorkspaceConfig {
     fn metadata(&self) -> Metadata {
-        Metadata::named(constants::CONFIG_WORKSPACE_FILENAME)
+        Metadata::named("Workspace config").source(format!(
+            "{}/{}",
+            constants::CONFIG_DIRNAME,
+            constants::CONFIG_WORKSPACE_FILENAME
+        ))
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        figment::providers::Serialized::defaults(WorkspaceConfig::default()).data()
+        Serialized::defaults(WorkspaceConfig::default()).data()
     }
 
     fn profile(&self) -> Option<Profile> {
@@ -80,13 +84,14 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
-        let mut config: WorkspaceConfig = match Figment::from(WorkspaceConfig::default())
-            .merge(Yaml::file(path))
-            .extract()
-        {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+        let mut config: WorkspaceConfig =
+            match Figment::from(Serialized::defaults(WorkspaceConfig::default()))
+                .merge(Yaml::file(path))
+                .extract()
+            {
+                Ok(cfg) => cfg,
+                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+            };
 
         if let Err(errors) = config.validate() {
             return Err(errors);

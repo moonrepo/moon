@@ -1,4 +1,4 @@
-use moon_config::{NpmConfig, WorkspaceConfig};
+use moon_config::WorkspaceConfig;
 use moon_toolchain::tools::npm::NpmTool;
 use moon_toolchain::{Tool, Toolchain};
 use predicates::prelude::*;
@@ -10,12 +10,8 @@ async fn create_npm_tool() -> (NpmTool, assert_fs::TempDir) {
 
     let mut config = WorkspaceConfig::default();
 
-    if let Some(ref mut node) = config.node {
-        node.version = String::from("1.0.0");
-        node.npm = Some(NpmConfig {
-            version: String::from("6.0.0"),
-        });
-    }
+    config.node.version = String::from("1.0.0");
+    config.node.npm.version = String::from("6.0.0");
 
     let toolchain = Toolchain::create_from_dir(&config, base_dir.path(), &env::temp_dir())
         .await

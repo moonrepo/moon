@@ -10,9 +10,7 @@ async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
 
     let mut config = WorkspaceConfig::default();
 
-    if let Some(ref mut node) = config.node {
-        node.version = String::from("1.0.0");
-    }
+    config.node.version = String::from("1.0.0");
 
     let toolchain = Toolchain::create_from_dir(&config, base_dir.path(), &env::temp_dir())
         .await

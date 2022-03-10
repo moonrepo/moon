@@ -16,12 +16,12 @@ pub async fn sync_project(
     let project = workspace.projects.load(project_id)?;
 
     // Sync a project reference to the root `tsconfig.json`
-    let node_config = workspace.config.node.as_ref().unwrap();
-    let typescript_config = workspace.config.typescript.as_ref().unwrap();
-    let tsconfig_root_name = typescript_config.root_config_file_name.as_ref().unwrap();
-    let tsconfig_branch_name = typescript_config.project_config_file_name.as_ref().unwrap();
+    let node_config = &workspace.config.node;
+    let typescript_config = &workspace.config.typescript;
+    let tsconfig_root_name = &typescript_config.root_config_file_name;
+    let tsconfig_branch_name = &typescript_config.project_config_file_name;
 
-    if typescript_config.sync_project_references.unwrap_or(true) {
+    if typescript_config.sync_project_references {
         if let Some(mut tsconfig) = workspace.load_tsconfig_json(tsconfig_root_name).await? {
             if tsconfig.add_project_ref(&project.source, tsconfig_branch_name) {
                 debug!(
@@ -43,10 +43,7 @@ pub async fn sync_project(
         let dep_project = workspace.projects.load(&dep_id)?;
 
         // Update `dependencies` within `tsconfig.json`
-        if node_config
-            .sync_project_workspace_dependencies
-            .unwrap_or(true)
-        {
+        if node_config.sync_project_workspace_dependencies {
             if let Some(mut package) = project.load_package_json().await? {
                 let dep_package_name = dep_project.get_package_name().await?.unwrap_or_default();
 
@@ -73,7 +70,7 @@ pub async fn sync_project(
         }
 
         // Update `references` within `tsconfig.json`
-        if typescript_config.sync_project_references.unwrap_or(true) {
+        if typescript_config.sync_project_references {
             if let Some(mut tsconfig) = project.load_tsconfig_json(tsconfig_branch_name).await? {
                 let dep_ref_path = String::from(
                     diff_paths(&project.root, &dep_project.root)

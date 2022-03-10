@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
+fn default_branch_default() -> String {
+    String::from("origin/master")
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VcsManager {
@@ -15,18 +19,20 @@ impl Default for VcsManager {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct VcsConfig {
-    pub manager: Option<VcsManager>,
+    #[serde(default)]
+    pub manager: VcsManager,
 
-    #[serde(rename = "defaultBranch")]
-    pub default_branch: Option<String>,
+    #[serde(default = "default_branch_default")]
+    pub default_branch: String,
 }
 
 impl Default for VcsConfig {
     fn default() -> Self {
         VcsConfig {
-            manager: Some(VcsManager::default()),
-            default_branch: Some(String::from("origin/master")),
+            manager: VcsManager::default(),
+            default_branch: default_branch_default(),
         }
     }
 }

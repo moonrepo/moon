@@ -67,9 +67,9 @@ pub struct VcsManager {}
 
 impl VcsManager {
     pub fn load(config: &WorkspaceConfig, working_dir: &Path) -> Box<dyn Vcs> {
-        let vcs_config = config.vcs.as_ref().unwrap();
-        let manager = vcs_config.manager.as_ref().unwrap();
-        let default_branch = vcs_config.default_branch.as_ref().unwrap().as_str();
+        let vcs_config = &config.vcs;
+        let manager = &vcs_config.manager;
+        let default_branch = &vcs_config.default_branch;
 
         debug!(
             target: "moon:workspace",

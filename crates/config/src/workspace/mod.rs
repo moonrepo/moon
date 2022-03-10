@@ -38,30 +38,23 @@ fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), Validat
     Ok(())
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
+    #[serde(default)]
     #[validate]
-    pub node: Option<NodeConfig>,
+    pub node: NodeConfig,
 
+    #[serde(default)]
     #[validate(custom = "validate_projects")]
     pub projects: HashMap<String, FilePath>,
 
+    #[serde(default)]
     #[validate]
-    pub typescript: Option<TypeScriptConfig>,
+    pub typescript: TypeScriptConfig,
 
+    #[serde(default)]
     #[validate]
-    pub vcs: Option<VcsConfig>,
-}
-
-impl Default for WorkspaceConfig {
-    fn default() -> Self {
-        WorkspaceConfig {
-            node: Some(NodeConfig::default()),
-            projects: HashMap::new(),
-            typescript: Some(TypeScriptConfig::default()),
-            vcs: Some(VcsConfig::default()),
-        }
-    }
+    pub vcs: VcsConfig,
 }
 
 impl Provider for WorkspaceConfig {
@@ -98,27 +91,23 @@ impl WorkspaceConfig {
         }
 
         // Versions from env vars should take precedence
-        if let Some(node_config) = &mut config.node {
-            if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
-                node_config.version = node_version;
-            }
+        if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
+            config.node.version = node_version;
+        }
 
-            if let Ok(npm_version) = env::var("MOON_NPM_VERSION") {
-                if let Some(npm_config) = &mut node_config.npm {
-                    npm_config.version = npm_version;
-                }
-            }
+        if let Ok(npm_version) = env::var("MOON_NPM_VERSION") {
+            config.node.npm.version = npm_version;
+        }
 
-            if let Ok(pnpm_version) = env::var("MOON_PNPM_VERSION") {
-                if let Some(pnpm_config) = &mut node_config.pnpm {
-                    pnpm_config.version = pnpm_version;
-                }
+        if let Ok(pnpm_version) = env::var("MOON_PNPM_VERSION") {
+            if let Some(pnpm_config) = &mut config.node.pnpm {
+                pnpm_config.version = pnpm_version;
             }
+        }
 
-            if let Ok(yarn_version) = env::var("MOON_YARN_VERSION") {
-                if let Some(yarn_config) = &mut node_config.yarn {
-                    yarn_config.version = yarn_version;
-                }
+        if let Ok(yarn_version) = env::var("MOON_YARN_VERSION") {
+            if let Some(yarn_config) = &mut config.node.yarn {
+                yarn_config.version = yarn_version;
             }
         }
 
@@ -148,10 +137,10 @@ mod tests {
             assert_eq!(
                 config,
                 WorkspaceConfig {
-                    node: Some(NodeConfig::default()),
+                    node: NodeConfig::default(),
                     projects: HashMap::new(),
-                    typescript: Some(TypeScriptConfig::default()),
-                    vcs: Some(VcsConfig::default()),
+                    typescript: TypeScriptConfig::default(),
+                    vcs: VcsConfig::default(),
                 }
             );
 
@@ -178,13 +167,13 @@ node:
                 assert_eq!(
                     config,
                     WorkspaceConfig {
-                        node: Some(NodeConfig {
-                            package_manager: Some(PackageManager::Yarn),
+                        node: NodeConfig {
+                            package_manager: PackageManager::Yarn,
                             ..NodeConfig::default()
-                        }),
+                        },
                         projects: HashMap::new(),
-                        typescript: Some(TypeScriptConfig::default()),
-                        vcs: Some(VcsConfig::default()),
+                        typescript: TypeScriptConfig::default(),
+                        vcs: VcsConfig::default(),
                     }
                 );
 
@@ -323,7 +312,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.unwrap().version, String::from("4.5.6"),);
+                assert_eq!(config.node.version, String::from("4.5.6"),);
 
                 Ok(())
             });
@@ -391,10 +380,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(
-                    config.node.unwrap().npm.unwrap().version,
-                    String::from("4.5.6"),
-                );
+                assert_eq!(config.node.npm.version, String::from("4.5.6"),);
 
                 Ok(())
             });
@@ -463,10 +449,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(
-                    config.node.unwrap().pnpm.unwrap().version,
-                    String::from("4.5.6"),
-                );
+                assert_eq!(config.node.pnpm.unwrap().version, String::from("4.5.6"),);
 
                 Ok(())
             });
@@ -535,10 +518,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(
-                    config.node.unwrap().yarn.unwrap().version,
-                    String::from("4.5.6"),
-                );
+                assert_eq!(config.node.yarn.unwrap().version, String::from("4.5.6"),);
 
                 Ok(())
             });
@@ -648,13 +628,13 @@ vcs:
                 assert_eq!(
                     config,
                     WorkspaceConfig {
-                        node: Some(NodeConfig::default()),
+                        node: NodeConfig::default(),
                         projects: HashMap::new(),
-                        typescript: Some(TypeScriptConfig::default()),
-                        vcs: Some(VcsConfig {
-                            manager: Some(VcsManager::Svn),
+                        typescript: TypeScriptConfig::default(),
+                        vcs: VcsConfig {
+                            manager: VcsManager::Svn,
                             ..VcsConfig::default()
-                        }),
+                        },
                     }
                 );
 

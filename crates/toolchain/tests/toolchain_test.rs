@@ -7,9 +7,7 @@ use std::path::{Path, PathBuf};
 async fn create_toolchain(base_dir: &Path) -> Toolchain {
     let mut config = WorkspaceConfig::default();
 
-    if let Some(ref mut node) = config.node {
-        node.version = String::from("1.0.0");
-    }
+    config.node.version = String::from("1.0.0");
 
     Toolchain::create_from_dir(&config, base_dir, &env::temp_dir())
         .await

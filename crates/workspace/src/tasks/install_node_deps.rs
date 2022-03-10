@@ -15,33 +15,30 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
     // Update artifacts based on node settings
-    if let Some(node_config) = &workspace.config.node {
-        let mut root_package = workspace.load_package_json().await?;
+    let node_config = &workspace.config.node;
+    let mut root_package = workspace.load_package_json().await?;
 
-        if node_config.add_engines_constraint.unwrap_or(true)
-            && root_package.add_engine("node", &node_config.version)
-        {
-            root_package.save().await?;
+    if node_config.add_engines_constraint && root_package.add_engine("node", &node_config.version) {
+        root_package.save().await?;
 
-            debug!(
-                target: TARGET,
-                "Adding engines version constraint to root {}",
-                color::path("package.json")
-            );
-        }
+        debug!(
+            target: TARGET,
+            "Adding engines version constraint to root {}",
+            color::path("package.json")
+        );
+    }
 
-        if let Some(version_manager) = &node_config.sync_version_manager_config {
-            let rc_name = version_manager.get_config_file_name();
-            let rc_path = workspace.root.join(&rc_name);
+    if let Some(version_manager) = &node_config.sync_version_manager_config {
+        let rc_name = version_manager.get_config_file_name();
+        let rc_path = workspace.root.join(&rc_name);
 
-            fs::write(&rc_path, &node_config.version).await?;
+        fs::write(&rc_path, &node_config.version).await?;
 
-            debug!(
-                target: TARGET,
-                "Syncing Node.js version to root {}",
-                color::path(&rc_name)
-            );
-        }
+        debug!(
+            target: TARGET,
+            "Syncing Node.js version to root {}",
+            color::path(&rc_name)
+        );
     }
 
     // Get the last modified time of the root lockfile
@@ -65,12 +62,10 @@ pub async fn install_node_deps(workspace: Arc<RwLock<Workspace>>) -> Result<(), 
 
         manager.install_dependencies(toolchain).await?;
 
-        if let Some(node_config) = &workspace.config.node {
-            if node_config.dedupe_on_lockfile_change.unwrap_or(true) {
-                debug!(target: TARGET, "Dedupeing dependencies",);
+        if node_config.dedupe_on_lockfile_change {
+            debug!(target: TARGET, "Dedupeing dependencies",);
 
-                manager.dedupe_dependencies(toolchain).await?;
-            }
+            manager.dedupe_dependencies(toolchain).await?;
         }
 
         // Update the cache with the timestamp

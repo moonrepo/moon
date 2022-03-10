@@ -3,10 +3,26 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use validator::{Validate, ValidationError};
 
-const NODE_VERSION: &str = "16.14.0";
-const NPM_VERSION: &str = "inherit"; // Use the version bundled with node
-const PNPM_VERSION: &str = "6.32.2";
-const YARN_VERSION: &str = "3.2.0";
+fn default_node_version() -> String {
+    env::var("MOON_NODE_VERSION").unwrap_or_else(|_| String::from("16.14.0"))
+}
+
+fn default_npm_version() -> String {
+    // Use the version bundled with node by default
+    env::var("MOON_NPM_VERSION").unwrap_or_else(|_| String::from("inherit"))
+}
+
+fn default_pnpm_version() -> String {
+    env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| String::from("6.32.2"))
+}
+
+fn default_yarn_version() -> String {
+    env::var("MOON_YARN_VERSION").unwrap_or_else(|_| String::from("3.2.0"))
+}
+
+fn default_bool_true() -> bool {
+    true
+}
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.version", value)
@@ -36,6 +52,12 @@ pub enum PackageManager {
     Yarn,
 }
 
+impl Default for PackageManager {
+    fn default() -> Self {
+        PackageManager::Npm
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VersionManager {
@@ -54,6 +76,7 @@ impl VersionManager {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct NpmConfig {
+    #[serde(default = "default_npm_version")]
     #[validate(custom = "validate_npm_version")]
     pub version: String,
 }
@@ -61,13 +84,14 @@ pub struct NpmConfig {
 impl Default for NpmConfig {
     fn default() -> Self {
         NpmConfig {
-            version: env::var("MOON_NPM_VERSION").unwrap_or_else(|_| NPM_VERSION.to_owned()),
+            version: default_npm_version(),
         }
     }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct PnpmConfig {
+    #[serde(default = "default_pnpm_version")]
     #[validate(custom = "validate_pnpm_version")]
     pub version: String,
 }
@@ -75,13 +99,14 @@ pub struct PnpmConfig {
 impl Default for PnpmConfig {
     fn default() -> Self {
         PnpmConfig {
-            version: env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| PNPM_VERSION.to_owned()),
+            version: default_pnpm_version(),
         }
     }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 pub struct YarnConfig {
+    #[serde(default = "default_yarn_version")]
     #[validate(custom = "validate_yarn_version")]
     pub version: String,
 }
@@ -89,7 +114,7 @@ pub struct YarnConfig {
 impl Default for YarnConfig {
     fn default() -> Self {
         YarnConfig {
-            version: env::var("MOON_YARN_VERSION").unwrap_or_else(|_| YARN_VERSION.to_owned()),
+            version: default_yarn_version(),
         }
     }
 }
@@ -97,19 +122,24 @@ impl Default for YarnConfig {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
-    pub add_engines_constraint: Option<bool>,
+    #[serde(default = "default_bool_true")]
+    pub add_engines_constraint: bool,
 
-    pub dedupe_on_lockfile_change: Option<bool>,
+    #[serde(default = "default_bool_true")]
+    pub dedupe_on_lockfile_change: bool,
 
+    #[serde(default)]
     #[validate]
-    pub npm: Option<NpmConfig>,
+    pub npm: NpmConfig,
 
-    pub package_manager: Option<PackageManager>,
+    #[serde(default)]
+    pub package_manager: PackageManager,
 
     #[validate]
     pub pnpm: Option<PnpmConfig>,
 
-    pub sync_project_workspace_dependencies: Option<bool>,
+    #[serde(default = "default_bool_true")]
+    pub sync_project_workspace_dependencies: bool,
 
     pub sync_version_manager_config: Option<VersionManager>,
 
@@ -123,14 +153,14 @@ pub struct NodeConfig {
 impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
-            add_engines_constraint: Some(true),
-            dedupe_on_lockfile_change: Some(true),
-            npm: Some(NpmConfig::default()),
-            package_manager: Some(PackageManager::Npm),
+            add_engines_constraint: default_bool_true(),
+            dedupe_on_lockfile_change: default_bool_true(),
+            npm: NpmConfig::default(),
+            package_manager: PackageManager::Npm,
             pnpm: None,
-            sync_project_workspace_dependencies: Some(true),
+            sync_project_workspace_dependencies: default_bool_true(),
             sync_version_manager_config: None,
-            version: env::var("MOON_NODE_VERSION").unwrap_or_else(|_| NODE_VERSION.to_owned()),
+            version: default_node_version(),
             yarn: None,
         }
     }

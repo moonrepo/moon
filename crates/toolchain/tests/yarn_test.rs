@@ -10,13 +10,11 @@ async fn create_yarn_tool() -> (YarnTool, assert_fs::TempDir) {
 
     let mut config = WorkspaceConfig::default();
 
-    if let Some(ref mut node) = config.node {
-        node.version = String::from("1.0.0");
-        node.package_manager = Some(PackageManager::Yarn);
-        node.yarn = Some(YarnConfig {
-            version: String::from("6.0.0"),
-        });
-    }
+    config.node.version = String::from("1.0.0");
+    config.node.package_manager = PackageManager::Yarn;
+    config.node.yarn = Some(YarnConfig {
+        version: String::from("6.0.0"),
+    });
 
     let toolchain = Toolchain::create_from_dir(&config, base_dir.path(), &env::temp_dir())
         .await

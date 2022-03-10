@@ -11,7 +11,8 @@
     "moon": "target/debug/moon --logLevel trace"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "website"
   ],
   "engines": {
     "node": ">=12.17.0"

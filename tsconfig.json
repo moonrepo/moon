@@ -4,6 +4,9 @@
   "references": [
     {
       "path": "packages/runtime"
+    },
+    {
+      "path": "website"
     }
   ]
 }

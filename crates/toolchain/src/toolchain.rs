@@ -7,7 +7,7 @@ use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::package::PackageJson;
-use moon_config::{NodeConfig, PackageManager as PM, WorkspaceConfig};
+use moon_config::{PackageManager as PM, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_utils::fs;
 use std::path::{Path, PathBuf};
@@ -86,26 +86,19 @@ impl Toolchain {
         // Order is IMPORTANT here, as some tools rely on others already
         // being instantiated. For example, npm requires node,
         // and pnpm/yarn require npm!
-        let node = match &config.node {
-            Some(cfg) => cfg.clone(),
-            None => NodeConfig::default(),
-        };
+        let node = &config.node;
 
-        toolchain.node = Some(NodeTool::new(&toolchain, &node)?);
+        toolchain.node = Some(NodeTool::new(&toolchain, node)?);
 
-        toolchain.npm = Some(NpmTool::new(&toolchain, &node.npm.unwrap_or_default())?);
+        toolchain.npm = Some(NpmTool::new(&toolchain, &node.npm)?);
 
-        if let Some(pm) = node.package_manager {
-            match pm {
-                PM::Npm => {}
-                PM::Pnpm => {
-                    toolchain.pnpm =
-                        Some(PnpmTool::new(&toolchain, &node.pnpm.unwrap_or_default())?);
-                }
-                PM::Yarn => {
-                    toolchain.yarn =
-                        Some(YarnTool::new(&toolchain, &node.yarn.unwrap_or_default())?);
-                }
+        match node.package_manager {
+            PM::Npm => {}
+            PM::Pnpm => {
+                toolchain.pnpm = Some(PnpmTool::new(&toolchain, node.pnpm.as_ref().unwrap())?);
+            }
+            PM::Yarn => {
+                toolchain.yarn = Some(YarnTool::new(&toolchain, node.yarn.as_ref().unwrap())?);
             }
         }
 

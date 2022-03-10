@@ -37,26 +37,26 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
             term.render_entry("Channel", &meta.channel)?;
         }
 
-        if let Some(depends_on) = config.depends_on {
-            let mut deps = vec![];
+        let mut deps = vec![];
 
-            for dep_id in depends_on {
-                match workspace.projects.load(&dep_id) {
-                    Ok(dep) => {
-                        deps.push(format!(
-                            "{} {}{}{}",
-                            color::id(&dep_id),
-                            color::muted_light("("),
-                            color::path(&dep.source),
-                            color::muted_light(")"),
-                        ));
-                    }
-                    Err(_) => {
-                        deps.push(color::id(&dep_id));
-                    }
-                };
-            }
+        for dep_id in config.depends_on {
+            match workspace.projects.load(&dep_id) {
+                Ok(dep) => {
+                    deps.push(format!(
+                        "{} {}{}{}",
+                        color::id(&dep_id),
+                        color::muted_light("("),
+                        color::path(&dep.source),
+                        color::muted_light(")"),
+                    ));
+                }
+                Err(_) => {
+                    deps.push(color::id(&dep_id));
+                }
+            };
+        }
 
+        if !deps.is_empty() {
             term.write_line("")?;
             term.render_label(Label::Default, "Depends on")?;
             term.render_list(&deps)?;

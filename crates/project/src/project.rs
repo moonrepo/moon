@@ -55,30 +55,25 @@ fn create_file_groups_from_config(
     let mut file_groups = HashMap::<String, FileGroup>::new();
 
     // Add global file groups first
-    if let Some(global_file_groups) = &global_config.file_groups {
-        for (group_id, files) in global_file_groups {
-            file_groups.insert(
-                group_id.to_owned(),
-                FileGroup::new(group_id, files.to_owned()),
-            );
-        }
+    for (group_id, files) in &global_config.file_groups {
+        file_groups.insert(
+            group_id.to_owned(),
+            FileGroup::new(group_id, files.to_owned()),
+        );
     }
 
     // Override global configs with local
     if let Some(local_config) = config {
-        if let Some(local_file_groups) = &local_config.file_groups {
-            for (group_id, files) in local_file_groups {
-                if file_groups.contains_key(group_id) {
-                    // Group already exists, so merge with it
-                    file_groups
-                        .get_mut(group_id)
-                        .unwrap()
-                        .merge(files.to_owned());
-                } else {
-                    // Insert a group
-                    file_groups
-                        .insert(group_id.clone(), FileGroup::new(group_id, files.to_owned()));
-                }
+        for (group_id, files) in &local_config.file_groups {
+            if file_groups.contains_key(group_id) {
+                // Group already exists, so merge with it
+                file_groups
+                    .get_mut(group_id)
+                    .unwrap()
+                    .merge(files.to_owned());
+            } else {
+                // Insert a group
+                file_groups.insert(group_id.clone(), FileGroup::new(group_id, files.to_owned()));
             }
         }
     }
@@ -97,29 +92,25 @@ fn create_tasks_from_config(
     let mut tasks = HashMap::<String, Task>::new();
 
     // Add global tasks first
-    if let Some(global_tasks) = &global_config.tasks {
-        for (task_id, task_config) in global_tasks {
-            tasks.insert(
-                task_id.clone(),
-                Task::from_config(Target::format(project_id, task_id)?, task_config),
-            );
-        }
+    for (task_id, task_config) in &global_config.tasks {
+        tasks.insert(
+            task_id.clone(),
+            Task::from_config(Target::format(project_id, task_id)?, task_config),
+        );
     }
 
     // Add local tasks second
     if let Some(local_config) = config {
-        if let Some(local_tasks) = &local_config.tasks {
-            for (task_id, task_config) in local_tasks {
-                if tasks.contains_key(task_id) {
-                    // Task already exists, so merge with it
-                    tasks.get_mut(task_id).unwrap().merge(task_config);
-                } else {
-                    // Insert a new task
-                    tasks.insert(
-                        task_id.clone(),
-                        Task::from_config(Target::format(project_id, task_id)?, task_config),
-                    );
-                }
+        for (task_id, task_config) in &local_config.tasks {
+            if tasks.contains_key(task_id) {
+                // Task already exists, so merge with it
+                tasks.get_mut(task_id).unwrap().merge(task_config);
+            } else {
+                // Insert a new task
+                tasks.insert(
+                    task_id.clone(),
+                    Task::from_config(Target::format(project_id, task_id)?, task_config),
+                );
             }
         }
     }
@@ -208,9 +199,7 @@ impl Project {
         let mut depends_on = vec![];
 
         if let Some(config) = &self.config {
-            if let Some(config_depends) = &config.depends_on {
-                depends_on.extend_from_slice(config_depends);
-            }
+            depends_on.extend_from_slice(&config.depends_on);
         }
 
         depends_on.sort();

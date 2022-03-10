@@ -9,7 +9,7 @@ use crate::types::{FileGroups, ProjectID};
 use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
 use serde::{Deserialize, Serialize};
@@ -83,29 +83,31 @@ pub struct ProjectMetadataConfig {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectConfig {
-    #[serde(rename = "dependsOn")]
-    pub depends_on: Option<Vec<ProjectID>>,
+    #[serde(default)]
+    pub depends_on: Vec<ProjectID>,
 
-    #[serde(rename = "fileGroups")]
+    #[serde(default)]
     #[validate(custom = "validate_file_groups")]
-    pub file_groups: Option<FileGroups>,
+    pub file_groups: FileGroups,
 
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
+    #[serde(default)]
     #[validate(custom = "validate_tasks")]
     #[validate]
-    pub tasks: Option<HashMap<String, TaskConfig>>,
+    pub tasks: HashMap<String, TaskConfig>,
 }
 
 impl Provider for ProjectConfig {
     fn metadata(&self) -> Metadata {
-        Metadata::named(constants::CONFIG_PROJECT_FILENAME)
+        Metadata::named("Project config").source(constants::CONFIG_PROJECT_FILENAME)
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        figment::providers::Serialized::defaults(ProjectConfig::default()).data()
+        Serialized::defaults(ProjectConfig::default()).data()
     }
 
     fn profile(&self) -> Option<Profile> {
@@ -115,13 +117,14 @@ impl Provider for ProjectConfig {
 
 impl ProjectConfig {
     pub fn load(path: &Path) -> Result<ProjectConfig, ValidationErrors> {
-        let config: ProjectConfig = match Figment::from(ProjectConfig::default())
-            .merge(Yaml::file(path))
-            .extract()
-        {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+        let config: ProjectConfig =
+            match Figment::from(Serialized::defaults(ProjectConfig::default()))
+                .merge(Yaml::file(path))
+                .extract()
+            {
+                Ok(cfg) => cfg,
+                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+            };
 
         if let Err(errors) = config.validate() {
             return Err(errors);
@@ -173,10 +176,10 @@ fileGroups:
             assert_eq!(
                 config,
                 ProjectConfig {
-                    file_groups: Some(HashMap::from([(
+                    file_groups: HashMap::from([(
                         String::from("sources"),
                         string_vec!["src/**/*"]
-                    )])),
+                    )]),
                     ..ProjectConfig::default()
                 }
             );
@@ -258,19 +261,14 @@ tasks:
                 assert_eq!(
                     config,
                     ProjectConfig {
-                        tasks: Some(HashMap::from([(
+                        tasks: HashMap::from([(
                             String::from("lint"),
                             TaskConfig {
                                 args: Some(vec![".".to_owned()]),
                                 command: Some("eslint".to_owned()),
-                                deps: None,
-                                env: None,
-                                inputs: None,
-                                options: None,
-                                outputs: None,
-                                type_of: None
+                                ..TaskConfig::default()
                             }
-                        )])),
+                        )]),
                         ..ProjectConfig::default()
                     }
                 );

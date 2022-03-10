@@ -7,7 +7,7 @@ use crate::types::FileGroups;
 use crate::validators::{validate_id, HashMapValidate};
 use figment::value::{Dict, Map};
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
 use serde::{Deserialize, Serialize};
@@ -43,23 +43,29 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct GlobalProjectConfig {
-    #[serde(rename = "fileGroups")]
+    #[serde(default)]
     #[validate(custom = "validate_file_groups")]
-    pub file_groups: Option<FileGroups>,
+    pub file_groups: FileGroups,
 
+    #[serde(default)]
     #[validate(custom = "validate_tasks")]
     #[validate]
-    pub tasks: Option<HashMap<String, TaskConfig>>,
+    pub tasks: HashMap<String, TaskConfig>,
 }
 
 impl Provider for GlobalProjectConfig {
     fn metadata(&self) -> Metadata {
-        Metadata::named(constants::CONFIG_PROJECT_FILENAME)
+        Metadata::named("Global project config").source(format!(
+            "{}/{}",
+            constants::CONFIG_DIRNAME,
+            constants::CONFIG_PROJECT_FILENAME
+        ))
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        figment::providers::Serialized::defaults(GlobalProjectConfig::default()).data()
+        Serialized::defaults(GlobalProjectConfig::default()).data()
     }
 
     fn profile(&self) -> Option<Profile> {
@@ -69,13 +75,14 @@ impl Provider for GlobalProjectConfig {
 
 impl GlobalProjectConfig {
     pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ValidationErrors> {
-        let config: GlobalProjectConfig = match Figment::from(GlobalProjectConfig::default())
-            .merge(Yaml::file(path))
-            .extract()
-        {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+        let config: GlobalProjectConfig =
+            match Figment::from(Serialized::defaults(GlobalProjectConfig::default()))
+                .merge(Yaml::file(path))
+                .extract()
+            {
+                Ok(cfg) => cfg,
+                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+            };
 
         // Validate the fields before continuing
         if let Err(errors) = config.validate() {
@@ -116,11 +123,11 @@ fileGroups:
             assert_eq!(
                 config,
                 GlobalProjectConfig {
-                    file_groups: Some(HashMap::from([(
+                    file_groups: HashMap::from([(
                         String::from("sources"),
                         string_vec!["src/**/*"]
-                    )])),
-                    tasks: None,
+                    )]),
+                    tasks: HashMap::new(),
                 }
             );
 

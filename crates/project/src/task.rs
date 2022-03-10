@@ -98,7 +98,7 @@ pub struct Task {
 impl Task {
     pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
-        let cloned_options = cloned_config.options.unwrap_or_default();
+        let cloned_options = cloned_config.options;
 
         let task = Task {
             args: cloned_config.args.unwrap_or_else(Vec::new),
@@ -121,7 +121,7 @@ impl Task {
             outputs: cloned_config.outputs.unwrap_or_else(Vec::new),
             output_paths: HashSet::new(),
             target: target.clone(),
-            type_of: cloned_config.type_of.unwrap_or_default(),
+            type_of: cloned_config.type_of,
         };
 
         debug!(
@@ -268,9 +268,8 @@ impl Task {
 
     pub fn merge(&mut self, config: &TaskConfig) {
         // Merge options first incase the merge strategy has changed
-        if let Some(options) = &config.options {
-            self.options.merge(options);
-        }
+        self.options.merge(&config.options);
+        self.type_of = config.type_of.clone();
 
         // Then merge the actual task fields
         if let Some(command) = &config.command {
@@ -296,10 +295,6 @@ impl Task {
         if let Some(outputs) = &config.outputs {
             self.outputs =
                 self.merge_string_vec(&self.outputs, outputs, &self.options.merge_outputs);
-        }
-
-        if let Some(type_of) = &config.type_of {
-            self.type_of = type_of.clone();
         }
     }
 

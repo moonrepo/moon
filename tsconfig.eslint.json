@@ -7,6 +7,8 @@
     "packages/*/src/**/*",
     "packages/*/tests/**/*",
     "packages/*/types/**/*",
-    "scripts/**/*"
+    "scripts/**/*",
+    "website/src/**/*",
+    "website/*.js"
   ]
 }

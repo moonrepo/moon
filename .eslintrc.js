@@ -14,5 +14,12 @@ module.exports = {
 				'promise/prefer-await-to-callbacks': 'off',
 			},
 		},
+		{
+			files: ['website/**/*'],
+			rules: {
+				// Path aliases
+				'import/no-unresolved': 'off',
+			},
+		},
 	],
 };

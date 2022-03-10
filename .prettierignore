@@ -1,6 +1,7 @@
 coverage/
 
 # Build folders
+.docusaurus/
 coverage/
 build/
 cjs/

@@ -1,3 +1,4 @@
+.docusaurus/
 node_modules/
 build/
 cjs/

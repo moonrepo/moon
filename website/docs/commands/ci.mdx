@@ -1,0 +1,67 @@
+---
+title: ci
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The `ci` command is a special command that should be ran in a continuous integration (CI)
+environment, as it does all the heavy lifting necessary for effectively running jobs. It achieves
+this by doing the following:
+
+- Determines touched files by comparing the current HEAD against a base.
+- Determines all [targets](../concepts/task#targets) that need to run based on touched files.
+- Additionally runs affected targets dependencies _and_ dependents.
+- Generates a task and dependency graph.
+- Installs the toolchain, Node.js, and npm dependencies.
+- Runs all tasks within the graph using a thread pool.
+- Displays stats about all passing, failed, and invalid tasks.
+
+```shell
+$ moon ci
+```
+
+## Arguments
+
+- `--base <rev>` - Base branch, commit, or revision to compare against.
+- `--head <rev>` - Current branch, commit, or revision to compare with.
+- `--job <index>` - Index of the current job.
+- `--jobTotal <total>` Total amount of jobs to run.
+
+## Revision comparison
+
+By default the command will compare the current branches HEAD against a base revision, which is
+typically the configured [`vcs.defaultBranch`](../config/workspace#defaultbranch) (master, main,
+trunk, etc). Both of these can be customized with the `--base` and `--head` options respectively.
+
+```shell
+$ moon ci --base another-branch --head <SHA>
+```
+
+## Parallelism
+
+If your CI environment supports splitting up tasks across multiple jobs, then you can utilize Moon's
+built in parallelism, by passing `--jobTotal` and `--job` options. The `--jobTotal` option is an
+integer of the total number of jobs available, and `--job` is the current index (0 based) amongst
+the total.
+
+When these options are passed, Moon will only run affected targets based on the current job slice.
+
+<Tabs>
+<TabItem value="circleci" label="CircleCI">
+
+```
+$ moon ci --job $CIRCLE_NODE_INDEX --jobTotal $CIRCLE_NODE_TOTAL
+```
+
+</TabItem>
+<TabItem value="buildkite" label="BuildKite">
+
+```
+$ moon ci --job $BUILDKITE_PARALLEL_JOB --jobTotal $BUILDKITE_PARALLEL_JOB_COUNT
+```
+
+</TabItem>
+</Tabs>
+
+> Your CI environment may provide environment variables for these 2 values.

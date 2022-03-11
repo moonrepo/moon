@@ -1,0 +1,47 @@
+---
+title: project
+---
+
+The `project <id>` command will display all available information about a project that has been
+configured and exists within the graph. If a project does not exist, the program will return with a
+1 exit code.
+
+```shell
+$ moon project web
+```
+
+## Arguments
+
+- `<id>` - ID of a project, as defined in [`projects`](../config/workspace#projects).
+- `--json` - Print the project and its configuration as JSON.
+
+## Example output
+
+The following output is an example of what this command prints, using our very own
+[`@moonrepo/runtime`](/api/runtime) package.
+
+```
+RUNTIME
+
+ID: runtime
+Source: packages/runtime
+Root: /Projects/moon/packages/runtime
+
+TASKS
+
+build: packemon build --addEngines --addExports
+format: prettier --check .
+lint: eslint --no-error-on-unmatched-pattern .
+test: jest --passWithNoTests .
+typecheck: tsc --build
+
+FILE GROUPS
+
+configs:
+ - *.{js,json}
+sources:
+ - src/**/*
+ - types/**/*
+tests:
+ - tests/**/*.test.*
+```

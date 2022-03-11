@@ -7,12 +7,31 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Concepts',
-			items: ['concepts/workspace', 'concepts/project', 'concepts/task'],
+			items: [
+				'concepts/workspace',
+				'concepts/toolchain',
+				'concepts/project',
+				'concepts/task',
+				'concepts/cache',
+			],
 		},
 		{
 			type: 'category',
 			label: 'Config files',
 			items: ['config/workspace', 'config/global-project', 'config/project'],
+		},
+		{
+			type: 'category',
+			label: 'Commands',
+			items: [
+				'commands/bin',
+				'commands/ci',
+				'commands/init',
+				'commands/project',
+				'commands/project-graph',
+				'commands/setup',
+				'commands/teardown',
+			],
 		},
 	],
 };

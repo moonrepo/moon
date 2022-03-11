@@ -1,0 +1,19 @@
+---
+title: init
+---
+
+The `init [dest]` command will initialize Moon into a repository and scaffold config files by
+creating a `.moon` folder.
+
+```shell
+$ moon init
+
+# In another directory
+$ moon init ./app
+```
+
+## Arguments
+
+- `[dest]` - Destination to initialize and scaffold into. Defaults to `.` (current working
+  directory).
+- `--force` - Overwrite existing config files if they exist.

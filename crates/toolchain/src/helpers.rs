@@ -163,11 +163,15 @@ pub async fn unpack(
 ) -> Result<(), ToolchainError> {
     fs::create_dir_all(output_dir).await?;
 
-    println!("Input = {:#?} {}", input_file, input_file.ends_with(".zip"));
+    println!(
+        "Input = {:#?} {}",
+        input_file,
+        input_file.extension().unwrap()
+    );
     println!("Output = {:#?}", output_dir);
     println!("Prefix = {:#?}", prefix);
 
-    if input_file.ends_with(".zip") {
+    if input_file.extension().unwrap() == "zip" {
         unpack_zip(input_file, output_dir, prefix)?;
     } else {
         unpack_tar(input_file, output_dir, prefix)?;

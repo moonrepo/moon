@@ -7,7 +7,11 @@ on:
 jobs:
   ci:
     name: CI
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: ['12.22.9', '14.19.0', '16.14.0']
     steps:
       - uses: actions/checkout@v2
         with:

@@ -144,6 +144,7 @@ pub struct NodeConfig {
 
     pub sync_version_manager_config: Option<VersionManager>,
 
+    #[serde(default = "default_node_version")]
     #[validate(custom = "validate_node_version")]
     pub version: String,
 

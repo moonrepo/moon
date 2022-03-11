@@ -1,0 +1,491 @@
+---
+title: project.yml
+toc_max_heading_level: 6
+---
+
+import Label from '@site/src/components/Label';
+
+The `project.yml` configuration file _is not required_ but can be used to define additional metadata
+for a project, override inherited tasks, and more. When used, this file must exist in the project
+root, as configured in [`projects`](./workspace#projects).
+
+## `dependsOn`
+
+> `ProjectID[]`
+
+Defines _other_ projects that _this_ project depends on, primarily when generating the project and
+task graphs. The most common use case for this is building those projects _before_ building this
+one, and for syncing [`package.json`](../concepts/project#packagejson) dependencies and
+[`tsconfig.json`](../concepts/project#tsconfigjson) project references when applicable.
+
+When defined, this setting requires an array of project IDs, which are the keys found in the
+[`projects`](./workspace#projects) map.
+
+```yaml title="project.yml"
+dependsOn:
+  - 'apiClients'
+  - 'designSystem'
+```
+
+## `fileGroups`
+
+> `Record<string, string[]>`
+
+File groups are a mechanism for grouping similar types of files within a project using file glob
+patterns or literal file paths. These groups are then used by [tasks](#tasks) to calculate
+functionality like cache computation, affected files since last change, deterministic builds, and
+more. By default, this setting _is not required_ for the following reasons:
+
+- File groups are an optional feature, and are designed for advanced use cases.
+- File groups defined in [`.moon/project.yml`](./global-project) will be inherited by all projects.
+
+When defined this setting requires a map, where the key is the file group name, and the value is a
+list of globs or paths. Globs and paths are relative to a project (even when defined
+[globally](./global-project)). This enables enforcement of organizational patterns across all
+projects in the workspace.
+
+```yaml title="project.yml"
+fileGroups:
+  configs:
+    - '*.{js,json}'
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*.test.*'
+    - '**/__tests__/**/*'
+  assets:
+    - 'assets/**/*'
+    - 'images/**/*'
+    - 'static/**/*'
+    - '**/*.{scss,css}'
+    - '**/*'
+```
+
+> The code snippet above is merely an example of file groups. Feel free to use those groups as-is,
+> modify the glob lists, add and remove groups, or implement completely new groups. The choice is
+> yours!
+
+### Inherited file groups
+
+A primary scenario in which to define file groups at the project-level is when you want to
+_override_ file groups defined at the workspace-level. For example, say we want to override the
+`sources` file group because our source folder is named "lib" and not "src", we would define our
+file groups as followed.
+
+```yaml title=".moon/project.yml"
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*.test.*'
+    - '**/__tests__/**/*'
+```
+
+```yaml title="project.yml"
+fileGroups:
+  sources:
+    - 'lib/**/*'
+    - 'types/**/*'
+  # Inherit `tests` as-is
+```
+
+File groups defined in `project.yml` will override file groups defined in `.moon/project.yml` of the
+same name, and _will not_ merge the value arrays.
+
+## `project`
+
+> `ProjectMetadataConfig`
+
+The `project` setting defines metadata about the project itself. Although this setting is optional,
+when defined, all fields within it _must_ be defined as well.
+
+```yaml title="project.yml"
+project:
+  type: 'library'
+  name: 'Moon'
+  description: 'A monorepo management tool.'
+  channel: '#moon'
+  owner: 'infra'
+  maintainers: ['miles.johnson']
+```
+
+The information listed within `project` is purely informational and primarily displayed within the
+CLI. However, this setting exists for you, your team, and your company, as a means to identify and
+organize all projects. Feel free to build your own tooling around these settings!
+
+### `channel`
+
+> `string`
+
+The Slack, Discord, Teams, IRC, etc channel name (with leading #) in which to discuss the project.
+
+### `description`
+
+> `string`
+
+A description of what the project does and aims to achieve. Be as descriptive as possible, as this
+is the kind of information search engines would index on.
+
+### `maintainers`
+
+> `string[]`
+
+A list of people/developers that maintain the project, review code changes, and can provide support.
+Can be a name, email, LDAP name, GitHub username, etc, the choice is yours.
+
+### `name`
+
+> `string`
+
+A human readable name of the project. This is _different_ from the unique project ID configured in
+[`projects`](./workspace#projects).
+
+### `owner`
+
+> `string`
+
+The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
+suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
+
+### `type`
+
+> `ProjectType`
+
+The type of project. Supports the following values:
+
+- `application` - A backend or frontend application that communicates over HTTP, TCP, RPC, etc.
+- `library` - A self-contained, shareable, and publishable set of code.
+- `tool` - An internal tool, command line program, one-off script, etc.
+
+## `tasks`
+
+> `Record<string, TaskConfig>`
+
+Tasks are actions that are ran within the context of a [project](../concepts/project), and commonly
+wrap an npm or shell command. This setting requires a map, where the key is a unique identifier for
+the task, and the value is an object of task parameters.
+
+```yaml title="project.yml"
+tasks:
+  format:
+    command: 'prettier'
+  lint:
+    command: 'eslint'
+  test:
+    command: 'jest'
+  typecheck:
+    command: 'tsc'
+```
+
+All parameters within a task are optional, except for `command` which is required _unless_ you are
+inheriting a global task of the same name.
+
+### `command`<Label text="Required" />
+
+> `string`
+
+The `command` field is the name of an npm binary or native shell command to run when executing the
+task. This field is required when _not_ inheriting a global task of the same name.
+
+```yaml title="project.yml" {3}
+tasks:
+  format:
+    command: 'prettier'
+```
+
+By default a task assumes the command is an npm binary, and if you'd like to reference a shell
+command, you'll also need to set the [`type`](#type) to "shell".
+
+```yaml title="project.yml"
+tasks:
+  clean:
+    command: 'rm'
+    args: ['-rf', 'dist']
+    type: 'shell'
+```
+
+### `args`
+
+> `string[]`
+
+The `args` field is a list of arguments to pass on the command line when executing the task.
+
+```yaml title="project.yml" {4,5}
+tasks:
+  test:
+    command: 'jest'
+    args:
+      - '--color'
+```
+
+For this to work correctly, each argument _must_ be its own list item, including argument values.
+For example:
+
+```yaml title="project.yml"
+tasks:
+  test:
+    command: 'jest'
+    args:
+      # Valid
+      - '--maxWorkers'
+      - '3'
+      # Also valid
+      - '--maxWorkers=3'
+      # Invalid
+      - '--maxWorkers 3'
+```
+
+### `deps`
+
+> `Target[]`
+
+The `deps` field is a list of other tasks (known as [targets](../concepts/task#targets)), either
+within this project or found in another project, that will be executed _before_ this task. It
+achieves this by generating a directed task graph based on the project graph.
+
+```yaml title="project.yml" {4-6}
+tasks:
+  build:
+    command: 'webpack'
+    deps:
+      - 'apiClients:build'
+      - 'designSystem:build'
+```
+
+### `env`
+
+> `Record<string, string>`
+
+The `env` field is map of strings that are passed as environment variables when running the command.
+
+```yaml title="project.yml" {4,5}
+tasks:
+  build:
+    command: 'webpack'
+    env:
+      NODE_ENV: 'production'
+```
+
+### `inputs`
+
+> `string[]`
+
+The `inputs` field is a list of file paths/globs that are used to calculate whether to execute this
+task based on files that have been touched since the last time the task has been ran. If no touched
+files align with the inputs, the task will complete instantly.
+
+By default inputs are relative from the _project root_, and can reference
+[file groups](#filegroups). To reference files from the workspace root (for example, config files),
+prefix the path with a "/".
+
+```yaml title="project.yml" {4-10}
+tasks:
+  lint:
+    command: 'eslint'
+    inputs:
+      # Config files anywhere within the project
+      - '**/.eslintignore'
+      - '**/.eslintrc.js'
+      # Config files at the workspace root
+      - '/.eslintignore'
+      - '/.eslintrc.js'
+```
+
+### `outputs`
+
+> `string[]`
+
+The `outputs` field is a list of files and folders that are _created_ as a result of executing this
+task, excluding internal cache files that are created from the underlying command (for example,
+`.eslintcache`).
+
+By default outputs are relative from the _project root_. To output files to the workspace root
+(should rarely be used), prefix the path with a "/".
+
+```yaml title="project.yml" {4-6}
+tasks:
+  build:
+    command: 'webpack'
+    outputs:
+      # Relative from project root
+      - 'build/'
+```
+
+### `options`
+
+> `TaskOptionsConfig`
+
+The `options` field is an object of configurable options that can be used to modify the task and its
+execution. The following fields can be provided, with merge related fields supporting all
+[merge strategies](../concepts/task#merge-strategies).
+
+```yaml title="project.yml" {6-8}
+tasks:
+  typecheck:
+    command: 'tsc'
+    args:
+      - '--noEmit'
+    options:
+      mergeArgs: 'replace'
+      runFromWorkspaceRoot: true
+```
+
+#### `mergeArgs`
+
+> `TaskMergeStrategy`
+
+The strategy to use when merging the [`args`](#args) list with an inherited task. Defaults to
+"append".
+
+#### `mergeDeps`
+
+> `TaskMergeStrategy`
+
+The strategy to use when merging the [`deps`](#deps) list with an inherited task. Defaults to
+"append".
+
+#### `mergeEnv`
+
+> `TaskMergeStrategy`
+
+The strategy to use when merging the [`env`](#env) map with an inherited task. Defaults to "append".
+
+#### `mergeInputs`
+
+> `TaskMergeStrategy`
+
+The strategy to use when merging the [`inputs`](#inputs) list with an inherited task. Defaults to
+"append".
+
+#### `mergeOutputs`
+
+> `TaskMergeStrategy`
+
+The strategy to use when merging the [`outputs`](#outputs) list with an inherited task. Defaults to
+"append".
+
+#### `retryCount`
+
+> `number`
+
+The number of attempts the task will retry execution before returning a failure. This is especially
+useful for flaky tasks. Defaults to `0`.
+
+```yaml title="project.yml" {5}
+tasks:
+  test:
+    # ...
+    options:
+      retryCount: 3
+```
+
+#### `runInCI`
+
+> `boolean`
+
+Whether to run the task automatically in a CI (continuous integration) environment when affected by
+touched files, typically through the `moon ci` command. Defaults to `true` unless the task name is
+"start" or "serve", and is _always_ true when a task defines [`outputs`](#outputs).
+
+```yaml title="project.yml" {5}
+tasks:
+  build:
+    # ...
+    options:
+      runInCI: false
+```
+
+#### `runFromWorkspaceRoot`
+
+> `boolean`
+
+Whether to use the workspace root as the working directory when executing a task. Defaults to
+`false` and runs from the task's project root.
+
+```yaml title="project.yml" {5}
+tasks:
+  typecheck:
+    # ...
+    options:
+      runFromWorkspaceRoot: true
+```
+
+### `type`
+
+The `type` field defines the type of command to run, where to locate its executable, and which tool
+to execute it with. Accepts "node" or "shell" and defaults to "node".
+
+```yaml title="project.yml" {4}
+tasks:
+  env:
+    command: 'printenv'
+    type: 'shell'
+```
+
+> This field exists because of our [toolchain](../concepts/toolchain), and Moon ensuring the correct
+> command is ran.
+
+## `workspace`
+
+Dictates how a project interacts with settings defined at the workspace-level.
+
+### `inheritedTasks`
+
+Provides a layer of control when inheriting tasks from [`.moon/project.yml`](./global-project).
+
+#### `exclude`
+
+The optional `exclude` setting permits a project to exclude specific tasks from being inherited. It
+accepts a list of strings, where each string is the ID of a global task to exclude.
+
+```yaml title="project.yml" {4}
+workspace:
+  inheritedTasks:
+    # Exclude the inherited `test` task for this project
+    exclude: ['test']
+```
+
+> Exclusion is applied after inclusion and before renaming.
+
+#### `include`
+
+The optional `include` setting permits a project to _only_ include specific inherited tasks (works
+like an allow/white list). It accepts a list of strings, where each string is the ID of a global
+task to include.
+
+When this field is not defined, the project will inherit all tasks from the global project config.
+
+```yaml title="project.yml" {4,7-9}
+workspace:
+  inheritedTasks:
+    # Include *no* tasks (works like a full exclude)
+    include: []
+
+    # Only include the `lint` and `test` tasks for this project
+    include:
+      - 'lint'
+      - 'test'
+```
+
+> Inclusion is applied before exclusion and renaming.
+
+#### `rename`
+
+The optional `rename` setting permits a project to rename the inherited task within the current
+project. It accepts a map of strings, where the key is the original ID (found in the global project
+config), and the value is the new ID to use.
+
+For example, say we have 2 tasks in the global project config called `buildPackage` and
+`buildApplication`, but we only need 1, and since we're an application, we should omit and rename.
+
+```yaml title="project.yml" {4,5}
+workspace:
+  inheritedTasks:
+    exclude: ['buildPackage']
+    rename:
+      buildApplication: 'build'
+```
+
+> Renaming occurs after inclusion and exclusion.

@@ -1,0 +1,26 @@
+---
+title: .moon/project.yml
+---
+
+## `fileGroups`
+
+Globs and paths are relative to a project (even when defined globally TODO LINK).
+
+## `tasks`
+
+Tasks that are defined here and inherited by all projects within the workspace, but can be
+overridden per project.
+
+> Learn more about tasks and its concepts in the [tasks documentation](./task.md).
+
+```yaml
+tasks:
+  format:
+    command: 'prettier'
+  lint:
+    command: 'eslint'
+  test:
+    command: 'jest'
+  typecheck:
+    command: 'tsc'
+```

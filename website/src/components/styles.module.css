@@ -1,0 +1,13 @@
+.label {
+	font-weight: bold;
+	font-size: small;
+	color: #fff;
+	color: var(--ifm-font-color-base-inverse);
+	background-color: var(--ifm-color-primary-darker);
+	border-radius: var(--ifm-global-radius);
+	display: inline-block;
+	margin-left: 1rem;
+	vertical-align: middle;
+	text-transform: uppercase;
+	padding: 0.25rem 0.45rem;
+}

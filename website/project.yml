@@ -6,7 +6,7 @@ tasks:
     command: 'docusaurus'
     args: ['start']
     options:
-      runInCi: false
+      runInCI: false
   typecheck:
     command: 'tsc'
     args:

@@ -4,7 +4,11 @@
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
 	docs: [
-		{},
+		{
+			type: 'category',
+			label: 'Concepts',
+			items: ['concepts/workspace', 'concepts/project', 'concepts/task'],
+		},
 		{
 			type: 'category',
 			label: 'Config files',

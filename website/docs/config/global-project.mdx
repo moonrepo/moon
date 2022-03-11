@@ -2,25 +2,50 @@
 title: .moon/project.yml
 ---
 
+The `.moon/project.yml` file configures file groups and tasks that are inherited by _every_ project
+in the workspace. Projects can override these settings within their respective
+[`project.yml`](./project).
+
 ## `fileGroups`
+
+> For more information on file group configuration, refer to the
+> [`fileGroups`](./project#filegroups) section in the [`project.yml`](./project) doc.
 
 Globs and paths are relative to a project (even when defined globally TODO LINK).
 
 ## `tasks`
 
-Tasks that are defined here and inherited by all projects within the workspace, but can be
-overridden per project.
+> For more information on task configuration, refer to the [`tasks`](./project#tasks) section in the
+> [`project.yml`](./project) doc.
 
-> Learn more about tasks and its concepts in the [tasks documentation](./task.md).
+As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
+context of a project, and commonly wrap an npm or shell command. For most workspaces, every project
+_should_ have linting, type-checking, testing, code formatting, so on and so forth. To reduce the
+amount of boilerplate that _every_ project would require, we offer the ability to define tasks that
+are inherited by all projects within the workspace, but can also be overridden per project.
 
-```yaml
+```yaml title=".moon/project.yml"
 tasks:
   format:
     command: 'prettier'
+    args:
+      - '--check'
+      - '.'
+
   lint:
     command: 'eslint'
+    args:
+      - '--no-error-on-unmatched-pattern'
+      - '.'
+
   test:
     command: 'jest'
+    args:
+      - '--passWithNoTests'
+      - '.'
+
   typecheck:
     command: 'tsc'
+    args:
+      - '--build'
 ```

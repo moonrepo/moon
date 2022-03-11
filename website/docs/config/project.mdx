@@ -6,8 +6,8 @@ toc_max_heading_level: 6
 import Label from '@site/src/components/Label';
 
 The `project.yml` configuration file _is not required_ but can be used to define additional metadata
-for a project, override inherited tasks, and more. When used, this file must exist in the project
-root, as configured in [`projects`](./workspace#projects).
+for a project, override inherited tasks, and more at the project-level. When used, this file must
+exist in a project's root, as configured in [`projects`](./workspace#projects).
 
 ## `dependsOn`
 
@@ -178,9 +178,6 @@ tasks:
   typecheck:
     command: 'tsc'
 ```
-
-All parameters within a task are optional, except for `command` which is required _unless_ you are
-inheriting a global task of the same name.
 
 ### `command`<Label text="Required" />
 

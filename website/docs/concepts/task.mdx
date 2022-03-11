@@ -1,23 +1,37 @@
-# Tasks
+---
+title: Tasks
+toc_max_heading_level: 5
+---
 
-- [Tokens](#tokens)
-  - [Functions](#functions)
-    - [File groups](#file-groups)
-    - [Inputs](#inputs)
-    - [Outputs](#outputs)
-  - [Variables](#variables)
-- [Targets](#targets)
-- [Merge strategies](#merge-strategies)
+Tasks are commands that are ran in the context of a [project](./project). Underneath the hood, a
+task is simply an npm binary or a system/shell command that is ran as a child-process. Tasks are
+processed in a parallel thread pool within Moon's orchestration layer.
 
-Tasks are commands that are ran in the context of a [project](./project.md). Underneath the hood, a
-task is simply a node module binary or a system/shell command that is ran as a child-process. Tasks
-communicate between the Moon client and server through a JSON-like message system.
+## Targets
+
+A target is an identifier that pairs a project to an owned task, in the format of
+"project_id:task_id". Targets are used by terminal commands...
+
+```shell
+$ moon run designSystem:build
+```
+
+And configurations for declaring cross-project or cross-task dependencies.
+
+```yaml
+tasks:
+  build:
+    command: 'webpack'
+    deps:
+      - 'designSystem:build'
+```
 
 ## Tokens
 
-Tokens are variables and functions that can be used by `args`, `inputs`, and `outputs` when
-configuring a task. They provide a way of accessing file group paths, referencing values from other
-task fields, and referencing metadata about the project and task itself.
+Tokens are variables and functions that can be used by [`args`](../config/project#args),
+[`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs) when configuring a
+task. They provide a way of accessing file group paths, referencing values from other task fields,
+and referencing metadata about the project and task itself.
 
 ### Functions
 
@@ -109,11 +123,11 @@ tasks:
     args:
       - 'build'
       - 'babel.config.js'
-      - 'webpack.babel.js'
+      - 'webpack.config.js'
       - 'package.json'
     inputs:
       - '/path/to/project/babel.config.js'
-      - '/path/to/project/webpack.babel.js'
+      - '/path/to/project/webpack.config.js'
       - '/path/to/project/package.json'
 ```
 
@@ -199,7 +213,7 @@ tasks:
 > When there's no directies, or too many directories, this function will return the project root
 > using `.`.
 
-#### Inputs
+#### Inputs & outputs
 
 ##### `@in`
 
@@ -236,8 +250,6 @@ tasks:
       - '/path/to/project/src'
       - '/path/to/project/babel.config.js'
 ```
-
-#### Outputs
 
 ##### `@out`
 
@@ -278,13 +290,13 @@ tasks:
 A token variable is a value that starts with `$` and is substituted to a value derived from the
 current workspace, project, and task. The following variables are available:
 
-- `$project` - Project ID of the project that owns the currently running task, as defined in
+- `$project` - ID of the project that owns the currently running task, as defined in
   `.moon/workspace.yml`.
 - `$projectSource` - Relative file path from the workspace root to the project root, as defined in
   `.moon/workspace.yml`.
 - `$projectRoot` - Absolute file path to the project root.
 - `$target` - Target that is currently running. Is a combination of project and task IDs.
-- `$task` - Task ID that is currently running.
+- `$task` - ID of the task that is currently running.
 - `$workspaceRoot` - Absolute file path to the workspace root.
 
 > Unlike token functions, token variables can be placed _within_ content when necessary.
@@ -315,41 +327,22 @@ tasks:
       - '--task=build'
 ```
 
-## Targets
-
-A target is an identifier that pairs a project to an owned task, in the format of
-"project_id:task_id". Targets are used by terminal commands...
-
-```shell
-$ moon run project:build
-```
-
-And task configurations for declaring cross-project or cross-task dependencies.
-
-```yaml
-tasks:
-  build:
-    command: 'webpack'
-    deps:
-      - 'dsl:build'
-```
-
 ## Merge strategies
 
-When a [global task](./workspace.md#tasks) and [local task](./project.md#tasks) of the same name
-exist, they are merged into a single task. To accomplish this, one of many
-[merge strategies](./workspace.md#options) can be used.
+When a [global task](../config/global-project#tasks) and [local task](../config/project#tasks) of
+the same name exist, they are merged into a single task. To accomplish this, one of many
+[merge strategies](../config/project#options) can be used.
 
 Merging is applied to the parameters `args`, `deps`, `env`, `inputs`, and `outputs`, using the
 `mergeArgs`, `mergeDeps`, `mergeEnv`, `mergeInputs` and `mergeOutputs` options respectively. Each of
 these options support one of the following strategy values.
 
-- `append` (default) - Values found in the local task are merged _after_ the items found in the
+- `append` (default) - Values found in the local task are merged _after_ the values found in the
   global task. For example, this strategy is useful for toggling flag arguments.
-- `prepend` - Values found in the local task are merged _before_ the items found in the global task.
-  For example, this strategy is useful for applying option argument that must come before positional
-  arguments.
-- `replace` - Values found in the local task entirely _replaces_ the value in the global task. This
+- `prepend` - Values found in the local task are merged _before_ the values found in the global
+  task. For example, this strategy is useful for applying option arguments that must come before
+  positional arguments.
+- `replace` - Values found in the local task entirely _replaces_ the values in the global task. This
   strategy is useful when you need full control.
 
 All 3 of these strategies are demonstrated below, with a somewhat contrived example, but you get the
@@ -365,7 +358,7 @@ tasks:
       - 'production'
       - '--color'
     deps:
-      - 'dsl:build'
+      - 'designSystem:build'
     inputs:
       - '/webpack.config.js'
     outputs:
@@ -378,7 +371,7 @@ tasks:
       - '--no-color'
       - '--no-stats'
     deps:
-      - 'hooks:build'
+      - 'reactHooks:build'
     inputs:
       - 'webpack.config.js'
     options:
@@ -397,10 +390,12 @@ tasks:
       - '--no-color'
       - '--no-stats'
     deps:
-      - 'hooks:build'
-      - 'dsl:build'
+      - 'reactHooks:build'
+      - 'designSystem:build'
     inputs:
       - 'webpack.config.js'
+    outputs:
+      - 'build/'
     options:
       mergeArgs: 'append'
       mergeDeps: 'prepend'

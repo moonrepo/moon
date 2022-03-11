@@ -1,11 +1,10 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{
-    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var,
+    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack_tar,
 };
 use crate::tool::Tool;
 use crate::Toolchain;
 use async_trait::async_trait;
-use flate2::read::GzDecoder;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
@@ -18,7 +17,6 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use tar::Archive;
 
 fn get_download_file_ext() -> &'static str {
     if consts::OS == "windows" {
@@ -310,38 +308,16 @@ impl Tool for NodeTool {
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let install_dir = self.get_install_dir();
+        let prefix = get_download_file_name(&self.config.version)?;
 
         fs::create_dir_all(install_dir).await?;
 
-        // Open .tar.gz file
-        let tar_gz = File::open(&self.download_path)
-            .map_err(|e| map_io_to_fs_error(e, self.download_path.clone()))?;
-
-        // Decompress to .tar
-        let tar = GzDecoder::new(tar_gz);
-
-        // Unpack the archive into the install dir
-        let mut archive = Archive::new(tar);
-        let prefix = get_download_file_name(&self.config.version)?;
-
-        archive.entries().unwrap().for_each(|entry_result| {
-            let mut entry = entry_result.unwrap();
-
-            // Remove the download folder prefix from all files
-            let path = entry
-                .path()
-                .unwrap()
-                .strip_prefix(&prefix)
-                .unwrap()
-                .to_owned();
-
-            entry.unpack(&self.get_install_dir().join(path)).unwrap();
-        });
+        unpack_tar(&self.download_path, install_dir, &prefix)?;
 
         debug!(
             target: "moon:toolchain:node",
             "Unpacked and installed to {}",
-            color::file_path(self.get_install_dir())
+            color::file_path(install_dir)
         );
 
         Ok(())

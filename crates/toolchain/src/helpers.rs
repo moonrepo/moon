@@ -1,4 +1,5 @@
 use crate::errors::ToolchainError;
+use flate2::read::GzDecoder;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
 use moon_utils::fs;
@@ -8,6 +9,7 @@ use std::env;
 use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
+use tar::Archive;
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"]).env(
@@ -82,6 +84,38 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
     let mut file = File::create(dest).map_err(handle_error)?;
 
     io::copy(&mut contents, &mut file).map_err(handle_error)?;
+
+    Ok(())
+}
+
+pub fn unpack_tar(
+    input_file: &Path,
+    output_dir: &Path,
+    prefix: &str,
+) -> Result<(), ToolchainError> {
+    // Open .tar.gz file
+    let tar_gz =
+        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+
+    // Decompress to .tar
+    let tar = GzDecoder::new(tar_gz);
+
+    // Unpack the archive into the install dir
+    let mut archive = Archive::new(tar);
+
+    archive.entries().unwrap().for_each(|entry_result| {
+        let mut entry = entry_result.unwrap();
+
+        // Remove the download folder prefix from all files
+        let path = entry
+            .path()
+            .unwrap()
+            .strip_prefix(&prefix)
+            .unwrap()
+            .to_owned();
+
+        entry.unpack(&output_dir.join(path)).unwrap();
+    });
 
     Ok(())
 }

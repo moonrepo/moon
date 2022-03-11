@@ -163,11 +163,7 @@ pub async fn unpack(
 ) -> Result<(), ToolchainError> {
     fs::create_dir_all(output_dir).await?;
 
-    println!(
-        "Input = {:#?} {}",
-        input_file,
-        input_file.extension().unwrap()
-    );
+    println!("Input = {:#?}", input_file,);
     println!("Output = {:#?}", output_dir);
     println!("Prefix = {:#?}", prefix);
 

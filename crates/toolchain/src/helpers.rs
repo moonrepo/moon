@@ -10,6 +10,7 @@ use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
 use tar::Archive;
+use zip::ZipArchive;
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"]).env(
@@ -116,6 +117,57 @@ pub fn unpack_tar(
 
         entry.unpack(&output_dir.join(path)).unwrap();
     });
+
+    Ok(())
+}
+
+pub fn unpack_zip(
+    input_file: &Path,
+    output_dir: &Path,
+    prefix: &str,
+) -> Result<(), ToolchainError> {
+    // Open .zip file
+    let zip =
+        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+
+    // Unpack the archive into the install dir
+    let mut archive = ZipArchive::new(zip).unwrap();
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i).unwrap();
+
+        let outpath = match file.enclosed_name() {
+            Some(path) => path.to_owned(),
+            None => continue,
+        };
+
+        println!("Filename: {} -> {}", file.name(), outpath.to_string_lossy());
+
+        {
+            let comment = file.comment();
+            if !comment.is_empty() {
+                println!("File {} comment: {}", i, comment);
+            }
+        }
+
+        // io::copy(&mut file, &mut io::stdout());
+    }
+
+    Ok(())
+}
+
+pub async fn unpack(
+    input_file: &Path,
+    output_dir: &Path,
+    prefix: &str,
+) -> Result<(), ToolchainError> {
+    fs::create_dir_all(output_dir).await?;
+
+    if input_file.ends_with(".zip") {
+        unpack_zip(input_file, output_dir, prefix)?;
+    } else {
+        unpack_tar(input_file, output_dir, prefix)?;
+    }
 
     Ok(())
 }

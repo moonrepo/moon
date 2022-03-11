@@ -1,6 +1,6 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{
-    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack_tar,
+    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack,
 };
 use crate::tool::Tool;
 use crate::Toolchain;
@@ -310,9 +310,7 @@ impl Tool for NodeTool {
         let install_dir = self.get_install_dir();
         let prefix = get_download_file_name(&self.config.version)?;
 
-        fs::create_dir_all(install_dir).await?;
-
-        unpack_tar(&self.download_path, install_dir, &prefix)?;
+        unpack(&self.download_path, install_dir, &prefix).await?;
 
         debug!(
             target: "moon:toolchain:node",

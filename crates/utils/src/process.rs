@@ -44,9 +44,13 @@ fn log_command_info(command: &Command) {
 }
 
 pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
+    // Based on how Node.js executes Windows commands:
+    // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
     if cfg!(target_os = "windows") {
-        let mut cmd = Command::new("cmd");
-        cmd.arg("/C");
+        let mut cmd = Command::new("cmd.exe");
+        cmd.arg("/d");
+        cmd.arg("/s");
+        cmd.arg("/c");
         cmd.arg(bin);
         cmd
     } else {

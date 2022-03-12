@@ -28,8 +28,8 @@ impl NpmTool {
         let mut npx_path = install_dir.clone();
 
         if consts::OS == "windows" {
-            bin_path.push("npm");
-            npx_path.push("npx");
+            bin_path.push("npm.cmd");
+            npx_path.push("npx.cmd");
         } else {
             bin_path.push("bin/npm");
             npx_path.push("bin/npx");

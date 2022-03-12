@@ -151,15 +151,12 @@ pub fn unpack_zip(
         let last_char = output_path.to_string_lossy();
         let has_trailing_slash = last_char.ends_with('/') || last_char.ends_with('\\');
 
-        println!(
-            "{:#?} -> {:#?} ({} {} )",
-            path, output_path, last_char, has_trailing_slash
-        );
+        println!("{:#?} -> {:#?} ({})", path, output_path, has_trailing_slash);
 
         // If a folder, ensure it exists and continue
-        if has_trailing_slash {
+        if has_trailing_slash || output_path.ends_with("node_modules") {
             // `zip` is not `Send`able, so we cant use our async variant here
-            std::fs::create_dir_all(&output_path).map_err(handle_error)?;
+            std::fs::create_dir(&output_path).map_err(handle_error)?;
 
             // If a file, copy it to the output dir
         } else {

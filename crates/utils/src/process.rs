@@ -45,7 +45,10 @@ fn log_command_info(command: &Command) {
 
 pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
     if cfg!(target_os = "windows") {
-        Command::new("cmd").args(&["/C", bin])
+        let mut cmd = Command::new("cmd");
+        cmd.arg("/C");
+        cmd.arg(bin);
+        cmd
     } else {
         Command::new(bin)
     }

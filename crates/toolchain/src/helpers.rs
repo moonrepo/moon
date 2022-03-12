@@ -146,11 +146,13 @@ pub fn unpack_zip(
         let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
 
         println!(
-            "{:#?} -> {:#?} ({} {})",
+            "{:#?} -> {:#?} ({} {} {} {})",
             path,
             output_path,
             output_path.ends_with("/"),
-            path.ends_with("/")
+            path.ends_with("/"),
+            output_path.ends_with("\\"),
+            path.ends_with("\\")
         );
 
         // If a folder, ensure it exists and continue
@@ -163,6 +165,17 @@ pub fn unpack_zip(
             let mut out = File::create(&output_path).map_err(handle_error)?;
 
             io::copy(&mut file, &mut out).map_err(handle_error)?;
+        }
+
+        // Update permissions when on a nix machine
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            if let Some(mode) = file.unix_mode() {
+                std::fs::set_permissions(&output_path, std::fs::Permissions::from_mode(mode))
+                    .map_err(handle_error)?;
+            }
         }
     }
 

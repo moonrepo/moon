@@ -155,8 +155,10 @@ pub fn unpack_zip(
 
         // If a folder, ensure it exists and continue
         if has_trailing_slash || output_path.ends_with("node_modules") {
-            // `zip` is not `Send`able, so we cant use our async variant here
-            std::fs::create_dir(&output_path).map_err(handle_error)?;
+            if !output_path.exists() {
+                // `zip` is not `Send`able, so we cant use our async variant here
+                std::fs::create_dir(&output_path).map_err(handle_error)?;
+            }
 
             // If a file, copy it to the output dir
         } else {

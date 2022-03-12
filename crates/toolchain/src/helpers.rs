@@ -145,16 +145,10 @@ pub fn unpack_zip(
         let output_path = output_dir.join(&path);
         let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
 
-        // Determine if theres a trailing slash. This is kind of nasty,
-        // but we cant use `Path.ends_with()` because it only works on path parts,
-        // and not the characters themself.
-        let last_char = output_path.to_string_lossy();
-        let has_trailing_slash = last_char.ends_with('/') || last_char.ends_with('\\');
-
-        println!("{:#?} -> {:#?} ({})", path, output_path, has_trailing_slash);
+        println!("{:#?} -> {:#?} ({})", path, output_path, file.is_dir());
 
         // If a folder, ensure it exists and continue
-        if has_trailing_slash || output_path.ends_with("node_modules") {
+        if file.is_dir() {
             if !output_path.exists() {
                 // `zip` is not `Send`able, so we cant use our async variant here
                 std::fs::create_dir(&output_path).map_err(handle_error)?;

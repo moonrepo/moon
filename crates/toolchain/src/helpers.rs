@@ -145,8 +145,6 @@ pub fn unpack_zip(
         let output_path = output_dir.join(&path);
         let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
 
-        println!("{:#?} -> {:#?} ({})", path, output_path, file.is_dir());
-
         // If a folder, ensure it exists and continue
         if file.is_dir() {
             if !output_path.exists() {
@@ -182,10 +180,6 @@ pub async fn unpack(
     prefix: &str,
 ) -> Result<(), ToolchainError> {
     fs::create_dir_all(output_dir).await?;
-
-    println!("Input = {:#?}", input_file,);
-    println!("Output = {:#?}", output_dir);
-    println!("Prefix = {:#?}", prefix);
 
     if input_file.extension().unwrap() == "zip" {
         unpack_zip(input_file, output_dir, prefix)?;

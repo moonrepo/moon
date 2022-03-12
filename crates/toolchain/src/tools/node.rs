@@ -141,7 +141,7 @@ impl NodeTool {
 
         if consts::OS == "windows" {
             bin_path.push("node.exe");
-            corepack_bin_path.push("corepack.exe");
+            corepack_bin_path.push("corepack");
         } else {
             bin_path.push("bin/node");
             corepack_bin_path.push("bin/corepack");

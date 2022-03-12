@@ -136,21 +136,26 @@ pub fn unpack_zip(
     for i in 0..archive.len() {
         let mut file = archive.by_index(i).unwrap();
 
-        let outpath = match file.enclosed_name() {
-            Some(path) => path.to_owned(),
+        // Remove the download folder prefix from all files
+        let path = match file.enclosed_name() {
+            Some(path) => path.strip_prefix(&prefix).unwrap().to_owned(),
             None => continue,
         };
 
-        println!("Filename: {} -> {}", file.name(), outpath.to_string_lossy());
+        let output_path = output_dir.join(path);
+        let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
 
-        {
-            let comment = file.comment();
-            if !comment.is_empty() {
-                println!("File {} comment: {}", i, comment);
-            }
+        // If a folder, ensure it exists and continue
+        if output_path.ends_with("/") {
+            // zip is not sendable, so we cant use our async variant here
+            std::fs::create_dir_all(&output_path).map_err(handle_error)?;
+
+            // If a file, copy it to the output dir
+        } else {
+            let mut out = File::create(&output_path).map_err(handle_error)?;
+
+            io::copy(&mut file, &mut out).map_err(handle_error)?;
         }
-
-        // io::copy(&mut file, &mut io::stdout());
     }
 
     Ok(())

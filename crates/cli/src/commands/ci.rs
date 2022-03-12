@@ -68,7 +68,9 @@ async fn gather_touched_files(
         .iter()
         .map(|f| {
             touched_files_to_print.push(format!("  {}", color::path(f)));
-            workspace.root.join(f)
+
+            // Canonicalize so path separators are correct between systems
+            workspace.root.join(f).canonicalize().unwrap()
         })
         .collect();
 

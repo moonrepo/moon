@@ -203,7 +203,7 @@ impl Project {
         let root = workspace_root.join(&source);
 
         debug!(
-            target: "moon:project",
+            target: &format!("moon:project:{}", id),
             "Loading project from {} (id = {}, path = {})",
             color::file_path(&root),
             color::id(id),
@@ -275,7 +275,20 @@ impl Project {
     /// Will attempt to find any file that starts with the project root.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {
         for file in touched_files {
-            if file.starts_with(&self.root) {
+            let affected = file.starts_with(&self.root);
+
+            trace!(
+                target: &format!("moon:project:{}", self.id),
+                "Is affected by {} = {}",
+                color::file_path(file),
+                if affected {
+                    color::success("true")
+                } else {
+                    color::failure("false")
+                },
+            );
+
+            if affected {
                 return true;
             }
         }
@@ -288,7 +301,7 @@ impl Project {
         let package_path = self.root.join("package.json");
 
         trace!(
-            target: "moon:project",
+            target: &format!("moon:project:{}", self.id),
             "Attempting to find {} in {}",
             color::path("package.json"),
             color::file_path(&self.root),
@@ -315,7 +328,7 @@ impl Project {
         let tsconfig_path = self.root.join(tsconfig_name);
 
         trace!(
-            target: "moon:project",
+            target: &format!("moon:project:{}", self.id),
             "Attempting to find {} in {}",
             color::path(tsconfig_name),
             color::file_path(&self.root),

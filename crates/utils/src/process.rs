@@ -44,7 +44,11 @@ fn log_command_info(command: &Command) {
 }
 
 pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
-    Command::new(bin)
+    if cfg!(target_os = "windows") {
+        Command::new("cmd").args(&["/C", bin])
+    } else {
+        Command::new(bin)
+    }
 }
 
 pub async fn exec_command(command: &mut Command) -> Result<Output, MoonError> {

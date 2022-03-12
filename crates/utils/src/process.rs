@@ -43,10 +43,13 @@ fn log_command_info(command: &Command) {
     }
 }
 
+#[cfg(windows)]
 pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
+    let bin_name = bin.as_ref().to_str().unwrap_or_default();
+
     // Based on how Node.js executes Windows commands:
     // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
-    if cfg!(target_os = "windows") {
+    if bin_name.ends_with(".cmd") || bin_name.ends_with(".bat") {
         let mut cmd = Command::new("cmd.exe");
         cmd.arg("/d");
         cmd.arg("/s");
@@ -56,6 +59,11 @@ pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
     } else {
         Command::new(bin)
     }
+}
+
+#[cfg(not(windows))]
+pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
+    Command::new(bin)
 }
 
 pub async fn exec_command(command: &mut Command) -> Result<Output, MoonError> {

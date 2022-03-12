@@ -142,11 +142,19 @@ pub fn unpack_zip(
             None => continue,
         };
 
-        let output_path = output_dir.join(path);
+        let output_path = output_dir.join(&path);
         let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
 
+        println!(
+            "{:#?} -> {:#?} ({} {})",
+            path,
+            output_path,
+            output_path.ends_with("/"),
+            path.ends_with("/")
+        );
+
         // If a folder, ensure it exists and continue
-        if output_path.ends_with("/") {
+        if path.ends_with("/") {
             // zip is not sendable, so we cant use our async variant here
             std::fs::create_dir_all(&output_path).map_err(handle_error)?;
 

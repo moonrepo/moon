@@ -154,8 +154,8 @@ pub fn unpack_zip(
         );
 
         // If a folder, ensure it exists and continue
-        if path.ends_with("/") {
-            // zip is not sendable, so we cant use our async variant here
+        if path.ends_with("/") || path.ends_with("\\") {
+            // `zip` is not `Send`able, so we cant use our async variant here
             std::fs::create_dir_all(&output_path).map_err(handle_error)?;
 
             // If a file, copy it to the output dir

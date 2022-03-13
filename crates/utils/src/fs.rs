@@ -163,8 +163,9 @@ pub fn normalize_glob(path: &Path) -> String {
     // Always use forward slashes for globs
     let glob = path.to_string_lossy().replace("\\", "/");
 
+    // Remove UNC prefix as it breaks glob matching
     if std::env::consts::OS == "windows" {
-        return glob.replace("//?/", ""); // Is this needed for globs?
+        return glob.replace("//?/", "");
     }
 
     glob

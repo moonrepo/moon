@@ -149,6 +149,16 @@ pub fn normalize(path: &Path) -> PathBuf {
     path.to_path_buf().clean()
 }
 
+#[cfg(not(windows))]
+pub fn normalize_separators(path: &str) -> String {
+    String::from(path)
+}
+
+#[cfg(windows)]
+pub fn normalize_separators(path: &str) -> String {
+    path.replace('/', "\\")
+}
+
 pub fn normalize_glob(path: &Path) -> String {
     // Always use forward slashes for globs
     let glob = path.to_string_lossy().replace("\\", "/");

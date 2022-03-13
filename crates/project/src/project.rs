@@ -9,6 +9,7 @@ use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
 use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
 use moon_logger::{color, debug, trace};
+use moon_utils::fs;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -21,18 +22,16 @@ pub type TasksMap = HashMap<TaskID, Task>;
 
 // project.yml
 fn load_project_config(
-    workspace_root: &Path,
+    project_root: &Path,
     project_source: &str,
 ) -> Result<Option<ProjectConfig>, ProjectError> {
-    let config_path = workspace_root
-        .join(&project_source)
-        .join(CONFIG_PROJECT_FILENAME);
+    let config_path = project_root.join(CONFIG_PROJECT_FILENAME);
 
     trace!(
         target: "moon:project",
         "Attempting to find {} in {}",
         color::path("project.yml"),
-        color::file_path(&workspace_root.join(&project_source)),
+        color::file_path(&project_root),
     );
 
     if config_path.exists() {
@@ -200,7 +199,7 @@ impl Project {
         workspace_root: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let root = workspace_root.join(&source);
+        let root = workspace_root.join(&fs::normalize_separators(source));
 
         debug!(
             target: &format!("moon:project:{}", id),
@@ -214,8 +213,7 @@ impl Project {
             return Err(ProjectError::MissingProject(String::from(source)));
         }
 
-        let root = root.canonicalize().unwrap();
-        let config = load_project_config(workspace_root, source)?;
+        let config = load_project_config(&root, source)?;
         let file_groups = create_file_groups_from_config(&config, global_config);
         let tasks = create_tasks_from_config(
             &config,

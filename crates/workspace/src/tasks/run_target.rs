@@ -60,6 +60,17 @@ async fn create_env_vars(
     Ok(env_vars)
 }
 
+fn create_node_options(task: &Task) -> Vec<&str> {
+    vec![
+        // "--inspect", // Enable node inspector
+        "--preserve-symlinks",
+        "--title",
+        &task.target,
+        "--unhandled-rejections",
+        "throw",
+    ]
+}
+
 /// Runs a task command through our toolchain's installed Node.js instance.
 /// We accomplish this by executing the Node.js binary as a child process,
 /// while passing a file path to a package's node module binary (this is the file
@@ -68,20 +79,14 @@ async fn create_env_vars(
 ///
 /// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
+#[cfg(not(windows))]
 fn create_node_target_command(
     project: &Project,
     task: &Task,
     node: &NodeTool,
 ) -> Result<Command, WorkspaceError> {
     // Node binary args
-    let mut args = vec![
-        // "--inspect", // Enable node inspector
-        "--preserve-symlinks",
-        "--title",
-        &task.target,
-        "--unhandled-rejections",
-        "throw",
-    ];
+    let mut args = create_node_options(task);
 
     // Package binary args
     let package_bin_path = node.find_package_bin_path(&task.command, &project.root)?;
@@ -95,6 +100,29 @@ fn create_node_target_command(
     cmd.args(&args)
         .envs(&task.env)
         .env("PATH", get_path_env_var(node.get_bin_dir()));
+
+    Ok(cmd)
+}
+
+/// Windows works quite differently than other systems, so we cannot do the above.
+/// On Windows, the package binary is a ".cmd" file, which means it needs to run
+/// through "cmd.exe" and not "node.exe". Because of this, the order of operations
+/// is switched, and "node.exe" is detected through the `PATH` env var.
+#[cfg(windows)]
+fn create_node_target_command(
+    project: &Project,
+    task: &Task,
+    node: &NodeTool,
+) -> Result<Command, WorkspaceError> {
+    let package_bin_path = node.find_package_bin_path(&task.command, &project.root)?;
+
+    // Create the command
+    let mut cmd = create_command(package_bin_path);
+
+    cmd.args(&task.args)
+        .envs(&task.env)
+        .env("PATH", get_path_env_var(node.get_bin_dir()))
+        .env("NODE_OPTIONS", create_node_options(task).join(" "));
 
     Ok(cmd)
 }

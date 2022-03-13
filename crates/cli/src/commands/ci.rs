@@ -3,9 +3,9 @@ use console::Term;
 use itertools::Itertools;
 use moon_logger::{color, debug};
 use moon_project::{Target, TargetID, TouchedFilePaths};
-use moon_terminal::helpers::safe_exit;
+use moon_terminal::helpers::{replace_style_tokens, safe_exit};
 use moon_terminal::output;
-use moon_utils::{is_ci, time};
+use moon_utils::{fs, is_ci, time};
 use moon_workspace::DepGraph;
 use moon_workspace::{TaskResultStatus, TaskRunner, Workspace, WorkspaceError};
 use std::collections::HashSet;
@@ -68,7 +68,7 @@ async fn gather_touched_files(
         .iter()
         .map(|f| {
             touched_files_to_print.push(format!("  {}", color::path(f)));
-            workspace.root.join(f)
+            workspace.root.join(fs::normalize_separators(f))
         })
         .collect();
 
@@ -240,7 +240,10 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
 
         if let Some(error) = &result.error {
             error_count += 1;
-            term.write_line(&format!("  {}", color::muted_light(error)))?;
+            term.write_line(&format!(
+                "     {}",
+                color::muted_light(&replace_style_tokens(error))
+            ))?;
         }
     }
 

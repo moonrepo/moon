@@ -125,7 +125,7 @@ impl Task {
         };
 
         debug!(
-            target: "moon:project:task",
+            target: &format!("moon:project:{}", target),
             "Creating task {} for command {}",
             color::target(&target),
             color::shell(&task.command)
@@ -137,7 +137,7 @@ impl Task {
     /// Expand the args list to resolve tokens, relative to the project root.
     pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
         trace!(
-            target: "moon:project:task",
+            target: &format!("moon:project:{}", self.target),
             "Expanding args for task {}",
             color::target(&self.target),
         );
@@ -184,7 +184,7 @@ impl Task {
     /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_inputs(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
         trace!(
-            target: "moon:project:task",
+            target: &format!("moon:project:{}", self.target),
             "Expanding inputs for task {}",
             color::target(&self.target),
         );
@@ -204,7 +204,7 @@ impl Task {
     /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_outputs(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
         trace!(
-            target: "moon:project:task",
+            target: &format!("moon:project:{}", self.target),
             "Expanding outputs for task {}",
             color::target(&self.target),
         );
@@ -231,7 +231,18 @@ impl Task {
             return Ok(true);
         }
 
+        trace!(
+            target: &format!("moon:project:{}", self.target),
+            "Checking if affected using input files: {}",
+            self.input_paths
+                .iter()
+                .map(|p| color::file_path(p))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+
         let mut glob_builder = GlobSetBuilder::new();
+        let has_globs = !self.input_globs.is_empty();
 
         for glob in &self.input_globs {
             glob_builder.add(Glob::new(glob)?);
@@ -239,27 +250,50 @@ impl Task {
 
         let globs = glob_builder.build()?;
 
+        if has_globs {
+            trace!(
+                target: &format!("moon:project:{}", self.target),
+                "Checking if affected using input globs: {}",
+                self.input_globs
+                    .iter()
+                    .map(|p| color::path(p))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+
         for file in touched_files {
-            if self.input_paths.contains(file) {
+            let mut affected = self.input_paths.contains(file);
+
+            if !affected && has_globs {
+                // globset doesnt match against inputs that use backwards slashes
+                // https://github.com/BurntSushi/ripgrep/issues/2001
+                #[cfg(windows)]
+                {
+                    use std::path::PathBuf;
+
+                    affected = globs.is_match(&PathBuf::from(fs::normalize_glob(file)));
+                }
+
+                #[cfg(not(windows))]
+                {
+                    affected = globs.is_match(file);
+                }
+            }
+
+            trace!(
+                target: &format!("moon:project:{}", self.target),
+                "Is affected by {} = {}",
+                color::file_path(file),
+                if affected {
+                    color::success("true")
+                } else {
+                    color::failure("false")
+                },
+            );
+
+            if affected {
                 return Ok(true);
-            }
-
-            // globset doesnt match against inputs that use backwards slashes
-            // https://github.com/BurntSushi/ripgrep/issues/2001
-            #[cfg(windows)]
-            {
-                use std::path::PathBuf;
-
-                if globs.is_match(&PathBuf::from(fs::normalize_glob(file))) {
-                    return Ok(true);
-                }
-            }
-
-            #[cfg(not(windows))]
-            {
-                if globs.is_match(file) {
-                    return Ok(true);
-                }
             }
         }
 

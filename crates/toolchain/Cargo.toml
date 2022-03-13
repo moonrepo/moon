@@ -15,6 +15,7 @@ semver = "1.0"
 sha2 = "0.10"
 tar = "0.4"
 thiserror = "1.0"
+zip = "0.5"
 
 [dev-dependencies]
 assert_fs = "1.0"

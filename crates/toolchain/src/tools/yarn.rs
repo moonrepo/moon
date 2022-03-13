@@ -25,7 +25,7 @@ impl YarnTool {
         let mut bin_path = install_dir.clone();
 
         if consts::OS == "windows" {
-            bin_path.push("yarn");
+            bin_path.push("yarn.cmd");
         } else {
             bin_path.push("bin/yarn");
         }

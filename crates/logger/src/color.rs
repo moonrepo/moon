@@ -55,7 +55,7 @@ pub fn path(path: &str) -> String {
 }
 
 pub fn file_path(path: &Path) -> String {
-    paint(Color::Cyan as u8, &path.to_string_lossy())
+    paint(Color::Cyan as u8, path.to_str().unwrap_or("<unknown>"))
 }
 
 pub fn url(url: &str) -> String {

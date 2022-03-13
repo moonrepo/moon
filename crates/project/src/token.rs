@@ -202,11 +202,10 @@ impl<'a> TokenResolver<'a> {
         let arg = matches.get(2).unwrap().as_str(); // arg
 
         trace!(
-            target: "moon:project:token",
-            "Resolving token function {} for {} value {}",
+            target: "moon:token",
+            "Resolving token function {} for {}",
             color::id(token),
             self.context.context_label(),
-            color::path(value)
         );
 
         match func {
@@ -248,7 +247,7 @@ impl<'a> TokenResolver<'a> {
         let var = matches.get(1).unwrap().as_str(); // var
 
         trace!(
-            target: "moon:project:token",
+            target: "moon:token",
             "Resolving token variable {} for {} value {}",
             color::id(token),
             self.context.context_label(),

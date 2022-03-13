@@ -25,7 +25,7 @@ impl PnpmTool {
         let mut bin_path = install_dir.clone();
 
         if consts::OS == "windows" {
-            bin_path.push("pnpm");
+            bin_path.push("pnpm.cmd");
         } else {
             bin_path.push("bin/pnpm");
         }

@@ -115,7 +115,7 @@ impl Workspace {
     pub async fn load() -> Result<Workspace, WorkspaceError> {
         let working_dir = env::current_dir().unwrap();
         let root_dir = match find_workspace_root(working_dir.clone()) {
-            Some(dir) => dir.canonicalize().unwrap(),
+            Some(dir) => dir,
             None => return Err(WorkspaceError::MissingConfigDir),
         };
 

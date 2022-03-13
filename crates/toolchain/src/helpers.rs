@@ -1,4 +1,5 @@
 use crate::errors::ToolchainError;
+use flate2::read::GzDecoder;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
 use moon_utils::fs;
@@ -8,6 +9,8 @@ use std::env;
 use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
+use tar::Archive;
+use zip::ZipArchive;
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"]).env(
@@ -82,6 +85,107 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
     let mut file = File::create(dest).map_err(handle_error)?;
 
     io::copy(&mut contents, &mut file).map_err(handle_error)?;
+
+    Ok(())
+}
+
+pub fn unpack_tar(
+    input_file: &Path,
+    output_dir: &Path,
+    prefix: &str,
+) -> Result<(), ToolchainError> {
+    // Open .tar.gz file
+    let tar_gz =
+        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+
+    // Decompress to .tar
+    let tar = GzDecoder::new(tar_gz);
+
+    // Unpack the archive into the install dir
+    let mut archive = Archive::new(tar);
+
+    archive.entries().unwrap().for_each(|entry_result| {
+        let mut entry = entry_result.unwrap();
+
+        // Remove the download folder prefix from all files
+        let path = entry
+            .path()
+            .unwrap()
+            .strip_prefix(&prefix)
+            .unwrap()
+            .to_owned();
+
+        entry.unpack(&output_dir.join(path)).unwrap();
+    });
+
+    Ok(())
+}
+
+pub fn unpack_zip(
+    input_file: &Path,
+    output_dir: &Path,
+    prefix: &str,
+) -> Result<(), ToolchainError> {
+    // Open .zip file
+    let zip =
+        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+
+    // Unpack the archive into the install dir
+    let mut archive = ZipArchive::new(zip).unwrap();
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i).unwrap();
+
+        // Remove the download folder prefix from all files
+        let path = match file.enclosed_name() {
+            Some(path) => path.strip_prefix(&prefix).unwrap().to_owned(),
+            None => continue,
+        };
+
+        let output_path = output_dir.join(&path);
+        let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
+
+        // If a folder, ensure it exists and continue
+        if file.is_dir() {
+            if !output_path.exists() {
+                // `zip` is not `Send`able, so we cant use our async variant here
+                std::fs::create_dir(&output_path).map_err(handle_error)?;
+            }
+
+            // If a file, copy it to the output dir
+        } else {
+            let mut out = File::create(&output_path).map_err(handle_error)?;
+
+            io::copy(&mut file, &mut out).map_err(handle_error)?;
+        }
+
+        // Update permissions when on a nix machine
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            if let Some(mode) = file.unix_mode() {
+                std::fs::set_permissions(&output_path, std::fs::Permissions::from_mode(mode))
+                    .map_err(handle_error)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub async fn unpack(
+    input_file: &Path,
+    output_dir: &Path,
+    prefix: &str,
+) -> Result<(), ToolchainError> {
+    fs::create_dir_all(output_dir).await?;
+
+    if input_file.extension().unwrap() == "zip" {
+        unpack_zip(input_file, output_dir, prefix)?;
+    } else {
+        unpack_tar(input_file, output_dir, prefix)?;
+    }
 
     Ok(())
 }

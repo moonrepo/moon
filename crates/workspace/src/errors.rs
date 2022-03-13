@@ -15,9 +15,6 @@ pub enum WorkspaceError {
     #[error("Task runner failed to run: {0}")]
     TaskRunnerFailure(String),
 
-    #[error("Target <target>{0}</target> failed to run.")]
-    TaskRunnerFailedTarget(String),
-
     #[error(
         "Unable to determine workspace root. Please create a <path>{}</path> configuration folder.",
         constants::CONFIG_DIRNAME

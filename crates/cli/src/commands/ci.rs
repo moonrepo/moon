@@ -5,7 +5,7 @@ use moon_logger::{color, debug};
 use moon_project::{Target, TargetID, TouchedFilePaths};
 use moon_terminal::helpers::{replace_style_tokens, safe_exit};
 use moon_terminal::output;
-use moon_utils::{is_ci, time, fs};
+use moon_utils::{fs, is_ci, time};
 use moon_workspace::DepGraph;
 use moon_workspace::{TaskResultStatus, TaskRunner, Workspace, WorkspaceError};
 use std::collections::HashSet;

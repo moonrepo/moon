@@ -217,9 +217,9 @@ pub async fn run_target(
                 output = o;
                 break;
             }
-            Err(_) => {
+            Err(e) => {
                 if attempt >= attempt_count {
-                    return Err(WorkspaceError::TaskRunnerFailedTarget(target.to_owned()));
+                    return Err(WorkspaceError::Moon(e));
                 } else {
                     attempt += 1;
 

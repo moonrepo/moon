@@ -30,8 +30,8 @@ fn load_project_config(
     trace!(
         target: "moon:project",
         "Attempting to find {} in {}",
-        color::path("project.yml"),
-        color::file_path(&project_root),
+        color::path(CONFIG_PROJECT_FILENAME),
+        color::file_path(project_root),
     );
 
     if config_path.exists() {

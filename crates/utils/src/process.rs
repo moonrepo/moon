@@ -43,6 +43,11 @@ fn log_command_info(command: &Command) {
     }
 }
 
+#[cfg(not(windows))]
+pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
+    Command::new(bin)
+}
+
 #[cfg(windows)]
 pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
     let bin_name = bin.as_ref().to_str().unwrap_or_default();
@@ -59,11 +64,6 @@ pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
     } else {
         Command::new(bin)
     }
-}
-
-#[cfg(not(windows))]
-pub fn create_command<S: AsRef<OsStr>>(bin: S) -> Command {
-    Command::new(bin)
 }
 
 pub async fn exec_command(command: &mut Command) -> Result<Output, MoonError> {

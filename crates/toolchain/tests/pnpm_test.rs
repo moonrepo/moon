@@ -43,7 +43,7 @@ async fn generates_paths() {
         .join("1.0.0");
 
     if env::consts::OS == "windows" {
-        bin_path = bin_path.join("pnpm");
+        bin_path = bin_path.join("pnpm.cmd");
     } else {
         bin_path = bin_path.join("bin").join("pnpm");
     }

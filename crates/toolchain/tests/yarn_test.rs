@@ -43,7 +43,7 @@ async fn generates_paths() {
         .join("1.0.0");
 
     if env::consts::OS == "windows" {
-        bin_path = bin_path.join("yarn");
+        bin_path = bin_path.join("yarn.cmd");
     } else {
         bin_path = bin_path.join("bin").join("yarn");
     }

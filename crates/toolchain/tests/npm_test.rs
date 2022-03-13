@@ -40,7 +40,7 @@ async fn generates_paths() {
         .join("1.0.0");
 
     if env::consts::OS == "windows" {
-        bin_path = bin_path.join("npm");
+        bin_path = bin_path.join("npm.cmd");
     } else {
         bin_path = bin_path.join("bin").join("npm");
     }

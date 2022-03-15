@@ -1,3 +1,5 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
 # OPTIONAL: This setting defines metadata about the project itself. Although this
 # setting is optional, when defined, all fields within it must be defined as well.
 project:

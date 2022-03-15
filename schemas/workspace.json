@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "WorkspaceConfig",
+  "description": "https://moonrepo.dev/docs/config/workspace",
   "type": "object",
   "properties": {
     "node": {
@@ -29,11 +30,6 @@
       "additionalProperties": {
         "type": "string"
       }
-    },
-    "schema": {
-      "description": "JSON schema URI.",
-      "default": "",
-      "type": "string"
     },
     "typescript": {
       "default": {

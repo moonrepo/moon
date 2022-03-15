@@ -39,6 +39,7 @@ fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), Validat
     Ok(())
 }
 
+/// https://moonrepo.dev/docs/config/workspace
 #[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]
@@ -58,7 +59,7 @@ pub struct WorkspaceConfig {
     pub vcs: VcsConfig,
 
     /// JSON schema URI.
-    #[serde(default)]
+    #[serde(skip, rename = "$schema")]
     pub schema: String,
 }
 

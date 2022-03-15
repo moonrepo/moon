@@ -1,4 +1,4 @@
-schema: '../schemas/global-project.json'
+$schema: '../schemas/global-project.json'
 
 fileGroups:
   configs:

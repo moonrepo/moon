@@ -1,4 +1,4 @@
-schema: '../schemas/workspace.json'
+$schema: '../schemas/workspace.json'
 
 node:
   version: '16.14.0'

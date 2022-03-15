@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ProjectConfig",
+  "description": "https://moonrepo.dev/docs/config/project",
   "type": "object",
   "properties": {
     "dependsOn": {
@@ -29,11 +30,6 @@
           "type": "null"
         }
       ]
-    },
-    "schema": {
-      "description": "JSON schema URI.",
-      "default": "",
-      "type": "string"
     },
     "tasks": {
       "default": {},

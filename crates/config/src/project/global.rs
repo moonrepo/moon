@@ -43,6 +43,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
     Ok(())
 }
 
+/// https://moonrepo.dev/docs/config/global-project
 #[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalProjectConfig {
@@ -56,7 +57,7 @@ pub struct GlobalProjectConfig {
     pub tasks: HashMap<String, TaskConfig>,
 
     /// JSON schema URI.
-    #[serde(default)]
+    #[serde(skip, rename = "$schema")]
     pub schema: String,
 }
 

@@ -10,6 +10,7 @@ use figment::{
     providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -42,7 +43,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
     Ok(())
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalProjectConfig {
     #[serde(default)]

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moonrepo.dev/schemas/workspace.json",
+  "title": "Workspace config",
+  "description": "Schema for the `.moon/workspace.yml` config file.",
+  "type": "object",
+  "properties": {
+    "vcs": {
+      "description": "The unique identifier for a product",
+      "type": "object",
+      "properties": {
+
+      }
+    }
+  }
+}

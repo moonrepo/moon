@@ -1,4 +1,5 @@
 use crate::validators::validate_semver_version;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
 use validator::{Validate, ValidationError};
@@ -44,7 +45,7 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.yarn.version", value)
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PackageManager {
     Npm,
@@ -58,7 +59,7 @@ impl Default for PackageManager {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VersionManager {
     NodeEnv,
@@ -74,7 +75,7 @@ impl VersionManager {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct NpmConfig {
     #[serde(default = "default_npm_version")]
     #[validate(custom = "validate_npm_version")]
@@ -89,7 +90,7 @@ impl Default for NpmConfig {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct PnpmConfig {
     #[serde(default = "default_pnpm_version")]
     #[validate(custom = "validate_pnpm_version")]
@@ -104,7 +105,7 @@ impl Default for PnpmConfig {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct YarnConfig {
     #[serde(default = "default_yarn_version")]
     #[validate(custom = "validate_yarn_version")]
@@ -119,7 +120,7 @@ impl Default for YarnConfig {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
     #[serde(default = "default_bool_true")]

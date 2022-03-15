@@ -14,6 +14,7 @@ use figment::{
     Figment, Metadata, Profile, Provider,
 };
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -38,7 +39,7 @@ fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), Validat
     Ok(())
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]
     #[validate]

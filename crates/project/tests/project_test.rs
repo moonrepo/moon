@@ -21,6 +21,7 @@ fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
         file_groups: HashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
         tasks: HashMap::new(),
+        schema: String::new(),
     }
 }
 
@@ -164,6 +165,7 @@ fn overrides_global_file_groups() {
         &GlobalProjectConfig {
             file_groups: HashMap::from([(String::from("tests"), string_vec!["tests/**/*"])]),
             tasks: HashMap::new(),
+            schema: String::new(),
         },
     )
     .unwrap();
@@ -297,6 +299,7 @@ mod tasks {
             &GlobalProjectConfig {
                 file_groups: HashMap::new(),
                 tasks: HashMap::from([(String::from("standard"), mock_task_config("cmd"))]),
+                schema: String::new(),
             },
         )
         .unwrap();
@@ -333,6 +336,7 @@ mod tasks {
             &GlobalProjectConfig {
                 file_groups: HashMap::new(),
                 tasks: HashMap::from([(String::from("standard"), mock_task_config("cmd"))]),
+                schema: String::new(),
             },
         )
         .unwrap();
@@ -401,6 +405,7 @@ mod tasks {
                         type_of: TaskType::Node,
                     },
                 )]),
+                schema: String::new(),
             },
         )
         .unwrap();
@@ -474,6 +479,7 @@ mod tasks {
                         type_of: TaskType::Node,
                     },
                 )]),
+                schema: String::new(),
             },
         )
         .unwrap();
@@ -550,6 +556,7 @@ mod tasks {
                         type_of: TaskType::Node,
                     },
                 )]),
+                schema: String::new(),
             },
         )
         .unwrap();
@@ -626,6 +633,7 @@ mod tasks {
                         type_of: TaskType::Node,
                     },
                 )]),
+                schema: String::new(),
             },
         )
         .unwrap();
@@ -725,6 +733,7 @@ mod tasks {
                             ..TaskConfig::default()
                         },
                     )]),
+                    schema: String::new(),
                 },
             )
             .unwrap();
@@ -796,6 +805,7 @@ mod tasks {
                             ..TaskConfig::default()
                         },
                     )]),
+                    schema: String::new(),
                 },
             )
             .unwrap();
@@ -850,6 +860,7 @@ mod tasks {
                             ..TaskConfig::default()
                         },
                     )]),
+                    schema: String::new(),
                 },
             )
             .unwrap();
@@ -903,6 +914,7 @@ mod tasks {
                             ..TaskConfig::default()
                         },
                     )]),
+                    schema: String::new(),
                 },
             )
             .unwrap();
@@ -971,6 +983,7 @@ mod workspace {
                         },
                     ),
                 ]),
+                schema: String::new(),
             }
         }
 

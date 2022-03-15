@@ -1,0 +1,202 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GlobalProjectConfig",
+  "type": "object",
+  "properties": {
+    "fileGroups": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "schema": {
+      "description": "JSON schema URI.",
+      "default": "",
+      "type": "string"
+    },
+    "tasks": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/TaskConfig"
+      }
+    }
+  },
+  "definitions": {
+    "TaskConfig": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deps": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "env": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "inputs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "options": {
+          "default": {
+            "mergeArgs": "append",
+            "mergeDeps": "append",
+            "mergeEnv": "append",
+            "mergeInputs": "append",
+            "mergeOutputs": "append",
+            "retryCount": 0,
+            "runInCi": true,
+            "runFromWorkspaceRoot": false
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/TaskOptionsConfig"
+            }
+          ]
+        },
+        "outputs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "default": "node",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TaskType"
+            }
+          ]
+        }
+      }
+    },
+    "TaskMergeStrategy": {
+      "type": "string",
+      "enum": [
+        "append",
+        "prepend",
+        "replace"
+      ]
+    },
+    "TaskOptionsConfig": {
+      "type": "object",
+      "properties": {
+        "mergeArgs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mergeDeps": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mergeEnv": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mergeInputs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mergeOutputs": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retryCount": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "runFromWorkspaceRoot": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "runInCi": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "TaskType": {
+      "type": "string",
+      "enum": [
+        "node",
+        "shell"
+      ]
+    }
+  }
+}

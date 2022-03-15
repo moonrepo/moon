@@ -56,6 +56,10 @@ pub struct WorkspaceConfig {
     #[serde(default)]
     #[validate]
     pub vcs: VcsConfig,
+
+    /// JSON schema URI.
+    #[serde(default)]
+    pub schema: String,
 }
 
 impl Provider for WorkspaceConfig {
@@ -142,6 +146,7 @@ mod tests {
                     projects: HashMap::new(),
                     typescript: TypeScriptConfig::default(),
                     vcs: VcsConfig::default(),
+                    schema: String::new(),
                 }
             );
 
@@ -175,6 +180,7 @@ node:
                         projects: HashMap::new(),
                         typescript: TypeScriptConfig::default(),
                         vcs: VcsConfig::default(),
+                        schema: String::new(),
                     }
                 );
 
@@ -636,6 +642,7 @@ vcs:
                             manager: VcsManager::Svn,
                             ..VcsConfig::default()
                         },
+                        schema: String::new(),
                     }
                 );
 

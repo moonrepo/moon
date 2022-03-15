@@ -54,6 +54,10 @@ pub struct GlobalProjectConfig {
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: HashMap<String, TaskConfig>,
+
+    /// JSON schema URI.
+    #[serde(default)]
+    pub schema: String,
 }
 
 impl Provider for GlobalProjectConfig {
@@ -129,6 +133,7 @@ fileGroups:
                         string_vec!["src/**/*"]
                     )]),
                     tasks: HashMap::new(),
+                    schema: String::new(),
                 }
             );
 

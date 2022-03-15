@@ -122,6 +122,10 @@ pub struct ProjectConfig {
     #[serde(default)]
     #[validate]
     pub workspace: ProjectWorkspaceConfig,
+
+    /// JSON schema URI.
+    #[serde(default)]
+    pub schema: String,
 }
 
 impl Provider for ProjectConfig {

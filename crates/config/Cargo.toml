@@ -3,6 +3,15 @@ name = "moon_config"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "moon_config"
+path = "src/main.rs"
+
+[lib]
+name = "moon_config"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
 [dependencies]
 moon_error = { path = "../error"}
 moon_utils = { path = "../utils"}

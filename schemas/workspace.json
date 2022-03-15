@@ -1,15 +1,217 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://moonrepo.dev/schemas/workspace.json",
-  "title": "Workspace config",
-  "description": "Schema for the `.moon/workspace.yml` config file.",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WorkspaceConfig",
   "type": "object",
   "properties": {
+    "node": {
+      "default": {
+        "addEnginesConstraint": true,
+        "dedupeOnLockfileChange": true,
+        "npm": {
+          "version": "inherit"
+        },
+        "packageManager": "npm",
+        "pnpm": null,
+        "syncProjectWorkspaceDependencies": true,
+        "syncVersionManagerConfig": null,
+        "version": "16.14.0",
+        "yarn": null
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/NodeConfig"
+        }
+      ]
+    },
+    "projects": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "schema": {
+      "description": "JSON schema URI.",
+      "default": "",
+      "type": "string"
+    },
+    "typescript": {
+      "default": {
+        "projectConfigFileName": "tsconfig.json",
+        "rootConfigFileName": "tsconfig.json",
+        "syncProjectReferences": true
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/TypeScriptConfig"
+        }
+      ]
+    },
     "vcs": {
-      "description": "The unique identifier for a product",
+      "default": {
+        "manager": "git",
+        "defaultBranch": "origin/master"
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/VcsConfig"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "NodeConfig": {
+      "type": "object",
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "addEnginesConstraint": {
+          "default": true,
+          "type": "boolean"
+        },
+        "dedupeOnLockfileChange": {
+          "default": true,
+          "type": "boolean"
+        },
+        "npm": {
+          "default": {
+            "version": "inherit"
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/NpmConfig"
+            }
+          ]
+        },
+        "packageManager": {
+          "default": "npm",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PackageManager"
+            }
+          ]
+        },
+        "pnpm": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PnpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectWorkspaceDependencies": {
+          "default": true,
+          "type": "boolean"
+        },
+        "syncVersionManagerConfig": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/VersionManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "yarn": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/YarnConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "NpmConfig": {
       "type": "object",
       "properties": {
-
+        "version": {
+          "default": "inherit",
+          "type": "string"
+        }
+      }
+    },
+    "PackageManager": {
+      "type": "string",
+      "enum": [
+        "npm",
+        "pnpm",
+        "yarn"
+      ]
+    },
+    "PnpmConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "default": "6.32.2",
+          "type": "string"
+        }
+      }
+    },
+    "TypeScriptConfig": {
+      "type": "object",
+      "properties": {
+        "projectConfigFileName": {
+          "default": "tsconfig.json",
+          "type": "string"
+        },
+        "rootConfigFileName": {
+          "default": "tsconfig.json",
+          "type": "string"
+        },
+        "syncProjectReferences": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "VcsConfig": {
+      "type": "object",
+      "properties": {
+        "defaultBranch": {
+          "default": "origin/master",
+          "type": "string"
+        },
+        "manager": {
+          "default": "git",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VcsManager"
+            }
+          ]
+        }
+      }
+    },
+    "VcsManager": {
+      "type": "string",
+      "enum": [
+        "git",
+        "svn"
+      ]
+    },
+    "VersionManager": {
+      "type": "string",
+      "enum": [
+        "nodeenv",
+        "nvm"
+      ]
+    },
+    "YarnConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "default": "3.2.0",
+          "type": "string"
+        }
       }
     }
   }

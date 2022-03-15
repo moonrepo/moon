@@ -1,3 +1,5 @@
+schema: '../schemas/workspace.json'
+
 node:
   version: '16.14.0'
   packageManager: 'yarn'

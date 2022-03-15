@@ -1,0 +1,222 @@
+---
+title: Install Moon
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+The following guide can be used for adding Moon to an existing repository (with incremental
+adoption), or to a fresh repository. All that's required is [Node.js](https://nodejs.org/en/) >=
+12.17.0 and a `package.json` at the root.
+
+## Choosing a package manager
+
+Before we install Moon, we should briefly talk about Node.js package managers. To start, Moon does
+not replace a package manager, nor does it apply any "magic" for them to work differently. Instead,
+Moon builds upon a package manager to provide a robust build system, assumes a standard
+`node_modules` layout and module resolution algorithm, and supports any of the following 3 package
+managers.
+
+- [npm](https://docs.npmjs.com/)
+- [pnpm](https://pnpm.io/)
+- [Yarn](https://yarnpkg.com/) (v1, v2/3 in `node-modules` linker mode)
+
+We suggest Yarn 3 for its powerful workspaces implementation, extensive support for native binaries,
+built-in package patching, and blazing speed, but feel free to choose the one that works best for
+you!
+
+### Enabling workspaces
+
+Moon was built with monorepos in mind, and as such, has first-class support for them through package
+workspaces (but is not a requirement). To utilize workspaces, enable them for your chosen package
+manager.
+
+<Tabs
+  groupId="package-manager"
+  defaultValue="yarn"
+  values={[
+    { label: 'Yarn', value: 'yarn' },
+    { label: 'npm', value: 'npm' },
+    { label: 'pnpm', value: 'pnpm' },
+  ]}
+>
+<TabItem value="yarn">
+
+```json title="package.json"
+{
+	// ...
+	"workspaces": ["apps/*", "packages/*"]
+}
+```
+
+```yaml title=".yarnrc.yml"
+# ...
+nodeLinker: 'node-modules'
+```
+
+- [Documentation](https://yarnpkg.com/features/workspaces)
+
+</TabItem>
+<TabItem value="npm">
+
+```json title="package.json"
+{
+	// ...
+	"workspaces": ["apps/*", "packages/*"]
+}
+```
+
+- [Documentation](https://docs.npmjs.com/cli/v8/using-npm/workspaces)
+
+</TabItem>
+<TabItem value="pnpm">
+
+```yaml title="pnpm-workspace.yaml"
+packages:
+	- 'apps/*'
+	- 'packages/*'
+```
+
+- [Documentation](https://pnpm.io/workspaces)
+
+</TabItem>
+</Tabs>
+
+## Installing the CLI
+
+The entirety of Moon is packaged and shipped as a single binary through the `@moonrepo/cli` npm
+package. Begin by installing this package at the root of the repository.
+
+<Tabs
+  groupId="package-manager"
+  defaultValue="yarn"
+  values={[
+    { label: 'Yarn', value: 'yarn' },
+    { label: 'Yarn (classic)', value: 'yarn1' },
+    { label: 'npm', value: 'npm' },
+    { label: 'pnpm', value: 'pnpm' },
+  ]}
+>
+<TabItem value="yarn">
+
+```shell
+yarn add --dev @moonrepo/cli
+```
+
+</TabItem>
+<TabItem value="yarn1">
+
+```shell
+yarn add --dev @moonrepo/cli
+
+# If using workspaces
+yarn add --dev -W @moonrepo/cli
+```
+
+</TabItem>
+<TabItem value="npm">
+
+```bash
+npm install --save-dev @moonrepo/cli
+```
+
+</TabItem>
+<TabItem value="pnpm">
+
+```shell
+pnpm add --dev @moonrepo/cli
+
+# If using workspaces
+pnpm add --dev -W @moonrepo/cli
+```
+
+</TabItem>
+</Tabs>
+
+### Accessing the `moon` binary
+
+We suggest _not_ installing the package globally, as adding an explicit development dependency with
+a version range ensures all developers and machines are using the same version of Moon. With that
+being said, how should you access `moon`? If you'd like it to be accessible in a global-like
+fashion, we suggest one of the following patterns:
+
+1. Update your `PATH` environment variable to include a path to the installed node module. This
+   would need to be added to every developers shell and other environments, like CI.
+
+```bash title="~/.bashrc"
+export PATH="/path/to/repo/node_modules/@moonrepo/cli:$PATH"
+```
+
+```shell
+moon --help
+```
+
+2. Symlink the binary to the root of the repository. This would require every developer to run the
+   binary from the repository root, which isn't the worst, but would work for other environments.
+   This can be automated through a `postinstall` script.
+
+```shell
+ln -s ./node_modules/@moonrepo/cli/moon ./moon
+```
+
+```shell
+./moon --help
+```
+
+3. Add the binary as a `package.json` script. Jump to the next section for more information.
+
+```shell
+yarn run moon --help
+```
+
+### Adding a package script
+
+Another way to utilize the `moon` binary would be through a `package.json` script -- but this comes
+with a cost -- which is the overhead of launching Node.js and your chosen package manager to execute
+the Rust binary, _instead of_ executing the Rust binary directly.
+
+```json title="package.json"
+{
+	// ...
+	"scripts": {
+		// ...
+		"moon": "moon",
+		// For Yarn 2+
+		"moon": "$(yarn bin moon)"
+	}
+}
+```
+
+> Yarn 2+ does not support executing Rust binaries through package scripts
+> ([issue](https://github.com/yarnpkg/berry/issues/882)), so we must access the full binary path and
+> execute on that.
+
+With this script, Moon can then be run with `npm run moon ...` (or `yarn run`, or `pnpm run`), but
+do note that this pattern _will not_ work with package workspaces unless the script is ran from the
+repository root.
+
+### Supported targets
+
+Because Moon is written in Rust, we only support targets that are explicitly compiled for, which
+are:
+
+- MacOS Intel (x64)
+- Linux (x86_64, gnu)
+- Windows (x64)
+
+## Initializing Moon
+
+Now that we have the CLI installed, let's scaffold and initialize Moon in a repository with the
+[`moon init`](./commands/init) command.
+
+```shell
+$ moon init
+```
+
+When executed, the following operations will be applied.
+
+- Creates a `.moon` folder with associated [`.moon/workspace.yml`](./config/workspace) and
+  [`.moon/project.yml`](./config/global-project) configuration files.
+- Append necessary ignore patterns to the relative `.gitignore`.
+
+And with that, let's move on to [configuration your workspace](./workspace).!

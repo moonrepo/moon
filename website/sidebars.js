@@ -7,6 +7,11 @@ const sidebars = {
 		'intro',
 		{
 			type: 'category',
+			label: 'Getting started',
+			items: ['install'],
+		},
+		{
+			type: 'category',
 			label: 'Concepts',
 			items: [
 				'concepts/workspace',

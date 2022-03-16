@@ -3,6 +3,8 @@ use moon_config::{load_global_project_config_template, load_workspace_config_tem
 use moon_logger::color;
 use moon_utils::fs;
 use std::env;
+use std::fs::OpenOptions;
+use std::io::prelude::*;
 
 pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Error>> {
     let working_dir = env::current_dir().unwrap();
@@ -23,6 +25,7 @@ pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Err
         return Ok(());
     }
 
+    // Create config files
     fs::create_dir_all(&moon_dir).await?;
 
     fs::write(
@@ -36,6 +39,21 @@ pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Err
         load_global_project_config_template(),
     )
     .await?;
+
+    // Append to ignore file
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dest_dir.join(".gitignore"))
+        .unwrap();
+
+    writeln!(
+        file,
+        r#"
+# Moon
+.moon/cache
+.moon/out"#
+    )?;
 
     println!(
         "Moon has successfully been initialized in {}",

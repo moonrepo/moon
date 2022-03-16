@@ -134,8 +134,21 @@ impl Toolchain {
 
         self.load_tool(node, check_versions).await?;
 
+        // Set the `packageManager` field on `package.json`
+        let mut check_manager_version = check_versions;
+        let manager_version = match node.config.package_manager {
+            PM::Npm => format!("npm@{}", node.config.npm.version),
+            PM::Pnpm => format!("pnpm@{}", node.config.pnpm.as_ref().unwrap().version),
+            PM::Yarn => format!("yarn@{}", node.config.yarn.as_ref().unwrap().version),
+        };
+
+        if using_corepack && root_package.set_package_manager(&manager_version) {
+            root_package.save().await?;
+            check_manager_version = true;
+        }
+
         // Enable corepack before intalling package managers (when available)
-        if using_corepack {
+        if using_corepack && check_manager_version {
             debug!(
                 target: "moon:toolchain:node",
                 "Enabling corepack for package manager control"
@@ -145,41 +158,16 @@ impl Toolchain {
         }
 
         // Install npm (should always be available even if using another package manager)
-        let npm = self.get_npm();
-        let npm_version = format!("npm@{}", npm.config.version);
-        let mut check_npm_version = check_versions;
+        self.load_tool(self.get_npm(), check_manager_version)
+            .await?;
 
-        if using_corepack && root_package.set_package_manager(&npm_version) {
-            root_package.save().await?;
-            check_npm_version = true;
-        }
-
-        self.load_tool(npm, check_npm_version).await?;
-
-        // Install pnpm *after* setting the corepack package manager
+        // Install pnpm and yarn *after* setting the corepack package manager
         if let Some(pnpm) = &self.pnpm {
-            let pnpm_version = format!("pnpm@{}", pnpm.config.version);
-            let mut check_pnpm_version = check_versions;
-
-            if using_corepack && root_package.set_package_manager(&pnpm_version) {
-                root_package.save().await?;
-                check_pnpm_version = true;
-            }
-
-            self.load_tool(pnpm, check_pnpm_version).await?;
+            self.load_tool(pnpm, check_manager_version).await?;
         }
 
-        // Install yarn *after* setting the corepack package manager
         if let Some(yarn) = &self.yarn {
-            let yarn_version = format!("yarn@{}", yarn.config.version);
-            let mut check_yarn_version = check_versions;
-
-            if using_corepack && root_package.set_package_manager(&yarn_version) {
-                root_package.save().await?;
-                check_yarn_version = true;
-            }
-
-            self.load_tool(yarn, check_yarn_version).await?;
+            self.load_tool(yarn, check_manager_version).await?;
         }
 
         Ok(())

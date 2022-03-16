@@ -28,7 +28,9 @@ pub trait Tool {
     fn get_download_path(&self) -> Option<&PathBuf>;
 
     /// Determine whether the tool has already been installed.
-    async fn is_installed(&self) -> Result<bool, ToolchainError>;
+    /// If `check_version` is false, avoid running the binaries as child processes
+    /// to extract the current version.
+    async fn is_installed(&self, check_version: bool) -> Result<bool, ToolchainError>;
 
     /// Runs any installation steps after downloading.
     /// This is typically unzipping an archive, and running any installers/binaries.

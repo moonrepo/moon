@@ -278,7 +278,7 @@ impl Tool for NodeTool {
         Ok(())
     }
 
-    async fn is_installed(&self) -> Result<bool, ToolchainError> {
+    async fn is_installed(&self, _check_version: bool) -> Result<bool, ToolchainError> {
         if self.install_dir.exists() {
             let version = self.get_installed_version().await?;
 

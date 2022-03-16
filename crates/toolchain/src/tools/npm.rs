@@ -79,8 +79,12 @@ impl Tool for NpmTool {
         Ok(()) // This is handled by node
     }
 
-    async fn is_installed(&self) -> Result<bool, ToolchainError> {
+    async fn is_installed(&self, check_version: bool) -> Result<bool, ToolchainError> {
         if self.bin_path.exists() {
+            if !check_version {
+                return Ok(true);
+            }
+
             let version = self.get_installed_version().await?;
 
             if self.config.version == "inherit" {

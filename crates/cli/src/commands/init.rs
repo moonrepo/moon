@@ -44,8 +44,7 @@ pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Err
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
-        .open(dest_dir.join(".gitignore"))
-        .unwrap();
+        .open(dest_dir.join(".gitignore"))?;
 
     writeln!(
         file,

@@ -14,6 +14,7 @@ use figment::{
     Figment, Metadata, Profile, Provider,
 };
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -38,7 +39,8 @@ fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), Validat
     Ok(())
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+/// https://moonrepo.dev/docs/config/workspace
+#[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]
     #[validate]
@@ -55,6 +57,10 @@ pub struct WorkspaceConfig {
     #[serde(default)]
     #[validate]
     pub vcs: VcsConfig,
+
+    /// JSON schema URI.
+    #[serde(skip, rename = "$schema")]
+    pub schema: String,
 }
 
 impl Provider for WorkspaceConfig {
@@ -141,6 +147,7 @@ mod tests {
                     projects: HashMap::new(),
                     typescript: TypeScriptConfig::default(),
                     vcs: VcsConfig::default(),
+                    schema: String::new(),
                 }
             );
 
@@ -174,6 +181,7 @@ node:
                         projects: HashMap::new(),
                         typescript: TypeScriptConfig::default(),
                         vcs: VcsConfig::default(),
+                        schema: String::new(),
                     }
                 );
 
@@ -635,6 +643,7 @@ vcs:
                             manager: VcsManager::Svn,
                             ..VcsConfig::default()
                         },
+                        schema: String::new(),
                     }
                 );
 

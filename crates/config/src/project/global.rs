@@ -10,6 +10,7 @@ use figment::{
     providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -42,7 +43,8 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
     Ok(())
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+/// https://moonrepo.dev/docs/config/global-project
+#[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalProjectConfig {
     #[serde(default)]
@@ -53,6 +55,10 @@ pub struct GlobalProjectConfig {
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: HashMap<String, TaskConfig>,
+
+    /// JSON schema URI.
+    #[serde(skip, rename = "$schema")]
+    pub schema: String,
 }
 
 impl Provider for GlobalProjectConfig {
@@ -128,6 +134,7 @@ fileGroups:
                         string_vec!["src/**/*"]
                     )]),
                     tasks: HashMap::new(),
+                    schema: String::new(),
                 }
             );
 

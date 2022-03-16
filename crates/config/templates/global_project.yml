@@ -1,3 +1,5 @@
+$schema: 'https://moonrepo.dev/schemas/global-project.json'
+
 # OPTIONAL: File groups are a mechanism for grouping similar types of files within a project
 # using file glob patterns. These groups are then used by tasks to calculate functionality like
 # cache computation, affected files since last change, command line arguments, deterministic

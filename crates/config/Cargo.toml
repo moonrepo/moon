@@ -3,12 +3,22 @@ name = "moon_config"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "moon_config"
+path = "src/main.rs"
+
+[lib]
+name = "moon_config"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
 [dependencies]
 moon_error = { path = "../error"}
 moon_utils = { path = "../utils"}
 figment = { version = "0.10", features = ["test", "yaml"] }
 json = "0.12"
 regex = "1.5"
+schemars = "0.8"
 semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }

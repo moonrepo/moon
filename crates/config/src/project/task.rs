@@ -1,5 +1,6 @@
 use crate::types::{FilePath, FilePathOrGlob, TargetID};
 use crate::validators::{validate_child_or_root_path, validate_target};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use validator::{Validate, ValidationError};
@@ -31,7 +32,7 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TaskType {
     Node,
@@ -44,7 +45,7 @@ impl Default for TaskType {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TaskMergeStrategy {
     Append,
@@ -58,7 +59,7 @@ impl Default for TaskMergeStrategy {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
     pub merge_args: Option<TaskMergeStrategy>,
@@ -93,7 +94,7 @@ impl Default for TaskOptionsConfig {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct TaskConfig {
     pub args: Option<Vec<String>>,
 

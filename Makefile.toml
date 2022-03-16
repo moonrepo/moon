@@ -1,0 +1,41 @@
+[config]
+default_to_workspace = false
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--emit=files"]
+
+[tasks.lint]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["clippy", "--workspace", "--all-targets"]
+dependencies = ["format"]
+
+[tasks.test]
+command = "cargo"
+args = ["test"]
+
+[tasks.test-output]
+command = "cargo"
+args = ["test", "--", "--nocapture", "--show-output"]
+
+[tasks.gen-json-schemas]
+command = "cargo"
+args = ["run", "-p", "moon_config"]
+
+[tasks.check]
+dependencies = [
+    "format",
+    "build",
+    "test"
+]
+

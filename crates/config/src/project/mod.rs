@@ -12,6 +12,7 @@ use figment::{
     providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -57,7 +58,7 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {
     Application,
@@ -65,7 +66,7 @@ pub enum ProjectType {
     Tool,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
     #[serde(rename = "type")]
     pub type_of: ProjectType,
@@ -82,7 +83,7 @@ pub struct ProjectMetadataConfig {
     pub channel: String,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
     pub exclude: Option<Vec<TaskID>>,
 
@@ -92,7 +93,7 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
     pub rename: HashMap<TaskID, TaskID>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
     #[serde(default)]
@@ -100,7 +101,8 @@ pub struct ProjectWorkspaceConfig {
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, Validate)]
+/// https://moonrepo.dev/docs/config/project
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectConfig {
     #[serde(default)]
@@ -121,6 +123,10 @@ pub struct ProjectConfig {
     #[serde(default)]
     #[validate]
     pub workspace: ProjectWorkspaceConfig,
+
+    /// JSON schema URI.
+    #[serde(skip, rename = "$schema")]
+    pub schema: String,
 }
 
 impl Provider for ProjectConfig {

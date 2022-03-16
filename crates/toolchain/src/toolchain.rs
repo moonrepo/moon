@@ -131,11 +131,10 @@ impl Toolchain {
         // Install node and add engines to `package.json`
         let node = self.get_node();
         let using_corepack = node.is_corepack_aware();
-
-        self.load_tool(node, check_versions).await?;
+        let installed_node = self.load_tool(node, check_versions).await?;
 
         // Set the `packageManager` field on `package.json`
-        let mut check_manager_version = check_versions;
+        let mut check_manager_version = installed_node || check_versions;
         let manager_version = match node.config.package_manager {
             PM::Npm => format!("npm@{}", node.config.npm.version),
             PM::Pnpm => format!("pnpm@{}", node.config.pnpm.as_ref().unwrap().version),
@@ -198,20 +197,23 @@ impl Toolchain {
 
     /// Load a tool into the toolchain by downloading an artifact/binary
     /// into the temp folder, then installing it into the tools folder.
+    /// Return `true` if the tool was newly installed.
     async fn load_tool(
         &self,
         tool: &(dyn Tool + Send + Sync),
         check_version: bool,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<bool, ToolchainError> {
         if !tool.is_downloaded() {
             tool.download(None).await?;
         }
 
-        if !tool.is_installed(check_version).await? {
+        if tool.is_installed(check_version).await? {
+            return Ok(false);
+        } else {
             tool.install(self).await?;
         }
 
-        Ok(())
+        Ok(true)
     }
 
     /// Unload the tool by removing any downloaded/installed artifacts.

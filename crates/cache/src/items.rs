@@ -62,5 +62,9 @@ pub struct RunTargetState {
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceState {
+    #[serde(default)]
     pub last_node_install_time: u128,
+
+    #[serde(default)]
+    pub last_version_check_time: u128,
 }

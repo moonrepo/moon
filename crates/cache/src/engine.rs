@@ -258,7 +258,8 @@ mod tests {
             assert_eq!(
                 item.item,
                 WorkspaceState {
-                    last_node_install_time: 123
+                    last_node_install_time: 123,
+                    last_version_check_time: 0,
                 }
             );
 

@@ -118,7 +118,11 @@ impl Toolchain {
     }
 
     /// Download and install all tools into the toolchain.
-    pub async fn setup(&self, root_package: &mut PackageJson) -> Result<(), ToolchainError> {
+    pub async fn setup(
+        &self,
+        root_package: &mut PackageJson,
+        check_versions: bool,
+    ) -> Result<(), ToolchainError> {
         debug!(
             target: "moon:toolchain",
             "Downloading and installing tools",
@@ -127,11 +131,23 @@ impl Toolchain {
         // Install node and add engines to `package.json`
         let node = self.get_node();
         let using_corepack = node.is_corepack_aware();
+        let installed_node = self.load_tool(node, check_versions).await?;
 
-        self.load_tool(node).await?;
+        // Set the `packageManager` field on `package.json`
+        let mut check_manager_version = installed_node || check_versions;
+        let manager_version = match node.config.package_manager {
+            PM::Npm => format!("npm@{}", node.config.npm.version),
+            PM::Pnpm => format!("pnpm@{}", node.config.pnpm.as_ref().unwrap().version),
+            PM::Yarn => format!("yarn@{}", node.config.yarn.as_ref().unwrap().version),
+        };
+
+        if using_corepack && root_package.set_package_manager(&manager_version) {
+            root_package.save().await?;
+            check_manager_version = true;
+        }
 
         // Enable corepack before intalling package managers (when available)
-        if using_corepack {
+        if using_corepack && check_manager_version {
             debug!(
                 target: "moon:toolchain:node",
                 "Enabling corepack for package manager control"
@@ -141,28 +157,16 @@ impl Toolchain {
         }
 
         // Install npm (should always be available even if using another package manager)
-        self.load_tool(self.get_npm()).await?;
+        self.load_tool(self.get_npm(), check_manager_version)
+            .await?;
 
-        // Install pnpm *after* setting the corepack package manager
+        // Install pnpm and yarn *after* setting the corepack package manager
         if let Some(pnpm) = &self.pnpm {
-            let pnpm_version = format!("pnpm@{}", pnpm.config.version);
-
-            if using_corepack && root_package.set_package_manager(&pnpm_version) {
-                root_package.save().await?;
-            }
-
-            self.load_tool(pnpm).await?;
+            self.load_tool(pnpm, check_manager_version).await?;
         }
 
-        // Install yarn *after* setting the corepack package manager
         if let Some(yarn) = &self.yarn {
-            let yarn_version = format!("yarn@{}", yarn.config.version);
-
-            if using_corepack && root_package.set_package_manager(&yarn_version) {
-                root_package.save().await?;
-            }
-
-            self.load_tool(yarn).await?;
+            self.load_tool(yarn, check_manager_version).await?;
         }
 
         Ok(())
@@ -193,16 +197,23 @@ impl Toolchain {
 
     /// Load a tool into the toolchain by downloading an artifact/binary
     /// into the temp folder, then installing it into the tools folder.
-    async fn load_tool(&self, tool: &(dyn Tool + Send + Sync)) -> Result<(), ToolchainError> {
+    /// Return `true` if the tool was newly installed.
+    async fn load_tool(
+        &self,
+        tool: &(dyn Tool + Send + Sync),
+        check_version: bool,
+    ) -> Result<bool, ToolchainError> {
         if !tool.is_downloaded() {
             tool.download(None).await?;
         }
 
-        if !tool.is_installed().await? {
+        if tool.is_installed(check_version).await? {
+            return Ok(false);
+        } else {
             tool.install(self).await?;
         }
 
-        Ok(())
+        Ok(true)
     }
 
     /// Unload the tool by removing any downloaded/installed artifacts.
@@ -219,7 +230,7 @@ impl Toolchain {
             }
         }
 
-        if tool.is_installed().await? {
+        if tool.is_installed(false).await? {
             let install_dir = tool.get_install_dir();
 
             fs::remove_dir_all(install_dir).await?;

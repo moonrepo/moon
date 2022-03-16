@@ -278,30 +278,20 @@ impl Tool for NodeTool {
         Ok(())
     }
 
-    async fn is_installed(&self) -> Result<bool, ToolchainError> {
+    async fn is_installed(&self, _check_version: bool) -> Result<bool, ToolchainError> {
         if self.install_dir.exists() {
-            let version = self.get_installed_version().await?;
-
-            if version == self.config.version {
-                debug!(
-                    target: "moon:toolchain:node",
-                    "Download has already been installed and is on the correct version",
-                );
-
-                return Ok(true);
-            }
-
             debug!(
                 target: "moon:toolchain:node",
-                "Download has been installed, but is on the wrong version ({}), attempting to reinstall",
-                version,
+                "Download has already been installed and is on the correct version",
             );
-        } else {
-            debug!(
-                target: "moon:toolchain:node",
-                "Download has not been installed",
-            );
+
+            return Ok(true);
         }
+
+        debug!(
+            target: "moon:toolchain:node",
+            "Download has not been installed",
+        );
 
         Ok(false)
     }

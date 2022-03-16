@@ -37,7 +37,7 @@ pub async fn bin(tool_type: &BinTools) -> Result<(), Box<dyn std::error::Error>>
         },
     };
 
-    let installed = tool.is_installed().await;
+    let installed = tool.is_installed(true).await;
 
     if installed.is_err() || !installed.unwrap() {
         safe_exit(BinExitCodes::NotInstalled as i32);

@@ -24,7 +24,8 @@ fn add_package_manager(workspace: &mut Workspace) -> bool {
         ),
     };
 
-    if workspace.toolchain.get_node().is_corepack_aware()
+    if manager_version != "npm@inherit"
+        && workspace.toolchain.get_node().is_corepack_aware()
         && workspace.package_json.set_package_manager(&manager_version)
     {
         debug!(

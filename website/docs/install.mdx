@@ -36,6 +36,7 @@ manager.
   defaultValue="yarn"
   values={[
     { label: 'Yarn', value: 'yarn' },
+    { label: 'Yarn (classic)', value: 'yarn1' },
     { label: 'npm', value: 'npm' },
     { label: 'pnpm', value: 'pnpm' },
   ]}
@@ -55,6 +56,18 @@ nodeLinker: 'node-modules'
 ```
 
 - [Documentation](https://yarnpkg.com/features/workspaces)
+
+</TabItem>
+<TabItem value="yarn1">
+
+```json title="package.json"
+{
+	// ...
+	"workspaces": ["apps/*", "packages/*"]
+}
+```
+
+- [Documentation](https://classic.yarnpkg.com/en/docs/workspaces)
 
 </TabItem>
 <TabItem value="npm">
@@ -207,7 +220,8 @@ are:
 ## Initializing Moon
 
 Now that we have the CLI installed, let's scaffold and initialize Moon in a repository with the
-[`moon init`](./commands/init) command.
+[`moon init`](./commands/init) command. Be sure to [access the binary](#accessing-the-moon-binary)
+as mentioned above.
 
 ```shell
 $ moon init
@@ -219,4 +233,7 @@ When executed, the following operations will be applied.
   [`.moon/project.yml`](./config/global-project) configuration files.
 - Append necessary ignore patterns to the relative `.gitignore`.
 
-And with that, let's move on to [configuration your workspace](./workspace).!
+## Next steps
+
+- [Setup the workspace](./setup-workspace)
+- [Learn about the workspace](./concepts/workspace)

@@ -8,7 +8,7 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Getting started',
-			items: ['install', 'setup-workspace'],
+			items: ['install', 'setup-workspace', 'create-project'],
 		},
 		{
 			type: 'category',

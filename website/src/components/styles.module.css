@@ -1,6 +1,6 @@
 .label {
 	font-weight: bold;
-	font-size: small;
+	font-size: 0.75rem;
 	color: #fff;
 	color: var(--ifm-font-color-base-inverse);
 	background-color: var(--ifm-color-primary-darker);
@@ -9,5 +9,12 @@
 	margin-left: 1rem;
 	vertical-align: middle;
 	text-transform: uppercase;
-	padding: 0.25rem 0.45rem;
+	padding: 0.2rem 0.4rem;
+}
+
+.labelHeader {
+	position: absolute;
+	margin-left: 0;
+	right: 0;
+	top: 1rem;
 }

@@ -4,6 +4,9 @@ title: Setup workspace
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import Label from '@site/src/components/Label';
+
+<Label header text="3 min" />
 
 Once Moon has been initialized, we must setup the [workspace](./concepts/workspace), which is
 denoted by the `.moon` folder and a relative `package.json` -- this is known as the workspace root.
@@ -15,7 +18,7 @@ The workspace is in charge of:
 - Managing a [toolchain](./concepts/toolchain) that automatically installs Node.js and other tools.
 - Running tasks and the build system.
 
-## Configure Node.js
+## Configuring Node.js
 
 The most important tool within Moon and its toolchain is Node.js, as it's the backbone of a
 JavaScript based repository. Let's now define the Node.js version we want to install in the
@@ -31,10 +34,10 @@ node:
 	version: '16.14.0'
 ```
 
-Let's now run `moon --logLevel debug setup` to verify that Node.js is downloaded and installed
-correctly. Pretty cool right?
+Let's now run [`moon --logLevel debug setup`](./commands/setup) to verify that Node.js is downloaded
+and installed correctly. Pretty cool right?
 
-## Configure a package manager
+## Configuring a package manager
 
 Even though Node.js is now installed, we need a package manager to install dependencies. During
 installation, we talked about [choosing a package manager](./install#choosing-a-package-manager), so
@@ -58,11 +61,11 @@ node:
 		version: '3.2.0'
 ```
 
-Once again, let's run `moon --logLevel debug setup` to verify the package manager is installed, and
-also take note that Node.js is _already_ installed. Based on the example configuration above, we'll
-be switching from npm (the default) to yarn.
+Once again, let's run [`moon --logLevel debug setup`](./commands/setup) to verify the package
+manager is installed, and also take note that Node.js is _already_ installed. Based on the example
+configuration above, we'll be switching from npm (the default) to yarn.
 
-## Configure a version control system
+## Configuring a version control system
 
 > Moon defaults to `git` for a VCS, so feel free to skip this if you use git.
 

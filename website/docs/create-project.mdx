@@ -1,0 +1,37 @@
+---
+title: Create a project
+---
+
+import Label from '@site/src/components/Label';
+
+<Label header text="3 min" />
+
+With a [workspace](./setup-workspace), we can now house one or many [projects](./concepts/project),
+with a project being an application, library, or tool. In the end, each project will have its own
+build layer, personal tasks, and custom configuration.
+
+## Declaring a project in the workspace
+
+Although a project may exist in your repository, it's not accessible from Moon until it's been
+mapped in the [`projects`](./config/workspace#projects) setting found in
+[`.moon/workspace.yml`](./config/workspace). When mapping a project, we require a unique identifier
+for the project, and a project source location (path relative from the workspace root).
+
+Let's say we have a frontend web application called "client", and a backend Node.js application
+called "server", our `projects` setting would look like the following.
+
+```yaml title=".moon/workspace.yml"
+projects:
+	client: 'apps/client'
+	server: 'apps/server'
+```
+
+> For easier maintenance, we suggest alpha sorting the `projects` map!
+
+We can now run [`moon project client`](./commands/project) and
+[`moon project server`](./commands/project) to display information about each project. If these
+projects were not mapped, or were pointing to an invalid source, the command would throw an error.
+
+## Configuring a project
+
+### Adding optional metadata

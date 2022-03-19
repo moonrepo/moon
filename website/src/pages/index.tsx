@@ -6,6 +6,40 @@ import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Layout from '@theme/Layout';
 import styles from './index.module.css';
 
+// - Configurable
+// - Extensible?
+// - Scalable
+
+// Management
+// - Smart hashing
+// - Remote caching
+// - Multi-platform
+// - Integrated toolchain
+
+// Organization
+// - Project graph
+// - Project boundaries
+// - Package workspaces
+// - Ownership metadata
+
+// Orchestration
+// - Dependency graph
+// - Task runner
+// - Task distribution
+// - Parallel execution
+// - Deterministic builds
+// - Incremental builds
+
+// Notification
+// - Flakiness detection
+// - Webhooks and events
+// - Terminal notifications
+
+// Development
+// - Node.js inspector integration
+// - Chrome profiling
+// - Editor extensions
+
 function HomepageHeader() {
 	const { siteConfig } = useDocusaurusContext();
 

@@ -2,6 +2,8 @@
 title: Create a project
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 import Label from '@site/src/components/Label';
 
 <Label header text="3 min" />
@@ -34,4 +36,130 @@ projects were not mapped, or were pointing to an invalid source, the command wou
 
 ## Configuring a project
 
+A project can be configured in 1 of 2 ways:
+
+- Through the [`.moon/project.yml`](./config/global-project) config file, which defines file groups
+  and tasks that are inherited by _all_ projects within the workspace. Perfect for standardizing
+  common tasks like linting, type-checking, and code formatting.
+- Through the [`project.yml`](./config/project) config file, found at the root of each project,
+  which defines files groups, tasks, dependencies, and more that are unique to that project.
+
+Both config files are optional, and can be used separately or together, the choice is yours!
+
+Now let's continue with our client and server example above. If we wanted to configure both
+projects, and defined config that's also share between the 2, we could do something like the
+following:
+
+<Tabs
+  groupId="project-config"
+  defaultValue="client"
+  values={[
+    { label: 'Client', value: 'client' },
+    { label: 'Server', value: 'server' },
+    { label: 'Both (inherited)', value: 'inherit' },
+  ]}
+>
+<TabItem value="client">
+
+```yaml title="apps/client/project.yml"
+tasks:
+	build:
+		command: 'webpack'
+		args:
+			- 'build'
+			- '--mode'
+			- 'production'
+			- '--entry'
+			- 'src/index.tsx'
+			- '--output-path'
+			- 'build'
+		inputs:
+			- 'src/**/*'
+		outputs:
+			- 'build'
+```
+
+</TabItem>
+<TabItem value="server">
+
+```yaml title="apps/server/project.yml"
+tasks:
+	build:
+		command: 'babel'
+		args:
+			- 'src'
+			- '--out-dir'
+			- 'build'
+		inputs:
+			- 'src/**/*'
+		outputs:
+			- 'build'
+```
+
+</TabItem>
+<TabItem value="inherit">
+
+```yaml title=".moon/project.yml"
+tasks:
+	format:
+		command: 'prettier'
+		args:
+			- '--write'
+			- '.'
+		inputs:
+			- 'src/**/*'
+	lint:
+		command: 'eslint'
+		args:
+			- '--no-error-on-unmatched-pattern'
+			- '.'
+		inputs:
+			- 'src/**/*'
+	test:
+		command: 'jest'
+		args:
+			- '--passWithNoTests'
+			- '.'
+		inputs:
+			- 'src/**/*'
+			- 'tests/**/*'
+	typecheck:
+		command: 'tsc'
+		args:
+			- '--build'
+		inputs:
+			- 'src/**/*'
+			- 'types/**/*'
+```
+
+</TabItem>
+</Tabs>
+
 ### Adding optional metadata
+
+When utilizing Moon in a large monorepo or organization, ownership becomes very important. To combat
+this problem, Moon supports the [`project`](./config/project#project) field within a project's
+[`project.yml`](./config/project) config.
+
+This field is _optional_ by default, but when defined it provides metadata about the project,
+specifically around team ownership, which developers maintain the project, where to discuss it, and
+more!
+
+```yaml title="project.yml"
+project:
+  type: 'tool'
+  name: 'Moon'
+  description: 'A monorepo management tool.'
+  channel: '#moon'
+  owner: 'infra.platform'
+  maintainers: ['miles.johnson']
+```
+
+## Next steps
+
+- [Create a task](./create-task)
+- [Configure `.moon/workspace.yml` further](./config/workspace)
+- [Configure `.moon/project.yml` further](./config/global-project)
+- [Configure `project.yml` further](./config/project)
+- [Learn about projects](./concepts/project)
+- [Learn about tasks](./concepts/task)

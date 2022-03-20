@@ -33,7 +33,12 @@ const config = {
 				// 		'https://github.com/milesj/moon/tree/master/website',
 				// },
 				theme: {
-					customCss: require.resolve('./src/css/custom.css'),
+					customCss: [
+						require.resolve('./src/css/icons/fontawesome.css'),
+						require.resolve('./src/css/icons/solid.css'),
+						require.resolve('./src/css/theme.css'),
+						require.resolve('./src/css/custom.css'),
+					],
 				},
 			}),
 		],
@@ -93,6 +98,16 @@ const config = {
 				readme: true,
 			},
 		],
+		function tailwind() {
+			return {
+				name: 'docusaurus-tailwindcss',
+				configurePostCss(postcssOptions) {
+					postcssOptions.plugins.push(require('tailwindcss'));
+
+					return postcssOptions;
+				},
+			};
+		},
 	],
 };
 

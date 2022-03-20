@@ -5,6 +5,7 @@ title: Setup workspace
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Label from '@site/src/components/Label';
+import NextSteps from '@site/src/components/NextSteps';
 
 <Label header text="3 min" />
 
@@ -105,7 +106,11 @@ vcs:
 
 ## Next steps
 
-- [Create a project](./create-project)
-- [Configure `.moon/workspace.yml` further](./config/workspace)
-- [Learn about the workspace](./concepts/workspace)
-- [Learn about the toolchain](./concepts/toolchain)
+<NextSteps
+	links={[
+		{ label: 'Create a project', url: './create-project' },
+		{ label: 'Configure `.moon/workspace.yml` further', url: './config/workspace' },
+		{ label: 'Learn about the workspace', url: './concepts/workspace' },
+		{ label: 'Learn about the toolchain', url: './concepts/toolchain' },
+	]}
+/>

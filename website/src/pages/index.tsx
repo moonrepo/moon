@@ -2,43 +2,89 @@ import React from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import HomepageFeatures from '@site/src/components/HomepageFeatures';
+import Features, { FeaturesProps } from '@site/src/components/Home/Features';
+import {
+	faFingerprint,
+	faCloudArrowUp,
+	faMicrochip,
+	faToolbox,
+	faDiagramProject,
+	faPoo,
+	faBarcode,
+} from '@fortawesome/free-solid-svg-icons';
 import Layout from '@theme/Layout';
 import styles from './index.module.css';
 
-// - Configurable
-// - Extensible?
-// - Scalable
-
-// Management
-// - Smart hashing
-// - Remote caching
-// - Multi-platform
-// - Integrated toolchain
-
-// Organization
-// - Project graph
-// - Project boundaries
-// - Package workspaces
-// - Ownership metadata
+// - Configurable							sliders-up
+// - Extensible?							puzzle
+// - Scalable									circle-bolt
 
 // Orchestration
-// - Dependency graph
-// - Task runner
-// - Task distribution
-// - Parallel execution
-// - Deterministic builds
-// - Incremental builds
+// - Dependency graph					sitemap
+// - Task runner							merge
+// - Task distribution				diagram-sankey
+// - Parallel execution				arrows-turn-right
+// - Incremental builds				arrow-up-right-dots
 
 // Notification
-// - Flakiness detection
-// - Webhooks and events
-// - Terminal notifications
+// - Flakiness detection			shield-halved
+// - Webhooks and events			message-code
+// - Terminal notifications		bell-on
 
 // Development
-// - Node.js inspector integration
-// - Chrome profiling
-// - Editor extensions
+// - Node.js inspector integration	user-secret
+// - Chrome profiling								aperture
+// - Editor extensions						chart-tree-map
+
+const managementFeatures: FeaturesProps['features'] = [
+	{
+		title: 'Smart hashing',
+		icon: faFingerprint,
+		description:
+			'Collects inputs from multiple sources to ensure builds are deterministic and reproducible.',
+	},
+	{
+		title: 'Remote caching',
+		icon: faCloudArrowUp,
+		description: 'Persists builds, hashes, and caches between teammates and CI/CD environments.',
+	},
+	{
+		title: 'Integrated toolchain',
+		icon: faToolbox,
+		description:
+			'Automatically downloads and installs explicit versions of Node.js and other tools for consistency.',
+	},
+	{
+		title: 'Multi-platform',
+		icon: faMicrochip,
+		description: 'Runs on common development platforms: Linux, MacOS, and Windows.',
+	},
+];
+
+const organizationFeatures: FeaturesProps['features'] = [
+	{
+		title: 'Project graph',
+		icon: faDiagramProject,
+		description: 'Generates a project graph to increase performance and reduce workloads.',
+	},
+	{
+		title: 'Project boundaries',
+		icon: faPoo, // grid-horizontal
+		description: 'Enforces boundaries to eliminate cycles and reduce indirection.',
+	},
+	{
+		title: 'Dependency workspaces',
+		icon: faPoo, // grid-dividers
+		description:
+			'Works alongside package manager workspaces so that projects have distinct dependency trees.',
+	},
+	{
+		title: 'Ownership metadata',
+		icon: faBarcode, // rectangle-barcode
+		description:
+			'Declare an owner, maintainers, support channels, and more, via LDAP or another integration.',
+	},
+];
 
 function HomepageHeader() {
 	const { siteConfig } = useDocusaurusContext();
@@ -67,8 +113,19 @@ export default function Home() {
 			description="Description will go into a meta tag in <head />"
 		>
 			<HomepageHeader />
+
 			<main>
-				<HomepageFeatures />
+				<Features
+					header="Management"
+					description="Automates the complexity away"
+					features={managementFeatures}
+				/>
+
+				<Features
+					header="Organization"
+					description="Automates the complexity away"
+					features={organizationFeatures}
+				/>
 			</main>
 		</Layout>
 	);

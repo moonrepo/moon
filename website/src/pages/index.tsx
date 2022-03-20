@@ -9,9 +9,11 @@ import {
 	faMicrochip,
 	faToolbox,
 	faDiagramProject,
-	faPoo,
+	faRectangleBarcode,
 	faBarcode,
-} from '@fortawesome/free-solid-svg-icons';
+	faGridHorizontal,
+	faGridDividers,
+} from '@fortawesome/pro-duotone-svg-icons';
 import Layout from '@theme/Layout';
 import styles from './index.module.css';
 
@@ -69,18 +71,18 @@ const organizationFeatures: FeaturesProps['features'] = [
 	},
 	{
 		title: 'Project boundaries',
-		icon: faPoo, // grid-horizontal
+		icon: faGridHorizontal,
 		description: 'Enforces boundaries to eliminate cycles and reduce indirection.',
 	},
 	{
 		title: 'Dependency workspaces',
-		icon: faPoo, // grid-dividers
+		icon: faGridDividers,
 		description:
 			'Works alongside package manager workspaces so that projects have distinct dependency trees.',
 	},
 	{
 		title: 'Ownership metadata',
-		icon: faBarcode, // rectangle-barcode
+		icon: faRectangleBarcode,
 		description:
 			'Declare an owner, maintainers, support channels, and more, via LDAP or another integration.',
 	},

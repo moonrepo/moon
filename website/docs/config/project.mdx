@@ -3,7 +3,7 @@ title: project.yml
 toc_max_heading_level: 6
 ---
 
-import Label from '@site/src/components/Label';
+import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 
 The `project.yml` configuration file _is not required_ but can be used to define additional metadata
 for a project, override inherited tasks, and more at the project-level. When used, this file must
@@ -179,7 +179,7 @@ tasks:
     command: 'tsc'
 ```
 
-### `command`<Label text="Required" />
+### `command`<RequiredLabel />
 
 > `string`
 

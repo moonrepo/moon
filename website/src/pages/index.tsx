@@ -10,7 +10,6 @@ import {
 	faToolbox,
 	faDiagramProject,
 	faRectangleBarcode,
-	faBarcode,
 	faGridHorizontal,
 	faGridDividers,
 } from '@fortawesome/pro-duotone-svg-icons';
@@ -44,11 +43,13 @@ const managementFeatures: FeaturesProps['features'] = [
 		icon: faFingerprint,
 		description:
 			'Collects inputs from multiple sources to ensure builds are deterministic and reproducible.',
+		status: 'coming-soon',
 	},
 	{
 		title: 'Remote caching',
 		icon: faCloudArrowUp,
 		description: 'Persists builds, hashes, and caches between teammates and CI/CD environments.',
+		status: 'coming-soon',
 	},
 	{
 		title: 'Integrated toolchain',
@@ -125,7 +126,7 @@ export default function Home() {
 
 				<Features
 					header="Organization"
-					description="Automates the complexity away"
+					description="Structuring a repository made simple"
 					features={organizationFeatures}
 				/>
 			</main>

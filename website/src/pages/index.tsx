@@ -126,16 +126,16 @@ const notificationFeatures: FeaturesProps['features'] = [
 		title: 'Terminal notifications',
 		icon: faBellOn,
 		description:
-			'Receives notifications in your chosen terminal when builds are successful... or not.',
+			'Receives notifications in your chosen terminal when builds are successful... or are not.',
 		status: 'coming-soon',
 	},
 ];
 
 const additionalFeatures: FeaturesProps['features'] = [
 	{
-		title: 'Configuration, not convention',
+		title: 'Configuration & convention',
 		icon: faSlidersUp,
-		description: 'Use Moon the way you and your company want.',
+		description: 'Use Moon the way you want, but with some guard rails.',
 	},
 	{
 		title: 'Scalability aware',

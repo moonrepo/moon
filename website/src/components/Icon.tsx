@@ -1,5 +1,15 @@
+import React from 'react';
+import cx from 'clsx';
 import { FontAwesomeIcon, FontAwesomeIconProps } from '@fortawesome/react-fontawesome';
 
-export type IconProps = FontAwesomeIconProps;
+export interface IconProps extends FontAwesomeIconProps {
+	className?: string;
+}
 
-export default FontAwesomeIcon;
+export default function Icon({ className, ...props }: IconProps) {
+	return (
+		<span className={cx('inline-block', className)} aria-hidden="true">
+			<FontAwesomeIcon {...props} />
+		</span>
+	);
+}

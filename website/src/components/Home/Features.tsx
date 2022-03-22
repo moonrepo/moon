@@ -3,6 +3,8 @@ import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import Icon from '../Icon';
 import FeatureStatus, { StatusType } from './FeatureStatus';
+import Heading from '../Heading';
+import Text from '../Text';
 
 export interface FeaturesProps {
 	header: string;
@@ -30,33 +32,51 @@ export default function Features({ header, description, features, columns = 4 }:
 					<h2 className="text-base font-semibold uppercase tracking-wider text-indigo-600">
 						{header}
 					</h2>
-					<p className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+
+					<Heading className="mt-2" level={2}>
 						{description}
-					</p>
+					</Heading>
+
 					<div className="mt-12">
 						<div className={`grid grid-cols-1 gap-8 ${columnClasses[columns]}`}>
-							{features.map((feature) => {
+							{features.map((feature, index) => {
 								const isFutureRelease =
 									feature.status === 'coming-soon' || feature.status === 'in-development';
+								const iconIndex = index + 1;
+								let iconColor = 'text-blue-500';
+
+								if (iconIndex % 4 === 0) {
+									iconColor = 'text-purple-500';
+								} else if (iconIndex % 3 === 0) {
+									iconColor = 'text-violet-500';
+								} else if (iconIndex % 2 === 0) {
+									iconColor = 'text-indigo-500';
+								}
 
 								return (
 									<div key={feature.title} className={cx('pt-6', isFutureRelease && 'opacity-80')}>
 										<div className="flow-root rounded-lg bg-gray-50 px-6 pb-8">
 											<div className="-mt-6">
 												<div>
-													<span className="inline-flex items-center justify-center text-5xl text-indigo-500">
-														<Icon icon={feature.icon} />
-													</span>
+													<Icon
+														icon={feature.icon}
+														className={`inline-flex items-center justify-center text-5xl ${iconColor}`}
+													/>
 												</div>
-												<h3 className="mt-4 text-xl font-semibold tracking-tight text-gray-900">
+
+												<Heading className="mt-4" level={4}>
 													{feature.title}
-												</h3>
+												</Heading>
+
 												{feature.status && (
 													<p>
 														<FeatureStatus status={feature.status} />
 													</p>
 												)}
-												<p className="mt-4 text-base text-gray-600">{feature.description}</p>
+
+												<Text className="mt-4" variant="muted">
+													{feature.description}
+												</Text>
 											</div>
 										</div>
 									</div>

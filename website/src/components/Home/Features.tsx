@@ -10,7 +10,7 @@ export interface FeaturesProps {
 	features: {
 		title: string;
 		icon: IconDefinition;
-		description: string;
+		description: React.ReactNode;
 		status?: StatusType;
 	}[];
 	columns?: 3 | 4 | 5;
@@ -24,43 +24,45 @@ const columnClasses = {
 
 export default function Features({ header, description, features, columns = 4 }: FeaturesProps) {
 	return (
-		<div className="relative bg-white py-16 sm:py-12 lg:py-20">
-			<div className="mx-auto max-w-md px-4 text-center sm:max-w-3xl sm:px-6 lg:max-w-7xl lg:px-8">
-				<h2 className="text-base font-semibold uppercase tracking-wider text-indigo-600">
-					{header}
-				</h2>
-				<p className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-					{description}
-				</p>
-				<div className="mt-12">
-					<div className={`grid grid-cols-1 gap-8 ${columnClasses[columns]}`}>
-						{features.map((feature) => {
-							const isFutureRelease =
-								feature.status === 'coming-soon' || feature.status === 'in-development';
+		<div className="bg-white">
+			<div className="relative py-12 sm:py-16 lg:py-18">
+				<div className="mx-auto max-w-md px-4 text-center sm:max-w-3xl sm:px-6 lg:max-w-7xl lg:px-8">
+					<h2 className="text-base font-semibold uppercase tracking-wider text-indigo-600">
+						{header}
+					</h2>
+					<p className="mt-2 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+						{description}
+					</p>
+					<div className="mt-12">
+						<div className={`grid grid-cols-1 gap-8 ${columnClasses[columns]}`}>
+							{features.map((feature) => {
+								const isFutureRelease =
+									feature.status === 'coming-soon' || feature.status === 'in-development';
 
-							return (
-								<div key={feature.title} className={cx('pt-6', isFutureRelease && 'opacity-80')}>
-									<div className="flow-root rounded-lg bg-gray-50 px-6 pb-8">
-										<div className="-mt-6">
-											<div>
-												<span className="inline-flex items-center justify-center text-5xl text-indigo-500">
-													<Icon icon={feature.icon} />
-												</span>
+								return (
+									<div key={feature.title} className={cx('pt-6', isFutureRelease && 'opacity-80')}>
+										<div className="flow-root rounded-lg bg-gray-50 px-6 pb-8">
+											<div className="-mt-6">
+												<div>
+													<span className="inline-flex items-center justify-center text-5xl text-indigo-500">
+														<Icon icon={feature.icon} />
+													</span>
+												</div>
+												<h3 className="mt-4 text-xl font-semibold tracking-tight text-gray-900">
+													{feature.title}
+												</h3>
+												{feature.status && (
+													<p>
+														<FeatureStatus status={feature.status} />
+													</p>
+												)}
+												<p className="mt-4 text-base text-gray-600">{feature.description}</p>
 											</div>
-											<h3 className="mt-4 text-xl font-semibold tracking-tight text-gray-900">
-												{feature.title}
-											</h3>
-											{feature.status && (
-												<p>
-													<FeatureStatus status={feature.status} />
-												</p>
-											)}
-											<p className="mt-4 text-base text-gray-600">{feature.description}</p>
 										</div>
 									</div>
-								</div>
-							);
-						})}
+								);
+							})}
+						</div>
 					</div>
 				</div>
 			</div>

@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Features, { FeaturesProps } from '@site/src/components/Home/Features';
+import AdditionalFeatures from '@site/src/components/Home/AdditionalFeatures';
 import {
 	faFingerprint,
 	faCloudArrowUp,
@@ -12,30 +13,22 @@ import {
 	faRectangleBarcode,
 	faGridHorizontal,
 	faGridDividers,
+	faSitemap,
+	faMerge,
+	faDiagramSankey,
+	faShieldHalved,
+	faArrowUpRightDots,
+	faMessageCode,
+	faBellOn,
+	faUserSecret,
+	faAperture,
+	faChartTreeMap,
+	faSlidersUp,
+	faCircleBolt,
+	faBoxAlt,
 } from '@fortawesome/pro-duotone-svg-icons';
 import Layout from '@theme/Layout';
 import styles from './index.module.css';
-
-// - Configurable							sliders-up
-// - Extensible?							puzzle
-// - Scalable									circle-bolt
-
-// Orchestration
-// - Dependency graph					sitemap
-// - Task runner							merge
-// - Task distribution				diagram-sankey
-// - Parallel execution				arrows-turn-right
-// - Incremental builds				arrow-up-right-dots
-
-// Notification
-// - Flakiness detection			shield-halved
-// - Webhooks and events			message-code
-// - Terminal notifications		bell-on
-
-// Development
-// - Node.js inspector integration	user-secret
-// - Chrome profiling								aperture
-// - Editor extensions						chart-tree-map
 
 const managementFeatures: FeaturesProps['features'] = [
 	{
@@ -43,7 +36,7 @@ const managementFeatures: FeaturesProps['features'] = [
 		icon: faFingerprint,
 		description:
 			'Collects inputs from multiple sources to ensure builds are deterministic and reproducible.',
-		status: 'coming-soon',
+		status: 'in-development',
 	},
 	{
 		title: 'Remote caching',
@@ -68,7 +61,7 @@ const organizationFeatures: FeaturesProps['features'] = [
 	{
 		title: 'Project graph',
 		icon: faDiagramProject,
-		description: 'Generates a project graph to increase performance and reduce workloads.',
+		description: 'Generates a project graph for dependency and dependent relationships.',
 	},
 	{
 		title: 'Project boundaries',
@@ -86,6 +79,97 @@ const organizationFeatures: FeaturesProps['features'] = [
 		icon: faRectangleBarcode,
 		description:
 			'Declare an owner, maintainers, support channels, and more, via LDAP or another integration.',
+	},
+];
+
+const orchestrationFeatures: FeaturesProps['features'] = [
+	{
+		title: 'Dependency graph',
+		icon: faSitemap,
+		description: 'Generates a dependency graph to increase performance and reduce workloads.',
+	},
+	{
+		title: 'Task runner',
+		icon: faMerge,
+		description:
+			'Executes tasks in parallel and in order using a thread pool and our dependency graph.',
+	},
+	{
+		title: 'Task distribution',
+		icon: faDiagramSankey,
+		description: 'Distributes tasks across multiple machines to increase throughput.',
+		status: 'coming-soon',
+	},
+	{
+		title: 'Incremental builds',
+		icon: faArrowUpRightDots,
+		description:
+			'With our smart hashing, only rebuild projects that have been touched since the last build.',
+		status: 'in-development',
+	},
+];
+
+const notificationFeatures: FeaturesProps['features'] = [
+	{
+		title: 'Flakiness detection',
+		icon: faShieldHalved,
+		description: 'Reduce flaky builds with automatic retries and passthrough settings.',
+		status: 'experimental',
+	},
+	{
+		title: 'Webhook events',
+		icon: faMessageCode,
+		description: 'Receive a webhook for every event in the pipeline. Useful for metrics gathering.',
+		status: 'coming-soon',
+	},
+	{
+		title: 'Terminal notifications',
+		icon: faBellOn,
+		description:
+			'Receives notifications in your chosen terminal when builds are successful... or not.',
+		status: 'coming-soon',
+	},
+];
+
+const additionalFeatures: FeaturesProps['features'] = [
+	{
+		title: 'Configuration, not convention',
+		icon: faSlidersUp,
+		description: 'Use Moon the way you and your company want.',
+	},
+	{
+		title: 'Scalability aware',
+		icon: faCircleBolt,
+		description: 'Engineered to scale and grow for codebases of any size.',
+	},
+	{
+		title: 'Integrated packages',
+		icon: faBoxAlt,
+		description: (
+			<>
+				Enhance your pipeline with our{' '}
+				<Link href="https://www.npmjs.com/org/moonrepo">@moonrepo</Link> npm packages.
+			</>
+		),
+		status: 'in-development',
+	},
+	{
+		title: 'Node.js inspection',
+		icon: faUserSecret,
+		description: 'Inspect and debug failing Node.js processes.',
+		status: 'coming-soon',
+	},
+	{
+		title: 'Build profiles',
+		icon: faAperture,
+		description: 'Generate build profiles that can be reviewed in Chrome.',
+		status: 'coming-soon',
+	},
+	{
+		title: 'Editor extensions',
+		icon: faChartTreeMap,
+		description: 'Utilize Moon extensions in your favorite editor.',
+		status: 'coming-soon',
 	},
 ];
 
@@ -120,14 +204,33 @@ export default function Home() {
 			<main>
 				<Features
 					header="Management"
-					description="Automates the complexity away"
+					description="Work more, manage and debug less"
 					features={managementFeatures}
 				/>
 
 				<Features
 					header="Organization"
-					description="Structuring a repository made simple"
+					description="Architect a repository to scale"
 					features={organizationFeatures}
+				/>
+
+				<Features
+					header="Orchestration"
+					description="Offload your heavy tasks"
+					features={orchestrationFeatures}
+				/>
+
+				<Features
+					header="Notification"
+					description="Be notified of pipeline health"
+					features={notificationFeatures}
+					columns={3}
+				/>
+
+				<AdditionalFeatures
+					header="And many more features"
+					description="To provide an amazing developer and maintainer experience!"
+					features={additionalFeatures}
 				/>
 			</main>
 		</Layout>

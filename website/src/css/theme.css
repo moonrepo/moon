@@ -19,6 +19,9 @@
 	h6 {
 		@apply text-base font-bold;
 	}
+	a {
+		@apply text-indigo-500;
+	}
 
 	.markdown ul {
 		@apply list-disc ml-8;

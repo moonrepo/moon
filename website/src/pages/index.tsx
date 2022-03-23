@@ -227,11 +227,7 @@ export default function Home() {
 					columns={3}
 				/>
 
-				<AdditionalFeatures
-					header="And many more features"
-					description="To provide an amazing developer and maintainer experience!"
-					features={additionalFeatures}
-				/>
+				<AdditionalFeatures header="And many more features" features={additionalFeatures} />
 			</main>
 		</Layout>
 	);

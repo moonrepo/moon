@@ -5,22 +5,14 @@ import Icon from '../Icon';
 import Heading from '../Heading';
 import Text from '../Text';
 
-export type AdditionalFeaturesProps = Omit<FeaturesProps, 'columns'>;
+export type AdditionalFeaturesProps = Omit<FeaturesProps, 'description' | 'columns'>;
 
-export default function AdditionalFeatures({
-	header,
-	description,
-	features,
-}: AdditionalFeaturesProps) {
+export default function AdditionalFeatures({ header, features }: AdditionalFeaturesProps) {
 	return (
 		<div className="bg-white">
 			<div className="max-w-7xl mx-auto py-16 px-6 sm:px-8 lg:py-20 lg:px-10">
 				<div className="max-w-3xl mx-auto text-center">
 					<Heading level={3}>{header}</Heading>
-
-					<Text className="mt-2" variant="muted" size="large">
-						{description}
-					</Text>
 				</div>
 
 				<dl className="mt-12 space-y-10 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-4 lg:gap-x-8">

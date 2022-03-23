@@ -3,17 +3,47 @@ title: .moon/project.yml
 ---
 
 The `.moon/project.yml` file configures file groups and tasks that are inherited by _every_ project
-in the workspace. Projects can override these settings within their respective
+in the workspace. Projects can override or merge with these settings within their respective
 [`project.yml`](./project).
 
 ## `fileGroups`
 
+> `Record<string, string[]>`
+
 > For more information on file group configuration, refer to the
 > [`fileGroups`](./project#filegroups) section in the [`project.yml`](./project) doc.
 
-Globs and paths are relative to a project (even when defined globally TODO LINK).
+As mentioned in the link above, file groups are a mechanism for grouping similar types of files
+within a project using file glob patterns or literal file paths. File groups defined here enables
+enforcement of organizational patterns and file locations.
+
+For example, encourage all projects to place source files in a `src` folder, and all test files in
+`tests`.
+
+```yaml title=".moon/project.yml"
+fileGroups:
+  configs:
+    - '*.{js,json}'
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*.test.*'
+    - '**/__tests__/**/*'
+  assets:
+    - 'assets/**/*'
+    - 'images/**/*'
+    - 'static/**/*'
+    - '**/*.{scss,css}'
+    - '**/*'
+```
+
+> Relative file paths and globs used within a file group are relative from the inherited project's
+> root, and not the workspace.
 
 ## `tasks`
+
+> `Record<string, TaskConfig>`
 
 > For more information on task configuration, refer to the [`tasks`](./project#tasks) section in the
 > [`project.yml`](./project) doc.
@@ -21,8 +51,9 @@ Globs and paths are relative to a project (even when defined globally TODO LINK)
 As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
 context of a project, and commonly wrap an npm or shell command. For most workspaces, every project
 _should_ have linting, type-checking, testing, code formatting, so on and so forth. To reduce the
-amount of boilerplate that _every_ project would require, we offer the ability to define tasks that
-are inherited by all projects within the workspace, but can also be overridden per project.
+amount of boilerplate that _every_ project would require, this setting offers the ability to define
+tasks that are inherited by all projects within the workspace, but can also be overridden per
+project.
 
 ```yaml title=".moon/project.yml"
 tasks:
@@ -49,3 +80,6 @@ tasks:
     args:
       - '--build'
 ```
+
+> Relative file paths and globs used within a task are relative from the inherited project's root,
+> and not the workspace.

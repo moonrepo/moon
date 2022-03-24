@@ -204,10 +204,10 @@ impl NodeTool {
     }
 
     pub fn is_corepack_aware(&self) -> bool {
-        let min_version = VersionReq::parse(">=16.9.0").unwrap();
         let cfg_version = Version::parse(&self.config.version).unwrap();
 
-        min_version.matches(&cfg_version)
+        VersionReq::parse(">=16.9.0").unwrap().matches(&cfg_version)
+            || VersionReq::parse("^14.19.0").unwrap().matches(&cfg_version)
     }
 }
 

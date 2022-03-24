@@ -26,7 +26,7 @@ export default function Text({ as = 'p', children, className = '', size, variant
 	const Tag = as as 'p';
 
 	return (
-		<Tag className={cx('text-base', size && sizes[size], variant && variants[variant], className)}>
+		<Tag className={cx(size ? sizes[size] : 'text-base', variant && variants[variant], className)}>
 			{children}
 		</Tag>
 	);

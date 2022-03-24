@@ -18,12 +18,12 @@ const variants: Record<LabelVariant, string> = {
 	warning: 'bg-yellow-100 text-yellow-800',
 };
 
-export default function Label({ className = '', icon, text, variant }: LabelProps) {
+export default function Label({ className, icon, text, variant }: LabelProps) {
 	return (
 		<span
 			className={cx(
-				'inline-flex items-center px-2 py-1 rounded text-xs font-bold uppercase bg-gray-100 text-gray-800',
-				variant && variants[variant],
+				'inline-flex items-center px-2 py-1 rounded text-xs font-bold uppercase',
+				variant ? variants[variant] : 'bg-gray-100 text-gray-800',
 				className,
 			)}
 		>

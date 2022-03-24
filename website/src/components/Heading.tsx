@@ -1,4 +1,5 @@
 import React from 'react';
+import cx from 'clsx';
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -18,8 +19,8 @@ const levels: Record<HeadingLevel, string> = {
 	6: 'text-base font-medium text-gray-900',
 };
 
-export default function Heading({ as, children, className = '', level }: HeadingProps) {
+export default function Heading({ as, children, className, level }: HeadingProps) {
 	const Tag = (as ?? `h${level}`) as 'h1';
 
-	return <Tag className={`${levels[level]} ${className}`}>{children}</Tag>;
+	return <Tag className={cx(levels[level], className)}>{children}</Tag>;
 }

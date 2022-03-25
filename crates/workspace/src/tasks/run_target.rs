@@ -1,4 +1,5 @@
 use crate::errors::WorkspaceError;
+use crate::tasks::hashing::hash_task;
 use crate::workspace::Workspace;
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
@@ -169,13 +170,20 @@ pub async fn run_target(
     let workspace = workspace.read().await;
     let mut cache = workspace.cache.cache_run_target_state(target).await?;
 
-    // TODO abort early for a cache hit
-
     // Gather the project and task
     let is_primary = primary_target == target;
     let (project_id, task_id) = Target::parse(target)?;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
+
+    // Check if this build has already been cached/hashed
+    let hash = hash_task(&workspace, &project, task).await?;
+
+    if cache.item.hash == hash {
+        println!("HASHED {} = {}", target, hash);
+
+        return Ok(());
+    }
 
     // Build the command to run based on the task
     let mut command = create_target_command(&workspace, &project, task).await?;
@@ -240,13 +248,13 @@ pub async fn run_target(
     for output_path in &task.output_paths {
         workspace
             .cache
-            // TODO hash
-            .link_task_output_to_out(&project_id, "hash", &project.root, output_path)
+            .link_task_output_to_out(&project_id, &hash, &project.root, output_path)
             .await?;
     }
 
     // Update the cache with the result
     cache.item.exit_code = output.status.code().unwrap_or(0);
+    cache.item.hash = hash;
     cache.item.last_run_time = cache.now_millis();
     cache.item.stderr = output_to_string(&output.stderr);
     cache.item.stdout = output_to_string(&output.stdout);

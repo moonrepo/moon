@@ -1,4 +1,5 @@
 use moon_config::package::PackageJson;
+use moon_config::tsconfig::TsConfigJson;
 use moon_project::{Project, Task};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -34,16 +35,28 @@ pub struct Hasher {
 
     // `project.yml` `dependsOn`
     project_deps: Vec<String>,
+
+    // Tash `target`
+    target: String,
+
+    // `tsconfig.json` `compilerOptions`
+    tsconfig_compiler_options: BTreeMap<String, String>,
+
+    // Version of our hasher
+    #[allow(dead_code)]
+    version: String,
 }
 
 impl Hasher {
     pub fn new(node_version: String) -> Self {
         Hasher {
             node_version,
+            version: String::from("1"),
             ..Hasher::default()
         }
     }
 
+    /// Hash `package.json` dependencies as version changes should bust the cache.
     pub fn hash_package_json(&mut self, package: &PackageJson) {
         if let Some(deps) = &package.dependencies {
             self.package_dependencies.extend(deps.clone());
@@ -58,20 +71,39 @@ impl Hasher {
         }
     }
 
+    /// Hash `dependsOn` from the owning project.
     pub fn hash_project(&mut self, project: &Project) {
         self.project_deps = project.get_dependencies(); // Sorted
     }
 
+    /// Hash `args`, `inputs`, `deps`, and `env` vars from a task.
     pub fn hash_task(&mut self, task: &Task) {
         self.command = task.command.clone();
         self.args = task.args.clone();
         self.deps = task.deps.clone();
+        self.target = task.target.clone();
 
         // Sort vectors to be deterministic
         self.args.sort();
         self.deps.sort();
     }
 
+    /// Hash `tsconfig.json` compiler options that may alter compiled/generated output.
+    pub fn hash_tsconfig_json(&mut self, tsconfig: &TsConfigJson) {
+        if let Some(compiler_options) = &tsconfig.compiler_options {
+            if let Some(module) = &compiler_options.module {
+                self.tsconfig_compiler_options
+                    .insert("module".to_owned(), format!("{:?}", module));
+            }
+
+            if let Some(target) = &compiler_options.target {
+                self.tsconfig_compiler_options
+                    .insert("target".to_owned(), format!("{:?}", target));
+            }
+        }
+    }
+
+    /// Convert the hasher and its contents to a SHA256 hash.
     pub fn to_hash(&self) -> String {
         let mut sha = Sha256::new();
 
@@ -91,6 +123,7 @@ impl Hasher {
         // Order is important! Do not move things around as it will
         // change the hash and break deterministic builds!
         // Adding/removing is ok though.
+        sha.update(self.version.as_bytes());
         sha.update(self.node_version.as_bytes());
 
         // Task
@@ -98,12 +131,16 @@ impl Hasher {
         hash_vec(&self.args, &mut sha);
         hash_vec(&self.deps, &mut sha);
         hash_btree(&self.env_vars, &mut sha);
+        hash_btree(&self.input_hashes, &mut sha);
 
         // Deps
         hash_vec(&self.project_deps, &mut sha);
         hash_btree(&self.package_dependencies, &mut sha);
         hash_btree(&self.package_dev_dependencies, &mut sha);
         hash_btree(&self.package_peer_dependencies, &mut sha);
+
+        // Config
+        hash_btree(&self.tsconfig_compiler_options, &mut sha);
 
         format!("{:x}", sha.finalize())
     }

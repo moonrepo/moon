@@ -50,6 +50,8 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
 pub struct RunTargetState {
     pub exit_code: i32,
 
+    pub hash: String,
+
     pub last_run_time: u128,
 
     pub stderr: String,

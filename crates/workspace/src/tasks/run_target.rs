@@ -1,5 +1,5 @@
 use crate::errors::WorkspaceError;
-use crate::tasks::hashing::hash_task;
+use crate::tasks::hashing::create_target_hasher;
 use crate::workspace::Workspace;
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
@@ -8,6 +8,7 @@ use moon_project::{Project, Target, Task};
 use moon_terminal::output::label_run_target;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{get_path_env_var, Tool};
+use moon_utils::fs;
 use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
 use std::collections::HashMap;
 use std::path::Path;
@@ -173,10 +174,11 @@ pub async fn run_target(
     let task = project.get_task(&task_id)?;
 
     // Check if this build has already been cached/hashed
-    let hash = hash_task(&workspace, &project, task).await?;
+    let hasher = create_target_hasher(&workspace, &project, task).await?;
+    let hash = hasher.to_hash();
 
     if cache.item.hash == hash {
-        println!("HASHED {} = {}", target, hash);
+        print_cache_item(&cache.item, true);
 
         return Ok(());
     }
@@ -248,6 +250,14 @@ pub async fn run_target(
             .await?;
     }
 
+    // Cache the hasher contents so that it can be debugged
+    fs::write_json(
+        &workspace.cache.hashes_dir.join(format!("{}.json", hash)),
+        &hasher,
+        true,
+    )
+    .await?;
+
     // Update the cache with the result
     cache.item.exit_code = output.status.code().unwrap_or(0);
     cache.item.hash = hash;
@@ -256,20 +266,20 @@ pub async fn run_target(
     cache.item.stdout = output_to_string(&output.stdout);
     cache.save().await?;
 
-    handle_cache_item(&cache.item, !is_primary);
+    print_cache_item(&cache.item, !is_primary);
 
     Ok(())
 }
 
-fn handle_cache_item(item: &RunTargetState, log: bool) {
+fn print_cache_item(item: &RunTargetState, log: bool) {
     // Only log when *not* the primary target, or a cache hit
     if log {
         if !item.stderr.is_empty() {
-            eprint!("{}", item.stderr);
+            eprintln!("{}", item.stderr);
         }
 
         if !item.stdout.is_empty() {
-            print!("{}", item.stdout);
+            println!("{}", item.stdout);
         }
     }
 }

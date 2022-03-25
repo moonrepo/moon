@@ -2,11 +2,11 @@ use crate::{Workspace, WorkspaceError};
 use moon_cache::Hasher;
 use moon_project::{Project, Task};
 
-pub async fn hash_task(
+pub async fn create_target_hasher(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
-) -> Result<String, WorkspaceError> {
+) -> Result<Hasher, WorkspaceError> {
     let mut hasher = Hasher::new(workspace.config.node.version.clone());
 
     hasher.hash_project(project);
@@ -34,5 +34,5 @@ pub async fn hash_task(
         hasher.hash_tsconfig_json(&tsconfig);
     }
 
-    Ok(hasher.to_hash())
+    Ok(hasher)
 }

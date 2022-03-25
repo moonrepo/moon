@@ -1,10 +1,12 @@
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
 use moon_project::{Project, Task};
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
-#[derive(Default)]
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Hasher {
     // Task `command`
     command: String,

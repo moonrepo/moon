@@ -1,3 +1,3 @@
-mod task;
+mod target;
 
-pub use task::hash_task;
+pub use target::create_target_hasher;

@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use git::Git;
 use moon_config::{VcsManager as VM, WorkspaceConfig};
 use moon_logger::{color, debug};
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use svn::Svn;
 
@@ -32,13 +32,15 @@ pub trait Vcs {
     async fn get_local_branch(&self) -> VcsResult<String>;
 
     /// Get the revision hash/number of the local branch's HEAD.
-    async fn get_local_branch_hash(&self) -> VcsResult<String>;
+    async fn get_local_branch_revision(&self) -> VcsResult<String>;
 
     /// Get the upstream checkout default name. Typically master/main on git, and trunk on svn.
     fn get_default_branch(&self) -> &str;
 
     /// Get the revision hash/number of the default branch's HEAD.
-    async fn get_default_branch_hash(&self) -> VcsResult<String>;
+    async fn get_default_branch_revision(&self) -> VcsResult<String>;
+
+    async fn get_hashed_files(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>>;
 
     /// Determine touched files from the local index / working tree.
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;

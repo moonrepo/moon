@@ -2,7 +2,7 @@ use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use moon_utils::process::{create_command, exec_command_capture_stdout};
 use regex::Regex;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 pub struct Git {
@@ -100,7 +100,7 @@ impl Vcs for Git {
             .await
     }
 
-    async fn get_local_branch_hash(&self) -> VcsResult<String> {
+    async fn get_local_branch_revision(&self) -> VcsResult<String> {
         self.run_command(vec!["rev-parse", "HEAD"], true).await
     }
 
@@ -108,9 +108,26 @@ impl Vcs for Git {
         &self.default_branch
     }
 
-    async fn get_default_branch_hash(&self) -> VcsResult<String> {
+    async fn get_default_branch_revision(&self) -> VcsResult<String> {
         self.run_command(vec!["rev-parse", &self.default_branch], true)
             .await
+    }
+
+    async fn get_hashed_files(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
+        let mut args = vec!["hash-object"];
+
+        for file in files {
+            args.push(file);
+        }
+
+        let output = self.run_command(args, true).await?;
+        let mut map = BTreeMap::new();
+
+        for (index, hash) in output.split('\n').enumerate() {
+            map.insert(files[index].clone(), hash.to_owned());
+        }
+
+        Ok(map)
     }
 
     // https://git-scm.com/docs/git-status#_short_format

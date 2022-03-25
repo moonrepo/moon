@@ -219,16 +219,22 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
 
     for result in &results {
         let status = match result.status {
-            TaskResultStatus::Passed => color::success("pass"),
+            TaskResultStatus::Passed | TaskResultStatus::Cached => color::success("pass"),
             TaskResultStatus::Failed => color::failure("fail"),
             TaskResultStatus::Invalid => color::invalid("skip"),
             _ => color::muted_light("oops"),
         };
 
-        let mut meta = vec![time::elapsed(result.duration.unwrap())];
+        let mut meta: Vec<String> = vec![];
 
-        if result.exit_code > 0 {
-            meta.push(format!("exit code {}", result.exit_code));
+        if matches!(result.status, TaskResultStatus::Cached) {
+            meta.push(String::from("cached"));
+        } else {
+            meta.push(time::elapsed(result.duration.unwrap()));
+
+            if result.exit_code > 0 {
+                meta.push(format!("exit code {}", result.exit_code));
+            }
         }
 
         term.write_line(&format!(

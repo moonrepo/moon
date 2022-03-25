@@ -1,4 +1,5 @@
 use crate::errors::WorkspaceError;
+use crate::task_result::TaskResultStatus;
 use crate::tasks::hashing::create_target_hasher;
 use crate::workspace::Workspace;
 use moon_cache::RunTargetState;
@@ -161,7 +162,7 @@ pub async fn run_target(
     target: &str,
     primary_target: &str,
     passthrough_args: &[String],
-) -> Result<(), WorkspaceError> {
+) -> Result<TaskResultStatus, WorkspaceError> {
     debug!(target: TARGET, "Running target {}", color::id(target));
 
     let workspace = workspace.read().await;
@@ -180,7 +181,7 @@ pub async fn run_target(
     if cache.item.hash == hash {
         print_cache_item(&cache.item, true);
 
-        return Ok(());
+        return Ok(TaskResultStatus::Cached);
     }
 
     // Build the command to run based on the task
@@ -268,7 +269,7 @@ pub async fn run_target(
 
     print_cache_item(&cache.item, !is_primary);
 
-    Ok(())
+    Ok(TaskResultStatus::Passed)
 }
 
 fn print_cache_item(item: &RunTargetState, log: bool) {

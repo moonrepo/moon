@@ -2,6 +2,7 @@ use petgraph::graph::NodeIndex;
 use std::time::{Duration, Instant};
 
 pub enum TaskResultStatus {
+    Cached,
     Failed,
     Invalid,
     Passed,
@@ -43,8 +44,8 @@ impl TaskResult {
         }
     }
 
-    pub fn pass(&mut self) {
-        self.status = TaskResultStatus::Passed;
+    pub fn pass(&mut self, status: TaskResultStatus) {
+        self.status = status;
         self.duration = Some(self.start_time.elapsed());
     }
 

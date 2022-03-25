@@ -16,13 +16,15 @@ async fn run_task(
     node: &Node,
     primary_target: &str,
     passthrough_args: &[String],
-) -> Result<(), WorkspaceError> {
+) -> Result<TaskResultStatus, WorkspaceError> {
+    let mut status = TaskResultStatus::Passed;
+
     match node {
         Node::InstallNodeDeps => {
-            install_node_deps(workspace).await?;
+            status = install_node_deps(workspace).await?;
         }
         Node::RunTarget(target_id) => {
-            run_target(workspace, target_id, primary_target, passthrough_args).await?;
+            status = run_target(workspace, target_id, primary_target, passthrough_args).await?;
         }
         Node::SetupToolchain => {
             setup_toolchain(workspace).await?;
@@ -32,7 +34,7 @@ async fn run_task(
         }
     }
 
-    Ok(())
+    Ok(status)
 }
 
 pub struct TaskRunner {
@@ -128,7 +130,7 @@ impl TaskRunner {
 
                         trace!(target: &log_target_name, "Running task {}", log_task_label);
 
-                        if let Err(error) = run_task(
+                        match run_task(
                             workspace_clone,
                             node,
                             &primary_target_clone,
@@ -136,24 +138,27 @@ impl TaskRunner {
                         )
                         .await
                         {
-                            result.fail(error.to_string());
+                            Ok(status) => {
+                                result.pass(status);
 
-                            trace!(
-                                target: &log_target_name,
-                                "Task {} failed in {:?}",
-                                log_task_label,
-                                result.duration.unwrap()
-                            );
-                        } else {
-                            result.pass();
+                                trace!(
+                                    target: &log_target_name,
+                                    "Ran task {} in {:?}",
+                                    log_task_label,
+                                    result.duration.unwrap()
+                                );
+                            }
+                            Err(error) => {
+                                result.fail(error.to_string());
 
-                            trace!(
-                                target: &log_target_name,
-                                "Ran task {} in {:?}",
-                                log_task_label,
-                                result.duration.unwrap()
-                            );
-                        }
+                                trace!(
+                                    target: &log_target_name,
+                                    "Task {} failed in {:?}",
+                                    log_task_label,
+                                    result.duration.unwrap()
+                                );
+                            }
+                        };
                     } else {
                         result.status = TaskResultStatus::Invalid;
 

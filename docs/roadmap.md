@@ -80,10 +80,10 @@
 - [x] Runs tasks if `outputs` defined or `run_in_ci` is true
 - [x] Runs dependencies AND dependents
 
-# 0.2.0
+- [ ] hashing
+- [ ] caching
 
-- hashing
-- caching
+# 0.2.0
 
 ## Targets
 

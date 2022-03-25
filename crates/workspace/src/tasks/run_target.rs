@@ -6,7 +6,7 @@ use moon_cache::RunTargetState;
 use moon_config::TaskType;
 use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
-use moon_terminal::output::label_run_target;
+use moon_terminal::output::{label_run_target, label_run_target_failed};
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{get_path_env_var, Tool};
 use moon_utils::fs;
@@ -174,11 +174,12 @@ pub async fn run_target(
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
 
-    // Check if this build has already been cached/hashed
+    // Abort early if this build has already been cached/hashed
     let hasher = create_target_hasher(&workspace, &project, task).await?;
     let hash = hasher.to_hash();
 
     if cache.item.hash == hash {
+        print_target_label(target, "(cached)", cache.item.exit_code != 0);
         print_cache_item(&cache.item, true);
 
         return Ok(TaskResultStatus::Cached);
@@ -199,15 +200,11 @@ pub async fn run_target(
     let output;
 
     loop {
-        if attempt == 1 {
-            println!("{}", label_run_target(target));
+        let attempt_comment = if attempt == 1 {
+            String::new()
         } else {
-            println!(
-                "{} {}",
-                label_run_target(target),
-                color::muted(&format!("(attempt {} of {})", attempt, attempt_count))
-            );
-        }
+            format!("(attempt {} of {})", attempt, attempt_count)
+        };
 
         let possible_output = if is_primary {
             // If this target matches the primary target (the last task to run),
@@ -221,10 +218,13 @@ pub async fn run_target(
 
         match possible_output {
             Ok(o) => {
+                print_target_label(target, &attempt_comment, false);
                 output = o;
                 break;
             }
             Err(e) => {
+                print_target_label(target, &attempt_comment, true);
+
                 if attempt >= attempt_count {
                     return Err(WorkspaceError::Moon(e));
                 } else {
@@ -251,7 +251,7 @@ pub async fn run_target(
             .await?;
     }
 
-    // Cache the hasher contents so that it can be debugged
+    // Write the hasher contents so that it can be debugged
     fs::write_json(
         &workspace.cache.hashes_dir.join(format!("{}.json", hash)),
         &hasher,
@@ -259,7 +259,7 @@ pub async fn run_target(
     )
     .await?;
 
-    // Update the cache with the result
+    // Write the cache with the result and output
     cache.item.exit_code = output.status.code().unwrap_or(0);
     cache.item.hash = hash;
     cache.item.last_run_time = cache.now_millis();
@@ -270,6 +270,20 @@ pub async fn run_target(
     print_cache_item(&cache.item, !is_primary);
 
     Ok(TaskResultStatus::Passed)
+}
+
+fn print_target_label(target: &str, comment: &str, failed: bool) {
+    let label = if failed {
+        label_run_target_failed(target)
+    } else {
+        label_run_target(target)
+    };
+
+    if comment.is_empty() {
+        println!("{}", label);
+    } else {
+        println!("{} {}", label, color::muted(comment));
+    }
 }
 
 fn print_cache_item(item: &RunTargetState, log: bool) {

@@ -1027,8 +1027,10 @@ dependencies = [
  "assert_fs",
  "moon_config",
  "moon_error",
+ "moon_project",
  "moon_utils",
  "serde",
+ "sha2",
  "tokio",
 ]
 

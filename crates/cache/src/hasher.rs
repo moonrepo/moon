@@ -1,0 +1,198 @@
+use moon_config::package::PackageJson;
+use moon_project::{Project, Task};
+use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
+
+#[derive(Default)]
+pub struct Hasher {
+    // Task `command`
+    command: String,
+
+    // Task `args`
+    args: Vec<String>,
+
+    // Task `deps`
+    deps: Vec<String>,
+
+    // Environment variables
+    env_vars: BTreeMap<String, String>,
+
+    // Input files and globs mapped to a unique hash
+    input_hashes: BTreeMap<String, String>,
+
+    // Node.js version
+    node_version: String,
+
+    // `package.json` `dependencies`
+    package_dependencies: BTreeMap<String, String>,
+
+    // `package.json` `devDependencies`
+    package_dev_dependencies: BTreeMap<String, String>,
+
+    // `package.json` `peerDependencies`
+    package_peer_dependencies: BTreeMap<String, String>,
+
+    // `project.yml` `dependsOn`
+    project_deps: Vec<String>,
+}
+
+impl Hasher {
+    pub fn new(node_version: String) -> Self {
+        Hasher {
+            node_version,
+            ..Hasher::default()
+        }
+    }
+
+    pub fn hash_package_json(&mut self, package: &PackageJson) {
+        if let Some(deps) = &package.dependencies {
+            self.package_dependencies.extend(deps.clone());
+        }
+
+        if let Some(dev_deps) = &package.dev_dependencies {
+            self.package_dev_dependencies.extend(dev_deps.clone());
+        }
+
+        if let Some(peer_deps) = &package.peer_dependencies {
+            self.package_peer_dependencies.extend(peer_deps.clone());
+        }
+    }
+
+    pub fn hash_project(&mut self, project: &Project) {
+        self.project_deps = project.get_dependencies(); // Sorted
+    }
+
+    pub fn hash_task(&mut self, task: &Task) {
+        self.command = task.command.clone();
+        self.args = task.args.clone();
+        self.deps = task.deps.clone();
+
+        // Sort vectors to be deterministic
+        self.args.sort();
+        self.deps.sort();
+    }
+
+    pub fn to_hash(&self) -> String {
+        let mut sha = Sha256::new();
+
+        let hash_btree = |tree: &BTreeMap<String, String>, hasher: &mut Sha256| {
+            for (k, v) in tree {
+                hasher.update(k.as_bytes());
+                hasher.update(v.as_bytes());
+            }
+        };
+
+        let hash_vec = |list: &Vec<String>, hasher: &mut Sha256| {
+            for v in list {
+                hasher.update(v.as_bytes());
+            }
+        };
+
+        // Order is important! Do not move things around as it will
+        // change the hash and break deterministic builds!
+        // Adding/removing is ok though.
+        sha.update(self.node_version.as_bytes());
+
+        // Task
+        sha.update(self.command.as_bytes());
+        hash_vec(&self.args, &mut sha);
+        hash_vec(&self.deps, &mut sha);
+        hash_btree(&self.env_vars, &mut sha);
+
+        // Deps
+        hash_vec(&self.project_deps, &mut sha);
+        hash_btree(&self.package_dependencies, &mut sha);
+        hash_btree(&self.package_dev_dependencies, &mut sha);
+        hash_btree(&self.package_peer_dependencies, &mut sha);
+
+        format!("{:x}", sha.finalize())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn returns_default_hash() {
+        let hasher = Hasher::new(String::from("0.0.0"));
+
+        assert_eq!(
+            hasher.to_hash(),
+            String::from("f0b8c77d978d7b4aebeb1df5a2c0a6aa70393689819dd4060826ab6d36b5ea90")
+        );
+    }
+
+    #[test]
+    fn returns_same_hash_if_called_again() {
+        let hasher = Hasher::new(String::from("0.0.0"));
+
+        assert_eq!(hasher.to_hash(), hasher.to_hash());
+    }
+
+    #[test]
+    fn returns_different_hash_for_diff_contents() {
+        let hasher1 = Hasher::new(String::from("0.0.0"));
+        let hasher2 = Hasher::new(String::from("1.0.0"));
+
+        assert_ne!(hasher1.to_hash(), hasher2.to_hash());
+    }
+
+    mod btreemap {
+        use super::*;
+
+        #[test]
+        fn returns_same_hash_for_same_value_inserted() {
+            let mut package1 = PackageJson::default();
+            package1.add_dependency("react".to_owned(), "17.0.0".to_owned(), true);
+
+            let mut hasher1 = Hasher::new(String::from("0.0.0"));
+            hasher1.hash_package_json(&package1);
+
+            let mut hasher2 = Hasher::new(String::from("0.0.0"));
+            hasher2.hash_package_json(&package1);
+            hasher2.hash_package_json(&package1);
+
+            assert_eq!(hasher1.to_hash(), hasher2.to_hash());
+        }
+
+        #[test]
+        fn returns_same_hash_for_diff_order_insertion() {
+            let mut package1 = PackageJson::default();
+            package1.add_dependency("react".to_owned(), "17.0.0".to_owned(), true);
+
+            let mut package2 = PackageJson::default();
+            package2.add_dependency("react-dom".to_owned(), "17.0.0".to_owned(), true);
+
+            let mut hasher1 = Hasher::new(String::from("0.0.0"));
+            hasher1.hash_package_json(&package2);
+            hasher1.hash_package_json(&package1);
+
+            let mut hasher2 = Hasher::new(String::from("0.0.0"));
+            hasher2.hash_package_json(&package1);
+            hasher2.hash_package_json(&package2);
+
+            assert_eq!(hasher1.to_hash(), hasher2.to_hash());
+        }
+
+        #[test]
+        fn returns_diff_hash_for_overwritten_value() {
+            let mut package1 = PackageJson::default();
+            package1.add_dependency("react".to_owned(), "17.0.0".to_owned(), true);
+
+            let mut package2 = PackageJson::default();
+            package2.add_dependency("react".to_owned(), "18.0.0".to_owned(), true);
+
+            let mut hasher1 = Hasher::new(String::from("0.0.0"));
+            hasher1.hash_package_json(&package1);
+
+            let hash1 = hasher1.to_hash();
+
+            hasher1.hash_package_json(&package2);
+
+            let hash2 = hasher1.to_hash();
+
+            assert_ne!(hash1, hash2);
+        }
+    }
+}

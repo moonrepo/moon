@@ -277,7 +277,7 @@ mod tests {
 
             assert_eq!(
                 fs::read_to_string(item.path).unwrap(),
-                r#"{"lastNodeInstallTime":123}"#
+                r#"{"lastNodeInstallTime":123,"lastVersionCheckTime":0}"#
             );
 
             dir.close().unwrap();

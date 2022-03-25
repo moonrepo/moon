@@ -29,10 +29,6 @@ async fn create_env_vars(
         "MOON_CACHE_DIR".to_owned(),
         map_path_buf(&workspace.cache.dir),
     );
-    env_vars.insert(
-        "MOON_OUT_DIR".to_owned(),
-        map_path_buf(&workspace.cache.out),
-    );
     env_vars.insert("MOON_PROJECT_ID".to_owned(), project.id.clone());
     env_vars.insert("MOON_PROJECT_ROOT".to_owned(), map_path_buf(&project.root));
     env_vars.insert("MOON_PROJECT_SOURCE".to_owned(), project.source.clone());
@@ -242,13 +238,13 @@ pub async fn run_target(
         }
     }
 
-    // Hard link outputs to the `.moon/out` folder and to the cloud,
+    // Hard link outputs to the `.moon/cache/out` folder and to the cloud,
     // so that subsequent builds are faster, and any local outputs
     // can be rehydrated easily.
     for output_path in &task.output_paths {
         workspace
             .cache
-            .link_task_output_to_out(&project_id, &hash, &project.root, output_path)
+            .link_task_output_to_out(&hash, &project.root, output_path)
             .await?;
     }
 

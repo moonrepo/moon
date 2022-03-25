@@ -39,7 +39,7 @@
   - [x] Relative paths
   - [x] Workspace relative paths
 - [x] Outputs
-  - [x] Write outputs to `.moon/out`
+  - [x] Write outputs to `.moon/cache/out`
   - [x] Symlink/copy outputs back to project dir
 - [x] Dependencies (on other tasks)
 - [x] Environment vars

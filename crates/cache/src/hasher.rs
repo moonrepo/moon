@@ -156,7 +156,7 @@ mod tests {
 
         assert_eq!(
             hasher.to_hash(),
-            String::from("f0b8c77d978d7b4aebeb1df5a2c0a6aa70393689819dd4060826ab6d36b5ea90")
+            String::from("ae2cf745a63ca5f47a7218ae5b4a8267295305591457a33a79c46754c1dcce0b")
         );
     }
 

@@ -12,20 +12,34 @@ pub struct CacheEngine {
     /// Contains cached items pertaining to runs and processes.
     pub dir: PathBuf,
 
-    /// The `.moon/out` directory relative to workspace root.
-    /// Contains project outputs from configured tasks.
-    pub out: PathBuf,
+    /// The `.moon/cache/hashes` directory. Stores hash contents.
+    pub hashes_dir: PathBuf,
+
+    /// The `.moon/cache/runs` directory. Stores run states and runfiles.
+    pub runs_dir: PathBuf,
+
+    /// The `.moon/cache/out` directory. Stores task output.
+    pub outputs_dir: PathBuf,
 }
 
 impl CacheEngine {
     pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
-        let out = workspace_root.join(CONFIG_DIRNAME).join("out");
+        let hashes_dir = dir.join("hashes");
+        let runs_dir = dir.join("runs");
+        let outputs_dir = dir.join("out");
 
         fs::create_dir_all(&dir).await?;
-        fs::create_dir_all(&out).await?;
+        fs::create_dir_all(&hashes_dir).await?;
+        fs::create_dir_all(&runs_dir).await?;
+        fs::create_dir_all(&outputs_dir).await?;
 
-        Ok(CacheEngine { dir, out })
+        Ok(CacheEngine {
+            dir,
+            hashes_dir,
+            runs_dir,
+            outputs_dir,
+        })
     }
 
     pub async fn cache_run_target_state(
@@ -37,7 +51,7 @@ impl CacheEngine {
             .collect();
 
         Ok(CacheItem::load(
-            self.dir.join(path),
+            self.runs_dir.join(path),
             RunTargetState {
                 target: String::from(target),
                 ..RunTargetState::default()
@@ -61,11 +75,11 @@ impl CacheEngine {
     ) -> Result<CacheRunfile, MoonError> {
         let path: PathBuf = [project_id, "runfile.json"].iter().collect();
 
-        Ok(CacheRunfile::load(self.dir.join(path), data).await?)
+        Ok(CacheRunfile::load(self.runs_dir.join(path), data).await?)
     }
 
     pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
-        let entries = fs::read_dir(&self.dir).await?;
+        let entries = fs::read_dir(&self.runs_dir).await?;
 
         for entry in entries {
             let path = entry.path();
@@ -80,12 +94,11 @@ impl CacheEngine {
 
     pub async fn link_task_output_to_out(
         &self,
-        project_id: &str,
         hash: &str,
         source_root: &Path,
         source_path: &Path,
     ) -> Result<(), MoonError> {
-        let dest_root = self.out.join(project_id).join(hash);
+        let dest_root = self.outputs_dir.join(hash);
 
         fs::create_dir_all(&dest_root).await?;
 
@@ -109,13 +122,15 @@ mod tests {
         use super::*;
 
         #[tokio::test]
-        async fn creates_dir() {
+        async fn creates_dirs() {
             let dir = assert_fs::TempDir::new().unwrap();
 
             CacheEngine::create(dir.path()).await.unwrap();
 
             assert!(dir.path().join(".moon/cache").exists());
-            assert!(dir.path().join(".moon/out").exists());
+            assert!(dir.path().join(".moon/cache/hashes").exists());
+            assert!(dir.path().join(".moon/cache/runs").exists());
+            assert!(dir.path().join(".moon/cache/out").exists());
 
             dir.close().unwrap();
         }
@@ -165,7 +180,7 @@ mod tests {
             assert!(runfile.path.exists());
 
             assert_eq!(
-                fs::read_to_string(dir.path().join(".moon/cache/123/runfile.json")).unwrap(),
+                fs::read_to_string(dir.path().join(".moon/cache/runs/123/runfile.json")).unwrap(),
                 "\"content\""
             );
 
@@ -192,8 +207,8 @@ mod tests {
         async fn loads_cache_if_it_exists() {
             let dir = assert_fs::TempDir::new().unwrap();
 
-            dir.child(".moon/cache/foo/bar/lastRunState.json")
-                .write_str(r#"{"exitCode":123,"lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
+            dir.child(".moon/cache/runs/foo/bar/lastRunState.json")
+                .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
                 .unwrap();
 
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -222,7 +237,7 @@ mod tests {
 
             assert_eq!(
                 fs::read_to_string(item.path).unwrap(),
-                r#"{"exitCode":123,"lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#
+                r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#
             );
 
             dir.close().unwrap();

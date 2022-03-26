@@ -40,7 +40,7 @@ pub trait Vcs {
     /// Get the revision hash/number of the default branch's HEAD.
     async fn get_default_branch_revision(&self) -> VcsResult<String>;
 
-    async fn get_hashed_files(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>>;
+    async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>>;
 
     /// Determine touched files from the local index / working tree.
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;

@@ -113,7 +113,7 @@ impl Vcs for Git {
             .await
     }
 
-    async fn get_hashed_files(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
+    async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
         let mut args = vec!["hash-object"];
 
         for file in files {

@@ -59,7 +59,7 @@ pub async fn create_target_hasher(
     // For input files, we need to hash them with the VCS layer
     if !task.input_paths.is_empty() {
         let files = convert_paths_to_files(&task.input_paths, &workspace.root)?;
-        let hashed_files = vcs.get_hashed_files(&files).await?;
+        let hashed_files = vcs.get_file_hashes(&files).await?;
 
         hasher.hash_inputs(hashed_files);
     }

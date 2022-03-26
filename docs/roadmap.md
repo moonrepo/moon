@@ -81,6 +81,8 @@
 - [x] Runs dependencies AND dependents
 
 - [ ] hashing
+  - [ ] use `stdin` for commands that take long arguments
+  - [ ] dont load `package.json`/`tsconfig.json` so much
 - [ ] caching
 
 # 0.2.0

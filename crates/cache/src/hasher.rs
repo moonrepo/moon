@@ -58,6 +58,10 @@ impl Hasher {
         }
     }
 
+    pub fn hash_inputs(&mut self, inputs: BTreeMap<String, String>) {
+        self.input_hashes.extend(inputs);
+    }
+
     /// Hash `package.json` dependencies as version changes should bust the cache.
     pub fn hash_package_json(&mut self, package: &PackageJson) {
         if let Some(deps) = &package.dependencies {

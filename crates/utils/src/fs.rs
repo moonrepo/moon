@@ -171,6 +171,13 @@ pub fn normalize_glob(path: &Path) -> String {
     glob
 }
 
+pub fn path_to_string(path: &Path) -> Result<String, MoonError> {
+    match path.to_str() {
+        Some(p) => Ok(p.to_owned()),
+        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
+    }
+}
+
 pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
     let handle_error = |e| map_io_to_fs_error(e, path.to_path_buf());
 

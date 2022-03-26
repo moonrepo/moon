@@ -290,11 +290,13 @@ fn print_cache_item(item: &RunTargetState, log: bool) {
     // Only log when *not* the primary target, or a cache hit
     if log {
         if !item.stderr.is_empty() {
-            eprintln!("{}", item.stderr);
+            eprintln!("{}", item.stderr.trim());
+            eprintln!();
         }
 
         if !item.stdout.is_empty() {
-            println!("{}", item.stdout);
+            println!("{}", item.stdout.trim());
+            println!();
         }
     }
 }

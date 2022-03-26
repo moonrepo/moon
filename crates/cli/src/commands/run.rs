@@ -82,6 +82,7 @@ pub fn render_result_stats(
         match result.status {
             TaskResultStatus::Cached => {
                 cached_count += 1;
+                pass_count += 1;
             }
             TaskResultStatus::Passed => {
                 pass_count += 1;
@@ -98,12 +99,15 @@ pub fn render_result_stats(
 
     let mut counts_message = vec![];
 
-    if cached_count > 0 {
-        counts_message.push(color::success(&format!("{} cached", cached_count)));
-    }
-
     if pass_count > 0 {
-        counts_message.push(color::success(&format!("{} completed", pass_count)));
+        if cached_count > 0 {
+            counts_message.push(color::success(&format!(
+                "{} completed ({} cached)",
+                pass_count, cached_count
+            )));
+        } else {
+            counts_message.push(color::success(&format!("{} completed", pass_count)));
+        }
     }
 
     if fail_count > 0 {

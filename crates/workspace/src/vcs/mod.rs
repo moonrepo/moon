@@ -68,7 +68,7 @@ pub trait Vcs {
 pub struct VcsManager {}
 
 impl VcsManager {
-    pub fn load(config: &WorkspaceConfig, working_dir: &Path) -> Box<dyn Vcs> {
+    pub fn load(config: &WorkspaceConfig, working_dir: &Path) -> Box<dyn Vcs + Send + Sync> {
         let vcs_config = &config.vcs;
         let manager = &vcs_config.manager;
         let default_branch = &vcs_config.default_branch;

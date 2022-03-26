@@ -231,10 +231,10 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
             meta.push(String::from("cached"));
         } else {
             meta.push(time::elapsed(result.duration.unwrap()));
+        }
 
-            if result.exit_code > 0 {
-                meta.push(format!("exit code {}", result.exit_code));
-            }
+        if result.exit_code > 0 {
+            meta.push(format!("exit code {}", result.exit_code));
         }
 
         term.write_line(&format!(

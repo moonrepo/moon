@@ -83,6 +83,7 @@
 - [ ] hashing
   - [ ] use `stdin` for commands that take long arguments
   - [ ] dont load `package.json`/`tsconfig.json` so much
+  - [ ] delete old hashes when the hash changes
 - [ ] caching
 
 # 0.2.0

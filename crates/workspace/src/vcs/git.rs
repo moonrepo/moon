@@ -124,11 +124,15 @@ impl Vcs for Git {
         let mut map = BTreeMap::new();
 
         for (index, hash) in output.split('\n').enumerate() {
-            map.insert(files[index].clone(), hash.to_owned());
+            if !hash.is_empty() {
+                map.insert(files[index].clone(), hash.to_owned());
+            }
         }
 
         Ok(map)
     }
+
+    // async fn get_file_tree_hashes(&self, dir: &Path) -> VcsResult<BTreeMap<String, String>> {}
 
     // https://git-scm.com/docs/git-status#_short_format
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {

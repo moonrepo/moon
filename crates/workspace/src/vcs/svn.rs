@@ -133,9 +133,10 @@ impl Vcs for Svn {
     async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
         let mut map = BTreeMap::new();
 
-        // svn doesnt support file hashing
+        // svn doesnt support file hashing, so instead of generating some
+        // random hash ourselves, just pass an emptry string.
         for file in files {
-            map.insert(file.to_owned(), file.to_owned());
+            map.insert(file.to_owned(), String::new());
         }
 
         Ok(map)

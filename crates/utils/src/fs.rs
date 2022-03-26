@@ -178,6 +178,10 @@ pub fn path_to_string(path: &Path) -> Result<String, MoonError> {
     }
 }
 
+pub fn standardize_separators(path: &str) -> String {
+    path.replace("\\", "/")
+}
+
 pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
     let handle_error = |e| map_io_to_fs_error(e, path.to_path_buf());
 

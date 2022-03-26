@@ -12,7 +12,6 @@ use moon_toolchain::{get_path_env_var, Tool};
 use moon_utils::fs;
 use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::Arc;
 use tokio::process::Command;
 use tokio::sync::RwLock;
@@ -24,28 +23,30 @@ async fn create_env_vars(
     project: &Project,
     task: &Task,
 ) -> Result<HashMap<String, String>, WorkspaceError> {
-    let map_path_buf = |path: &Path| String::from(path.to_str().unwrap());
     let mut env_vars = HashMap::new();
 
     env_vars.insert(
         "MOON_CACHE_DIR".to_owned(),
-        map_path_buf(&workspace.cache.dir),
+        fs::path_to_string(&workspace.cache.dir)?,
     );
     env_vars.insert("MOON_PROJECT_ID".to_owned(), project.id.clone());
-    env_vars.insert("MOON_PROJECT_ROOT".to_owned(), map_path_buf(&project.root));
+    env_vars.insert(
+        "MOON_PROJECT_ROOT".to_owned(),
+        fs::path_to_string(&project.root)?,
+    );
     env_vars.insert("MOON_PROJECT_SOURCE".to_owned(), project.source.clone());
     env_vars.insert("MOON_RUN_TARGET".to_owned(), task.target.clone());
     env_vars.insert(
         "MOON_TOOLCHAIN_DIR".to_owned(),
-        map_path_buf(&workspace.toolchain.dir),
+        fs::path_to_string(&workspace.toolchain.dir)?,
     );
     env_vars.insert(
         "MOON_WORKSPACE_ROOT".to_owned(),
-        map_path_buf(&workspace.root),
+        fs::path_to_string(&workspace.root)?,
     );
     env_vars.insert(
         "MOON_WORKING_DIR".to_owned(),
-        map_path_buf(&workspace.working_dir),
+        fs::path_to_string(&workspace.working_dir)?,
     );
 
     // Store runtime data on the file system so that downstream commands can utilize it
@@ -53,7 +54,7 @@ async fn create_env_vars(
 
     env_vars.insert(
         "MOON_PROJECT_RUNFILE".to_owned(),
-        map_path_buf(&runfile.path),
+        fs::path_to_string(&runfile.path)?,
     );
 
     Ok(env_vars)

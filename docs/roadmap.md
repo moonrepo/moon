@@ -86,6 +86,7 @@
   - [x] delete old hashes when the hash changes
   - [ ] ignore hashes for files that are gitignored
 - [x] caching
+  - [ ] add a `--no-cache` option to disable all caching
 
 # 0.2.0
 

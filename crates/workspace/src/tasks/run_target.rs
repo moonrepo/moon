@@ -201,32 +201,33 @@ pub async fn run_target(
     let output;
 
     loop {
+        let possible_output;
         let attempt_comment = if attempt == 1 {
             String::new()
         } else {
             format!("(attempt {} of {})", attempt, attempt_count)
         };
 
-        let possible_output = if is_primary {
+        if is_primary {
+            print_target_label(target, &attempt_comment, false);
+
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
-            spawn_command(&mut command).await
+            possible_output = spawn_command(&mut command).await;
         } else {
             // Otherwise we run the process in the background and write the output
             // once it has completed.
-            exec_command(&mut command).await
+            possible_output = exec_command(&mut command).await;
+
+            print_target_label(target, &attempt_comment, possible_output.is_err());
         };
 
         match possible_output {
             Ok(o) => {
-                print_target_label(target, &attempt_comment, false);
                 output = o;
-
                 break;
             }
             Err(e) => {
-                print_target_label(target, &attempt_comment, true);
-
                 if attempt >= attempt_count {
                     return Err(WorkspaceError::Moon(e));
                 } else {

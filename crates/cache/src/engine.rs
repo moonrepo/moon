@@ -30,7 +30,6 @@ impl CacheEngine {
         let runs_dir = dir.join("runs");
         let outputs_dir = dir.join("out");
 
-        fs::create_dir_all(&dir).await?;
         fs::create_dir_all(&hashes_dir).await?;
         fs::create_dir_all(&runs_dir).await?;
         fs::create_dir_all(&outputs_dir).await?;

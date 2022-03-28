@@ -101,7 +101,7 @@ pub struct ProjectWorkspaceConfig {
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
 
-/// https://moonrepo.dev/docs/config/project
+/// <https://moonrepo.dev/docs/config/project>
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectConfig {

@@ -4,7 +4,7 @@ use moon_project::{ExpandedFiles, Project, Task};
 use moon_utils::fs;
 use std::path::Path;
 
-fn convert_paths_to_files(
+fn convert_paths_to_strings(
     paths: &ExpandedFiles,
     workspace_root: &Path,
 ) -> Result<Vec<String>, WorkspaceError> {
@@ -13,10 +13,15 @@ fn convert_paths_to_files(
     for path in paths {
         // Inputs may not exist and `git hash-object` will fail if you pass an unknown file
         if path.exists() {
-            // We also need to use relative paths from workspace root so it works across machines
-            files.push(fs::path_to_string(
-                path.strip_prefix(workspace_root).unwrap(),
-            )?);
+            // We also need to use relative paths from the workspace root,
+            // so that it works across machines
+            let rel_path = if path.starts_with(workspace_root) {
+                path.strip_prefix(workspace_root).unwrap()
+            } else {
+                path
+            };
+
+            files.push(fs::path_to_string(rel_path)?);
         }
     }
 
@@ -56,13 +61,15 @@ pub async fn create_target_hasher(
         hasher.hash_tsconfig_json(&tsconfig);
     }
 
-    // For input files, we need to hash them with the VCS layer
+    // For input files, hash them with the vcs layer first
     if !task.input_paths.is_empty() {
-        let files = convert_paths_to_files(&task.input_paths, &workspace.root)?;
+        let files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
         let hashed_files = vcs.get_file_hashes(&files).await?;
 
         hasher.hash_inputs(hashed_files);
     }
+
+    // TODO input globs
 
     Ok(hasher)
 }

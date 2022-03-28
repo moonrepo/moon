@@ -1,5 +1,6 @@
 use crate::items::{CacheItem, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
+use crate::Hasher;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_utils::fs;
@@ -78,6 +79,16 @@ impl CacheEngine {
         Ok(CacheRunfile::load(self.runs_dir.join(path), data).await?)
     }
 
+    pub async fn delete_hash(&self, hash: &str) -> Result<(), MoonError> {
+        // Remove the hash file itself
+        fs::remove_file(&self.hashes_dir.join(format!("{}.json", hash))).await?;
+
+        // And the output with the hash
+        fs::remove_dir_all(&self.outputs_dir.join(hash)).await?;
+
+        Ok(())
+    }
+
     pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
         let entries = fs::read_dir(&self.runs_dir).await?;
 
@@ -107,6 +118,17 @@ impl CacheEngine {
         } else {
             fs::link_dir(source_root, source_path, &dest_root).await?;
         }
+
+        Ok(())
+    }
+
+    pub async fn save_hash(&self, hash: &str, hasher: &Hasher) -> Result<(), MoonError> {
+        fs::write_json(
+            &self.hashes_dir.join(format!("{}.json", hash)),
+            &hasher,
+            true,
+        )
+        .await?;
 
         Ok(())
     }

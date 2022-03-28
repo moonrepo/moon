@@ -221,6 +221,7 @@ pub async fn run_target(
             Ok(o) => {
                 print_target_label(target, &attempt_comment, false);
                 output = o;
+
                 break;
             }
             Err(e) => {
@@ -252,13 +253,13 @@ pub async fn run_target(
             .await?;
     }
 
-    // Write the hasher contents so that it can be debugged
-    fs::write_json(
-        &workspace.cache.hashes_dir.join(format!("{}.json", hash)),
-        &hasher,
-        true,
-    )
-    .await?;
+    // Delete the old hash
+    if !cache.item.hash.is_empty() && cache.item.hash != hash {
+        workspace.cache.delete_hash(&cache.item.hash).await?;
+    }
+
+    // Save the new hash
+    workspace.cache.save_hash(&hash, &hasher).await?;
 
     // Write the cache with the result and output
     cache.item.exit_code = output.status.code().unwrap_or(0);

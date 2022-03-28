@@ -17,7 +17,7 @@ async fn run_task(
     primary_target: &str,
     passthrough_args: &[String],
 ) -> Result<TaskResultStatus, WorkspaceError> {
-    let mut status = TaskResultStatus::Passed;
+    let status;
 
     match node {
         Node::InstallNodeDeps => {
@@ -27,10 +27,10 @@ async fn run_task(
             status = run_target(workspace, target_id, primary_target, passthrough_args).await?;
         }
         Node::SetupToolchain => {
-            setup_toolchain(workspace).await?;
+            status = setup_toolchain(workspace).await?;
         }
         Node::SyncProject(project_id) => {
-            sync_project(workspace, project_id).await?;
+            status = sync_project(workspace, project_id).await?;
         }
     }
 

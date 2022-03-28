@@ -1,6 +1,8 @@
 use crate::errors::WorkspaceError;
+use crate::task_result::TaskResultStatus;
 use crate::workspace::Workspace;
 use moon_logger::{color, debug};
+use moon_utils::is_ci;
 use pathdiff::diff_paths;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -11,9 +13,10 @@ const TARGET: &str = "moon:task-runner:sync-project";
 pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
-) -> Result<(), WorkspaceError> {
+) -> Result<TaskResultStatus, WorkspaceError> {
     let workspace = workspace.read().await;
     let project = workspace.projects.load(project_id)?;
+    let mut mutated_files = false;
 
     // Sync a project reference to the root `tsconfig.json`
     let node_config = &workspace.config.node;
@@ -32,6 +35,7 @@ pub async fn sync_project(
                 );
 
                 tsconfig.save().await?;
+                mutated_files = true;
             }
         }
     }
@@ -65,6 +69,7 @@ pub async fn sync_project(
                     );
 
                     package.save().await?;
+                    mutated_files = true;
                 }
             }
         }
@@ -88,10 +93,21 @@ pub async fn sync_project(
                     );
 
                     tsconfig.save().await?;
+                    mutated_files = true;
                 }
             }
         }
     }
 
-    Ok(())
+    if mutated_files {
+        // If files have been modified in CI, we should update the status to warning,
+        // as these modifications should be committed to the repo.
+        if is_ci() {
+            return Ok(TaskResultStatus::Invalid);
+        } else {
+            return Ok(TaskResultStatus::Passed);
+        }
+    }
+
+    Ok(TaskResultStatus::Skipped)
 }

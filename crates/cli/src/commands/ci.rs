@@ -219,9 +219,11 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
 
     for result in &results {
         let status = match result.status {
-            TaskResultStatus::Passed | TaskResultStatus::Cached => color::success("pass"),
+            TaskResultStatus::Passed | TaskResultStatus::Cached | TaskResultStatus::Skipped => {
+                color::success("pass")
+            }
             TaskResultStatus::Failed => color::failure("fail"),
-            TaskResultStatus::Invalid => color::invalid("skip"),
+            TaskResultStatus::Invalid => color::invalid("warn"),
             _ => color::muted_light("oops"),
         };
 
@@ -229,6 +231,8 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
 
         if matches!(result.status, TaskResultStatus::Cached) {
             meta.push(String::from("cached"));
+        } else if matches!(result.status, TaskResultStatus::Skipped) {
+            meta.push(String::from("skipped"));
         } else {
             meta.push(time::elapsed(result.duration.unwrap()));
         }

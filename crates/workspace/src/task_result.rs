@@ -3,11 +3,12 @@ use std::time::{Duration, Instant};
 
 pub enum TaskResultStatus {
     Cached,
-    CachedFromRemote, // TODO
+    // CachedFromRemote, // TODO
     Failed,
     Invalid,
     Passed,
     Running,
+    Skipped, // When nothing happened
 }
 
 pub struct TaskResult {

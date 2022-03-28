@@ -84,7 +84,7 @@ pub fn render_result_stats(
                 cached_count += 1;
                 pass_count += 1;
             }
-            TaskResultStatus::Passed => {
+            TaskResultStatus::Passed | TaskResultStatus::Skipped => {
                 pass_count += 1;
             }
             TaskResultStatus::Failed => {

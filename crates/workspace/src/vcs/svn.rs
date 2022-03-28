@@ -142,6 +142,22 @@ impl Vcs for Svn {
         Ok(map)
     }
 
+    async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
+        let mut map = BTreeMap::new();
+
+        let output = self
+            .run_command(vec!["ls", "--recursive", "--depth", "infinity", dir], false)
+            .await?;
+
+        // svn doesnt support file hashing, so instead of generating some
+        // random hash ourselves, just pass an emptry string.
+        for file in output.split('\n') {
+            map.insert(file.to_owned(), String::new());
+        }
+
+        Ok(map)
+    }
+
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self.run_command(vec!["status", "wc"], false).await?;

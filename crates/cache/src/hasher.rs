@@ -59,6 +59,8 @@ impl Hasher {
         }
     }
 
+    /// Hash a mapping of input file paths to unique file hashes.
+    /// File paths *must* be relative from the workspace root.
     pub fn hash_inputs(&mut self, inputs: BTreeMap<String, String>) {
         for (file, hash) in inputs {
             // Standardize on `/` separators so that the hash is

@@ -1157,6 +1157,7 @@ dependencies = [
  "chrono",
  "chrono-humanize",
  "dirs",
+ "globset",
  "json_comments",
  "lazy_static",
  "moon_error",

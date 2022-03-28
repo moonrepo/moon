@@ -3,6 +3,7 @@ use std::time::{Duration, Instant};
 
 pub enum TaskResultStatus {
     Cached,
+    CachedFromRemote, // TODO
     Failed,
     Invalid,
     Passed,

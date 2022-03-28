@@ -69,7 +69,19 @@ pub async fn create_target_hasher(
         hasher.hash_inputs(hashed_files);
     }
 
-    // TODO input globs
+    // For input globs, its much more performant to:
+    //  `git ls-tree` -> match against glob patterns
+    // Then it is to:
+    //  glob + walk the file system -> `git hash-object`
+    if !task.input_globs.is_empty() {
+        let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
+        let globset = task.create_globset()?;
+
+        // Input globs are absolute paths, so we must do the same
+        hashed_file_tree.retain(|k, _| fs::matches_globset(&globset, &workspace.root.join(k)));
+
+        hasher.hash_inputs(hashed_file_tree);
+    }
 
     Ok(hasher)
 }

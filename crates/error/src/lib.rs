@@ -24,6 +24,9 @@ pub enum MoonError {
     #[error("Network failure for <file_path>{0}</file_path>: {1}")]
     NetworkWithHandle(PathBuf, #[source] IoError),
 
+    #[error("Path <file_path>{0}</file_path> contains invalid UTF-8 characters.")]
+    PathInvalidUTF8(PathBuf),
+
     #[error("Process failure for <path>{0}</path>: {1}")]
     Process(String, #[source] IoError),
 

@@ -73,13 +73,18 @@ pub fn render_result_stats(
     results: Vec<TaskResult>,
     duration: Duration,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let mut cached_count = 0;
     let mut pass_count = 0;
     let mut fail_count = 0;
     let mut invalid_count = 0;
 
     for result in results {
         match result.status {
-            TaskResultStatus::Passed => {
+            TaskResultStatus::Cached => {
+                cached_count += 1;
+                pass_count += 1;
+            }
+            TaskResultStatus::Passed | TaskResultStatus::Skipped => {
                 pass_count += 1;
             }
             TaskResultStatus::Failed => {
@@ -95,7 +100,14 @@ pub fn render_result_stats(
     let mut counts_message = vec![];
 
     if pass_count > 0 {
-        counts_message.push(color::success(&format!("{} completed", pass_count)));
+        if cached_count > 0 {
+            counts_message.push(color::success(&format!(
+                "{} completed ({} cached)",
+                pass_count, cached_count
+            )));
+        } else {
+            counts_message.push(color::success(&format!("{} completed", pass_count)));
+        }
     }
 
     if fail_count > 0 {

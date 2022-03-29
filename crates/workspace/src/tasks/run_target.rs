@@ -1,15 +1,17 @@
 use crate::errors::WorkspaceError;
+use crate::task_result::TaskResultStatus;
+use crate::tasks::hashing::create_target_hasher;
 use crate::workspace::Workspace;
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
 use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
-use moon_terminal::output::label_run_target;
+use moon_terminal::output::{label_run_target, label_run_target_failed};
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{get_path_env_var, Tool};
+use moon_utils::fs;
 use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::Arc;
 use tokio::process::Command;
 use tokio::sync::RwLock;
@@ -21,32 +23,30 @@ async fn create_env_vars(
     project: &Project,
     task: &Task,
 ) -> Result<HashMap<String, String>, WorkspaceError> {
-    let map_path_buf = |path: &Path| String::from(path.to_str().unwrap());
     let mut env_vars = HashMap::new();
 
     env_vars.insert(
         "MOON_CACHE_DIR".to_owned(),
-        map_path_buf(&workspace.cache.dir),
-    );
-    env_vars.insert(
-        "MOON_OUT_DIR".to_owned(),
-        map_path_buf(&workspace.cache.out),
+        fs::path_to_string(&workspace.cache.dir)?,
     );
     env_vars.insert("MOON_PROJECT_ID".to_owned(), project.id.clone());
-    env_vars.insert("MOON_PROJECT_ROOT".to_owned(), map_path_buf(&project.root));
+    env_vars.insert(
+        "MOON_PROJECT_ROOT".to_owned(),
+        fs::path_to_string(&project.root)?,
+    );
     env_vars.insert("MOON_PROJECT_SOURCE".to_owned(), project.source.clone());
     env_vars.insert("MOON_RUN_TARGET".to_owned(), task.target.clone());
     env_vars.insert(
         "MOON_TOOLCHAIN_DIR".to_owned(),
-        map_path_buf(&workspace.toolchain.dir),
+        fs::path_to_string(&workspace.toolchain.dir)?,
     );
     env_vars.insert(
         "MOON_WORKSPACE_ROOT".to_owned(),
-        map_path_buf(&workspace.root),
+        fs::path_to_string(&workspace.root)?,
     );
     env_vars.insert(
         "MOON_WORKING_DIR".to_owned(),
-        map_path_buf(&workspace.working_dir),
+        fs::path_to_string(&workspace.working_dir)?,
     );
 
     // Store runtime data on the file system so that downstream commands can utilize it
@@ -54,7 +54,7 @@ async fn create_env_vars(
 
     env_vars.insert(
         "MOON_PROJECT_RUNFILE".to_owned(),
-        map_path_buf(&runfile.path),
+        fs::path_to_string(&runfile.path)?,
     );
 
     Ok(env_vars)
@@ -163,19 +163,28 @@ pub async fn run_target(
     target: &str,
     primary_target: &str,
     passthrough_args: &[String],
-) -> Result<(), WorkspaceError> {
+) -> Result<TaskResultStatus, WorkspaceError> {
     debug!(target: TARGET, "Running target {}", color::id(target));
 
     let workspace = workspace.read().await;
     let mut cache = workspace.cache.cache_run_target_state(target).await?;
-
-    // TODO abort early for a cache hit
 
     // Gather the project and task
     let is_primary = primary_target == target;
     let (project_id, task_id) = Target::parse(target)?;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
+
+    // Abort early if this build has already been cached/hashed
+    let hasher = create_target_hasher(&workspace, &project, task).await?;
+    let hash = hasher.to_hash();
+
+    if cache.item.hash == hash {
+        print_target_label(target, "(cached)", cache.item.exit_code != 0);
+        print_cache_item(&cache.item, true);
+
+        return Ok(TaskResultStatus::Cached);
+    }
 
     // Build the command to run based on the task
     let mut command = create_target_command(&workspace, &project, task).await?;
@@ -192,24 +201,29 @@ pub async fn run_target(
     let output;
 
     loop {
-        if attempt == 1 {
-            println!("{}", label_run_target(target));
+        let possible_output;
+        let attempt_comment = if attempt == 1 {
+            String::new()
         } else {
-            println!(
-                "{} {}",
-                label_run_target(target),
-                color::muted(&format!("(attempt {} of {})", attempt, attempt_count))
-            );
-        }
+            format!("(attempt {} of {})", attempt, attempt_count)
+        };
 
-        let possible_output = if is_primary {
+        if is_primary {
+            // Print label *before* output is streamed since it may stay open forever,
+            // or use ANSI escape codes to alter the terminal.
+            print_target_label(target, &attempt_comment, false);
+
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
-            spawn_command(&mut command).await
+            possible_output = spawn_command(&mut command).await;
         } else {
             // Otherwise we run the process in the background and write the output
             // once it has completed.
-            exec_command(&mut command).await
+            possible_output = exec_command(&mut command).await;
+
+            // Print label *after* output has been captured, so parallel tasks
+            // aren't intertwined and the labels align with the output.
+            print_target_label(target, &attempt_comment, possible_output.is_err());
         };
 
         match possible_output {
@@ -234,38 +248,62 @@ pub async fn run_target(
         }
     }
 
-    // Hard link outputs to the `.moon/out` folder and to the cloud,
+    // Hard link outputs to the `.moon/cache/out` folder and to the cloud,
     // so that subsequent builds are faster, and any local outputs
     // can be rehydrated easily.
     for output_path in &task.output_paths {
         workspace
             .cache
-            // TODO hash
-            .link_task_output_to_out(&project_id, "hash", &project.root, output_path)
+            .link_task_output_to_out(&hash, &project.root, output_path)
             .await?;
     }
 
-    // Update the cache with the result
+    // Delete the old hash
+    if !cache.item.hash.is_empty() && cache.item.hash != hash {
+        workspace.cache.delete_hash(&cache.item.hash).await?;
+    }
+
+    // Save the new hash
+    workspace.cache.save_hash(&hash, &hasher).await?;
+
+    // Write the cache with the result and output
     cache.item.exit_code = output.status.code().unwrap_or(0);
+    cache.item.hash = hash;
     cache.item.last_run_time = cache.now_millis();
     cache.item.stderr = output_to_string(&output.stderr);
     cache.item.stdout = output_to_string(&output.stdout);
     cache.save().await?;
 
-    handle_cache_item(&cache.item, !is_primary);
+    print_cache_item(&cache.item, !is_primary);
 
-    Ok(())
+    Ok(TaskResultStatus::Passed)
 }
 
-fn handle_cache_item(item: &RunTargetState, log: bool) {
+fn print_target_label(target: &str, comment: &str, failed: bool) {
+    let label = if failed {
+        label_run_target_failed(target)
+    } else {
+        label_run_target(target)
+    };
+
+    if comment.is_empty() {
+        println!("{}", label);
+    } else {
+        println!("{} {}", label, color::muted(comment));
+    }
+}
+
+fn print_cache_item(item: &RunTargetState, log: bool) {
     // Only log when *not* the primary target, or a cache hit
     if log {
         if !item.stderr.is_empty() {
-            eprint!("{}", item.stderr);
+            eprintln!("{}", item.stderr.trim());
+            eprintln!();
         }
 
         if !item.stdout.is_empty() {
-            print!("{}", item.stdout);
+            println!("{}", item.stdout.trim());
+            println!();
         }
     }
 }

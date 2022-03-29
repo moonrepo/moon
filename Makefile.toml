@@ -12,7 +12,7 @@ args = ["build"]
 [tasks.format]
 install_crate = "rustfmt"
 command = "cargo"
-args = ["fmt", "--", "--emit=files"]
+args = ["fmt", "--all", "--", "--emit=files"]
 
 [tasks.lint]
 install_crate = "rustfmt"
@@ -22,11 +22,11 @@ dependencies = ["format"]
 
 [tasks.test]
 command = "cargo"
-args = ["test"]
+args = ["test", "--workspace"]
 
 [tasks.test-output]
 command = "cargo"
-args = ["test", "--", "--nocapture", "--show-output"]
+args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
 
 [tasks.gen-json-schemas]
 command = "cargo"

@@ -2,7 +2,7 @@ use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use moon_utils::process::{create_command, exec_command_capture_stdout};
 use regex::Regex;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 // TODO: This code hasn't been tested yet and may not be accurate!
@@ -30,7 +30,7 @@ impl Svn {
         String::new()
     }
 
-    async fn get_hash_for_revision(&self, revision: &str) -> VcsResult<String> {
+    async fn get_revision_number(&self, revision: &str) -> VcsResult<String> {
         let output = self.run_command(vec!["info", "-r", revision], true).await?;
 
         Ok(self.extract_line_from_info("Revision:", &output))
@@ -118,16 +118,44 @@ impl Vcs for Svn {
         Ok(self.get_default_branch().to_owned())
     }
 
-    async fn get_local_branch_hash(&self) -> VcsResult<String> {
-        Ok(self.get_hash_for_revision("BASE").await?)
+    async fn get_local_branch_revision(&self) -> VcsResult<String> {
+        Ok(self.get_revision_number("BASE").await?)
     }
 
     fn get_default_branch(&self) -> &str {
         &self.default_branch
     }
 
-    async fn get_default_branch_hash(&self) -> VcsResult<String> {
-        Ok(self.get_hash_for_revision("HEAD").await?)
+    async fn get_default_branch_revision(&self) -> VcsResult<String> {
+        Ok(self.get_revision_number("HEAD").await?)
+    }
+
+    async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
+        let mut map = BTreeMap::new();
+
+        // svn doesnt support file hashing, so instead of generating some
+        // random hash ourselves, just pass an emptry string.
+        for file in files {
+            map.insert(file.to_owned(), String::new());
+        }
+
+        Ok(map)
+    }
+
+    async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
+        let mut map = BTreeMap::new();
+
+        let output = self
+            .run_command(vec!["ls", "--recursive", "--depth", "infinity", dir], false)
+            .await?;
+
+        // svn doesnt support file hashing, so instead of generating some
+        // random hash ourselves, just pass an emptry string.
+        for file in output.split('\n') {
+            map.insert(file.to_owned(), String::new());
+        }
+
+        Ok(map)
     }
 
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
@@ -141,7 +169,7 @@ impl Vcs for Svn {
         &self,
         revision: &str,
     ) -> VcsResult<TouchedFiles> {
-        let number: usize = self.get_hash_for_revision(revision).await?.parse().unwrap();
+        let number: usize = self.get_revision_number(revision).await?.parse().unwrap();
 
         // TODO: this is definitely not right...
         Ok(self

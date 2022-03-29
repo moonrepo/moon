@@ -122,7 +122,7 @@ impl Toolchain {
         &self,
         root_package: &mut PackageJson,
         check_versions: bool,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<bool, ToolchainError> {
         debug!(
             target: "moon:toolchain",
             "Downloading and installing tools",
@@ -157,19 +157,20 @@ impl Toolchain {
         }
 
         // Install npm (should always be available even if using another package manager)
-        self.load_tool(self.get_npm(), check_manager_version)
+        let mut installed_pm = self
+            .load_tool(self.get_npm(), check_manager_version)
             .await?;
 
         // Install pnpm and yarn *after* setting the corepack package manager
         if let Some(pnpm) = &self.pnpm {
-            self.load_tool(pnpm, check_manager_version).await?;
+            installed_pm = self.load_tool(pnpm, check_manager_version).await?;
         }
 
         if let Some(yarn) = &self.yarn {
-            self.load_tool(yarn, check_manager_version).await?;
+            installed_pm = self.load_tool(yarn, check_manager_version).await?;
         }
 
-        Ok(())
+        Ok(installed_node || installed_pm)
     }
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.

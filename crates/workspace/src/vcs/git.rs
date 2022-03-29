@@ -2,7 +2,7 @@ use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use moon_utils::process::{create_command, exec_command_capture_stdout};
 use regex::Regex;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 pub struct Git {
@@ -17,13 +17,85 @@ impl Git {
             working_dir: working_dir.to_path_buf(),
         }
     }
+}
 
-    fn process_touched_files<F: Fn(String) -> (char, char, String)>(
-        output: String,
-        extract: F,
-    ) -> TouchedFiles {
+#[async_trait]
+impl Vcs for Git {
+    async fn get_local_branch(&self) -> VcsResult<String> {
+        self.run_command(vec!["branch", "--show-current"], true)
+            .await
+    }
+
+    async fn get_local_branch_revision(&self) -> VcsResult<String> {
+        self.run_command(vec!["rev-parse", "HEAD"], true).await
+    }
+
+    fn get_default_branch(&self) -> &str {
+        &self.default_branch
+    }
+
+    async fn get_default_branch_revision(&self) -> VcsResult<String> {
+        self.run_command(vec!["rev-parse", &self.default_branch], true)
+            .await
+    }
+
+    async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
+        let mut args = vec!["hash-object"];
+
+        for file in files {
+            args.push(file);
+        }
+
+        let output = self.run_command(args, true).await?;
+        let mut map = BTreeMap::new();
+
+        for (index, hash) in output.split('\n').enumerate() {
+            if !hash.is_empty() {
+                map.insert(files[index].clone(), hash.to_owned());
+            }
+        }
+
+        Ok(map)
+    }
+
+    async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
+        let output = self
+            .run_command(vec!["ls-tree", "HEAD", "-r", dir], true)
+            .await?;
+        let mut map = BTreeMap::new();
+
+        for line in output.split('\n') {
+            // <mode> <type> <hash>\t<file>
+            let parts = line.split(' ');
+            // <hash>\t<file>
+            let mut last_parts = parts.last().unwrap().split('\t');
+            let hash = last_parts.next().unwrap();
+            let file = last_parts.next().unwrap();
+
+            map.insert(file.to_owned(), hash.to_owned());
+        }
+
+        Ok(map)
+    }
+
+    // https://git-scm.com/docs/git-status#_short_format
+    async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
+        let output = self
+            .run_command(
+                vec![
+                    "status",
+                    "--porcelain",
+                    "--untracked-files",
+                    // We use this option so that file names with special characters
+                    // are displayed as-is and are not quoted/escaped
+                    "-z",
+                ],
+                false,
+            )
+            .await?;
+
         if output.is_empty() {
-            return TouchedFiles::default();
+            return Ok(TouchedFiles::default());
         }
 
         let mut added = HashSet::new();
@@ -33,15 +105,26 @@ impl Git {
         let mut staged = HashSet::new();
         let mut unstaged = HashSet::new();
         let mut all = HashSet::new();
-        let spaces_regex = Regex::new(r"\s+").unwrap();
+        let xy_regex = Regex::new(r"^(M|T|A|D|R|C|U|\?|!| )(M|T|A|D|R|C|U|\?|!| ) ").unwrap();
 
-        for line in output.split('\n') {
+        // Lines are terminated by a NUL byte:
+        //  XY file\0
+        //  XY file\0orig_file\0
+        for line in output.split('\0') {
             if line.is_empty() {
                 continue;
             }
 
-            let clean_line = String::from(spaces_regex.replace_all(line, " "));
-            let (x, y, file) = extract(clean_line);
+            // orig_file\0
+            if !xy_regex.is_match(line) {
+                continue;
+            }
+
+            // XY file\0
+            let mut chars = line.chars();
+            let x = chars.next().unwrap_or_default();
+            let y = chars.next().unwrap_or_default();
+            let file = String::from(&line[3..]);
 
             match x {
                 'A' | 'C' => {
@@ -81,7 +164,7 @@ impl Git {
             all.insert(file.clone());
         }
 
-        TouchedFiles {
+        Ok(TouchedFiles {
             added,
             all,
             deleted,
@@ -89,52 +172,7 @@ impl Git {
             staged,
             unstaged,
             untracked,
-        }
-    }
-}
-
-#[async_trait]
-impl Vcs for Git {
-    async fn get_local_branch(&self) -> VcsResult<String> {
-        self.run_command(vec!["branch", "--show-current"], true)
-            .await
-    }
-
-    async fn get_local_branch_hash(&self) -> VcsResult<String> {
-        self.run_command(vec!["rev-parse", "HEAD"], true).await
-    }
-
-    fn get_default_branch(&self) -> &str {
-        &self.default_branch
-    }
-
-    async fn get_default_branch_hash(&self) -> VcsResult<String> {
-        self.run_command(vec!["rev-parse", &self.default_branch], true)
-            .await
-    }
-
-    // https://git-scm.com/docs/git-status#_short_format
-    async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
-        let output = self
-            .run_command(
-                vec!["-c", "color.status=false", "status", "-s", "-u"],
-                false,
-            )
-            .await?;
-
-        // XY file/path [-> copied/file]
-        Ok(Git::process_touched_files(output, |line| {
-            let mut chars = line.chars();
-            let x = chars.next().unwrap_or_default();
-            let y = chars.next().unwrap_or_default();
-            let mut file = &line[3..];
-
-            if let Some(index) = file.find("->") {
-                file = &file[index + 1..];
-            }
-
-            (x, y, file.to_owned())
-        }))
+        })
     }
 
     async fn get_touched_files_against_previous_revision(
@@ -165,6 +203,9 @@ impl Vcs for Git {
                     "--name-status",
                     "--no-color",
                     "--relative",
+                    // We use this option so that file names with special characters
+                    // are displayed as-is and are not quoted/escaped
+                    "-z",
                     base_revision,
                     revision,
                 ],
@@ -172,18 +213,66 @@ impl Vcs for Git {
             )
             .await?;
 
-        // X file/path [copied/file]
-        Ok(Git::process_touched_files(output, |line| {
-            let parts = line.split(' ').collect::<Vec<&str>>();
-            let status = parts[0].chars().next().unwrap();
-            let mut file = parts[1];
+        if output.is_empty() {
+            return Ok(TouchedFiles::default());
+        }
 
-            if let Some(copied_file) = parts.get(2) {
-                file = copied_file;
+        let mut added = HashSet::new();
+        let mut deleted = HashSet::new();
+        let mut modified = HashSet::new();
+        let mut staged = HashSet::new();
+        let mut all = HashSet::new();
+        let x_with_score_regex = Regex::new(r"^(C|M|R)(\d{3})$").unwrap();
+        let x_regex = Regex::new(r"^(A|D|M|T|U|X)$").unwrap();
+        let mut last_status = "A";
+
+        // Lines AND statuses are terminated by a NUL byte
+        //  X\0file\0
+        //  X000\0file\0
+        //  X000\0file\0renamed_file\0
+        for line in output.split('\0') {
+            if line.is_empty() {
+                continue;
             }
 
-            (status as char, ' ', file.to_owned())
-        }))
+            // X\0
+            // X000\0
+            if x_with_score_regex.is_match(line) || x_regex.is_match(line) {
+                last_status = &line[0..1];
+                continue;
+            }
+
+            let x = last_status.chars().next().unwrap();
+            let file = line.to_owned();
+
+            match x {
+                'A' | 'C' => {
+                    added.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                'D' => {
+                    deleted.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                'M' | 'R' => {
+                    modified.insert(file.clone());
+                    staged.insert(file.clone());
+                }
+                _ => {}
+            }
+
+            all.insert(file.clone());
+        }
+
+        Ok(TouchedFiles {
+            added,
+            all,
+            deleted,
+            modified,
+            staged,
+            unstaged: HashSet::new(),
+            untracked: HashSet::new(),
+        })
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {

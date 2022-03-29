@@ -1,7 +1,7 @@
 use crate::errors::ProjectError;
 use crate::token::TokenResolver;
 use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
-use globset::{Glob, GlobSetBuilder};
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
@@ -134,6 +134,17 @@ impl Task {
         task
     }
 
+    /// Create a globset of all input globs to match with.
+    pub fn create_globset(&self) -> Result<GlobSet, ProjectError> {
+        let mut glob_builder = GlobSetBuilder::new();
+
+        for glob in &self.input_globs {
+            glob_builder.add(Glob::new(glob)?);
+        }
+
+        Ok(glob_builder.build()?)
+    }
+
     /// Expand the args list to resolve tokens, relative to the project root.
     pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
         trace!(
@@ -241,14 +252,8 @@ impl Task {
                 .join(", ")
         );
 
-        let mut glob_builder = GlobSetBuilder::new();
         let has_globs = !self.input_globs.is_empty();
-
-        for glob in &self.input_globs {
-            glob_builder.add(Glob::new(glob)?);
-        }
-
-        let globs = glob_builder.build()?;
+        let globset = self.create_globset()?;
 
         if has_globs {
             trace!(
@@ -266,19 +271,7 @@ impl Task {
             let mut affected = self.input_paths.contains(file);
 
             if !affected && has_globs {
-                // globset doesnt match against inputs that use backwards slashes
-                // https://github.com/BurntSushi/ripgrep/issues/2001
-                #[cfg(windows)]
-                {
-                    use std::path::PathBuf;
-
-                    affected = globs.is_match(&PathBuf::from(fs::normalize_glob(file)));
-                }
-
-                #[cfg(not(windows))]
-                {
-                    affected = globs.is_match(file);
-                }
+                affected = fs::matches_globset(&globset, file);
             }
 
             trace!(

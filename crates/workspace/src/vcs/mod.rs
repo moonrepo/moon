@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use git::Git;
 use moon_config::{VcsManager as VM, WorkspaceConfig};
 use moon_logger::{color, debug};
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use svn::Svn;
 
@@ -32,13 +32,21 @@ pub trait Vcs {
     async fn get_local_branch(&self) -> VcsResult<String>;
 
     /// Get the revision hash/number of the local branch's HEAD.
-    async fn get_local_branch_hash(&self) -> VcsResult<String>;
+    async fn get_local_branch_revision(&self) -> VcsResult<String>;
 
     /// Get the upstream checkout default name. Typically master/main on git, and trunk on svn.
     fn get_default_branch(&self) -> &str;
 
     /// Get the revision hash/number of the default branch's HEAD.
-    async fn get_default_branch_hash(&self) -> VcsResult<String>;
+    async fn get_default_branch_revision(&self) -> VcsResult<String>;
+
+    /// Get a map of hashes for the provided files.
+    /// Files are relative from the repository root.
+    async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>>;
+
+    /// Get a map of hashes for all files recursively starting from a directory.
+    /// Files are relative from the repository root.
+    async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>>;
 
     /// Determine touched files from the local index / working tree.
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;
@@ -66,7 +74,7 @@ pub trait Vcs {
 pub struct VcsManager {}
 
 impl VcsManager {
-    pub fn load(config: &WorkspaceConfig, working_dir: &Path) -> Box<dyn Vcs> {
+    pub fn load(config: &WorkspaceConfig, working_dir: &Path) -> Box<dyn Vcs + Send + Sync> {
         let vcs_config = &config.vcs;
         let manager = &vcs_config.manager;
         let default_branch = &vcs_config.default_branch;

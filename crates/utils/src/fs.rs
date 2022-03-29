@@ -1,4 +1,5 @@
 use async_recursion::async_recursion;
+use globset::GlobSet;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use path_clean::PathClean;
@@ -139,6 +140,18 @@ pub async fn link_dir(from_root: &Path, from: &Path, to_root: &Path) -> Result<(
     Ok(())
 }
 
+#[cfg(not(windows))]
+pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
+    globset.is_match(path)
+}
+
+// globset doesnt match against inputs that use backwards slashes
+// https://github.com/BurntSushi/ripgrep/issues/2001
+#[cfg(windows)]
+pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
+    globset.is_match(&PathBuf::from(normalize_glob(path)))
+}
+
 pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
     Ok(fs::metadata(path)
         .await
@@ -147,6 +160,18 @@ pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
 
 pub fn normalize(path: &Path) -> PathBuf {
     path.to_path_buf().clean()
+}
+
+pub fn normalize_glob(path: &Path) -> String {
+    // Always use forward slashes for globs
+    let glob = standardize_separators(&path.to_string_lossy());
+
+    // Remove UNC prefix as it breaks glob matching
+    if std::env::consts::OS == "windows" {
+        return glob.replace("//?/", "");
+    }
+
+    glob
 }
 
 #[cfg(not(windows))]
@@ -159,16 +184,15 @@ pub fn normalize_separators(path: &str) -> String {
     path.replace('/', "\\")
 }
 
-pub fn normalize_glob(path: &Path) -> String {
-    // Always use forward slashes for globs
-    let glob = path.to_string_lossy().replace("\\", "/");
-
-    // Remove UNC prefix as it breaks glob matching
-    if std::env::consts::OS == "windows" {
-        return glob.replace("//?/", "");
+pub fn path_to_string(path: &Path) -> Result<String, MoonError> {
+    match path.to_str() {
+        Some(p) => Ok(p.to_owned()),
+        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
     }
+}
 
-    glob
+pub fn standardize_separators(path: &str) -> String {
+    path.replace("\\", "/")
 }
 
 pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
@@ -179,6 +203,26 @@ pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
 
     while let Some(entry) = entries.next_entry().await.map_err(handle_error)? {
         results.push(entry);
+    }
+
+    Ok(results)
+}
+
+#[async_recursion]
+pub async fn read_dir_all(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
+    let handle_error = |e| map_io_to_fs_error(e, path.to_path_buf());
+
+    let mut entries = fs::read_dir(path).await.map_err(handle_error)?;
+    let mut results = vec![];
+
+    while let Some(entry) = entries.next_entry().await.map_err(handle_error)? {
+        if let Ok(file_type) = entry.file_type().await {
+            if file_type.is_dir() {
+                results.extend(read_dir_all(&entry.path()).await?);
+            } else {
+                results.push(entry);
+            }
+        }
     }
 
     Ok(results)

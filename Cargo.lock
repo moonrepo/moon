@@ -1027,8 +1027,10 @@ dependencies = [
  "assert_fs",
  "moon_config",
  "moon_error",
+ "moon_project",
  "moon_utils",
  "serde",
+ "sha2",
  "tokio",
 ]
 
@@ -1155,6 +1157,7 @@ dependencies = [
  "chrono",
  "chrono-humanize",
  "dirs",
+ "globset",
  "json_comments",
  "lazy_static",
  "moon_error",

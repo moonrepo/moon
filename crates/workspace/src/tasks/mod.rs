@@ -1,3 +1,4 @@
+pub mod hashing;
 mod install_node_deps;
 mod run_target;
 mod setup_toolchain;

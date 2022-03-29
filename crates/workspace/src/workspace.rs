@@ -146,7 +146,7 @@ impl Workspace {
     }
 
     /// Detect the version control system currently being used.
-    pub fn detect_vcs(&self) -> Box<dyn Vcs> {
+    pub fn detect_vcs(&self) -> Box<dyn Vcs + Send + Sync> {
         VcsManager::load(&self.config, &self.working_dir)
     }
 

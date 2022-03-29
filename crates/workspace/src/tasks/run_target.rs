@@ -7,10 +7,9 @@ use moon_config::TaskType;
 use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_run_target, label_run_target_failed};
-use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{get_path_env_var, Tool};
-use moon_utils::fs;
 use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
+use moon_utils::{fs, string_vec};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::process::Command;
@@ -60,8 +59,8 @@ async fn create_env_vars(
     Ok(env_vars)
 }
 
-fn create_node_options(task: &Task) -> Vec<&str> {
-    vec![
+fn create_node_options(task: &Task) -> Vec<String> {
+    string_vec![
         // "--inspect", // Enable node inspector
         "--preserve-symlinks",
         "--title",
@@ -81,27 +80,45 @@ fn create_node_options(task: &Task) -> Vec<&str> {
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[cfg(not(windows))]
 fn create_node_target_command(
+    workspace: &Workspace,
     project: &Project,
     task: &Task,
-    node: &NodeTool,
 ) -> Result<Command, WorkspaceError> {
-    // Node binary args
-    let mut args = create_node_options(task);
+    let node = workspace.toolchain.get_node();
+    let mut cmd = node.get_bin_path();
+    let mut args = vec![];
 
-    // Package binary args
-    let package_bin_path = node.find_package_bin_path(&task.command, &project.root)?;
+    match task.command.as_str() {
+        "node" => {
+            args.extend(create_node_options(task));
+        }
+        "npm" => {
+            cmd = workspace.toolchain.get_npm().get_bin_path();
+        }
+        "pnpm" => {
+            cmd = workspace.toolchain.get_pnpm().unwrap().get_bin_path();
+        }
+        "yarn" => {
+            cmd = workspace.toolchain.get_yarn().unwrap().get_bin_path();
+        }
+        bin => {
+            let bin_path = node.find_package_bin_path(bin, &project.root)?;
 
-    args.push(package_bin_path.to_str().unwrap());
-    args.extend(task.args.iter().map(|a| a.as_str()));
+            args.extend(create_node_options(task));
+            args.push(fs::path_to_string(&bin_path)?);
+        }
+    };
 
     // Create the command
-    let mut cmd = create_command(node.get_bin_path());
+    let mut command = create_command(cmd);
 
-    cmd.args(&args)
+    command
+        .args(&args)
+        .args(&task.args)
         .envs(&task.env)
         .env("PATH", get_path_env_var(node.get_bin_dir()));
 
-    Ok(cmd)
+    Ok(command)
 }
 
 /// Windows works quite differently than other systems, so we cannot do the above.
@@ -110,21 +127,40 @@ fn create_node_target_command(
 /// is switched, and "node.exe" is detected through the `PATH` env var.
 #[cfg(windows)]
 fn create_node_target_command(
+    workspace: &Workspace,
     project: &Project,
     task: &Task,
-    node: &NodeTool,
 ) -> Result<Command, WorkspaceError> {
-    let package_bin_path = node.find_package_bin_path(&task.command, &project.root)?;
+    let node = workspace.toolchain.get_node();
+
+    let cmd = match task.command.as_str() {
+        "node" => node.get_bin_path().clone(),
+        "npm" => workspace.toolchain.get_npm().get_bin_path().clone(),
+        "pnpm" => workspace
+            .toolchain
+            .get_pnpm()
+            .unwrap()
+            .get_bin_path()
+            .clone(),
+        "yarn" => workspace
+            .toolchain
+            .get_yarn()
+            .unwrap()
+            .get_bin_path()
+            .clone(),
+        bin => node.find_package_bin_path(bin, &project.root)?,
+    };
 
     // Create the command
-    let mut cmd = create_command(package_bin_path);
+    let mut command = create_command(cmd);
 
-    cmd.args(&task.args)
+    command
+        .args(&task.args)
         .envs(&task.env)
         .env("PATH", get_path_env_var(node.get_bin_dir()))
         .env("NODE_OPTIONS", create_node_options(task).join(" "));
 
-    Ok(cmd)
+    Ok(command)
 }
 
 fn create_shell_target_command(task: &Task) -> Command {
@@ -138,8 +174,6 @@ async fn create_target_command(
     project: &Project,
     task: &Task,
 ) -> Result<Command, WorkspaceError> {
-    let toolchain = &workspace.toolchain;
-
     let exec_dir = if task.options.run_from_workspace_root {
         &workspace.root
     } else {
@@ -149,7 +183,7 @@ async fn create_target_command(
     let env_vars = create_env_vars(workspace, project, task).await?;
 
     let mut command = match task.type_of {
-        TaskType::Node => create_node_target_command(project, task, toolchain.get_node())?,
+        TaskType::Node => create_node_target_command(workspace, project, task)?,
         _ => create_shell_target_command(task),
     };
 

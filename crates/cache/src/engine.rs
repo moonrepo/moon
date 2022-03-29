@@ -186,6 +186,37 @@ mod tests {
         }
     }
 
+    mod delete_hash {
+        use super::*;
+
+        #[tokio::test]
+        async fn deletes_files() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+
+            dir.child(".moon/cache/hashes/abc123.json")
+                .write_str("{}")
+                .unwrap();
+
+            dir.child(".moon/cache/out/abc123/file.js")
+                .write_str("")
+                .unwrap();
+
+            let hash_file = cache.hashes_dir.join("abc123.json");
+            let out_file = cache.outputs_dir.join("abc123/file.js");
+
+            assert!(hash_file.exists());
+            assert!(out_file.exists());
+
+            cache.delete_hash("abc123").await.unwrap();
+
+            assert!(!hash_file.exists());
+            assert!(!out_file.exists());
+
+            dir.close().unwrap();
+        }
+    }
+
     mod create_runfile {
         use super::*;
 
@@ -315,6 +346,24 @@ mod tests {
                 fs::read_to_string(item.path).unwrap(),
                 r#"{"lastNodeInstallTime":123,"lastVersionCheckTime":0}"#
             );
+
+            dir.close().unwrap();
+        }
+    }
+
+    mod save_hash {
+        use super::*;
+        use crate::Hasher;
+
+        #[tokio::test]
+        async fn creates_hash_file() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let hasher = Hasher::default();
+
+            cache.save_hash("abc123", &hasher).await.unwrap();
+
+            assert!(cache.hashes_dir.join("abc123.json").exists());
 
             dir.close().unwrap();
         }

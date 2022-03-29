@@ -83,5 +83,7 @@ pub async fn create_target_hasher(
         hasher.hash_inputs(hashed_file_tree);
     }
 
+    // TODO include local file changes
+
     Ok(hasher)
 }

@@ -60,6 +60,7 @@
 - [x] Installs npm dependencies
 - [x] Syncs `package.json` and `tsconfig.json` for all projects
   - [x] Writes JSON preserving field order
+- [ ] Handle non-0 exit codes
 
 ## CLI
 
@@ -80,13 +81,15 @@
 - [x] Runs tasks if `outputs` defined or `run_in_ci` is true
 - [x] Runs dependencies AND dependents
 
+## Cache
+
+- [ ] add a `--no-cache` option to disable all caching
 - [ ] hashing
   - [ ] use `stdin` for commands that take long arguments
   - [ ] dont load `package.json`/`tsconfig.json` so much
   - [x] delete old hashes when the hash changes
   - [ ] ignore hashes for files that are gitignored
-- [x] caching
-  - [ ] add a `--no-cache` option to disable all caching
+  - [ ] include local file changes in hash
 
 # 0.2.0
 

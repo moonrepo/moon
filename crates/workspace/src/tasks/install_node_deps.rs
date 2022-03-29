@@ -83,5 +83,5 @@ pub async fn install_node_deps(
         "Lockfile has not changed since last install, skipping Node.js dependencies",
     );
 
-    Ok(TaskResultStatus::Cached)
+    Ok(TaskResultStatus::Skipped)
 }

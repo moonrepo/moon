@@ -209,6 +209,8 @@ pub async fn run_target(
         };
 
         if is_primary {
+            // Print label *before* output is streamed since it may stay open forever,
+            // or use ANSI escape codes to alter the terminal.
             print_target_label(target, &attempt_comment, false);
 
             // If this target matches the primary target (the last task to run),
@@ -219,6 +221,8 @@ pub async fn run_target(
             // once it has completed.
             possible_output = exec_command(&mut command).await;
 
+            // Print label *after* output has been captured, so parallel tasks
+            // aren't intertwined and the labels align with the output.
             print_target_label(target, &attempt_comment, possible_output.is_err());
         };
 

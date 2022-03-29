@@ -138,11 +138,11 @@ fn create_node_target_command(
         "npm" => workspace.toolchain.get_npm().get_bin_path(),
         "pnpm" => workspace.toolchain.get_pnpm().unwrap().get_bin_path(),
         "yarn" => workspace.toolchain.get_yarn().unwrap().get_bin_path(),
-        bin => node.find_package_bin_path(bin, &project.root)?,
+        bin => &node.find_package_bin_path(bin, &project.root)?,
     };
 
     // Create the command
-    let mut command = create_command(package_bin_path);
+    let mut command = create_command(cmd);
 
     command
         .args(&task.args)

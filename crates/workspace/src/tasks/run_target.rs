@@ -109,13 +109,12 @@ fn create_node_target_command(
         }
     };
 
-    args.extend(task.args.clone());
-
     // Create the command
     let mut command = create_command(cmd);
 
     command
         .args(&args)
+        .args(&task.args)
         .envs(&task.env)
         .env("PATH", get_path_env_var(node.get_bin_dir()));
 

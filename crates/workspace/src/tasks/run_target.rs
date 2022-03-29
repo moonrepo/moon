@@ -117,7 +117,7 @@ fn create_node_target_command(
     command
         .args(&args)
         .envs(&task.env)
-        .env("PATH", get_path_env_var(cmd.to_owned()));
+        .env("PATH", get_path_env_var(node.get_bin_dir()));
 
     Ok(command)
 }
@@ -131,19 +131,27 @@ fn create_node_target_command(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
-    node: &NodeTool,
 ) -> Result<Command, WorkspaceError> {
-    let package_bin_path = node.find_package_bin_path(&task.command, &project.root)?;
+    let node = workspace.toolchain.get_node();
+
+    let cmd = match task.command.as_str() {
+        "node" => node.get_bin_path(),
+        "npm" => workspace.toolchain.get_npm().get_bin_path(),
+        "pnpm" => workspace.toolchain.get_pnpm().unwrap().get_bin_path(),
+        "yarn" => workspace.toolchain.get_yarn().unwrap().get_bin_path(),
+        bin => node.find_package_bin_path(bin, &project.root)?,
+    };
 
     // Create the command
-    let mut cmd = create_command(package_bin_path);
+    let mut command = create_command(package_bin_path);
 
-    cmd.args(&task.args)
+    command
+        .args(&task.args)
         .envs(&task.env)
         .env("PATH", get_path_env_var(node.get_bin_dir()))
         .env("NODE_OPTIONS", create_node_options(task).join(" "));
 
-    Ok(cmd)
+    Ok(command)
 }
 
 fn create_shell_target_command(task: &Task) -> Command {

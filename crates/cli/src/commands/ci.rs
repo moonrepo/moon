@@ -258,7 +258,8 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     term.flush()?;
-    render_result_stats(results, runner.duration.unwrap())?;
+
+    render_result_stats(results, runner.duration.unwrap(), true)?;
 
     if error_count > 0 {
         safe_exit(1);

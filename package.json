@@ -9,7 +9,7 @@
     "test": "jest --passWithNoTests",
     "lint": "eslint --cache --color --fix --ext .ts,.tsx,.mjs ./packages ./scripts",
     "type": "tsc --build",
-    "cli": "moon"
+    "cli": "target/debug/moon"
   },
   "workspaces": [
     "packages/*"

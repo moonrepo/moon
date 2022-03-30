@@ -70,13 +70,26 @@ async fn get_touched_files(
 pub fn render_result_stats(
     results: Vec<Action>,
     duration: Duration,
+    in_actions_context: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut cached_count = 0;
     let mut pass_count = 0;
     let mut fail_count = 0;
     let mut invalid_count = 0;
 
-    for result in results {
+    let filtered_results = if in_actions_context {
+        results
+    } else {
+        results
+            .into_iter()
+            .filter(|result| match &result.label {
+                Some(l) => l.contains("RunTarget"),
+                None => false,
+            })
+            .collect()
+    };
+
+    for result in filtered_results {
         match result.status {
             ActionStatus::Cached => {
                 cached_count += 1;
@@ -118,8 +131,18 @@ pub fn render_result_stats(
 
     let term = Term::buffered_stdout();
     term.write_line("")?;
-    term.render_entry("Tasks", &counts_message.join(&color::muted(", ")))?;
-    term.render_entry(" Time", &time::elapsed(duration))?;
+
+    let counts_message = counts_message.join(&color::muted(", "));
+    let elapsed_time = time::elapsed(duration);
+
+    if in_actions_context {
+        term.render_entry("Actions", &counts_message)?;
+        term.render_entry("   Time", &elapsed_time)?;
+    } else {
+        term.render_entry("Tasks", &counts_message)?;
+        term.render_entry(" Time", &elapsed_time)?;
+    }
+
     term.write_line("")?;
     term.flush()?;
 
@@ -166,7 +189,7 @@ pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::e
         .await?;
 
     // Render stats about the run
-    render_result_stats(results, runner.duration.unwrap())?;
+    render_result_stats(results, runner.duration.unwrap(), false)?;
 
     Ok(())
 }

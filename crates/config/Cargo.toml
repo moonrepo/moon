@@ -23,6 +23,7 @@ semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
 serde_yaml = "0.8"
+shell-words = "1.1"
 validator = { version = "0.14", features = ["derive"] }
 
 [dev-dependencies]

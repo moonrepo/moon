@@ -1,8 +1,10 @@
 use crate::types::{FilePath, FilePathOrGlob, TargetID};
 use crate::validators::{validate_child_or_root_path, validate_target};
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::de::{self, SeqAccess};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 use validator::{Validate, ValidationError};
 
 // These structs utilize optional fields so that we can handle merging effectively,
@@ -96,6 +98,8 @@ impl Default for TaskOptionsConfig {
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct TaskConfig {
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_args")]
     pub args: Option<Vec<String>>,
 
     pub command: Option<String>,
@@ -118,6 +122,48 @@ pub struct TaskConfig {
     #[serde(default)]
     #[serde(rename = "type")]
     pub type_of: TaskType,
+}
+
+// SERDE
+
+struct DeserializeArgs;
+
+impl<'de> de::Visitor<'de> for DeserializeArgs {
+    type Value = Vec<String>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a sequence of strings or a string")
+    }
+
+    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: SeqAccess<'de>,
+    {
+        let mut vec = Vec::new();
+
+        while let Some(elem) = visitor.next_element()? {
+            vec.push(elem);
+        }
+
+        Ok(vec)
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        match shell_words::split(value) {
+            Ok(args) => Ok(args),
+            Err(error) => Err(E::custom(error)),
+        }
+    }
+}
+
+fn deserialize_args<'de, D>(deserializer: D) -> Result<Option<Vec<String>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Ok(Some(deserializer.deserialize_any(DeserializeArgs)?))
 }
 
 #[cfg(test)]
@@ -167,9 +213,12 @@ mod tests {
     }
 
     mod args {
+        use super::TaskConfig;
+        use moon_utils::string_vec;
+
         #[test]
         #[should_panic(
-            expected = "Invalid field `args`. Expected a sequence type, received string \"abc\"."
+            expected = "Invalid field `args`. Expected a sequence of strings or a string type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -177,7 +226,7 @@ mod tests {
                     super::CONFIG_FILENAME,
                     r#"
 command: foo
-args: abc
+args: 123
 "#,
                 )?;
 
@@ -203,6 +252,78 @@ args:
                 )?;
 
                 super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_vec_strings() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+args:
+    - arg
+    - -o
+    - '@token(0)'
+    - --opt
+    - value
+    - 'quoted arg'
+"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    TaskConfig {
+                        command: Some(String::from("foo")),
+                        args: Some(string_vec![
+                            "arg",
+                            "-o",
+                            "@token(0)",
+                            "--opt",
+                            "value",
+                            "quoted arg"
+                        ]),
+                        ..TaskConfig::default()
+                    }
+                );
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_string() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+args: 'arg -o @token(0) --opt value "quoted arg"'
+"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    TaskConfig {
+                        command: Some(String::from("foo")),
+                        args: Some(string_vec![
+                            "arg",
+                            "-o",
+                            "@token(0)",
+                            "--opt",
+                            "value",
+                            "quoted arg"
+                        ]),
+                        ..TaskConfig::default()
+                    }
+                );
 
                 Ok(())
             });

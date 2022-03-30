@@ -7,7 +7,7 @@ use moon_terminal::helpers::{replace_style_tokens, safe_exit};
 use moon_terminal::output;
 use moon_utils::{fs, is_ci, time};
 use moon_workspace::DepGraph;
-use moon_workspace::{ActionStatus, TaskRunner, Workspace, WorkspaceError};
+use moon_workspace::{ActionRunner, ActionStatus, Workspace, WorkspaceError};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -208,7 +208,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     // Process all tasks in the graph
     print_header("Running all targets");
 
-    let mut runner = TaskRunner::new(workspace);
+    let mut runner = ActionRunner::new(workspace);
     let results = runner.run(dep_graph).await?;
 
     // Print out the results and exit if an error occurs

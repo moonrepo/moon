@@ -13,7 +13,7 @@ pub enum WorkspaceError {
     DepGraphUnknownNode(usize),
 
     #[error("Task runner failed to run: {0}")]
-    TaskRunnerFailure(String),
+    ActionRunnerFailure(String),
 
     #[error(
         "Unable to determine workspace root. Please create a <path>{}</path> configuration folder.",

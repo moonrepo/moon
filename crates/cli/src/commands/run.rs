@@ -4,7 +4,7 @@ use moon_logger::color;
 use moon_project::TouchedFilePaths;
 use moon_terminal::ExtendedTerm;
 use moon_utils::time;
-use moon_workspace::{Action, ActionStatus, DepGraph, TaskRunner, Workspace, WorkspaceError};
+use moon_workspace::{Action, ActionRunner, ActionStatus, DepGraph, Workspace, WorkspaceError};
 use std::collections::HashSet;
 use std::string::ToString;
 use std::time::Duration;
@@ -156,7 +156,7 @@ pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::e
     }
 
     // Process all tasks in the graph
-    let mut runner = TaskRunner::new(workspace);
+    let mut runner = ActionRunner::new(workspace);
 
     let results = runner
         .bail_on_error()

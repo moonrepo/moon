@@ -37,7 +37,7 @@ async fn run_action(
     Ok(status)
 }
 
-pub struct TaskRunner {
+pub struct ActionRunner {
     bail: bool,
 
     pub duration: Option<Duration>,
@@ -49,11 +49,11 @@ pub struct TaskRunner {
     workspace: Arc<RwLock<Workspace>>,
 }
 
-impl TaskRunner {
+impl ActionRunner {
     pub fn new(workspace: Workspace) -> Self {
         debug!(target: TARGET, "Creating task runner",);
 
-        TaskRunner {
+        ActionRunner {
             bail: false,
             duration: None,
             passthrough_args: Vec::new(),
@@ -175,7 +175,7 @@ impl TaskRunner {
                 match handle.await {
                     Ok(Ok(result)) => {
                         if self.bail && result.error.is_some() {
-                            return Err(WorkspaceError::TaskRunnerFailure(result.error.unwrap()));
+                            return Err(WorkspaceError::ActionRunnerFailure(result.error.unwrap()));
                         }
 
                         results.push(result);
@@ -184,7 +184,7 @@ impl TaskRunner {
                         return Err(e);
                     }
                     Err(e) => {
-                        return Err(WorkspaceError::TaskRunnerFailure(e.to_string()));
+                        return Err(WorkspaceError::ActionRunnerFailure(e.to_string()));
                     }
                 }
             }

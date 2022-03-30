@@ -1,3 +1,4 @@
+use crate::{is_readable, is_writable};
 use moon_error::MoonError;
 use moon_utils::fs;
 use serde::de::DeserializeOwned;
@@ -16,7 +17,7 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     pub async fn load(path: PathBuf, default: T) -> Result<CacheItem<T>, MoonError> {
         let item: T;
 
-        if path.exists() {
+        if is_readable() && path.exists() {
             item = fs::read_json(&path).await?;
         } else {
             item = default;
@@ -28,7 +29,9 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     }
 
     pub async fn save(&self) -> Result<(), MoonError> {
-        fs::write_json(&self.path, &self.item, false).await?;
+        if is_writable() {
+            fs::write_json(&self.path, &self.item, false).await?;
+        }
 
         Ok(())
     }

@@ -2,25 +2,10 @@
 
 use crate::commands::bin::BinTools;
 use crate::commands::run::RunStatus;
-use clap::{ArgEnum, Parser, Subcommand};
+use crate::enums::{CacheMode, LogLevel};
+use clap::{Parser, Subcommand};
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
-
-#[derive(ArgEnum, Clone, Debug)]
-pub enum LogLevel {
-    Off,
-    Error,
-    Warn,
-    Info,
-    Debug,
-    Trace,
-}
-
-impl Default for LogLevel {
-    fn default() -> Self {
-        LogLevel::Info
-    }
-}
 
 const HEADING_AFFECTED: &str = "Affected by changes";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
@@ -143,9 +128,10 @@ pub enum Commands {
             arg_enum,
             long,
             help = "Filter affected files based on a change status",
-            help_heading = HEADING_AFFECTED
+            help_heading = HEADING_AFFECTED,
+            default_value_t
         )]
-        status: Option<RunStatus>,
+        status: RunStatus,
 
         // Passthrough args (after --)
         #[clap(
@@ -156,7 +142,7 @@ pub enum Commands {
     },
 }
 
-#[derive(Debug, Parser)]
+#[derive(Parser)]
 #[clap(
     bin_name = "moon",
     name = label_moon(),
@@ -172,8 +158,11 @@ pub enum Commands {
     rename_all = "camelCase"
 )]
 pub struct App {
-    #[clap(arg_enum, long, short = 'L', help = "Lowest log level to output")]
-    pub log_level: Option<LogLevel>,
+    #[clap(arg_enum, long, help = "Mode for cache operations", default_value_t)]
+    pub cache: CacheMode,
+
+    #[clap(arg_enum, long, help = "Lowest log level to output", default_value_t)]
+    pub log_level: LogLevel,
 
     #[clap(subcommand)]
     pub command: Commands,

@@ -1,6 +1,6 @@
 use crate::items::{CacheItem, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
-use crate::Hasher;
+use crate::{is_writable, Hasher};
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_utils::fs;
@@ -79,11 +79,13 @@ impl CacheEngine {
     }
 
     pub async fn delete_hash(&self, hash: &str) -> Result<(), MoonError> {
-        // Remove the hash file itself
-        fs::remove_file(&self.hashes_dir.join(format!("{}.json", hash))).await?;
+        if is_writable() {
+            // Remove the hash file itself
+            fs::remove_file(&self.hashes_dir.join(format!("{}.json", hash))).await?;
 
-        // And the output with the hash
-        fs::remove_dir_all(&self.outputs_dir.join(hash)).await?;
+            // And the output with the hash
+            fs::remove_dir_all(&self.outputs_dir.join(hash)).await?;
+        }
 
         Ok(())
     }
@@ -108,26 +110,30 @@ impl CacheEngine {
         source_root: &Path,
         source_path: &Path,
     ) -> Result<(), MoonError> {
-        let dest_root = self.outputs_dir.join(hash);
+        if is_writable() {
+            let dest_root = self.outputs_dir.join(hash);
 
-        fs::create_dir_all(&dest_root).await?;
+            fs::create_dir_all(&dest_root).await?;
 
-        if source_path.is_file() {
-            fs::link_file(source_root, source_path, &dest_root).await?;
-        } else {
-            fs::link_dir(source_root, source_path, &dest_root).await?;
+            if source_path.is_file() {
+                fs::link_file(source_root, source_path, &dest_root).await?;
+            } else {
+                fs::link_dir(source_root, source_path, &dest_root).await?;
+            }
         }
 
         Ok(())
     }
 
     pub async fn save_hash(&self, hash: &str, hasher: &Hasher) -> Result<(), MoonError> {
-        fs::write_json(
-            &self.hashes_dir.join(format!("{}.json", hash)),
-            &hasher,
-            true,
-        )
-        .await?;
+        if is_writable() {
+            fs::write_json(
+                &self.hashes_dir.join(format!("{}.json", hash)),
+                &hasher,
+                true,
+            )
+            .await?;
+        }
 
         Ok(())
     }

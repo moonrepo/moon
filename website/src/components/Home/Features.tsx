@@ -1,20 +1,22 @@
 import React from 'react';
 import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import Icon from '../Icon';
-import FeatureStatus, { StatusType } from './FeatureStatus';
 import Heading from '../Heading';
+import Icon from '../Icon';
 import Text from '../Text';
+import FeatureStatus, { StatusType } from './FeatureStatus';
+
+export interface Feature {
+	title: string;
+	icon: IconDefinition;
+	description: React.ReactNode;
+	status?: StatusType;
+}
 
 export interface FeaturesProps {
 	header: string;
 	description: string;
-	features: {
-		title: string;
-		icon: IconDefinition;
-		description: React.ReactNode;
-		status?: StatusType;
-	}[];
+	features: Feature[];
 	columns?: 3 | 4 | 5;
 }
 
@@ -47,9 +49,13 @@ export default function Features({ header, description, features, columns = 4 }:
 
 								if (iconIndex % 4 === 0) {
 									iconColor = 'text-purple-500';
-								} else if (iconIndex % 3 === 0) {
+								}
+
+								if (iconIndex % 3 === 0) {
 									iconColor = 'text-violet-500';
-								} else if (iconIndex % 2 === 0) {
+								}
+
+								if (iconIndex % 2 === 0) {
 									iconColor = 'text-indigo-500';
 								}
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import Label from '../Label';
 
-export type StatusType = 'stable' | 'experimental' | 'in-development' | 'coming-soon';
+export type StatusType = 'coming-soon' | 'experimental' | 'in-development' | 'stable';
 
 export interface FeatureStatusProps {
 	status?: StatusType;

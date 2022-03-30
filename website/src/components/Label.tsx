@@ -3,7 +3,7 @@ import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import Icon from './Icon';
 
-export type LabelVariant = 'success' | 'failure' | 'warning';
+export type LabelVariant = 'failure' | 'success' | 'warning';
 
 export interface LabelProps {
 	className?: string;

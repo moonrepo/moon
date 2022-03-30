@@ -1,11 +1,11 @@
 import React from 'react';
+import Heading from '../Heading';
+import Icon from '../Icon';
+import Text from '../Text';
 import { FeaturesProps } from './Features';
 import FeatureStatus from './FeatureStatus';
-import Icon from '../Icon';
-import Heading from '../Heading';
-import Text from '../Text';
 
-export type AdditionalFeaturesProps = Omit<FeaturesProps, 'description' | 'columns'>;
+export type AdditionalFeaturesProps = Omit<FeaturesProps, 'columns' | 'description'>;
 
 export default function AdditionalFeatures({ header, features }: AdditionalFeaturesProps) {
 	return (

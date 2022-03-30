@@ -1,42 +1,44 @@
+/* eslint-disable sort-keys */
+
 import React from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import Features, { FeaturesProps } from '@site/src/components/Home/Features';
-import AdditionalFeatures from '@site/src/components/Home/AdditionalFeatures';
 import {
-	faFingerprint,
-	faCloudArrowUp,
-	faMicrochip,
-	faToolbox,
-	faDiagramProject,
-	faRectangleBarcode,
-	faGridHorizontal,
-	faGridDividers,
-	faSitemap,
-	faMerge,
-	faDiagramSankey,
-	faShieldHalved,
-	faArrowUpRightDots,
-	faMessageCode,
-	faBellOn,
-	faUserSecret,
 	faAperture,
-	faChartTreeMap,
-	faSlidersUp,
-	faCircleBolt,
+	faArrowUpRightDots,
+	faBellOn,
 	faBoxAlt,
+	faChartTreeMap,
+	faCircleBolt,
+	faCloudArrowUp,
+	faDiagramProject,
+	faDiagramSankey,
+	faFingerprint,
+	faGridDividers,
+	faGridHorizontal,
+	faMerge,
+	faMessageCode,
+	faMicrochip,
+	faRectangleBarcode,
+	faShieldHalved,
+	faSitemap,
+	faSlidersUp,
+	faToolbox,
+	faUserSecret,
 } from '@fortawesome/pro-duotone-svg-icons';
+import AdditionalFeatures from '@site/src/components/Home/AdditionalFeatures';
+import Features, { Feature } from '@site/src/components/Home/Features';
 import Layout from '@theme/Layout';
 import styles from './index.module.css';
 
-const managementFeatures: FeaturesProps['features'] = [
+const managementFeatures: Feature[] = [
 	{
 		title: 'Smart hashing',
 		icon: faFingerprint,
 		description:
 			'Collects inputs from multiple sources to ensure builds are deterministic and reproducible.',
-		status: 'in-development',
+		status: 'experimental',
 	},
 	{
 		title: 'Remote caching',
@@ -57,7 +59,7 @@ const managementFeatures: FeaturesProps['features'] = [
 	},
 ];
 
-const organizationFeatures: FeaturesProps['features'] = [
+const organizationFeatures: Feature[] = [
 	{
 		title: 'Project graph',
 		icon: faDiagramProject,
@@ -78,11 +80,11 @@ const organizationFeatures: FeaturesProps['features'] = [
 		title: 'Ownership metadata',
 		icon: faRectangleBarcode,
 		description:
-			'Declare an owner, maintainers, support channels, and more, via LDAP or another integration.',
+			'Declare an owner, maintainers, support channels, and more, for LDAP or another integration.',
 	},
 ];
 
-const orchestrationFeatures: FeaturesProps['features'] = [
+const orchestrationFeatures: Feature[] = [
 	{
 		title: 'Dependency graph',
 		icon: faSitemap,
@@ -105,11 +107,11 @@ const orchestrationFeatures: FeaturesProps['features'] = [
 		icon: faArrowUpRightDots,
 		description:
 			'With our smart hashing, only rebuild projects that have been touched since the last build.',
-		status: 'in-development',
+		status: 'experimental',
 	},
 ];
 
-const notificationFeatures: FeaturesProps['features'] = [
+const notificationFeatures: Feature[] = [
 	{
 		title: 'Flakiness detection',
 		icon: faShieldHalved,
@@ -131,7 +133,7 @@ const notificationFeatures: FeaturesProps['features'] = [
 	},
 ];
 
-const additionalFeatures: FeaturesProps['features'] = [
+const additionalFeatures: Feature[] = [
 	{
 		title: 'Configuration & convention',
 		icon: faSlidersUp,
@@ -204,7 +206,7 @@ export default function Home() {
 			<main>
 				<Features
 					header="Management"
-					description="Work more, manage and debug less"
+					description="Develop more, manage less"
 					features={managementFeatures}
 				/>
 

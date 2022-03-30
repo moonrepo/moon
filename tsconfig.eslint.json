@@ -9,6 +9,7 @@
     "packages/*/types/**/*",
     "scripts/**/*",
     "website/src/**/*",
+    "website/.eslintrc.js",
     "website/*.js"
   ]
 }

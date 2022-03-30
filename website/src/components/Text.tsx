@@ -3,7 +3,7 @@ import cx from 'clsx';
 
 export type TextVariant = 'muted';
 
-export type TextSize = 'small' | 'large';
+export type TextSize = 'large' | 'small';
 
 export interface TextProps {
 	as?: string;
@@ -14,8 +14,8 @@ export interface TextProps {
 }
 
 const sizes: Record<TextSize, string> = {
-	small: 'text-sm',
 	large: 'text-lg',
+	small: 'text-sm',
 };
 
 const variants: Record<TextVariant, string> = {

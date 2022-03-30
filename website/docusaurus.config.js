@@ -102,6 +102,7 @@ const config = {
 			return {
 				name: 'docusaurus-tailwindcss',
 				configurePostCss(postcssOptions) {
+					// eslint-disable-next-line import/no-extraneous-dependencies, node/no-unpublished-require
 					postcssOptions.plugins.push(require('tailwindcss'));
 
 					return postcssOptions;

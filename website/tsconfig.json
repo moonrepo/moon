@@ -1,5 +1,10 @@
 {
   "extends": "@tsconfig/docusaurus/tsconfig.json",
+  "include": [
+    ".eslintrc.js",
+    "*.config.js",
+    "src/**/*"
+  ],
   "compilerOptions": {
     "baseUrl": "."
   }

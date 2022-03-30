@@ -153,8 +153,8 @@ ensure other Node.js processes outside of our toolchain are utilizing the same v
 
 ##### dedupeOnLockfileChange
 
-The `dedupeOnLockfileChange` setting will dedupe dependencies after they have been installed, in an effort
-to keep the workspace tree as clean and lean as possible. Defaults to `true`.
+The `dedupeOnLockfileChange` setting will dedupe dependencies after they have been installed, in an
+effort to keep the workspace tree as clean and lean as possible. Defaults to `true`.
 
 ```yaml
 node:
@@ -389,8 +389,8 @@ tasks:
 ##### deps
 
 The optional `deps` param is a list of other project tasks, known as [targets](./task.md#targets),
-that will be executed _before_ this task. It achieves this by generating a concurrent task graph
-based on the project graph.
+that will be executed _before_ this task. It achieves this by generating a concurrent dependency
+graph based on the project graph.
 
 ```yaml
 tasks:

@@ -12,8 +12,8 @@ pub enum WorkspaceError {
     #[error("Unknown node {0} found in dependency graph. How did this get here?")]
     DepGraphUnknownNode(usize),
 
-    #[error("Task runner failed to run: {0}")]
-    TaskRunnerFailure(String),
+    #[error("Action runner failed to run: {0}")]
+    ActionRunnerFailure(String),
 
     #[error(
         "Unable to determine workspace root. Please create a <path>{}</path> configuration folder.",

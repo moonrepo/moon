@@ -9,7 +9,7 @@ use moon_config::{
 use moon_logger::{color, debug, trace};
 use moon_utils::fs;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,11 +102,11 @@ impl Task {
         let cloned_options = cloned_config.options;
 
         let task = Task {
-            args: cloned_config.args.unwrap_or_else(Vec::new),
+            args: cloned_config.args.unwrap_or_default(),
             command: cloned_config.command.unwrap_or_default(),
-            deps: cloned_config.deps.unwrap_or_else(Vec::new),
-            env: cloned_config.env.unwrap_or_else(HashMap::new),
-            inputs: cloned_config.inputs.unwrap_or_else(Vec::new),
+            deps: cloned_config.deps.unwrap_or_default(),
+            env: cloned_config.env.unwrap_or_default(),
+            inputs: cloned_config.inputs.unwrap_or_default(),
             input_globs: vec![],
             input_paths: HashSet::new(),
             options: TaskOptions {
@@ -119,7 +119,7 @@ impl Task {
                 run_in_ci: cloned_options.run_in_ci.unwrap_or_default(),
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },
-            outputs: cloned_config.outputs.unwrap_or_else(Vec::new),
+            outputs: cloned_config.outputs.unwrap_or_default(),
             output_paths: HashSet::new(),
             target: target.clone(),
             type_of: cloned_config.type_of,

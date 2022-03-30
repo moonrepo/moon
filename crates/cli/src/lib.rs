@@ -45,35 +45,25 @@ pub async fn run_cli() {
     }
 
     // Match and run subcommand
-    let result;
-
-    match &args.command {
-        Commands::Bin { tool } => {
-            result = bin(tool).await;
-        }
+    let result = match &args.command {
+        Commands::Bin { tool } => bin(tool).await,
         Commands::Ci {
             base,
             head,
             job,
             job_total,
         } => {
-            result = ci(CiOptions {
+            ci(CiOptions {
                 base: base.clone(),
                 head: head.clone(),
                 job: *job,
                 job_total: *job_total,
             })
-            .await;
+            .await
         }
-        Commands::Init { dest, force } => {
-            result = init(dest, *force).await;
-        }
-        Commands::Project { id, json } => {
-            result = project(id, *json).await;
-        }
-        Commands::ProjectGraph { id } => {
-            result = project_graph(id).await;
-        }
+        Commands::Init { dest, force } => init(dest, *force).await,
+        Commands::Project { id, json } => project(id, *json).await,
+        Commands::ProjectGraph { id } => project_graph(id).await,
         Commands::Run {
             target,
             affected,
@@ -81,7 +71,7 @@ pub async fn run_cli() {
             status,
             passthrough,
         } => {
-            result = run(
+            run(
                 target,
                 RunOptions {
                     affected: *affected,
@@ -90,15 +80,11 @@ pub async fn run_cli() {
                     passthrough: passthrough.clone(),
                 },
             )
-            .await;
+            .await
         }
-        Commands::Setup => {
-            result = setup().await;
-        }
-        Commands::Teardown => {
-            result = teardown().await;
-        }
-    }
+        Commands::Setup => setup().await,
+        Commands::Teardown => teardown().await,
+    };
 
     if let Err(error) = result {
         Term::buffered_stderr().render_error(error);

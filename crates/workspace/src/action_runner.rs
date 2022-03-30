@@ -17,22 +17,14 @@ async fn run_action(
     primary_target: &str,
     passthrough_args: &[String],
 ) -> Result<ActionStatus, WorkspaceError> {
-    let status;
-
-    match action_node {
-        Node::InstallNodeDeps => {
-            status = install_node_deps(workspace).await?;
-        }
+    let status = match action_node {
+        Node::InstallNodeDeps => install_node_deps(workspace).await?,
         Node::RunTarget(target_id) => {
-            status = run_target(workspace, target_id, primary_target, passthrough_args).await?;
+            run_target(workspace, target_id, primary_target, passthrough_args).await?
         }
-        Node::SetupToolchain => {
-            status = setup_toolchain(workspace).await?;
-        }
-        Node::SyncProject(project_id) => {
-            status = sync_project(workspace, project_id).await?;
-        }
-    }
+        Node::SetupToolchain => setup_toolchain(workspace).await?,
+        Node::SyncProject(project_id) => sync_project(workspace, project_id).await?,
+    };
 
     Ok(status)
 }

@@ -1,7 +1,7 @@
+use crate::action::{Action, ActionStatus};
+use crate::actions::{install_node_deps, run_target, setup_toolchain, sync_project};
 use crate::dep_graph::{DepGraph, Node};
 use crate::errors::WorkspaceError;
-use crate::task_result::{TaskResult, TaskResultStatus};
-use crate::tasks::{install_node_deps, run_target, setup_toolchain, sync_project};
 use crate::workspace::Workspace;
 use moon_logger::{color, debug, trace};
 use std::sync::Arc;
@@ -11,15 +11,15 @@ use tokio::task;
 
 const TARGET: &str = "moon:task-runner";
 
-async fn run_task(
+async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
-    node: &Node,
+    graph_node: &Node,
     primary_target: &str,
     passthrough_args: &[String],
-) -> Result<TaskResultStatus, WorkspaceError> {
+) -> Result<ActionStatus, WorkspaceError> {
     let status;
 
-    match node {
+    match graph_node {
         Node::InstallNodeDeps => {
             status = install_node_deps(workspace).await?;
         }
@@ -78,7 +78,7 @@ impl TaskRunner {
         Ok(())
     }
 
-    pub async fn run(&mut self, graph: DepGraph) -> Result<Vec<TaskResult>, WorkspaceError> {
+    pub async fn run(&mut self, graph: DepGraph) -> Result<Vec<Action>, WorkspaceError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
@@ -96,7 +96,7 @@ impl TaskRunner {
             "Running {} tasks across {} batches", node_count, batches_count
         );
 
-        let mut results: Vec<TaskResult> = vec![];
+        let mut results: Vec<Action> = vec![];
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
@@ -118,7 +118,7 @@ impl TaskRunner {
                 let primary_target_clone = Arc::clone(&primary_target);
 
                 task_handles.push(task::spawn(async move {
-                    let mut result = TaskResult::new(task);
+                    let mut result = Action::new(task);
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(task) {
@@ -130,7 +130,7 @@ impl TaskRunner {
 
                         trace!(target: &log_target_name, "Running task {}", log_task_label);
 
-                        match run_task(
+                        match run_action(
                             workspace_clone,
                             node,
                             &primary_target_clone,
@@ -160,7 +160,7 @@ impl TaskRunner {
                             }
                         };
                     } else {
-                        result.status = TaskResultStatus::Invalid;
+                        result.status = ActionStatus::Invalid;
 
                         return Err(WorkspaceError::DepGraphUnknownNode(task.index()));
                     }

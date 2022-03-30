@@ -1,6 +1,6 @@
+use crate::action::ActionStatus;
+use crate::actions::hashing::create_target_hasher;
 use crate::errors::WorkspaceError;
-use crate::task_result::TaskResultStatus;
-use crate::tasks::hashing::create_target_hasher;
 use crate::workspace::Workspace;
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
@@ -197,7 +197,7 @@ pub async fn run_target(
     target: &str,
     primary_target: &str,
     passthrough_args: &[String],
-) -> Result<TaskResultStatus, WorkspaceError> {
+) -> Result<ActionStatus, WorkspaceError> {
     debug!(target: TARGET, "Running target {}", color::id(target));
 
     let workspace = workspace.read().await;
@@ -217,7 +217,7 @@ pub async fn run_target(
         print_target_label(target, "(cached)", cache.item.exit_code != 0);
         print_cache_item(&cache.item, true);
 
-        return Ok(TaskResultStatus::Cached);
+        return Ok(ActionStatus::Cached);
     }
 
     // Build the command to run based on the task
@@ -310,7 +310,7 @@ pub async fn run_target(
 
     print_cache_item(&cache.item, !is_primary);
 
-    Ok(TaskResultStatus::Passed)
+    Ok(ActionStatus::Passed)
 }
 
 fn print_target_label(target: &str, comment: &str, failed: bool) {

@@ -1,5 +1,5 @@
+use crate::action::ActionStatus;
 use crate::errors::WorkspaceError;
-use crate::task_result::TaskResultStatus;
 use crate::workspace::Workspace;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug};
@@ -11,7 +11,7 @@ const TARGET: &str = "moon:task-runner:install-node-deps";
 
 pub async fn install_node_deps(
     workspace: Arc<RwLock<Workspace>>,
-) -> Result<TaskResultStatus, WorkspaceError> {
+) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
     let toolchain = &workspace.toolchain;
     let manager = toolchain.get_node_package_manager();
@@ -75,7 +75,7 @@ pub async fn install_node_deps(
         cache.item.last_node_install_time = cache.now_millis();
         cache.save().await?;
 
-        return Ok(TaskResultStatus::Passed);
+        return Ok(ActionStatus::Passed);
     }
 
     debug!(
@@ -83,5 +83,5 @@ pub async fn install_node_deps(
         "Lockfile has not changed since last install, skipping Node.js dependencies",
     );
 
-    Ok(TaskResultStatus::Skipped)
+    Ok(ActionStatus::Skipped)
 }

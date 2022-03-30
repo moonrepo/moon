@@ -1,5 +1,5 @@
+use crate::action::ActionStatus;
 use crate::errors::WorkspaceError;
-use crate::task_result::TaskResultStatus;
 use crate::workspace::Workspace;
 use moon_logger::debug;
 use std::sync::Arc;
@@ -11,7 +11,7 @@ const HOUR: u128 = MINUTE * 60;
 
 pub async fn setup_toolchain(
     workspace: Arc<RwLock<Workspace>>,
-) -> Result<TaskResultStatus, WorkspaceError> {
+) -> Result<ActionStatus, WorkspaceError> {
     debug!(
         target: "moon:task-runner:setup-toolchain",
         "Setting up toolchain",
@@ -40,8 +40,8 @@ pub async fn setup_toolchain(
     }
 
     Ok(if installed_tools {
-        TaskResultStatus::Passed
+        ActionStatus::Passed
     } else {
-        TaskResultStatus::Skipped
+        ActionStatus::Skipped
     })
 }

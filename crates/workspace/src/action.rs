@@ -1,7 +1,7 @@
 use petgraph::graph::NodeIndex;
 use std::time::{Duration, Instant};
 
-pub enum TaskResultStatus {
+pub enum ActionStatus {
     Cached,
     // CachedFromRemote, // TODO
     Failed,
@@ -11,7 +11,7 @@ pub enum TaskResultStatus {
     Skipped, // When nothing happened
 }
 
-pub struct TaskResult {
+pub struct Action {
     pub duration: Option<Duration>,
 
     pub error: Option<String>,
@@ -24,36 +24,36 @@ pub struct TaskResult {
 
     pub start_time: Instant,
 
-    pub status: TaskResultStatus,
+    pub status: ActionStatus,
 
     pub stderr: String,
 
     pub stdout: String,
 }
 
-impl TaskResult {
+impl Action {
     pub fn new(node_index: NodeIndex) -> Self {
-        TaskResult {
+        Action {
             duration: None,
             error: None,
             exit_code: -1,
             label: None,
             node_index,
             start_time: Instant::now(),
-            status: TaskResultStatus::Running,
+            status: ActionStatus::Running,
             stderr: String::new(),
             stdout: String::new(),
         }
     }
 
-    pub fn pass(&mut self, status: TaskResultStatus) {
+    pub fn pass(&mut self, status: ActionStatus) {
         self.status = status;
         self.duration = Some(self.start_time.elapsed());
     }
 
     pub fn fail(&mut self, error: String) {
         self.error = Some(error);
-        self.status = TaskResultStatus::Failed;
+        self.status = ActionStatus::Failed;
         self.duration = Some(self.start_time.elapsed());
     }
 }

@@ -7,7 +7,7 @@ use moon_terminal::helpers::{replace_style_tokens, safe_exit};
 use moon_terminal::output;
 use moon_utils::{fs, is_ci, time};
 use moon_workspace::DepGraph;
-use moon_workspace::{TaskResultStatus, TaskRunner, Workspace, WorkspaceError};
+use moon_workspace::{ActionStatus, TaskRunner, Workspace, WorkspaceError};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -219,19 +219,19 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
 
     for result in &results {
         let status = match result.status {
-            TaskResultStatus::Passed | TaskResultStatus::Cached | TaskResultStatus::Skipped => {
+            ActionStatus::Passed | ActionStatus::Cached | ActionStatus::Skipped => {
                 color::success("pass")
             }
-            TaskResultStatus::Failed => color::failure("fail"),
-            TaskResultStatus::Invalid => color::invalid("warn"),
+            ActionStatus::Failed => color::failure("fail"),
+            ActionStatus::Invalid => color::invalid("warn"),
             _ => color::muted_light("oops"),
         };
 
         let mut meta: Vec<String> = vec![];
 
-        if matches!(result.status, TaskResultStatus::Cached) {
+        if matches!(result.status, ActionStatus::Cached) {
             meta.push(String::from("cached"));
-        } else if matches!(result.status, TaskResultStatus::Skipped) {
+        } else if matches!(result.status, ActionStatus::Skipped) {
             meta.push(String::from("skipped"));
         } else {
             meta.push(time::elapsed(result.duration.unwrap()));

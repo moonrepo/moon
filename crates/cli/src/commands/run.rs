@@ -4,9 +4,7 @@ use moon_logger::color;
 use moon_project::TouchedFilePaths;
 use moon_terminal::ExtendedTerm;
 use moon_utils::time;
-use moon_workspace::{
-    DepGraph, TaskResult, TaskResultStatus, TaskRunner, Workspace, WorkspaceError,
-};
+use moon_workspace::{Action, ActionStatus, DepGraph, TaskRunner, Workspace, WorkspaceError};
 use std::collections::HashSet;
 use std::string::ToString;
 use std::time::Duration;
@@ -70,7 +68,7 @@ async fn get_touched_files(
 }
 
 pub fn render_result_stats(
-    results: Vec<TaskResult>,
+    results: Vec<Action>,
     duration: Duration,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut cached_count = 0;
@@ -80,17 +78,17 @@ pub fn render_result_stats(
 
     for result in results {
         match result.status {
-            TaskResultStatus::Cached => {
+            ActionStatus::Cached => {
                 cached_count += 1;
                 pass_count += 1;
             }
-            TaskResultStatus::Passed | TaskResultStatus::Skipped => {
+            ActionStatus::Passed | ActionStatus::Skipped => {
                 pass_count += 1;
             }
-            TaskResultStatus::Failed => {
+            ActionStatus::Failed => {
                 fail_count += 1;
             }
-            TaskResultStatus::Invalid => {
+            ActionStatus::Invalid => {
                 invalid_count += 1;
             }
             _ => {}

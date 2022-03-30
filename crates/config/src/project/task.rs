@@ -213,6 +213,9 @@ mod tests {
     }
 
     mod args {
+        use super::TaskConfig;
+        use moon_utils::string_vec;
+
         #[test]
         #[should_panic(
             expected = "Invalid field `args`. Expected a sequence of strings or a string type, received unsigned int `123`."
@@ -249,6 +252,78 @@ args:
                 )?;
 
                 super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_vec_strings() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+args:
+    - arg
+    - -o
+    - '@token(0)'
+    - --opt
+    - value
+    - 'quoted arg'
+"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    TaskConfig {
+                        command: Some(String::from("foo")),
+                        args: Some(string_vec![
+                            "arg",
+                            "-o",
+                            "@token(0)",
+                            "--opt",
+                            "value",
+                            "quoted arg"
+                        ]),
+                        ..TaskConfig::default()
+                    }
+                );
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_string() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+args: 'arg -o @token(0) --opt value "quoted arg"'
+"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config,
+                    TaskConfig {
+                        command: Some(String::from("foo")),
+                        args: Some(string_vec![
+                            "arg",
+                            "-o",
+                            "@token(0)",
+                            "--opt",
+                            "value",
+                            "quoted arg"
+                        ]),
+                        ..TaskConfig::default()
+                    }
+                );
 
                 Ok(())
             });

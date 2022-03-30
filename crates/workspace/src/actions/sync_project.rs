@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const TARGET: &str = "moon:task-runner:sync-project";
+const TARGET: &str = "moon:action:sync-project";
 
 pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,

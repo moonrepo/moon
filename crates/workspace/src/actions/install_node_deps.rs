@@ -7,7 +7,7 @@ use moon_utils::fs;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const TARGET: &str = "moon:task-runner:install-node-deps";
+const TARGET: &str = "moon:action:install-node-deps";
 
 pub async fn install_node_deps(
     workspace: Arc<RwLock<Workspace>>,

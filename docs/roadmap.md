@@ -47,7 +47,7 @@
   - [x] Expands tokens defined in configs
 - [x] Can run from project root or workspace root (using `run_from_workspace_root`)
 
-## Task runner
+## Action runner
 
 - [x] Sorts dep graph topologically
   - [x] Groups into batches and parallelizes
@@ -104,7 +104,7 @@
 - [ ] Deps referencing targets (`^`)
 - [ ] Add `@cache` token
 
-## Task runner
+## Action runner
 
 - [ ] Add a debug layer so that the node processes can be inspected
 

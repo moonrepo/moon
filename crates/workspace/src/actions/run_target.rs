@@ -15,7 +15,7 @@ use std::sync::Arc;
 use tokio::process::Command;
 use tokio::sync::RwLock;
 
-const TARGET: &str = "moon:task-runner:run-target";
+const TARGET: &str = "moon:action:run-target";
 
 async fn create_env_vars(
     workspace: &Workspace,

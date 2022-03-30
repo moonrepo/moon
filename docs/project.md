@@ -97,8 +97,8 @@ Can be a name, email, LDAP/GitHub username, etc, the choice is yours.
 #### dependsOn
 
 The optional `dependsOn` setting defines _other_ projects that _this_ project depends on, primarily
-when generating the project and task graphs. The most common use case is building those projects
-_before_ building this one. It will also sync [package.json](#packagejson) and
+when generating the project and dependency graphs. The most common use case is building those
+projects _before_ building this one. It will also sync [package.json](#packagejson) and
 [tsconfig.json](#tsconfigjson) when applicable.
 
 When defined, this setting requires an array of project IDs, which are the keys found in the

@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tokio::task;
 
-const TARGET: &str = "moon:task-runner";
+const TARGET: &str = "moon:action-runner";
 
 async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
@@ -51,7 +51,7 @@ pub struct ActionRunner {
 
 impl ActionRunner {
     pub fn new(workspace: Workspace) -> Self {
-        debug!(target: TARGET, "Creating task runner",);
+        debug!(target: TARGET, "Creating action runner",);
 
         ActionRunner {
             bail: false,

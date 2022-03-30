@@ -13,7 +13,7 @@ pub async fn setup_toolchain(
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<ActionStatus, WorkspaceError> {
     debug!(
-        target: "moon:task-runner:setup-toolchain",
+        target: "moon:action:setup-toolchain",
         "Setting up toolchain",
     );
 

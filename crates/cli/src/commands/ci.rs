@@ -168,7 +168,7 @@ fn generate_dep_graph(
     workspace: &Workspace,
     targets: &TargetList,
 ) -> Result<DepGraph, WorkspaceError> {
-    print_header("Generating dependency and task graphs");
+    print_header("Generating dependency graph");
 
     let mut dep_graph = DepGraph::default();
 
@@ -181,7 +181,7 @@ fn generate_dep_graph(
     }
 
     println!("Target count: {}", targets.len());
-    println!("Node count: {}", dep_graph.graph.node_count());
+    println!("Action count: {}", dep_graph.graph.node_count());
 
     Ok(dep_graph)
 }

@@ -16,11 +16,6 @@ impl Logger {
             return;
         }
 
-        #[cfg(windows)]
-        if std::env::consts::OS == "windows" {
-            ansi_term::enable_ansi_support().unwrap();
-        }
-
         Dispatch::new()
             .filter(|metadata| metadata.target().starts_with("moon"))
             .format(|out, message, record| {
@@ -43,14 +38,16 @@ impl Logger {
                 }
 
                 let prefix = format!(
-                    "[{} {}]",
+                    "{}{} {}{}",
+                    color::muted("["),
                     color::log_level(record.level()),
-                    current_timestamp.format(date_format),
+                    color::muted(&current_timestamp.format(date_format).to_string()),
+                    color::muted("]"),
                 );
 
                 out.finish(format_args!(
                     "{} {} {}",
-                    color::muted(&prefix),
+                    prefix,
                     color::log_target(record.target()),
                     message
                 ));

@@ -21,7 +21,7 @@ async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
         fs::create_dir_all(dir).await?;
     }
 
-    trace!(target: "moon:toolchain", "Created directory {}", color::file_path(dir));
+    trace!(target: "moon:toolchain", "Created directory {}", color::path(dir));
 
     Ok(())
 }
@@ -63,7 +63,7 @@ impl Toolchain {
         debug!(
             target: "moon:toolchain",
             "Creating toolchain at {}",
-            color::file_path(&dir)
+            color::path(&dir)
         );
 
         create_dir(&dir).await?;
@@ -226,7 +226,7 @@ impl Toolchain {
 
                 trace!(
                     target: "moon:toolchain", "Deleted download {}",
-                    color::file_path(download_path)
+                    color::path(download_path)
                 );
             }
         }
@@ -239,7 +239,7 @@ impl Toolchain {
             trace!(
                 target: "moon:toolchain",
                 "Deleted installation {}",
-                color::file_path(install_dir)
+                color::path(install_dir)
             );
         }
 

@@ -6,10 +6,10 @@ const STEP_CHAR: &str = "▪";
 pub fn label_moon() -> String {
     format!(
         "{}{}{}{}",
-        style(color::paint(57, "M")).bold(),
-        style(color::paint(63, "O")).bold(),
-        style(color::paint(69, "O")).bold(),
-        style(color::paint(75, "N")).bold(),
+        style("M").color256(57).bold(),
+        style("O").color256(63).bold(),
+        style("O").color256(69).bold(),
+        style("N").color256(75).bold(),
     )
 }
 

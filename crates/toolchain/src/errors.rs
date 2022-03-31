@@ -3,7 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolchainError {
-    #[error("Shashum check has failed for <file_path>{0}</file_path>, which was downloaded from <url>{1}</url>.")]
+    #[error(
+        "Shashum check has failed for <file>{0}</file>, which was downloaded from <url>{1}</url>."
+    )]
     InvalidShasum(
         String, // Download path
         String, // URL

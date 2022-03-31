@@ -33,7 +33,7 @@ impl PnpmTool {
         debug!(
             target: "moon:toolchain:pnpm",
             "Creating tool at {}",
-            color::file_path(&bin_path)
+            color::path(&bin_path)
         );
 
         Ok(PnpmTool {

@@ -38,7 +38,7 @@ impl NpmTool {
         debug!(
             target: "moon:toolchain:npm",
             "Creating tool at {}",
-            color::file_path(&bin_path)
+            color::path(&bin_path)
         );
 
         Ok(NpmTool {

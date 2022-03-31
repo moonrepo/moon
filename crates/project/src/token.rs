@@ -150,7 +150,7 @@ impl<'a> TokenResolver<'a> {
                 warn!(
                     target: "moon:project:token",
                     "Found a token function in {} with other content. Token functions *must* be used literally as the only value.",
-                    color::path(value)
+                    color::file(value)
                 );
             }
         }
@@ -251,7 +251,7 @@ impl<'a> TokenResolver<'a> {
             "Resolving token variable {} for {} value {}",
             color::id(token),
             self.context.context_label(),
-            color::path(value)
+            color::file(value)
         );
 
         let (project_id, task_id) = Target::parse(&task.target)?;

@@ -67,7 +67,7 @@ async fn gather_touched_files(
         .all
         .iter()
         .map(|f| {
-            touched_files_to_print.push(format!("  {}", color::path(f)));
+            touched_files_to_print.push(format!("  {}", color::file(f)));
             workspace.root.join(fs::normalize_separators(f))
         })
         .collect();

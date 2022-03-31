@@ -150,7 +150,7 @@ impl NodeTool {
         debug!(
             target: "moon:toolchain:node",
             "Creating tool at {}",
-            color::file_path(&bin_path)
+            color::path(&bin_path)
         );
 
         Ok(NodeTool {
@@ -244,7 +244,7 @@ impl Tool for NodeTool {
             target: "moon:toolchain:node",
             "Downloading binary from {} to {}",
             color::url(&download_url),
-            color::file_path(&self.download_path)
+            color::path(&self.download_path)
         );
 
         // Download the SHASUMS256.txt file
@@ -305,7 +305,7 @@ impl Tool for NodeTool {
         debug!(
             target: "moon:toolchain:node",
             "Unpacked and installed to {}",
-            color::file_path(install_dir)
+            color::path(install_dir)
         );
 
         Ok(())

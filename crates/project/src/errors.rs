@@ -9,12 +9,12 @@ pub enum ProjectError {
     DependencyCycleDetected,
 
     #[error(
-        "Failed to validate <path>{0}/{}</path> configuration file.\n\n<muted>{0}</muted>",
+        "Failed to validate <file>{0}/{}</file> configuration file.\n\n<muted>{0}</muted>",
         constants::CONFIG_PROJECT_FILENAME
     )]
     InvalidConfigFile(String, ValidationErrors),
 
-    #[error("Failed to parse and open <path>{0}/package.json</path>: {1}")]
+    #[error("Failed to parse and open <file>{0}/package.json</file>: {1}")]
     InvalidPackageJson(String, String),
 
     #[error(
@@ -22,14 +22,14 @@ pub enum ProjectError {
     )]
     InvalidTargetFormat(String),
 
-    #[error("Failed to parse and open <path>{0}/{1}</path>: {2}")]
+    #[error("Failed to parse and open <file>{0}/{1}</file>: {2}")]
     InvalidTsConfigJson(String, String, String),
 
-    #[error("No project exists at path <path>{0}</path>.")]
+    #[error("No project exists at path <file>{0}</file>.")]
     MissingProject(String),
 
     #[error(
-        "Task outputs do not support file globs. Found <file_path>{0}</file_path> in <target>{1}</target>."
+        "Task outputs do not support file globs. Found <path>{0}</path> in <target>{1}</target>."
     )]
     NoOutputGlob(PathBuf, String),
 

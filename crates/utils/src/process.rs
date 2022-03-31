@@ -32,7 +32,7 @@ fn log_command_info(command: &Command) {
             target: "moon:utils",
             "Running command {} (in {})",
             color::shell(&command_line),
-            color::file_path(cwd),
+            color::path(cwd),
         );
     } else {
         trace!(

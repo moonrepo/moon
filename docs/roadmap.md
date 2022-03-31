@@ -83,7 +83,7 @@
 
 ## Cache
 
-- [ ] add a `--no-cache` option to disable all caching
+- [x] add a `--no-cache` option to disable all caching
 - [ ] hashing
   - [ ] use `stdin` for commands that take long arguments
   - [ ] dont load `package.json`/`tsconfig.json` so much

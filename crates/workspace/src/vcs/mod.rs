@@ -5,7 +5,6 @@ use crate::errors::WorkspaceError;
 use async_trait::async_trait;
 use git::Git;
 use moon_config::{VcsManager as VM, WorkspaceConfig};
-use moon_logger::{color, debug};
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use svn::Svn;
@@ -78,12 +77,6 @@ impl VcsManager {
         let vcs_config = &config.vcs;
         let manager = &vcs_config.manager;
         let default_branch = &vcs_config.default_branch;
-
-        debug!(
-            target: "moon:workspace",
-            "Using {} version control system",
-            color::symbol(&format!("{:?}", manager).to_lowercase())
-        );
 
         match manager {
             VM::Svn => Box::new(Svn::new(default_branch, working_dir)),

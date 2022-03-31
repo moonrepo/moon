@@ -106,17 +106,13 @@ pub fn log_target(value: &str) -> String {
 }
 
 pub fn log_level(level: Level) -> String {
-    let msg = String::from(pad_str(level.as_str(), 5, Alignment::Left, None)).to_lowercase();
+    let msg = String::from(pad_str(level.as_str(), 5, Alignment::Right, None)).to_lowercase();
 
     match level {
         // Only color these as we want them to stand out
         Level::Error => paint(Color::Red as u8, &msg),
         Level::Warn => paint(Color::Yellow as u8, &msg),
-        // Just return as is
-        _ => msg,
-        // Level::Info => Color::White,
-        // Level::Debug => Color::Blue,
-        // Level::Trace => Color::Lime,
+        _ => muted(&msg),
     }
 }
 

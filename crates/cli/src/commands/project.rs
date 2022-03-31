@@ -103,8 +103,14 @@ mod tests {
     use crate::helpers::{create_test_command, get_assert_output, get_assert_stderr_output};
     use insta::assert_snapshot;
 
+    fn force_ansi_colors() {
+        std::env::set_var("CLICOLOR_FORCE", "1");
+    }
+
     #[test]
     fn unknown_project() {
+        force_ansi_colors();
+
         let assert = create_test_command("projects")
             .arg("project")
             .arg("unknown")
@@ -117,6 +123,8 @@ mod tests {
 
     #[test]
     fn empty_config() {
+        force_ansi_colors();
+
         let assert = create_test_command("projects")
             .arg("project")
             .arg("emptyConfig")
@@ -127,6 +135,8 @@ mod tests {
 
     #[test]
     fn no_config() {
+        force_ansi_colors();
+
         let assert = create_test_command("projects")
             .arg("project")
             .arg("noConfig")
@@ -137,6 +147,8 @@ mod tests {
 
     #[test]
     fn basic_config() {
+        force_ansi_colors();
+
         // with dependsOn and fileGroups
         let assert = create_test_command("projects")
             .arg("project")
@@ -148,6 +160,8 @@ mod tests {
 
     #[test]
     fn advanced_config() {
+        force_ansi_colors();
+
         // with project metadata
         let assert = create_test_command("projects")
             .arg("project")
@@ -159,6 +173,8 @@ mod tests {
 
     #[test]
     fn depends_on_paths() {
+        force_ansi_colors();
+
         // shows dependsOn paths when they exist
         let assert = create_test_command("projects")
             .arg("project")
@@ -170,6 +186,8 @@ mod tests {
 
     #[test]
     fn with_tasks() {
+        force_ansi_colors();
+
         let assert = create_test_command("projects")
             .arg("project")
             .arg("tasks")

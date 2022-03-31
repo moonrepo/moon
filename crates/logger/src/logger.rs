@@ -24,13 +24,13 @@ impl Logger {
         Dispatch::new()
             .filter(|metadata| metadata.target().starts_with("moon"))
             .format(|out, message, record| {
-                let mut date_format = "[%Y-%m-%d %H:%M:%S]";
+                let mut date_format = "%Y-%m-%d %H:%M:%S";
                 let current_timestamp = Local::now();
 
                 // Shorten the timestamp when within the same hour
                 unsafe {
                     if !FIRST_LOG && current_timestamp.hour() == LAST_HOUR {
-                        date_format = "[%H:%M:%S]";
+                        date_format = "%H:%M:%S";
                     }
 
                     if FIRST_LOG {
@@ -42,9 +42,15 @@ impl Logger {
                     }
                 }
 
+                let prefix = format!(
+                    "[{} {}]",
+                    color::log_level(record.level()),
+                    current_timestamp.format(date_format),
+                );
+
                 out.finish(format_args!(
                     "{} {} {}",
-                    color::muted(&current_timestamp.format(date_format).to_string()),
+                    color::muted(&prefix),
                     color::log_target(record.target()),
                     message
                 ));

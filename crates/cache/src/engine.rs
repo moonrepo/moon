@@ -526,6 +526,8 @@ mod tests {
             let cache = CacheEngine::create(dir.path()).await.unwrap();
             let mut item = cache.cache_workspace_state().await.unwrap();
 
+            std::env::remove_var("MOON_CACHE");
+
             item.item.last_node_install_time = 123;
             item.save().await.unwrap();
 

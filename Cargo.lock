@@ -1092,8 +1092,8 @@ dependencies = [
 name = "moon_logger"
 version = "0.1.0"
 dependencies = [
- "ansi_term",
  "chrono",
+ "console",
  "fern",
  "log",
 ]

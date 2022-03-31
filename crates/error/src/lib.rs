@@ -9,25 +9,25 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MoonError {
-    #[error("File system failure for <file_path>{0}</file_path>: {1}")]
+    #[error("File system failure for <path>{0}</path>: {1}")]
     FileSystem(PathBuf, #[source] IoError),
 
-    #[error("Failed to create a hard link from <file_path>{0}</file_path> to <file_path>{1}</file_path>.")]
+    #[error("Failed to create a hard link from <path>{0}</path> to <path>{1}</path>.")]
     HardLink(PathBuf, PathBuf),
 
-    #[error("Failed to parse <file_path>{0}</file_path>: {1}")]
+    #[error("Failed to parse <path>{0}</path>: {1}")]
     Json(PathBuf, #[source] JsonError),
 
     #[error("Network failure: {0}")]
     Network(#[source] IoError),
 
-    #[error("Network failure for <file_path>{0}</file_path>: {1}")]
+    #[error("Network failure for <path>{0}</path>: {1}")]
     NetworkWithHandle(PathBuf, #[source] IoError),
 
-    #[error("Path <file_path>{0}</file_path> contains invalid UTF-8 characters.")]
+    #[error("Path <path>{0}</path> contains invalid UTF-8 characters.")]
     PathInvalidUTF8(PathBuf),
 
-    #[error("Process failure for <path>{0}</path>: {1}")]
+    #[error("Process failure for <file>{0}</file>: {1}")]
     Process(String, #[source] IoError),
 
     #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code. {2}")]

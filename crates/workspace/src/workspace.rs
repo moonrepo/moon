@@ -18,7 +18,7 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
     trace!(
         target: "moon:workspace",
         "Attempting to find workspace root at {}",
-        color::file_path(&current_dir),
+        color::path(&current_dir),
     );
 
     if config_dir.exists() {
@@ -42,13 +42,13 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
     trace!(
         target: "moon:workspace",
         "Attempting to find {} in {}",
-        color::path(
+        color::file(
             &format!("{}/{}",
                 constants::CONFIG_DIRNAME,
                 constants::CONFIG_PROJECT_FILENAME,
             )
         ),
-        color::file_path(root_dir)
+        color::path(root_dir)
     );
 
     if !config_path.exists() {
@@ -70,13 +70,13 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     trace!(
         target: "moon:workspace",
         "Attempting to find {} in {}",
-        color::path(
+        color::file(
             &format!("{}/{}",
                 constants::CONFIG_DIRNAME,
                 constants::CONFIG_WORKSPACE_FILENAME,
             )
         ),
-        color::file_path(root_dir)
+        color::path(root_dir)
     );
 
     if !config_path.exists() {
@@ -122,8 +122,8 @@ impl Workspace {
         debug!(
             target: "moon:workspace",
             "Creating workspace at {} (from working directory {})",
-            color::file_path(&root_dir),
-            color::file_path(&working_dir)
+            color::path(&root_dir),
+            color::path(&working_dir)
         );
 
         // Load configs
@@ -157,8 +157,8 @@ impl Workspace {
         trace!(
             target: "moon:workspace",
             "Attempting to find {} in {}",
-            color::path("package.json"),
-            color::file_path(&self.root),
+            color::file("package.json"),
+            color::path(&self.root),
         );
 
         if !package_json_path.exists() {
@@ -178,8 +178,8 @@ impl Workspace {
         trace!(
             target: "moon:workspace",
             "Attempting to find {} in {}",
-            color::path(tsconfig_name),
-            color::file_path(&self.root),
+            color::file(tsconfig_name),
+            color::path(&self.root),
         );
 
         if !tsconfig_json_path.exists() {

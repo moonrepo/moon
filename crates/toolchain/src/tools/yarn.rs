@@ -33,7 +33,7 @@ impl YarnTool {
         debug!(
             target: "moon:toolchain:yarn",
             "Creating tool at {}",
-            color::file_path(&bin_path)
+            color::path(&bin_path)
         );
 
         Ok(YarnTool {

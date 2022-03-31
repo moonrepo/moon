@@ -51,11 +51,11 @@ pub fn invalid(value: &str) -> String {
     paint(Color::Yellow as u8, value)
 }
 
-pub fn path(path: &str) -> String {
+pub fn file(path: &str) -> String {
     paint(Color::Teal as u8, path)
 }
 
-pub fn file_path(path: &Path) -> String {
+pub fn path(path: &Path) -> String {
     paint(Color::Cyan as u8, path.to_str().unwrap_or("<unknown>"))
 }
 

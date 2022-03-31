@@ -23,10 +23,10 @@ pub fn replace_style_tokens(value: &str) -> String {
         let inner = caps.get(2).map_or("", |m| m.as_str());
 
         match token {
-            "file_path" => color::file_path(Path::new(inner)),
+            "file" => color::file(inner),
             "id" => color::id(inner),
             "muted" => color::muted_light(inner),
-            "path" => color::path(inner),
+            "path" => color::path(Path::new(inner)),
             "target" => color::target(inner),
             "shell" => color::shell(inner),
             "symbol" => color::symbol(inner),
@@ -45,6 +45,8 @@ mod test {
 
         #[test]
         fn renders_ansi() {
+            std::env::set_var("CLICOLOR_FORCE", "1");
+
             let list = vec!["file_path", "muted", "id", "path", "shell", "symbol"];
 
             for token in list {
@@ -61,6 +63,8 @@ mod test {
 
         #[test]
         fn renders_multiple_ansi() {
+            std::env::set_var("CLICOLOR_FORCE", "1");
+
             assert_ne!(
                 replace_style_tokens("<muted>Before</muted> <id>inner</id> <symbol>after</symbol>"),
                 "Before inner after"

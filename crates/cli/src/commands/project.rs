@@ -20,11 +20,11 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
     term.write_line("")?;
     term.render_label(Label::Brand, &project.id)?;
     term.render_entry("ID", &color::id(&project.id))?;
-    term.render_entry("Source", &color::path(&project.source))?;
+    term.render_entry("Source", &color::file(&project.source))?;
 
     // Dont show in test snapshots
     if env::var("MOON_TEST").is_err() {
-        term.render_entry("Root", &color::file_path(&project.root))?;
+        term.render_entry("Root", &color::path(&project.root))?;
     }
 
     if let Some(config) = project.config {
@@ -46,7 +46,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
                         "{} {}{}{}",
                         color::id(&dep_id),
                         color::muted_light("("),
-                        color::path(&dep.source),
+                        color::file(&dep.source),
                         color::muted_light(")"),
                     ));
                 }
@@ -85,7 +85,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
             let mut files = vec![];
 
             for file in &project.file_groups.get(group).unwrap().files {
-                files.push(color::path(file));
+                files.push(color::file(file));
             }
 
             term.render_entry_list(group, &files)?;

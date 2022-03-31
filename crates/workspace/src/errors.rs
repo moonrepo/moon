@@ -6,7 +6,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum WorkspaceError {
-    #[error("A dependency cycle has been detected for <path>{0}</path>.")]
+    #[error("A dependency cycle has been detected for <file>{0}</file>.")]
     DepGraphCycleDetected(String),
 
     #[error("Unknown node {0} found in dependency graph. How did this get here?")]
@@ -16,40 +16,40 @@ pub enum WorkspaceError {
     ActionRunnerFailure(String),
 
     #[error(
-        "Unable to determine workspace root. Please create a <path>{}</path> configuration folder.",
+        "Unable to determine workspace root. Please create a <file>{}</file> configuration folder.",
         constants::CONFIG_DIRNAME
     )]
     MissingConfigDir,
 
     #[error(
-        "Unable to locate a root <path>package.json</path>. Please create one alongside the <path>{}</path> configuration folder.",
+        "Unable to locate a root <file>package.json</file>. Please create one alongside the <file>{}</file> configuration folder.",
         constants::CONFIG_DIRNAME
     )]
     MissingPackageJson,
 
     #[error(
-        "Unable to locate <path>{}/{}</path> configuration file.",
+        "Unable to locate <file>{}/{}</file> configuration file.",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     MissingWorkspaceConfigFile,
 
     #[error(
-        "Unable to locate <path>{}/{}</path> configuration file.",
+        "Unable to locate <file>{}/{}</file> configuration file.",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_PROJECT_FILENAME
     )]
     MissingGlobalProjectConfigFile,
 
     #[error(
-        "Failed to validate <path>{}/{}</path> configuration file.\n\n<muted>{0}</muted>",
+        "Failed to validate <file>{}/{}</file> configuration file.\n\n<muted>{0}</muted>",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     InvalidWorkspaceConfigFile(ValidationErrors),
 
     #[error(
-        "Failed to validate <path>{}/{}</path> configuration file.\n\n<muted>{0}</muted>",
+        "Failed to validate <file>{}/{}</file> configuration file.\n\n<muted>{0}</muted>",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_PROJECT_FILENAME
     )]

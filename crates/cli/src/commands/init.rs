@@ -18,7 +18,7 @@ pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Err
     if moon_dir.exists() && !force {
         println!(
             "Moon has already been initialized in {} (pass {} to overwrite)",
-            color::file_path(&dest_dir.canonicalize().unwrap()),
+            color::path(&dest_dir.canonicalize().unwrap()),
             color::shell("--force")
         );
 
@@ -56,7 +56,7 @@ pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Err
 
     println!(
         "Moon has successfully been initialized in {}",
-        color::file_path(&dest_dir.canonicalize().unwrap()),
+        color::path(&dest_dir.canonicalize().unwrap()),
     );
 
     Ok(())

@@ -45,7 +45,7 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
     trace!(
         target: "moon:toolchain",
         "Calculating sha256 for file {} -> {}",
-        color::file_path(path),
+        color::path(path),
         color::symbol(&hash)
     );
 
@@ -71,7 +71,7 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
     trace!(
         target: "moon:toolchain",
         "Downloading file to {}",
-        color::file_path(dest.parent().unwrap()),
+        color::path(dest.parent().unwrap()),
     );
 
     // Ensure parent directories exist

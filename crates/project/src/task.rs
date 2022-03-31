@@ -247,7 +247,7 @@ impl Task {
             "Checking if affected using input files: {}",
             self.input_paths
                 .iter()
-                .map(|p| color::file_path(p))
+                .map(|p| color::path(p))
                 .collect::<Vec<_>>()
                 .join(", ")
         );
@@ -261,7 +261,7 @@ impl Task {
                 "Checking if affected using input globs: {}",
                 self.input_globs
                     .iter()
-                    .map(|p| color::path(p))
+                    .map(|p| color::file(p))
                     .collect::<Vec<_>>()
                     .join(", ")
             );
@@ -277,7 +277,7 @@ impl Task {
             trace!(
                 target: &format!("moon:project:{}", self.target),
                 "Is affected by {} = {}",
-                color::file_path(file),
+                color::path(file),
                 if affected {
                     color::success("true")
                 } else {

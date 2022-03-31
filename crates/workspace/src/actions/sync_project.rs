@@ -31,7 +31,7 @@ pub async fn sync_project(
                     target: TARGET,
                     "Syncing {} as a project reference to the root {}",
                     color::id(project_id),
-                    color::path(tsconfig_root_name)
+                    color::file(tsconfig_root_name)
                 );
 
                 tsconfig.save().await?;
@@ -65,7 +65,7 @@ pub async fn sync_project(
                         "Syncing {} as a dependency to {}'s {}",
                         color::id(&dep_id),
                         color::id(project_id),
-                        color::path("package.json")
+                        color::file("package.json")
                     );
 
                     package.save().await?;
@@ -89,7 +89,7 @@ pub async fn sync_project(
                         "Syncing {} as a project reference to {}'s {}",
                         color::id(&dep_id),
                         color::id(project_id),
-                        color::path(tsconfig_branch_name)
+                        color::file(tsconfig_branch_name)
                     );
 
                     tsconfig.save().await?;

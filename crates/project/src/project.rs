@@ -30,8 +30,8 @@ fn load_project_config(
     trace!(
         target: "moon:project",
         "Attempting to find {} in {}",
-        color::path(CONFIG_PROJECT_FILENAME),
-        color::file_path(project_root),
+        color::file(CONFIG_PROJECT_FILENAME),
+        color::path(project_root),
     );
 
     if config_path.exists() {
@@ -204,9 +204,9 @@ impl Project {
         debug!(
             target: &format!("moon:project:{}", id),
             "Loading project from {} (id = {}, path = {})",
-            color::file_path(&root),
+            color::path(&root),
             color::id(id),
-            color::path(source),
+            color::file(source),
         );
 
         if !root.exists() {
@@ -278,7 +278,7 @@ impl Project {
             trace!(
                 target: &format!("moon:project:{}", self.id),
                 "Is affected by {} = {}",
-                color::file_path(file),
+                color::path(file),
                 if affected {
                     color::success("true")
                 } else {
@@ -301,8 +301,8 @@ impl Project {
         trace!(
             target: &format!("moon:project:{}", self.id),
             "Attempting to find {} in {}",
-            color::path("package.json"),
-            color::file_path(&self.root),
+            color::file("package.json"),
+            color::path(&self.root),
         );
 
         if package_path.exists() {
@@ -328,8 +328,8 @@ impl Project {
         trace!(
             target: &format!("moon:project:{}", self.id),
             "Attempting to find {} in {}",
-            color::path(tsconfig_name),
-            color::file_path(&self.root),
+            color::file(tsconfig_name),
+            color::path(&self.root),
         );
 
         if tsconfig_path.exists() {

@@ -27,7 +27,7 @@ pub async fn install_node_deps(
         debug!(
             target: TARGET,
             "Adding engines version constraint to root {}",
-            color::path("package.json")
+            color::file("package.json")
         );
     }
 
@@ -40,7 +40,7 @@ pub async fn install_node_deps(
         debug!(
             target: TARGET,
             "Syncing Node.js version to root {}",
-            color::path(&rc_name)
+            color::file(&rc_name)
         );
     }
 

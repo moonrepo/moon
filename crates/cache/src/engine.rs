@@ -400,7 +400,8 @@ mod tests {
             let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
             item.item.exit_code = 123;
-            item.save().await.unwrap();
+
+            run_with_env("", || item.save()).await.unwrap();
 
             assert_eq!(
                 fs::read_to_string(item.path).unwrap(),
@@ -526,10 +527,9 @@ mod tests {
             let cache = CacheEngine::create(dir.path()).await.unwrap();
             let mut item = cache.cache_workspace_state().await.unwrap();
 
-            std::env::remove_var("MOON_CACHE");
-
             item.item.last_node_install_time = 123;
-            item.save().await.unwrap();
+
+            run_with_env("", || item.save()).await.unwrap();
 
             assert_eq!(
                 fs::read_to_string(item.path).unwrap(),

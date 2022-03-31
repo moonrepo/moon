@@ -40,7 +40,11 @@ where
     F: FnOnce() -> Fut,
     Fut: std::future::Future<Output = T>,
 {
-    env::set_var("MOON_CACHE", env);
+    if env.is_empty() {
+        env::remove_var("MOON_CACHE");
+    } else {
+        env::set_var("MOON_CACHE", env);
+    }
 
     let result = callback().await;
 

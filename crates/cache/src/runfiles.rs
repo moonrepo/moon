@@ -15,9 +15,9 @@ impl CacheRunfile {
     ) -> Result<CacheRunfile, MoonError> {
         fs::create_dir_all(path.parent().unwrap()).await?;
 
-        if !path.exists() {
-            fs::write_json(&path, data, false).await?;
-        }
+        // Always write a runfile, regardless of MOON_CACHE,
+        // since consumers expect this to exist at runtime
+        fs::write_json(&path, data, true).await?;
 
         Ok(CacheRunfile { path })
     }

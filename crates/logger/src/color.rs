@@ -106,15 +106,22 @@ pub fn log_target(value: &str) -> String {
 }
 
 pub fn log_level(level: Level) -> String {
-    let color = match level {
-        Level::Error => Color::Red,
-        Level::Warn => Color::Yellow,
-        Level::Info => Color::White,
-        Level::Debug => Color::Blue,
-        Level::Trace => Color::Lime,
-    };
+    let mut msg = level.as_str().to_lowercase();
 
-    paint(color as u8, &level.as_str().to_lowercase())
+    while msg.len() < 5 {
+        msg = [&msg, " "].concat();
+    }
+
+    match level {
+        // Only color these as we want them to stand out
+        Level::Error => paint(Color::Red as u8, &msg),
+        Level::Warn => paint(Color::Yellow as u8, &msg),
+        // Just return as is
+        _ => msg,
+        // Level::Info => Color::White,
+        // Level::Debug => Color::Blue,
+        // Level::Trace => Color::Lime,
+    }
 }
 
 pub fn no_color() -> bool {

@@ -1,5 +1,6 @@
 mod app;
 mod commands;
+mod enums;
 mod helpers;
 
 use crate::commands::bin::bin;
@@ -10,11 +11,13 @@ use crate::commands::project_graph::project_graph;
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::teardown::teardown;
-use app::{App, Commands, LogLevel};
+use app::{App, Commands};
 use clap::Parser;
 use console::Term;
+use enums::LogLevel;
 use moon_logger::{LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
+use std::env;
 
 // This is annoying, but clap requires applying the `ArgEnum`
 // trait onto the enum, which we can't apply to the log package.
@@ -33,8 +36,13 @@ pub async fn run_cli() {
     // Create app and parse arguments
     let args = App::parse();
 
-    // Instantiate the logger
-    Logger::init(map_log_level(args.log_level.unwrap_or_default()));
+    // Setup logging
+    Logger::init(map_log_level(args.log_level));
+
+    // Setup caching
+    if env::var("MOON_CACHE").is_err() {
+        env::set_var("MOON_CACHE", args.cache.to_string().to_lowercase());
+    }
 
     // Match and run subcommand
     let result;
@@ -78,7 +86,7 @@ pub async fn run_cli() {
                 RunOptions {
                     affected: *affected,
                     local: *local,
-                    status: status.clone().unwrap_or_default(),
+                    status: status.clone(),
                     passthrough: passthrough.clone(),
                 },
             )

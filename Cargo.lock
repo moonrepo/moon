@@ -1028,6 +1028,7 @@ dependencies = [
  "assert_fs",
  "moon_config",
  "moon_error",
+ "moon_logger",
  "moon_project",
  "moon_utils",
  "serde",

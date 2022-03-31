@@ -1,6 +1,7 @@
+use crate::hasher::Hasher;
+use crate::helpers::is_writable;
 use crate::items::{CacheItem, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
-use crate::Hasher;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_utils::fs;
@@ -79,11 +80,13 @@ impl CacheEngine {
     }
 
     pub async fn delete_hash(&self, hash: &str) -> Result<(), MoonError> {
-        // Remove the hash file itself
-        fs::remove_file(&self.hashes_dir.join(format!("{}.json", hash))).await?;
+        if is_writable() {
+            // Remove the hash file itself
+            fs::remove_file(&self.hashes_dir.join(format!("{}.json", hash))).await?;
 
-        // And the output with the hash
-        fs::remove_dir_all(&self.outputs_dir.join(hash)).await?;
+            // And the output with the hash
+            fs::remove_dir_all(&self.outputs_dir.join(hash)).await?;
+        }
 
         Ok(())
     }
@@ -108,26 +111,30 @@ impl CacheEngine {
         source_root: &Path,
         source_path: &Path,
     ) -> Result<(), MoonError> {
-        let dest_root = self.outputs_dir.join(hash);
+        if is_writable() {
+            let dest_root = self.outputs_dir.join(hash);
 
-        fs::create_dir_all(&dest_root).await?;
+            fs::create_dir_all(&dest_root).await?;
 
-        if source_path.is_file() {
-            fs::link_file(source_root, source_path, &dest_root).await?;
-        } else {
-            fs::link_dir(source_root, source_path, &dest_root).await?;
+            if source_path.is_file() {
+                fs::link_file(source_root, source_path, &dest_root).await?;
+            } else {
+                fs::link_dir(source_root, source_path, &dest_root).await?;
+            }
         }
 
         Ok(())
     }
 
     pub async fn save_hash(&self, hash: &str, hasher: &Hasher) -> Result<(), MoonError> {
-        fs::write_json(
-            &self.hashes_dir.join(format!("{}.json", hash)),
-            &hasher,
-            true,
-        )
-        .await?;
+        if is_writable() {
+            fs::write_json(
+                &self.hashes_dir.join(format!("{}.json", hash)),
+                &hasher,
+                true,
+            )
+            .await?;
+        }
 
         Ok(())
     }
@@ -136,6 +143,7 @@ impl CacheEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::helpers::run_with_env;
     use assert_fs::prelude::*;
     use std::fs;
 
@@ -215,6 +223,64 @@ mod tests {
 
             dir.close().unwrap();
         }
+
+        #[tokio::test]
+        async fn doesnt_delete_if_cache_off() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+
+            dir.child(".moon/cache/hashes/abc123.json")
+                .write_str("{}")
+                .unwrap();
+
+            dir.child(".moon/cache/out/abc123/file.js")
+                .write_str("")
+                .unwrap();
+
+            let hash_file = cache.hashes_dir.join("abc123.json");
+            let out_file = cache.outputs_dir.join("abc123/file.js");
+
+            assert!(hash_file.exists());
+            assert!(out_file.exists());
+
+            run_with_env("off", || cache.delete_hash("abc123"))
+                .await
+                .unwrap();
+
+            assert!(hash_file.exists());
+            assert!(out_file.exists());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn doesnt_delete_if_cache_readonly() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+
+            dir.child(".moon/cache/hashes/abc123.json")
+                .write_str("{}")
+                .unwrap();
+
+            dir.child(".moon/cache/out/abc123/file.js")
+                .write_str("")
+                .unwrap();
+
+            let hash_file = cache.hashes_dir.join("abc123.json");
+            let out_file = cache.outputs_dir.join("abc123/file.js");
+
+            assert!(hash_file.exists());
+            assert!(out_file.exists());
+
+            run_with_env("read", || cache.delete_hash("abc123"))
+                .await
+                .unwrap();
+
+            assert!(hash_file.exists());
+            assert!(out_file.exists());
+
+            dir.close().unwrap();
+        }
     }
 
     mod create_runfile {
@@ -279,18 +345,98 @@ mod tests {
         }
 
         #[tokio::test]
+        async fn loads_cache_if_it_exists_and_cache_is_readonly() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/runs/foo/bar/lastRunState.json")
+                .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
+                .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = run_with_env("read", || cache.cache_run_target_state("foo:bar"))
+                .await
+                .unwrap();
+
+            assert_eq!(
+                item.item,
+                RunTargetState {
+                    exit_code: 123,
+                    target: String::from("foo:bar"),
+                    ..RunTargetState::default()
+                }
+            );
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn doesnt_load_if_it_exists_but_cache_is_off() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/runs/foo/bar/lastRunState.json")
+                .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
+                .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = run_with_env("off", || cache.cache_run_target_state("foo:bar"))
+                .await
+                .unwrap();
+
+            assert_eq!(
+                item.item,
+                RunTargetState {
+                    target: String::from("foo:bar"),
+                    ..RunTargetState::default()
+                }
+            );
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
         async fn saves_to_cache() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
             let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
             item.item.exit_code = 123;
-            item.save().await.unwrap();
+
+            run_with_env("", || item.save()).await.unwrap();
 
             assert_eq!(
                 fs::read_to_string(item.path).unwrap(),
                 r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#
             );
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn doesnt_save_if_cache_off() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
+
+            item.item.exit_code = 123;
+
+            run_with_env("off", || item.save()).await.unwrap();
+
+            assert!(!item.path.exists());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn doesnt_save_if_cache_readonly() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
+
+            item.item.exit_code = 123;
+
+            run_with_env("read", || item.save()).await.unwrap();
+
+            assert!(!item.path.exists());
 
             dir.close().unwrap();
         }
@@ -334,13 +480,56 @@ mod tests {
         }
 
         #[tokio::test]
+        async fn loads_cache_if_it_exists_and_cache_is_readonly() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/workspaceState.json")
+                .write_str(r#"{"lastNodeInstallTime":123}"#)
+                .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = run_with_env("read", || cache.cache_workspace_state())
+                .await
+                .unwrap();
+
+            assert_eq!(
+                item.item,
+                WorkspaceState {
+                    last_node_install_time: 123,
+                    last_version_check_time: 0,
+                }
+            );
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn doesnt_load_if_it_exists_but_cache_is_off() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/workspaceState.json")
+                .write_str(r#"{"lastNodeInstallTime":123}"#)
+                .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = run_with_env("off", || cache.cache_workspace_state())
+                .await
+                .unwrap();
+
+            assert_eq!(item.item, WorkspaceState::default());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
         async fn saves_to_cache() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
             let mut item = cache.cache_workspace_state().await.unwrap();
 
             item.item.last_node_install_time = 123;
-            item.save().await.unwrap();
+
+            run_with_env("", || item.save()).await.unwrap();
 
             assert_eq!(
                 fs::read_to_string(item.path).unwrap(),
@@ -364,6 +553,36 @@ mod tests {
             cache.save_hash("abc123", &hasher).await.unwrap();
 
             assert!(cache.hashes_dir.join("abc123.json").exists());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn doesnt_create_if_cache_off() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let hasher = Hasher::default();
+
+            run_with_env("off", || cache.save_hash("abc123", &hasher))
+                .await
+                .unwrap();
+
+            assert!(!cache.hashes_dir.join("abc123.json").exists());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        async fn doesnt_create_if_cache_readonly() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let hasher = Hasher::default();
+
+            run_with_env("read", || cache.save_hash("abc123", &hasher))
+                .await
+                .unwrap();
+
+            assert!(!cache.hashes_dir.join("abc123.json").exists());
 
             dir.close().unwrap();
         }

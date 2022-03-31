@@ -1123,7 +1123,6 @@ dependencies = [
 name = "moon_terminal"
 version = "0.1.0"
 dependencies = [
- "ansi_term",
  "console",
  "lazy_static",
  "moon_logger",

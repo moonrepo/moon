@@ -198,26 +198,33 @@ command, you'll also need to set the [`type`](#type) to "shell".
 tasks:
   clean:
     command: 'rm'
-    args: ['-rf', 'dist']
+    args: '-rf dist'
     type: 'shell'
 ```
 
 ### `args`
 
-> `string[]`
+> `string | string[]`
 
-The `args` field is a list of arguments to pass on the command line when executing the task.
+The `args` field is a collection of arguments to pass on the command line when executing the task.
+This setting can be defined using a string, or an array of strings. We suggest using arrays when
+dealing with many args, or the args string cannot be parsed easily.
 
 ```yaml title="project.yml" {4,5}
 tasks:
   test:
     command: 'jest'
+    # String
+    args: '--color --maxWorkers 3'
+    # Array
     args:
       - '--color'
+      - '--maxWorkers'
+      - '3'
 ```
 
-For this to work correctly, each argument _must_ be its own list item, including argument values.
-For example:
+However, for the array approach to work correctly, each argument _must_ be its own distinct item,
+including argument values. For example:
 
 ```yaml title="project.yml"
 tasks:
@@ -321,8 +328,7 @@ execution. The following fields can be provided, with merge related fields suppo
 tasks:
   typecheck:
     command: 'tsc'
-    args:
-      - '--noEmit'
+    args: '--noEmit'
     options:
       mergeArgs: 'replace'
       runFromWorkspaceRoot: true

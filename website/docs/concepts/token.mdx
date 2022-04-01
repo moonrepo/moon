@@ -42,9 +42,7 @@ fileGroups:
 tasks:
   lint:
     command: 'eslint'
-    args:
-      - '@dirs(lintable)'
-      - '--color'
+    args: '@dirs(lintable) --color'
     inputs:
       - '@dirs(lintable)'
 
@@ -84,9 +82,7 @@ fileGroups:
 tasks:
   build:
     command: 'webpack'
-    args:
-      - 'build'
-      - '@files(config)'
+    args: 'build @files(config)'
     inputs:
       - '@files(config)'
 
@@ -127,9 +123,7 @@ fileGroups:
 tasks:
   test:
     command: 'jest'
-    args:
-      - '--testMatch'
-      - '@globs(tests)'
+    args: '--testMatch @globs(tests)'
     inputs:
       - '@globs(tests)'
 
@@ -168,9 +162,7 @@ fileGroups:
 tasks:
   format:
     command: 'prettier'
-    args:
-      - '--write'
-      - '@root(sources)'
+    args: '--write @root(sources)'
     inputs:
       - '@root(sources)'
 
@@ -276,9 +268,7 @@ ID of the project that owns the currently running task, as defined in
 tasks:
   build:
     command: 'example'
-    args:
-      - '--project'
-      - '$project'
+    args: '--project $project'
 
 # Resolves to
 tasks:
@@ -321,9 +311,7 @@ Absolute file path to the project root.
 tasks:
   build:
     command: 'example'
-    args:
-      - '--cwd'
-      - '$projectRoot'
+    args: '--cwd $projectRoot'
 
 # Resolves to
 tasks:
@@ -343,8 +331,7 @@ Target that is currently running. Is a combination of project and task IDs.
 tasks:
   build:
     command: 'example'
-    args:
-      - '$target'
+    args: '$target'
 
 # Resolves to
 tasks:
@@ -363,8 +350,7 @@ ID of the task that is currently running.
 tasks:
   build:
     command: 'example'
-    args:
-      - '--task=$task'
+    args: '--task=$task'
 
 # Resolves to
 tasks:

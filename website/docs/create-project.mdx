@@ -103,30 +103,23 @@ tasks:
 tasks:
 	format:
 		command: 'prettier'
-		args:
-			- '--write'
-			- '.'
+		args: '--write .'
 		inputs:
 			- 'src/**/*'
 	lint:
 		command: 'eslint'
-		args:
-			- '--no-error-on-unmatched-pattern'
-			- '.'
+		args: '--no-error-on-unmatched-pattern .'
 		inputs:
 			- 'src/**/*'
 	test:
 		command: 'jest'
-		args:
-			- '--passWithNoTests'
-			- '.'
+		args: '--passWithNoTests .'
 		inputs:
 			- 'src/**/*'
 			- 'tests/**/*'
 	typecheck:
 		command: 'tsc'
-		args:
-			- '--build'
+		args: '--build'
 		inputs:
 			- 'src/**/*'
 			- 'types/**/*'

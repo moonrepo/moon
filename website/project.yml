@@ -1,10 +1,10 @@
 tasks:
   build:
     command: 'docusaurus'
-    args: ['build']
+    args: 'build'
   start:
     command: 'docusaurus'
-    args: ['start']
+    args: 'start'
     options:
       runInCI: false
   typecheck:

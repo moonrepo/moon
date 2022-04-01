@@ -59,26 +59,19 @@ project.
 tasks:
   format:
     command: 'prettier'
-    args:
-      - '--check'
-      - '.'
+    args: '--check .'
 
   lint:
     command: 'eslint'
-    args:
-      - '--no-error-on-unmatched-pattern'
-      - '.'
+    args: '--no-error-on-unmatched-pattern .'
 
   test:
     command: 'jest'
-    args:
-      - '--passWithNoTests'
-      - '.'
+    args: '--passWithNoTests .'
 
   typecheck:
     command: 'tsc'
-    args:
-      - '--build'
+    args: '--build'
 ```
 
 > Relative file paths and globs used within a task are relative from the inherited project's root,

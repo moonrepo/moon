@@ -22,12 +22,12 @@ export default function Label({ className, icon, text, variant }: LabelProps) {
 	return (
 		<span
 			className={cx(
-				'inline-flex items-center px-2 py-1 rounded text-xs font-bold uppercase',
+				'inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase',
 				variant ? variants[variant] : 'bg-gray-100 text-gray-800',
 				className,
 			)}
 		>
-			{icon && <Icon icon={icon} className="mr-2" />}
+			{icon && <Icon icon={icon} className="mr-1" />}
 
 			{text}
 		</span>

@@ -29,18 +29,18 @@ const columnClasses = {
 export default function Features({ header, description, features, columns = 4 }: FeaturesProps) {
 	return (
 		<div className="bg-white">
-			<div className="relative py-12 sm:py-16 lg:py-18">
-				<div className="mx-auto max-w-md px-4 text-center sm:max-w-3xl sm:px-6 lg:max-w-7xl lg:px-8">
+			<div className="relative py-5 sm:py-6 lg:py-7">
+				<div className="mx-auto max-w-md px-2 text-center sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
 					<h2 className="text-base font-semibold uppercase tracking-wider text-indigo-600">
 						{header}
 					</h2>
 
-					<Heading className="mt-2" level={2}>
+					<Heading className="mt-1" level={2}>
 						{description}
 					</Heading>
 
-					<div className="mt-12">
-						<div className={`grid grid-cols-1 gap-8 ${columnClasses[columns]}`}>
+					<div className="mt-5">
+						<div className={cx('grid grid-cols-1 gap-4', columnClasses[columns])}>
 							{features.map((feature, index) => {
 								const isFutureRelease =
 									feature.status === 'coming-soon' || feature.status === 'in-development';
@@ -61,16 +61,19 @@ export default function Features({ header, description, features, columns = 4 }:
 
 								return (
 									<div key={feature.title} className={cx('pt-6', isFutureRelease && 'opacity-80')}>
-										<div className="flow-root rounded-lg bg-gray-50 px-6 pb-8">
-											<div className="-mt-6">
+										<div className="flow-root rounded-lg bg-gray-50 px-3 pb-3">
+											<div className="-mt-3">
 												<div>
 													<Icon
 														icon={feature.icon}
-														className={`inline-flex items-center justify-center text-5xl ${iconColor}`}
+														className={cx(
+															'inline-flex items-center justify-center text-5xl',
+															iconColor,
+														)}
 													/>
 												</div>
 
-												<Heading className="mt-4" level={4}>
+												<Heading className="mt-2" level={4}>
 													{feature.title}
 												</Heading>
 
@@ -80,7 +83,7 @@ export default function Features({ header, description, features, columns = 4 }:
 													</p>
 												)}
 
-												<Text className="mt-4" variant="muted">
+												<Text className="mt-2" variant="muted">
 													{feature.description}
 												</Text>
 											</div>

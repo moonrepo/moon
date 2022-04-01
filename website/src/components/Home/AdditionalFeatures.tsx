@@ -10,34 +10,36 @@ export type AdditionalFeaturesProps = Omit<FeaturesProps, 'columns' | 'descripti
 export default function AdditionalFeatures({ header, features }: AdditionalFeaturesProps) {
 	return (
 		<div className="bg-white">
-			<div className="max-w-7xl mx-auto py-16 px-6 sm:px-8 lg:py-20 lg:px-10">
-				<div className="max-w-3xl mx-auto text-center">
-					<Heading level={3}>{header}</Heading>
+			<div className="relative py-5 sm:py-6 lg:py-7">
+				<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
+					<div className="text-center">
+						<Heading level={3}>{header}</Heading>
+					</div>
+
+					<dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4 lg:gap-8">
+						{features.map((feature) => (
+							<div key={feature.title} className="relative">
+								<dt>
+									<Icon icon={feature.icon} className="absolute h-3 w-3 text-indigo-500" />
+
+									<Heading className="ml-4" level={5}>
+										{feature.title}
+									</Heading>
+								</dt>
+
+								<Text as="dd" className="mt-1 ml-4" variant="muted">
+									{feature.status && (
+										<p className="mb-1">
+											<FeatureStatus status={feature.status} />
+										</p>
+									)}
+
+									{feature.description}
+								</Text>
+							</div>
+						))}
+					</dl>
 				</div>
-
-				<dl className="mt-12 space-y-10 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-4 lg:gap-x-8">
-					{features.map((feature) => (
-						<div key={feature.title} className="relative">
-							<dt>
-								<Icon icon={feature.icon} className="absolute h-6 w-6 text-indigo-500" />
-
-								<Heading className="ml-9" level={5}>
-									{feature.title}
-								</Heading>
-							</dt>
-
-							<Text as="dd" className="mt-2 ml-9" variant="muted">
-								{feature.status && (
-									<p className="mb-2">
-										<FeatureStatus status={feature.status} />
-									</p>
-								)}
-
-								{feature.description}
-							</Text>
-						</div>
-					))}
-				</dl>
 			</div>
 		</div>
 	);

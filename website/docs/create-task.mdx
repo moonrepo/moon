@@ -1,0 +1,96 @@
+---
+title: Create a task
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+
+<HeaderLabel text="10 min" />
+
+The primary feature of Moon is a build system, and for it to operate in any capacity, it requires
+tasks to run. In Moon, a task is an npm or system binary that is ran as a child process within the
+context of a project (is the current working directory). Tasks are defined in a project's
+[`project.yml`](./config/project), or inherited by all projects with
+[`.moon/project.yml`](./config/global-project).
+
+## Configuring a task
+
+Most, if not all projects, utilize the same core tasks: linting, testing, code formatting, and
+type-checking. Because these are so universal, let's implement the type-checking task in
+[`.moon/project.yml`](./config/global-project), which will be inherited by all projects.
+
+Begin by adding a `typecheck` field to the [`tasks`](./config/project#tasks) setting. This task will
+use [TypeScript](https://www.typescriptlang.org/) and run `tsc` under the hood, since we defined the
+[`command`](./config/project#command) setting.
+
+```yaml title=".moon/project.yml" {2,3}
+tasks:
+	typecheck:
+		command: 'tsc'
+```
+
+By itself, this isn't doing much. So let's add some arguments with the
+[`args`](./config/project#args) setting. We encourage everyone to use
+[TypeScript project references](https://www.typescriptlang.org/docs/handbook/project-references.html)
+for project boundaries and strict encapsulation, and as such, we'll use it below.
+
+```yaml title=".moon/project.yml" {4}
+tasks:
+	typecheck:
+		command: 'tsc'
+		args: '--build --verbose'
+```
+
+With this, the task can be ran from the command line with
+[`moon run <project>:typecheck`](./commands/run)! This is tasks in its most simplest form, but
+continue reading on how to take full advantage of our build system.
+
+### Inputs
+
+Our task above works, but isn't very effective as it _always_ runs, regardless of what has changed
+since the last time it has ran. This problem is exacerbated in continuous integration environments.
+
+To mitigate this problem, Moon provides a system known as inputs, which are file paths and globs
+that are used by the task when it's ran. Moon will use and compare these inputs to determine whether
+to run, or to return the previous run from the cache.
+
+If you're a bit confused, let's demonstrate this by expanding the task with the
+[`inputs`](./config/project#inputs) field. Since this is TypeScript, we expect a `tsconfig.json` to
+exist in the project, and probably in the workspace root too.
+
+```yaml title=".moon/project.yml" {5-11}
+tasks:
+	typecheck:
+		command: 'tsc'
+		args: '--build --verbose'
+		inputs:
+			- 'src/**/*'
+			- 'tests/**/*'
+			- 'types/**/*'
+			- 'tsconfig.json'
+			- '/tsconfig.*.json'
+			- '/tsconfig.json'
+```
+
+This list of inputs may look complicated, but they are merely run checks. For example, when Moon
+detects a change in...
+
+- Any files within the `src`, `tests`, and `types` folders, relative from the project's root.
+- A `tsconfig.json` in the project's root.
+- A `tsconfig.json` or any `tsconfig.*.json` in the workspace root (denoted by the leading `/`).
+
+...the task will be ran! If the change occurs _outside_ of the project or the list of inputs, the
+task will _not_ be ran.
+
+> Inputs are a powerful feature that can be fine-tuned to your project's need. Be as granular or
+> open as you want, the choice is yours!
+
+### Outputs
+
+## Next steps
+
+- [Configure `.moon/project.yml` further](./config/global-project)
+- [Configure `project.yml` further](./config/project)
+- [Learn about tasks](./concepts/task)
+- [Learn about tokens](./concepts/token)

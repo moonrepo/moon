@@ -276,8 +276,8 @@ tasks:
 > `string[]`
 
 The `inputs` field is a list of file paths/globs that are used to calculate whether to execute this
-task based on files that have been touched since the last time the task has been ran. If no touched
-files align with the inputs, the task will complete instantly.
+task based on files that have been touched since the last time the task has been ran. If _not_
+defined, then all files within a project are considered an input.
 
 By default inputs are relative from the _project root_, and can reference
 [file groups](#filegroups). To reference files from the workspace root (for example, config files),

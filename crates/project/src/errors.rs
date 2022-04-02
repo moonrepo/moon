@@ -61,6 +61,9 @@ pub enum TargetError {
         "Invalid target <target>{0}</target>, must be in the format of \"project_id:task_id\"."
     )]
     InvalidFormat(String),
+
+    #[error("Target <target>:</target> encountered. Wildcard project and task not supported.")]
+    TooWild,
 }
 
 #[derive(Error, Debug)]

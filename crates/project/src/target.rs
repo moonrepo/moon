@@ -53,6 +53,10 @@ impl Target {
     }
 
     pub fn parse(target: &str) -> Result<Target, ProjectError> {
+        if target == ":" {
+            return Err(ProjectError::Target(TargetError::TooWild));
+        }
+
         let matches = match TARGET_PATTERN.captures(target) {
             Some(result) => result,
             None => {
@@ -192,5 +196,11 @@ mod tests {
                 task: TargetTask::All,
             }
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "Target(TooWild)")]
+    fn parse_too_wild() {
+        Target::parse(":").unwrap();
     }
 }

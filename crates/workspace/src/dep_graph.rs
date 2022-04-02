@@ -536,7 +536,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Project(InvalidTargetFormat(\"invalid-target\"))")]
+        #[should_panic(expected = "Project(Target(InvalidFormat(\"invalid-target\")))")]
         fn errors_for_invalid_target() {
             let projects = create_project_graph();
 

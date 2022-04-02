@@ -3,6 +3,7 @@ use moon_config::{ProjectID, TargetID, TaskID};
 use moon_utils::regex::TARGET_PATTERN;
 use std::fmt;
 
+#[derive(Debug, PartialEq)]
 pub enum TargetProject {
     All,           // :task
     Deps,          // ^:task
@@ -21,6 +22,7 @@ impl fmt::Display for TargetProject {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum TargetTask {
     All,        // project:
     Id(TaskID), // project:id
@@ -35,9 +37,10 @@ impl fmt::Display for TargetTask {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Target {
-    project: TargetProject,
-    task: TargetTask,
+    pub project: TargetProject,
+    pub task: TargetTask,
 }
 
 impl Target {
@@ -61,6 +64,7 @@ impl Target {
 
         let project = match matches.name("project") {
             Some(value) => match value.as_str() {
+                "" => TargetProject::All,
                 "^" => TargetProject::Deps,
                 "~" => TargetProject::Own,
                 id => TargetProject::Id(id.to_owned()),
@@ -69,22 +73,39 @@ impl Target {
         };
 
         let task = match matches.name("task") {
-            Some(id) => TargetTask::Id(id.as_str().to_owned()),
+            Some(value) => match value.as_str() {
+                "" => TargetTask::All,
+                id => TargetTask::Id(id.to_owned()),
+            },
             None => TargetTask::All,
         };
 
         Ok(Target { project, task })
     }
 
-    // pub fn parse(target: &str) -> Result<(ProjectID, TaskID), ProjectError> {
-    //     let split: Vec<&str> = target.split(':').collect();
+    pub fn parse_ids(target: &str) -> Result<(ProjectID, TaskID), ProjectError> {
+        let result = Target::parse(target)?;
 
-    //     if split.len() != 2 {
-    //         return Err(ProjectError::InvalidTargetFormat(String::from(target)));
-    //     }
+        let project_id = match result.project {
+            TargetProject::Id(id) => id,
+            _ => {
+                return Err(ProjectError::Target(TargetError::IdOnly(String::from(
+                    target,
+                ))))
+            }
+        };
 
-    //     Ok((String::from(split[0]), String::from(split[1])))
-    // }
+        let task_id = match result.task {
+            TargetTask::Id(id) => id,
+            _ => {
+                return Err(ProjectError::Target(TargetError::IdOnly(String::from(
+                    target,
+                ))))
+            }
+        };
+
+        Ok((project_id, task_id))
+    }
 }
 
 #[cfg(test)]

@@ -205,7 +205,7 @@ pub async fn run_target(
 
     // Gather the project and task
     let is_primary = primary_target == target;
-    let (project_id, task_id) = Target::parse(target)?;
+    let (project_id, task_id) = Target::parse_ids(target)?;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
 

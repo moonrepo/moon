@@ -159,7 +159,7 @@ impl DepGraph {
             color::target(target),
         );
 
-        let (project_id, task_id) = Target::parse(target)?;
+        let (project_id, task_id) = Target::parse_ids(target)?;
         let project = projects.load(&project_id)?;
 
         // We should sync projects *before* running targets
@@ -210,7 +210,7 @@ impl DepGraph {
             color::target(target),
         );
 
-        let (project_id, task_id) = Target::parse(target)?;
+        let (project_id, task_id) = Target::parse_ids(target)?;
         let project = projects.load(&project_id)?;
         let dependents = projects.get_dependents_of(&project)?;
 
@@ -241,7 +241,7 @@ impl DepGraph {
         }
 
         // Validate project first
-        let (project_id, task_id) = Target::parse(target)?;
+        let (project_id, task_id) = Target::parse_ids(target)?;
         let project = projects.load(&project_id)?;
 
         if !globally_affected && !project.is_affected(touched_files) {

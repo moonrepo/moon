@@ -53,6 +53,11 @@ pub enum ProjectError {
 #[derive(Error, Debug)]
 pub enum TargetError {
     #[error(
+        "Target <target>{0}</target> requires literal project and task identifiers, found a scope."
+    )]
+    IdOnly(String),
+
+    #[error(
         "Invalid target <target>{0}</target>, must be in the format of \"project_id:task_id\"."
     )]
     InvalidFormat(String),

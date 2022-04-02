@@ -22,5 +22,5 @@ const levels: Record<HeadingLevel, string> = {
 export default function Heading({ as, children, className, level }: HeadingProps) {
 	const Tag = (as ?? `h${level}`) as 'h1';
 
-	return <Tag className={cx(levels[level], className)}>{children}</Tag>;
+	return <Tag className={cx('m-0', levels[level], className)}>{children}</Tag>;
 }

@@ -10,13 +10,13 @@ export type AdditionalFeaturesProps = Omit<FeaturesProps, 'columns' | 'descripti
 export default function AdditionalFeatures({ header, features }: AdditionalFeaturesProps) {
 	return (
 		<div className="bg-white">
-			<div className="relative py-5 sm:py-6 lg:py-7">
+			<div className="relative py-4 sm:py-5 lg:py-6">
 				<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
 					<div className="text-center">
 						<Heading level={3}>{header}</Heading>
 					</div>
 
-					<dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4 lg:gap-8">
+					<dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">
 						{features.map((feature) => (
 							<div key={feature.title} className="relative">
 								<dt>

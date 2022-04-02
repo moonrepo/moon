@@ -29,9 +29,9 @@ const columnClasses = {
 export default function Features({ header, description, features, columns = 4 }: FeaturesProps) {
 	return (
 		<div className="bg-white">
-			<div className="relative py-5 sm:py-6 lg:py-7">
+			<div className="relative py-4 sm:py-5 lg:py-6">
 				<div className="mx-auto max-w-md px-2 text-center sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
-					<h2 className="text-base font-semibold uppercase tracking-wider text-indigo-600">
+					<h2 className="m-0 text-base font-semibold uppercase tracking-wider text-indigo-600">
 						{header}
 					</h2>
 
@@ -39,7 +39,7 @@ export default function Features({ header, description, features, columns = 4 }:
 						{description}
 					</Heading>
 
-					<div className="mt-5">
+					<div className="mt-4">
 						<div className={cx('grid grid-cols-1 gap-4', columnClasses[columns])}>
 							{features.map((feature, index) => {
 								const isFutureRelease =
@@ -61,7 +61,7 @@ export default function Features({ header, description, features, columns = 4 }:
 
 								return (
 									<div key={feature.title} className={cx('pt-6', isFutureRelease && 'opacity-80')}>
-										<div className="flow-root rounded-lg bg-gray-50 px-3 pb-3">
+										<div className="flow-root rounded-lg bg-gray-50 px-2 pb-3">
 											<div className="-mt-3">
 												<div>
 													<Icon

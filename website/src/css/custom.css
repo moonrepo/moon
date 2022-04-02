@@ -1,8 +1,106 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Overwrite Docusaurus styles with our custom Tailwind styles.
  */
+
+html:root {
+	--ifm-toc-border-color: transparent;
+
+	/* Code blocks */
+	--ifm-code-font-size: 95%;
+	--ifm-code-padding-vertical: var(--moon-padding-0_25);
+	--ifm-code-padding-horizontal: var(--moon-padding-0_5);
+
+	/* Sidebar */
+	--doc-sidebar-width: 350px;
+	--ifm-menu-link-padding-vertical: var(--moon-padding-1);
+	--ifm-menu-link-padding-horizontal: var(--moon-padding-1_5);
+
+	/* Toc */
+	--ifm-toc-padding-vertical: var(--moon-padding-1);
+	--ifm-toc-padding-horizontal: var(--moon-padding-1);
+
+	/* Markdown*/
+	--ifm-list-item-margin: var(--moon-margin-1);
+}
+
+html[data-theme='dark'] {
+	--ifm-color-primary-lightest: var(--moon-color-indigo-100);
+	--ifm-color-primary-lighter: var(--moon-color-indigo-200);
+	--ifm-color-primary-light: var(--moon-color-indigo-300);
+	--ifm-color-primary: var(--moon-color-indigo-400);
+	--ifm-color-primary-dark: var(--moon-color-indigo-500);
+	--ifm-color-primary-darker: var(--moon-color-indigo-600);
+	--ifm-color-primary-darkest: var(--moon-color-indigo-700);
+
+	/* Backgrounds */
+	--ifm-background-color: var(--moon-color-gray-900);
+	--ifm-code-background: var(--moon-color-gray-800);
+
+	/* Hover styles for boxes? */
+	--ifm-color-emphasis-200: var(--moon-color-gray-700);
+
+	/* Navbar */
+	--ifm-navbar-background-color: var(--moon-color-gray-800);
+	--ifm-navbar-link-color: var(--moon-color-indigo-50);
+	--ifm-navbar-link-hover-color: var(--moon-color-indigo-400);
+
+	/* Sidebar */
+	--ifm-menu-color-background-active: var(--moon-color-gray-800);
+	--ifm-menu-color: var(--moon-color-indigo-50);
+	--ifm-menu-color-active: var(--moon-color-indigo-400);
+
+	/* Toc */
+	--ifm-toc-link-color: var(--moon-color-indigo-50);
+
+	/* Markdown */
+	--ifm-link-hover-color: var(--moon-color-pink-400);
+}
+
+/**
+ * Because of Tailwind preflight, many Docusaurus styles need to be "fixed".
+ */
+
+.navbar__item {
+	display: inline-flex;
+	flex-wrap: nowrap;
+	align-items: center;
+}
+
+.menu__list-item:not(:first-child) {
+	margin-top: var(--moon-padding-1);
+}
+
+@media (min-width: 997px) {
+	html .menu {
+		padding: var(--moon-padding-1_5);
+	}
+}
+
+/*
+.markdown a {
+	color: var(--ifm-link-color);
+	text-decoration: none;
+}
+
+.markdown a:hover {
+	color: var(--ifm-link-hover-color);
+}
+
+.markdown p {
+	margin: 0 0 var(--moon-margin-3);
+	line-height: 1.85;
+}
+
+.markdown ol,
+.markdown ul {
+	margin: 0 0 var(--moon-margin-3);
+	padding: 0 0 0 var(--moon-padding-5);
+}
+
+.markdown ul {
+	list-style-type: disc;
+}
+*/
 
 /* https://coolors.co/palette/012a4a-013a63-01497c-014f86-2a6f97-2c7da0-468faf-61a5c2-89c2d9-a9d6e5 */
 :root {
@@ -13,18 +111,6 @@
 	--ifm-color-primary-light: #468faf;
 	--ifm-color-primary-lighter: #61a5c2;
 	--ifm-color-primary-lightest: #89c2d9;
-	--ifm-code-font-size: 95%;
-}
-
-/* https://coolors.co/palette/03045e-023e8a-0077b6-0096c7-00b4d8-48cae4-90e0ef-a6e6f2-b8ebf5-c6eff7 */
-[data-theme='dark'] {
-	--ifm-color-primary: #00b4d8;
-	--ifm-color-primary-dark: #0096c7;
-	--ifm-color-primary-darker: #0077b6;
-	--ifm-color-primary-darkest: #023e8a;
-	--ifm-color-primary-light: #48cae4;
-	--ifm-color-primary-lighter: #90e0ef;
-	--ifm-color-primary-lightest: #a6e6f2;
 }
 
 .docusaurus-highlight-code-line {

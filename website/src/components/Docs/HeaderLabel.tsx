@@ -1,6 +1,6 @@
 import React from 'react';
 import { faClock } from '@fortawesome/pro-regular-svg-icons';
-import Label, { LabelProps } from '../Label';
+import Label, { LabelProps } from '../../ui/typography/Label';
 
 export type HeaderLabelProps = Pick<LabelProps, 'text'>;
 

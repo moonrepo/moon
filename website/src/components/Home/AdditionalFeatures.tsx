@@ -1,7 +1,7 @@
 import React from 'react';
-import Heading from '../Heading';
-import Icon from '../Icon';
-import Text from '../Text';
+import Heading from '../../ui/typography/Heading';
+import Icon from '../../ui/typography/Icon';
+import Text from '../../ui/typography/Text';
 import { FeaturesProps } from './Features';
 import FeatureStatus from './FeatureStatus';
 
@@ -12,9 +12,9 @@ export default function AdditionalFeatures({ header, features }: AdditionalFeatu
 		<div className="bg-white">
 			<div className="relative py-4 sm:py-5 lg:py-6">
 				<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
-					<div className="text-center">
-						<Heading level={3}>{header}</Heading>
-					</div>
+					<Heading align="center" level={3}>
+						{header}
+					</Heading>
 
 					<dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">
 						{features.map((feature) => (

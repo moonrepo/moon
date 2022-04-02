@@ -1,5 +1,5 @@
 import React from 'react';
-import Label from '../Label';
+import Label from '../../ui/typography/Label';
 
 export type StatusType = 'coming-soon' | 'experimental' | 'in-development' | 'stable';
 

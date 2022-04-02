@@ -10,7 +10,7 @@ import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 
 The primary feature of Moon is a build system, and for it to operate in any capacity, it requires
 tasks to run. In Moon, a task is an npm or system binary that is ran as a child process within the
-context of a project (is the current working directory). Tasks are defined in a project's
+context of a project (is the current working directory). Tasks are defined per project with
 [`project.yml`](./config/project), or inherited by all projects with
 [`.moon/project.yml`](./config/global-project).
 
@@ -118,6 +118,49 @@ tasks:
 ```
 
 ## Using file groups
+
+Once you're familiar with configuring tasks, you may notice certain inputs being repeated
+constantly, like source files, test files, and configuration. To reduce the amount of boilerplate
+required, Moon provides a feature known as file groups, which enables grouping of similar file types
+within a project using file glob patterns or literal file paths.
+
+File groups are defined with the [`fileGroups`](./config/project#filegroups) setting, which maps a
+list of file paths/globs to a group, like so.
+
+```yaml title=".moon/project.yml"
+fileGroups:
+	configs:
+		- '*.config.js'
+		- 'tsconfig.json'
+		- '/tsconfig.*.json'
+		- '/tsconfig.json'
+	sources:
+		- 'src/**/*'
+		- 'types/**/*'
+	tests:
+		- 'tests/**/*'
+```
+
+We can then replace the inputs in our task above with these new file groups using a syntax known as
+[tokens](./concepts/token), specifically the [`@globs`](./concepts/token#globs) and
+[`@files`](./concepts/token#files) token functions. Tokens are an advanced feature, so please refer
+to their documentation for more information!
+
+```yaml title=".moon/project.yml" {6-8}
+tasks:
+	typecheck:
+		command: 'tsc'
+		args: '--build --verbose'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- '@files(configs)'
+		outputs:
+			- 'dts'
+```
+
+With file groups (and tokens), you're able to reduce the amount of configuration required _and_
+encourage certain file structures for consuming projects!
 
 ## Next steps
 

@@ -20,6 +20,7 @@ html:root {
 	--ifm-toc-padding-horizontal: var(--moon-padding-1);
 
 	/* Markdown*/
+	--ifm-leading-desktop: 1.5;
 	--ifm-list-item-margin: var(--moon-margin-1);
 }
 
@@ -60,10 +61,8 @@ html[data-theme='dark'] {
  * Because of Tailwind preflight, many Docusaurus styles need to be "fixed".
  */
 
-.navbar__item {
-	display: inline-flex;
-	flex-wrap: nowrap;
-	align-items: center;
+a:hover {
+	text-decoration: none;
 }
 
 .menu__list-item:not(:first-child) {

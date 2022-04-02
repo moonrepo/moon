@@ -17,11 +17,6 @@ pub enum ProjectError {
     #[error("Failed to parse and open <file>{0}/package.json</file>: {1}")]
     InvalidPackageJson(String, String),
 
-    #[error(
-        "Invalid target <target>{0}</target>, must be in the format of \"project_id:task_id\"."
-    )]
-    InvalidTargetFormat(String),
-
     #[error("Failed to parse and open <file>{0}/{1}</file>: {2}")]
     InvalidTsConfigJson(String, String, String),
 
@@ -49,7 +44,18 @@ pub enum ProjectError {
     GlobSet(#[from] globset::Error),
 
     #[error(transparent)]
+    Target(#[from] TargetError),
+
+    #[error(transparent)]
     Token(#[from] TokenError),
+}
+
+#[derive(Error, Debug)]
+pub enum TargetError {
+    #[error(
+        "Invalid target <target>{0}</target>, must be in the format of \"project_id:task_id\"."
+    )]
+    InvalidFormat(String),
 }
 
 #[derive(Error, Debug)]

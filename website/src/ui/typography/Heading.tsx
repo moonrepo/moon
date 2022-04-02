@@ -23,7 +23,7 @@ const levels: Record<HeadingLevel, string> = {
 };
 
 export default function Heading({
-	align = 'start',
+	align,
 	as,
 	children,
 	className = '',
@@ -38,7 +38,7 @@ export default function Heading({
 		<Tag
 			className={cx(
 				'm-0',
-				alignment[align],
+				align && alignment[align],
 				levels[level],
 				overflows[overflow],
 				transform && transforms[transform],

@@ -1,10 +1,10 @@
 import React from 'react';
-import cx from 'clsx';
-import Link from '@docusaurus/Link';
 import { useHomePageRoute, useSidebarBreadcrumbs } from '@docusaurus/theme-common';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { faAngleRight, faHouseBlank } from '@fortawesome/pro-regular-svg-icons';
-import Icon from '@site/src/ui/typography/Icon';
+import Icon from '../ui/typography/Icon';
+import Link from '../ui/typography/Link';
+import Text from '../ui/typography/Text';
 
 interface BreadcrumbsItemLinkProps {
 	active: boolean;
@@ -13,21 +13,28 @@ interface BreadcrumbsItemLinkProps {
 }
 
 function BreadcrumbsItemLink({ active, children, href }: BreadcrumbsItemLinkProps) {
-	const className = 'ml-2 text-sm font-medium text-gray-500';
-
 	return href ? (
 		<Link
-			className={cx(className, 'hover:text-gray-400')}
+			aria-current={active ? 'page' : undefined}
 			href={href}
 			itemProp="item"
-			aria-current={active ? 'page' : undefined}
+			size="sm"
+			variant="muted"
+			weight="medium"
 		>
 			<span itemProp="name">{children}</span>
 		</Link>
 	) : (
-		<span className={className} itemProp="item name" aria-current={active ? 'page' : undefined}>
+		<Text
+			aria-current={active ? 'page' : undefined}
+			as="span"
+			itemProp="item name"
+			size="sm"
+			variant="muted"
+			weight="medium"
+		>
 			{children}
-		</span>
+		</Text>
 	);
 }
 
@@ -40,7 +47,7 @@ function BreadcrumbsItem({ children, index }: BreadcrumbsItemProps) {
 	return (
 		<li itemScope itemProp="itemListElement" itemType="https://schema.org/ListItem">
 			<div className="flex items-center">
-				<Icon icon={faAngleRight} className="flex-shrink-0 text-gray-600" aria-hidden="true" />
+				<Icon icon={faAngleRight} className="flex-shrink-0 text-gray-600 mr-2" aria-hidden="true" />
 
 				{children}
 
@@ -55,12 +62,10 @@ function HomeBreadcrumbItem() {
 
 	return (
 		<li>
-			<div>
-				<a href={homeHref} className="text-gray-500 hover:text-gray-400">
-					<Icon icon={faHouseBlank} className="flex-shrink-0" aria-hidden="true" />
-					<span className="sr-only">Home</span>
-				</a>
-			</div>
+			<Link href={homeHref} variant="muted">
+				<Icon icon={faHouseBlank} className="flex-shrink-0" aria-hidden="true" />
+				<span className="sr-only">Home</span>
+			</Link>
 		</li>
 	);
 }
@@ -74,10 +79,10 @@ export default function DocBreadcrumbs() {
 	}
 
 	return (
-		<nav className="flex" aria-label="Breadcrumb">
+		<nav className="flex pl-1 mb-2" aria-label="Breadcrumb">
 			<ol
 				role="list"
-				className="list-none p-0 pl-1 m-0 mb-2 flex items-center space-x-2"
+				className="list-none p-0 m-0 flex items-center space-x-2"
 				itemScope
 				itemType="https://schema.org/BreadcrumbList"
 			>

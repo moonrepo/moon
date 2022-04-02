@@ -71,7 +71,7 @@ export const transforms: Record<TypographyTransform, string> = {
 };
 
 export const variants: Record<TypographyVariant, string> = {
-	muted: 'text-gray-600',
+	muted: 'text-gray-500',
 	neutral: '',
 };
 
@@ -84,8 +84,8 @@ export const weights: Record<TypographyWeight, string> = {
 	thin: 'font-thin',
 };
 
-export default function Text({
-	align = 'start',
+export default function Text<T extends TextElement>({
+	align,
 	as: Tag = 'p',
 	children,
 	className = '',
@@ -94,12 +94,12 @@ export default function Text({
 	transform,
 	variant = 'neutral',
 	weight = 'normal',
-}: TextProps) {
+}: React.ComponentProps<T> & TextProps) {
 	return (
 		<Tag
 			className={cx(
 				'm-0',
-				alignment[align],
+				align && alignment[align],
 				overflows[overflow],
 				sizes[size],
 				transform && transforms[transform],

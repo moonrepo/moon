@@ -39,6 +39,7 @@ html[data-theme='dark'] {
 
 	/* Hover styles for boxes? */
 	--ifm-color-emphasis-200: var(--moon-color-gray-700);
+	--ifm-background-surface-color: var(--moon-color-gray-800);
 
 	/* Navbar */
 	--ifm-navbar-background-color: var(--moon-color-gray-800);

@@ -91,15 +91,15 @@ const orchestrationFeatures: Feature[] = [
 		description: 'Generates a dependency graph to increase performance and reduce workloads.',
 	},
 	{
-		title: 'Task runner',
+		title: 'Action runner',
 		icon: faMerge,
 		description:
-			'Executes tasks in parallel and in order using a thread pool and our dependency graph.',
+			'Executes actions in parallel and in order using a thread pool and our dependency graph.',
 	},
 	{
-		title: 'Task distribution',
+		title: 'Action distribution',
 		icon: faDiagramSankey,
-		description: 'Distributes tasks across multiple machines to increase throughput.',
+		description: 'Distributes actions across multiple machines to increase throughput.',
 		status: 'coming-soon',
 	},
 	{

@@ -20,7 +20,7 @@ pub use project_graph::ProjectGraph;
 
 // Tasks & targets
 pub use moon_config::{TargetID, TaskID, TaskType};
-pub use target::Target;
+pub use target::{Target, TargetProject, TargetTask};
 pub use task::{Task, TaskOptions};
 
 // Tokens

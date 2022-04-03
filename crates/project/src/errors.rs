@@ -64,6 +64,9 @@ pub enum TargetError {
 
     #[error("Target <target>:</target> encountered. Wildcard project and task not supported.")]
     TooWild,
+
+    #[error("Target scope <symbol>{0}</symbol> not supported in this context.")]
+    UnsupportedScope(String),
 }
 
 #[derive(Error, Debug)]

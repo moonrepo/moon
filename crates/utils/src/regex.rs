@@ -21,8 +21,8 @@ pub fn matches_id(id: &str) -> bool {
     ID_PATTERN.is_match(id)
 }
 
-pub fn matches_target(target: &str) -> bool {
-    TARGET_PATTERN.is_match(target)
+pub fn matches_target(target_id: &str) -> bool {
+    TARGET_PATTERN.is_match(target_id)
 }
 
 pub fn matches_token_func(token: &str) -> bool {

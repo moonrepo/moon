@@ -1,6 +1,6 @@
 use crate::errors::WorkspaceError;
 use moon_logger::{color, debug, trace};
-use moon_project::{ProjectGraph, Target, TouchedFilePaths};
+use moon_project::{ProjectGraph, Target, TargetProject, TargetTask, TouchedFilePaths};
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
@@ -146,62 +146,52 @@ impl DepGraph {
 
     pub fn run_target(
         &mut self,
-        target: &str,
+        target: &Target,
         projects: &ProjectGraph,
-    ) -> Result<NodeIndex, WorkspaceError> {
-        if self.index_cache.contains_key(target) {
-            return Ok(*self.index_cache.get(target).unwrap());
-        }
+        touched_files: Option<&TouchedFilePaths>,
+    ) -> Result<(), WorkspaceError> {
+        match target.project {
+            // :task
+            TargetProject::All => match target.task {
+                TargetTask::All => {
+                    target.block_task_scope(target.task)?;
+                }
+                // :task
+                TargetTask::Id(task_id) => {
+                    for project_id in projects.ids() {
+                        let project = projects.load(&project_id)?;
 
-        trace!(
-            target: TARGET,
-            "Target {} does not exist in the dependency graph, inserting",
-            color::target(target),
-        );
-
-        let (project_id, task_id) = Target::parse_ids(target)?;
-        let project = projects.load(&project_id)?;
-
-        // We should sync projects *before* running targets
-        let project_node = self.sync_project(&project.id, projects)?;
-        let node = self.graph.add_node(Node::RunTarget(target.to_owned()));
-
-        self.graph.add_edge(node, self.install_node_deps_index, ());
-        self.graph.add_edge(node, project_node, ());
-
-        // Also cache so we don't run the same target multiple times
-        self.index_cache.insert(target.to_owned(), node);
-
-        // And we also need to wait on all dependent nodes
-        let task = project.get_task(&task_id)?;
-
-        if !task.deps.is_empty() {
-            let dep_names: Vec<String> = task
-                .deps
-                .clone()
-                .into_iter()
-                .map(|d| color::symbol(&d))
-                .collect();
-
-            trace!(
-                target: TARGET,
-                "Adding dependencies {} from target {}",
-                dep_names.join(", "),
-                color::target(target),
-            );
-
-            for dep_target in &task.deps {
-                let dep_node = self.run_target(dep_target, projects)?;
-                self.graph.add_edge(node, dep_node, ());
+                        if project.tasks.contains_key(&task_id) {
+                            self.do_run_target(&project_id, &task_id, projects, touched_files)?;
+                        }
+                    }
+                }
+            },
+            // project:
+            // project:task
+            TargetProject::Id(project_id) => match target.task {
+                // project:
+                TargetTask::All => {
+                    for task_id in projects.load(&project_id)?.tasks.keys() {
+                        self.do_run_target(&project_id, task_id, projects, touched_files)?;
+                    }
+                }
+                // project:task
+                TargetTask::Id(task_id) => {
+                    self.do_run_target(&project_id, &task_id, projects, touched_files)?;
+                }
+            },
+            _ => {
+                target.block_project_scope(target.project)?;
             }
-        }
+        };
 
-        Ok(node)
+        Ok(())
     }
 
     pub fn run_target_dependents(
         &mut self,
-        target: &str,
+        target: &Target,
         projects: &ProjectGraph,
     ) -> Result<(), WorkspaceError> {
         trace!(
@@ -210,7 +200,7 @@ impl DepGraph {
             color::target(target),
         );
 
-        let (project_id, task_id) = Target::parse_ids(target)?;
+        let (project_id, task_id) = target.ids()?;
         let project = projects.load(&project_id)?;
         let dependents = projects.get_dependents_of(&project)?;
 
@@ -223,52 +213,6 @@ impl DepGraph {
         }
 
         Ok(())
-    }
-
-    pub fn run_target_if_touched(
-        &mut self,
-        target: &str,
-        touched_files: &TouchedFilePaths,
-        projects: &ProjectGraph,
-    ) -> Result<Option<NodeIndex>, WorkspaceError> {
-        let globally_affected = projects.is_globally_affected(touched_files);
-
-        if globally_affected {
-            trace!(
-                target: TARGET,
-                "Moon files touched, marking all targets as affected",
-            );
-        }
-
-        // Validate project first
-        let (project_id, task_id) = Target::parse_ids(target)?;
-        let project = projects.load(&project_id)?;
-
-        if !globally_affected && !project.is_affected(touched_files) {
-            trace!(
-                target: TARGET,
-                "Project {} not affected based on touched files, skipping",
-                color::id(&project_id),
-            );
-
-            return Ok(None);
-        }
-
-        // Validate task exists for project
-        let task = project.get_task(&task_id)?;
-
-        if !globally_affected && !task.is_affected(touched_files)? {
-            trace!(
-                target: TARGET,
-                "Project {} task {} not affected based on touched files, skipping",
-                color::id(&project_id),
-                color::id(&task_id),
-            );
-
-            return Ok(None);
-        }
-
-        Ok(Some(self.run_target(target, projects)?))
     }
 
     pub fn sync_project(
@@ -330,6 +274,102 @@ impl DepGraph {
             .join(" -> ");
 
         Err(WorkspaceError::DepGraphCycleDetected(cycle))
+    }
+
+    fn do_run_target(
+        &mut self,
+        project_id: &str,
+        task_id: &str,
+        projects: &ProjectGraph,
+        touched_files: Option<&TouchedFilePaths>,
+    ) -> Result<Option<NodeIndex>, WorkspaceError> {
+        let target_id = Target::format(project_id, task_id)?;
+
+        if self.index_cache.contains_key(&target_id) {
+            return Ok(Some(*self.index_cache.get(&target_id).unwrap()));
+        }
+
+        let project = projects.load(&project_id)?;
+
+        // Compare against touched files if provided
+        if let Some(touched) = touched_files {
+            let globally_affected = projects.is_globally_affected(touched_files);
+
+            if globally_affected {
+                trace!(
+                    target: TARGET,
+                    "Moon files touched, marking all targets as affected",
+                );
+            }
+
+            // Validate project first
+            if !globally_affected && !project.is_affected(touched) {
+                trace!(
+                    target: TARGET,
+                    "Project {} not affected based on touched files, skipping",
+                    color::id(&project_id),
+                );
+
+                return Ok(None);
+            }
+
+            // Validate task exists for project
+            if !globally_affected && !project.get_task(&task_id)?.is_affected(touched)? {
+                trace!(
+                    target: TARGET,
+                    "Project {} task {} not affected based on touched files, skipping",
+                    color::id(&project_id),
+                    color::id(&task_id),
+                );
+
+                return Ok(None);
+            }
+        }
+
+        trace!(
+            target: TARGET,
+            "Target {} does not exist in the dependency graph, inserting",
+            color::target(&target_id),
+        );
+
+        // We should sync projects *before* running targets
+        let project_node = self.sync_project(&project.id, projects)?;
+        let node = self.graph.add_node(Node::RunTarget(target_id.to_owned()));
+
+        self.graph.add_edge(node, self.install_node_deps_index, ());
+        self.graph.add_edge(node, project_node, ());
+
+        // Also cache so we don't run the same target multiple times
+        self.index_cache.insert(target_id.to_owned(), node);
+
+        // And we also need to wait on all dependent nodes
+        let task = project.get_task(&task_id)?;
+
+        if !task.deps.is_empty() {
+            let dep_names: Vec<String> = task
+                .deps
+                .clone()
+                .into_iter()
+                .map(|d| color::symbol(&d))
+                .collect();
+
+            trace!(
+                target: TARGET,
+                "Adding dependencies {} from target {}",
+                dep_names.join(", "),
+                color::target(&target_id),
+            );
+
+            for dep_target_id in &task.deps {
+                let dep_target = Target::parse(dep_target_id)?;
+
+                if let Some(dep_node) = self.do_run_target(dep_target, projects, touched_files)? {
+                    self.graph.add_edge(node, dep_node, ());
+                }
+            }
+        }
+
+        Ok(Some(node))
     }
 }
 

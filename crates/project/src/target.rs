@@ -39,7 +39,10 @@ impl fmt::Display for TargetTask {
 
 #[derive(Debug, PartialEq)]
 pub struct Target {
+    pub id: String,
+
     pub project: TargetProject,
+
     pub task: TargetTask,
 }
 
@@ -52,16 +55,16 @@ impl Target {
         Ok(format!("{}:{}", project, task))
     }
 
-    pub fn parse(target: &str) -> Result<Target, ProjectError> {
-        if target == ":" {
+    pub fn parse(target_id: &str) -> Result<Target, ProjectError> {
+        if target_id == ":" {
             return Err(ProjectError::Target(TargetError::TooWild));
         }
 
-        let matches = match TARGET_PATTERN.captures(target) {
+        let matches = match TARGET_PATTERN.captures(target_id) {
             Some(result) => result,
             None => {
                 return Err(ProjectError::Target(TargetError::InvalidFormat(
-                    String::from(target),
+                    target_id.to_owned(),
                 )))
             }
         };
@@ -84,31 +87,45 @@ impl Target {
             None => TargetTask::All,
         };
 
-        Ok(Target { project, task })
+        Ok(Target {
+            id: target_id.to_owned(),
+            project,
+            task,
+        })
     }
 
-    pub fn parse_ids(target: &str) -> Result<(ProjectID, TaskID), ProjectError> {
-        let result = Target::parse(target)?;
+    pub fn block_project_scope(&self, scope: TargetProject) -> Result<(), ProjectError> {
+        if matches!(&self.project, scope) {
+            return Err(ProjectError::Target(TargetError::UnsupportedScope(
+                scope.to_string(),
+            )));
+        }
 
-        let project_id = match result.project {
+        Ok(())
+    }
+
+    pub fn block_task_scope(&self, scope: TargetTask) -> Result<(), ProjectError> {
+        if matches!(&self.task, scope) {
+            return Err(ProjectError::Target(TargetError::UnsupportedScope(
+                scope.to_string(),
+            )));
+        }
+
+        Ok(())
+    }
+
+    pub fn ids(&self) -> Result<(ProjectID, TaskID), ProjectError> {
+        let project_id = match &self.project {
             TargetProject::Id(id) => id,
-            _ => {
-                return Err(ProjectError::Target(TargetError::IdOnly(String::from(
-                    target,
-                ))))
-            }
+            _ => return Err(ProjectError::Target(TargetError::IdOnly(self.id.clone()))),
         };
 
-        let task_id = match result.task {
+        let task_id = match &self.task {
             TargetTask::Id(id) => id,
-            _ => {
-                return Err(ProjectError::Target(TargetError::IdOnly(String::from(
-                    target,
-                ))))
-            }
+            _ => return Err(ProjectError::Target(TargetError::IdOnly(self.id.clone()))),
         };
 
-        Ok((project_id, task_id))
+        Ok((project_id.clone(), task_id.clone()))
     }
 }
 
@@ -126,6 +143,7 @@ mod tests {
         assert_eq!(
             Target::parse("foo:build").unwrap(),
             Target {
+                id: String::from("foo:build"),
                 project: TargetProject::Id("foo".to_owned()),
                 task: TargetTask::Id("build".to_owned())
             }
@@ -137,6 +155,7 @@ mod tests {
         assert_eq!(
             Target::parse("^:build").unwrap(),
             Target {
+                id: String::from("^:build"),
                 project: TargetProject::Deps,
                 task: TargetTask::Id("build".to_owned())
             }
@@ -148,6 +167,7 @@ mod tests {
         assert_eq!(
             Target::parse("^:").unwrap(),
             Target {
+                id: String::from("^:"),
                 project: TargetProject::Deps,
                 task: TargetTask::All,
             }
@@ -159,6 +179,7 @@ mod tests {
         assert_eq!(
             Target::parse("~:build").unwrap(),
             Target {
+                id: String::from("~:build"),
                 project: TargetProject::Own,
                 task: TargetTask::Id("build".to_owned())
             }
@@ -170,6 +191,7 @@ mod tests {
         assert_eq!(
             Target::parse("~:").unwrap(),
             Target {
+                id: String::from("~:"),
                 project: TargetProject::Own,
                 task: TargetTask::All,
             }
@@ -181,6 +203,7 @@ mod tests {
         assert_eq!(
             Target::parse(":build").unwrap(),
             Target {
+                id: String::from(":build"),
                 project: TargetProject::All,
                 task: TargetTask::Id("build".to_owned())
             }
@@ -192,6 +215,7 @@ mod tests {
         assert_eq!(
             Target::parse("foo:").unwrap(),
             Target {
+                id: String::from("foo:"),
                 project: TargetProject::Id("foo".to_owned()),
                 task: TargetTask::All,
             }

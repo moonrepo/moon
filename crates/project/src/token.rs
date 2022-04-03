@@ -254,7 +254,7 @@ impl<'a> TokenResolver<'a> {
             color::file(value)
         );
 
-        let (project_id, task_id) = Target::parse_ids(&task.target)?;
+        let (project_id, task_id) = Target::parse(&task.target)?.ids()?;
         let workspace_root = self.data.workspace_root;
         let project_root = self.data.project_root;
 

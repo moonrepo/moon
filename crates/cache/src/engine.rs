@@ -45,16 +45,16 @@ impl CacheEngine {
 
     pub async fn cache_run_target_state(
         &self,
-        target: &str,
+        target_id: &str,
     ) -> Result<CacheItem<RunTargetState>, MoonError> {
-        let path: PathBuf = [&target.replace(':', "/"), "lastRunState.json"]
+        let path: PathBuf = [&target_id.replace(':', "/"), "lastRunState.json"]
             .iter()
             .collect();
 
         Ok(CacheItem::load(
             self.runs_dir.join(path),
             RunTargetState {
-                target: String::from(target),
+                target: String::from(target_id),
                 ..RunTargetState::default()
             },
         )

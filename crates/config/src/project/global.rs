@@ -1,4 +1,5 @@
 // .moon/project.yml
+#![allow(rustdoc::bare_urls)]
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};

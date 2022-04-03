@@ -1,4 +1,5 @@
 // <project path>/project.yml
+#![allow(rustdoc::bare_urls)]
 
 pub mod global;
 pub mod task;

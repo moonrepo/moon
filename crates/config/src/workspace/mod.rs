@@ -1,4 +1,5 @@
 // .moon/workspace.yml
+#![allow(rustdoc::bare_urls)]
 
 mod node;
 mod typescript;

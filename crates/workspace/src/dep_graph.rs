@@ -465,9 +465,15 @@ mod tests {
         let projects = create_tasks_project_graph();
 
         let mut graph = DepGraph::default();
-        graph.run_target("cycle:a", &projects).unwrap();
-        graph.run_target("cycle:b", &projects).unwrap();
-        graph.run_target("cycle:c", &projects).unwrap();
+        graph
+            .run_target(&Target::new("cycle", "a").unwrap(), &projects, None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("cycle", "b").unwrap(), &projects, None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("cycle", "c").unwrap(), &projects, None)
+            .unwrap();
 
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
@@ -483,8 +489,12 @@ mod tests {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("tasks:test", &projects).unwrap();
-            graph.run_target("tasks:lint", &projects).unwrap();
+            graph
+                .run_target(&Target::new("tasks", "test").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -513,9 +523,15 @@ mod tests {
             let projects = create_tasks_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("basic:test", &projects).unwrap();
-            graph.run_target("basic:lint", &projects).unwrap();
-            graph.run_target("chain:a", &projects).unwrap();
+            graph
+                .run_target(&Target::new("basic", "test").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("basic", "lint").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("chain", "a").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -556,9 +572,15 @@ mod tests {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("tasks:lint", &projects).unwrap();
-            graph.run_target("tasks:lint", &projects).unwrap();
-            graph.run_target("tasks:lint", &projects).unwrap();
+            graph
+                .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -582,23 +604,14 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Project(Target(InvalidFormat(\"invalid-target\")))")]
-        fn errors_for_invalid_target() {
-            let projects = create_project_graph();
-
-            let mut graph = DepGraph::default();
-            graph.run_target("invalid-target", &projects).unwrap();
-
-            assert_snapshot!(graph.to_dot());
-        }
-
-        #[test]
         #[should_panic(expected = "Project(UnconfiguredID(\"unknown\"))")]
         fn errors_for_unknown_project() {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("unknown:test", &projects).unwrap();
+            graph
+                .run_target(&Target::new("unknown", "test").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -609,7 +622,9 @@ mod tests {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("tasks:build", &projects).unwrap();
+            graph
+                .run_target(&Target::new("tasks", "build").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -628,10 +643,18 @@ mod tests {
 
             let mut graph = DepGraph::default();
             graph
-                .run_target_if_touched("inputA:a", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputA", "a").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
             graph
-                .run_target_if_touched("inputB:b", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputB", "b").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
 
             assert_snapshot!(graph.to_dot());
@@ -648,13 +671,25 @@ mod tests {
 
             let mut graph = DepGraph::default();
             graph
-                .run_target_if_touched("inputA:a", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputA", "a").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
             graph
-                .run_target_if_touched("inputB:b2", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputB", "b2").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
             graph
-                .run_target_if_touched("inputC:c", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputC", "c").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
 
             assert_snapshot!(graph.to_dot());

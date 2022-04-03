@@ -38,7 +38,7 @@ impl fmt::Display for TargetProject {
 //     }
 // }
 
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Target {
     pub id: String,
 
@@ -129,6 +129,12 @@ impl Target {
         // };
 
         Ok((project_id.clone(), self.task_id.clone()))
+    }
+}
+
+impl PartialOrd for Target {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 

@@ -1,4 +1,5 @@
-use crate::errors::ProjectError;
+use crate::errors::{ProjectError, TargetError};
+use crate::target::{Target, TargetProject};
 use crate::token::TokenResolver;
 use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
 use globset::{Glob, GlobSet, GlobSetBuilder};
@@ -188,6 +189,43 @@ impl Task {
         }
 
         self.args = args;
+
+        Ok(())
+    }
+
+    /// Expand the deps list and resolve parent/self scopes.
+    pub fn expand_deps(
+        &mut self,
+        owner_id: &str,
+        depends_on: &[String],
+    ) -> Result<(), ProjectError> {
+        let mut deps: Vec<String> = vec![];
+
+        for dep in &self.deps {
+            let target = Target::parse(dep)?;
+
+            match &target.project {
+                // ^:task
+                TargetProject::Deps => {
+                    for project_id in depends_on {
+                        deps.push(Target::format(project_id, &target.task_id)?);
+                    }
+                }
+                // ~:task
+                TargetProject::Own => {
+                    deps.push(Target::format(owner_id, &target.task_id)?);
+                }
+                // project:task
+                TargetProject::Id(_) => {
+                    deps.push(dep.clone());
+                }
+                _ => {
+                    target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
+                }
+            };
+        }
+
+        self.deps = deps;
 
         Ok(())
     }

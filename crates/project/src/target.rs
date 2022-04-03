@@ -22,20 +22,20 @@ impl fmt::Display for TargetProject {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum TargetTask {
-    All,        // project:
-    Id(TaskID), // project:id
-}
+// #[derive(Debug, PartialEq)]
+// pub enum TargetTask {
+//     All,        // project:
+//     Id(TaskID), // project:id
+// }
 
-impl fmt::Display for TargetTask {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TargetTask::All => write!(f, ""),
-            TargetTask::Id(name) => write!(f, "{}", name),
-        }
-    }
-}
+// impl fmt::Display for TargetTask {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             TargetTask::All => write!(f, ""),
+//             TargetTask::Id(name) => write!(f, "{}", name),
+//         }
+//     }
+// }
 
 #[derive(Debug, PartialEq)]
 pub struct Target {
@@ -43,16 +43,14 @@ pub struct Target {
 
     pub project: TargetProject,
 
-    pub task: TargetTask,
+    pub project_id: Option<String>,
+
+    pub task_id: String,
 }
 
 impl Target {
     pub fn format(project_id: &str, task_id: &str) -> Result<TargetID, ProjectError> {
         Ok(format!("{}:{}", project_id, task_id))
-    }
-
-    pub fn format_with(project: TargetProject, task: TargetTask) -> Result<TargetID, ProjectError> {
-        Ok(format!("{}:{}", project, task))
     }
 
     pub fn parse(target_id: &str) -> Result<Target, ProjectError> {
@@ -69,32 +67,40 @@ impl Target {
             }
         };
 
+        let mut project_id = None;
+
         let project = match matches.name("project") {
             Some(value) => match value.as_str() {
                 "" => TargetProject::All,
                 "^" => TargetProject::Deps,
                 "~" => TargetProject::Own,
-                id => TargetProject::Id(id.to_owned()),
+                id => {
+                    project_id = Some(id.to_owned());
+                    TargetProject::Id(id.to_owned())
+                }
             },
             None => TargetProject::All,
         };
 
-        let task = match matches.name("task") {
-            Some(value) => match value.as_str() {
-                "" => TargetTask::All,
-                id => TargetTask::Id(id.to_owned()),
-            },
-            None => TargetTask::All,
-        };
+        let task_id = matches.name("task").unwrap().as_str().to_owned();
+
+        // let task = match matches.name("task") {
+        //     Some(value) => match value.as_str() {
+        //         "" => TargetTask::All,
+        //         id => TargetTask::Id(id.to_owned()),
+        //     },
+        //     None => TargetTask::All,
+        // };
 
         Ok(Target {
             id: target_id.to_owned(),
             project,
-            task,
+            project_id,
+            task_id,
         })
     }
 
-    pub fn block_project_scope(&self, scope: TargetProject) -> Result<(), ProjectError> {
+    pub fn block_project_scope(&self, scope: &TargetProject) -> Result<(), ProjectError> {
         if matches!(&self.project, scope) {
             return Err(ProjectError::Target(TargetError::UnsupportedScope(
                 scope.to_string(),
@@ -104,28 +110,25 @@ impl Target {
         Ok(())
     }
 
-    pub fn block_task_scope(&self, scope: TargetTask) -> Result<(), ProjectError> {
-        if matches!(&self.task, scope) {
-            return Err(ProjectError::Target(TargetError::UnsupportedScope(
-                scope.to_string(),
-            )));
-        }
-
-        Ok(())
+    pub fn fail_with(&self, error: TargetError) -> Result<(), ProjectError> {
+        Err(ProjectError::Target(error))
     }
 
     pub fn ids(&self) -> Result<(ProjectID, TaskID), ProjectError> {
-        let project_id = match &self.project {
-            TargetProject::Id(id) => id,
-            _ => return Err(ProjectError::Target(TargetError::IdOnly(self.id.clone()))),
+        let project_id = match &self.project_id {
+            Some(id) => id,
+            None => match &self.project {
+                TargetProject::Id(id) => id,
+                _ => return Err(ProjectError::Target(TargetError::IdOnly(self.id.clone()))),
+            },
         };
 
-        let task_id = match &self.task {
-            TargetTask::Id(id) => id,
-            _ => return Err(ProjectError::Target(TargetError::IdOnly(self.id.clone()))),
-        };
+        // let task_id = match &self.task {
+        //     TargetTask::Id(id) => id,
+        //     _ => return Err(ProjectError::Target(TargetError::IdOnly(self.id.clone()))),
+        // };
 
-        Ok((project_id.clone(), task_id.clone()))
+        Ok((project_id.clone(), self.task_id.clone()))
     }
 }
 
@@ -145,7 +148,9 @@ mod tests {
             Target {
                 id: String::from("foo:build"),
                 project: TargetProject::Id("foo".to_owned()),
-                task: TargetTask::Id("build".to_owned())
+                project_id: Some("foo".to_owned()),
+                task_id: "build".to_owned(),
+                // task: TargetTask::Id("build".to_owned())
             }
         );
     }
@@ -157,22 +162,24 @@ mod tests {
             Target {
                 id: String::from("^:build"),
                 project: TargetProject::Deps,
-                task: TargetTask::Id("build".to_owned())
+                project_id: None,
+                task_id: "build".to_owned(),
+                // task: TargetTask::Id("build".to_owned())
             }
         );
     }
 
-    #[test]
-    fn parse_deps_project_all_tasks() {
-        assert_eq!(
-            Target::parse("^:").unwrap(),
-            Target {
-                id: String::from("^:"),
-                project: TargetProject::Deps,
-                task: TargetTask::All,
-            }
-        );
-    }
+    // #[test]
+    // fn parse_deps_project_all_tasks() {
+    //     assert_eq!(
+    //         Target::parse("^:").unwrap(),
+    //         Target {
+    //             id: String::from("^:"),
+    //             project: TargetProject::Deps,
+    //             task: TargetTask::All,
+    //         }
+    //     );
+    // }
 
     #[test]
     fn parse_self_project() {
@@ -181,22 +188,24 @@ mod tests {
             Target {
                 id: String::from("~:build"),
                 project: TargetProject::Own,
-                task: TargetTask::Id("build".to_owned())
+                project_id: None,
+                task_id: "build".to_owned(),
+                // task: TargetTask::Id("build".to_owned())
             }
         );
     }
 
-    #[test]
-    fn parse_self_project_all_tasks() {
-        assert_eq!(
-            Target::parse("~:").unwrap(),
-            Target {
-                id: String::from("~:"),
-                project: TargetProject::Own,
-                task: TargetTask::All,
-            }
-        );
-    }
+    // #[test]
+    // fn parse_self_project_all_tasks() {
+    //     assert_eq!(
+    //         Target::parse("~:").unwrap(),
+    //         Target {
+    //             id: String::from("~:"),
+    //             project: TargetProject::Own,
+    //             task: TargetTask::All,
+    //         }
+    //     );
+    // }
 
     #[test]
     fn parse_all_projects() {
@@ -205,22 +214,24 @@ mod tests {
             Target {
                 id: String::from(":build"),
                 project: TargetProject::All,
-                task: TargetTask::Id("build".to_owned())
+                project_id: None,
+                task_id: "build".to_owned(),
+                // task: TargetTask::Id("build".to_owned())
             }
         );
     }
 
-    #[test]
-    fn parse_all_tasks() {
-        assert_eq!(
-            Target::parse("foo:").unwrap(),
-            Target {
-                id: String::from("foo:"),
-                project: TargetProject::Id("foo".to_owned()),
-                task: TargetTask::All,
-            }
-        );
-    }
+    // #[test]
+    // fn parse_all_tasks() {
+    //     assert_eq!(
+    //         Target::parse("foo:").unwrap(),
+    //         Target {
+    //             id: String::from("foo:"),
+    //             project: TargetProject::Id("foo".to_owned()),
+    //             task: TargetTask::All,
+    //         }
+    //     );
+    // }
 
     #[test]
     #[should_panic(expected = "Target(TooWild)")]

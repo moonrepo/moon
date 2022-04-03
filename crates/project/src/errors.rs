@@ -65,8 +65,10 @@ pub enum TargetError {
     #[error("Target <target>:</target> encountered. Wildcard project and task not supported.")]
     TooWild,
 
-    #[error("Target scope <symbol>{0}</symbol> not supported in this context.")]
-    UnsupportedScope(String),
+    #[error(
+        "Scope \"all projects\" is not supported in task deps, for target <target>{0}</target>."
+    )]
+    NoProjectAllInTaskDeps(String),
 }
 
 #[derive(Error, Debug)]

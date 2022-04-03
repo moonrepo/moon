@@ -10,7 +10,7 @@ mod token;
 mod types;
 
 pub use constants::ROOT_NODE_ID;
-pub use errors::ProjectError;
+pub use errors::{ProjectError, TargetError};
 pub use types::*;
 
 // Projects
@@ -20,7 +20,7 @@ pub use project_graph::ProjectGraph;
 
 // Tasks & targets
 pub use moon_config::{TargetID, TaskID, TaskType};
-pub use target::{Target, TargetProject, TargetTask};
+pub use target::{Target, TargetProject};
 pub use task::{Task, TaskOptions};
 
 // Tokens

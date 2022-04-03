@@ -7,7 +7,7 @@ lazy_static! {
 
     pub static ref ID_PATTERN: Regex = Regex::new(&format!("^{}$", *ID_GROUP)).unwrap();
     pub static ref TARGET_PATTERN: Regex = Regex::new(
-        "^(?P<project>(?:[A-Za-z]{1}[0-9A-Za-z_-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z_-]*)?$").unwrap();
+        "^(?P<project>(?:[A-Za-z]{1}[0-9A-Za-z_-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z_-]*)$").unwrap();
 
     // Token function: `@func(arg)`
     static ref TOKEN_GROUP: &'static str = "([0-9A-Za-z_-]+)";

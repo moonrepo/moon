@@ -1,4 +1,5 @@
 // .moon/workspace.yml
+#![allow(rustdoc::bare_urls)]
 
 mod node;
 mod typescript;
@@ -39,7 +40,7 @@ fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), Validat
     Ok(())
 }
 
-/// <https://moonrepo.dev/docs/config/workspace>
+/// https://moonrepo.dev/docs/config/workspace
 #[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]

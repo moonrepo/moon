@@ -1,4 +1,5 @@
 // .moon/project.yml
+#![allow(rustdoc::bare_urls)]
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
@@ -43,7 +44,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
     Ok(())
 }
 
-/// <https://moonrepo.dev/docs/config/global-project>
+/// https://moonrepo.dev/docs/config/global-project
 #[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalProjectConfig {

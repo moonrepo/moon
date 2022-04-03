@@ -1,4 +1,5 @@
 // <project path>/project.yml
+#![allow(rustdoc::bare_urls)]
 
 pub mod global;
 pub mod task;
@@ -101,7 +102,7 @@ pub struct ProjectWorkspaceConfig {
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
 
-/// <https://moonrepo.dev/docs/config/project>
+/// https://moonrepo.dev/docs/config/project
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectConfig {

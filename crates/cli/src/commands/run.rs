@@ -1,7 +1,7 @@
 use clap::ArgEnum;
 use console::Term;
 use moon_logger::color;
-use moon_project::{Target, TargetProject, TouchedFilePaths};
+use moon_project::{Target, TouchedFilePaths};
 use moon_terminal::ExtendedTerm;
 use moon_utils::time;
 use moon_workspace::{Action, ActionRunner, ActionStatus, DepGraph, Workspace, WorkspaceError};
@@ -151,20 +151,15 @@ pub fn render_result_stats(
 
 pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std::error::Error>> {
     let target = Target::parse(target_id)?;
-    target.block_project_scope(TargetProject::Deps)?;
-    target.block_project_scope(TargetProject::Own)?;
+    let workspace = Workspace::load().await?;
 
     // Generate a dependency graph for all the targets that need to be ran
-    let workspace = Workspace::load().await?;
     let mut dep_graph = DepGraph::default();
 
     if options.affected {
         let touched_files = get_touched_files(&workspace, &options.status, options.local).await?;
 
-        if dep_graph
-            .run_target(target, &workspace.projects, Some(&touched_files))?
-            .is_none()
-        {
+        if dep_graph.run_target(&target, &workspace.projects, Some(&touched_files))? == 0 {
             if matches!(options.status, RunStatus::All) {
                 println!("Target {} not affected by touched files", target_id);
             } else {
@@ -178,7 +173,7 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
             return Ok(());
         }
     } else {
-        dep_graph.run_target(target, &workspace.projects, None)?;
+        dep_graph.run_target(&target, &workspace.projects, None)?;
     }
 
     // Process all tasks in the graph

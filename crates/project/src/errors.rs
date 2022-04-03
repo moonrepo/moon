@@ -66,9 +66,15 @@ pub enum TargetError {
     TooWild,
 
     #[error(
-        "Scope \"all projects\" is not supported in task deps, for target <target>{0}</target>."
+        "All projects scope (:) is not supported in task deps, for target <target>{0}</target>."
     )]
     NoProjectAllInTaskDeps(String),
+
+    #[error("Project dependencies scope (^:) is not supported in run contexts.")]
+    NoProjectDepsInRunContext,
+
+    #[error("Project self scope (~:) is not supported in run contexts.")]
+    NoProjectSelfInRunContext,
 }
 
 #[derive(Error, Debug)]

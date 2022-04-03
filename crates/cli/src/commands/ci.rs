@@ -2,7 +2,7 @@ use crate::commands::run::render_result_stats;
 use console::Term;
 use itertools::Itertools;
 use moon_logger::{color, debug};
-use moon_project::{Target, TargetID, TouchedFilePaths};
+use moon_project::{Target, TouchedFilePaths};
 use moon_terminal::helpers::{replace_style_tokens, safe_exit};
 use moon_terminal::output;
 use moon_utils::{fs, is_ci, time};
@@ -11,7 +11,7 @@ use moon_workspace::{ActionRunner, ActionStatus, Workspace, WorkspaceError};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-type TargetList = Vec<TargetID>;
+type TargetList = Vec<Target>;
 
 const TARGET: &str = "moon:ci";
 
@@ -29,7 +29,7 @@ fn print_targets(targets: &TargetList) {
         "{}",
         targets_to_print
             .iter()
-            .map(|t| format!("  {}", color::target(t)))
+            .map(|t| format!("  {}", color::target(&t.id)))
             .join("\n")
     );
 }
@@ -104,7 +104,7 @@ fn gather_runnable_targets(
         }
 
         for (task_id, task) in &project.tasks {
-            let target = Target::format(&project_id, task_id)?;
+            let target = Target::new(&project_id, task_id)?;
 
             if task.should_run_in_ci() {
                 if globally_affected || task.is_affected(touched_files)? {
@@ -114,7 +114,7 @@ fn gather_runnable_targets(
                 debug!(
                     target: TARGET,
                     "Not running target {} because it either has no `outputs` or `runInCi` is false",
-                    color::target(&target),
+                    color::target(&target.id),
                 );
             }
         }
@@ -174,7 +174,7 @@ fn generate_dep_graph(
 
     for target in targets {
         // Run the target and its dependencies
-        dep_graph.run_target(target, &workspace.projects)?;
+        dep_graph.run_target(target, &workspace.projects, None)?;
 
         // And also run its dependents to ensure consumers still work correctly
         dep_graph.run_target_dependents(target, &workspace.projects)?;

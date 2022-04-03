@@ -1,13 +1,14 @@
 use crate::errors::{ProjectError, TargetError};
 use moon_config::{ProjectID, TargetID, TaskID};
 use moon_utils::regex::TARGET_PATTERN;
+use std::cmp::Ordering;
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
 pub enum TargetProject {
     All,           // :task
     Deps,          // ^:task
-    Id(ProjectID), // id:task
+    Id(ProjectID), // project:task
     Own,           // ~:task
 }
 
@@ -37,7 +38,7 @@ impl fmt::Display for TargetProject {
 //     }
 // }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
 pub struct Target {
     pub id: String,
 
@@ -49,6 +50,15 @@ pub struct Target {
 }
 
 impl Target {
+    pub fn new(project_id: &str, task_id: &str) -> Result<Target, ProjectError> {
+        Ok(Target {
+            id: Target::format(project_id, task_id)?,
+            project: TargetProject::Id(project_id.to_owned()),
+            project_id: Some(project_id.to_owned()),
+            task_id: task_id.to_owned(),
+        })
+    }
+
     pub fn format(project_id: &str, task_id: &str) -> Result<TargetID, ProjectError> {
         Ok(format!("{}:{}", project_id, task_id))
     }
@@ -100,16 +110,6 @@ impl Target {
         })
     }
 
-    pub fn block_project_scope(&self, scope: &TargetProject) -> Result<(), ProjectError> {
-        if matches!(&self.project, scope) {
-            return Err(ProjectError::Target(TargetError::UnsupportedScope(
-                scope.to_string(),
-            )));
-        }
-
-        Ok(())
-    }
-
     pub fn fail_with(&self, error: TargetError) -> Result<(), ProjectError> {
         Err(ProjectError::Target(error))
     }
@@ -129,6 +129,12 @@ impl Target {
         // };
 
         Ok((project_id.clone(), self.task_id.clone()))
+    }
+}
+
+impl Ord for Target {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id.cmp(&other.id)
     }
 }
 

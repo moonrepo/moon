@@ -1,6 +1,6 @@
 use crate::errors::WorkspaceError;
 use moon_logger::{color, debug, trace};
-use moon_project::{ProjectGraph, Target, TargetProject, TargetTask, TouchedFilePaths};
+use moon_project::{ProjectGraph, Target, TargetError, TargetProject, TouchedFilePaths};
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
@@ -149,44 +149,45 @@ impl DepGraph {
         target: &Target,
         projects: &ProjectGraph,
         touched_files: Option<&TouchedFilePaths>,
-    ) -> Result<(), WorkspaceError> {
-        match target.project {
-            // :task
-            TargetProject::All => match target.task {
-                TargetTask::All => {
-                    target.block_task_scope(target.task)?;
-                }
-                // :task
-                TargetTask::Id(task_id) => {
-                    for project_id in projects.ids() {
-                        let project = projects.load(&project_id)?;
+    ) -> Result<usize, WorkspaceError> {
+        let task_id = &target.task_id;
+        let mut inserted_count = 0;
 
-                        if project.tasks.contains_key(&task_id) {
-                            self.do_run_target(&project_id, &task_id, projects, touched_files)?;
-                        }
+        match &target.project {
+            // :task
+            TargetProject::All => {
+                for project_id in projects.ids() {
+                    let project = projects.load(&project_id)?;
+
+                    if project.tasks.contains_key(task_id)
+                        && self
+                            .do_run_target(&project_id, task_id, projects, touched_files)?
+                            .is_some()
+                    {
+                        inserted_count += 1;
                     }
                 }
-            },
-            // project:
+            }
+            // ^:task
+            TargetProject::Deps => {
+                target.fail_with(TargetError::NoProjectDepsInRunContext)?;
+            }
             // project:task
-            TargetProject::Id(project_id) => match target.task {
-                // project:
-                TargetTask::All => {
-                    for task_id in projects.load(&project_id)?.tasks.keys() {
-                        self.do_run_target(&project_id, task_id, projects, touched_files)?;
-                    }
+            TargetProject::Id(project_id) => {
+                if self
+                    .do_run_target(project_id, task_id, projects, touched_files)?
+                    .is_some()
+                {
+                    inserted_count += 1;
                 }
-                // project:task
-                TargetTask::Id(task_id) => {
-                    self.do_run_target(&project_id, &task_id, projects, touched_files)?;
-                }
-            },
-            _ => {
-                target.block_project_scope(target.project)?;
+            }
+            // ~:task
+            TargetProject::Own => {
+                target.fail_with(TargetError::NoProjectSelfInRunContext)?;
             }
         };
 
-        Ok(())
+        Ok(inserted_count)
     }
 
     pub fn run_target_dependents(
@@ -197,7 +198,7 @@ impl DepGraph {
         trace!(
             target: TARGET,
             "Adding dependents to run for target {}",
-            color::target(target),
+            color::target(&target.id),
         );
 
         let (project_id, task_id) = target.ids()?;
@@ -208,7 +209,7 @@ impl DepGraph {
             let dependent = projects.load(&dependent_id)?;
 
             if dependent.tasks.contains_key(&task_id) {
-                self.run_target(&Target::format(&dependent_id, &task_id)?, projects)?;
+                self.run_target(&Target::new(&dependent_id, &task_id)?, projects, None)?;
             }
         }
 
@@ -289,11 +290,11 @@ impl DepGraph {
             return Ok(Some(*self.index_cache.get(&target_id).unwrap()));
         }
 
-        let project = projects.load(&project_id)?;
+        let project = projects.load(project_id)?;
 
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
-            let globally_affected = projects.is_globally_affected(touched_files);
+            let globally_affected = projects.is_globally_affected(touched);
 
             if globally_affected {
                 trace!(
@@ -307,19 +308,19 @@ impl DepGraph {
                 trace!(
                     target: TARGET,
                     "Project {} not affected based on touched files, skipping",
-                    color::id(&project_id),
+                    color::id(project_id),
                 );
 
                 return Ok(None);
             }
 
             // Validate task exists for project
-            if !globally_affected && !project.get_task(&task_id)?.is_affected(touched)? {
+            if !globally_affected && !project.get_task(task_id)?.is_affected(touched)? {
                 trace!(
                     target: TARGET,
                     "Project {} task {} not affected based on touched files, skipping",
-                    color::id(&project_id),
-                    color::id(&task_id),
+                    color::id(project_id),
+                    color::id(task_id),
                 );
 
                 return Ok(None);
@@ -343,7 +344,7 @@ impl DepGraph {
         self.index_cache.insert(target_id.to_owned(), node);
 
         // And we also need to wait on all dependent nodes
-        let task = project.get_task(&task_id)?;
+        let task = project.get_task(task_id)?;
 
         if !task.deps.is_empty() {
             let dep_names: Vec<String> = task
@@ -363,7 +364,12 @@ impl DepGraph {
             for dep_target_id in &task.deps {
                 let dep_target = Target::parse(dep_target_id)?;
 
-                if let Some(dep_node) = self.do_run_target(dep_target, projects, touched_files)? {
+                if let Some(dep_node) = self.do_run_target(
+                    &dep_target.project_id.unwrap(),
+                    &dep_target.task_id,
+                    projects,
+                    touched_files,
+                )? {
                     self.graph.add_edge(node, dep_node, ());
                 }
             }

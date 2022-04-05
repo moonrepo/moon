@@ -1,4 +1,6 @@
 tasks:
+  build:
+    command: webpack
   lint:
     command: eslint
   test:

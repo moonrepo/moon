@@ -416,6 +416,9 @@ mod tests {
             global_config,
             &HashMap::from([
                 ("basic".to_owned(), "basic".to_owned()),
+                ("build-a".to_owned(), "build-a".to_owned()),
+                ("build-b".to_owned(), "build-b".to_owned()),
+                ("build-c".to_owned(), "build-c".to_owned()),
                 ("chain".to_owned(), "chain".to_owned()),
                 ("cycle".to_owned(), "cycle".to_owned()),
                 ("inputA".to_owned(), "input-a".to_owned()),
@@ -601,6 +604,70 @@ mod tests {
                     vec![NodeIndex::new(3)]
                 ]
             );
+        }
+
+        #[test]
+        fn runs_all_projects_for_target_all_scope() {
+            let projects = create_tasks_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph
+                .run_target(&Target::parse(":build").unwrap(), &projects, None)
+                .unwrap();
+
+            assert_snapshot!(graph.to_dot());
+
+            assert_eq!(
+                graph.sort_topological().unwrap(),
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(1),
+                    NodeIndex::new(2), // sync project: basic
+                    NodeIndex::new(3), // basic:build
+                    NodeIndex::new(5), // sync project: build-c
+                    NodeIndex::new(4), // sync project: build-a
+                    NodeIndex::new(7), // build-c:build
+                    NodeIndex::new(6), // build-a:build
+                    NodeIndex::new(8), // sync project: build-b
+                    NodeIndex::new(9), // build-b:build
+                ]
+            );
+            assert_eq!(
+                sort_batches(graph.sort_batched_topological().unwrap()),
+                vec![
+                    vec![NodeIndex::new(0)],
+                    vec![NodeIndex::new(1), NodeIndex::new(2), NodeIndex::new(5)],
+                    vec![
+                        NodeIndex::new(3),
+                        NodeIndex::new(4),
+                        NodeIndex::new(7),
+                        NodeIndex::new(8)
+                    ],
+                    vec![NodeIndex::new(6), NodeIndex::new(9)],
+                ]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Project(Target(NoProjectDepsInRunContext))")]
+        fn errors_for_target_deps_scope() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph
+                .run_target(&Target::parse("^:lint").unwrap(), &projects, None)
+                .unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Project(Target(NoProjectSelfInRunContext))")]
+        fn errors_for_target_self_scope() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph
+                .run_target(&Target::parse("~:lint").unwrap(), &projects, None)
+                .unwrap();
         }
 
         #[test]

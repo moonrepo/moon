@@ -1,0 +1,10 @@
+dependsOn:
+  - basic
+  - build-c
+
+tasks:
+  build:
+    command: webpack
+    deps:
+      - 'basic:build'
+      - '^:build'

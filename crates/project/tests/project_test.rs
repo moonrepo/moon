@@ -347,8 +347,9 @@ mod tasks {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
                     tasks: HashMap::from([
-                        (String::from("test"), mock_task_config("jest"),),
-                        (String::from("lint"), mock_task_config("eslint"),)
+                        (String::from("build"), mock_task_config("webpack")),
+                        (String::from("test"), mock_task_config("jest")),
+                        (String::from("lint"), mock_task_config("eslint"))
                     ]),
                     ..ProjectConfig::default()
                 }),
@@ -356,6 +357,13 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from("tasks/basic"),
                 tasks: HashMap::from([
+                    (
+                        String::from("build"),
+                        Task::from_config(
+                            Target::format("id", "build").unwrap(),
+                            &mock_task_config("webpack")
+                        )
+                    ),
                     (
                         String::from("standard"),
                         Task::from_config(

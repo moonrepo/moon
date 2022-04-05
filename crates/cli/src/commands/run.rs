@@ -158,8 +158,10 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
 
     if options.affected {
         let touched_files = get_touched_files(&workspace, &options.status, options.local).await?;
+        let inserted_count =
+            dep_graph.run_target(&target, &workspace.projects, Some(&touched_files))?;
 
-        if dep_graph.run_target(&target, &workspace.projects, Some(&touched_files))? == 0 {
+        if inserted_count == 0 {
             if matches!(options.status, RunStatus::All) {
                 println!("Target {} not affected by touched files", target_id);
             } else {

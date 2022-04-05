@@ -17,7 +17,7 @@ impl fmt::Display for TargetProject {
         match self {
             TargetProject::All => write!(f, ""),
             TargetProject::Deps => write!(f, "^"),
-            TargetProject::Id(name) => write!(f, "{}", name),
+            TargetProject::Id(id) => write!(f, "{}", id),
             TargetProject::Own => write!(f, "~"),
         }
     }

@@ -1,0 +1,11 @@
+tasks:
+  clean:
+    command: rm
+    args: -rf
+  build:
+    command: tsc
+  lint:
+    command: eslint
+    deps:
+      - ~:clean
+      - ~:build

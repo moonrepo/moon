@@ -702,6 +702,55 @@ mod tasks {
         );
     }
 
+    mod expands_deps {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn resolves_self_scope() {
+            let project = Project::new(
+                "id",
+                "self",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                project.tasks.get("lint").unwrap().deps,
+                string_vec!["id:clean", "id:build"]
+            );
+        }
+
+        #[test]
+        fn resolves_deps_scope() {
+            let project = Project::new(
+                "id",
+                "deps",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                project.tasks.get("build").unwrap().deps,
+                string_vec!["foo:build", "bar:build", "baz:build"]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Target(NoProjectAllInTaskDeps(\":build\"))")]
+        fn errors_for_all_scope() {
+            Project::new(
+                "id",
+                "all",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+        }
+    }
+
     mod tokens {
         use super::*;
         use pretty_assertions::assert_eq;

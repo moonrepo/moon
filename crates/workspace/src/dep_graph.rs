@@ -161,7 +161,7 @@ impl DepGraph {
 
                     if project.tasks.contains_key(task_id)
                         && self
-                            .do_run_target(&project_id, task_id, projects, touched_files)?
+                            .insert_target(&project_id, task_id, projects, touched_files)?
                             .is_some()
                     {
                         inserted_count += 1;
@@ -175,7 +175,7 @@ impl DepGraph {
             // project:task
             TargetProject::Id(project_id) => {
                 if self
-                    .do_run_target(project_id, task_id, projects, touched_files)?
+                    .insert_target(project_id, task_id, projects, touched_files)?
                     .is_some()
                 {
                     inserted_count += 1;
@@ -277,7 +277,7 @@ impl DepGraph {
         Err(WorkspaceError::DepGraphCycleDetected(cycle))
     }
 
-    fn do_run_target(
+    fn insert_target(
         &mut self,
         project_id: &str,
         task_id: &str,
@@ -364,7 +364,7 @@ impl DepGraph {
             for dep_target_id in &task.deps {
                 let dep_target = Target::parse(dep_target_id)?;
 
-                if let Some(dep_node) = self.do_run_target(
+                if let Some(dep_node) = self.insert_target(
                     &dep_target.project_id.unwrap(),
                     &dep_target.task_id,
                     projects,

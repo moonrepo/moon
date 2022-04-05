@@ -145,6 +145,7 @@ mod tests {
     use super::*;
     use crate::helpers::run_with_env;
     use assert_fs::prelude::*;
+    use serial_test::serial;
     use std::fs;
 
     mod create {
@@ -224,7 +225,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn doesnt_delete_if_cache_off() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -253,7 +255,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn doesnt_delete_if_cache_readonly() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -344,7 +347,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn loads_cache_if_it_exists_and_cache_is_readonly() {
             let dir = assert_fs::TempDir::new().unwrap();
 
@@ -369,7 +373,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn doesnt_load_if_it_exists_but_cache_is_off() {
             let dir = assert_fs::TempDir::new().unwrap();
 
@@ -393,7 +398,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn saves_to_cache() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -411,7 +417,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn doesnt_save_if_cache_off() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -426,7 +433,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn doesnt_save_if_cache_readonly() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -479,7 +487,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn loads_cache_if_it_exists_and_cache_is_readonly() {
             let dir = assert_fs::TempDir::new().unwrap();
 
@@ -503,7 +512,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn doesnt_load_if_it_exists_but_cache_is_off() {
             let dir = assert_fs::TempDir::new().unwrap();
 
@@ -521,7 +531,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn saves_to_cache() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -557,7 +568,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn doesnt_create_if_cache_off() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -572,7 +584,8 @@ mod tests {
             dir.close().unwrap();
         }
 
-        #[tokio::test(flavor = "multi_thread")]
+        #[tokio::test]
+        #[serial]
         async fn doesnt_create_if_cache_readonly() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();

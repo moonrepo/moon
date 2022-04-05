@@ -127,7 +127,7 @@ impl Task {
 
         debug!(
             target: &format!("moon:project:{}", target),
-            "Creating task {} for command {}",
+            "Creating task {} with command {}",
             color::target(&target),
             color::shell(&task.command)
         );
@@ -148,6 +148,10 @@ impl Task {
 
     /// Expand the args list to resolve tokens, relative to the project root.
     pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
+        if self.args.is_empty() {
+            return Ok(());
+        }
+
         trace!(
             target: &format!("moon:project:{}", self.target),
             "Expanding args for task {}",
@@ -199,6 +203,16 @@ impl Task {
         owner_id: &str,
         depends_on: &[String],
     ) -> Result<(), ProjectError> {
+        if self.deps.is_empty() {
+            return Ok(());
+        }
+
+        trace!(
+            target: &format!("moon:project:{}", self.target),
+            "Expanding deps for task {}",
+            color::target(&self.target),
+        );
+
         let mut deps: Vec<String> = vec![];
 
         // Dont use a `HashSet` as we want to preserve order
@@ -239,6 +253,10 @@ impl Task {
 
     /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_inputs(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
+        if self.inputs.is_empty() {
+            return Ok(());
+        }
+
         trace!(
             target: &format!("moon:project:{}", self.target),
             "Expanding inputs for task {}",
@@ -259,6 +277,10 @@ impl Task {
 
     /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_outputs(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
+        if self.outputs.is_empty() {
+            return Ok(());
+        }
+
         trace!(
             target: &format!("moon:project:{}", self.target),
             "Expanding outputs for task {}",

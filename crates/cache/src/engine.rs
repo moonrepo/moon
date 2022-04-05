@@ -152,6 +152,7 @@ mod tests {
         use super::*;
 
         #[tokio::test]
+        #[serial]
         async fn creates_dirs() {
             let dir = assert_fs::TempDir::new().unwrap();
 
@@ -170,6 +171,7 @@ mod tests {
         use super::*;
 
         #[tokio::test]
+        #[serial]
         async fn deletes_dir() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -199,6 +201,7 @@ mod tests {
         use super::*;
 
         #[tokio::test]
+        #[serial]
         async fn deletes_files() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -290,6 +293,7 @@ mod tests {
         use super::*;
 
         #[tokio::test]
+        #[serial]
         async fn creates_runfile_on_call() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -313,6 +317,7 @@ mod tests {
         use super::*;
 
         #[tokio::test]
+        #[serial]
         async fn creates_parent_dir_on_call() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -325,6 +330,7 @@ mod tests {
         }
 
         #[tokio::test]
+        #[serial]
         async fn loads_cache_if_it_exists() {
             let dir = assert_fs::TempDir::new().unwrap();
 
@@ -454,6 +460,7 @@ mod tests {
         use super::*;
 
         #[tokio::test]
+        #[serial]
         async fn creates_parent_dir_on_call() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -466,6 +473,7 @@ mod tests {
         }
 
         #[tokio::test]
+        #[serial]
         async fn loads_cache_if_it_exists() {
             let dir = assert_fs::TempDir::new().unwrap();
 
@@ -556,6 +564,7 @@ mod tests {
         use crate::Hasher;
 
         #[tokio::test]
+        #[serial]
         async fn creates_hash_file() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();

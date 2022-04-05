@@ -13,13 +13,13 @@ const TARGET: &str = "moon:action-runner";
 
 async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
-    graph_node: &Node,
+    action_node: &Node,
     primary_target: &str,
     passthrough_args: &[String],
 ) -> Result<ActionStatus, WorkspaceError> {
     let status;
 
-    match graph_node {
+    match action_node {
         Node::InstallNodeDeps => {
             status = install_node_deps(workspace).await?;
         }
@@ -87,48 +87,52 @@ impl ActionRunner {
         let passthrough_args = Arc::new(self.passthrough_args.clone());
         let primary_target = Arc::new(self.primary_target.clone());
 
-        // Clean the runner state *before* running tasks instead of after,
+        // Clean the runner state *before* running actions instead of after,
         // so that failing or broken builds can dig into and debug the state!
         self.cleanup().await?;
 
         debug!(
             target: TARGET,
-            "Running {} tasks across {} batches", node_count, batches_count
+            "Running {} actions across {} batches", node_count, batches_count
         );
 
         let mut results: Vec<Action> = vec![];
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
-            let tasks_count = batch.len();
+            let actions_count = batch.len();
 
             trace!(
                 target: &format!("{}:batch:{}", TARGET, batch_count),
-                "Running {} tasks",
-                tasks_count
+                "Running {} actions",
+                actions_count
             );
 
-            let mut task_handles = vec![];
+            let mut action_handles = vec![];
 
-            for (t, task) in batch.into_iter().enumerate() {
-                let task_count = t + 1;
+            for (i, node_index) in batch.into_iter().enumerate() {
+                let action_count = i + 1;
                 let workspace_clone = Arc::clone(&self.workspace);
                 let graph_clone = Arc::clone(&graph);
                 let passthrough_args_clone = Arc::clone(&passthrough_args);
                 let primary_target_clone = Arc::clone(&primary_target);
 
-                task_handles.push(task::spawn(async move {
-                    let mut result = Action::new(task);
+                action_handles.push(task::spawn(async move {
+                    let mut result = Action::new(node_index);
                     let own_graph = graph_clone.read().await;
 
-                    if let Some(node) = own_graph.get_node_from_index(task) {
+                    if let Some(node) = own_graph.get_node_from_index(node_index) {
                         result.label = Some(node.label());
 
                         let log_target_name =
-                            format!("{}:batch:{}:{}", TARGET, batch_count, task_count);
-                        let log_task_label = color::muted_light(&node.label());
+                            format!("{}:batch:{}:{}", TARGET, batch_count, action_count);
+                        let log_action_label = color::muted_light(&node.label());
 
-                        trace!(target: &log_target_name, "Running task {}", log_task_label);
+                        trace!(
+                            target: &log_target_name,
+                            "Running action {}",
+                            log_action_label
+                        );
 
                         match run_action(
                             workspace_clone,
@@ -143,8 +147,8 @@ impl ActionRunner {
 
                                 trace!(
                                     target: &log_target_name,
-                                    "Ran task {} in {:?}",
-                                    log_task_label,
+                                    "Ran action {} in {:?}",
+                                    log_action_label,
                                     result.duration.unwrap()
                                 );
                             }
@@ -153,8 +157,8 @@ impl ActionRunner {
 
                                 trace!(
                                     target: &log_target_name,
-                                    "Task {} failed in {:?}",
-                                    log_task_label,
+                                    "Action {} failed in {:?}",
+                                    log_action_label,
                                     result.duration.unwrap()
                                 );
                             }
@@ -162,16 +166,16 @@ impl ActionRunner {
                     } else {
                         result.status = ActionStatus::Invalid;
 
-                        return Err(WorkspaceError::DepGraphUnknownNode(task.index()));
+                        return Err(WorkspaceError::DepGraphUnknownNode(node_index.index()));
                     }
 
                     Ok(result)
                 }));
             }
 
-            // Wait for all tasks in this batch to complete,
+            // Wait for all actions in this batch to complete,
             // while also handling and propagating errors
-            for handle in task_handles {
+            for handle in action_handles {
                 match handle.await {
                     Ok(Ok(result)) => {
                         if self.bail && result.error.is_some() {
@@ -194,7 +198,7 @@ impl ActionRunner {
 
         debug!(
             target: TARGET,
-            "Finished running {} tasks in {:?}",
+            "Finished running {} actions in {:?}",
             node_count,
             self.duration.unwrap()
         );

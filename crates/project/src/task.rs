@@ -201,6 +201,13 @@ impl Task {
     ) -> Result<(), ProjectError> {
         let mut deps: Vec<String> = vec![];
 
+        // Dont use a `HashSet` as we want to preserve order
+        let mut push_dep = |dep: String| {
+            if !deps.contains(&dep) {
+                deps.push(dep);
+            }
+        };
+
         for dep in &self.deps {
             let target = Target::parse(dep)?;
 
@@ -208,16 +215,16 @@ impl Task {
                 // ^:task
                 TargetProject::Deps => {
                     for project_id in depends_on {
-                        deps.push(Target::format(project_id, &target.task_id)?);
+                        push_dep(Target::format(project_id, &target.task_id)?);
                     }
                 }
                 // ~:task
                 TargetProject::Own => {
-                    deps.push(Target::format(owner_id, &target.task_id)?);
+                    push_dep(Target::format(owner_id, &target.task_id)?);
                 }
                 // project:task
                 TargetProject::Id(_) => {
-                    deps.push(dep.clone());
+                    push_dep(dep.clone());
                 }
                 _ => {
                     target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;

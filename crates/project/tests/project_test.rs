@@ -731,10 +731,42 @@ mod tasks {
         }
 
         #[test]
+        fn resolves_self_scope_without_dupes() {
+            let project = Project::new(
+                "id",
+                "self-dupes",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                project.tasks.get("lint").unwrap().deps,
+                string_vec!["id:build"]
+            );
+        }
+
+        #[test]
         fn resolves_deps_scope() {
             let project = Project::new(
                 "id",
                 "deps",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                project.tasks.get("build").unwrap().deps,
+                string_vec!["foo:build", "bar:build", "baz:build"]
+            );
+        }
+
+        #[test]
+        fn resolves_deps_scope_without_dupes() {
+            let project = Project::new(
+                "id",
+                "deps-dupes",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
             )

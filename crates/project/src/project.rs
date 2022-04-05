@@ -89,6 +89,7 @@ fn create_tasks_from_config(
     file_groups: &FileGroupsMap,
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
+    let mut depends_on = vec![];
 
     // Gather inheritance configs
     let mut include_all = true;
@@ -97,6 +98,7 @@ fn create_tasks_from_config(
     let mut rename: HashMap<TaskID, TaskID> = HashMap::new();
 
     if let Some(local_config) = config {
+        depends_on.extend(local_config.depends_on.clone());
         rename = local_config.workspace.inherited_tasks.rename.clone();
 
         if let Some(include_config) = &local_config.workspace.inherited_tasks.include {
@@ -156,10 +158,11 @@ fn create_tasks_from_config(
         }
     }
 
-    // Expand args, inputs, and outputs after all tasks have been created
+    // Expand deps, args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
         let data = TokenSharedData::new(file_groups, workspace_root, project_root);
 
+        task.expand_deps(project_id, &depends_on)?;
         task.expand_inputs(TokenResolver::for_inputs(&data))?;
         task.expand_outputs(TokenResolver::for_outputs(&data))?;
 

@@ -347,8 +347,9 @@ mod tasks {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
                     tasks: HashMap::from([
-                        (String::from("test"), mock_task_config("jest"),),
-                        (String::from("lint"), mock_task_config("eslint"),)
+                        (String::from("build"), mock_task_config("webpack")),
+                        (String::from("test"), mock_task_config("jest")),
+                        (String::from("lint"), mock_task_config("eslint"))
                     ]),
                     ..ProjectConfig::default()
                 }),
@@ -356,6 +357,13 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from("tasks/basic"),
                 tasks: HashMap::from([
+                    (
+                        String::from("build"),
+                        Task::from_config(
+                            Target::format("id", "build").unwrap(),
+                            &mock_task_config("webpack")
+                        )
+                    ),
                     (
                         String::from("standard"),
                         Task::from_config(
@@ -700,6 +708,87 @@ mod tasks {
                 )]),
             }
         );
+    }
+
+    mod expands_deps {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn resolves_self_scope() {
+            let project = Project::new(
+                "id",
+                "self",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                project.tasks.get("lint").unwrap().deps,
+                string_vec!["id:clean", "id:build"]
+            );
+        }
+
+        #[test]
+        fn resolves_self_scope_without_dupes() {
+            let project = Project::new(
+                "id",
+                "self-dupes",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                project.tasks.get("lint").unwrap().deps,
+                string_vec!["id:build"]
+            );
+        }
+
+        #[test]
+        fn resolves_deps_scope() {
+            let project = Project::new(
+                "id",
+                "deps",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                project.tasks.get("build").unwrap().deps,
+                string_vec!["foo:build", "bar:build", "baz:build"]
+            );
+        }
+
+        #[test]
+        fn resolves_deps_scope_without_dupes() {
+            let project = Project::new(
+                "id",
+                "deps-dupes",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+
+            assert_eq!(
+                project.tasks.get("build").unwrap().deps,
+                string_vec!["foo:build", "bar:build", "baz:build"]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Target(NoProjectAllInTaskDeps(\":build\"))")]
+        fn errors_for_all_scope() {
+            Project::new(
+                "id",
+                "all",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            )
+            .unwrap();
+        }
     }
 
     mod tokens {

@@ -1,7 +1,7 @@
 use clap::ArgEnum;
 use console::Term;
 use moon_logger::color;
-use moon_project::TouchedFilePaths;
+use moon_project::{Target, TouchedFilePaths};
 use moon_terminal::ExtendedTerm;
 use moon_utils::time;
 use moon_workspace::{Action, ActionRunner, ActionStatus, DepGraph, Workspace, WorkspaceError};
@@ -149,7 +149,8 @@ pub fn render_result_stats(
     Ok(())
 }
 
-pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std::error::Error>> {
+    let target = Target::parse(target_id)?;
     let workspace = Workspace::load().await?;
 
     // Generate a dependency graph for all the targets that need to be ran
@@ -157,17 +158,16 @@ pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::e
 
     if options.affected {
         let touched_files = get_touched_files(&workspace, &options.status, options.local).await?;
+        let inserted_count =
+            dep_graph.run_target(&target, &workspace.projects, Some(&touched_files))?;
 
-        if dep_graph
-            .run_target_if_touched(target, &touched_files, &workspace.projects)?
-            .is_none()
-        {
+        if inserted_count == 0 {
             if matches!(options.status, RunStatus::All) {
-                println!("Target {} not affected by touched files", target);
+                println!("Target {} not affected by touched files", target_id);
             } else {
                 println!(
                     "Target {} not affected by touched files (using status {})",
-                    target,
+                    target_id,
                     color::symbol(&options.status.to_string().to_lowercase())
                 );
             }
@@ -175,7 +175,7 @@ pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::e
             return Ok(());
         }
     } else {
-        dep_graph.run_target(target, &workspace.projects)?;
+        dep_graph.run_target(&target, &workspace.projects, None)?;
     }
 
     // Process all tasks in the graph
@@ -184,7 +184,7 @@ pub async fn run(target: &str, options: RunOptions) -> Result<(), Box<dyn std::e
     let results = runner
         .bail_on_error()
         .set_passthrough_args(options.passthrough)
-        .set_primary_target(target)
+        .set_primary_target(target_id)
         .run(dep_graph)
         .await?;
 

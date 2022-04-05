@@ -13,25 +13,25 @@ pub fn label_moon() -> String {
     )
 }
 
-pub fn label_run_target(target: &str) -> String {
+pub fn label_run_target(target_id: &str) -> String {
     format!(
         "{}{}{}{} {}",
         color::paint(57, STEP_CHAR),
         color::paint(63, STEP_CHAR),
         color::paint(69, STEP_CHAR),
         color::paint(75, STEP_CHAR),
-        style(target).bold()
+        style(target_id).bold()
     )
 }
 
-pub fn label_run_target_failed(target: &str) -> String {
+pub fn label_run_target_failed(target_id: &str) -> String {
     format!(
         "{}{}{}{} {}",
         color::paint(124, STEP_CHAR),
         color::paint(125, STEP_CHAR),
         color::paint(126, STEP_CHAR),
         color::paint(127, STEP_CHAR),
-        style(target).bold()
+        style(target_id).bold()
     )
 }
 

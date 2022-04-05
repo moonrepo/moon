@@ -46,6 +46,8 @@
 - [x] Tokens
   - [x] Expands tokens defined in configs
 - [x] Can run from project root or workspace root (using `run_from_workspace_root`)
+- [x] Self referencing targets (`~`)
+- [x] Deps referencing targets (`^`)
 
 ## Action runner
 
@@ -100,8 +102,6 @@
 
 ## Tasks
 
-- [ ] Self referencing targets (`~`)
-- [ ] Deps referencing targets (`^`)
 - [ ] Add `@cache` token
 
 ## Action runner

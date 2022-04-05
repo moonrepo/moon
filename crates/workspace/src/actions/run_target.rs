@@ -194,18 +194,18 @@ async fn create_target_command(
 
 pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
-    target: &str,
+    target_id: &str,
     primary_target: &str,
     passthrough_args: &[String],
 ) -> Result<ActionStatus, WorkspaceError> {
-    debug!(target: TARGET, "Running target {}", color::id(target));
+    debug!(target: TARGET, "Running target {}", color::id(target_id));
 
     let workspace = workspace.read().await;
-    let mut cache = workspace.cache.cache_run_target_state(target).await?;
+    let mut cache = workspace.cache.cache_run_target_state(target_id).await?;
 
     // Gather the project and task
-    let is_primary = primary_target == target;
-    let (project_id, task_id) = Target::parse(target)?;
+    let is_primary = primary_target == target_id;
+    let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
 
@@ -214,7 +214,7 @@ pub async fn run_target(
     let hash = hasher.to_hash();
 
     if cache.item.hash == hash {
-        print_target_label(target, "(cached)", cache.item.exit_code != 0);
+        print_target_label(target_id, "(cached)", cache.item.exit_code != 0);
         print_cache_item(&cache.item, true);
 
         return Ok(ActionStatus::Cached);
@@ -245,7 +245,7 @@ pub async fn run_target(
         if is_primary {
             // Print label *before* output is streamed since it may stay open forever,
             // or use ANSI escape codes to alter the terminal.
-            print_target_label(target, &attempt_comment, false);
+            print_target_label(target_id, &attempt_comment, false);
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
@@ -257,7 +257,7 @@ pub async fn run_target(
 
             // Print label *after* output has been captured, so parallel tasks
             // aren't intertwined and the labels align with the output.
-            print_target_label(target, &attempt_comment, possible_output.is_err());
+            print_target_label(target_id, &attempt_comment, possible_output.is_err());
         };
 
         match possible_output {
@@ -274,7 +274,7 @@ pub async fn run_target(
                     debug!(
                         target: TARGET,
                         "Target {} failed, running again with attempt {}",
-                        color::target(target),
+                        color::target(target_id),
                         attempt
                     );
                 }

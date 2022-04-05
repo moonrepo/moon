@@ -103,12 +103,12 @@ pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
 }
 
 // Validate the value is a target in the format of "project_id:task_id".
-pub fn validate_target(key: &str, target: &str) -> Result<(), ValidationError> {
-    if !matches_target(target) {
+pub fn validate_target(key: &str, target_id: &str) -> Result<(), ValidationError> {
+    if !matches_target(target_id) {
         return Err(create_validation_error(
             "invalid_target",
             key,
-            String::from("Must be a valid target (project_id:task_id)."),
+            String::from("Must be a valid target format."),
         ));
     }
 

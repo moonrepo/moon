@@ -1,6 +1,6 @@
 use crate::errors::WorkspaceError;
 use moon_logger::{color, debug, trace};
-use moon_project::{ProjectGraph, Target, TouchedFilePaths};
+use moon_project::{ProjectGraph, Target, TargetError, TargetProject, TouchedFilePaths};
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
@@ -146,71 +146,62 @@ impl DepGraph {
 
     pub fn run_target(
         &mut self,
-        target: &str,
+        target: &Target,
         projects: &ProjectGraph,
-    ) -> Result<NodeIndex, WorkspaceError> {
-        if self.index_cache.contains_key(target) {
-            return Ok(*self.index_cache.get(target).unwrap());
-        }
+        touched_files: Option<&TouchedFilePaths>,
+    ) -> Result<usize, WorkspaceError> {
+        let task_id = &target.task_id;
+        let mut inserted_count = 0;
 
-        trace!(
-            target: TARGET,
-            "Target {} does not exist in the dependency graph, inserting",
-            color::target(target),
-        );
+        match &target.project {
+            // :task
+            TargetProject::All => {
+                for project_id in projects.ids() {
+                    let project = projects.load(&project_id)?;
 
-        let (project_id, task_id) = Target::parse(target)?;
-        let project = projects.load(&project_id)?;
-
-        // We should sync projects *before* running targets
-        let project_node = self.sync_project(&project.id, projects)?;
-        let node = self.graph.add_node(Node::RunTarget(target.to_owned()));
-
-        self.graph.add_edge(node, self.install_node_deps_index, ());
-        self.graph.add_edge(node, project_node, ());
-
-        // Also cache so we don't run the same target multiple times
-        self.index_cache.insert(target.to_owned(), node);
-
-        // And we also need to wait on all dependent nodes
-        let task = project.get_task(&task_id)?;
-
-        if !task.deps.is_empty() {
-            let dep_names: Vec<String> = task
-                .deps
-                .clone()
-                .into_iter()
-                .map(|d| color::symbol(&d))
-                .collect();
-
-            trace!(
-                target: TARGET,
-                "Adding dependencies {} from target {}",
-                dep_names.join(", "),
-                color::target(target),
-            );
-
-            for dep_target in &task.deps {
-                let dep_node = self.run_target(dep_target, projects)?;
-                self.graph.add_edge(node, dep_node, ());
+                    if project.tasks.contains_key(task_id)
+                        && self
+                            .insert_target(&project_id, task_id, projects, touched_files)?
+                            .is_some()
+                    {
+                        inserted_count += 1;
+                    }
+                }
             }
-        }
+            // ^:task
+            TargetProject::Deps => {
+                target.fail_with(TargetError::NoProjectDepsInRunContext)?;
+            }
+            // project:task
+            TargetProject::Id(project_id) => {
+                if self
+                    .insert_target(project_id, task_id, projects, touched_files)?
+                    .is_some()
+                {
+                    inserted_count += 1;
+                }
+            }
+            // ~:task
+            TargetProject::Own => {
+                target.fail_with(TargetError::NoProjectSelfInRunContext)?;
+            }
+        };
 
-        Ok(node)
+        Ok(inserted_count)
     }
 
     pub fn run_target_dependents(
         &mut self,
-        target: &str,
+        target: &Target,
         projects: &ProjectGraph,
     ) -> Result<(), WorkspaceError> {
         trace!(
             target: TARGET,
             "Adding dependents to run for target {}",
-            color::target(target),
+            color::target(&target.id),
         );
 
-        let (project_id, task_id) = Target::parse(target)?;
+        let (project_id, task_id) = target.ids()?;
         let project = projects.load(&project_id)?;
         let dependents = projects.get_dependents_of(&project)?;
 
@@ -218,57 +209,11 @@ impl DepGraph {
             let dependent = projects.load(&dependent_id)?;
 
             if dependent.tasks.contains_key(&task_id) {
-                self.run_target(&Target::format(&dependent_id, &task_id)?, projects)?;
+                self.run_target(&Target::new(&dependent_id, &task_id)?, projects, None)?;
             }
         }
 
         Ok(())
-    }
-
-    pub fn run_target_if_touched(
-        &mut self,
-        target: &str,
-        touched_files: &TouchedFilePaths,
-        projects: &ProjectGraph,
-    ) -> Result<Option<NodeIndex>, WorkspaceError> {
-        let globally_affected = projects.is_globally_affected(touched_files);
-
-        if globally_affected {
-            trace!(
-                target: TARGET,
-                "Moon files touched, marking all targets as affected",
-            );
-        }
-
-        // Validate project first
-        let (project_id, task_id) = Target::parse(target)?;
-        let project = projects.load(&project_id)?;
-
-        if !globally_affected && !project.is_affected(touched_files) {
-            trace!(
-                target: TARGET,
-                "Project {} not affected based on touched files, skipping",
-                color::id(&project_id),
-            );
-
-            return Ok(None);
-        }
-
-        // Validate task exists for project
-        let task = project.get_task(&task_id)?;
-
-        if !globally_affected && !task.is_affected(touched_files)? {
-            trace!(
-                target: TARGET,
-                "Project {} task {} not affected based on touched files, skipping",
-                color::id(&project_id),
-                color::id(&task_id),
-            );
-
-            return Ok(None);
-        }
-
-        Ok(Some(self.run_target(target, projects)?))
     }
 
     pub fn sync_project(
@@ -331,6 +276,107 @@ impl DepGraph {
 
         Err(WorkspaceError::DepGraphCycleDetected(cycle))
     }
+
+    fn insert_target(
+        &mut self,
+        project_id: &str,
+        task_id: &str,
+        projects: &ProjectGraph,
+        touched_files: Option<&TouchedFilePaths>,
+    ) -> Result<Option<NodeIndex>, WorkspaceError> {
+        let target_id = Target::format(project_id, task_id)?;
+
+        if self.index_cache.contains_key(&target_id) {
+            return Ok(Some(*self.index_cache.get(&target_id).unwrap()));
+        }
+
+        let project = projects.load(project_id)?;
+
+        // Compare against touched files if provided
+        if let Some(touched) = touched_files {
+            let globally_affected = projects.is_globally_affected(touched);
+
+            if globally_affected {
+                trace!(
+                    target: TARGET,
+                    "Moon files touched, marking all targets as affected",
+                );
+            }
+
+            // Validate project first
+            if !globally_affected && !project.is_affected(touched) {
+                trace!(
+                    target: TARGET,
+                    "Project {} not affected based on touched files, skipping",
+                    color::id(project_id),
+                );
+
+                return Ok(None);
+            }
+
+            // Validate task exists for project
+            if !globally_affected && !project.get_task(task_id)?.is_affected(touched)? {
+                trace!(
+                    target: TARGET,
+                    "Project {} task {} not affected based on touched files, skipping",
+                    color::id(project_id),
+                    color::id(task_id),
+                );
+
+                return Ok(None);
+            }
+        }
+
+        trace!(
+            target: TARGET,
+            "Target {} does not exist in the dependency graph, inserting",
+            color::target(&target_id),
+        );
+
+        // We should sync projects *before* running targets
+        let project_node = self.sync_project(&project.id, projects)?;
+        let node = self.graph.add_node(Node::RunTarget(target_id.to_owned()));
+
+        self.graph.add_edge(node, self.install_node_deps_index, ());
+        self.graph.add_edge(node, project_node, ());
+
+        // Also cache so we don't run the same target multiple times
+        self.index_cache.insert(target_id.to_owned(), node);
+
+        // And we also need to wait on all dependent nodes
+        let task = project.get_task(task_id)?;
+
+        if !task.deps.is_empty() {
+            let dep_names: Vec<String> = task
+                .deps
+                .clone()
+                .into_iter()
+                .map(|d| color::symbol(&d))
+                .collect();
+
+            trace!(
+                target: TARGET,
+                "Adding dependencies {} from target {}",
+                dep_names.join(", "),
+                color::target(&target_id),
+            );
+
+            for dep_target_id in &task.deps {
+                let dep_target = Target::parse(dep_target_id)?;
+
+                if let Some(dep_node) = self.insert_target(
+                    &dep_target.project_id.unwrap(),
+                    &dep_target.task_id,
+                    projects,
+                    touched_files,
+                )? {
+                    self.graph.add_edge(node, dep_node, ());
+                }
+            }
+        }
+
+        Ok(Some(node))
+    }
 }
 
 #[cfg(test)]
@@ -370,6 +416,9 @@ mod tests {
             global_config,
             &HashMap::from([
                 ("basic".to_owned(), "basic".to_owned()),
+                ("build-a".to_owned(), "build-a".to_owned()),
+                ("build-b".to_owned(), "build-b".to_owned()),
+                ("build-c".to_owned(), "build-c".to_owned()),
                 ("chain".to_owned(), "chain".to_owned()),
                 ("cycle".to_owned(), "cycle".to_owned()),
                 ("inputA".to_owned(), "input-a".to_owned()),
@@ -419,9 +468,15 @@ mod tests {
         let projects = create_tasks_project_graph();
 
         let mut graph = DepGraph::default();
-        graph.run_target("cycle:a", &projects).unwrap();
-        graph.run_target("cycle:b", &projects).unwrap();
-        graph.run_target("cycle:c", &projects).unwrap();
+        graph
+            .run_target(&Target::new("cycle", "a").unwrap(), &projects, None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("cycle", "b").unwrap(), &projects, None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("cycle", "c").unwrap(), &projects, None)
+            .unwrap();
 
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
@@ -437,8 +492,12 @@ mod tests {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("tasks:test", &projects).unwrap();
-            graph.run_target("tasks:lint", &projects).unwrap();
+            graph
+                .run_target(&Target::new("tasks", "test").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -467,9 +526,15 @@ mod tests {
             let projects = create_tasks_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("basic:test", &projects).unwrap();
-            graph.run_target("basic:lint", &projects).unwrap();
-            graph.run_target("chain:a", &projects).unwrap();
+            graph
+                .run_target(&Target::new("basic", "test").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("basic", "lint").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("chain", "a").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -510,9 +575,15 @@ mod tests {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("tasks:lint", &projects).unwrap();
-            graph.run_target("tasks:lint", &projects).unwrap();
-            graph.run_target("tasks:lint", &projects).unwrap();
+            graph
+                .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+                .unwrap();
+            graph
+                .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
 
@@ -536,14 +607,67 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Project(InvalidTargetFormat(\"invalid-target\"))")]
-        fn errors_for_invalid_target() {
+        fn runs_all_projects_for_target_all_scope() {
+            let projects = create_tasks_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph
+                .run_target(&Target::parse(":build").unwrap(), &projects, None)
+                .unwrap();
+
+            assert_snapshot!(graph.to_dot());
+
+            assert_eq!(
+                graph.sort_topological().unwrap(),
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(1),
+                    NodeIndex::new(2), // sync project: basic
+                    NodeIndex::new(3), // basic:build
+                    NodeIndex::new(5), // sync project: build-c
+                    NodeIndex::new(4), // sync project: build-a
+                    NodeIndex::new(7), // build-c:build
+                    NodeIndex::new(6), // build-a:build
+                    NodeIndex::new(8), // sync project: build-b
+                    NodeIndex::new(9), // build-b:build
+                ]
+            );
+            assert_eq!(
+                sort_batches(graph.sort_batched_topological().unwrap()),
+                vec![
+                    vec![NodeIndex::new(0)],
+                    vec![NodeIndex::new(1), NodeIndex::new(2), NodeIndex::new(5)],
+                    vec![
+                        NodeIndex::new(3),
+                        NodeIndex::new(4),
+                        NodeIndex::new(7),
+                        NodeIndex::new(8)
+                    ],
+                    vec![NodeIndex::new(6), NodeIndex::new(9)],
+                ]
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Project(Target(NoProjectDepsInRunContext))")]
+        fn errors_for_target_deps_scope() {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("invalid-target", &projects).unwrap();
+            graph
+                .run_target(&Target::parse("^:lint").unwrap(), &projects, None)
+                .unwrap();
+        }
 
-            assert_snapshot!(graph.to_dot());
+        #[test]
+        #[should_panic(expected = "Project(Target(NoProjectSelfInRunContext))")]
+        fn errors_for_target_self_scope() {
+            let projects = create_project_graph();
+
+            let mut graph = DepGraph::default();
+            graph
+                .run_target(&Target::parse("~:lint").unwrap(), &projects, None)
+                .unwrap();
         }
 
         #[test]
@@ -552,7 +676,9 @@ mod tests {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("unknown:test", &projects).unwrap();
+            graph
+                .run_target(&Target::new("unknown", "test").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -563,7 +689,9 @@ mod tests {
             let projects = create_project_graph();
 
             let mut graph = DepGraph::default();
-            graph.run_target("tasks:build", &projects).unwrap();
+            graph
+                .run_target(&Target::new("tasks", "build").unwrap(), &projects, None)
+                .unwrap();
 
             assert_snapshot!(graph.to_dot());
         }
@@ -582,10 +710,18 @@ mod tests {
 
             let mut graph = DepGraph::default();
             graph
-                .run_target_if_touched("inputA:a", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputA", "a").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
             graph
-                .run_target_if_touched("inputB:b", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputB", "b").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
 
             assert_snapshot!(graph.to_dot());
@@ -602,13 +738,25 @@ mod tests {
 
             let mut graph = DepGraph::default();
             graph
-                .run_target_if_touched("inputA:a", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputA", "a").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
             graph
-                .run_target_if_touched("inputB:b2", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputB", "b2").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
             graph
-                .run_target_if_touched("inputC:c", &touched_files, &projects)
+                .run_target(
+                    &Target::new("inputC", "c").unwrap(),
+                    &projects,
+                    Some(&touched_files),
+                )
                 .unwrap();
 
             assert_snapshot!(graph.to_dot());

@@ -1,4 +1,5 @@
-use crate::errors::ProjectError;
+use crate::errors::{ProjectError, TargetError};
+use crate::target::{Target, TargetProject};
 use crate::token::TokenResolver;
 use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
 use globset::{Glob, GlobSet, GlobSetBuilder};
@@ -126,7 +127,7 @@ impl Task {
 
         debug!(
             target: &format!("moon:project:{}", target),
-            "Creating task {} for command {}",
+            "Creating task {} with command {}",
             color::target(&target),
             color::shell(&task.command)
         );
@@ -147,6 +148,10 @@ impl Task {
 
     /// Expand the args list to resolve tokens, relative to the project root.
     pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
+        if self.args.is_empty() {
+            return Ok(());
+        }
+
         trace!(
             target: &format!("moon:project:{}", self.target),
             "Expanding args for task {}",
@@ -192,8 +197,66 @@ impl Task {
         Ok(())
     }
 
+    /// Expand the deps list and resolve parent/self scopes.
+    pub fn expand_deps(
+        &mut self,
+        owner_id: &str,
+        depends_on: &[String],
+    ) -> Result<(), ProjectError> {
+        if self.deps.is_empty() {
+            return Ok(());
+        }
+
+        trace!(
+            target: &format!("moon:project:{}", self.target),
+            "Expanding deps for task {}",
+            color::target(&self.target),
+        );
+
+        let mut deps: Vec<String> = vec![];
+
+        // Dont use a `HashSet` as we want to preserve order
+        let mut push_dep = |dep: String| {
+            if !deps.contains(&dep) {
+                deps.push(dep);
+            }
+        };
+
+        for dep in &self.deps {
+            let target = Target::parse(dep)?;
+
+            match &target.project {
+                // ^:task
+                TargetProject::Deps => {
+                    for project_id in depends_on {
+                        push_dep(Target::format(project_id, &target.task_id)?);
+                    }
+                }
+                // ~:task
+                TargetProject::Own => {
+                    push_dep(Target::format(owner_id, &target.task_id)?);
+                }
+                // project:task
+                TargetProject::Id(_) => {
+                    push_dep(dep.clone());
+                }
+                _ => {
+                    target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
+                }
+            };
+        }
+
+        self.deps = deps;
+
+        Ok(())
+    }
+
     /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_inputs(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
+        if self.inputs.is_empty() {
+            return Ok(());
+        }
+
         trace!(
             target: &format!("moon:project:{}", self.target),
             "Expanding inputs for task {}",
@@ -214,6 +277,10 @@ impl Task {
 
     /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_outputs(&mut self, token_resolver: TokenResolver) -> Result<(), ProjectError> {
+        if self.outputs.is_empty() {
+            return Ok(());
+        }
+
         trace!(
             target: &format!("moon:project:{}", self.target),
             "Expanding outputs for task {}",

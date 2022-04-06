@@ -49,11 +49,11 @@ fileGroups:
 > [`project.yml`](./project) doc.
 
 As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
-context of a project, and commonly wrap an npm or shell command. For most workspaces, every project
-_should_ have linting, type-checking, testing, code formatting, so on and so forth. To reduce the
-amount of boilerplate that _every_ project would require, this setting offers the ability to define
-tasks that are inherited by all projects within the workspace, but can also be overridden per
-project.
+context of a project, and commonly wrap an npm binary or system command. For most workspaces, every
+project _should_ have linting, type-checking, testing, code formatting, so on and so forth. To
+reduce the amount of boilerplate that _every_ project would require, this setting offers the ability
+to define tasks that are inherited by all projects within the workspace, but can also be overridden
+per project.
 
 ```yaml title=".moon/project.yml"
 tasks:

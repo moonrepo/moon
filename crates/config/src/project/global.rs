@@ -36,7 +36,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
             return Err(create_validation_error(
                 "required_command",
                 &format!("tasks.{}.command", name),
-                String::from("An npm/shell command is required."),
+                String::from("An npm/system command is required."),
             ));
         }
     }
@@ -244,7 +244,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks.test.command`. An npm/shell command is required."
+            expected = "Invalid field `tasks.test.command`. An npm/system command is required."
         )]
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {

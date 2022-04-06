@@ -38,5 +38,5 @@ dependsOn: []
 fileGroups: {}
 
 # OPTIONAL: A task is an action that is ran within the context of a project, and
-# wraps around an npm or shell command. View `.moon/project.yml` for more info.
+# wraps around an npm or system command. View `.moon/project.yml` for more info.
 tasks: {}

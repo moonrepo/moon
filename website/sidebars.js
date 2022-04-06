@@ -18,6 +18,7 @@ const sidebars = {
 				'concepts/toolchain',
 				'concepts/project',
 				'concepts/task',
+				'concepts/target',
 				'concepts/token',
 				'concepts/cache',
 			],

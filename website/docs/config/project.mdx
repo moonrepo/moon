@@ -163,8 +163,8 @@ The type of project. Supports the following values:
 > `Record<string, TaskConfig>`
 
 Tasks are actions that are ran within the context of a [project](../concepts/project), and commonly
-wrap an npm or shell command. This setting requires a map, where the key is a unique identifier for
-the task, and the value is an object of task parameters.
+wrap an npm binary or system command. This setting requires a map, where the key is a unique
+identifier for the task, and the value is an object of task parameters.
 
 ```yaml title="project.yml"
 tasks:
@@ -182,7 +182,7 @@ tasks:
 
 > `string`
 
-The `command` field is the name of an npm binary or native shell command to run when executing the
+The `command` field is the name of an npm binary or native system command to run when executing the
 task. This field is required when _not_ inheriting a global task of the same name.
 
 ```yaml title="project.yml" {3}
@@ -191,15 +191,15 @@ tasks:
     command: 'prettier'
 ```
 
-By default a task assumes the command is an npm binary, and if you'd like to reference a shell
-command, you'll also need to set the [`type`](#type) to "shell".
+By default a task assumes the command is an npm binary, and if you'd like to reference a system
+command, you'll also need to set the [`type`](#type) to "system".
 
 ```yaml title="project.yml"
 tasks:
   clean:
     command: 'rm'
     args: '-rf dist'
-    type: 'shell'
+    type: 'system'
 ```
 
 ### `args`
@@ -244,9 +244,9 @@ tasks:
 
 > `Target[]`
 
-The `deps` field is a list of other tasks (known as [targets](../concepts/task#targets)), either
-within this project or found in another project, that will be executed _before_ this task. It
-achieves this by generating a directed task graph based on the project graph.
+The `deps` field is a list of other tasks (known as [targets](../concepts/target)), either within
+this project or found in another project, that will be executed _before_ this task. It achieves this
+by generating a directed task graph based on the project graph.
 
 ```yaml title="project.yml" {4-6}
 tasks:
@@ -417,13 +417,13 @@ tasks:
 ### `type`
 
 The `type` field defines the type of command to run, where to locate its executable, and which tool
-to execute it with. Accepts "node" or "shell" and defaults to "node".
+to execute it with. Accepts "node" or "system" and defaults to "node".
 
 ```yaml title="project.yml" {4}
 tasks:
   env:
     command: 'printenv'
-    type: 'shell'
+    type: 'system'
 ```
 
 > This field exists because of our [toolchain](../concepts/toolchain), and Moon ensuring the correct

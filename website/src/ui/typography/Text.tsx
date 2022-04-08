@@ -71,7 +71,7 @@ export const transforms: Record<TypographyTransform, string> = {
 };
 
 export const variants: Record<TypographyVariant, string> = {
-	muted: 'text-gray-500',
+	muted: 'text-gray-600',
 	neutral: '',
 };
 

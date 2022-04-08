@@ -12,8 +12,8 @@ export interface LinkProps extends BaseLinkProps, Pick<TypographyProps, 'transfo
 }
 
 const variants: Record<LinkVariant, string> = {
-	muted: 'text-gray-500 hover:text-gray-600 dark:hover:text-gray-400',
-	primary: 'text-indigo-400 hover:text-pink-400',
+	muted: 'text-gray-600 hover:text-gray-800 dark:hover:text-gray-400',
+	primary: 'text-purple-400 hover:text-purple-300',
 };
 
 export default function Link({

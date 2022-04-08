@@ -2,8 +2,7 @@
 // @ts-check
 
 const path = require('path');
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/shadesOfPurple');
+const prismTheme = require('./prism.config');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -83,8 +82,8 @@ const config = {
 				copyright: `Copyright © ${new Date().getFullYear()} Moon. Built with Docusaurus.`,
 			},
 			prism: {
-				theme: lightCodeTheme,
-				darkTheme: darkCodeTheme,
+				theme: prismTheme,
+				darkTheme: prismTheme,
 			},
 		}),
 
@@ -110,6 +109,8 @@ const config = {
 			};
 		},
 	],
+
+	clientModules: [require.resolve('./src/js/darkModeSyncer.ts')],
 };
 
 module.exports = config;

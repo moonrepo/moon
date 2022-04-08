@@ -4,6 +4,12 @@
 
 html:root {
 	--ifm-toc-border-color: transparent;
+	--ifm-color-emphasis-200: var(--moon-color-slate-600);
+
+	/** Navbar (same between light and dark) */
+	--ifm-navbar-background-color: var(--moon-color-slate-900);
+	--ifm-navbar-link-color: var(--moon-color-purple-50);
+	--ifm-navbar-link-hover-color: var(--moon-color-purple-400);
 
 	/* Code blocks */
 	--ifm-code-font-size: 95%;
@@ -25,37 +31,32 @@ html:root {
 }
 
 html[data-theme='dark'] {
-	--ifm-color-primary-lightest: var(--moon-color-indigo-100);
-	--ifm-color-primary-lighter: var(--moon-color-indigo-200);
-	--ifm-color-primary-light: var(--moon-color-indigo-300);
-	--ifm-color-primary: var(--moon-color-indigo-400);
-	--ifm-color-primary-dark: var(--moon-color-indigo-500);
-	--ifm-color-primary-darker: var(--moon-color-indigo-600);
-	--ifm-color-primary-darkest: var(--moon-color-indigo-700);
+	--ifm-color-primary-lightest: var(--moon-color-purple-100);
+	--ifm-color-primary-lighter: var(--moon-color-purple-200);
+	--ifm-color-primary-light: var(--moon-color-purple-300);
+	--ifm-color-primary: var(--moon-color-purple-400);
+	--ifm-color-primary-dark: var(--moon-color-purple-500);
+	--ifm-color-primary-darker: var(--moon-color-purple-600);
+	--ifm-color-primary-darkest: var(--moon-color-purple-700);
 
 	/* Backgrounds */
-	--ifm-background-color: var(--moon-color-gray-900);
-	--ifm-code-background: var(--moon-color-gray-800);
+	--ifm-background-color: var(--moon-color-slate-800);
+	--ifm-code-background: var(--moon-color-slate-600);
 
 	/* Hover styles for boxes? */
-	--ifm-color-emphasis-200: var(--moon-color-gray-700);
-	--ifm-background-surface-color: var(--moon-color-gray-800);
-
-	/* Navbar */
-	--ifm-navbar-background-color: var(--moon-color-gray-800);
-	--ifm-navbar-link-color: var(--moon-color-indigo-50);
-	--ifm-navbar-link-hover-color: var(--moon-color-indigo-400);
+	--ifm-background-surface-color: var(--moon-color-slate-700);
 
 	/* Sidebar */
-	--ifm-menu-color-background-active: var(--moon-color-gray-800);
-	--ifm-menu-color: var(--moon-color-indigo-50);
-	--ifm-menu-color-active: var(--moon-color-indigo-400);
+	--ifm-menu-color-background-active: var(--moon-color-purple-600);
+	--ifm-menu-color-background-hover: var(--moon-color-slate-600);
+	--ifm-menu-color: var(--moon-color-purple-50);
+	--ifm-menu-color-active: var(--moon-color-white);
 
 	/* Toc */
-	--ifm-toc-link-color: var(--moon-color-indigo-50);
+	--ifm-toc-link-color: var(--moon-color-purple-50);
 
 	/* Markdown */
-	--ifm-link-hover-color: var(--moon-color-pink-400);
+	--ifm-link-hover-color: var(--moon-color-purple-300);
 }
 
 /**
@@ -66,6 +67,11 @@ a:hover {
 	text-decoration: none;
 }
 
+.navbar__items > div {
+	color: var(--moon-color-white);
+}
+
+.menu__list .menu__list,
 .menu__list-item:not(:first-child) {
 	margin-top: var(--moon-padding-1);
 }

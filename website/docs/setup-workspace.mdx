@@ -108,9 +108,17 @@ vcs:
 
 <NextSteps
 	links={[
-		{ label: 'Create a project', url: './create-project' },
-		{ label: 'Configure `.moon/workspace.yml` further', url: './config/workspace' },
-		{ label: 'Learn about the workspace', url: './concepts/workspace' },
-		{ label: 'Learn about the toolchain', url: './concepts/toolchain' },
+		{ icon: 'new-project', label: 'Create a project', url: './create-project' },
+		{
+			icon: 'workspace-config',
+			label: (
+				<>
+					Configure <code>.moon/workspace.yml</code> further
+				</>
+			),
+			url: './config/workspace',
+		},
+		{ icon: 'workspace', label: 'Learn about the workspace', url: './concepts/workspace' },
+		{ icon: 'toolchain', label: 'Learn about the toolchain', url: './concepts/toolchain' },
 	]}
 />

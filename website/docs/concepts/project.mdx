@@ -8,13 +8,16 @@ files, assets, resources, and more. A project must exist and be configured withi
 
 ## ID
 
-A project identifier, also knows an a PID, or simply ID, is a unique resource for locating a
-project. The PID is explicitly configured within [`.moon/workspace.yml`](../config/workspace), as a
-key within the [`projects`](../config/workspace#projects) setting.
+A project identifier is a unique resource for locating a project. The ID is explicitly configured
+within [`.moon/workspace.yml`](../config/workspace), as a key within the
+[`projects`](../config/workspace#projects) setting, and can be written in camelCase, kebab-case, or
+snake_case.
 
-PIDs are used heavily by configuration and the command line to link and reference everything.
-They're also a much easier concept for remembering projects than file system paths, and they
-typically can be written with less key strokes.
+IDs are used heavily by configuration and the command line to link and reference everything. They're
+also a much easier concept for remembering projects than file system paths, and they typically can
+be written with less key strokes.
+
+Lastly, a project ID can be paired with a task ID to create a [target](./target).
 
 ## Configuration
 

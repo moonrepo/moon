@@ -5,6 +5,7 @@ title: Create a project
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="3 min" />
 
@@ -150,9 +151,36 @@ project:
 
 ## Next steps
 
-- [Create a task](./create-task)
-- [Configure `.moon/workspace.yml` further](./config/workspace)
-- [Configure `.moon/project.yml` further](./config/global-project)
-- [Configure `project.yml` further](./config/project)
-- [Learn about projects](./concepts/project)
-- [Learn about tasks](./concepts/task)
+<NextSteps
+	links={[
+		{ icon: 'new-task', label: 'Create a task', url: './create-task' },
+		{
+			icon: 'workspace-config',
+			label: (
+				<>
+					Configure <code>.moon/workspace.yml</code> further
+				</>
+			),
+			url: './config/workspace',
+		},
+		{
+			icon: 'project-config-global',
+			label: (
+				<>
+					Configure <code>.moon/project.yml</code> further
+				</>
+			),
+			url: './config/global-project',
+		},
+		{
+			icon: 'project-config',
+			label: (
+				<>
+					Configure <code>project.yml</code> further
+				</>
+			),
+			url: './config/project',
+		},
+		{ icon: 'project', label: 'Learn about projects', url: './concepts/project' },
+	]}
+/>

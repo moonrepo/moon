@@ -5,6 +5,7 @@ title: Install Moon
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="5 min" />
 
@@ -238,5 +239,9 @@ When executed, the following operations will be applied.
 
 ## Next steps
 
-- [Setup the workspace](./setup-workspace)
-- [Learn about the workspace](./concepts/workspace)
+<NextSteps
+	links={[
+		{ icon: 'workspace-config', label: 'Setup the workspace', url: './setup-workspace' },
+		{ icon: 'workspace', label: 'Learn about the workspace', url: './concepts/workspace' },
+	]}
+/>

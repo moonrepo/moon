@@ -2,7 +2,7 @@ import React from 'react';
 import { useHomePageRoute, useSidebarBreadcrumbs } from '@docusaurus/theme-common';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { faAngleRight, faHouseBlank } from '@fortawesome/pro-regular-svg-icons';
-import Icon from '../ui/typography/Icon';
+import Icon from '../ui/iconography/Icon';
 import Link from '../ui/typography/Link';
 import Text from '../ui/typography/Text';
 

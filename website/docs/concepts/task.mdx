@@ -6,6 +6,19 @@ Tasks are commands that are ran in the context of a [project](./project). Undern
 task is simply an npm binary or a system command that is ran as a child process. Tasks are processed
 in a parallel thread pool within Moon's orchestration layer.
 
+## ID
+
+A task identifier is a unique resource for locating a task _within_ a project. The ID is explicitly
+configured as a key within the [`tasks`](../config/project#tasks) setting, and can be written in
+camelCase, kebab-case, or snake_case.
+
+A task ID can be paired with a project ID to create a [target](./target).
+
+## Configuration
+
+Tasks can be configured per project through [`project.yml`](../config/project), or for all projects
+through [`.moon/project.yml`](../config/global-project).
+
 ## Merge strategies
 
 When a [global task](../config/global-project#tasks) and [local task](../config/project#tasks) of

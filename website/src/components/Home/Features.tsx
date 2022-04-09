@@ -2,7 +2,7 @@ import React from 'react';
 import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import Heading from '../../ui/typography/Heading';
-import Icon from '../../ui/typography/Icon';
+import Icon from '../../ui/iconography/Icon';
 import Text from '../../ui/typography/Text';
 import FeatureStatus, { StatusType } from './FeatureStatus';
 

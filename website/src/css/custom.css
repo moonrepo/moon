@@ -5,6 +5,7 @@
 html:root {
 	--ifm-toc-border-color: transparent;
 	--ifm-color-emphasis-200: var(--moon-color-slate-600);
+	--ifm-color-emphasis-300: var(--moon-color-slate-700);
 
 	/** Navbar (same between light and dark) */
 	--ifm-navbar-background-color: var(--moon-color-slate-900);
@@ -28,6 +29,9 @@ html:root {
 	/* Markdown*/
 	--ifm-leading-desktop: 1.5;
 	--ifm-list-item-margin: var(--moon-margin-1);
+	--ifm-blockquote-padding-vertical: var(--moon-padding-1);
+	--ifm-blockquote-padding-horizontal: var(--moon-padding-1_5);
+	--ifm-blockquote-border-left-width: 4px;
 }
 
 html[data-theme='dark'] {
@@ -41,10 +45,8 @@ html[data-theme='dark'] {
 
 	/* Backgrounds */
 	--ifm-background-color: var(--moon-color-slate-800);
-	--ifm-code-background: var(--moon-color-slate-600);
-
-	/* Hover styles for boxes? */
-	--ifm-background-surface-color: var(--moon-color-slate-700);
+	--ifm-background-surface-color: var(--moon-color-slate-600);
+	--ifm-code-background: rgba(255, 255, 255, .075);
 
 	/* Sidebar */
 	--ifm-menu-color-background-active: var(--moon-color-purple-600);
@@ -57,6 +59,8 @@ html[data-theme='dark'] {
 
 	/* Markdown */
 	--ifm-link-hover-color: var(--moon-color-purple-300);
+	--ifm-blockquote-border-color: var(--moon-color-teal-300);
+	--ifm-blockquote-background-color: var(--moon-color-slate-600);
 }
 
 /**
@@ -65,6 +69,10 @@ html[data-theme='dark'] {
 
 a:hover {
 	text-decoration: none;
+}
+
+blockquote {
+	background-color: var(--ifm-blockquote-background-color);
 }
 
 .navbar__items > div {

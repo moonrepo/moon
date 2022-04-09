@@ -5,6 +5,7 @@ title: Create a task
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="10 min" />
 
@@ -164,7 +165,27 @@ encourage certain file structures for consuming projects!
 
 ## Next steps
 
-- [Configure `.moon/project.yml` further](./config/global-project)
-- [Configure `project.yml` further](./config/project)
-- [Learn about tasks](./concepts/task)
-- [Learn about tokens](./concepts/token)
+<NextSteps
+	links={[
+		{
+			icon: 'project-config-global',
+			label: (
+				<>
+					Configure <code>.moon/project.yml</code> further
+				</>
+			),
+			url: './config/global-project',
+		},
+		{
+			icon: 'project-config',
+			label: (
+				<>
+					Configure <code>project.yml</code> further
+				</>
+			),
+			url: './config/project',
+		},
+		{ icon: 'task', label: 'Learn about tasks', url: './concepts/task' },
+		{ icon: 'token', label: 'Learn about tokens', url: './concepts/token' },
+	]}
+/>

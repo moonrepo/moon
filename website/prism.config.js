@@ -5,7 +5,7 @@ const { colors } = tailwind.theme;
 module.exports = {
 	plain: {
 		backgroundColor: colors.slate['900'],
-		color: colors.white,
+		color: colors.gray['100'],
 	},
 	styles: [
 		{
@@ -36,7 +36,7 @@ module.exports = {
 		{
 			types: ['punctuation'],
 			style: {
-				color: colors.gray['200'],
+				color: colors.gray['300'],
 			},
 		},
 		{
@@ -48,7 +48,7 @@ module.exports = {
 		{
 			types: ['string', 'url'],
 			style: {
-				color: colors.green['300'],
+				color: colors.green['200'],
 			},
 		},
 		{

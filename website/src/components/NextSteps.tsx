@@ -10,7 +10,7 @@ export default function NextSteps({ links }: NextStepsProps) {
 	return (
 		<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 			{links.map((link) => (
-				<Link href={link.url} className="focus:outline-none">
+				<Link key={link.url} href={link.url} className="focus:outline-none">
 					<div className="relative rounded-lg px-3 py-3 flex items-center space-x-2 border-solid border border-t-0 border-b-2 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border-slate-900/75">
 						<div className="flex-shrink-0">
 							<ProductIcon size="lg" name={link.icon} />

@@ -84,6 +84,15 @@ blockquote {
 	margin-top: var(--moon-padding-1);
 }
 
+.pagination-nav__item .icon-next,
+.pagination-nav__item--next .icon-previous {
+	display: none
+}
+
+.pagination-nav__item--next .icon-next {
+	display: inline-block;
+}
+
 @media (min-width: 997px) {
 	html .menu {
 		padding: var(--moon-padding-1_5);

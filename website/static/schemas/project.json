@@ -1,9 +1,16 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "GlobalProjectConfig",
-  "description": "https://moonrepo.dev/docs/config/global-project",
+  "title": "ProjectConfig",
+  "description": "https://moonrepo.dev/docs/config/project",
   "type": "object",
   "properties": {
+    "dependsOn": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "fileGroups": {
       "default": {},
       "type": "object",
@@ -14,15 +21,128 @@
         }
       }
     },
+    "project": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ProjectMetadataConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "tasks": {
       "default": {},
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TaskConfig"
       }
+    },
+    "workspace": {
+      "default": {
+        "inheritedTasks": {
+          "exclude": null,
+          "include": null,
+          "rename": {}
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectWorkspaceConfig"
+        }
+      ]
     }
   },
   "definitions": {
+    "ProjectMetadataConfig": {
+      "type": "object",
+      "required": [
+        "channel",
+        "description",
+        "maintainers",
+        "name",
+        "owner",
+        "type"
+      ],
+      "properties": {
+        "channel": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "maintainers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ProjectType"
+        }
+      }
+    },
+    "ProjectType": {
+      "type": "string",
+      "enum": [
+        "application",
+        "library",
+        "tool"
+      ]
+    },
+    "ProjectWorkspaceConfig": {
+      "type": "object",
+      "properties": {
+        "inheritedTasks": {
+          "default": {
+            "exclude": null,
+            "include": null,
+            "rename": {}
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
+            }
+          ]
+        }
+      }
+    },
+    "ProjectWorkspaceInheritedTasksConfig": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "include": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "rename": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "TaskConfig": {
       "type": "object",
       "properties": {
@@ -82,7 +202,7 @@
             "mergeInputs": "append",
             "mergeOutputs": "append",
             "retryCount": 0,
-            "runInCi": true,
+            "runInCI": true,
             "runFromWorkspaceRoot": false
           },
           "allOf": [
@@ -185,7 +305,7 @@
             "null"
           ]
         },
-        "runInCi": {
+        "runInCI": {
           "type": [
             "boolean",
             "null"

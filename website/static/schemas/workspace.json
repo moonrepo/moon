@@ -58,9 +58,6 @@
   "definitions": {
     "NodeConfig": {
       "type": "object",
-      "required": [
-        "version"
-      ],
       "properties": {
         "addEnginesConstraint": {
           "default": true,
@@ -113,6 +110,7 @@
           ]
         },
         "version": {
+          "default": "16.14.0",
           "type": "string"
         },
         "yarn": {

@@ -109,12 +109,12 @@ impl Toolchain {
         root_dir: &Path,
         config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
-        Ok(Toolchain::create_from_dir(
+        Toolchain::create_from_dir(
             config,
             &fs::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
         )
-        .await?)
+        .await
     }
 
     /// Download and install all tools into the toolchain.

@@ -26,7 +26,7 @@ jobs:
             target: x86_64-apple-darwin
             arch: x64
             binary: moon
-            strip: strip -x
+            # strip: strip -x
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             arch: x64
@@ -68,9 +68,9 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      - name: Strip debug symbols
-        if: ${{ matrix.strip }}
-        run: ${{ matrix.strip }} ${{ matrix.binary }}
+      # - name: Strip debug symbols
+      #   if: ${{ matrix.strip }}
+      #   run: ${{ matrix.strip }} ${{ matrix.binary }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -87,7 +87,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             arch: x64
             binary: moon
-            strip: strip
+            # strip: strip
             image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
@@ -137,9 +137,9 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      - name: Strip debug symbols
-        if: ${{ matrix.strip }}
-        run: ${{ matrix.strip }} ${{ matrix.binary }}
+      # - name: Strip debug symbols
+      #   if: ${{ matrix.strip }}
+      #   run: ${{ matrix.strip }} ${{ matrix.binary }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:

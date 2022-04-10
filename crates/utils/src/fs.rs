@@ -153,9 +153,9 @@ pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
 }
 
 pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
-    Ok(fs::metadata(path)
+    fs::metadata(path)
         .await
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?)
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))
 }
 
 pub fn normalize(path: &Path) -> PathBuf {
@@ -245,7 +245,7 @@ pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
-    Ok(clean_json(json)?)
+    clean_json(json)
 }
 
 pub async fn remove_file(path: &Path) -> Result<(), MoonError> {

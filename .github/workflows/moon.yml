@@ -13,28 +13,28 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         node-version: ['12.22.9', '14.19.0', '16.14.0']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.yarn/cache
             ./.yarn/install-state.gz
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.moon/tools
           key: ${{ runner.os }}-moon
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.58.0
+          toolchain: 1.60.0
           profile: minimal
       - uses: actions-rs/cargo@v1
         with:

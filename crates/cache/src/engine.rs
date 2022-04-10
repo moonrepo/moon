@@ -51,22 +51,22 @@ impl CacheEngine {
             .iter()
             .collect();
 
-        Ok(CacheItem::load(
+        CacheItem::load(
             self.runs_dir.join(path),
             RunTargetState {
                 target: String::from(target_id),
                 ..RunTargetState::default()
             },
         )
-        .await?)
+        .await
     }
 
     pub async fn cache_workspace_state(&self) -> Result<CacheItem<WorkspaceState>, MoonError> {
-        Ok(CacheItem::load(
+        CacheItem::load(
             self.dir.join("workspaceState.json"),
             WorkspaceState::default(),
         )
-        .await?)
+        .await
     }
 
     pub async fn create_runfile<T: DeserializeOwned + Serialize>(
@@ -76,7 +76,7 @@ impl CacheEngine {
     ) -> Result<CacheRunfile, MoonError> {
         let path: PathBuf = [project_id, "runfile.json"].iter().collect();
 
-        Ok(CacheRunfile::load(self.runs_dir.join(path), data).await?)
+        CacheRunfile::load(self.runs_dir.join(path), data).await
     }
 
     pub async fn delete_hash(&self, hash: &str) -> Result<(), MoonError> {

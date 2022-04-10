@@ -87,13 +87,12 @@ impl ExtendedTerm for Term {
         let message = replace_style_tokens(error.to_string().trim());
         let message_width = measure_text_width(&message);
         let available_space = self.size().1 as usize - label_width - 3; // padding
-        let contents;
 
-        if message.contains('\n') || message_width > available_space {
-            contents = format!("{}\n\n{}", label, &message);
+        let contents = if message.contains('\n') || message_width > available_space {
+            format!("{}\n\n{}", label, &message)
         } else {
-            contents = format!("{} {}", label, &message);
-        }
+            format!("{} {}", label, &message)
+        };
 
         self.write_line("").unwrap();
         self.write_line(&contents).unwrap();

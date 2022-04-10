@@ -26,7 +26,7 @@ jobs:
             target: x86_64-apple-darwin
             arch: x64
             binary: moon
-            strip: strip -x
+            # strip: strip -x
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             arch: x64
@@ -34,8 +34,8 @@ jobs:
     name: Stable - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           architecture: ${{ matrix.arch }}
           check-latest: true
@@ -51,12 +51,12 @@ jobs:
         with:
           command: generate-lockfile
       - name: Cache cargo registry
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cargo/registry
           key: ${{ matrix.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache cargo index
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cargo/git
           key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
@@ -68,9 +68,9 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      - name: Strip debug symbols
-        if: ${{ matrix.strip }}
-        run: ${{ matrix.strip }} ${{ matrix.binary }}
+      # - name: Strip debug symbols
+      #   if: ${{ matrix.strip }}
+      #   run: ${{ matrix.strip }} ${{ matrix.binary }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -87,7 +87,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             arch: x64
             binary: moon
-            strip: strip
+            # strip: strip
             image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
@@ -101,8 +101,8 @@ jobs:
       image: ${{ matrix.image }}
       options: --pull always
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           architecture: ${{ matrix.arch }}
           node-version: 16
@@ -117,12 +117,12 @@ jobs:
         with:
           command: generate-lockfile
       - name: Cache cargo registry
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cargo/registry
           key: ${{ matrix.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache cargo index
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cargo/git
           key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
@@ -137,9 +137,9 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      - name: Strip debug symbols
-        if: ${{ matrix.strip }}
-        run: ${{ matrix.strip }} ${{ matrix.binary }}
+      # - name: Strip debug symbols
+      #   if: ${{ matrix.strip }}
+      #   run: ${{ matrix.strip }} ${{ matrix.binary }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -162,8 +162,8 @@ jobs:
     name: Test Node@${{ matrix.node }} - ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           cache: yarn
           node-version: ${{ matrix.node }}
@@ -205,8 +205,8 @@ jobs:
       image: ${{ matrix.settings.image }}
       options: --pull always
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           cache: yarn
           node-version: ${{ matrix.node }}
@@ -236,8 +236,8 @@ jobs:
       - test-macos-windows
       - test-linux
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           cache: yarn
           node-version: 16

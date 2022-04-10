@@ -1,6 +1,8 @@
 use crate::types::{FilePath, FilePathOrGlob, TargetID};
 use crate::validators::{validate_child_or_root_path, validate_target};
-use schemars::JsonSchema;
+use schemars::gen::SchemaGenerator;
+use schemars::schema::Schema;
+use schemars::{schema_for, JsonSchema};
 use serde::de::{self, SeqAccess};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
@@ -100,6 +102,7 @@ impl Default for TaskOptionsConfig {
 pub struct TaskConfig {
     #[serde(default)]
     #[serde(deserialize_with = "deserialize_args")]
+    #[schemars(schema_with = "make_args_schema")]
     pub args: Option<Vec<String>>,
 
     pub command: Option<String>,
@@ -125,6 +128,15 @@ pub struct TaskConfig {
 }
 
 // SERDE
+
+#[derive(JsonSchema)]
+#[serde(untagged)]
+enum Args {
+    #[allow(dead_code)]
+    Str(String),
+    #[allow(dead_code)]
+    Vec(Vec<String>),
+}
 
 struct DeserializeArgs;
 
@@ -164,6 +176,40 @@ where
     D: Deserializer<'de>,
 {
     Ok(Some(deserializer.deserialize_any(DeserializeArgs)?))
+}
+
+fn make_args_schema(_gen: &mut SchemaGenerator) -> Schema {
+    let root = schema_for!(Args);
+
+    Schema::Object(root.schema)
+
+    // let mut schema: SchemaObject = <String>::json_schema(gen).into();
+    // schema.instance_type = None;
+    // schema.subschemas = Some(Box::new(SubschemaValidation {
+    //     one_of: Some(vec![
+    //         Schema::Object(SchemaObject {
+    //             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
+    //             ..SchemaObject::default()
+    //         }),
+    //         Schema::Object(SchemaObject {
+    //             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
+    //             array: Some(Box::new(ArrayValidation {
+    //                 items: Some(SingleOrVec::Single(Box::new(Schema::Object(
+    //                     SchemaObject {
+    //                         instance_type: Some(SingleOrVec::Single(Box::new(
+    //                             InstanceType::String,
+    //                         ))),
+    //                         ..SchemaObject::default()
+    //                     },
+    //                 )))),
+    //                 ..ArrayValidation::default()
+    //             })),
+    //             ..SchemaObject::default()
+    //         }),
+    //     ]),
+    //     ..SubschemaValidation::default()
+    // }));
+    // schema.into()
 }
 
 #[cfg(test)]

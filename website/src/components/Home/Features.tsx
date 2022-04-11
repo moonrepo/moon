@@ -25,38 +25,38 @@ export interface FeaturesProps {
 }
 
 const backgroundGradients: Record<FeatureTier, string> = {
-	1: 'from-slate-600 to-purple-600',
-	2: 'from-purple-600 to-pink-100',
-	3: 'from-pink-100 to-white',
+	1: 'from-slate-600 to-purple-700',
+	2: 'from-purple-700 to-purple-200',
+	3: 'from-purple-200 to-white',
 	4: 'bg-white',
 };
 
 const headings: Record<FeatureTier, string> = {
 	1: 'text-white',
 	2: 'text-white',
-	3: 'text-gray-800',
+	3: 'text-gray-900',
 	4: 'text-gray-800',
 };
 
 const titles: Record<FeatureTier, string> = {
-	1: 'text-teal-400',
-	2: 'text-purple-900',
-	3: 'text-pink-700',
-	4: 'text-pink-400',
+	1: 'text-purple-500',
+	2: 'text-purple-300',
+	3: 'text-pink-600',
+	4: 'text-teal-600',
 };
 
 const cardIcons: Record<FeatureTier, string> = {
-	1: 'text-teal-300',
+	1: 'text-purple-400',
 	2: 'text-purple-700',
 	3: 'text-pink-600',
-	4: 'text-pink-600',
+	4: 'text-teal-600',
 };
 
 const cardForegrounds: Record<FeatureTier, string> = {
-	1: 'text-teal-200',
+	1: 'text-purple-200',
 	2: 'text-purple-800',
-	3: 'text-pink-500',
-	4: 'text-gray-800',
+	3: 'text-gray-800',
+	4: 'text-gray-700',
 };
 
 const cardBackgrounds: Record<FeatureTier, string> = {
@@ -129,7 +129,7 @@ export default function Features({
 												</p>
 											)}
 
-											<Text className={cx('mt-2', cardForegrounds[tier])} variant="muted">
+											<Text className={cx('mt-2', cardForegrounds[tier])}>
 												{feature.description}
 											</Text>
 										</div>

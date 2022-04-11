@@ -1,7 +1,6 @@
 /* eslint-disable sort-keys */
 
 import React from 'react';
-import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {
@@ -28,8 +27,8 @@ import {
 } from '@fortawesome/pro-duotone-svg-icons';
 import AdditionalFeatures from '@site/src/components/Home/AdditionalFeatures';
 import Features, { Feature } from '@site/src/components/Home/Features';
+import Hero from '@site/src/components/Home/Hero';
 import Layout from '@theme/Layout';
-import styles from './index.module.css';
 
 const managementFeatures: Feature[] = [
 	{
@@ -174,30 +173,6 @@ const additionalFeatures: Feature[] = [
 	},
 ];
 
-function HomepageHeader() {
-	const { siteConfig } = useDocusaurusContext();
-
-	return (
-		<header
-			className={clsx(
-				'hero hero--primary',
-				styles.heroBanner,
-				'bg-gradient-to-b from-slate-900 to-slate-600',
-			)}
-		>
-			<div className="container">
-				<h1 className="hero__title">{siteConfig.title}</h1>
-				<p className="hero__subtitle">{siteConfig.tagline}</p>
-				<div className={styles.buttons}>
-					<Link className="button button--secondary button--lg" to="/docs/intro">
-						Docusaurus Tutorial - 5min ⏱️
-					</Link>
-				</div>
-			</div>
-		</header>
-	);
-}
-
 export default function Home() {
 	const { siteConfig } = useDocusaurusContext();
 
@@ -206,7 +181,7 @@ export default function Home() {
 			title={`Hello from ${siteConfig.title}`}
 			description="Description will go into a meta tag in <head />"
 		>
-			<HomepageHeader />
+			<Hero />
 
 			<main>
 				<Features

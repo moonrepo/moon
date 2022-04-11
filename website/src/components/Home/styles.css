@@ -2,6 +2,7 @@
 	position: relative;
 }
 
+/*
 .star-pattern::after {
 	content: ' ';
   display: block;
@@ -15,3 +16,4 @@
   background-repeat: repeat;
   background-position: 50% 0;
 }
+*/

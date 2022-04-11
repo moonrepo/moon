@@ -7,7 +7,7 @@ const prismTheme = require('./prism.config');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
 	title: 'Moon',
-	tagline: 'Build system for JavaScript based repos.',
+	tagline: 'A build system for the JavaScript ecosystem',
 	url: 'https://moonrepo.dev',
 	baseUrl: '/',
 	onBrokenLinks: 'throw',

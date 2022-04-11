@@ -8,6 +8,7 @@ module.exports = {
 		// Conflicts with Docusaurus's styles
 		preflight: false,
 	},
+	darkMode: 'class',
 	plugins: [
 		// Generate CSS variables so that we may overwrite Docusaurus styles with them
 		plugin(({ addComponents, config }) => {
@@ -45,7 +46,7 @@ module.exports = {
 			white: '#fff',
 			// https://maketintsandshades.com/#292940
 			gray: {
-				50: '#ffffff',
+				50: '#fafafa',
 				100: '#eaeaec',
 				200: '#d4d4d9',
 				300: '#bfbfc6',

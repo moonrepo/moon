@@ -1,8 +1,8 @@
 import React from 'react';
 import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import Heading from '../../ui/typography/Heading';
 import Icon from '../../ui/iconography/Icon';
+import Heading from '../../ui/typography/Heading';
 import Text from '../../ui/typography/Text';
 import FeatureStatus, { StatusType } from './FeatureStatus';
 
@@ -31,7 +31,7 @@ export default function Features({ header, description, features, columns = 4 }:
 		<div className="bg-white">
 			<div className="relative py-4 sm:py-5 lg:py-6">
 				<div className="mx-auto max-w-md px-2 text-center sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
-					<h2 className="m-0 text-base font-semibold uppercase tracking-wider text-indigo-600">
+					<h2 className="m-0 text-base font-semibold uppercase tracking-wider text-purple-600">
 						{header}
 					</h2>
 
@@ -45,18 +45,15 @@ export default function Features({ header, description, features, columns = 4 }:
 								const isFutureRelease =
 									feature.status === 'coming-soon' || feature.status === 'in-development';
 								const iconIndex = index + 1;
-								let iconColor = 'text-blue-500';
+								let iconColor = 'text-purple-500';
 
+								// eslint-disable-next-line
 								if (iconIndex % 4 === 0) {
+									iconColor = 'text-purple-600';
+								} else if (iconIndex % 3 === 0) {
+									iconColor = 'text-purple-400';
+								} else if (iconIndex % 2 === 0) {
 									iconColor = 'text-purple-500';
-								}
-
-								if (iconIndex % 3 === 0) {
-									iconColor = 'text-violet-500';
-								}
-
-								if (iconIndex % 2 === 0) {
-									iconColor = 'text-indigo-500';
 								}
 
 								return (

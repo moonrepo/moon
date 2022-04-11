@@ -1,6 +1,6 @@
 import React from 'react';
-import Heading from '../../ui/typography/Heading';
 import Icon from '../../ui/iconography/Icon';
+import Heading from '../../ui/typography/Heading';
 import Text from '../../ui/typography/Text';
 import { FeaturesProps } from './Features';
 import FeatureStatus from './FeatureStatus';
@@ -20,7 +20,7 @@ export default function AdditionalFeatures({ header, features }: AdditionalFeatu
 						{features.map((feature) => (
 							<div key={feature.title} className="relative">
 								<dt>
-									<Icon icon={feature.icon} className="absolute h-3 w-3 text-indigo-500" />
+									<Icon icon={feature.icon} className="absolute h-3 w-3 text-purple-500" />
 
 									<Heading className="ml-4" level={5}>
 										{feature.title}

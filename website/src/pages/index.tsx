@@ -16,7 +16,6 @@ import {
 	faDiagramSankey,
 	faFingerprint,
 	faGridDividers,
-	faGridHorizontal,
 	faMerge,
 	faMessageCode,
 	faMicrochip,
@@ -67,7 +66,7 @@ const organizationFeatures: Feature[] = [
 	},
 	{
 		title: 'Project boundaries',
-		icon: faGridHorizontal,
+		icon: faChartTreeMap,
 		description: 'Enforces boundaries to eliminate cycles and reduce indirection.',
 	},
 	{
@@ -179,7 +178,13 @@ function HomepageHeader() {
 	const { siteConfig } = useDocusaurusContext();
 
 	return (
-		<header className={clsx('hero hero--primary', styles.heroBanner)}>
+		<header
+			className={clsx(
+				'hero hero--primary',
+				styles.heroBanner,
+				'bg-gradient-to-b from-slate-900 to-slate-600',
+			)}
+		>
 			<div className="container">
 				<h1 className="hero__title">{siteConfig.title}</h1>
 				<p className="hero__subtitle">{siteConfig.tagline}</p>
@@ -208,18 +213,21 @@ export default function Home() {
 					header="Management"
 					description="Develop more, manage less"
 					features={managementFeatures}
+					tier={1}
 				/>
 
 				<Features
 					header="Organization"
 					description="Architect a repository to scale"
 					features={organizationFeatures}
+					tier={2}
 				/>
 
 				<Features
 					header="Orchestration"
 					description="Offload your heavy tasks"
 					features={orchestrationFeatures}
+					tier={3}
 				/>
 
 				<Features
@@ -227,6 +235,7 @@ export default function Home() {
 					description="Be notified of pipeline health"
 					features={notificationFeatures}
 					columns={3}
+					tier={4}
 				/>
 
 				<AdditionalFeatures header="And many more features" features={additionalFeatures} />

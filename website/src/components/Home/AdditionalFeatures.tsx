@@ -5,14 +5,14 @@ import Text from '../../ui/typography/Text';
 import { FeaturesProps } from './Features';
 import FeatureStatus from './FeatureStatus';
 
-export type AdditionalFeaturesProps = Omit<FeaturesProps, 'columns' | 'description'>;
+export type AdditionalFeaturesProps = Omit<FeaturesProps, 'columns' | 'description' | 'tier'>;
 
 export default function AdditionalFeatures({ header, features }: AdditionalFeaturesProps) {
 	return (
 		<div className="bg-white">
 			<div className="relative py-4 sm:py-5 lg:py-6">
 				<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
-					<Heading align="center" level={3}>
+					<Heading align="center" className="text-gray-900" level={3}>
 						{header}
 					</Heading>
 
@@ -22,7 +22,7 @@ export default function AdditionalFeatures({ header, features }: AdditionalFeatu
 								<dt>
 									<Icon icon={feature.icon} className="absolute h-3 w-3 text-purple-500" />
 
-									<Heading className="ml-4" level={5}>
+									<Heading className="ml-4 text-gray-900" level={5}>
 										{feature.title}
 									</Heading>
 								</dt>

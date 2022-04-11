@@ -1,3 +1,4 @@
+import './styles.css';
 import React from 'react';
 import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -5,6 +6,8 @@ import Icon from '../../ui/iconography/Icon';
 import Heading from '../../ui/typography/Heading';
 import Text from '../../ui/typography/Text';
 import FeatureStatus, { StatusType } from './FeatureStatus';
+
+export type FeatureTier = 1 | 2 | 3 | 4;
 
 export interface Feature {
 	title: string;
@@ -18,7 +21,57 @@ export interface FeaturesProps {
 	description: string;
 	features: Feature[];
 	columns?: 3 | 4 | 5;
+	tier: FeatureTier;
 }
+
+const backgroundGradients: Record<FeatureTier, string> = {
+	1: 'from-slate-600 to-purple-600',
+	2: 'from-purple-600 to-pink-100',
+	3: 'from-pink-100 to-white',
+	4: 'bg-white',
+};
+
+const headings: Record<FeatureTier, string> = {
+	1: 'text-white',
+	2: 'text-white',
+	3: 'text-gray-800',
+	4: 'text-gray-800',
+};
+
+const titles: Record<FeatureTier, string> = {
+	1: 'text-teal-400',
+	2: 'text-purple-900',
+	3: 'text-pink-700',
+	4: 'text-pink-400',
+};
+
+const cardIcons: Record<FeatureTier, string> = {
+	1: 'text-teal-300',
+	2: 'text-purple-700',
+	3: 'text-pink-600',
+	4: 'text-pink-600',
+};
+
+const cardForegrounds: Record<FeatureTier, string> = {
+	1: 'text-teal-200',
+	2: 'text-purple-800',
+	3: 'text-pink-500',
+	4: 'text-gray-800',
+};
+
+const cardBackgrounds: Record<FeatureTier, string> = {
+	1: 'from-white/10 to-white/0',
+	2: 'from-white/20 to-white/0',
+	3: 'from-white/40 to-white/0',
+	4: 'from-gray-100/30 to-white',
+};
+
+const cardHeadings: Record<FeatureTier, string> = {
+	1: 'text-white',
+	2: 'text-white',
+	3: 'text-gray-900',
+	4: 'text-gray-900',
+};
 
 const columnClasses = {
 	3: 'sm:grid-cols-2 lg:grid-cols-3',
@@ -26,68 +79,63 @@ const columnClasses = {
 	5: 'sm:grid-cols-3 lg:grid-cols-5',
 };
 
-export default function Features({ header, description, features, columns = 4 }: FeaturesProps) {
+export default function Features({
+	header,
+	description,
+	features,
+	columns = 4,
+	tier,
+}: FeaturesProps) {
 	return (
-		<div className="bg-white">
-			<div className="relative py-4 sm:py-5 lg:py-6">
+		<div className={cx('bg-gradient-to-b', backgroundGradients[tier])}>
+			<div className="relative py-4 sm:py-5 lg:py-6 star-pattern">
 				<div className="mx-auto max-w-md px-2 text-center sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
-					<h2 className="m-0 text-base font-semibold uppercase tracking-wider text-purple-600">
+					<h2 className={cx('m-0 text-base font-semibold uppercase tracking-wider', titles[tier])}>
 						{header}
 					</h2>
 
-					<Heading className="mt-1" level={2}>
+					<Heading className={cx('mt-1', headings[tier])} level={2}>
 						{description}
 					</Heading>
 
 					<div className="mt-4">
 						<div className={cx('grid grid-cols-1 gap-4', columnClasses[columns])}>
-							{features.map((feature, index) => {
-								const isFutureRelease =
-									feature.status === 'coming-soon' || feature.status === 'in-development';
-								const iconIndex = index + 1;
-								let iconColor = 'text-purple-500';
-
-								// eslint-disable-next-line
-								if (iconIndex % 4 === 0) {
-									iconColor = 'text-purple-600';
-								} else if (iconIndex % 3 === 0) {
-									iconColor = 'text-purple-400';
-								} else if (iconIndex % 2 === 0) {
-									iconColor = 'text-purple-500';
-								}
-
-								return (
-									<div key={feature.title} className={cx('pt-6', isFutureRelease && 'opacity-80')}>
-										<div className="flow-root rounded-lg bg-gray-50 px-2 pb-3">
-											<div className="-mt-3">
-												<div>
-													<Icon
-														icon={feature.icon}
-														className={cx(
-															'inline-flex items-center justify-center text-5xl',
-															iconColor,
-														)}
-													/>
-												</div>
-
-												<Heading className="mt-2" level={4}>
-													{feature.title}
-												</Heading>
-
-												{feature.status && (
-													<p>
-														<FeatureStatus status={feature.status} />
-													</p>
-												)}
-
-												<Text className="mt-2" variant="muted">
-													{feature.description}
-												</Text>
+							{features.map((feature) => (
+								<div key={feature.title} className="pt-6">
+									<div
+										className={cx(
+											'flow-root rounded-lg px-2 pb-3 bg-gradient-to-b',
+											cardBackgrounds[tier],
+										)}
+									>
+										<div className="-mt-3">
+											<div>
+												<Icon
+													icon={feature.icon}
+													className={cx(
+														'inline-flex items-center justify-center text-5xl',
+														cardIcons[tier],
+													)}
+												/>
 											</div>
+
+											<Heading className={cx('mt-2', cardHeadings[tier])} level={4}>
+												{feature.title}
+											</Heading>
+
+											{feature.status && (
+												<p>
+													<FeatureStatus status={feature.status} />
+												</p>
+											)}
+
+											<Text className={cx('mt-2', cardForegrounds[tier])} variant="muted">
+												{feature.description}
+											</Text>
 										</div>
 									</div>
-								);
-							})}
+								</div>
+							))}
 						</div>
 					</div>
 				</div>

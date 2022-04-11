@@ -14,12 +14,12 @@ export interface HeadingProps extends Omit<TypographyProps, 'weight'> {
 }
 
 const levels: Record<HeadingLevel, string> = {
-	1: 'text-4xl font-extrabold text-gray-900 sm:text-5xl',
-	2: 'text-3xl font-extrabold text-gray-900 sm:text-4xl',
-	3: 'text-2xl font-bold text-gray-900',
-	4: 'text-xl font-semibold leading-8 text-gray-900',
-	5: 'text-lg font-medium leading-6 text-gray-900',
-	6: 'text-base font-medium text-gray-900',
+	1: 'text-4xl font-extrabold sm:text-5xl',
+	2: 'text-3xl font-extrabold sm:text-4xl',
+	3: 'text-2xl font-bold',
+	4: 'text-xl font-semibold leading-8',
+	5: 'text-lg font-medium leading-6',
+	6: 'text-base font-medium',
 };
 
 export default function Heading({

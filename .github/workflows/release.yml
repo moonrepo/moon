@@ -39,6 +39,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           architecture: ${{ matrix.arch }}
+          cache: yarn
           check-latest: true
           node-version: 16
       - uses: actions-rs/toolchain@v1
@@ -106,6 +107,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           architecture: ${{ matrix.arch }}
+          cache: yarn
           node-version: 16
       - uses: actions-rs/toolchain@v1
         with:
@@ -135,7 +137,7 @@ jobs:
       - name: Add target
         run: rustup target add ${{ matrix.target }}
       - name: Build binary
-        run: node ./scripts/buildBinary.mjs
+        run: ls -la . && node ./scripts/buildBinary.mjs
         shell: bash
         env:
           BINARY: ${{ matrix.binary }}

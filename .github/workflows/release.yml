@@ -85,7 +85,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             arch: x64
             binary: moon
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   arch: x64
@@ -187,7 +187,7 @@ jobs:
         settings:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine

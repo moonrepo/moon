@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { getPackageFromTarget, getPath } from './helpers.mjs';
 
 async function syncArtifacts() {
@@ -11,15 +12,22 @@ async function syncArtifacts() {
 			await Promise.all(
 				artifacts.map(async (artifact) => {
 					const artifactPath = getPath('artifacts', targetDir, artifact);
-					const binaryPath = getPath(
-						'packages',
-						getPackageFromTarget(targetDir.replace('binary-', '')),
-						artifact,
-					);
+					const target = targetDir.replace('binary-', '');
 
 					// Copy the artifact binary into the target core package
+					const binaryPath = getPath('packages', getPackageFromTarget(target), artifact);
+
 					await fs.promises.copyFile(artifactPath, binaryPath);
 					await fs.promises.chmod(binaryPath, 0o755);
+
+					// Copy the artifact binary into the release folder so it can be used as an asset
+					const releasePath = getPath(
+						'artifacts/release',
+						artifact.replace('moon', `moon-${target}`),
+					);
+
+					await fs.promises.mkdir(path.dirname(releasePath), { recursive: true });
+					await fs.promises.copyFile(artifactPath, releasePath);
 				}),
 			);
 		}),

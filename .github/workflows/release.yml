@@ -143,6 +143,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - test
+    env:
+      NPM_CHANNEL: latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -162,8 +164,15 @@ jobs:
       - name: Sync artifact binaries
         run: node ./scripts/syncArtifacts.mjs
         shell: bash
-      - name: Publish
+      - name: Publish npm packages
         run: bash ./scripts/publishPackages.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # TODO changelog
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          fail_on_unmatched_files: true
+          files: artifacts/release/*
+          prerelease: ${{ env.NPM_CHANNEL == 'next' }}

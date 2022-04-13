@@ -27,7 +27,6 @@ jobs:
             target: x86_64-apple-darwin
             arch: x64
             binary: moon
-            # strip: strip -x
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             arch: x64
@@ -70,9 +69,6 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      # - name: Strip debug symbols
-      #   if: ${{ matrix.strip }}
-      #   run: ${{ matrix.strip }} ${{ matrix.binary }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -89,7 +85,6 @@ jobs:
             target: x86_64-unknown-linux-gnu
             arch: x64
             binary: moon
-            # strip: strip
             image: docker.io/centos/nodejs-12-centos7
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
@@ -107,6 +102,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           architecture: ${{ matrix.arch }}
+          check-latest: true
           node-version: 16
       - uses: actions-rs/toolchain@v1
         with:
@@ -114,8 +110,6 @@ jobs:
           profile: minimal
           target: ${{ matrix.target }}
           toolchain: stable
-      # - name: Install apt packages
-      #   run: apt-get update && apt-get -y install libssl-dev pkg-config
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
         with:
@@ -136,14 +130,11 @@ jobs:
       - name: Add target
         run: rustup target add ${{ matrix.target }}
       - name: Build binary
-        run: ls -la . && which node && node ./scripts/buildBinary.mjs
+        run: node ./scripts/buildBinary.mjs
         shell: bash
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      # - name: Strip debug symbols
-      #   if: ${{ matrix.strip }}
-      #   run: ${{ matrix.strip }} ${{ matrix.binary }}
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -196,7 +187,7 @@ jobs:
         settings:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
+            image: docker.io/centos/nodejs-12-centos7
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
@@ -210,10 +201,10 @@ jobs:
       options: --pull always
     steps:
       - uses: actions/checkout@v3
-      # - uses: actions/setup-node@v3
-      #   with:
-      #     cache: yarn
-      #     node-version: ${{ matrix.node }}
+      - uses: actions/setup-node@v3
+        with:
+          cache: yarn
+          node-version: ${{ matrix.node }}
       - name: Download artifacts
         uses: actions/download-artifact@v2
         with:

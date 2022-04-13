@@ -104,11 +104,11 @@ jobs:
       options: --pull always
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          architecture: ${{ matrix.arch }}
-          cache: yarn
-          node-version: 16
+      # - uses: actions/setup-node@v3
+      #   with:
+      #     architecture: ${{ matrix.arch }}
+      #     cache: yarn
+      #     node-version: 16
       - uses: actions-rs/toolchain@v1
         with:
           override: true
@@ -137,7 +137,7 @@ jobs:
       - name: Add target
         run: rustup target add ${{ matrix.target }}
       - name: Build binary
-        run: ls -la . && node ./scripts/buildBinary.mjs
+        run: ls -la . && which yarn && which node && node ./scripts/buildBinary.mjs
         shell: bash
         env:
           BINARY: ${{ matrix.binary }}
@@ -198,7 +198,7 @@ jobs:
         settings:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
@@ -212,10 +212,10 @@ jobs:
       options: --pull always
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          cache: yarn
-          node-version: ${{ matrix.node }}
+      # - uses: actions/setup-node@v3
+      #   with:
+      #     cache: yarn
+      #     node-version: ${{ matrix.node }}
       - name: Download artifacts
         uses: actions/download-artifact@v2
         with:

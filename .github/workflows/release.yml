@@ -90,7 +90,7 @@ jobs:
             arch: x64
             binary: moon
             # strip: strip
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
+            image: docker.io/centos/nodejs-12-centos7
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   arch: x64
@@ -104,11 +104,11 @@ jobs:
       options: --pull always
     steps:
       - uses: actions/checkout@v3
-      # - uses: actions/setup-node@v3
-      #   with:
-      #     architecture: ${{ matrix.arch }}
-      #     cache: yarn
-      #     node-version: 16
+      - uses: actions/setup-node@v3
+        with:
+          architecture: ${{ matrix.arch }}
+          cache: yarn
+          node-version: 16
       - uses: actions-rs/toolchain@v1
         with:
           override: true

@@ -113,6 +113,8 @@ jobs:
           profile: minimal
           target: ${{ matrix.target }}
           toolchain: stable
+      - name: Install apt packages
+        run: apt install pkg-config
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
         with:

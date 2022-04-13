@@ -15,6 +15,7 @@ on:
   schedule:
     # Test every night to ensure builds are good
     - cron: '0 10 * * *' # 2am PT, 10am UTC
+  pull_request:
 
 jobs:
   build-macos-windows:

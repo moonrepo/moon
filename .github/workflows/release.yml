@@ -89,7 +89,7 @@ jobs:
             arch: x64
             binary: moon
             # strip: strip
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   arch: x64
@@ -113,8 +113,8 @@ jobs:
           profile: minimal
           target: ${{ matrix.target }}
           toolchain: stable
-      - name: Install apt packages
-        run: apt-get update && apt-get -y install libssl-dev pkg-config
+      # - name: Install apt packages
+      #   run: apt-get update && apt-get -y install libssl-dev pkg-config
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
         with:

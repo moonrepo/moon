@@ -85,7 +85,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             arch: x64
             binary: moon
-            image: docker.io/centos/nodejs-12-centos7
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   arch: x64
@@ -187,7 +187,7 @@ jobs:
         settings:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            image: docker.io/centos/nodejs-12-centos7
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
@@ -203,7 +203,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          cache: yarn
+          check-latest: true
+          # Cache doesnt work in the container
+          # cache: yarn
           node-version: ${{ matrix.node }}
       - name: Download artifacts
         uses: actions/download-artifact@v2

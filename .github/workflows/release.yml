@@ -140,6 +140,7 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
+          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
       # - name: Strip debug symbols
       #   if: ${{ matrix.strip }}
       #   run: ${{ matrix.strip }} ${{ matrix.binary }}

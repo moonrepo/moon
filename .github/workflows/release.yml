@@ -114,7 +114,7 @@ jobs:
           target: ${{ matrix.target }}
           toolchain: stable
       - name: Install apt packages
-        run: apt install pkg-config && ls -la /usr/lib && which pkg-config
+        run: apt install libssl-dev pkg-config
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
         with:
@@ -140,7 +140,7 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+          # PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
       # - name: Strip debug symbols
       #   if: ${{ matrix.strip }}
       #   run: ${{ matrix.strip }} ${{ matrix.binary }}

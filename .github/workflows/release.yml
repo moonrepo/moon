@@ -163,14 +163,7 @@ jobs:
         run: node ./scripts/syncArtifacts.mjs
         shell: bash
       - name: Publish
-        run: |
-          echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-          if git log -1 --pretty=%B | grep "-alpha\|-beta\|-rc";
-          then
-            npm publish --tag next --access public
-          else
-            npm publish --access public
-          fi
+        run: bash ./scripts/publishPackages.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -85,7 +85,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             arch: x64
             binary: moon
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            # image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   arch: x64
@@ -94,9 +94,9 @@ jobs:
           #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
     name: Stable - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
-    container:
-      image: ${{ matrix.image }}
-      options: --pull always
+    # container:
+    #   image: ${{ matrix.image }}
+    #   options: --pull always
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -135,6 +135,7 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
+          RUSTFLAGS: '-C strip=symbols'
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:

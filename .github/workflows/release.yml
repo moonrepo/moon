@@ -114,10 +114,7 @@ jobs:
           target: ${{ matrix.target }}
           toolchain: stable
       - name: Install apt packages
-        run:
-          - apt install pkg-config
-          - ls -la /usr/lib
-          - which pkg-config
+        run: apt install pkg-config && ls -la /usr/lib && which pkg-config
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
         with:

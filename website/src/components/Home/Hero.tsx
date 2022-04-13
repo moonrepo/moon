@@ -17,7 +17,7 @@ export default function Hero() {
 				<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0">
 					{siteConfig.tagline}
 					<span className="opacity-50">
-						,<br className="lg:hidden" /> powered by Rust.
+						,<br className="lg:hidden" aria-hidden /> powered by Rust.
 					</span>
 				</p>
 

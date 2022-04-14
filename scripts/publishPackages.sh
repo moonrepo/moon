@@ -12,6 +12,7 @@ if [[ -z "${NPM_TOKEN}" ]]; then
 	echo "Missing NPM_TOKEN!"
 else
 	echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+	echo "npmAuthToken: $NPM_TOKEN" >> ./.yarnrc.yml
 
 	# Update env var in GitHub actions
 	echo "NPM_CHANNEL=$tag" >> $GITHUB_ENV

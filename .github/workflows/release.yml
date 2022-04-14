@@ -158,11 +158,11 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           path: artifacts
-      - name: List binaries
-        run: ls -R artifacts
-        shell: bash
       - name: Sync artifact binaries
         run: node ./scripts/syncArtifacts.mjs
+        shell: bash
+      - name: List binaries
+        run: ls -R artifacts
         shell: bash
       - name: Publish npm packages
         run: bash ./scripts/publishPackages.sh

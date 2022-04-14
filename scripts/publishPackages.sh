@@ -4,10 +4,11 @@
 # then publish to next, otherwise latest.
 tag=latest
 
-if git log -1 --pretty=%B | grep -e "-alpha" -e "-beta" -e "-rc";
-then
-	tag=next
-fi
+# TODO This fails in GitHub???
+# if git log -1 --pretty=%B | grep -e "-alpha" -e "-beta" -e "-rc";
+# then
+# 	tag=next
+# fi
 
 if [[ -z "${NPM_TOKEN}" ]]; then
 	echo "Missing NPM_TOKEN!"

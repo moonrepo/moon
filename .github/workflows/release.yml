@@ -166,6 +166,7 @@ jobs:
         shell: bash
       - name: Publish npm packages
         run: bash ./scripts/publishPackages.sh
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

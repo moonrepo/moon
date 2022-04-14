@@ -23,8 +23,9 @@ for package in packages/core packages/core-*; do
 	if [[ -z "${GITHUB_TOKEN}" ]]; then
 		echo $package # Testing locally
 	else
-		cd "$package" || exit
-		npm publish --tag $tag --access public
+		cd "./$package" || exit
+		# We cant use npm because of: https://github.com/npm/cli/issues/2610
+		yarn npm publish --tag $tag --access public
 		cd ../..
 	fi
 done

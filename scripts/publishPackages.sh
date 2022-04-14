@@ -4,11 +4,9 @@
 # then publish to next, otherwise latest.
 tag=latest
 
-# TODO This fails in GitHub???
-# if git log -1 --pretty=%B | grep -e "-alpha" -e "-beta" -e "-rc";
-# then
-# 	tag=next
-# fi
+if git log -1 --pretty=%B | grep -e "-alpha" -e "-beta" -e "-rc"; then
+	tag=next
+fi
 
 if [[ -z "${NPM_TOKEN}" ]]; then
 	echo "Missing NPM_TOKEN!"
@@ -23,8 +21,10 @@ fi
 # Other packages will be published the classic way.
 for package in packages/core packages/core-*; do
 	if [[ -z "${GITHUB_TOKEN}" ]]; then
-		echo $package; # Testing locally
+		echo $package # Testing locally
 	else
-		npm publish $package --tag $tag --access public;
+		cd "$package" || exit
+		npm publish --tag $tag --access public
+		cd ../..
 	fi
 done

@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import fs from 'fs';
-import { BINARY, getPackageFromTarget, getPath, TARGET } from './helpers.mjs';
+import { BINARY, getPackageFromTarget, getPath, TARGET } from '../helpers.mjs';
 
 async function buildBinary() {
 	// Allow arbitrary args to be passed through

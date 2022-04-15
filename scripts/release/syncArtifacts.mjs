@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { getPackageFromTarget, getPath } from './helpers.mjs';
+import { getPackageFromTarget, getPath } from '../helpers.mjs';
 
 async function syncArtifacts() {
 	const targetDirs = await fs.promises.readdir(getPath('artifacts'));

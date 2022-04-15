@@ -21,6 +21,8 @@ jobs:
           node-version: 16
       - name: Install dependencies
         run: yarn install
+      - name: Build packages
+        run: yarn run build
       - name: Publish npm packages
         run: bash ./scripts/release/publishPackages.sh
         shell: bash

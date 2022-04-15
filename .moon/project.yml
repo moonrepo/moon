@@ -13,11 +13,9 @@ tasks:
   build:
     command: 'packemon'
     args:
-      - 'pack'
+      - 'build'
       - '--addEngines'
       - '--addExports'
-      - '--declaration'
-      - 'standard'
     inputs:
       - '@globs(sources)'
       - 'package.json'

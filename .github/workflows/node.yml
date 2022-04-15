@@ -5,8 +5,8 @@ on:
       - master
   pull_request:
 jobs:
-  pack:
-    name: Pack
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,9 +14,9 @@ jobs:
         with:
           cache: yarn
       - run: yarn install --immutable
-      - run: yarn run pack
-  changelog:
-    name: Changelog
+      - run: yarn run build
+  version:
+    name: Version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

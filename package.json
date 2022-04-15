@@ -3,8 +3,9 @@
   "private": true,
   "packageManager": "yarn@3.2.0",
   "scripts": {
-    "bump": "yarn version check --interactive",
-    "bump:cli": "bash ./scripts/version/bumpBinaryVersions.sh",
+    "version:apply": "yarn version apply --all",
+    "version:bump": "yarn version check --interactive",
+    "version:bump:cli": "bash ./scripts/version/bumpBinaryVersions.sh",
     "build": "target/debug/moon --logLevel trace run :build",
     "type": "target/debug/moon --logLevel trace run :typecheck",
     "moon": "target/debug/moon --logLevel trace"

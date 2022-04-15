@@ -9,7 +9,7 @@ on:
     # Test on master to ensure PRs are good
     branches:
       - master
-    # Release packages when a tag is created
+    # Release cli/core packages when a tag is created
     tags:
       - '@moonrepo/cli@*'
   schedule:

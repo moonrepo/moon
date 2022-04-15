@@ -15,4 +15,14 @@ jobs:
           cache: yarn
       - run: yarn install --immutable
       - run: yarn run pack
-      - run: yarn config get cacheFolder
+  changelog:
+    name: Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          cache: yarn
+      - run: yarn version check

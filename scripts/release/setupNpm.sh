@@ -18,15 +18,5 @@ else
 	echo "NPM_CHANNEL=$tag" >> $GITHUB_ENV
 fi
 
-# We only want to publish packages relating to the Rust binary.
-# Other packages will be published the classic way.
-for package in packages/cli packages/core-*; do
-	if [[ -z "${GITHUB_TOKEN}" ]]; then
-		echo $package # Testing locally
-	else
-		cd "./$package" || exit
-		# We cant use npm because of: https://github.com/npm/cli/issues/2610
-		yarn npm publish --tag $tag --access public
-		cd ../..
-	fi
-done
+# And make it available to other scripts
+export NPM_CHANNEL="$tag"

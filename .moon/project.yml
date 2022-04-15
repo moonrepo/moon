@@ -24,6 +24,8 @@ tasks:
     outputs:
       - 'dts'
       - 'mjs'
+    env:
+      NODE_ENV: production
 
   format:
     command: 'prettier'

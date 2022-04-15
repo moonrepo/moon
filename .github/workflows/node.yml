@@ -1,12 +1,9 @@
 name: Node
 on:
-  push:
-    branches:
-      - master
   pull_request:
 jobs:
-  pack:
-    name: Pack
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,5 +11,15 @@ jobs:
         with:
           cache: yarn
       - run: yarn install --immutable
-      - run: yarn run pack
-      - run: yarn config get cacheFolder
+      - run: yarn run build
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          cache: yarn
+      - run: yarn version check

@@ -165,7 +165,7 @@ jobs:
         run: ls -R artifacts
         shell: bash
       - name: Publish npm packages
-        run: bash ./scripts/publishPackages.sh
+        run: bash ./scripts/release/publishBinaryPackages.sh
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

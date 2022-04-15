@@ -3,6 +3,8 @@
   "private": true,
   "packageManager": "yarn@3.2.0",
   "scripts": {
+    "bump": "",
+    "bump:cli": "bash ./scripts/release/bumpBinaryVersions.sh",
     "build": "target/debug/moon --logLevel trace run :build",
     "type": "target/debug/moon --logLevel trace run :typecheck",
     "moon": "target/debug/moon --logLevel trace"

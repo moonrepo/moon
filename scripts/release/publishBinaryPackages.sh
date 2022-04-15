@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# NOTE: This runs in CI as part of the release workflow.
+
 # Determine release channel. If contains "alpha", "beta", or "rc",
 # then publish to next, otherwise latest.
 tag=latest

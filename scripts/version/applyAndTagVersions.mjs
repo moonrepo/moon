@@ -25,6 +25,29 @@ function logDiff(diff) {
 	});
 }
 
+async function createCommit(versions) {
+	console.log('Creating git commit');
+
+	let commit = 'Release';
+
+	versions.forEach((version) => {
+		commit += `\n- ${version}`;
+	});
+
+	await exec('git', ['add', '--all']);
+	await exec('git', ['commit', '-m', `'${commit}'`]);
+}
+
+async function createTags(versions) {
+	console.log('Creating git tags');
+
+	await Promise.all(
+		versions.map(async (version) => {
+			await exec('git', ['tag', version]);
+		}),
+	);
+}
+
 async function run() {
 	// Gather the versions before we apply the new ones
 	const prevVersions = await getPackageVersions();
@@ -52,6 +75,12 @@ async function run() {
 	}
 
 	logDiff(diff);
+
+	// Create git commit and tags
+	await createCommit(diff);
+	await createTags(diff);
+
+	console.log(chalk.green('Created commit and tags!'));
 }
 
 run().catch((error) => {

@@ -5,5 +5,5 @@ default-members = ["crates/cli"]
 
 [profile.release]
 codegen-units = 1
-panic = 'abort'
+panic = "abort"
 strip = "debuginfo"

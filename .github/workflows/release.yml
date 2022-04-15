@@ -15,18 +15,30 @@ on:
   schedule:
     # Test every night to ensure builds are good
     - cron: '0 10 * * *' # 2am PT, 10am UTC
+  # Uncomment to test in PRs (its safe)
+  # pull_request:
 
 jobs:
-  build-macos-windows:
+  build:
     strategy:
       fail-fast: false
       matrix:
         include:
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            arch: x64
+            binary: moon
+          # - host: ubuntu-latest
+          #   target: x86_64-unknown-linux-musl
+          #   arch: x64
+          #   binary: moon
+          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+
           - host: macos-latest
             target: x86_64-apple-darwin
             arch: x64
             binary: moon
-            # strip: strip -x
+
           - host: windows-latest
             target: x86_64-pc-windows-msvc
             arch: x64
@@ -38,6 +50,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           architecture: ${{ matrix.arch }}
+          cache: yarn
           check-latest: true
           node-version: 16
       - uses: actions-rs/toolchain@v1
@@ -60,73 +73,7 @@ jobs:
         with:
           path: ~/.cargo/git
           key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - name: Add target
-        run: rustup target add ${{ matrix.target }}
-      - name: Build binary
-        run: node ./scripts/buildBinary.mjs
-        shell: bash
-        env:
-          BINARY: ${{ matrix.binary }}
-          TARGET: ${{ matrix.target }}
-      # - name: Strip debug symbols
-      #   if: ${{ matrix.strip }}
-      #   run: ${{ matrix.strip }} ${{ matrix.binary }}
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: binary-${{ matrix.target }}
-          path: ${{ matrix.binary }}
-          if-no-files-found: error
-
-  build-linux:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            arch: x64
-            binary: moon
-            # strip: strip
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
-          # - host: ubuntu-latest
-          #   target: x86_64-unknown-linux-musl
-          #   arch: x64
-          #   binary: moon
-          #   strip: strip
-          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-    name: Stable - ${{ matrix.target }}
-    runs-on: ${{ matrix.host }}
-    container:
-      image: ${{ matrix.image }}
-      options: --pull always
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          architecture: ${{ matrix.arch }}
-          node-version: 16
-      - uses: actions-rs/toolchain@v1
-        with:
-          override: true
-          profile: minimal
-          target: ${{ matrix.target }}
-          toolchain: stable
-      - name: Generate lockfile
-        uses: actions-rs/cargo@v1
-        with:
-          command: generate-lockfile
-      - name: Cache cargo registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ matrix.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo index
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/git
-          key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - name: Setup cross compile toolchain
+      - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
       - name: Add target
@@ -137,9 +84,7 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      # - name: Strip debug symbols
-      #   if: ${{ matrix.strip }}
-      #   run: ${{ matrix.strip }} ${{ matrix.binary }}
+          RUSTFLAGS: '-C strip=symbols'
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
@@ -147,69 +92,33 @@ jobs:
           path: ${{ matrix.binary }}
           if-no-files-found: error
 
-  test-macos-windows:
+  test:
     strategy:
       fail-fast: false
       matrix:
-        settings:
-          - host: macos-latest
-            target: x86_64-apple-darwin
-          - host: windows-latest
-            target: x86_64-pc-windows-msvc
-        node: [12, 14, 16]
-    needs:
-      - build-macos-windows
-    name: Test Node@${{ matrix.node }} - ${{ matrix.settings.target }}
-    runs-on: ${{ matrix.settings.host }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          cache: yarn
-          node-version: ${{ matrix.node }}
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: artifacts
-      - name: Sync artifact binaries
-        run: node ./scripts/syncArtifacts.mjs
-        shell: bash
-      - name: Install dependencies
-        run: yarn install
-      - name: List packages
-        run: ls -R ./packages/core-macos-* ./packages/core-windows-*
-        shell: bash
-      - name: Test binary
-        run: node ./scripts/testBinary.mjs
-        shell: bash
-        env:
-          TARGET: ${{ matrix.settings.target }}
-
-  test-linux:
-    strategy:
-      fail-fast: false
-      matrix:
-        settings:
+        include:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-        node: [12, 14, 16]
+
+          - host: macos-latest
+            target: x86_64-apple-darwin
+
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
     needs:
-      - build-linux
-    name: Test Node@${{ matrix.node }} - ${{ matrix.settings.target }}
-    runs-on: ${{ matrix.settings.host }}
-    container:
-      image: ${{ matrix.settings.image }}
-      options: --pull always
+      - build
+    name: Test - ${{ matrix.target }}
+    runs-on: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           cache: yarn
-          node-version: ${{ matrix.node }}
+          check-latest: true
+          node-version: 16
       - name: Download artifacts
         uses: actions/download-artifact@v2
         with:
@@ -220,26 +129,28 @@ jobs:
       - name: Install dependencies
         run: yarn install
       - name: List packages
-        run: ls -R ./packages/core-linux-*
+        run: ls -R ./packages/core-linux-* ./packages/core-macos-* ./packages/core-windows-*
         shell: bash
       - name: Test binary
         run: node ./scripts/testBinary.mjs
         shell: bash
         env:
-          TARGET: ${{ matrix.settings.target }}
+          TARGET: ${{ matrix.target }}
 
   publish:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     name: Publish
     runs-on: ubuntu-latest
     needs:
-      - test-macos-windows
-      - test-linux
+      - test
+    env:
+      NPM_CHANNEL: latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           cache: yarn
+          check-latest: true
           node-version: 16
       - name: Install dependencies
         run: yarn install
@@ -250,22 +161,19 @@ jobs:
       - name: Sync artifact binaries
         run: node ./scripts/syncArtifacts.mjs
         shell: bash
-      - name: List packages
-        run: ls -R ./packages/*
+      - name: List binaries
+        run: ls -R artifacts
         shell: bash
-      # - name: Publish
-      #   run: |
-      #     if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
-      #     then
-      #       echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-      #       npm publish --access public
-      #     elif git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
-      #     then
-      #       echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-      #       npm publish --tag next --access public
-      #     else
-      #       echo "Not a release, skipping publish"
-      #     fi
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish npm packages
+        run: bash ./scripts/publishPackages.sh
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # TODO changelog
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          fail_on_unmatched_files: true
+          files: artifacts/release/*
+          prerelease: ${{ env.NPM_CHANNEL == 'next' }}

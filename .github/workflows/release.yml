@@ -79,7 +79,7 @@ jobs:
       - name: Add target
         run: rustup target add ${{ matrix.target }}
       - name: Build binary
-        run: node ./scripts/buildBinary.mjs
+        run: node ./scripts/release/buildBinary.mjs
         shell: bash
         env:
           BINARY: ${{ matrix.binary }}
@@ -124,7 +124,7 @@ jobs:
         with:
           path: artifacts
       - name: Sync artifact binaries
-        run: node ./scripts/syncArtifacts.mjs
+        run: node ./scripts/release/syncArtifacts.mjs
         shell: bash
       - name: Install dependencies
         run: yarn install
@@ -132,7 +132,7 @@ jobs:
         run: ls -R ./packages/core-linux-* ./packages/core-macos-* ./packages/core-windows-*
         shell: bash
       - name: Test binary
-        run: node ./scripts/testBinary.mjs
+        run: node ./scripts/release/testBinary.mjs
         shell: bash
         env:
           TARGET: ${{ matrix.target }}
@@ -159,7 +159,7 @@ jobs:
         with:
           path: artifacts
       - name: Sync artifact binaries
-        run: node ./scripts/syncArtifacts.mjs
+        run: node ./scripts/release/syncArtifacts.mjs
         shell: bash
       - name: List binaries
         run: ls -R artifacts

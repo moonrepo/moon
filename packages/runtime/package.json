@@ -1,6 +1,7 @@
 {
   "name": "@moonrepo/runtime",
   "version": "0.0.1",
+  "type": "module",
   "description": "Action runner and runtime utilities.",
   "keywords": [
     "moon",
@@ -11,7 +12,6 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
-  "type": "module",
   "main": "./mjs/index.mjs",
   "module": "./mjs/index.mjs",
   "types": "./dts/index.d.ts",
@@ -39,10 +39,14 @@
   },
   "exports": {
     "./package.json": "./package.json",
+    "./*": {
+      "types": "./dts/*.d.ts"
+    },
     ".": {
       "node": {
         "import": "./mjs/index.mjs"
-      }
+      },
+      "types": "./dts/index.d.ts"
     }
   }
 }

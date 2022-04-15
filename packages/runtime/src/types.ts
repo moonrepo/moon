@@ -1,19 +1,45 @@
-import { PackageStructure, Path } from '@boost/common';
+import { Path } from '@boost/common';
 
-export interface TsConfigStructure {
-	compilerOptions?: Record<string, unknown>;
-	exclude?: string[];
-	extends?: string;
-	files?: string[];
-	include?: string[];
-	references?: { path: string }[];
+export interface FileGroup {
+	files: string;
+	id: string;
+}
+
+// Keep in sync with crates/project/src/task.rs
+export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
+
+export interface TaskOptions {
+	mergeArgs: TaskMergeStrategy;
+	mergeDeps: TaskMergeStrategy;
+	mergeEnv: TaskMergeStrategy;
+	mergeInputs: TaskMergeStrategy;
+	mergeOutputs: TaskMergeStrategy;
+	retryCount: number;
+	runInCI: boolean;
+	runFromWorkspaceRoot: boolean;
+}
+
+export interface Task {
+	args: string[];
+	command: string;
+	deps: string[];
+	env: Record<string, string>;
+	inputs: string[];
+	inputGlobs: string[];
+	inputPaths: string[];
+	options: TaskOptions;
+	outputs: string[];
+	outputPaths: string[];
+	target: string;
+	type: 'node' | 'system';
 }
 
 // Keep in sync with crates/project/src/project.rs
 export interface Project {
+	config: object;
+	fileGroups: Record<string, FileGroup>;
 	id: string;
-	package_json: PackageStructure | null;
 	root: Path;
 	source: string;
-	tsconfig_json: TsConfigStructure | null;
+	tasks: Record<string, Task>;
 }

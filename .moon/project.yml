@@ -13,9 +13,11 @@ tasks:
   build:
     command: 'packemon'
     args:
-      - 'build'
+      - 'pack'
       - '--addEngines'
       - '--addExports'
+      - '--declaration'
+      - 'standard'
     inputs:
       - '@globs(sources)'
       - 'package.json'
@@ -24,6 +26,8 @@ tasks:
     outputs:
       - 'dts'
       - 'mjs'
+    env:
+      NODE_ENV: production
 
   format:
     command: 'prettier'

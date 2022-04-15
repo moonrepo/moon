@@ -27,7 +27,7 @@ export function getPath(...parts) {
 	return path.join(ROOT, ...parts);
 }
 
-export function exec(cmd, args, cwd = process.cwd()) {
+export async function exec(cmd, args, cwd = process.cwd()) {
 	await new Promise((resolve, reject) => {
 		const child = spawn(cmd, args, {
 			cwd,

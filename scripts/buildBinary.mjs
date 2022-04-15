@@ -21,13 +21,15 @@ async function buildBinary() {
 	// Copy the binary to the package
 	const targetPath = getPath('target', TARGET, 'release', BINARY);
 	const binaryPath = getPath('packages', getPackageFromTarget(), BINARY);
+	const artifactPath = getPath(BINARY);
 
 	// Copy into target core package
 	await fs.promises.copyFile(targetPath, binaryPath);
 	await fs.promises.chmod(binaryPath, 0o755);
 
 	// Copy into root so that it can be uploaded as an artifact
-	await fs.promises.copyFile(targetPath, getPath(BINARY));
+	await fs.promises.copyFile(targetPath, artifactPath);
+	await fs.promises.chmod(artifactPath, 0o755);
 }
 
 buildBinary().catch((error) => {

@@ -11,7 +11,7 @@ on:
       - master
     # Release packages when a tag is created
     tags:
-      - v*
+      - '@moonrepo/cli@*'
   schedule:
     # Test every night to ensure builds are good
     - cron: '0 10 * * *' # 2am PT, 10am UTC

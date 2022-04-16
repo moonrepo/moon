@@ -59,17 +59,17 @@ jobs:
           profile: minimal
           target: ${{ matrix.target }}
           toolchain: stable
-      - name: Generate lockfile
-        uses: actions-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
+        name: Generate lockfile
         with:
           command: generate-lockfile
-      - name: Cache cargo registry
-        uses: actions/cache@v3
+      - uses: actions/cache@v3
+        name: Cache cargo registry
         with:
           path: ~/.cargo/registry
           key: ${{ matrix.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo index
-        uses: actions/cache@v3
+      - uses: actions/cache@v3
+        name: Cache cargo index
         with:
           path: ~/.cargo/git
           key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
@@ -85,8 +85,8 @@ jobs:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
           RUSTFLAGS: '-C strip=symbols'
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
+        name: Upload artifact
         with:
           name: binary-${{ matrix.target }}
           path: ${{ matrix.binary }}
@@ -119,8 +119,8 @@ jobs:
           cache: yarn
           check-latest: true
           node-version: 16
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v2
+        name: Download artifacts
         with:
           path: artifacts
       - name: Sync artifact binaries
@@ -154,8 +154,8 @@ jobs:
           node-version: 16
       - name: Install dependencies
         run: yarn install
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v2
+        name: Download artifacts
         with:
           path: artifacts
       - name: Sync artifact binaries
@@ -171,8 +171,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       # TODO changelog
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v1
+        name: Create GitHub release
         with:
           fail_on_unmatched_files: true
           files: artifacts/release/*

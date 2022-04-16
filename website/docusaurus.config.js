@@ -114,12 +114,16 @@ const config = {
 							},
 							{
 								label: 'Discord',
-								to: 'TODO',
+								to: 'https://discord.com',
+							},
+							{
+								label: 'Twitter',
+								to: 'https://twitter.com/moonrepo',
 							},
 						],
 					},
 				],
-				copyright: `Copyright © ${new Date().getFullYear()} Moon. Built with Docusaurus.`,
+				copyright: `Copyright © ${new Date().getFullYear()} Moon.`,
 			},
 			prism: {
 				theme: prismTheme,

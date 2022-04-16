@@ -1,6 +1,8 @@
 import React from 'react';
-import clsx from 'clsx';
+import { faDiscord, faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons';
+import Icon from '../../../ui/iconography/Icon';
 import Heading from '../../../ui/typography/Heading';
+import Link from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
 
 export default function FooterLayout({ style, links, logo, copyright }) {
@@ -25,35 +27,37 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 			</h2>
 
 			<div className="max-w-7xl mx-auto py-3 px-2 sm:px-3 md:py-4 md:px-4 lg:px-6">
-				<div className="lg:grid lg:grid-cols-2 lg:gap-4">
-					<div className="grid grid-cols-3 gap-4">{links}</div>
+				<div className="lg:grid lg:grid-cols-3 lg:gap-4">
+					<div className="grid grid-cols-3 gap-4 lg:col-span-2">{links}</div>
 
 					<div className="mt-4 lg:mt-0">
 						<Heading level={6} transform="uppercase">
-							Subscribe to our newsletter
+							Subscribe for updates
 						</Heading>
 
-						<Text className="mt-2" variant="muted">
+						{/* <Text className="mt-2" variant="muted">
 							The latest news, articles, and resources, sent to your inbox weekly.
-						</Text>
+						</Text> */}
 
 						<form className="mt-2 sm:flex sm:max-w-md">
-							<label htmlFor="email-address" className="sr-only">
+							<label htmlFor="email" className="sr-only">
 								Email address
 							</label>
+
 							<input
 								type="email"
-								name="email-address"
-								id="email-address"
+								name="email"
+								id="email"
 								autoComplete="email"
 								required
-								className="appearance-none min-w-0 w-full bg-white border border-transparent rounded-md py-2 px-4 text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white focus:border-white focus:placeholder-gray-400"
-								placeholder="Enter your email"
+								className="appearance-none outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 sm:px-2 sm:py-2 text-base text-gray-800 placeholder-gray-600"
+								placeholder="Email address"
 							/>
-							<div className="mt-3 rounded-md sm:mt-0 sm:ml-3 sm:flex-shrink-0">
+
+							<div className="mt-1 rounded-md sm:mt-0 sm:ml-1 sm:flex-shrink-0">
 								<button
 									type="submit"
-									className="w-full bg-indigo-500 border border-transparent rounded-md py-2 px-4 flex items-center justify-center text-base font-medium text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500"
+									className="w-full border border-transparent rounded-md px-2 py-1 sm:px-3 sm:py-2 flex items-center justify-center text-base font-bold text-white hover:text-white bg-purple-600 hover:bg-purple-700 cursor-pointer"
 								>
 									Subscribe
 								</button>
@@ -62,19 +66,27 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 					</div>
 				</div>
 
-				<div className="mt-3 pt-3 md:mt-4 md:pt-4 border-0 border-t border-solid border-gray-200 dark:border-slate-400 flex items-center justify-center">
-					{/* 	<div className="flex space-x-6 md:order-2">
-						navigation.social.map((item) => (
-							<a key={item.name} href={item.href} className="text-gray-400 hover:text-gray-300">
-								<span className="sr-only">{item.name}</span>
-								<item.icon className="h-6 w-6" aria-hidden="true" />
-							</a>
-            ))
-					</div> */}
-
-					<Text className="mt-2 md:mt-0 md:order-1" variant="muted" size="sm" as="div">
+				<div className="mt-3 pt-3 md:mt-4 md:pt-4 border-0 border-t border-solid border-gray-200 dark:border-slate-400 flex items-center justify-between">
+					<Text variant="muted" size="sm" as="div">
 						{copyright}
 					</Text>
+
+					<div className="flex space-x-2">
+						<Link href="#">
+							<span className="sr-only">GitHub</span>
+							<Icon icon={faGithub} />
+						</Link>
+
+						<Link href="#">
+							<span className="sr-only">Discord</span>
+							<Icon icon={faDiscord} />
+						</Link>
+
+						<Link href="#">
+							<span className="sr-only">Twitter</span>
+							<Icon icon={faTwitter} />
+						</Link>
+					</div>
 				</div>
 			</div>
 		</footer>

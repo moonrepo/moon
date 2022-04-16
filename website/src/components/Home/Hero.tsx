@@ -30,7 +30,7 @@ export default function Hero() {
 					<div>
 						<Link
 							href="/docs/install"
-							className="w-full flex items-center justify-center px-2 py-1 text-base font-bold rounded-md text-white hover:text-white bg-purple-600 hover:scale-110 sm:px-3 sm:py-2 md:text-lg transition-transform"
+							className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-purple-600 hover:scale-110 md:text-lg transition-transform"
 						>
 							Get started
 							<Icon icon={faRocketLaunch} className="ml-1 md:ml-2 inline-block" />
@@ -40,7 +40,7 @@ export default function Hero() {
 					<div className="ml-1 sm:ml-2 lg:ml-3">
 						<Link
 							href="https://www.npmjs.com/package/@moonrepo/cli"
-							className="w-full flex items-center justify-center px-2 py-1 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 sm:px-3 sm:py-2 md:text-lg group transition-transform"
+							className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 md:text-lg group transition-transform"
 						>
 							<span className="opacity-50">v</span>1.2.3
 						</Link>

@@ -4,18 +4,34 @@
 // name accordingly.
 
 const html = document.documentElement;
+const app = document.querySelector('#__docusaurus');
 
+// We cant set the class on `html` or `body` as Docusaurus rewrites the classes
 function toggle() {
 	if (html.dataset.theme === 'dark') {
-		html.classList.add('dark');
-	} else {
-		html.classList.remove('dark');
+		app.classList.add('dark');
+	} else if (html.dataset.theme === 'light') {
+		app.classList.remove('dark');
 	}
 }
 
 document.addEventListener('DOMContentLoaded', toggle);
 
-window.addEventListener('popstate', toggle);
+window.history.pushState = new Proxy(window.history.pushState, {
+	apply: (target, thisArg, argArray) => {
+		toggle();
+
+		return target.apply(thisArg, argArray);
+	},
+});
+
+window.history.replaceState = new Proxy(window.history.replaceState, {
+	apply: (target, thisArg, argArray) => {
+		toggle();
+
+		return target.apply(thisArg, argArray);
+	},
+});
 
 const observer = new MutationObserver((mutations) => {
 	for (const mutation of mutations) {

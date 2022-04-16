@@ -17,6 +17,7 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: ${{ runner.os }}-yarn-
       - run: yarn install --immutable
+      - run: ls -la ~/.yarn
       - run: yarn run build
   version:
     name: Version

@@ -17,7 +17,6 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: ${{ runner.os }}-yarn-
       - run: yarn install --immutable
-      - run: ls -la ~/.yarn
       - run: yarn run build
   version:
     name: Version
@@ -35,7 +34,4 @@ jobs:
             .yarn/install-state.gz
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: ${{ runner.os }}-yarn-
-      # - run: ls -la ~/.yarn
-      - run: ls -la .yarn
       - run: yarn version check
-      - run: yarn config get cacheFolder

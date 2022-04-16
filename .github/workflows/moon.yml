@@ -38,8 +38,9 @@ jobs:
         with:
           path: ~/.moon/tools
           key:
-            ${{ runner.os }}-${{ matrix.node-version }}-moon-${{ hashFiles('.moon/workspace.yml') }}
-          restore-keys: ${{ runner.os }}-${{ matrix.node-version }}-moon-
+            ${{ runner.os }}-moon-node@${{ matrix.node-version }}-${{
+            hashFiles('.moon/workspace.yml') }}
+          restore-keys: ${{ runner.os }}-moon-node@${{ matrix.node-version }}-
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: 1.60.0

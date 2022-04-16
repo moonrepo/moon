@@ -50,9 +50,17 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           architecture: ${{ matrix.arch }}
-          cache: yarn
           check-latest: true
           node-version: 16
+      - uses: actions/cache@v3
+        name: Cache cargo
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
         with:
           override: true
@@ -63,16 +71,6 @@ jobs:
         name: Generate lockfile
         with:
           command: generate-lockfile
-      - uses: actions/cache@v3
-        name: Cache cargo registry
-        with:
-          path: ~/.cargo/registry
-          key: ${{ matrix.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions/cache@v3
-        name: Cache cargo index
-        with:
-          path: ~/.cargo/git
-          key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
@@ -116,9 +114,25 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          cache: yarn
           check-latest: true
           node-version: 16
+      - uses: actions/cache@v3
+        name: Cache cargo
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - uses: actions/cache@v3
+        name: Cache node modules
+        with:
+          path: |
+            ~/.yarn
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
       - uses: actions/download-artifact@v2
         name: Download artifacts
         with:
@@ -127,7 +141,7 @@ jobs:
         run: node ./scripts/release/syncArtifacts.mjs
         shell: bash
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --immutable
       - name: List packages
         run: ls -R ./packages/core-linux-* ./packages/core-macos-* ./packages/core-windows-*
         shell: bash
@@ -149,11 +163,18 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          cache: yarn
           check-latest: true
           node-version: 16
+      - uses: actions/cache@v3
+        name: Cache node modules
+        with:
+          path: |
+            ~/.yarn
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --immutable
       - uses: actions/download-artifact@v2
         name: Download artifacts
         with:

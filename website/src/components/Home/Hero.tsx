@@ -11,7 +11,12 @@ export default function Hero() {
 		<div className="bg-gradient-to-b from-slate-900 to-slate-600 star-pattern">
 			<div className="max-w-7xl mx-auto py-10 px-4 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 text-center lg:text-left">
 				<h1 className="text-6xl tracking-tight font-extrabold text-purple-600">
-					{siteConfig.title}
+					<img
+						src="/img/logo-hero.svg"
+						alt={siteConfig.title}
+						title={siteConfig.title}
+						width={300}
+					/>
 				</h1>
 
 				<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0">

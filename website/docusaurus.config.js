@@ -12,7 +12,7 @@ const config = {
 	baseUrl: '/',
 	onBrokenLinks: 'throw',
 	onBrokenMarkdownLinks: 'warn',
-	favicon: 'img/favicon.ico',
+	favicon: 'img/favicon.svg',
 	organizationName: 'milesj',
 	projectName: 'moon',
 
@@ -47,7 +47,7 @@ const config = {
 		/** @type {import('@docusaurus/preset-classic').ThemeConfig} */
 		({
 			navbar: {
-				title: 'Moon',
+				// title: 'Moon',
 				logo: {
 					alt: 'Moon',
 					src: 'img/logo.svg',

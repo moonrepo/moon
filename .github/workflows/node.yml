@@ -33,3 +33,4 @@ jobs:
             .yarn/install-state.gz
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
       - run: yarn version check
+      - run: yarn config get cacheFolder

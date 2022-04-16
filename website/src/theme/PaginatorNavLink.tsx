@@ -1,6 +1,6 @@
 import React from 'react';
 import { faChevronLeft, faChevronRight } from '@fortawesome/pro-regular-svg-icons';
-import { Props } from '@theme/PaginatorNavLink';
+import type { Props } from '@theme/PaginatorNavLink';
 import Icon from '../ui/iconography/Icon';
 import Link from '../ui/typography/Link';
 

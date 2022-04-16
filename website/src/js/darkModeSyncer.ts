@@ -5,14 +5,22 @@
 
 const html = document.documentElement;
 
+function toggle() {
+	if (html.dataset.theme === 'dark') {
+		html.classList.add('dark');
+	} else {
+		html.classList.remove('dark');
+	}
+}
+
+document.addEventListener('DOMContentLoaded', toggle);
+
+window.addEventListener('popstate', toggle);
+
 const observer = new MutationObserver((mutations) => {
 	for (const mutation of mutations) {
 		if (mutation.type === 'attributes') {
-			if (html.dataset.theme === 'dark') {
-				html.classList.add('dark');
-			} else {
-				html.classList.remove('dark');
-			}
+			toggle();
 		}
 	}
 });

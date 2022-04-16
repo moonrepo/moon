@@ -78,7 +78,47 @@ const config = {
 			},
 			footer: {
 				style: 'dark',
-				links: [],
+				links: [
+					{
+						title: 'Learn',
+						items: [
+							{
+								label: 'Documentation',
+								to: '/docs',
+							},
+							{
+								label: 'Packages',
+								to: '/api',
+							},
+						],
+					},
+					{
+						title: 'Ecosystem',
+						items: [
+							{
+								label: 'Releases',
+								to: 'https://github.com/milesj/moon/releases',
+							},
+							{
+								label: 'Discussions',
+								to: 'https://github.com/milesj/moon/discussions',
+							},
+						],
+					},
+					{
+						title: 'Support',
+						items: [
+							{
+								label: 'GitHub',
+								to: 'https://github.com/milesj/moon',
+							},
+							{
+								label: 'Discord',
+								to: 'TODO',
+							},
+						],
+					},
+				],
 				copyright: `Copyright © ${new Date().getFullYear()} Moon. Built with Docusaurus.`,
 			},
 			prism: {

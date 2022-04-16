@@ -207,7 +207,7 @@ export default function Home() {
 
 				<Features
 					header="Notification"
-					description="Be notified of pipeline health"
+					description="Monitor pipeline health"
 					features={notificationFeatures}
 					columns={3}
 					tier={4}

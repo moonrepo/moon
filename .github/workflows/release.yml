@@ -50,29 +50,27 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           architecture: ${{ matrix.arch }}
-          cache: yarn
           check-latest: true
           node-version: 16
+      - uses: actions/cache@v3
+        name: Cache cargo
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
         with:
           override: true
           profile: minimal
           target: ${{ matrix.target }}
           toolchain: stable
-      - name: Generate lockfile
-        uses: actions-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
+        name: Generate lockfile
         with:
           command: generate-lockfile
-      - name: Cache cargo registry
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/registry
-          key: ${{ matrix.target }}-node@16-cargo-registry-trimmed-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo index
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/git
-          key: ${{ matrix.target }}-node@16-cargo-index-trimmed-${{ hashFiles('**/Cargo.lock') }}
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
@@ -85,8 +83,8 @@ jobs:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
           RUSTFLAGS: '-C strip=symbols'
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
+        name: Upload artifact
         with:
           name: binary-${{ matrix.target }}
           path: ${{ matrix.binary }}
@@ -116,18 +114,34 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          cache: yarn
           check-latest: true
           node-version: 16
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
+      - uses: actions/cache@v3
+        name: Cache cargo
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - uses: actions/cache@v3
+        name: Cache node modules
+        with:
+          path: |
+            ~/.yarn
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
+      - uses: actions/download-artifact@v2
+        name: Download artifacts
         with:
           path: artifacts
       - name: Sync artifact binaries
         run: node ./scripts/release/syncArtifacts.mjs
         shell: bash
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --immutable
       - name: List packages
         run: ls -R ./packages/core-linux-* ./packages/core-macos-* ./packages/core-windows-*
         shell: bash
@@ -149,13 +163,20 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          cache: yarn
           check-latest: true
           node-version: 16
+      - uses: actions/cache@v3
+        name: Cache node modules
+        with:
+          path: |
+            ~/.yarn
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
       - name: Install dependencies
-        run: yarn install
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
+        run: yarn install --immutable
+      - uses: actions/download-artifact@v2
+        name: Download artifacts
         with:
           path: artifacts
       - name: Sync artifact binaries
@@ -171,8 +192,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       # TODO changelog
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v1
+        name: Create GitHub release
         with:
           fail_on_unmatched_files: true
           files: artifacts/release/*

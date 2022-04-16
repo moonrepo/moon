@@ -8,8 +8,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
+      - uses: actions/cache@v3
+        name: Cache node modules
         with:
-          cache: yarn
+          path: |
+            ~/.yarn
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
       - run: yarn install --immutable
       - run: yarn run build
   version:
@@ -20,6 +25,11 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v3
+      - uses: actions/cache@v3
+        name: Cache node modules
         with:
-          cache: yarn
+          path: |
+            ~/.yarn
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
       - run: yarn version check

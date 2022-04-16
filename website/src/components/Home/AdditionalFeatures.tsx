@@ -10,7 +10,7 @@ export type AdditionalFeaturesProps = Omit<FeaturesProps, 'columns' | 'descripti
 export default function AdditionalFeatures({ header, features }: AdditionalFeaturesProps) {
 	return (
 		<div className="bg-white">
-			<div className="relative py-4 sm:py-5 lg:py-6">
+			<div className="relative py-4 sm:py-6 lg:py-8">
 				<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
 					<Heading align="center" className="text-gray-900" level={3}>
 						{header}

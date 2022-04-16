@@ -65,6 +65,10 @@ html[data-theme='light'] {
 	--ifm-blockquote-background-color: var(--moon-color-gray-100);
 }
 
+html[data-theme='light'] .navbar-sidebar__item {
+	background-color: var(--moon-color-white);
+}
+
 html[data-theme='dark'] {
 	--ifm-color-primary-lightest: var(--moon-color-purple-100);
 	--ifm-color-primary-lighter: var(--moon-color-purple-200);
@@ -116,6 +120,18 @@ blockquote {
 }
 
 .navbar__items > div {
+	color: var(--moon-color-white);
+}
+
+.navbar__toggle,
+.navbar-sidebar__brand button,
+.navbar-sidebar__close {
+	color: var(--moon-color-gray-300);
+}
+
+.navbar__toggle:hover,
+.navbar-sidebar__brand button:hover,
+.navbar-sidebar__close:hover {
 	color: var(--moon-color-white);
 }
 

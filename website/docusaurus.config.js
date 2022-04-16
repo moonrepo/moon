@@ -69,11 +69,6 @@ const config = {
 						label: 'Packages',
 						position: 'left',
 					},
-					{
-						href: 'https://github.com/milesj/moon',
-						label: 'GitHub',
-						position: 'right',
-					},
 				],
 			},
 			footer: {

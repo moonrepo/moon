@@ -35,7 +35,7 @@ const headings: Record<FeatureTier, string> = {
 	1: 'text-white',
 	2: 'text-white',
 	3: 'text-gray-900',
-	4: 'text-gray-800',
+	4: 'text-gray-900',
 };
 
 const titles: Record<FeatureTier, string> = {

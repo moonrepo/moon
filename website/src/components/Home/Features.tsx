@@ -1,4 +1,3 @@
-import './styles.css';
 import React from 'react';
 import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -88,7 +87,7 @@ export default function Features({
 }: FeaturesProps) {
 	return (
 		<div className={cx('bg-gradient-to-b', backgroundGradients[tier])}>
-			<div className="relative py-4 sm:py-5 lg:py-6 star-pattern">
+			<div className="relative py-4 sm:py-5 lg:py-6">
 				<div className="mx-auto max-w-md px-2 text-center sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
 					<h2 className={cx('m-0 text-base font-semibold uppercase tracking-wider', titles[tier])}>
 						{header}

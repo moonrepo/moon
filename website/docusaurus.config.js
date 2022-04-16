@@ -33,8 +33,6 @@ const config = {
 				// },
 				theme: {
 					customCss: [
-						require.resolve('./src/css/icons/fontawesome.css'),
-						require.resolve('./src/css/icons/solid.css'),
 						require.resolve('./src/css/theme.css'),
 						require.resolve('./src/css/custom.css'),
 					],

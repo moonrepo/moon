@@ -50,8 +50,7 @@ pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Err
         file,
         r#"
 # Moon
-.moon/cache
-"#
+.moon/cache"#
     )?;
 
     println!(

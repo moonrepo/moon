@@ -33,3 +33,4 @@ tokio = { version = "1.16", features = ["full"] }
 assert_cmd = "2.0"
 insta = "1.8"
 predicates = "2.0"
+serial_test = "0.6"

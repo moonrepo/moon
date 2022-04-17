@@ -1065,6 +1065,7 @@ dependencies = [
  "moon_utils",
  "moon_workspace",
  "predicates",
+ "serial_test",
  "strum",
  "strum_macros",
  "tokio",

@@ -12,20 +12,14 @@ fileGroups:
 tasks:
   build:
     command: 'packemon'
-    args:
-      - 'build'
-      - '--addEngines'
-      - '--addExports'
+    args: 'build'
     inputs:
       - '@globs(sources)'
       - 'package.json'
       - 'tsconfig.json'
       - '/tsconfig.options.json'
     outputs:
-      - 'dts'
       - 'mjs'
-    env:
-      NODE_ENV: production
 
   format:
     command: 'prettier'

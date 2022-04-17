@@ -90,7 +90,7 @@ html[data-theme='dark'] {
 	/* Backgrounds */
 	--ifm-background-color: var(--moon-color-slate-800);
 	--ifm-background-surface-color: var(--moon-color-slate-600);
-	--ifm-code-background: rgba(255, 255, 255, .075);
+	--ifm-code-background: rgba(255, 255, 255, 0.075);
 
 	/* Sidebar */
 	--ifm-menu-color-background-active: var(--moon-color-purple-600);
@@ -142,7 +142,7 @@ blockquote {
 
 .pagination-nav__item .icon-next,
 .pagination-nav__item--next .icon-previous {
-	display: none
+	display: none;
 }
 
 .pagination-nav__item--next .icon-next {

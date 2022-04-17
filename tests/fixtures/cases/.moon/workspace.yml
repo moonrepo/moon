@@ -1,0 +1,7 @@
+node:
+  # We use an old version to avoid conflicts within local dev
+  version: '16.0.0'
+
+projects:
+  base: 'base'
+  nodeThrowError: 'node-throw-error'

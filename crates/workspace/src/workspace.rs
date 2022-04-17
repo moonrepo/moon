@@ -52,7 +52,7 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
     );
 
     if !config_path.exists() {
-        return Err(WorkspaceError::MissingGlobalProjectConfigFile);
+        return Ok(GlobalProjectConfig::default());
     }
 
     match GlobalProjectConfig::load(config_path) {

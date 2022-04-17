@@ -35,13 +35,6 @@ pub enum WorkspaceError {
     MissingWorkspaceConfigFile,
 
     #[error(
-        "Unable to locate <file>{}/{}</file> configuration file.",
-        constants::CONFIG_DIRNAME,
-        constants::CONFIG_PROJECT_FILENAME
-    )]
-    MissingGlobalProjectConfigFile,
-
-    #[error(
         "Failed to validate <file>{}/{}</file> configuration file.\n\n<muted>{0}</muted>",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME

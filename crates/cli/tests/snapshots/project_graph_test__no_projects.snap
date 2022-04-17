@@ -1,8 +1,7 @@
 ---
-source: crates/cli/src/commands/project_graph.rs
-assertion_line: 29
+source: crates/cli/tests/project_graph_test.rs
+assertion_line: 8
 expression: get_assert_output(&assert)
-
 ---
 digraph {
     0 [ label="(workspace)" style=filled, shape=circle, fillcolor=black, fontcolor=white]

@@ -1,7 +1,6 @@
 mod app;
 mod commands;
 mod enums;
-mod helpers;
 
 use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};

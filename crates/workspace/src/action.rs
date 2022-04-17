@@ -16,8 +16,6 @@ pub struct Action {
 
     pub error: Option<String>,
 
-    pub exit_code: i8,
-
     pub label: Option<String>,
 
     pub node_index: NodeIndex,
@@ -36,7 +34,6 @@ impl Action {
         Action {
             duration: None,
             error: None,
-            exit_code: -1,
             label: None,
             node_index,
             start_time: Instant::now(),

@@ -1,6 +1,8 @@
 use crate::errors::WorkspaceError;
 use moon_logger::{color, debug, trace};
-use moon_project::{ProjectGraph, Target, TargetError, TargetProject, TouchedFilePaths};
+use moon_project::{
+    ProjectGraph, ProjectID, Target, TargetError, TargetID, TargetProject, TouchedFilePaths,
+};
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
@@ -13,9 +15,9 @@ const TARGET: &str = "moon:dep-graph";
 
 pub enum Node {
     InstallNodeDeps,
-    RunTarget(String), // target id
+    RunTarget(TargetID),
     SetupToolchain,
-    SyncProject(String), // project id
+    SyncProject(ProjectID),
 }
 
 impl Node {

@@ -17,9 +17,9 @@ const levels: Record<HeadingLevel, string> = {
 	1: 'text-4xl font-extrabold sm:text-5xl',
 	2: 'text-3xl font-extrabold sm:text-4xl',
 	3: 'text-2xl font-bold',
-	4: 'text-xl font-semibold leading-8',
-	5: 'text-lg font-medium leading-6',
-	6: 'text-base font-medium',
+	4: 'text-xl font-bold',
+	5: 'text-lg font-semibold',
+	6: 'text-base font-semibold',
 };
 
 export default function Heading({

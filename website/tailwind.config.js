@@ -1,3 +1,4 @@
+const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors');
 const plugin = require('tailwindcss/plugin');
 const flattenColorPalette = require('tailwindcss/lib/util/flattenColorPalette').default;
@@ -16,6 +17,7 @@ module.exports = {
 
 			Object.entries({
 				colors: 'color',
+				fontFamily: 'font-family',
 				margin: 'margin',
 				padding: 'padding',
 			}).forEach(([key, name]) => {
@@ -28,7 +30,7 @@ module.exports = {
 				Object.entries(setting).forEach(([k, v]) => {
 					const varName = k.toLocaleLowerCase().replace('/', '-').replace('.', '_');
 
-					cssVars[`--moon-${name}-${varName}`] = v;
+					cssVars[`--moon-${name}-${varName}`] = Array.isArray(v) ? v.join(', ') : v;
 				});
 			});
 
@@ -38,6 +40,11 @@ module.exports = {
 		}),
 	],
 	theme: {
+		extend: {
+			fontFamily: {
+				sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
+			},
+		},
 		// These arent entirely accessible but work for now
 		colors: {
 			current: 'currentColor',

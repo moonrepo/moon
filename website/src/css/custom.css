@@ -119,6 +119,10 @@ blockquote {
 	background-color: var(--ifm-blockquote-background-color);
 }
 
+.navbar__logo {
+	margin-top: -2px;
+}
+
 .navbar__items > div {
 	color: var(--moon-color-white);
 }

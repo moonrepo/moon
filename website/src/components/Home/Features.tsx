@@ -46,14 +46,14 @@ const titles: Record<FeatureTier, string> = {
 
 const cardIcons: Record<FeatureTier, string> = {
 	1: 'text-purple-400',
-	2: 'text-purple-700',
+	2: 'text-blurple-400',
 	3: 'text-pink-600',
 	4: 'text-teal-600',
 };
 
 const cardForegrounds: Record<FeatureTier, string> = {
 	1: 'text-purple-200',
-	2: 'text-purple-800',
+	2: 'text-blurple-600',
 	3: 'text-gray-800',
 	4: 'text-gray-700',
 };

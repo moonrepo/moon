@@ -57,7 +57,7 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 							<div className="mt-1 rounded-md sm:mt-0 sm:ml-1 sm:flex-shrink-0">
 								<button
 									type="submit"
-									className="w-full border border-transparent rounded-md px-2 py-1 sm:px-3 sm:py-2 flex items-center justify-center text-base font-bold text-white hover:text-white bg-purple-600 hover:bg-purple-700 cursor-pointer"
+									className="w-full border border-transparent rounded-md px-2 py-1 sm:px-3 sm:py-2 flex items-center justify-center text-base font-bold text-white hover:text-white bg-blurple-400 hover:bg-blurple-500 dark:bg-purple-600 dark:hover:bg-purple-500 cursor-pointer"
 								>
 									Subscribe
 								</button>

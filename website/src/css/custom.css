@@ -33,13 +33,13 @@ html:root {
 }
 
 html[data-theme='light'] {
-	--ifm-color-primary-lightest: var(--moon-color-purple-300);
-	--ifm-color-primary-lighter: var(--moon-color-purple-400);
-	--ifm-color-primary-light: var(--moon-color-purple-500);
-	--ifm-color-primary: var(--moon-color-purple-600);
-	--ifm-color-primary-dark: var(--moon-color-purple-700);
-	--ifm-color-primary-darker: var(--moon-color-purple-800);
-	--ifm-color-primary-darkest: var(--moon-color-purple-900);
+	--ifm-color-primary-lightest: var(--moon-color-blurple-100);
+	--ifm-color-primary-lighter: var(--moon-color-blurple-200);
+	--ifm-color-primary-light: var(--moon-color-blurple-300);
+	--ifm-color-primary: var(--moon-color-blurple-400);
+	--ifm-color-primary-dark: var(--moon-color-blurple-600);
+	--ifm-color-primary-darker: var(--moon-color-blurple-700);
+	--ifm-color-primary-darkest: var(--moon-color-blurple-800);
 
 	--ifm-color-secondary: var(--moon-color-slate-600);
 	--ifm-color-success: var(--moon-color-green-600);
@@ -51,16 +51,16 @@ html[data-theme='light'] {
 	--ifm-color-emphasis-300: var(--moon-color-gray-700);
 
 	/* Sidebar */
-	--ifm-menu-color-background-active: var(--moon-color-purple-100);
-	--ifm-menu-color-background-hover: var(--moon-color-gray-100);
-	--ifm-menu-color: var(--moon-color-gray-700);
-	--ifm-menu-color-active: var(--moon-color-purple-600);
+	--ifm-menu-color-background-active: var(--moon-color-blurple-50);
+	--ifm-menu-color-background-hover: var(--moon-color-gray-50);
+	--ifm-menu-color: var(--moon-color-gray-800);
+	--ifm-menu-color-active: var(--moon-color-blurple-600);
 
 	/* Toc */
-	--ifm-toc-link-color: var(--moon-color-gray-700);
+	--ifm-toc-link-color: var(--moon-color-gray-800);
 
 	/* Markdown */
-	--ifm-link-hover-color: var(--moon-color-purple-800);
+	--ifm-link-hover-color: var(--moon-color-blurple-800);
 	--ifm-blockquote-border-color: var(--moon-color-teal-400);
 	--ifm-blockquote-background-color: var(--moon-color-gray-100);
 }

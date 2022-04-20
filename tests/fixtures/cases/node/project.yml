@@ -1,0 +1,19 @@
+tasks:
+  exitCodeNonZero:
+    command: node
+    args: ./exitCodeNonZero.js
+  exitCodeZero:
+    command: node
+    args: ./exitCodeZero.js
+  processExitNonZero:
+    command: node
+    args: ./processExitNonZero.js
+  processExitZero:
+    command: node
+    args: ./processExitZero.js
+  standard:
+    command: node
+    args: ./standard.js
+  throwError:
+    command: node
+    args: ./throwError.js

@@ -6,6 +6,7 @@ use moon_terminal::ExtendedTerm;
 use moon_utils::time;
 use moon_workspace::{Action, ActionRunner, ActionStatus, DepGraph, Workspace, WorkspaceError};
 use std::collections::HashSet;
+use std::env;
 use std::string::ToString;
 use std::time::Duration;
 use strum_macros::Display;
@@ -133,7 +134,10 @@ pub fn render_result_stats(
     term.write_line("")?;
 
     let counts_message = counts_message.join(&color::muted(", "));
-    let elapsed_time = time::elapsed(duration);
+    let elapsed_time = match env::var("MOON_TEST") {
+        Ok(_) => String::from("100ms"),
+        Err(_) => time::elapsed(duration),
+    };
 
     if in_actions_context {
         term.render_entry("Actions", &counts_message)?;

@@ -1,7 +1,8 @@
 node:
-  # We use an old version to avoid conflicts within local dev
+  # We use an old version to avoid conflicts with Moon's actual workspace.
+  # This value also needs to stay in sync with `cargo make test`.
   version: '16.0.0'
 
 projects:
   base: 'base'
-  nodeThrowError: 'node-throw-error'
+  node: 'node'

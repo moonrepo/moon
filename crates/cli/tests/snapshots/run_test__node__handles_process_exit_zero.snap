@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 24
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ node:processExitZero
+stdout
+
+Tasks: 1 completed
+ Time: 100ms
+
+stderr
+

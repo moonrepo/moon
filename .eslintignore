@@ -11,3 +11,6 @@ umd/
 *.min.js
 *.map
 *.snap
+
+# Test fixtures
+/tests

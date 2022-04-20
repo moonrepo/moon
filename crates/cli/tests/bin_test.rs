@@ -27,16 +27,26 @@ fn invalid_tool() {
         .stderr(predicate::str::contains("\"unknown\" isn\'t a valid value"));
 }
 
+// We use a different Node.js version as to not conflict with other tests!
+
 #[test]
 fn not_configured() {
-    let assert = create_moon_command("cases").arg("bin").arg("yarn").assert();
+    let assert = create_moon_command("cases")
+        .arg("bin")
+        .arg("yarn")
+        .env("MOON_NODE_VERSION", "16.2.0")
+        .assert();
 
     assert.failure().code(1).stdout("");
 }
 
 #[test]
 fn not_installed() {
-    let assert = create_moon_command("cases").arg("bin").arg("node").assert();
+    let assert = create_moon_command("cases")
+        .arg("bin")
+        .arg("node")
+        .env("MOON_NODE_VERSION", "16.2.0")
+        .assert();
 
     assert.failure().code(2).stdout("");
 }

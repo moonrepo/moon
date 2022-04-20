@@ -22,6 +22,7 @@ pub fn create_moon_command(fixture: &str) -> assert_cmd::Command {
     let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
     cmd.current_dir(get_fixtures_dir(fixture));
     cmd.env("MOON_TEST", "true");
+    cmd.env("MOON_CACHE", "off"); // Never cache in tests
     cmd
 }
 

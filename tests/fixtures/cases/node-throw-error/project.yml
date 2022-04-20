@@ -1,4 +1,0 @@
-tasks:
-  test:
-    command: node
-    args: ./test.js

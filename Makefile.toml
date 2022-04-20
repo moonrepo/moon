@@ -20,13 +20,20 @@ command = "cargo"
 args = ["clippy", "--workspace", "--all-targets"]
 dependencies = ["format"]
 
+[tasks.test-setup]
+command = "cargo"
+args = ["run", "--", "setup"]
+env = { MOON_NODE_VERSION = "16.0.0" }
+
 [tasks.test]
 command = "cargo"
 args = ["test", "--workspace"]
+dependencies = ["test-setup"]
 
 [tasks.test-output]
 command = "cargo"
 args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
+dependencies = ["test-setup"]
 
 [tasks.gen-json-schemas]
 command = "cargo"

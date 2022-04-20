@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 14
+expression: get_assert_output(&assert)
+---
+
+[38;5;15m[48;5;161m[1m ERROR [0m
+
+File system failure for /Users/milesj/Projects/moon/tests/fixtures/cases/.moon/cache/runs/node/runfile.json: No such file or directory (os error 2)
+
+

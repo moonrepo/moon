@@ -5,6 +5,11 @@ node:
 projects:
   base: 'base'
 
+  # Project/task deps
+  depsA: 'deps-a'
+  depsB: 'deps-b'
+  depsC: 'deps-c'
+
   # Target scopes
   targetScopeA: 'target-scope-a'
   targetScopeB: 'target-scope-b'

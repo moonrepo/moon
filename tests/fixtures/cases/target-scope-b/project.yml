@@ -1,5 +1,18 @@
 tasks:
+  # :scope
   all:
     command: echo
-    args: 'b'
+    args: 'scope=all'
+    type: system
+
+  # ~:scope
+  self:
+    command: echo
+    args: 'scope=self'
+    deps:
+      - '~:selfOther'
+    type: system
+  selfOther:
+    command: echo
+    args: 'selfOther'
     type: system

@@ -1,5 +1,6 @@
 tasks:
+  # :scope
   all:
     command: echo
-    args: 'c'
+    args: 'scope=all'
     type: system

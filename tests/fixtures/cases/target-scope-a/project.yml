@@ -1,5 +1,19 @@
+dependsOn:
+  - depsA
+  - depsB
+  - depsC
+
 tasks:
+  # :scope
   all:
     command: echo
-    args: 'a'
+    args: 'scope=all'
+    type: system
+
+  # ^:scope
+  deps:
+    command: echo
+    args: 'scope=deps'
+    deps:
+      - '^:standard'
     type: system

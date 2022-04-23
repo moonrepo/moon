@@ -1,0 +1,18 @@
+tasks:
+  standard:
+    command: echo
+    args: 'deps=b'
+    type: system
+
+  dependencyOrder:
+    command: echo
+    args: 'deps=b'
+    type: system
+    deps:
+      - 'depsC:dependencyOrder'
+
+  # Cycle detection
+  taskCycle:
+    command: unknown
+    deps:
+      - 'depsC:taskCycle'

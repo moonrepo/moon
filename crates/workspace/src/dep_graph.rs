@@ -266,7 +266,6 @@ impl DepGraph {
     fn detect_cycle(&self) -> Result<(), WorkspaceError> {
         use petgraph::algo::kosaraju_scc;
 
-        // TODO: Not exactly accurate, revisit!!!
         let scc = kosaraju_scc(&self.graph);
         let cycle = scc
             .last()
@@ -274,7 +273,7 @@ impl DepGraph {
             .iter()
             .map(|i| self.get_node_from_index(*i).unwrap().label())
             .collect::<Vec<String>>()
-            .join(" -> ");
+            .join(" → ");
 
         Err(WorkspaceError::DepGraphCycleDetected(cycle))
     }

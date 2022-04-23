@@ -25,6 +25,40 @@ fn errors_for_unknown_task_in_project() {
     assert_snapshot!(get_assert_output(&assert));
 }
 
+#[test]
+fn errors_for_cycle_in_task_deps() {
+    let assert = create_moon_command("cases")
+        .arg("run")
+        .arg("depsA:taskCycle")
+        .assert();
+
+    assert_snapshot!(get_assert_output(&assert));
+}
+
+mod dependencies {
+    use super::*;
+
+    #[test]
+    fn runs_the_graph_in_order() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("depsA:dependencyOrder")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn runs_the_graph_in_order_not_from_head() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("depsB:dependencyOrder")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+}
+
 mod target_scopes {
     use super::*;
 
@@ -53,11 +87,44 @@ mod target_scopes {
         let assert = create_moon_command("cases").arg("run").arg(":all").assert();
         let output = get_assert_output(&assert);
 
-        // We cant use snapshots since it runs in parallel and the output changes
         assert!(predicate::str::contains("targetScopeA:all").eval(&output));
         assert!(predicate::str::contains("targetScopeB:all").eval(&output));
         assert!(predicate::str::contains("targetScopeC:all").eval(&output));
         assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
+    }
+
+    #[test]
+    fn supports_deps_scope_in_task() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("targetScopeA:deps")
+            .assert();
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
+        assert!(predicate::str::contains("scope=deps").eval(&output));
+        assert!(predicate::str::contains("depsA:standard").eval(&output));
+        assert!(predicate::str::contains("deps=a").eval(&output));
+        assert!(predicate::str::contains("depsB:standard").eval(&output));
+        assert!(predicate::str::contains("deps=b").eval(&output));
+        assert!(predicate::str::contains("depsC:standard").eval(&output));
+        assert!(predicate::str::contains("deps=c").eval(&output));
+        assert!(predicate::str::contains("Tasks: 4 completed").eval(&output));
+    }
+
+    #[test]
+    fn supports_self_scope_in_task() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("targetScopeB:self")
+            .assert();
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("targetScopeB:self").eval(&output));
+        assert!(predicate::str::contains("scope=self").eval(&output));
+        assert!(predicate::str::contains("targetScopeB:selfOther").eval(&output));
+        assert!(predicate::str::contains("selfOther").eval(&output));
+        assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
     }
 }
 

@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node-version: ['12.22.9', '14.19.0', '16.14.0']
+        node-version: ['12.22.9', '14.19.0', '16.14.0', '18.0.0']
     steps:
       - uses: actions/checkout@v3
         with:

@@ -89,6 +89,9 @@ pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
 // https://github.com/BurntSushi/ripgrep/issues/2001
 #[cfg(windows)]
 pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
+    use crate::path::normalize_glob;
+    use std::path::PathBuf;
+
     globset.is_match(&PathBuf::from(normalize_glob(path)))
 }
 

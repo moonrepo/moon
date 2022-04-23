@@ -4,5 +4,12 @@ node:
 
 projects:
   base: 'base'
+
+  # Target scopes
+  targetScopeA: 'target-scope-a'
+  targetScopeB: 'target-scope-b'
+  targetScopeC: 'target-scope-c'
+
+  # Tool types
   node: 'node'
   system: 'system'

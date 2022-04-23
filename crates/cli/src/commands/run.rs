@@ -135,7 +135,7 @@ pub fn render_result_stats(
 
     let counts_message = counts_message.join(&color::muted(", "));
     let elapsed_time = match env::var("MOON_TEST") {
-        Ok(_) => String::from("100ms"),
+        Ok(_) => String::from("100ms"), // Snapshots
         Err(_) => time::elapsed(duration),
     };
 

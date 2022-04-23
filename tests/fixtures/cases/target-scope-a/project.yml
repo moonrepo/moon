@@ -1,0 +1,5 @@
+tasks:
+  all:
+    command: echo
+    args: 'a'
+    type: system

@@ -3,6 +3,7 @@ use moon_utils::path::replace_home_dir;
 use moon_utils::test::{
     create_moon_command, get_assert_output, get_fixtures_dir, replace_fixtures_dir,
 };
+use predicates::prelude::*;
 
 #[test]
 fn errors_for_unknown_project() {
@@ -22,6 +23,42 @@ fn errors_for_unknown_task_in_project() {
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
+}
+
+mod target_scopes {
+    use super::*;
+
+    #[test]
+    fn errors_for_deps_scope() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("^:test")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn errors_for_self_scope() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("~:test")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn supports_all_scope() {
+        let assert = create_moon_command("cases").arg("run").arg(":all").assert();
+        let output = get_assert_output(&assert);
+
+        // We cant use snapshots since it runs in parallel and the output changes
+        assert!(predicate::str::contains("targetScopeA:all").eval(&output));
+        assert!(predicate::str::contains("targetScopeB:all").eval(&output));
+        assert!(predicate::str::contains("targetScopeC:all").eval(&output));
+        assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
+    }
 }
 
 mod node {

@@ -5,7 +5,7 @@ use moon_logger::{color, debug};
 use moon_project::{Target, TouchedFilePaths};
 use moon_terminal::helpers::{replace_style_tokens, safe_exit};
 use moon_terminal::output;
-use moon_utils::{fs, is_ci, time};
+use moon_utils::{is_ci, path, time};
 use moon_workspace::DepGraph;
 use moon_workspace::{ActionRunner, ActionStatus, Workspace, WorkspaceError};
 use std::collections::HashSet;
@@ -68,7 +68,7 @@ async fn gather_touched_files(
         .iter()
         .map(|f| {
             touched_files_to_print.push(format!("  {}", color::file(f)));
-            workspace.root.join(fs::normalize_separators(f))
+            workspace.root.join(path::normalize_separators(f))
         })
         .collect();
 

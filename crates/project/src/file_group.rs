@@ -1,7 +1,7 @@
 use crate::errors::{ProjectError, TokenError};
 use common_path::common_path_all;
 use globwalk::GlobWalkerBuilder;
-use moon_utils::fs::{expand_root_path, is_glob};
+use moon_utils::path::{expand_root_path, is_glob};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};

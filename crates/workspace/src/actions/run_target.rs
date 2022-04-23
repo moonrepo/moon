@@ -9,7 +9,7 @@ use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_run_target, label_run_target_failed};
 use moon_toolchain::{get_path_env_var, Tool};
 use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
-use moon_utils::{fs, string_vec};
+use moon_utils::{path, string_vec};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::process::Command;
@@ -26,26 +26,26 @@ async fn create_env_vars(
 
     env_vars.insert(
         "MOON_CACHE_DIR".to_owned(),
-        fs::path_to_string(&workspace.cache.dir)?,
+        path::path_to_string(&workspace.cache.dir)?,
     );
     env_vars.insert("MOON_PROJECT_ID".to_owned(), project.id.clone());
     env_vars.insert(
         "MOON_PROJECT_ROOT".to_owned(),
-        fs::path_to_string(&project.root)?,
+        path::path_to_string(&project.root)?,
     );
     env_vars.insert("MOON_PROJECT_SOURCE".to_owned(), project.source.clone());
     env_vars.insert("MOON_RUN_TARGET".to_owned(), task.target.clone());
     env_vars.insert(
         "MOON_TOOLCHAIN_DIR".to_owned(),
-        fs::path_to_string(&workspace.toolchain.dir)?,
+        path::path_to_string(&workspace.toolchain.dir)?,
     );
     env_vars.insert(
         "MOON_WORKSPACE_ROOT".to_owned(),
-        fs::path_to_string(&workspace.root)?,
+        path::path_to_string(&workspace.root)?,
     );
     env_vars.insert(
         "MOON_WORKING_DIR".to_owned(),
-        fs::path_to_string(&workspace.working_dir)?,
+        path::path_to_string(&workspace.working_dir)?,
     );
 
     // Store runtime data on the file system so that downstream commands can utilize it
@@ -53,7 +53,7 @@ async fn create_env_vars(
 
     env_vars.insert(
         "MOON_PROJECT_RUNFILE".to_owned(),
-        fs::path_to_string(&runfile.path)?,
+        path::path_to_string(&runfile.path)?,
     );
 
     Ok(env_vars)
@@ -105,7 +105,7 @@ fn create_node_target_command(
             let bin_path = node.find_package_bin_path(bin, &project.root)?;
 
             args.extend(create_node_options(task));
-            args.push(fs::path_to_string(&bin_path)?);
+            args.push(path::path_to_string(&bin_path)?);
         }
     };
 

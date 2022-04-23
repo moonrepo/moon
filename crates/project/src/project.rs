@@ -9,7 +9,7 @@ use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
 use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
 use moon_logger::{color, debug, trace};
-use moon_utils::fs;
+use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -202,7 +202,7 @@ impl Project {
         workspace_root: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let root = workspace_root.join(&fs::normalize_separators(source));
+        let root = workspace_root.join(&path::normalize_separators(source));
 
         debug!(
             target: &format!("moon:project:{}", id),

@@ -1,4 +1,4 @@
-use crate::fs;
+use crate::path;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -19,7 +19,7 @@ pub fn replace_fixtures_dir(value: &str, dir: &Path) -> String {
 
 // We need to do this so slashes are accurate and always forward
 pub fn wrap_glob(path: &Path) -> PathBuf {
-    PathBuf::from(fs::normalize_glob(path))
+    PathBuf::from(path::normalize_glob(path))
 }
 
 pub fn create_moon_command(fixture: &str) -> assert_cmd::Command {

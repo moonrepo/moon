@@ -2,6 +2,7 @@ use crate::{Workspace, WorkspaceError};
 use moon_cache::Hasher;
 use moon_project::{ExpandedFiles, Project, Task};
 use moon_utils::fs;
+use moon_utils::path::path_to_string;
 use std::path::Path;
 
 fn convert_paths_to_strings(
@@ -21,7 +22,7 @@ fn convert_paths_to_strings(
                 path
             };
 
-            files.push(fs::path_to_string(rel_path)?);
+            files.push(path_to_string(rel_path)?);
         }
     }
 

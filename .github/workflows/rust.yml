@@ -27,7 +27,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: --debug cargo-make
+          args: --debug --force cargo-make
       - uses: actions-rs/cargo@v1
         with:
           command: make
@@ -58,7 +58,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: --debug cargo-make
+          args: --debug --force cargo-make
       - uses: actions-rs/cargo@v1
         with:
           command: make
@@ -88,7 +88,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: --debug cargo-make
+          args: --debug --force cargo-make
       - uses: actions-rs/cargo@v1
         with:
           command: build

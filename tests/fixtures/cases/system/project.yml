@@ -11,3 +11,7 @@ tasks:
     command: bash
     args: ./bash.sh
     type: system
+  passthroughArgs:
+    command: bash
+    args: ./passthroughArgs.sh
+    type: system

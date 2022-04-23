@@ -1,12 +1,10 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 187
+assertion_line: 44
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ system:ls
-bash.sh
-passthroughArgs.sh
-project.yml
+▪▪▪▪ node:npm
+latest
 
 Tasks: 1 completed
  Time: 100ms

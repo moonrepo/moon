@@ -1,12 +1,10 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 187
+assertion_line: 163
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ system:ls
-bash.sh
-passthroughArgs.sh
-project.yml
+▪▪▪▪ node:passthroughArgs
+-aBc --opt value --optCamel=value foo 'bar baz' --opt-kebab 123
 
 Tasks: 1 completed
  Time: 100ms

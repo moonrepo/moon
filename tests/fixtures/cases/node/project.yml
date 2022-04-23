@@ -1,4 +1,7 @@
 tasks:
+  npm:
+    command: npm
+    args: config get tag
   standard:
     command: node
     args: ./standard.js
@@ -29,3 +32,6 @@ tasks:
   topLevelAwait:
     command: node
     args: ./topLevelAwait.mjs
+  passthroughArgs:
+    command: node
+    args: ./passthroughArgs.js

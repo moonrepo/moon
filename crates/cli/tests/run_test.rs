@@ -4,6 +4,26 @@ use moon_utils::test::{
     create_moon_command, get_assert_output, get_fixtures_dir, replace_fixtures_dir,
 };
 
+#[test]
+fn errors_for_unknown_project() {
+    let assert = create_moon_command("cases")
+        .arg("run")
+        .arg("unknown:test")
+        .assert();
+
+    assert_snapshot!(get_assert_output(&assert));
+}
+
+#[test]
+fn errors_for_unknown_task_in_project() {
+    let assert = create_moon_command("cases")
+        .arg("run")
+        .arg("base:unknown")
+        .assert();
+
+    assert_snapshot!(get_assert_output(&assert));
+}
+
 mod node {
     use super::*;
 
@@ -12,6 +32,16 @@ mod node {
             &get_assert_output(assert),
             &get_fixtures_dir(fixtures_dir),
         ))
+    }
+
+    #[test]
+    fn runs_package_managers() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("node:npm")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
@@ -113,6 +143,25 @@ mod node {
 
         assert_snapshot!(get_path_safe_output(&assert, "cases"));
     }
+
+    #[test]
+    fn passes_args_through() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("node:passthroughArgs")
+            .arg("--")
+            .arg("-aBc")
+            .arg("--opt")
+            .arg("value")
+            .arg("--optCamel=value")
+            .arg("foo")
+            .arg("'bar baz'")
+            .arg("--opt-kebab")
+            .arg("123")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
 }
 
 mod system {
@@ -143,6 +192,25 @@ mod system {
         let assert = create_moon_command("cases")
             .arg("run")
             .arg("system:bash")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn passes_args_through() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("system:passthroughArgs")
+            .arg("--")
+            .arg("-aBc")
+            .arg("--opt")
+            .arg("value")
+            .arg("--optCamel=value")
+            .arg("foo")
+            .arg("'bar baz'")
+            .arg("--opt-kebab")
+            .arg("123")
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));

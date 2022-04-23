@@ -1,0 +1,2 @@
+echo "stdout"
+err "stderr"

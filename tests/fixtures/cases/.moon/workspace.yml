@@ -5,3 +5,4 @@ node:
 projects:
   base: 'base'
   node: 'node'
+  system: 'system'

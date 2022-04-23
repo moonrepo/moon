@@ -114,3 +114,17 @@ mod node {
         assert_snapshot!(get_path_safe_output(&assert, "cases"));
     }
 }
+
+mod system {
+    use super::*;
+
+    #[test]
+    fn handles_echo() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("system:echo")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+}

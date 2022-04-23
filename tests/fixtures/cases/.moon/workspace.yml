@@ -1,6 +1,5 @@
 node:
-  # We use an old version to avoid conflicts with Moon's actual workspace.
-  # This value also needs to stay in sync with `cargo make test`.
+  # We use an old version to avoid conflicts with Moon's actual workspace!
   version: '16.0.0'
 
 projects:

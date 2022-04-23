@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 44
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ node:mjs
+stdout
+
+Tasks: 1 completed
+ Time: 100ms
+
+stderr
+

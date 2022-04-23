@@ -1,4 +1,13 @@
 tasks:
+  standard:
+    command: node
+    args: ./standard.js
+  cjs:
+    command: node
+    args: ./cjsFile.cjs
+  mjs:
+    command: node
+    args: ./mjsFile.mjs
   exitCodeNonZero:
     command: node
     args: ./exitCodeNonZero.js
@@ -11,12 +20,12 @@ tasks:
   processExitZero:
     command: node
     args: ./processExitZero.js
-  standard:
-    command: node
-    args: ./standard.js
   throwError:
     command: node
     args: ./throwError.js
   unhandledPromise:
     command: node
     args: ./unhandledPromise.js
+  topLevelAwait:
+    command: node
+    args: ./topLevelAwait.mjs

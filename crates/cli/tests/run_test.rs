@@ -25,6 +25,36 @@ mod node {
     }
 
     #[test]
+    fn runs_cjs_files() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("node:cjs")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn runs_mjs_files() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("node:mjs")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn supports_top_level_await() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("node:topLevelAwait")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
     fn handles_process_exit_zero() {
         let assert = create_moon_command("cases")
             .arg("run")

@@ -3,6 +3,7 @@
 
 pub use console::style;
 use console::{colors_enabled, pad_str, Alignment};
+use dirs::home_dir as get_home_dir;
 use log::Level;
 use std::env;
 use std::path::Path;
@@ -56,7 +57,18 @@ pub fn file(path: &str) -> String {
 }
 
 pub fn path(path: &Path) -> String {
-    paint(Color::Cyan as u8, path.to_str().unwrap_or("<unknown>"))
+    let path_str = path.to_str().unwrap_or("<unknown>");
+
+    if let Some(home_dir) = get_home_dir() {
+        if path.starts_with(&home_dir) {
+            return paint(
+                Color::Cyan as u8,
+                &path_str.replace(home_dir.to_str().unwrap(), "~"),
+            );
+        }
+    }
+
+    paint(Color::Cyan as u8, path_str)
 }
 
 pub fn url(url: &str) -> String {

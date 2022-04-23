@@ -1,6 +1,6 @@
 tasks:
   standard:
-    type: shell
+    type: system
     command: newcmd
     deps:
       - b:standard

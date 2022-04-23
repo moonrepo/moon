@@ -1,6 +1,6 @@
 tasks:
   standard:
-    type: shell
+    type: system
     deps:
       - b:standard
     args:

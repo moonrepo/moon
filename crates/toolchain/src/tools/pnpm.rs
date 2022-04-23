@@ -9,6 +9,7 @@ use moon_utils::is_ci;
 use moon_utils::process::{create_command, exec_command, Output};
 use std::env::consts;
 use std::path::PathBuf;
+use std::process::Stdio;
 
 #[derive(Clone, Debug)]
 pub struct PnpmTool {
@@ -162,6 +163,8 @@ impl PackageManager for PnpmTool {
             create_command(self.get_bin_path())
                 .args(exec_args)
                 .current_dir(&toolchain.workspace_root)
+                .stderr(Stdio::inherit())
+                .stdout(Stdio::inherit())
                 .env("PATH", get_path_env_var(self.get_bin_dir())),
         )
         .await?)
@@ -187,6 +190,8 @@ impl PackageManager for PnpmTool {
             create_command(self.get_bin_path())
                 .args(args)
                 .current_dir(&toolchain.workspace_root)
+                .stderr(Stdio::inherit())
+                .stdout(Stdio::inherit())
                 .env("PATH", get_path_env_var(self.get_bin_dir())),
         )
         .await?)

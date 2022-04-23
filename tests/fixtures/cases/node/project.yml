@@ -17,3 +17,6 @@ tasks:
   throwError:
     command: node
     args: ./throwError.js
+  unhandledPromise:
+    command: node
+    args: ./unhandledPromise.js

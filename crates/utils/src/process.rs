@@ -1,4 +1,4 @@
-use crate::fs::get_home_dir;
+use crate::path::get_home_dir;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, trace};
 use std::env;
@@ -171,19 +171,9 @@ fn handle_nonzero_status(command: &mut Command, output: &Output) -> Result<(), M
 
         match output.status.code() {
             Some(code) => {
-                return Err(MoonError::ProcessNonZero(
-                    bin_name.to_owned(),
-                    code,
-                    output_to_string(&output.stderr), // Always correct?
-                ));
+                return Err(MoonError::ProcessNonZero(bin_name.to_owned(), code));
             }
-            None => {
-                return Err(MoonError::ProcessNonZero(
-                    bin_name.to_owned(),
-                    -1,
-                    String::from("Process terminated by signal."),
-                ))
-            }
+            None => return Err(MoonError::ProcessNonZero(bin_name.to_owned(), -1)),
         };
     }
 

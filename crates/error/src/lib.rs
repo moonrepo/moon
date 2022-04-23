@@ -30,8 +30,8 @@ pub enum MoonError {
     #[error("Process failure for <shell>{0}</shell>: {1}")]
     Process(String, #[source] IoError),
 
-    #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code. {2}")]
-    ProcessNonZero(String, i32, String),
+    #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code.")]
+    ProcessNonZero(String, i32),
 
     #[error("{0}")]
     Unknown(#[source] IoError),

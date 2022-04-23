@@ -1,4 +1,5 @@
 pub mod fs;
+pub mod path;
 pub mod process;
 pub mod regex;
 pub mod test;

@@ -13,6 +13,10 @@ pub fn get_fixtures_root() -> PathBuf {
     path.canonicalize().unwrap()
 }
 
+pub fn replace_fixtures_dir(value: &str, dir: &Path) -> String {
+    value.replace(dir.to_str().unwrap(), "<WORKSPACE>")
+}
+
 // We need to do this so slashes are accurate and always forward
 pub fn wrap_glob(path: &Path) -> PathBuf {
     PathBuf::from(fs::normalize_glob(path))

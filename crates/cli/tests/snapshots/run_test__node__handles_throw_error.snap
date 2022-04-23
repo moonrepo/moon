@@ -1,0 +1,26 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 74
+expression: "get_path_safe_output(&assert, \"cases\")"
+---
+▪▪▪▪ node:throwError
+stdout
+stderr
+<WORKSPACE>/node/throwError.js:4
+throw new Error('Oops');
+^
+
+Error: Oops
+    at Object.<anonymous> (<WORKSPACE>/node/throwError.js:4:7)
+    at Module._compile (node:internal/modules/cjs/loader:1108:14)
+    at Object.Module._extensions..js (node:internal/modules/cjs/loader:1137:10)
+    at Module.load (node:internal/modules/cjs/loader:988:32)
+    at Function.Module._load (node:internal/modules/cjs/loader:828:14)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:76:12)
+    at node:internal/main/run_main_module:17:47
+
+[38;5;15m[48;5;161m[1m ERROR [0m
+
+Action runner failed to run: Process ~/.moon/tools/node/16.0.0/bin/node failed with a 1 exit code.
+
+

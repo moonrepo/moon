@@ -10,8 +10,6 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use tokio::fs;
 
-pub use dirs::home_dir as get_home_dir;
-
 pub fn clean_json(json: String) -> Result<String, MoonError> {
     // Remove comments
     let mut stripped = String::with_capacity(json.len());

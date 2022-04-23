@@ -1,8 +1,18 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command, get_assert_output};
+use moon_utils::path::replace_home_dir;
+use moon_utils::test::{
+    create_moon_command, get_assert_output, get_fixtures_dir, replace_fixtures_dir,
+};
 
 mod node {
     use super::*;
+
+    fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &str) -> String {
+        replace_home_dir(&replace_fixtures_dir(
+            &get_assert_output(assert),
+            &get_fixtures_dir(fixtures_dir),
+        ))
+    }
 
     #[test]
     fn runs_standard_script() {
@@ -52,5 +62,25 @@ mod node {
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn handles_throw_error() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("node:throwError")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, "cases"));
+    }
+
+    #[test]
+    fn handles_unhandled_promise() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("node:unhandledPromise")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, "cases"));
     }
 }

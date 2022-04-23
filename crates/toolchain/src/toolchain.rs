@@ -10,6 +10,7 @@ use moon_config::package::PackageJson;
 use moon_config::{PackageManager as PM, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_utils::fs;
+use moon_utils::path::get_home_dir;
 use std::path::{Path, PathBuf};
 
 async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
@@ -111,7 +112,7 @@ impl Toolchain {
     ) -> Result<Toolchain, ToolchainError> {
         Toolchain::create_from_dir(
             config,
-            &fs::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
+            &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
         )
         .await

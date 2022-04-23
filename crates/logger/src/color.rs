@@ -76,6 +76,15 @@ pub fn url(url: &str) -> String {
 }
 
 pub fn shell(cmd: &str) -> String {
+    // Some shell commands are file paths to the binary
+    if let Some(home_dir) = get_home_dir() {
+        let home_dir_str = home_dir.to_str().unwrap();
+
+        if cmd.starts_with(home_dir_str) {
+            return paint(Color::Pink as u8, &cmd.replace(home_dir_str, "~"));
+        }
+    }
+
     paint(Color::Pink as u8, cmd)
 }
 

@@ -27,7 +27,7 @@ pub enum MoonError {
     #[error("Path <path>{0}</path> contains invalid UTF-8 characters.")]
     PathInvalidUTF8(PathBuf),
 
-    #[error("Process failure for <file>{0}</file>: {1}")]
+    #[error("Process failure for <shell>{0}</shell>: {1}")]
     Process(String, #[source] IoError),
 
     #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code. {2}")]

@@ -9,6 +9,6 @@ stderr
 
 [38;5;15m[48;5;161m[1m ERROR [0m
 
-Action runner failed to run: Process /Users/milesj/.moon/tools/node/16.0.0/bin/node failed with a 1 exit code. stderr
+Action runner failed to run: Process ~/.moon/tools/node/16.0.0/bin/node failed with a 1 exit code. stderr
 
 

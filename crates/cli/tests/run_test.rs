@@ -127,4 +127,24 @@ mod system {
 
         assert_snapshot!(get_assert_output(&assert));
     }
+
+    #[test]
+    fn handles_ls() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("system:ls")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn runs_bash_script() {
+        let assert = create_moon_command("cases")
+            .arg("run")
+            .arg("system:bash")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
 }

@@ -3,11 +3,10 @@ source: crates/cli/tests/run_test.rs
 assertion_line: 128
 expression: get_assert_output(&assert)
 ---
+▪▪▪▪ system:echo
+hello
 
-[38;5;15m[48;5;161m[1m ERROR [0m
-
-Failed to validate system/project.yml configuration file.
-
-system
+Tasks: 1 completed
+ Time: 100ms
 
 

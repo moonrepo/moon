@@ -433,7 +433,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -453,7 +453,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         },
                         &workspace_root,
                         project_source
@@ -507,7 +507,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Append),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -530,7 +530,7 @@ mod tasks {
                             inputs: Some(string_vec!["a.*", "b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Append),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         },
                         &workspace_root,
                         project_source
@@ -584,7 +584,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -607,7 +607,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*", "a.*"]),
                             outputs: Some(string_vec!["b.ts", "a.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         },
                         &workspace_root,
                         project_source

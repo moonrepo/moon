@@ -40,7 +40,7 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 #[serde(rename_all = "lowercase")]
 pub enum TaskType {
     Node,
-    Shell,
+    System,
 }
 
 impl Default for TaskType {

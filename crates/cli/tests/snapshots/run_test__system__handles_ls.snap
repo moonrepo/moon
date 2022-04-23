@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 138
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ system:ls
+bash.sh
+project.yml
+
+Tasks: 1 completed
+ Time: 100ms
+
+

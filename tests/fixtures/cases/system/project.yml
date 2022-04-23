@@ -1,5 +1,13 @@
 tasks:
+  ls:
+    command: ls
+    args: '-1 .'
+    type: system
   echo:
+    command: echo
+    args: 'hello'
+    type: system
+  bash:
     command: bash
-    args: ./echo.sh
+    args: ./bash.sh
     type: system

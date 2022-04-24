@@ -3,7 +3,7 @@ use flate2::read::GzDecoder;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
 use moon_utils::fs;
-use moon_utils::process::{create_command, exec_command_capture_stdout};
+use moon_utils::process::{output_to_trimmed_string, Command};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs::File;
@@ -13,13 +13,16 @@ use tar::Archive;
 use zip::ZipArchive;
 
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
-    let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"]).env(
-        "PATH",
-        get_path_env_var(bin.parent().unwrap().to_path_buf()),
-    ))
-    .await?;
+    let output = Command::new(bin)
+        .arg("--version")
+        .env(
+            "PATH",
+            get_path_env_var(bin.parent().unwrap().to_path_buf()),
+        )
+        .exec_capture_output()
+        .await?;
 
-    version = version.trim().to_owned();
+    let mut version = output_to_trimmed_string(&output.stdout);
 
     if version.is_empty() {
         version = String::from("0.0.0");

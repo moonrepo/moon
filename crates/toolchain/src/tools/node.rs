@@ -10,7 +10,7 @@ use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, error};
 use moon_utils::fs;
-use moon_utils::process::{create_command, exec_command, Output};
+use moon_utils::process::Command;
 use semver::{Version, VersionReq};
 use std::env::consts;
 use std::ffi::OsStr;
@@ -162,17 +162,18 @@ impl NodeTool {
         })
     }
 
-    pub async fn exec_corepack<I, S>(&self, args: I) -> Result<Output, ToolchainError>
+    pub async fn exec_corepack<I, S>(&self, args: I) -> Result<(), ToolchainError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        Ok(exec_command(
-            create_command(&self.corepack_bin_path)
-                .args(args)
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+        Command::new(&self.corepack_bin_path)
+            .args(args)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_capture_output()
+            .await?;
+
+        Ok(())
     }
 
     pub fn find_package_bin_path(

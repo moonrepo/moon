@@ -1,6 +1,6 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
-use moon_utils::process::{create_command, exec_command_capture_stdout};
+use moon_utils::process::{output_to_string, Command};
 use regex::Regex;
 use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -203,17 +203,18 @@ impl Vcs for Svn {
     }
 
     async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {
-        let output = exec_command_capture_stdout(
-            create_command("svn")
-                .args(args)
-                .current_dir(&self.working_dir),
-        )
-        .await?;
+        let output = Command::new("svn")
+            .args(args)
+            .cwd(&self.working_dir)
+            .exec_capture_output()
+            .await?;
+
+        let stdout = output_to_string(&output.stdout);
 
         if trim {
-            return Ok(output.trim().to_owned());
+            return Ok(stdout.trim().to_owned());
         }
 
-        Ok(output)
+        Ok(stdout)
     }
 }

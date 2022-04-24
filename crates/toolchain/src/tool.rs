@@ -2,7 +2,6 @@ use crate::errors::ToolchainError;
 use crate::Toolchain;
 use async_trait::async_trait;
 use std::path::PathBuf;
-use std::process::Output;
 
 #[async_trait]
 pub trait Tool {

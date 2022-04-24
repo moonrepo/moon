@@ -22,7 +22,7 @@ pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
         .exec_capture_output()
         .await?;
 
-    let mut version = output_to_string(output).trim().to_owned();
+    let mut version = output_to_string(&output.stdout).trim().to_owned();
 
     if version.is_empty() {
         version = String::from("0.0.0");

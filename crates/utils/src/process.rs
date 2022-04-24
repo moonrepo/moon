@@ -35,84 +35,6 @@ pub fn create_command<S: AsRef<OsStr>>(bin: S) -> TokioCommand {
     }
 }
 
-// pub async fn exec_command_capture_stderr(command: &mut TokioCommand) -> Result<String, MoonError> {
-//     let output = exec_command(command).await?;
-
-//     Ok(output_to_string(&output.stderr))
-// }
-
-// pub async fn exec_command_capture_stdout(command: &mut TokioCommand) -> Result<String, MoonError> {
-//     let output = exec_command(command).await?;
-
-//     Ok(output_to_string(&output.stdout))
-// }
-
-// pub async fn spawn_command(command: &mut TokioCommand) -> Result<Output, MoonError> {
-//     log_command_info(command);
-
-//     let mut child = command
-//         .stderr(Stdio::piped())
-//         .stdout(Stdio::piped())
-//         .envs(env::vars())
-//         // Inherit ANSI colors since they're stripped from pipes
-//         .env("FORCE_COLOR", env::var("FORCE_COLOR").unwrap_or_default())
-//         .env("TERM", env::var("TERM").unwrap_or_default())
-//         .spawn()
-//         .unwrap();
-
-//     // We need to log the child process output to the parent terminal
-//     // AND capture stdout/stderr so that we can cache it for future runs.
-//     // This doesn't seem to be supported natively by `Stdio`, so I have
-//     // this *real ugly* implementation to solve it. There's gotta be a
-//     // better way to do this?
-//     // https://stackoverflow.com/a/49063262
-//     let err = BufReader::new(child.stderr.take().unwrap());
-//     let out = BufReader::new(child.stdout.take().unwrap());
-
-//     // Spawn additional threads for logging the buffer
-//     let stderr = Arc::new(RwLock::new(vec![]));
-//     let stdout = Arc::new(RwLock::new(vec![]));
-//     let stderr_clone = Arc::clone(&stderr);
-//     let stdout_clone = Arc::clone(&stdout);
-
-//     task::spawn(async move {
-//         let mut lines = err.lines();
-//         let mut stderr_write = stderr_clone.write().await;
-
-//         while let Some(line) = lines.next_line().await.unwrap() {
-//             eprintln!("{}", line);
-//             stderr_write.push(line);
-//         }
-//     });
-
-//     task::spawn(async move {
-//         let mut lines = out.lines();
-//         let mut stdout_write = stdout_clone.write().await;
-
-//         while let Some(line) = lines.next_line().await.unwrap() {
-//             println!("{}", line);
-//             stdout_write.push(line);
-//         }
-//     });
-
-//     // Attempt to capture the child output
-//     let mut output = child.wait_with_output().await.map_err(|e| {
-//         map_io_to_process_error(e, command.as_std().get_program().to_str().unwrap())
-//     })?;
-
-//     if output.stderr.is_empty() {
-//         output.stderr = stderr.read().await.join("").into_bytes();
-//     }
-
-//     if output.stdout.is_empty() {
-//         output.stdout = stdout.read().await.join("").into_bytes();
-//     }
-
-//     handle_nonzero_status(command, &output)?;
-
-//     Ok(output)
-// }
-
 pub fn output_to_string(data: &[u8]) -> String {
     String::from_utf8(data.to_vec()).unwrap_or_default()
 }
@@ -131,7 +53,7 @@ pub struct Command {
 impl Command {
     pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
         Command {
-            bin: String::from(bin.as_ref().clone().to_string_lossy()),
+            bin: String::from(bin.as_ref().to_string_lossy()),
             cmd: create_command(bin),
         }
     }
@@ -203,13 +125,81 @@ impl Command {
         Ok(status)
     }
 
+    pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
+        self.log_command_info();
+
+        let mut child = self
+            .cmd
+            .stderr(Stdio::piped())
+            .stdout(Stdio::piped())
+            .envs(env::vars())
+            // Inherit ANSI colors since they're stripped from pipes
+            .env("FORCE_COLOR", env::var("FORCE_COLOR").unwrap_or_default())
+            .env("TERM", env::var("TERM").unwrap_or_default())
+            .spawn()
+            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+
+        // We need to log the child process output to the parent terminal
+        // AND capture stdout/stderr so that we can cache it for future runs.
+        // This doesn't seem to be supported natively by `Stdio`, so I have
+        // this *real ugly* implementation to solve it. There's gotta be a
+        // better way to do this?
+        // https://stackoverflow.com/a/49063262
+        let err = BufReader::new(child.stderr.take().unwrap());
+        let out = BufReader::new(child.stdout.take().unwrap());
+
+        // Spawn additional threads for logging the buffer
+        let stderr = Arc::new(RwLock::new(vec![]));
+        let stdout = Arc::new(RwLock::new(vec![]));
+        let stderr_clone = Arc::clone(&stderr);
+        let stdout_clone = Arc::clone(&stdout);
+
+        task::spawn(async move {
+            let mut lines = err.lines();
+            let mut stderr_write = stderr_clone.write().await;
+
+            while let Some(line) = lines.next_line().await.unwrap() {
+                eprintln!("{}", line);
+                stderr_write.push(line);
+            }
+        });
+
+        task::spawn(async move {
+            let mut lines = out.lines();
+            let mut stdout_write = stdout_clone.write().await;
+
+            while let Some(line) = lines.next_line().await.unwrap() {
+                println!("{}", line);
+                stdout_write.push(line);
+            }
+        });
+
+        // Attempt to capture the child output
+        let mut output = child
+            .wait_with_output()
+            .await
+            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+
+        if output.stderr.is_empty() {
+            output.stderr = stderr.read().await.join("").into_bytes();
+        }
+
+        if output.stdout.is_empty() {
+            output.stdout = stdout.read().await.join("").into_bytes();
+        }
+
+        self.handle_nonzero_status(&output.status)?;
+
+        Ok(output)
+    }
+
     fn handle_nonzero_status(&self, status: &ExitStatus) -> Result<(), MoonError> {
         if !status.success() {
             match status.code() {
                 Some(code) => {
-                    return Err(MoonError::ProcessNonZero(self.bin, code));
+                    return Err(MoonError::ProcessNonZero(self.bin.clone(), code));
                 }
-                None => return Err(MoonError::ProcessNonZero(self.bin, -1)),
+                None => return Err(MoonError::ProcessNonZero(self.bin.clone(), -1)),
             };
         }
 

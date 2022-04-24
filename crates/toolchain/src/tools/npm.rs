@@ -189,7 +189,7 @@ impl PackageManager for NpmTool {
 
         Command::new(&self.npx_path)
             .args(exec_args)
-            .current_dir(&toolchain.workspace_root)
+            .cwd(&toolchain.workspace_root)
             .env("PATH", get_path_env_var(self.get_bin_dir()))
             .exec_stream_output()
             .await?;

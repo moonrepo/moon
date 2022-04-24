@@ -294,12 +294,12 @@ impl Vcs for Git {
             .exec_capture_output()
             .await?;
 
-        let stdout = output_to_string(&output);
+        let stdout = output_to_string(&output.stdout);
 
         if trim {
-            return Ok(output.trim().to_owned());
+            return Ok(stdout.trim().to_owned());
         }
 
-        Ok(output)
+        Ok(stdout)
     }
 }

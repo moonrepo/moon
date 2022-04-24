@@ -8,11 +8,10 @@ use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_run_target, label_run_target_failed};
 use moon_toolchain::{get_path_env_var, Tool};
-use moon_utils::process::{create_command, exec_command, output_to_string, spawn_command};
+use moon_utils::process::{output_to_string, Command};
 use moon_utils::{path, string_vec};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::process::Command;
 use tokio::sync::RwLock;
 
 const TARGET: &str = "moon:action:run-target";
@@ -110,7 +109,7 @@ fn create_node_target_command(
     };
 
     // Create the command
-    let mut command = create_command(cmd);
+    let mut command = Command::new(cmd);
 
     command
         .args(&args)
@@ -152,7 +151,7 @@ fn create_node_target_command(
     };
 
     // Create the command
-    let mut command = create_command(cmd);
+    let mut command = Command::new(cmd);
 
     command
         .args(&task.args)
@@ -164,7 +163,7 @@ fn create_node_target_command(
 }
 
 fn create_shell_target_command(task: &Task) -> Command {
-    let mut cmd = create_command(&task.command);
+    let mut cmd = Command::new(&task.command);
     cmd.args(&task.args);
     cmd
 }
@@ -187,7 +186,7 @@ async fn create_target_command(
         _ => create_shell_target_command(task),
     };
 
-    command.current_dir(&exec_dir).envs(env_vars);
+    command.cwd(&exec_dir).envs(env_vars);
 
     Ok(command)
 }
@@ -244,16 +243,16 @@ pub async fn run_target(
 
         if is_primary {
             // Print label *before* output is streamed since it may stay open forever,
-            // or use ANSI escape codes to alter the terminal.
+            // or it may use ANSI escape codes to alter the terminal.
             print_target_label(target_id, &attempt_comment, false);
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
-            possible_output = spawn_command(&mut command).await;
+            possible_output = command.exec_stream_and_capture_output().await;
         } else {
             // Otherwise we run the process in the background and write the output
             // once it has completed.
-            possible_output = exec_command(&mut command).await;
+            possible_output = command.exec_capture_output().await;
 
             // Print label *after* output has been captured, so parallel tasks
             // aren't intertwined and the labels align with the output.

@@ -49,7 +49,7 @@ pub trait Tool {
 #[async_trait]
 pub trait PackageManager {
     /// Dedupe dependencies after they have been installed.
-    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError>;
+    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 
     /// Download and execute a one-off package.
     async fn exec_package(
@@ -57,7 +57,7 @@ pub trait PackageManager {
         toolchain: &Toolchain,
         package: &str,
         args: Vec<&str>,
-    ) -> Result<Output, ToolchainError>;
+    ) -> Result<(), ToolchainError>;
 
     /// Return the name of the lockfile.
     fn get_lockfile_name(&self) -> String;
@@ -66,5 +66,5 @@ pub trait PackageManager {
     fn get_workspace_dependency_range(&self) -> String;
 
     /// Install dependencies at the root where a `package.json` exists.
-    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError>;
+    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 }

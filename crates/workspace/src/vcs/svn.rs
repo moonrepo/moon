@@ -203,12 +203,13 @@ impl Vcs for Svn {
     }
 
     async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {
-        let output = exec_command_capture_stdout(
-            create_command("svn")
-                .args(args)
-                .current_dir(&self.working_dir),
-        )
-        .await?;
+        let output = Command::new("svn")
+            .args(args)
+            .cwd(&self.working_dir)
+            .exec_capture_output()
+            .await?;
+
+        let stdout = output_to_string(&output);
 
         if trim {
             return Ok(output.trim().to_owned());

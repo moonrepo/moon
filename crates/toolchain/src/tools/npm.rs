@@ -6,10 +6,9 @@ use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
-use moon_utils::process::{create_command, exec_command, Output};
+use moon_utils::process::Command;
 use std::env::consts;
 use std::path::PathBuf;
-use std::process::Stdio;
 
 #[derive(Clone, Debug)]
 pub struct NpmTool {
@@ -53,13 +52,12 @@ impl NpmTool {
     pub async fn add_global_dep(&self, name: &str, version: &str) -> Result<(), ToolchainError> {
         let package = format!("{}@{}", name, version);
 
-        exec_command(
-            create_command(self.get_bin_path())
-                .args(["install", "-g", &package])
-                .env("PATH", get_path_env_var(self.get_bin_dir()))
-                .current_dir(&self.install_dir),
-        )
-        .await?;
+        Command::new(self.get_bin_path())
+            .args(["install", "-g", &package])
+            .cwd(&self.install_dir)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_capture_output()
+            .await?;
 
         Ok(())
     }
@@ -168,14 +166,15 @@ impl Tool for NpmTool {
 
 #[async_trait]
 impl PackageManager for NpmTool {
-    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
-        Ok(exec_command(
-            create_command(self.get_bin_path())
-                .args(["dedupe"])
-                .current_dir(&toolchain.workspace_root)
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        Command::new(self.get_bin_path())
+            .args(["dedupe"])
+            .cwd(&toolchain.workspace_root)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_capture_output()
+            .await?;
+
+        Ok(())
     }
 
     async fn exec_package(
@@ -183,20 +182,19 @@ impl PackageManager for NpmTool {
         toolchain: &Toolchain,
         package: &str,
         args: Vec<&str>,
-    ) -> Result<Output, ToolchainError> {
+    ) -> Result<(), ToolchainError> {
         let mut exec_args = vec!["--package", package, "--"];
 
         exec_args.extend(args);
 
-        Ok(exec_command(
-            create_command(&self.npx_path)
-                .args(exec_args)
-                .current_dir(&toolchain.workspace_root)
-                .stderr(Stdio::inherit())
-                .stdout(Stdio::inherit())
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+        Command::new(&self.npx_path)
+            .args(exec_args)
+            .current_dir(&toolchain.workspace_root)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 
     fn get_lockfile_name(&self) -> String {
@@ -208,15 +206,14 @@ impl PackageManager for NpmTool {
         String::from("*")
     }
 
-    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
-        Ok(exec_command(
-            create_command(self.get_bin_path())
-                .args([if is_ci() { "ci" } else { "install" }])
-                .current_dir(&toolchain.workspace_root)
-                .stderr(Stdio::inherit())
-                .stdout(Stdio::inherit())
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        Command::new(self.get_bin_path())
+            .arg(if is_ci() { "ci" } else { "install" })
+            .cwd(&toolchain.workspace_root)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 }

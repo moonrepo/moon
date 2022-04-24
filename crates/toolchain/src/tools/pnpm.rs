@@ -6,10 +6,9 @@ use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
-use moon_utils::process::{create_command, exec_command, Output};
+use moon_utils::process::Command;
 use std::env::consts;
 use std::path::PathBuf;
-use std::process::Stdio;
 
 #[derive(Clone, Debug)]
 pub struct PnpmTool {
@@ -136,16 +135,17 @@ impl Tool for PnpmTool {
 
 #[async_trait]
 impl PackageManager for PnpmTool {
-    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
+    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune
-        Ok(exec_command(
-            create_command(self.get_bin_path())
-                .args(["prune"])
-                .current_dir(&toolchain.workspace_root)
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+        Command::new(self.get_bin_path())
+            .arg("prune")
+            .cwd(&toolchain.workspace_root)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_capture_output()
+            .await?;
+
+        Ok(())
     }
 
     async fn exec_package(
@@ -153,21 +153,20 @@ impl PackageManager for PnpmTool {
         toolchain: &Toolchain,
         package: &str,
         args: Vec<&str>,
-    ) -> Result<Output, ToolchainError> {
+    ) -> Result<(), ToolchainError> {
         let mut exec_args = vec!["--package", package, "dlx"];
 
         exec_args.extend(args);
 
         // https://pnpm.io/cli/dlx
-        Ok(exec_command(
-            create_command(self.get_bin_path())
-                .args(exec_args)
-                .current_dir(&toolchain.workspace_root)
-                .stderr(Stdio::inherit())
-                .stdout(Stdio::inherit())
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+        Command::new(self.get_bin_path())
+            .args(exec_args)
+            .cwd(&toolchain.workspace_root)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 
     fn get_lockfile_name(&self) -> String {
@@ -179,21 +178,20 @@ impl PackageManager for PnpmTool {
         String::from("workspace:*")
     }
 
-    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
+    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
         if is_ci() {
             args.push("--frozen-lockfile");
         }
 
-        Ok(exec_command(
-            create_command(self.get_bin_path())
-                .args(args)
-                .current_dir(&toolchain.workspace_root)
-                .stderr(Stdio::inherit())
-                .stdout(Stdio::inherit())
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+        Command::new(self.get_bin_path())
+            .args(args)
+            .cwd(&toolchain.workspace_root)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 }

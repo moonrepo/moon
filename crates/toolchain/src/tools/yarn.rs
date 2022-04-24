@@ -6,10 +6,9 @@ use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
-use moon_utils::process::{create_command, exec_command, Output};
+use moon_utils::process::Command;
 use std::env::consts;
 use std::path::PathBuf;
-use std::process::Stdio;
 
 #[derive(Clone, Debug)]
 pub struct YarnTool {
@@ -147,13 +146,12 @@ impl Tool for YarnTool {
                 color::shell(&format!("yarn set version {}", self.config.version))
             );
 
-            exec_command(
-                create_command(self.get_bin_path())
-                    .args(["set", "version", &self.config.version])
-                    .current_dir(&toolchain.workspace_root)
-                    .env("PATH", get_path_env_var(self.get_bin_dir())),
-            )
-            .await?;
+            Command::new(self.get_bin_path())
+                .args(["set", "version", &self.config.version])
+                .cwd(&toolchain.workspace_root)
+                .env("PATH", get_path_env_var(self.get_bin_dir()))
+                .exec_capture_output()
+                .await?;
         }
 
         Ok(())
@@ -178,29 +176,30 @@ impl Tool for YarnTool {
 
 #[async_trait]
 impl PackageManager for YarnTool {
-    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
+    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {
-            Ok(toolchain
+            toolchain
                 .get_npm()
                 .exec_package(
                     toolchain,
                     "yarn-deduplicate",
                     vec!["yarn-deduplicate", "yarn.lock"],
                 )
-                .await?)
+                .await?;
 
         // yarn dedupe
         } else {
-            Ok(exec_command(
-                create_command(self.get_bin_path())
-                    .args(["dedupe"])
-                    .current_dir(&toolchain.workspace_root)
-                    .env("PATH", get_path_env_var(self.get_bin_dir())),
-            )
-            .await?)
+            Command::new(self.get_bin_path())
+                .arg("dedupe")
+                .cwd(&toolchain.workspace_root)
+                .env("PATH", get_path_env_var(self.get_bin_dir()))
+                .exec_capture_output()
+                .await?;
         }
+
+        Ok(())
     }
 
     async fn exec_package(
@@ -208,21 +207,20 @@ impl PackageManager for YarnTool {
         toolchain: &Toolchain,
         package: &str,
         args: Vec<&str>,
-    ) -> Result<Output, ToolchainError> {
+    ) -> Result<(), ToolchainError> {
         let mut exec_args = vec!["dlx", "--package", package];
 
         exec_args.extend(args);
 
         // https://yarnpkg.com/cli/dlx
-        Ok(exec_command(
-            create_command(self.get_bin_path())
-                .args(exec_args)
-                .current_dir(&toolchain.workspace_root)
-                .stderr(Stdio::inherit())
-                .stdout(Stdio::inherit())
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+        Command::new(self.get_bin_path())
+            .args(exec_args)
+            .cwd(&toolchain.workspace_root)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 
     fn get_lockfile_name(&self) -> String {
@@ -238,7 +236,7 @@ impl PackageManager for YarnTool {
         }
     }
 
-    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<Output, ToolchainError> {
+    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
         if is_ci() {
@@ -258,14 +256,13 @@ impl PackageManager for YarnTool {
             }
         }
 
-        Ok(exec_command(
-            create_command(self.get_bin_path())
-                .args(args)
-                .current_dir(&toolchain.workspace_root)
-                .stderr(Stdio::inherit())
-                .stdout(Stdio::inherit())
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+        Command::new(self.get_bin_path())
+            .args(args)
+            .cwd(&toolchain.workspace_root)
+            .env("PATH", get_path_env_var(self.get_bin_dir()))
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 }

@@ -207,8 +207,24 @@ impl PackageManager for NpmTool {
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        let mut args = vec!["install"];
+
+        if is_ci() {
+            let lockfile = toolchain.workspace_root.join(self.get_lockfile_name());
+
+            // npm will error if using `ci` and a lockfile does not exist!
+            if lockfile.exists() {
+                args.clear();
+                args.push("ci");
+            }
+        } else {
+            args.push("--no-audit");
+        }
+
+        args.push("--no-fund");
+
         Command::new(self.get_bin_path())
-            .arg(if is_ci() { "ci" } else { "install" })
+            .args(args)
             .cwd(&toolchain.workspace_root)
             .env("PATH", get_path_env_var(self.get_bin_dir()))
             .exec_stream_output()

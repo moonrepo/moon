@@ -3,7 +3,7 @@ use flate2::read::GzDecoder;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
 use moon_utils::fs;
-use moon_utils::process::{output_to_string, Command};
+use moon_utils::process::{output_to_trimmed_string, Command};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs::File;
@@ -22,7 +22,7 @@ pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
         .exec_capture_output()
         .await?;
 
-    let mut version = output_to_string(&output.stdout).trim().to_owned();
+    let mut version = output_to_trimmed_string(&output.stdout);
 
     if version.is_empty() {
         version = String::from("0.0.0");

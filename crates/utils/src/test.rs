@@ -2,6 +2,18 @@ use crate::path;
 use std::env;
 use std::path::{Path, PathBuf};
 
+pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
+    use assert_fs::prelude::*;
+
+    let temp_dir = assert_fs::fixture::TempDir::new().unwrap();
+
+    temp_dir
+        .copy_from(get_fixtures_dir(dir), &["**/*"])
+        .unwrap();
+
+    temp_dir
+}
+
 pub fn get_fixtures_dir(dir: &str) -> PathBuf {
     get_fixtures_root().join(dir)
 }
@@ -23,8 +35,12 @@ pub fn wrap_glob(path: &Path) -> PathBuf {
 }
 
 pub fn create_moon_command(fixture: &str) -> assert_cmd::Command {
+    create_moon_command_in(&get_fixtures_dir(fixture))
+}
+
+pub fn create_moon_command_in(path: &Path) -> assert_cmd::Command {
     let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
-    cmd.current_dir(get_fixtures_dir(fixture));
+    cmd.current_dir(path);
     cmd.env("MOON_TEST", "true");
     cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
     cmd.env("MOON_CACHE", "off"); // Never cache in tests

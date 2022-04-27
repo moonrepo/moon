@@ -1,7 +1,8 @@
 use insta::assert_snapshot;
 use moon_utils::path::replace_home_dir;
 use moon_utils::test::{
-    create_moon_command, get_assert_output, get_fixtures_dir, replace_fixtures_dir,
+    create_fixtures_sandbox, create_moon_command, create_moon_command_in, get_assert_output,
+    get_fixtures_dir, replace_fixtures_dir,
 };
 use predicates::prelude::*;
 use std::fs;
@@ -316,30 +317,26 @@ mod node_npm {
 
     #[test]
     fn installs_correct_version() {
-        let package_json = prepare_workspace("node-npm");
+        let fixture = create_fixtures_sandbox("node-npm");
 
-        let assert = create_moon_command("node-npm")
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("npm:version")
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
-
-        cleanup_workspace("node-npm", package_json);
     }
 
     #[test]
     fn can_install_a_dep() {
-        let package_json = prepare_workspace("node-npm");
+        let fixture = create_fixtures_sandbox("node-npm");
 
-        let assert = create_moon_command("node-npm")
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("npm:installDep")
             .assert();
 
         assert.success();
-
-        cleanup_workspace("node-npm", package_json);
     }
 }
 
@@ -348,65 +345,56 @@ mod node_pnpm {
 
     #[test]
     fn installs_correct_version() {
-        let package_json = prepare_workspace("node-pnpm");
+        let fixture = create_fixtures_sandbox("node-pnpm");
 
-        let assert = create_moon_command("node-pnpm")
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("pnpm:version")
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
-
-        cleanup_workspace("node-pnpm", package_json);
     }
 
     #[test]
     fn can_install_a_dep() {
-        let package_json = prepare_workspace("node-pnpm");
+        let fixture = create_fixtures_sandbox("node-pnpm");
 
-        let assert = create_moon_command("node-pnpm")
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("pnpm:installDep")
             .assert();
 
         assert.success();
-
-        cleanup_workspace("node-pnpm", package_json);
     }
 }
 
-// NOTE: Been unable to figure out how to run Yarn 1 commands within a Yarn 3 workspace!
-// mod node_yarn1 {
-//     use super::*;
+mod node_yarn1 {
+    use super::*;
 
-//     #[test]
-//     fn installs_correct_version() {
-//         let assert = create_moon_command("node-yarn1")
-//             .arg("run")
-//             .arg("yarn:version")
-//             .env("MOON_LOG", "trace")
-//             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
-//             .assert();
+    #[test]
+    fn installs_correct_version() {
+        let fixture = create_fixtures_sandbox("node-yarn1");
 
-//         assert_snapshot!(get_assert_output(&assert));
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("yarn:version")
+            .assert();
 
-//         cleanup_workspace("node-yarn1");
-//     }
+        assert_snapshot!(get_assert_output(&assert));
+    }
 
-//     #[test]
-//     fn can_install_a_dep() {
-//         let assert = create_moon_command("node-yarn1")
-//             .arg("run")
-//             .arg("yarn:installDep")
-//             .env("MOON_LOG", "trace")
-//             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
-//             .assert();
+    #[test]
+    fn can_install_a_dep() {
+        let fixture = create_fixtures_sandbox("node-yarn1");
 
-//         assert.success();
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("yarn:installDep")
+            .assert();
 
-//         cleanup_workspace("node-yarn1");
-//     }
-// }
+        assert.success();
+    }
+}
 
 mod system {
     use super::*;

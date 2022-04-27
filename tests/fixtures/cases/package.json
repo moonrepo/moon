@@ -3,5 +3,8 @@
   "private": true,
   "workspaces": [
     "*"
-  ]
+  ],
+  "engines": {
+    "node": "16.0.0"
+  }
 }

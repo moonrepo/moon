@@ -7,6 +7,7 @@ edition = "2021"
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 assert_cmd = "2.0"
+assert_fs = "1.0"
 async-recursion = "1.0"
 chrono = "0.4.19"
 chrono-humanize = "0.2.1"

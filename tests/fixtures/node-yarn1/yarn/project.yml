@@ -4,4 +4,4 @@ tasks:
     args: --version
   installDep:
     command: yarn
-    args: add react@17.0.0
+    args: add -W --ignore-engines react@17.0.0

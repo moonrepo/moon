@@ -34,5 +34,7 @@ packages/*/moon.exe
 /moon.exe
 
 # Moon tests/fixtures
-tests/fixtures/cases/.moon/cache
-tests/fixtures/cases/package-lock.json
+tests/fixtures/*/.moon/cache
+tests/fixtures/*/package-lock.json
+tests/fixtures/*/pnpm-lock.yaml
+tests/fixtures/*/yarn.lock

@@ -1,5 +1,5 @@
 {
-  "name": "test-cases",
+  "name": "test-node-npm",
   "private": true,
   "workspaces": [
     "*"

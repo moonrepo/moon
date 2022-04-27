@@ -7,7 +7,7 @@ use moon_config::NpmConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
 use moon_utils::process::Command;
-use std::env::consts;
+use std::env::{self, consts};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -223,12 +223,18 @@ impl PackageManager for NpmTool {
 
         args.push("--no-fund");
 
-        Command::new(self.get_bin_path())
+        let mut process = Command::new(self.get_bin_path());
+
+        process
             .args(args)
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(self.get_bin_dir()))
-            .exec_stream_output()
-            .await?;
+            .env("PATH", get_path_env_var(self.get_bin_dir()));
+
+        if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
+            process.exec_capture_output().await?;
+        } else {
+            process.exec_stream_output().await?;
+        }
 
         Ok(())
     }

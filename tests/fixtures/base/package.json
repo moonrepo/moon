@@ -1,1 +1,4 @@
-{}
+{
+  "name": "test-base",
+  "private": true
+}

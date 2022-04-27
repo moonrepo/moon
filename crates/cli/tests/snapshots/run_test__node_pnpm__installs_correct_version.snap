@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 337
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ pnpm:version
+6.32.0
+
+Tasks: 1 completed
+ Time: 100ms
+
+

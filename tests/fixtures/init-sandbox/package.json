@@ -1,3 +1,4 @@
 {
-  "name": "init"
+  "name": "init",
+  "private": true
 }

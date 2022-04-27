@@ -4,6 +4,49 @@ use moon_utils::test::{
     create_moon_command, get_assert_output, get_fixtures_dir, replace_fixtures_dir,
 };
 use predicates::prelude::*;
+use std::fs;
+
+fn prepare_workspace(fixtures: &str) -> String {
+    let root = get_fixtures_dir(fixtures);
+
+    fs::read_to_string(root.join("package.json")).unwrap()
+}
+
+fn cleanup_workspace(fixtures: &str, package_json: String) {
+    let root = get_fixtures_dir(fixtures);
+
+    fs::write(root.join("package.json"), package_json).unwrap();
+
+    let moon_cache = root.join(".moon/cache");
+
+    if moon_cache.exists() {
+        fs::remove_dir_all(moon_cache).unwrap();
+    }
+
+    // let node_modules = root.join("node_modules");
+
+    // if node_modules.exists() {
+    //     fs::remove_dir_all(node_modules).unwrap();
+    // }
+
+    let package_lock = root.join("package-lock.json");
+
+    if package_lock.exists() {
+        fs::remove_file(package_lock).unwrap();
+    }
+
+    let pnpm_lock = root.join("pnpm-lock.yaml");
+
+    if pnpm_lock.exists() {
+        fs::remove_file(pnpm_lock).unwrap();
+    }
+
+    let yarn_lock = root.join("yarn.lock");
+
+    if yarn_lock.exists() {
+        fs::remove_file(yarn_lock).unwrap();
+    }
+}
 
 #[test]
 fn errors_for_unknown_project() {
@@ -267,6 +310,103 @@ mod node {
         assert_snapshot!(get_assert_output(&assert));
     }
 }
+
+mod node_npm {
+    use super::*;
+
+    #[test]
+    fn installs_correct_version() {
+        let package_json = prepare_workspace("node-npm");
+
+        let assert = create_moon_command("node-npm")
+            .arg("run")
+            .arg("npm:version")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+
+        cleanup_workspace("node-npm", package_json);
+    }
+
+    #[test]
+    fn can_install_a_dep() {
+        let package_json = prepare_workspace("node-npm");
+
+        let assert = create_moon_command("node-npm")
+            .arg("run")
+            .arg("npm:installDep")
+            .assert();
+
+        assert.success();
+
+        cleanup_workspace("node-npm", package_json);
+    }
+}
+
+mod node_pnpm {
+    use super::*;
+
+    #[test]
+    fn installs_correct_version() {
+        let package_json = prepare_workspace("node-pnpm");
+
+        let assert = create_moon_command("node-pnpm")
+            .arg("run")
+            .arg("pnpm:version")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+
+        cleanup_workspace("node-pnpm", package_json);
+    }
+
+    #[test]
+    fn can_install_a_dep() {
+        let package_json = prepare_workspace("node-pnpm");
+
+        let assert = create_moon_command("node-pnpm")
+            .arg("run")
+            .arg("pnpm:installDep")
+            .assert();
+
+        assert.success();
+
+        cleanup_workspace("node-pnpm", package_json);
+    }
+}
+
+// NOTE: Been unable to figure out how to run Yarn 1 commands within a Yarn 3 workspace!
+// mod node_yarn1 {
+//     use super::*;
+
+//     #[test]
+//     fn installs_correct_version() {
+//         let assert = create_moon_command("node-yarn1")
+//             .arg("run")
+//             .arg("yarn:version")
+//             .env("MOON_LOG", "trace")
+//             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
+//             .assert();
+
+//         assert_snapshot!(get_assert_output(&assert));
+
+//         cleanup_workspace("node-yarn1");
+//     }
+
+//     #[test]
+//     fn can_install_a_dep() {
+//         let assert = create_moon_command("node-yarn1")
+//             .arg("run")
+//             .arg("yarn:installDep")
+//             .env("MOON_LOG", "trace")
+//             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
+//             .assert();
+
+//         assert.success();
+
+//         cleanup_workspace("node-yarn1");
+//     }
+// }
 
 mod system {
     use super::*;

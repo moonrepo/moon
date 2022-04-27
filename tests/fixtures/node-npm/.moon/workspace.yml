@@ -1,0 +1,9 @@
+node:
+  # We use an old version to avoid conflicts with Moon's actual workspace!
+  version: '16.1.0'
+  packageManager: 'npm'
+  npm:
+    version: '7.0.0'
+
+projects:
+  npm: npm

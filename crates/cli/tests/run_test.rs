@@ -2,7 +2,7 @@ use insta::assert_snapshot;
 use moon_utils::path::replace_home_dir;
 use moon_utils::test::{
     create_fixtures_sandbox, create_moon_command, create_moon_command_in, get_assert_output,
-    get_fixtures_dir, replace_fixtures_dir,
+    replace_fixtures_dir,
 };
 use predicates::prelude::*;
 use serial_test::serial;
@@ -55,7 +55,9 @@ mod dependencies {
 
     #[test]
     fn runs_the_graph_in_order() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("depsA:dependencyOrder")
             .assert();
@@ -65,7 +67,9 @@ mod dependencies {
 
     #[test]
     fn runs_the_graph_in_order_not_from_head() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("depsB:dependencyOrder")
             .assert();
@@ -99,7 +103,12 @@ mod target_scopes {
 
     #[test]
     fn supports_all_scope() {
-        let assert = create_moon_command("cases").arg("run").arg(":all").assert();
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg(":all")
+            .assert();
         let output = get_assert_output(&assert);
 
         assert!(predicate::str::contains("targetScopeA:all").eval(&output));
@@ -110,7 +119,9 @@ mod target_scopes {
 
     #[test]
     fn supports_deps_scope_in_task() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("targetScopeA:deps")
             .assert();
@@ -129,7 +140,9 @@ mod target_scopes {
 
     #[test]
     fn supports_self_scope_in_task() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("targetScopeB:self")
             .assert();
@@ -146,16 +159,18 @@ mod target_scopes {
 mod node {
     use super::*;
 
-    fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &str) -> String {
+    fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &Path) -> String {
         replace_home_dir(&replace_fixtures_dir(
             &get_assert_output(assert),
-            &get_fixtures_dir(fixtures_dir),
+            fixtures_dir,
         ))
     }
 
     #[test]
     fn runs_package_managers() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:npm")
             .assert();
@@ -165,7 +180,9 @@ mod node {
 
     #[test]
     fn runs_standard_script() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
@@ -175,7 +192,9 @@ mod node {
 
     #[test]
     fn runs_cjs_files() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:cjs")
             .assert();
@@ -185,7 +204,9 @@ mod node {
 
     #[test]
     fn runs_mjs_files() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:mjs")
             .assert();
@@ -195,7 +216,9 @@ mod node {
 
     #[test]
     fn supports_top_level_await() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:topLevelAwait")
             .assert();
@@ -205,7 +228,9 @@ mod node {
 
     #[test]
     fn handles_process_exit_zero() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:processExitZero")
             .assert();
@@ -215,7 +240,9 @@ mod node {
 
     #[test]
     fn handles_process_exit_nonzero() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:processExitNonZero")
             .assert();
@@ -225,7 +252,9 @@ mod node {
 
     #[test]
     fn handles_process_exit_code_zero() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:exitCodeZero")
             .assert();
@@ -235,7 +264,9 @@ mod node {
 
     #[test]
     fn handles_process_exit_code_nonzero() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:exitCodeNonZero")
             .assert();
@@ -245,27 +276,35 @@ mod node {
 
     #[test]
     fn handles_throw_error() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:throwError")
             .assert();
+        let output = get_assert_output(&assert);
 
-        assert_snapshot!(get_path_safe_output(&assert, "cases"));
+        // Output contains file paths that we cant snapshot
+        assert!(predicate::str::contains("Error: Oops").eval(&output));
     }
 
     #[test]
     fn handles_unhandled_promise() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:unhandledPromise")
             .assert();
 
-        assert_snapshot!(get_path_safe_output(&assert, "cases"));
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
     }
 
     #[test]
     fn passes_args_through() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("node:passthroughArgs")
             .arg("--")
@@ -397,6 +436,30 @@ mod node {
             assert_snapshot!(get_assert_output(&assert));
         }
     }
+
+    mod sync_depends_on {
+        use super::*;
+
+        #[test]
+        fn adds_engines_constraint() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            append_workspace_config(
+                &fixture.path().join(".moon/workspace.yml"),
+                r#"  syncProjectWorkspaceDependencies: true"#,
+            );
+
+            create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("dependsOn:standard")
+                .assert();
+
+            // deps-c does not have a `package.json` on purpose
+            assert_snapshot!(
+                read_to_string(fixture.path().join("depends-on/package.json")).unwrap()
+            );
+        }
+    }
 }
 
 mod node_npm {
@@ -494,7 +557,9 @@ mod system {
 
     #[test]
     fn handles_echo() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("system:echo")
             .assert();
@@ -504,7 +569,9 @@ mod system {
 
     #[test]
     fn handles_ls() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("system:ls")
             .assert();
@@ -514,7 +581,9 @@ mod system {
 
     #[test]
     fn runs_bash_script() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("system:bash")
             .assert();
@@ -524,7 +593,9 @@ mod system {
 
     #[test]
     fn passes_args_through() {
-        let assert = create_moon_command("cases")
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("system:passthroughArgs")
             .arg("--")

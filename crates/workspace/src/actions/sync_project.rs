@@ -46,7 +46,7 @@ pub async fn sync_project(
     for dep_id in project.get_dependencies() {
         let dep_project = workspace.projects.load(&dep_id)?;
 
-        // Update `dependencies` within `tsconfig.json`
+        // Update `dependencies` within `package.json`
         if node_config.sync_project_workspace_dependencies {
             if let Some(mut package) = project.load_package_json().await? {
                 let dep_package_name = dep_project.get_package_name().await?.unwrap_or_default();

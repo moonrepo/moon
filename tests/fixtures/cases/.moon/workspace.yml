@@ -5,6 +5,7 @@ projects:
   depsA: 'deps-a'
   depsB: 'deps-b'
   depsC: 'deps-c'
+  dependsOn: 'depends-on'
 
   # Target scopes
   targetScopeA: 'target-scope-a'

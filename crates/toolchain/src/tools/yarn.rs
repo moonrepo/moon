@@ -180,14 +180,17 @@ impl PackageManager for YarnTool {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {
-            toolchain
-                .get_npm()
-                .exec_package(
-                    toolchain,
-                    "yarn-deduplicate",
-                    vec!["yarn-deduplicate", "yarn.lock"],
-                )
-                .await?;
+            // Will error if the lockfile does not exist!
+            if toolchain.workspace_root.join("yarn.lock").exists() {
+                toolchain
+                    .get_npm()
+                    .exec_package(
+                        toolchain,
+                        "yarn-deduplicate",
+                        vec!["yarn-deduplicate", "yarn.lock"],
+                    )
+                    .await?;
+            }
 
         // yarn dedupe
         } else {

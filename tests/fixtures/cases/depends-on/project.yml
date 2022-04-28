@@ -1,0 +1,10 @@
+dependsOn:
+  - depsA
+  - depsB
+  - depsC
+
+tasks:
+  standard:
+    command: echo
+    args: ''
+    type: system

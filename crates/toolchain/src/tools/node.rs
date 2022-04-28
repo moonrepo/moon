@@ -241,13 +241,6 @@ impl Tool for NodeTool {
 
         download_file_from_url(&download_url, &self.download_path).await?;
 
-        debug!(
-            target: "moon:toolchain:node",
-            "Downloading binary from {} to {}",
-            color::url(&download_url),
-            color::path(&self.download_path)
-        );
-
         // Download the SHASUMS256.txt file
         let shasums_url = get_nodejs_url(version, host, "SHASUMS256.txt");
         let shasums_path = self

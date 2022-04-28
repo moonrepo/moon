@@ -1,6 +1,6 @@
 node:
-  # We use an old version to avoid conflicts with Moon's actual workspace!
-  version: '16.1.0'
+  # Use a unique version as to not collide with other tests
+  version: '16.2.0'
   packageManager: 'pnpm'
   pnpm:
     version: '6.32.0'

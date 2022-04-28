@@ -13,7 +13,7 @@ projects:
 node:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
   # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
-  version: '16.13.0'
+  version: '18.0.0'
 
   # OPTIONAL: The package manager to use when managing dependencies.
   # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".

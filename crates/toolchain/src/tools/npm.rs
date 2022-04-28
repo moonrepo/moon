@@ -183,7 +183,7 @@ impl PackageManager for NpmTool {
         package: &str,
         args: Vec<&str>,
     ) -> Result<(), ToolchainError> {
-        let mut exec_args = vec!["--package", package, "--"];
+        let mut exec_args = vec!["--silent", "--package", package, "--"];
 
         exec_args.extend(args);
 

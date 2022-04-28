@@ -73,8 +73,9 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
 
     trace!(
         target: "moon:toolchain",
-        "Downloading file to {}",
-        color::path(dest.parent().unwrap()),
+        "Downloading file {} to {}",
+        color::url(url),
+        color::path(dest),
     );
 
     // Ensure parent directories exist

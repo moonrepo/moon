@@ -1,6 +1,6 @@
 node:
-  # We use an old version to avoid conflicts with Moon's actual workspace!
-  version: '16.1.0'
+  # Use a unique version as to not collide with other tests because of corepack
+  version: '16.3.0'
   packageManager: 'yarn'
   yarn:
     version: '1.22.0'

@@ -41,9 +41,15 @@ pub fn create_moon_command(fixture: &str) -> assert_cmd::Command {
 pub fn create_moon_command_in(path: &Path) -> assert_cmd::Command {
     let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
     cmd.current_dir(path);
+    // Never cache in tests
+    cmd.env("MOON_CACHE", "off");
+    // Let our code know were running tests
     cmd.env("MOON_TEST", "true");
+    // Hide install output as it disrupts testing snapshots
     cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
-    cmd.env("MOON_CACHE", "off"); // Never cache in tests
+    // Uncomment for debugging
+    // cmd.arg("--logLevel");
+    // cmd.arg("trace");
     cmd
 }
 

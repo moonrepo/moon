@@ -5,49 +5,7 @@ use moon_utils::test::{
     get_fixtures_dir, replace_fixtures_dir,
 };
 use predicates::prelude::*;
-use std::fs;
-
-fn prepare_workspace(fixtures: &str) -> String {
-    let root = get_fixtures_dir(fixtures);
-
-    fs::read_to_string(root.join("package.json")).unwrap()
-}
-
-fn cleanup_workspace(fixtures: &str, package_json: String) {
-    let root = get_fixtures_dir(fixtures);
-
-    fs::write(root.join("package.json"), package_json).unwrap();
-
-    let moon_cache = root.join(".moon/cache");
-
-    if moon_cache.exists() {
-        fs::remove_dir_all(moon_cache).unwrap();
-    }
-
-    // let node_modules = root.join("node_modules");
-
-    // if node_modules.exists() {
-    //     fs::remove_dir_all(node_modules).unwrap();
-    // }
-
-    let package_lock = root.join("package-lock.json");
-
-    if package_lock.exists() {
-        fs::remove_file(package_lock).unwrap();
-    }
-
-    let pnpm_lock = root.join("pnpm-lock.yaml");
-
-    if pnpm_lock.exists() {
-        fs::remove_file(pnpm_lock).unwrap();
-    }
-
-    let yarn_lock = root.join("yarn.lock");
-
-    if yarn_lock.exists() {
-        fs::remove_file(yarn_lock).unwrap();
-    }
-}
+use serial_test::serial;
 
 #[test]
 fn errors_for_unknown_project() {
@@ -316,6 +274,7 @@ mod node_npm {
     use super::*;
 
     #[test]
+    #[serial]
     fn installs_correct_version() {
         let fixture = create_fixtures_sandbox("node-npm");
 
@@ -328,6 +287,7 @@ mod node_npm {
     }
 
     #[test]
+    #[serial]
     fn can_install_a_dep() {
         let fixture = create_fixtures_sandbox("node-npm");
 
@@ -344,6 +304,7 @@ mod node_pnpm {
     use super::*;
 
     #[test]
+    #[serial]
     fn installs_correct_version() {
         let fixture = create_fixtures_sandbox("node-pnpm");
 
@@ -356,6 +317,7 @@ mod node_pnpm {
     }
 
     #[test]
+    #[serial]
     fn can_install_a_dep() {
         let fixture = create_fixtures_sandbox("node-pnpm");
 
@@ -372,6 +334,7 @@ mod node_yarn1 {
     use super::*;
 
     #[test]
+    #[serial]
     fn installs_correct_version() {
         let fixture = create_fixtures_sandbox("node-yarn1");
 
@@ -384,6 +347,7 @@ mod node_yarn1 {
     }
 
     #[test]
+    #[serial]
     fn can_install_a_dep() {
         let fixture = create_fixtures_sandbox("node-yarn1");
 

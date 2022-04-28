@@ -34,7 +34,7 @@ fn not_configured() {
     let assert = create_moon_command("cases")
         .arg("bin")
         .arg("yarn")
-        .env("MOON_NODE_VERSION", "16.2.0")
+        .env("MOON_NODE_VERSION", "17.0.0")
         .assert();
 
     assert.failure().code(1).stdout("");
@@ -45,7 +45,7 @@ fn not_installed() {
     let assert = create_moon_command("cases")
         .arg("bin")
         .arg("node")
-        .env("MOON_NODE_VERSION", "16.2.0")
+        .env("MOON_NODE_VERSION", "17.0.0")
         .assert();
 
     assert.failure().code(2).stdout("");

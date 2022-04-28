@@ -198,7 +198,7 @@ Would result in the following `dependencies` within a project's `package.json`.
 ##### syncVersionManagerConfig
 
 The `syncVersionManagerConfig` setting syncs the currently configured [Node.js version](#version) to
-a 3rd-party version manager's config/rc file. Supports `nodeenv` (syncs to `.node-version`), `nvm`
+a 3rd-party version manager's config/rc file. Supports `nodenv` (syncs to `.node-version`), `nvm`
 (syncs to `.nvmrc`), or none (default).
 
 ```yaml

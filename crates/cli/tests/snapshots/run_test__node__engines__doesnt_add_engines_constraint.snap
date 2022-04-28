@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 319
+expression: "read_to_string(fixture.path().join(\"package.json\")).unwrap()"
+---
+{
+  "name": "test-cases",
+  "private": true,
+  "workspaces": [
+    "*"
+  ]
+}
+

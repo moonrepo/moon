@@ -1,6 +1,3 @@
-node:
-  version: '16.0.0'
-
 projects:
   base: 'base'
 
@@ -17,3 +14,12 @@ projects:
   # Tool types
   node: 'node'
   system: 'system'
+
+# Put at the bottom so we can append settings to test
+node:
+  version: '16.0.0'
+
+  # Turn everything off by default for easier testing
+  addEnginesConstraint: false
+  dedupeOnLockfileChange: false
+  syncProjectWorkspaceDependencies: false

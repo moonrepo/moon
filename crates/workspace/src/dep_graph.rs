@@ -463,7 +463,7 @@ mod tests {
 
     #[test]
     #[should_panic(
-        expected = "CycleDetected(\"RunTarget(cycle:a) -> RunTarget(cycle:b) -> RunTarget(cycle:c)\")"
+        expected = "CycleDetected(\"RunTarget(cycle:a) → RunTarget(cycle:b) → RunTarget(cycle:c)\")"
     )]
     fn detects_cycles() {
         let projects = create_tasks_project_graph();

@@ -62,14 +62,14 @@ impl Default for PackageManager {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VersionManager {
-    NodeEnv,
+    Nodenv,
     Nvm,
 }
 
 impl VersionManager {
     pub fn get_config_file_name(&self) -> String {
         match self {
-            VersionManager::NodeEnv => String::from(".node-version"),
+            VersionManager::Nodenv => String::from(".node-version"),
             VersionManager::Nvm => String::from(".nvmrc"),
         }
     }

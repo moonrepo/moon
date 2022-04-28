@@ -6,6 +6,19 @@ use moon_utils::test::{
 };
 use predicates::prelude::*;
 use serial_test::serial;
+use std::fs::{read_to_string, OpenOptions};
+use std::io::prelude::*;
+use std::path::Path;
+
+fn append_workspace_config(path: &Path, yaml: &str) {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(path)
+        .unwrap();
+
+    writeln!(file, "{}", yaml).unwrap();
+}
 
 #[test]
 fn errors_for_unknown_project() {
@@ -267,6 +280,122 @@ mod node {
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
+    }
+
+    mod engines {
+        use super::*;
+
+        #[test]
+        fn adds_engines_constraint() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            append_workspace_config(
+                &fixture.path().join(".moon/workspace.yml"),
+                r#"  addEnginesConstraint: true"#,
+            );
+
+            create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .assert();
+
+            assert_snapshot!(read_to_string(fixture.path().join("package.json")).unwrap());
+        }
+
+        #[test]
+        fn doesnt_add_engines_constraint() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            append_workspace_config(
+                &fixture.path().join(".moon/workspace.yml"),
+                r#"  addEnginesConstraint: false"#,
+            );
+
+            create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .assert();
+
+            assert_snapshot!(read_to_string(fixture.path().join("package.json")).unwrap());
+        }
+    }
+
+    mod version_manager {
+        use super::*;
+
+        #[test]
+        fn adds_no_file_by_default() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .assert();
+
+            assert!(!fixture.path().join(".nvmrc").exists());
+            assert!(!fixture.path().join(".node-version").exists());
+        }
+
+        #[test]
+        fn adds_nvmrc_file() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            append_workspace_config(
+                &fixture.path().join(".moon/workspace.yml"),
+                r#"  syncVersionManagerConfig: nvm"#,
+            );
+
+            create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .assert();
+
+            assert!(fixture.path().join(".nvmrc").exists());
+
+            assert_eq!(
+                read_to_string(fixture.path().join(".nvmrc")).unwrap(),
+                "16.0.0"
+            );
+        }
+
+        #[test]
+        fn adds_nodenv_file() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            append_workspace_config(
+                &fixture.path().join(".moon/workspace.yml"),
+                r#"  syncVersionManagerConfig: nodenv"#,
+            );
+
+            create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .assert();
+
+            assert!(fixture.path().join(".node-version").exists());
+
+            assert_eq!(
+                read_to_string(fixture.path().join(".node-version")).unwrap(),
+                "16.0.0"
+            );
+        }
+
+        #[test]
+        fn errors_for_invalid_value() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            append_workspace_config(
+                &fixture.path().join(".moon/workspace.yml"),
+                r#"  syncVersionManagerConfig: invalid"#,
+            );
+
+            let assert = create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .assert();
+
+            assert_snapshot!(get_assert_output(&assert));
+        }
     }
 }
 

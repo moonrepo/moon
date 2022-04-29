@@ -42,6 +42,7 @@ pub async fn sync_project(
 
     // Sync each dependency to `tsconfig.json` and `package.json`
     let manager = workspace.toolchain.get_node_package_manager();
+    let mut project_tsconfig = project.load_tsconfig_json(tsconfig_branch_name).await?;
 
     for dep_id in project.get_dependencies() {
         let dep_project = workspace.projects.load(&dep_id)?;
@@ -76,9 +77,13 @@ pub async fn sync_project(
 
         // Update `references` within `tsconfig.json`
         if typescript_config.sync_project_references {
-            if let Some(mut tsconfig) = project.load_tsconfig_json(tsconfig_branch_name).await? {
+            if let Some(tsconfig) = &mut project_tsconfig {
+                if !dep_project.root.join(tsconfig_branch_name).exists() {
+                    continue;
+                }
+
                 let dep_ref_path = String::from(
-                    diff_paths(&project.root, &dep_project.root)
+                    diff_paths(&dep_project.root, &project.root)
                         .unwrap_or_else(|| PathBuf::from("."))
                         .to_string_lossy(),
                 );

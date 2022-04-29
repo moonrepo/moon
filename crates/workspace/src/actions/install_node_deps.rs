@@ -19,7 +19,7 @@ pub async fn install_node_deps(
 
     // Update artifacts based on node settings
     let node_config = &workspace.config.node;
-    let mut root_package = workspace.load_package_json().await?;
+    let root_package = workspace.load_package_json().await?;
 
     if node_config.add_engines_constraint && root_package.add_engine("node", &node_config.version) {
         root_package.save().await?;

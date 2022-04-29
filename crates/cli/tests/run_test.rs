@@ -6,6 +6,7 @@ use moon_utils::test::{
 };
 use predicates::prelude::*;
 use serial_test::serial;
+use std::env;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
 use std::path::Path;
@@ -247,7 +248,11 @@ mod node {
             .arg("node:processExitNonZero")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        if env::consts::OS == "windows" {
+            assert.code(1);
+        } else {
+            assert_snapshot!(get_assert_output(&assert));
+        }
     }
 
     #[test]
@@ -271,7 +276,11 @@ mod node {
             .arg("node:exitCodeNonZero")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        if env::consts::OS == "windows" {
+            assert.code(1);
+        } else {
+            assert_snapshot!(get_assert_output(&assert));
+        }
     }
 
     #[test]
@@ -297,7 +306,11 @@ mod node {
             .arg("node:unhandledPromise")
             .assert();
 
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        if env::consts::OS == "windows" {
+            assert.code(1);
+        } else {
+            assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        }
     }
 
     #[test]

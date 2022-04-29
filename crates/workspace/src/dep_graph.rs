@@ -335,11 +335,11 @@ impl DepGraph {
         );
 
         // We should sync projects *before* running targets
-        let project_node = self.sync_project(&project.id, projects)?;
+        let sync_project_index = self.sync_project(&project.id, projects)?;
         let node = self.graph.add_node(Node::RunTarget(target_id.to_owned()));
 
         self.graph.add_edge(node, self.install_node_deps_index, ());
-        self.graph.add_edge(node, project_node, ());
+        self.graph.add_edge(node, sync_project_index, ());
 
         // Also cache so we don't run the same target multiple times
         self.index_cache.insert(target_id.to_owned(), node);

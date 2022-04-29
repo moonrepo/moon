@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 458
+assertion_line: 531
 expression: "read_to_string(fixture.path().join(\"depends-on/package.json\")).unwrap()"
 ---
 {

@@ -16,11 +16,12 @@ projects:
   node: 'node'
   system: 'system'
 
+typescript:
+  syncProjectReferences: false
+
 # Put at the bottom so we can append settings to test
 node:
   version: '16.0.0'
-
-  # Turn everything off by default for easier testing
   addEnginesConstraint: false
   dedupeOnLockfileChange: false
   syncProjectWorkspaceDependencies: false

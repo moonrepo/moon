@@ -514,12 +514,12 @@ mod node {
         use super::*;
 
         #[test]
-        fn adds_engines_constraint() {
+        fn syncs_as_dependency_to_package_json() {
             let fixture = create_fixtures_sandbox("cases");
 
             append_workspace_config(
                 &fixture.path().join(".moon/workspace.yml"),
-                r#"  syncProjectWorkspaceDependencies: true"#,
+                "  syncProjectWorkspaceDependencies: true",
             );
 
             create_moon_command_in(fixture.path())
@@ -530,6 +530,30 @@ mod node {
             // deps-c does not have a `package.json` on purpose
             assert_snapshot!(
                 read_to_string(fixture.path().join("depends-on/package.json")).unwrap()
+            );
+        }
+
+        #[test]
+        fn syncs_as_reference_to_tsconfig_json() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            append_workspace_config(
+                &fixture.path().join(".moon/workspace.yml"),
+                "typescript:\n  syncProjectReferences: true",
+            );
+
+            create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("dependsOn:standard")
+                .assert();
+
+            // root
+            assert_snapshot!(read_to_string(fixture.path().join("tsconfig.json")).unwrap());
+
+            // project
+            // deps-a does not have a `tsconfig.json` on purpose
+            assert_snapshot!(
+                read_to_string(fixture.path().join("depends-on/tsconfig.json")).unwrap()
             );
         }
     }

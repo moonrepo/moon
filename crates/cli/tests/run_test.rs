@@ -384,6 +384,18 @@ mod node {
         assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
     }
 
+    #[test]
+    fn retries_on_failure_till_count() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:retryCount")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
     mod install_deps {
         use super::*;
 
@@ -739,6 +751,30 @@ mod system {
     }
 
     #[test]
+    fn handles_process_exit_zero() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("system:exitZero")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn handles_process_exit_nonzero() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("system:exitNonZero")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
     fn passes_args_through() {
         let fixture = create_fixtures_sandbox("cases");
 
@@ -805,5 +841,17 @@ mod system {
             .assert();
 
         assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
+    #[test]
+    fn retries_on_failure_till_count() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("system:retryCount")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
     }
 }

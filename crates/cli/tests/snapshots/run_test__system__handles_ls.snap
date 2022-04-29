@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 726
+assertion_line: 738
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ system:ls
@@ -8,6 +8,8 @@ bash.sh
 cwd.sh
 envVars.sh
 envVarsMoon.sh
+exitNonZero.sh
+exitZero.sh
 passthroughArgs.sh
 project.yml
 

@@ -11,6 +11,14 @@ tasks:
     command: bash
     args: ./bash.sh
     type: system
+  exitNonZero:
+    command: bash
+    args: ./exitNonZero.sh
+    type: system
+  exitZero:
+    command: bash
+    args: ./exitZero.sh
+    type: system
   passthroughArgs:
     command: bash
     args: ./passthroughArgs.sh
@@ -37,3 +45,9 @@ tasks:
     type: system
     options:
       runFromWorkspaceRoot: true
+  retryCount:
+    command: bash
+    args: ./exitNonZero.sh
+    type: system
+    options:
+      retryCount: 3

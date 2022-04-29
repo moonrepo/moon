@@ -53,3 +53,8 @@ tasks:
     args: ./node/cwd.js
     options:
       runFromWorkspaceRoot: true
+  retryCount:
+    command: node
+    args: ./processExitNonZero.js
+    options:
+      retryCount: 3

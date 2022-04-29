@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 774
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ system:exitNonZero
+stdout
+stderr
+
+[38;5;15m[48;5;161m[1m ERROR [0m Action runner failed to run: Process bash failed with a 1 exit code.
+
+

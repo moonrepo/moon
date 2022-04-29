@@ -2,6 +2,7 @@ import React from 'react';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
+import cliPackage from '@moonrepo/cli/package.json';
 import Icon from '../../ui/iconography/Icon';
 
 export default function Hero() {
@@ -22,7 +23,7 @@ export default function Hero() {
 				<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0">
 					{siteConfig.tagline}
 					<span className="opacity-50">
-						,<br className="lg:hidden" aria-hidden /> powered by Rust.
+						,<br /> powered by Rust.
 					</span>
 				</p>
 
@@ -42,7 +43,8 @@ export default function Hero() {
 							href="https://www.npmjs.com/package/@moonrepo/cli"
 							className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 md:text-lg group transition-transform"
 						>
-							<span className="opacity-50">v</span>1.2.3
+							<span className="opacity-50">v</span>
+							{cliPackage.version}
 						</Link>
 					</div>
 				</div>

@@ -57,18 +57,10 @@ pub fn file(path: &str) -> String {
 }
 
 pub fn path(path: &Path) -> String {
-    let path_str = path.to_str().unwrap_or("<unknown>");
-
-    if let Some(home_dir) = get_home_dir() {
-        if path.starts_with(&home_dir) {
-            return paint(
-                Color::Cyan as u8,
-                &path_str.replace(home_dir.to_str().unwrap(), "~"),
-            );
-        }
-    }
-
-    paint(Color::Cyan as u8, path_str)
+    paint(
+        Color::Cyan as u8,
+        &clean_path(path.to_str().unwrap_or("<unknown>")),
+    )
 }
 
 pub fn url(url: &str) -> String {
@@ -76,16 +68,7 @@ pub fn url(url: &str) -> String {
 }
 
 pub fn shell(cmd: &str) -> String {
-    // Some shell commands are file paths to the binary
-    if let Some(home_dir) = get_home_dir() {
-        let home_dir_str = home_dir.to_str().unwrap();
-
-        if cmd.starts_with(home_dir_str) {
-            return paint(Color::Pink as u8, &cmd.replace(home_dir_str, "~"));
-        }
-    }
-
-    paint(Color::Pink as u8, cmd)
+    paint(Color::Pink as u8, &clean_path(cmd))
 }
 
 pub fn symbol(value: &str) -> String {
@@ -187,3 +170,21 @@ pub const COLOR_LIST: [u8; 76] = [
 ];
 
 pub const COLOR_LIST_UNSUPPORTED: [u8; 6] = [6, 2, 3, 4, 5, 1];
+
+fn clean_path(path: &str) -> String {
+    let mut path_str = path.to_owned();
+
+    if let Some(home_dir) = get_home_dir() {
+        let home_dir_str = home_dir.to_str().unwrap();
+
+        if path.starts_with(&home_dir_str) {
+            path_str = path_str.replace(home_dir.to_str().unwrap(), "~");
+        }
+    }
+
+    if env::var("MOON_TEST_STANDARDIZE_PATHS").is_ok() {
+        path_str = path_str.replace('\\', "/");
+    }
+
+    path_str
+}

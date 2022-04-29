@@ -1,10 +1,11 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 702
+assertion_line: 726
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ system:ls
 bash.sh
+cwd.sh
 envVars.sh
 envVarsMoon.sh
 passthroughArgs.sh

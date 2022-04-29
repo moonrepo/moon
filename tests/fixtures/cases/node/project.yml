@@ -45,3 +45,11 @@ tasks:
   envVarsMoon:
     command: node
     args: ./envVarsMoon.js
+  runFromProject:
+    command: node
+    args: ./cwd.js
+  runFromWorkspace:
+    command: node
+    args: ./node/cwd.js
+    options:
+      runFromWorkspaceRoot: true

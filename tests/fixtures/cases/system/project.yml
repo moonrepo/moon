@@ -3,12 +3,6 @@ tasks:
     command: ls
     args: '-1 .'
     type: system
-  lsRoot:
-    command: ls
-    args: '-1 .'
-    type: system
-    options:
-      runFromWorkspaceRoot: true
   echo:
     command: echo
     args: 'hello'
@@ -33,3 +27,13 @@ tasks:
     command: bash
     args: ./envVarsMoon.sh
     type: system
+  runFromProject:
+    command: bash
+    args: ./cwd.sh
+    type: system
+  runFromWorkspace:
+    command: bash
+    args: ./system/cwd.sh
+    type: system
+    options:
+      runFromWorkspaceRoot: true

@@ -360,6 +360,30 @@ mod node {
         assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
     }
 
+    #[test]
+    fn runs_from_project_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:runFromProject")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
+    #[test]
+    fn runs_from_workspace_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:runFromWorkspace")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
     mod install_deps {
         use super::*;
 
@@ -703,18 +727,6 @@ mod system {
     }
 
     #[test]
-    fn handles_ls_from_root() {
-        let fixture = create_fixtures_sandbox("cases");
-
-        let assert = create_moon_command_in(fixture.path())
-            .arg("run")
-            .arg("system:lsRoot")
-            .assert();
-
-        assert_snapshot!(get_assert_output(&assert));
-    }
-
-    #[test]
     fn runs_bash_script() {
         let fixture = create_fixtures_sandbox("cases");
 
@@ -766,6 +778,30 @@ mod system {
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
             .arg("system:envVarsMoon")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
+    #[test]
+    fn runs_from_project_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("system:runFromProject")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
+    #[test]
+    fn runs_from_workspace_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("system:runFromWorkspace")
             .assert();
 
         assert_snapshot!(get_path_safe_output(&assert, fixture.path()));

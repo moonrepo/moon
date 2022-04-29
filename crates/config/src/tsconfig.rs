@@ -116,9 +116,10 @@ impl TsConfigJson {
         true
     }
 
-    pub async fn save(&self) -> Result<(), MoonError> {
+    pub async fn save(&mut self) -> Result<(), MoonError> {
         if self.dirty {
             write_preserved_json(&self.path, self).await?;
+            self.dirty = false;
         }
 
         Ok(())

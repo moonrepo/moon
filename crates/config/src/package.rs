@@ -164,9 +164,10 @@ impl PackageJson {
         Ok(cfg)
     }
 
-    pub async fn save(&self) -> Result<(), MoonError> {
+    pub async fn save(&mut self) -> Result<(), MoonError> {
         if self.dirty {
             write_preserved_json(&self.path, self).await?;
+            self.dirty = false;
         }
 
         Ok(())
@@ -439,7 +440,7 @@ mod test {
         let file = dir.child("package.json");
         file.write_str(json).unwrap();
 
-        let package = PackageJson::load(file.path()).await.unwrap();
+        let mut package = PackageJson::load(file.path()).await.unwrap();
         package.save().await.unwrap();
 
         assert_eq!(fs::read_json_string(file.path()).await.unwrap(), json,);

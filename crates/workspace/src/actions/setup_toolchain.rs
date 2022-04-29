@@ -17,7 +17,7 @@ pub async fn setup_toolchain(
         "Setting up toolchain",
     );
 
-    let workspace = workspace.read().await;
+    let workspace = workspace.write().await; // Mutates package.json
     let mut cache = workspace.cache.cache_workspace_state().await?;
     let mut root_package = workspace.load_package_json().await?;
 

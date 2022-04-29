@@ -14,7 +14,7 @@ pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
 ) -> Result<ActionStatus, WorkspaceError> {
-    let workspace = workspace.read().await;
+    let workspace = workspace.write().await; // Mutates tsconfig.json
     let project = workspace.projects.load(project_id)?;
     let mut mutated_files = false;
 

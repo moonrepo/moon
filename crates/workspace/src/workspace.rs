@@ -9,7 +9,6 @@ use moon_project::ProjectGraph;
 use moon_toolchain::Toolchain;
 use std::env;
 use std::path::{Path, PathBuf};
-use tokio::sync::OnceCell;
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
@@ -108,10 +107,6 @@ pub struct Workspace {
 
     /// The current working directory.
     pub working_dir: PathBuf,
-
-    package_json: OnceCell<PackageJson>,
-
-    tsconfig_json: OnceCell<TsConfigJson>,
 }
 
 impl Workspace {
@@ -147,8 +142,6 @@ impl Workspace {
             root: root_dir,
             toolchain,
             working_dir,
-            package_json: OnceCell::new(),
-            tsconfig_json: OnceCell::new(),
         })
     }
 
@@ -158,11 +151,7 @@ impl Workspace {
     }
 
     /// Load and parse the root `package.json`.
-    pub async fn load_package_json(&mut self) -> Result<&mut PackageJson, WorkspaceError> {
-        if let Some(package_json) = self.package_json.get_mut() {
-            return Ok(package_json);
-        }
-
+    pub async fn load_package_json(&self) -> Result<PackageJson, WorkspaceError> {
         let package_json_path = self.root.join("package.json");
 
         trace!(
@@ -176,10 +165,7 @@ impl Workspace {
             return Err(WorkspaceError::MissingPackageJson);
         }
 
-        self.package_json
-            .set(PackageJson::load(&package_json_path).await?);
-
-        Ok(self.package_json.get_mut().unwrap())
+        Ok(PackageJson::load(&package_json_path).await?)
     }
 
     /// Load and parse the root `tsconfig.json` if it exists.

@@ -12,14 +12,14 @@ const TARGET: &str = "moon:action:install-node-deps";
 pub async fn install_node_deps(
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<ActionStatus, WorkspaceError> {
-    let workspace = workspace.read().await;
+    let workspace = workspace.write().await; // Mutates package.json
     let toolchain = &workspace.toolchain;
     let manager = toolchain.get_node_package_manager();
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
     // Update artifacts based on node settings
     let node_config = &workspace.config.node;
-    let root_package = workspace.load_package_json().await?;
+    let mut root_package = workspace.load_package_json().await?;
 
     if node_config.add_engines_constraint && root_package.add_engine("node", &node_config.version) {
         root_package.save().await?;

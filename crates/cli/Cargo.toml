@@ -30,6 +30,7 @@ strum_macros = "0.23"
 tokio = { version = "1.16", features = ["full"] }
 
 [dev-dependencies]
+moon_cache = { path = "../cache" }
 assert_cmd = "2.0"
 insta = "1.8"
 predicates = "2.0"

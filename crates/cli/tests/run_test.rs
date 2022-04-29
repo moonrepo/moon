@@ -60,6 +60,74 @@ fn errors_for_cycle_in_task_deps() {
     assert_snapshot!(get_assert_output(&assert));
 }
 
+mod caching {
+    use super::*;
+    use moon_cache::{CacheItem, RunTargetState};
+
+    #[test]
+    fn uses_cache_on_subsequent_runs() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:standard")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:standard")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn creates_runfile() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:standard")
+            .assert();
+
+        assert!(fixture
+            .path()
+            .join(".moon/cache/runs/node/runfile.json")
+            .exists());
+    }
+
+    #[tokio::test]
+    async fn creates_run_state_cache() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:standard")
+            .assert();
+
+        let cache_path = fixture
+            .path()
+            .join(".moon/cache/runs/node/standard/lastRunState.json");
+
+        assert!(cache_path.exists());
+
+        let state = CacheItem::load(cache_path, RunTargetState::default())
+            .await
+            .unwrap();
+
+        assert_eq!(state.item.exit_code, 0);
+        assert_eq!(state.item.stdout, "stdout");
+        assert_eq!(state.item.stderr, "stderr");
+        assert_eq!(state.item.target, "node:standard");
+        assert_eq!(
+            state.item.hash,
+            "0957f07cd32663feeac762e10189d4be02c100309ed3e28c9d7491f1e040960d"
+        );
+    }
+}
+
 mod dependencies {
     use super::*;
 

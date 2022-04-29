@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 551
+assertion_line: 681
 expression: "read_to_string(fixture.path().join(\"tsconfig.json\")).unwrap()"
 ---
 {
@@ -10,9 +10,6 @@ expression: "read_to_string(fixture.path().join(\"tsconfig.json\")).unwrap()"
     },
     {
       "path": "depends-on"
-    },
-    {
-      "path": "deps-a"
     },
     {
       "path": "deps-b"

@@ -1057,6 +1057,7 @@ dependencies = [
  "indicatif",
  "insta",
  "itertools",
+ "moon_cache",
  "moon_config",
  "moon_logger",
  "moon_project",

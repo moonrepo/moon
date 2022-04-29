@@ -78,7 +78,7 @@ pub fn normalize_glob(path: &Path) -> String {
 
 #[cfg(not(windows))]
 pub fn normalize_separators(path: &str) -> String {
-    String::from(path)
+    path.replace('\\', "/")
 }
 
 #[cfg(windows)]

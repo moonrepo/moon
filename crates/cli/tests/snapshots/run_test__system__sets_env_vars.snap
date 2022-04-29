@@ -1,14 +1,12 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 702
+assertion_line: 759
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ system:ls
-bash.sh
-envVars.sh
-envVarsMoon.sh
-passthroughArgs.sh
-project.yml
+▪▪▪▪ system:envVars
+MOON_FOO=abc
+MOON_BAR=123
+MOON_BAZ=true
 
 Tasks: 1 completed
  Time: 100ms

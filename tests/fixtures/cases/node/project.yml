@@ -35,3 +35,13 @@ tasks:
   passthroughArgs:
     command: node
     args: ./passthroughArgs.js
+  envVars:
+    command: node
+    args: ./envVars.js
+    env:
+      MOON_FOO: abc
+      MOON_BAR: '123'
+      MOON_BAZ: 'true'
+  envVarsMoon:
+    command: node
+    args: ./envVarsMoon.js

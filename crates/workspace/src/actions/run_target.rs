@@ -164,7 +164,7 @@ fn create_node_target_command(
 
 fn create_shell_target_command(task: &Task) -> Command {
     let mut cmd = Command::new(&task.command);
-    cmd.args(&task.args);
+    cmd.args(&task.args).envs(&task.env);
     cmd
 }
 
@@ -179,12 +179,12 @@ async fn create_target_command(
         &project.root
     };
 
-    let env_vars = create_env_vars(workspace, project, task).await?;
-
     let mut command = match task.type_of {
         TaskType::Node => create_node_target_command(workspace, project, task)?,
         _ => create_shell_target_command(task),
     };
+
+    let env_vars = create_env_vars(workspace, project, task).await?;
 
     command.cwd(&exec_dir).envs(env_vars);
 

@@ -21,6 +21,15 @@ fn append_workspace_config(path: &Path, yaml: &str) {
     writeln!(file, "{}", yaml).unwrap();
 }
 
+fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &Path) -> String {
+    let result = replace_home_dir(&replace_fixtures_dir(
+        &get_assert_output(assert),
+        fixtures_dir,
+    ));
+
+    result.replace("/private<", "<")
+}
+
 #[test]
 fn errors_for_unknown_project() {
     let assert = create_moon_command("cases")
@@ -159,13 +168,6 @@ mod target_scopes {
 
 mod node {
     use super::*;
-
-    fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &Path) -> String {
-        replace_home_dir(&replace_fixtures_dir(
-            &get_assert_output(assert),
-            fixtures_dir,
-        ))
-    }
 
     #[test]
     fn runs_package_managers() {
@@ -332,6 +334,30 @@ mod node {
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn sets_env_vars() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:envVars")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn inherits_moon_env_vars() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("node:envVarsMoon")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
     }
 
     mod install_deps {
@@ -677,6 +703,18 @@ mod system {
     }
 
     #[test]
+    fn handles_ls_from_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("system:lsRoot")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
     fn runs_bash_script() {
         let fixture = create_fixtures_sandbox("cases");
 
@@ -707,5 +745,29 @@ mod system {
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn sets_env_vars() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("system:envVars")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn inherits_moon_env_vars() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("system:envVarsMoon")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
     }
 }

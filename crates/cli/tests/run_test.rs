@@ -321,6 +321,66 @@ mod node {
         assert_snapshot!(get_assert_output(&assert));
     }
 
+    mod install_deps {
+        use super::*;
+
+        #[test]
+        fn installs_on_first_run() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            assert!(!fixture.path().join("node_modules").exists());
+
+            let assert = create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
+                .assert();
+            let output = get_assert_output(&assert);
+
+            assert!(fixture.path().join("node_modules").exists());
+
+            assert!(predicate::str::contains("added 7 packages").eval(&output));
+        }
+
+        #[test]
+        fn doesnt_reinstall_on_second_run() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            let assert = create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
+                .assert();
+            let output1 = get_assert_output(&assert);
+
+            assert!(predicate::str::contains("added 7 packages").eval(&output1));
+
+            let assert = create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
+                .assert();
+            let output2 = get_assert_output(&assert);
+
+            assert!(!predicate::str::contains("added 7 packages").eval(&output2));
+        }
+
+        #[test]
+        fn creates_workspace_state_cache() {
+            let fixture = create_fixtures_sandbox("cases");
+
+            create_moon_command_in(fixture.path())
+                .arg("run")
+                .arg("node:standard")
+                .assert();
+
+            assert!(fixture
+                .path()
+                .join(".moon/cache/workspaceState.json")
+                .exists());
+        }
+    }
+
     mod engines {
         use super::*;
 

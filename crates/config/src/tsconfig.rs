@@ -2,7 +2,7 @@
 
 use json;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
-use moon_utils::fs;
+use moon_utils::{fs, path::standardize_separators};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -82,11 +82,11 @@ impl TsConfigJson {
     /// path and tsconfig file name, and sort the list based on path.
     /// Return true if the new value is different from the old value.
     pub fn add_project_ref(&mut self, base_path: &str, tsconfig_name: &str) -> bool {
+        let mut path = standardize_separators(base_path);
+
         // File name is optional when using standard naming
-        let path = if tsconfig_name == "tsconfig.json" {
-            base_path.to_owned()
-        } else {
-            format!("{}/{}", base_path, tsconfig_name)
+        if tsconfig_name != "tsconfig.json" {
+            path = format!("{}/{}", path, tsconfig_name)
         };
 
         let mut references = match &self.references {
@@ -116,9 +116,10 @@ impl TsConfigJson {
         true
     }
 
-    pub async fn save(&self) -> Result<(), MoonError> {
+    pub async fn save(&mut self) -> Result<(), MoonError> {
         if self.dirty {
             write_preserved_json(&self.path, self).await?;
+            self.dirty = false;
         }
 
         Ok(())

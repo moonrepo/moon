@@ -12,7 +12,7 @@ const TARGET: &str = "moon:action:install-node-deps";
 pub async fn install_node_deps(
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<ActionStatus, WorkspaceError> {
-    let workspace = workspace.read().await;
+    let workspace = workspace.write().await; // Mutates package.json
     let toolchain = &workspace.toolchain;
     let manager = toolchain.get_node_package_manager();
     let mut cache = workspace.cache.cache_workspace_state().await?;

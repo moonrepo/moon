@@ -62,7 +62,8 @@
 - [x] Installs npm dependencies
 - [x] Syncs `package.json` and `tsconfig.json` for all projects
   - [x] Writes JSON preserving field order
-- [ ] Handle non-0 exit codes
+- [x] Handle non-0 exit codes
+- [x] Handle offline
 
 ## CLI
 
@@ -75,6 +76,7 @@
 - [x] `run` command to run targets
   - [x] Args after `--` are passed to the underlying command
   - [x] Only run on affected changes
+  - [x] Run multiple targets
 - [x] `ci` command for smart running affected targets (below)
 
 ## CI
@@ -110,7 +112,6 @@
 
 ## CLI
 
-- [ ] `run`
-  - [ ] All projects for target (`*`)
+- [ ] `run-many`
 - [ ] `graph`
   - [ ] Spin up an interactive website with full project/task data

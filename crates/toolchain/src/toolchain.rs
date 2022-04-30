@@ -9,8 +9,8 @@ use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::package::PackageJson;
 use moon_config::{PackageManager as PM, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
-use moon_utils::fs;
 use moon_utils::path::get_home_dir;
+use moon_utils::{fs, is_offline};
 use std::path::{Path, PathBuf};
 
 async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
@@ -203,12 +203,18 @@ impl Toolchain {
         tool: &(dyn Tool + Send + Sync),
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
-        if !tool.is_downloaded() {
+        if tool.is_downloaded() {
+            // Continue to install
+        } else if is_offline() {
+            return Err(ToolchainError::InternetConnectionRequired);
+        } else {
             tool.download(None).await?;
         }
 
         if tool.is_installed(check_version).await? {
             return Ok(false);
+        } else if is_offline() {
+            return Err(ToolchainError::InternetConnectionRequired);
         } else {
             tool.install(self).await?;
         }

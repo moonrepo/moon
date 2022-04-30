@@ -192,8 +192,6 @@ impl Toolchain {
         self.unload_tool(self.get_npm()).await?;
         self.unload_tool(self.get_node()).await?;
 
-        fs::remove_dir_all(&self.dir).await?;
-
         Ok(())
     }
 

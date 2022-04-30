@@ -135,7 +135,7 @@ const additionalFeatures: Feature[] = [
 	{
 		title: 'Configuration & convention',
 		icon: faSlidersUp,
-		description: 'Use Moon the way you want, but with some guard rails.',
+		description: 'Use moon the way you want, but with some guard rails.',
 	},
 	{
 		title: 'Scalability aware',
@@ -168,7 +168,7 @@ const additionalFeatures: Feature[] = [
 	{
 		title: 'Editor extensions',
 		icon: faChartTreeMap,
-		description: 'Utilize Moon extensions in your favorite editor.',
+		description: 'Utilize moon extensions in your favorite editor.',
 		status: 'coming-soon',
 	},
 ];

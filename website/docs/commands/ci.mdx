@@ -40,12 +40,12 @@ $ moon ci --base another-branch --head <SHA>
 
 ## Parallelism
 
-If your CI environment supports splitting up tasks across multiple jobs, then you can utilize Moon's
+If your CI environment supports splitting up tasks across multiple jobs, then you can utilize moon's
 built in parallelism, by passing `--jobTotal` and `--job` options. The `--jobTotal` option is an
 integer of the total number of jobs available, and `--job` is the current index (0 based) amongst
 the total.
 
-When these options are passed, Moon will only run affected [targets](../concepts/target) based on
+When these options are passed, moon will only run affected [targets](../concepts/target) based on
 the current job slice.
 
 <Tabs>

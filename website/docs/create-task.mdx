@@ -9,8 +9,8 @@ import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="10 min" />
 
-The primary feature of Moon is a build system, and for it to operate in any capacity, it requires
-tasks to run. In Moon, a task is an npm binary or system command that is ran as a child process
+The primary feature of moon is a build system, and for it to operate in any capacity, it requires
+tasks to run. In moon, a task is an npm binary or system command that is ran as a child process
 within the context of a project (is the current working directory). Tasks are defined per project
 with [`project.yml`](./config/project), or inherited by all projects with
 [`.moon/project.yml`](./config/global-project).
@@ -53,8 +53,8 @@ Our task above works, but isn't very efficient as it _always_ runs, regardless o
 since the last time it has ran. This becomes problematic in continuous integration environments, not
 just locally.
 
-To mitigate this problem, Moon provides a system known as inputs, which are file paths and globs
-that are used by the task when it's ran. Moon will use and compare these inputs to calculate whether
+To mitigate this problem, moon provides a system known as inputs, which are file paths and globs
+that are used by the task when it's ran. moon will use and compare these inputs to calculate whether
 to run, or to return the previous run state from the cache.
 
 If you're a bit confused, let's demonstrate this by expanding the task with the
@@ -75,7 +75,7 @@ tasks:
 			- '/tsconfig.json'
 ```
 
-This list of inputs may look complicated, but they are merely run checks. For example, when Moon
+This list of inputs may look complicated, but they are merely run checks. For example, when moon
 detects a change in...
 
 - Any files within the `src`, `tests`, and `types` folders, relative from the project's root.
@@ -122,7 +122,7 @@ tasks:
 
 Once you're familiar with configuring tasks, you may notice certain inputs being repeated
 constantly, like source files, test files, and configuration. To reduce the amount of boilerplate
-required, Moon provides a feature known as file groups, which enables grouping of similar file types
+required, moon provides a feature known as file groups, which enables grouping of similar file types
 within a project using file glob patterns or literal file paths.
 
 File groups are defined with the [`fileGroups`](./config/project#filegroups) setting, which maps a

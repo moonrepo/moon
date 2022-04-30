@@ -9,7 +9,7 @@ import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="3 min" />
 
-Once Moon has been initialized, we must setup the [workspace](./concepts/workspace), which is
+Once moon has been initialized, we must setup the [workspace](./concepts/workspace), which is
 denoted by the `.moon` folder and a relative `package.json` -- this is known as the workspace root.
 The workspace is in charge of:
 
@@ -21,7 +21,7 @@ The workspace is in charge of:
 
 ## Configuring Node.js
 
-The most important tool within Moon and its toolchain is Node.js, as it's the backbone of a
+The most important tool within moon and its toolchain is Node.js, as it's the backbone of a
 JavaScript based repository. Let's now define the Node.js version we want to install in the
 toolchain, enforce for developers, and to utilize when running `moon` commands, by updating
 [`node.version`](./config/workspace#version) in [`.moon/workspace.yml`](./config/workspace).
@@ -50,7 +50,7 @@ node:
 	packageManager: 'yarn'
 ```
 
-By default Moon will install the latest version of a package manager, but this isn't consistently
+By default moon will install the latest version of a package manager, but this isn't consistently
 updated, so we suggest defining an explicit semantic version for the package manager as well,
 through the [`node.<packageManager>.version`](./config/workspace#version-1) setting.
 
@@ -68,9 +68,9 @@ configuration above, we'll be switching from npm (the default) to yarn.
 
 ## Configuring a version control system
 
-> Moon defaults to `git` for a VCS, so feel free to skip this if you use git.
+> moon defaults to `git` for a VCS, so feel free to skip this if you use git.
 
-Moon requires a version control system (VCS) to be present for functionality like file diffing,
+moon requires a version control system (VCS) to be present for functionality like file diffing,
 hashing, and revision comparison. The VCS and its default branch can be configured through the
 [`vcs`](./config/workspace#vcs) setting.
 

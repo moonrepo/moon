@@ -1,7 +1,7 @@
 {
   "name": "@moonrepo/cli",
   "version": "0.0.2",
-  "description": "Moon command line and core system.",
+  "description": "moon command line and core system.",
   "keywords": [
     "moon",
     "repo",

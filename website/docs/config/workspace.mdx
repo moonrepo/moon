@@ -26,10 +26,10 @@ projects:
   web: 'apps/web'
 ```
 
-Unlike packages in the JavaScript ecosystem, a Moon project _does not_ require a `package.json`, and
+Unlike packages in the JavaScript ecosystem, a moon project _does not_ require a `package.json`, and
 is not coupled to Yarn workspaces (or similar architectures).
 
-> **Why doesn't Moon auto-detect projects?** Moon _does not_ automatically detect projects using
+> **Why doesn't moon auto-detect projects?** moon _does not_ automatically detect projects using
 > file system globs for the following reasons:
 >
 > - Depth-first scans are expensive, especially when the workspace continues to grow.
@@ -40,7 +40,7 @@ is not coupled to Yarn workspaces (or similar architectures).
 
 > `NodeConfig`
 
-Defines the Node.js version and package manager to install within the toolchain, as Moon _does not_
+Defines the Node.js version and package manager to install within the toolchain, as moon _does not_
 use a Node.js binary found on the local machine. Managing the Node.js version within the toolchain
 ensures a deterministic environment across any machine (whether a developer, CI, or production
 machine).
@@ -192,7 +192,7 @@ the same version, which is a very common practice when managing dependencies.
 
 > `TypeScriptConfig`
 
-Dictates how Moon interacts with and utilizes TypeScript within the workspace.
+Dictates how moon interacts with and utilizes TypeScript within the workspace.
 
 ### `projectConfigFileName`
 

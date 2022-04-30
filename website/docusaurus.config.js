@@ -6,7 +6,7 @@ const prismTheme = require('./prism.config');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-	title: 'Moon',
+	title: 'moon',
 	tagline: 'A build system for the JavaScript ecosystem',
 	url: 'https://moonrepo.dev',
 	baseUrl: '/',
@@ -45,9 +45,9 @@ const config = {
 		/** @type {import('@docusaurus/preset-classic').ThemeConfig} */
 		({
 			navbar: {
-				// title: 'Moon',
+				// title: 'moon',
 				logo: {
-					alt: 'Moon',
+					alt: 'moon',
 					src: 'img/logo.svg',
 				},
 				items: [
@@ -116,7 +116,7 @@ const config = {
 						],
 					},
 				],
-				copyright: `Copyright © ${new Date().getFullYear()} Moon.`,
+				copyright: `Copyright © ${new Date().getFullYear()} moon.`,
 			},
 			prism: {
 				theme: prismTheme,

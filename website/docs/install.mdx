@@ -1,5 +1,5 @@
 ---
-title: Install Moon
+title: Install moon
 ---
 
 import Tabs from '@theme/Tabs';
@@ -9,15 +9,15 @@ import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="5 min" />
 
-The following guide can be used for adding Moon to an existing repository (with incremental
+The following guide can be used for adding moon to an existing repository (with incremental
 adoption), or to a fresh repository. All that's required is [Node.js](https://nodejs.org/en/) >=
 12.17.0 and a `package.json` at the root.
 
 ## Choosing a package manager
 
-Before we install Moon, we should briefly talk about Node.js package managers. To start, Moon does
+Before we install moon, we should briefly talk about Node.js package managers. To start, moon does
 not replace a package manager, nor does it apply any "magic" for them to work differently. Instead,
-Moon builds upon a package manager to provide a robust build system, assumes a standard
+moon builds upon a package manager to provide a robust build system, assumes a standard
 `node_modules` layout and module resolution algorithm, and supports any of the following 3 package
 managers.
 
@@ -31,7 +31,7 @@ you!
 
 ### Enabling workspaces
 
-Moon was built with monorepos in mind, and as such, has first-class support for them through package
+moon was built with monorepos in mind, and as such, has first-class support for them through package
 workspaces (but is not a requirement). To utilize workspaces, enable them for your chosen package
 manager.
 
@@ -101,7 +101,7 @@ packages:
 
 ## Installing the CLI
 
-The entirety of Moon is packaged and shipped as a single binary through the `@moonrepo/cli` npm
+The entirety of moon is packaged and shipped as a single binary through the `@moonrepo/cli` npm
 package. Begin by installing this package at the root of the repository.
 
 <Tabs
@@ -153,7 +153,7 @@ pnpm add --dev -W @moonrepo/cli
 ### Accessing the `moon` binary
 
 We suggest _not_ installing the package globally, as adding an explicit development dependency with
-a version range ensures all developers and machines are using the same version of Moon. With that
+a version range ensures all developers and machines are using the same version of moon. With that
 being said, how should you access `moon`? If you'd like it to be accessible in a global-like
 fashion, we suggest one of the following patterns:
 
@@ -208,22 +208,22 @@ the Rust binary, _instead of_ executing the Rust binary directly.
 > ([issue](https://github.com/yarnpkg/berry/issues/882)), so we must access the full binary path and
 > execute on that.
 
-With this script, Moon can then be run with `npm run moon ...` (or `yarn run`, or `pnpm run`), but
+With this script, moon can then be run with `npm run moon ...` (or `yarn run`, or `pnpm run`), but
 do note that this pattern _will not_ work with package workspaces unless the script is ran from the
 repository root.
 
 ### Supported targets
 
-Because Moon is written in Rust, we only support targets that are explicitly compiled for, which
+Because moon is written in Rust, we only support targets that are explicitly compiled for, which
 are:
 
 - MacOS Intel (x64)
 - Linux (x86_64, gnu)
 - Windows (x64)
 
-## Initializing Moon
+## Initializing moon
 
-Now that we have the CLI installed, let's scaffold and initialize Moon in a repository with the
+Now that we have the CLI installed, let's scaffold and initialize moon in a repository with the
 [`moon init`](./commands/init) command. Be sure to [access the binary](#accessing-the-moon-binary)
 as mentioned above.
 

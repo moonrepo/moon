@@ -15,7 +15,7 @@ build layer, personal tasks, and custom configuration.
 
 ## Declaring a project in the workspace
 
-Although a project may exist in your repository, it's not accessible from Moon until it's been
+Although a project may exist in your repository, it's not accessible from moon until it's been
 mapped in the [`projects`](./config/workspace#projects) setting found in
 [`.moon/workspace.yml`](./config/workspace). When mapping a project, we require a unique identifier
 for the project, and a project source location (path relative from the workspace root).
@@ -131,8 +131,8 @@ tasks:
 
 ### Adding optional metadata
 
-When utilizing Moon in a large monorepo or organization, ownership becomes very important. To combat
-this problem, Moon supports the [`project`](./config/project#project) field within a project's
+When utilizing moon in a large monorepo or organization, ownership becomes very important. To combat
+this problem, moon supports the [`project`](./config/project#project) field within a project's
 [`project.yml`](./config/project) config.
 
 This field is _optional_ by default, but when defined it provides metadata about the project,
@@ -142,7 +142,7 @@ more!
 ```yaml title="project.yml"
 project:
   type: 'tool'
-  name: 'Moon'
+  name: 'moon'
   description: 'A monorepo management tool.'
   channel: '#moon'
   owner: 'infra.platform'

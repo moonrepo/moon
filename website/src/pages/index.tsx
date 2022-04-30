@@ -196,11 +196,12 @@ export default function Home() {
 					description="Architect a repository to scale"
 					features={organizationFeatures}
 					tier={2}
+					reversed
 				/>
 
 				<Features
 					header="Orchestration"
-					description="Offload your heavy tasks"
+					description="Offload heavy tasks"
 					features={orchestrationFeatures}
 					tier={3}
 				/>
@@ -209,8 +210,9 @@ export default function Home() {
 					header="Notification"
 					description="Monitor pipeline health"
 					features={notificationFeatures}
-					columns={3}
+					// columns={3}
 					tier={4}
+					reversed
 				/>
 
 				<AdditionalFeatures header="And many more features" features={additionalFeatures} />

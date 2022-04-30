@@ -19,7 +19,7 @@ export interface FeaturesProps {
 	header: string;
 	description: string;
 	features: Feature[];
-	columns?: 3 | 4 | 5;
+	reversed?: boolean;
 	tier: FeatureTier;
 }
 
@@ -30,112 +30,82 @@ const backgroundGradients: Record<FeatureTier, string> = {
 	4: 'bg-white',
 };
 
-const headings: Record<FeatureTier, string> = {
-	1: 'text-white',
-	2: 'text-white',
-	3: 'text-gray-900',
-	4: 'text-gray-900',
+const cardGradients: Record<FeatureTier, string> = {
+	1: 'from-purple-600 to-blurple-600',
+	2: 'from-pink-400 to-red-400',
+	3: 'from-teal-400 to-slate-100',
+	4: 'from-yellow-300 to-green-600',
 };
 
-const titles: Record<FeatureTier, string> = {
-	1: 'text-purple-500',
-	2: 'text-purple-300',
-	3: 'text-pink-600',
-	4: 'text-teal-600',
+const iconColors: Record<FeatureTier, string> = {
+	1: 'text-blurple-300',
+	2: 'text-pink-500',
+	3: 'text-teal-600',
+	4: 'text-green-600',
 };
 
-const cardIcons: Record<FeatureTier, string> = {
-	1: 'text-purple-300',
-	2: 'text-blurple-400',
-	3: 'text-pink-600',
-	4: 'text-teal-600',
-};
-
-const cardForegrounds: Record<FeatureTier, string> = {
-	1: 'text-purple-200',
-	2: 'text-blurple-600',
-	3: 'text-gray-900',
-	4: 'text-gray-800',
-};
-
-const cardBackgrounds: Record<FeatureTier, string> = {
-	1: 'from-white/10 to-white/0',
-	2: 'from-white/20 to-white/0',
-	3: 'from-white/40 to-white/0',
-	4: 'from-gray-100/30 to-white',
-};
-
-const cardHeadings: Record<FeatureTier, string> = {
-	1: 'text-white',
-	2: 'text-white',
-	3: 'text-gray-900',
-	4: 'text-gray-900',
-};
-
-const columnClasses = {
-	3: 'sm:grid-cols-2 lg:grid-cols-3',
-	4: 'sm:grid-cols-2 lg:grid-cols-4',
-	5: 'sm:grid-cols-3 lg:grid-cols-5',
-};
-
-export default function Features({
-	header,
-	description,
-	features,
-	columns = 4,
-	tier,
-}: FeaturesProps) {
+export default function Features({ header, description, features, reversed, tier }: FeaturesProps) {
 	return (
 		<div className={cx('bg-gradient-to-b', backgroundGradients[tier])}>
 			<div className="relative py-4 sm:py-5 lg:py-6">
-				<div className="mx-auto max-w-md px-2 text-center sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
-					<h2 className={cx('m-0 text-base font-semibold uppercase tracking-wider', titles[tier])}>
-						{header}
-					</h2>
+				<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
+					<div className={cx('flex items-center justify-between', reversed && 'flex-row-reverse')}>
+						<aside
+							className={cx(
+								'w-1/3 p-4 drop-shadow z-0',
+								reversed
+									? 'rounded-tr-lg rounded-br-lg bg-gradient-to-bl pl-0'
+									: 'text-right rounded-tl-lg rounded-bl-lg bg-gradient-to-br pr-0',
+								cardGradients[tier],
+							)}
+						>
+							<h2
+								className={cx(
+									'm-0 px-1 py-0.5 inline-block text-base font-semibold uppercase tracking-wider text-white bg-black/20',
+									reversed
+										? 'rounded-tr-lg rounded-br-lg pl-4'
+										: 'rounded-tl-lg rounded-bl-lg pr-4',
+								)}
+							>
+								{header}
+							</h2>
 
-					<Heading className={cx('mt-1', headings[tier])} level={2}>
-						{description}
-					</Heading>
+							<Heading className={cx('mt-2 text-white', reversed ? 'ml-4' : 'mr-4')} level={2}>
+								{description}
+							</Heading>
+						</aside>
 
-					<div className="mt-4">
-						<div className={cx('grid grid-cols-1 gap-4', columnClasses[columns])}>
-							{features.map((feature) => (
-								<div key={feature.title} className="pt-6">
-									<div
-										className={cx(
-											'flow-root rounded-lg px-2 pb-3 bg-gradient-to-b',
-											cardBackgrounds[tier],
-										)}
-									>
-										<div className="-mt-3">
-											<div>
-												<Icon
-													icon={feature.icon}
-													className={cx(
-														'inline-flex items-center justify-center text-5xl',
-														cardIcons[tier],
-													)}
-												/>
-											</div>
+						<section className="w-2/3 bg-white rounded-lg p-4 drop-shadow z-10">
+							<ul className="m-0 p-0 list-none grid grid-cols-2 gap-4">
+								{features.map((feature) => (
+									<li key={feature.title} className="flex">
+										<Icon
+											icon={feature.icon}
+											className={cx(
+												'pt-1 w-9 text-5xl shrink-0 grow-0 justify-center flex',
+												iconColors[tier],
+											)}
+										/>
 
-											<Heading className={cx('mt-2', cardHeadings[tier])} level={4}>
+										<div className="ml-1">
+											<Heading level={4} className="text-gray-900">
 												{feature.title}
 											</Heading>
 
 											{feature.status && (
-												<p>
+												<p className="m-0">
 													<FeatureStatus status={feature.status} />
 												</p>
 											)}
 
-											<Text className={cx('mt-2', cardForegrounds[tier])}>
+											<Text className="mt-1" variant="muted">
 												{feature.description}
 											</Text>
 										</div>
-									</div>
-								</div>
-							))}
-						</div>
+									</li>
+								))}
+							</ul>
+						</section>
 					</div>
 				</div>
 			</div>

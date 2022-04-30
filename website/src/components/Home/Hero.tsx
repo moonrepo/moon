@@ -2,7 +2,6 @@ import React from 'react';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
-import cliPackage from '@moonrepo/cli/package.json';
 import Icon from '../../ui/iconography/Icon';
 
 export default function Hero() {
@@ -44,7 +43,7 @@ export default function Hero() {
 							className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 md:text-lg group transition-transform"
 						>
 							<span className="opacity-50">v</span>
-							{cliPackage.version}
+							{(require('@moonrepo/cli/package.json') as { version: string }).version}
 						</Link>
 					</div>
 				</div>

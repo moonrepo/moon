@@ -3,7 +3,9 @@ use async_trait::async_trait;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
 use std::collections::{BTreeMap, HashSet};
+use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 // TODO: This code hasn't been tested yet and may not be accurate!
 
@@ -154,9 +156,20 @@ impl Vcs for Svn {
         let mut map = BTreeMap::new();
 
         // svn doesnt support file hashing, so instead of generating some
-        // random hash ourselves, just pass an emptry string.
+        // random hash ourselves, just use the modified time.
         for file in files {
-            map.insert(file.to_owned(), String::new());
+            if let Ok(metadata) = fs::metadata(file) {
+                if let Ok(modified) = metadata.modified() {
+                    map.insert(
+                        file.to_owned(),
+                        modified
+                            .duration_since(SystemTime::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_millis()
+                            .to_string(),
+                    );
+                }
+            }
         }
 
         Ok(map)

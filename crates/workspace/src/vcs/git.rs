@@ -1,6 +1,6 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
-use moon_utils::process::{output_to_string, Command};
+use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
 use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -17,17 +17,37 @@ impl Git {
             working_dir: working_dir.to_path_buf(),
         }
     }
+
+    async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {
+        let output = command.exec_capture_output().await?;
+
+        if trim {
+            return Ok(output_to_trimmed_string(&output.stdout));
+        }
+
+        Ok(output_to_string(&output.stdout))
+    }
 }
 
 #[async_trait]
 impl Vcs for Git {
+    fn create_command(&self, args: Vec<&str>) -> Command {
+        let mut cmd = Command::new("git");
+        cmd.args(args).cwd(&self.working_dir);
+        cmd
+    }
+
     async fn get_local_branch(&self) -> VcsResult<String> {
-        self.run_command(vec!["branch", "--show-current"], true)
-            .await
+        self.run_command(
+            &mut self.create_command(vec!["branch", "--show-current"]),
+            true,
+        )
+        .await
     }
 
     async fn get_local_branch_revision(&self) -> VcsResult<String> {
-        self.run_command(vec!["rev-parse", "HEAD"], true).await
+        self.run_command(&mut self.create_command(vec!["rev-parse", "HEAD"]), true)
+            .await
     }
 
     fn get_default_branch(&self) -> &str {
@@ -35,18 +55,20 @@ impl Vcs for Git {
     }
 
     async fn get_default_branch_revision(&self) -> VcsResult<String> {
-        self.run_command(vec!["rev-parse", &self.default_branch], true)
-            .await
+        self.run_command(
+            &mut self.create_command(vec!["rev-parse", &self.default_branch]),
+            true,
+        )
+        .await
     }
 
     async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
-        let mut args = vec!["hash-object"];
+        let output = self
+            .create_command(vec!["hash-object", "--stdin-paths"])
+            .exec_capture_output_with_input(&files.join("\n"))
+            .await?;
+        let output = output_to_trimmed_string(&output.stdout);
 
-        for file in files {
-            args.push(file);
-        }
-
-        let output = self.run_command(args, true).await?;
         let mut map = BTreeMap::new();
 
         for (index, hash) in output.split('\n').enumerate() {
@@ -60,7 +82,10 @@ impl Vcs for Git {
 
     async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
         let output = self
-            .run_command(vec!["ls-tree", "HEAD", "-r", dir], true)
+            .run_command(
+                &mut self.create_command(vec!["ls-tree", "HEAD", "-r", dir]),
+                true,
+            )
             .await?;
         let mut map = BTreeMap::new();
 
@@ -82,14 +107,14 @@ impl Vcs for Git {
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self
             .run_command(
-                vec![
+                &mut self.create_command(vec![
                     "status",
                     "--porcelain",
                     "--untracked-files",
                     // We use this option so that file names with special characters
                     // are displayed as-is and are not quoted/escaped
                     "-z",
-                ],
+                ]),
                 false,
             )
             .await?;
@@ -197,7 +222,7 @@ impl Vcs for Git {
     ) -> VcsResult<TouchedFiles> {
         let output = self
             .run_command(
-                vec![
+                &mut self.create_command(vec![
                     "--no-pager",
                     "diff",
                     "--name-status",
@@ -208,7 +233,7 @@ impl Vcs for Git {
                     "-z",
                     base_revision,
                     revision,
-                ],
+                ]),
                 false,
             )
             .await?;
@@ -285,21 +310,5 @@ impl Vcs for Git {
         }
 
         false
-    }
-
-    async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {
-        let output = Command::new("git")
-            .args(args)
-            .cwd(&self.working_dir)
-            .exec_capture_output()
-            .await?;
-
-        let stdout = output_to_string(&output.stdout);
-
-        if trim {
-            return Ok(stdout.trim().to_owned());
-        }
-
-        Ok(stdout)
     }
 }

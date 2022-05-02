@@ -5,7 +5,7 @@ use std::env;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::Arc;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::sync::RwLock;
 use tokio::task;
@@ -101,6 +101,34 @@ impl Command {
 
         let output = self.cmd.output();
         let output = output
+            .await
+            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+
+        self.handle_nonzero_status(&output.status)?;
+
+        Ok(output)
+    }
+
+    pub async fn exec_capture_output_with_input(
+        &mut self,
+        input: &str,
+    ) -> Result<Output, MoonError> {
+        self.log_command_info();
+
+        let mut child = self
+            .cmd
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+
+        let mut stdin = child.stdin.take().unwrap();
+        stdin.write_all(input.as_bytes()).await.unwrap();
+        drop(stdin);
+
+        let output = child
+            .wait_with_output()
             .await
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 

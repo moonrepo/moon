@@ -93,7 +93,7 @@
   - [ ] dont load `package.json`/`tsconfig.json` so much
   - [x] delete old hashes when the hash changes
   - [ ] ignore hashes for files that are gitignored
-  - [ ] include local file changes in hash
+  - [x] include local file changes in hash
 
 # 0.2.0
 

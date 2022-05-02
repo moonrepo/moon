@@ -35,6 +35,7 @@ pub async fn create_target_hasher(
     task: &Task,
 ) -> Result<Hasher, WorkspaceError> {
     let vcs = workspace.detect_vcs();
+    let globset = task.create_globset()?;
     let mut hasher = Hasher::new(workspace.config.node.version.clone());
 
     hasher.hash_project(project);
@@ -70,13 +71,12 @@ pub async fn create_target_hasher(
         hasher.hash_inputs(hashed_files);
     }
 
-    // For input globs, its much more performant to:
+    // For input globs, it's much more performant to:
     //  `git ls-tree` -> match against glob patterns
     // Then it is to:
     //  glob + walk the file system -> `git hash-object`
     if !task.input_globs.is_empty() {
         let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
-        let globset = task.create_globset()?;
 
         // Input globs are absolute paths, so we must do the same
         hashed_file_tree.retain(|k, _| fs::matches_globset(&globset, &workspace.root.join(k)));
@@ -84,7 +84,22 @@ pub async fn create_target_hasher(
         hasher.hash_inputs(hashed_file_tree);
     }
 
-    // TODO include local file changes
+    // Include local file changes so that development builds work.
+    // Also run this LAST as it should take highest precedence!
+    let local_files = vcs.get_touched_files().await?;
+
+    if !local_files.all.is_empty() {
+        // Only hash files that are within the task's inputs
+        let files = local_files
+            .all
+            .into_iter()
+            .filter(|f| fs::matches_globset(&globset, &workspace.root.join(f)))
+            .collect::<Vec<String>>();
+
+        if !files.is_empty() {
+            hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
+        }
+    }
 
     Ok(hasher)
 }

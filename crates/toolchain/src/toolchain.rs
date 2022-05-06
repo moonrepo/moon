@@ -6,7 +6,6 @@ use crate::tools::npm::NpmTool;
 use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use moon_config::constants::CONFIG_DIRNAME;
-use moon_config::package::PackageJson;
 use moon_config::{PackageManager as PM, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_utils::path::get_home_dir;
@@ -119,36 +118,18 @@ impl Toolchain {
     }
 
     /// Download and install all tools into the toolchain.
-    pub async fn setup(
-        &self,
-        root_package: &mut PackageJson,
-        check_versions: bool,
-    ) -> Result<bool, ToolchainError> {
+    pub async fn setup(&self, check_versions: bool) -> Result<bool, ToolchainError> {
         debug!(
             target: "moon:toolchain",
             "Downloading and installing tools",
         );
 
-        // Install node and add engines to `package.json`
         let node = self.get_node();
-        let using_corepack = node.is_corepack_aware();
         let installed_node = self.load_tool(node, check_versions).await?;
-
-        // Set the `packageManager` field on `package.json`
-        let mut check_manager_version = installed_node || check_versions;
-        let manager_version = match node.config.package_manager {
-            PM::Npm => format!("npm@{}", node.config.npm.version),
-            PM::Pnpm => format!("pnpm@{}", node.config.pnpm.as_ref().unwrap().version),
-            PM::Yarn => format!("yarn@{}", node.config.yarn.as_ref().unwrap().version),
-        };
-
-        if using_corepack && root_package.set_package_manager(&manager_version) {
-            root_package.save().await?;
-            check_manager_version = true;
-        }
+        let check_manager_version = installed_node || check_versions;
 
         // Enable corepack before intalling package managers (when available)
-        if using_corepack && check_manager_version {
+        if node.is_corepack_aware() && check_manager_version {
             debug!(
                 target: "moon:toolchain:node",
                 "Enabling corepack for package manager control"

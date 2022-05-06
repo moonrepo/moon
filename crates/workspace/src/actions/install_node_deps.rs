@@ -1,6 +1,7 @@
 use crate::action::ActionStatus;
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
+use moon_config::PackageManager;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, warn};
 use moon_utils::{fs, is_offline};
@@ -14,15 +15,36 @@ pub async fn install_node_deps(
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.write().await; // Mutates package.json
     let toolchain = &workspace.toolchain;
-    let manager = toolchain.get_node_package_manager();
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
     // Update artifacts based on node settings
     let node_config = &workspace.config.node;
     let mut root_package = workspace.load_package_json().await?;
+    let mut write_root_package = false;
 
+    // Add `packageManager` to root `package.json`
+    let manager = toolchain.get_node_package_manager();
+    let manager_version = match node_config.package_manager {
+        PackageManager::Npm => format!("npm@{}", node_config.npm.version),
+        PackageManager::Pnpm => format!("pnpm@{}", node_config.pnpm.as_ref().unwrap().version),
+        PackageManager::Yarn => format!("yarn@{}", node_config.yarn.as_ref().unwrap().version),
+    };
+
+    if toolchain.get_node().is_corepack_aware()
+        && root_package.set_package_manager(&manager_version)
+    {
+        write_root_package = true;
+
+        debug!(
+            target: TARGET,
+            "Adding package manager version to root {}",
+            color::file("package.json")
+        );
+    }
+
+    // Add `engines` constraint to root `package.json`
     if node_config.add_engines_constraint && root_package.add_engine("node", &node_config.version) {
-        root_package.save().await?;
+        write_root_package = true;
 
         debug!(
             target: TARGET,
@@ -31,6 +53,11 @@ pub async fn install_node_deps(
         );
     }
 
+    if write_root_package {
+        root_package.save().await?;
+    }
+
+    // Create nvm/nodenv config file
     if let Some(version_manager) = &node_config.sync_version_manager_config {
         let rc_name = version_manager.get_config_file_name();
         let rc_path = workspace.root.join(&rc_name);

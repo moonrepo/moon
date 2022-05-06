@@ -42,7 +42,7 @@ pub async fn create_target_hasher(
     hasher.hash_task(task);
 
     // Hash root configs first
-    hasher.hash_package_json(&workspace.load_package_json().await?);
+    hasher.hash_package_json(&workspace.package_json);
 
     if let Some(root_tsconfig) = workspace
         .load_tsconfig_json(&workspace.config.typescript.root_config_file_name)

@@ -89,12 +89,33 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     }
 }
 
+// package.json
+async fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceError> {
+    let package_json_path = root_dir.join("package.json");
+
+    trace!(
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::file("package.json"),
+        color::path(root_dir),
+    );
+
+    if !package_json_path.exists() {
+        return Err(WorkspaceError::MissingPackageJson);
+    }
+
+    Ok(PackageJson::load(&package_json_path).await?)
+}
+
 pub struct Workspace {
     /// Engine for reading and writing cache/outputs.
     pub cache: CacheEngine,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
+
+    /// The root `package.json`.
+    pub package_json: PackageJson,
 
     /// The project graph, where each project is lazy loaded in.
     pub projects: ProjectGraph,
@@ -129,6 +150,7 @@ impl Workspace {
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
+        let package_json = load_package_json(&root_dir).await?;
 
         // Setup components
         let cache = CacheEngine::create(&root_dir).await?;
@@ -138,6 +160,7 @@ impl Workspace {
         Ok(Workspace {
             cache,
             config,
+            package_json,
             projects,
             root: root_dir,
             toolchain,
@@ -148,24 +171,6 @@ impl Workspace {
     /// Detect the version control system currently being used.
     pub fn detect_vcs(&self) -> Box<dyn Vcs + Send + Sync> {
         VcsManager::load(&self.config, &self.working_dir)
-    }
-
-    /// Load and parse the root `package.json`.
-    pub async fn load_package_json(&self) -> Result<PackageJson, WorkspaceError> {
-        let package_json_path = self.root.join("package.json");
-
-        trace!(
-            target: "moon:workspace",
-            "Attempting to find {} in {}",
-            color::file("package.json"),
-            color::path(&self.root),
-        );
-
-        if !package_json_path.exists() {
-            return Err(WorkspaceError::MissingPackageJson);
-        }
-
-        Ok(PackageJson::load(&package_json_path).await?)
     }
 
     /// Load and parse the root `tsconfig.json` if it exists.

@@ -17,7 +17,7 @@ pub async fn sync_project(
     let mut mutated_files = false;
     let mut sync_project_references;
 
-    // Read only, wrap in a block so its dropped
+    // Read only
     {
         let workspace = workspace.read().await;
         let node_config = &workspace.config.node;
@@ -98,7 +98,7 @@ pub async fn sync_project(
         }
     }
 
-    // Mutates, wrap in a block so its dropped
+    // Writes root `tsconfig.json`
     {
         // Sync a project reference to the root `tsconfig.json`
         if sync_project_references {

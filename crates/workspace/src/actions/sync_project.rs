@@ -1,7 +1,9 @@
 use crate::action::ActionStatus;
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
+use moon_config::tsconfig::TsConfigJson;
 use moon_logger::{color, debug};
+use moon_project::Project;
 use moon_utils::is_ci;
 use pathdiff::diff_paths;
 use std::path::PathBuf;
@@ -9,6 +11,28 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 const TARGET: &str = "moon:action:sync-project";
+
+fn sync_root_tsconfig(
+    tsconfig: &mut TsConfigJson,
+    tsconfig_root_name: &str,
+    tsconfig_branch_name: &str,
+    project: &Project,
+) -> bool {
+    if project.root.join(tsconfig_branch_name).exists()
+        && tsconfig.add_project_ref(&project.source, tsconfig_branch_name)
+    {
+        debug!(
+            target: TARGET,
+            "Syncing {} as a project reference to the root {}",
+            color::id(&project.id),
+            color::file(tsconfig_root_name)
+        );
+
+        return true;
+    }
+
+    false
+}
 
 pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,
@@ -100,24 +124,20 @@ pub async fn sync_project(
 
     // Writes root `tsconfig.json`
     {
-        // Sync a project reference to the root `tsconfig.json`
+        // Sync a project reference
         if sync_project_references {
-            let workspace = workspace.write().await;
-            let tsconfig_root_name = &workspace.config.typescript.root_config_file_name;
-            let tsconfig_branch_name = &workspace.config.typescript.project_config_file_name;
+            let mut workspace = workspace.write().await;
+            let tsconfig_root_name = workspace.config.typescript.root_config_file_name.clone();
+            let tsconfig_branch_name = workspace.config.typescript.project_config_file_name.clone();
             let project = workspace.projects.load(project_id)?;
 
-            if let Some(mut tsconfig) = workspace.load_tsconfig_json(tsconfig_root_name).await? {
-                if project.root.join(tsconfig_branch_name).exists()
-                    && tsconfig.add_project_ref(&project.source, tsconfig_branch_name)
-                {
-                    debug!(
-                        target: TARGET,
-                        "Syncing {} as a project reference to the root {}",
-                        color::id(project_id),
-                        color::file(tsconfig_root_name)
-                    );
-
+            if let Some(tsconfig) = &mut workspace.tsconfig_json {
+                if sync_root_tsconfig(
+                    tsconfig,
+                    &tsconfig_root_name,
+                    &tsconfig_branch_name,
+                    &project,
+                ) {
                     tsconfig.save().await?;
                     mutated_files = true;
                 }

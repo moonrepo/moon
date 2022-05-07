@@ -44,11 +44,8 @@ pub async fn create_target_hasher(
     // Hash root configs first
     hasher.hash_package_json(&workspace.package_json);
 
-    if let Some(root_tsconfig) = workspace
-        .load_tsconfig_json(&workspace.config.typescript.root_config_file_name)
-        .await?
-    {
-        hasher.hash_tsconfig_json(&root_tsconfig);
+    if let Some(root_tsconfig) = &workspace.tsconfig_json {
+        hasher.hash_tsconfig_json(root_tsconfig);
     }
 
     // Hash project configs second so they can override

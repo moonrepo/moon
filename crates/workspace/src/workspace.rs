@@ -107,6 +107,27 @@ async fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceErro
     Ok(PackageJson::load(&package_json_path).await?)
 }
 
+// tsconfig.json
+async fn load_tsconfig_json(
+    root_dir: &Path,
+    tsconfig_name: &str,
+) -> Result<Option<TsConfigJson>, WorkspaceError> {
+    let tsconfig_json_path = root_dir.join(tsconfig_name);
+
+    trace!(
+        target: "moon:workspace",
+        "Attempting to find {} in {}",
+        color::file(tsconfig_name),
+        color::path(root_dir),
+    );
+
+    if !tsconfig_json_path.exists() {
+        return Ok(None);
+    }
+
+    Ok(Some(TsConfigJson::load(&tsconfig_json_path).await?))
+}
+
 pub struct Workspace {
     /// Engine for reading and writing cache/outputs.
     pub cache: CacheEngine,
@@ -125,6 +146,9 @@ pub struct Workspace {
 
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
+
+    /// The root `tsconfig.json`.
+    pub tsconfig_json: Option<TsConfigJson>,
 
     /// The current working directory.
     pub working_dir: PathBuf,
@@ -151,6 +175,8 @@ impl Workspace {
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
         let package_json = load_package_json(&root_dir).await?;
+        let tsconfig_json =
+            load_tsconfig_json(&root_dir, &config.typescript.root_config_file_name).await?;
 
         // Setup components
         let cache = CacheEngine::create(&root_dir).await?;
@@ -164,6 +190,7 @@ impl Workspace {
             projects,
             root: root_dir,
             toolchain,
+            tsconfig_json,
             working_dir,
         })
     }
@@ -171,26 +198,5 @@ impl Workspace {
     /// Detect the version control system currently being used.
     pub fn detect_vcs(&self) -> Box<dyn Vcs + Send + Sync> {
         VcsManager::load(&self.config, &self.working_dir)
-    }
-
-    /// Load and parse the root `tsconfig.json` if it exists.
-    pub async fn load_tsconfig_json(
-        &self,
-        tsconfig_name: &str,
-    ) -> Result<Option<TsConfigJson>, WorkspaceError> {
-        let tsconfig_json_path = self.root.join(tsconfig_name);
-
-        trace!(
-            target: "moon:workspace",
-            "Attempting to find {} in {}",
-            color::file(tsconfig_name),
-            color::path(&self.root),
-        );
-
-        if !tsconfig_json_path.exists() {
-            return Ok(None);
-        }
-
-        Ok(Some(TsConfigJson::load(&tsconfig_json_path).await?))
     }
 }

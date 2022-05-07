@@ -12,27 +12,19 @@ use tokio::task;
 
 pub use std::process::{ExitStatus, Output, Stdio};
 
-#[cfg(not(windows))]
-pub fn create_command<S: AsRef<OsStr>>(bin: S) -> TokioCommand {
-    TokioCommand::new(bin)
+// Based on how Node.js executes Windows commands:
+// https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
+fn create_windows_cmd() -> TokioCommand {
+    let mut cmd = TokioCommand::new("cmd.exe");
+    cmd.arg("/d");
+    cmd.arg("/s");
+    cmd.arg("/q");
+    cmd.arg("/c");
+    cmd
 }
 
-#[cfg(windows)]
-pub fn create_command<S: AsRef<OsStr>>(bin: S) -> TokioCommand {
-    let bin_name = bin.as_ref().to_str().unwrap_or_default();
-
-    // Based on how Node.js executes Windows commands:
-    // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
-    if bin_name.ends_with(".cmd") || bin_name.ends_with(".bat") {
-        let mut cmd = TokioCommand::new("cmd.exe");
-        cmd.arg("/d");
-        cmd.arg("/s");
-        cmd.arg("/c");
-        cmd.arg(bin);
-        cmd
-    } else {
-        TokioCommand::new(bin)
-    }
+pub fn is_windows_script(bin: &str) -> bool {
+    bin.ends_with(".cmd") || bin.ends_with(".bat")
 }
 
 pub fn output_to_string(data: &[u8]) -> String {
@@ -55,9 +47,28 @@ pub struct Command {
 // but the encapsulation this struct provides is necessary.
 impl Command {
     pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
+        let mut bin_name = String::from(bin.as_ref().to_string_lossy());
+        let mut cmd;
+
+        // Referencing cmd.exe directly
+        if bin_name == "cmd" || bin_name == "cmd.exe" {
+            bin_name = String::from("cmd.exe");
+            cmd = create_windows_cmd();
+
+        // Referencing a batch script that needs to be ran with cmd.exe
+        } else if is_windows_script(&bin_name) {
+            bin_name = String::from("cmd.exe");
+            cmd = create_windows_cmd();
+            cmd.arg(bin);
+
+        // Assume a command exists on the system
+        } else {
+            cmd = TokioCommand::new(bin);
+        }
+
         Command {
-            bin: String::from(bin.as_ref().to_string_lossy()),
-            cmd: create_command(bin),
+            bin: bin_name,
+            cmd,
             full_errors: false,
         }
     }

@@ -15,6 +15,7 @@ projects:
   # Tool types
   node: 'node'
   system: 'system'
+  systemWindows: 'system-windows'
 
 typescript:
   syncProjectReferences: false

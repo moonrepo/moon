@@ -925,3 +925,125 @@ mod system {
         assert_snapshot!(get_assert_output(&assert));
     }
 }
+
+#[cfg(windows)]
+mod system_windows {
+    use super::*;
+
+    #[test]
+    fn runs_bat_script() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:bat")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
+    #[test]
+    fn handles_process_exit_zero() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:exitZero")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn handles_process_exit_nonzero() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:exitNonZero")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn passes_args_through() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:passthroughArgs")
+            .arg("--")
+            .arg("-aBc")
+            .arg("--opt")
+            .arg("value")
+            .arg("--optCamel=value")
+            .arg("foo")
+            .arg("'bar baz'")
+            .arg("--opt-kebab")
+            .arg("123")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn sets_env_vars() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:envVars")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn inherits_moon_env_vars() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:envVarsMoon")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
+    #[test]
+    fn runs_from_project_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:runFromProject")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
+    #[test]
+    fn runs_from_workspace_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:runFromWorkspace")
+            .assert();
+
+        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    }
+
+    #[test]
+    fn retries_on_failure_till_count() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("systemWindows:retryCount")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+}

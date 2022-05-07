@@ -8,9 +8,10 @@ use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_run_target, label_run_target_failed};
 use moon_toolchain::{get_path_env_var, Tool};
-use moon_utils::process::{output_to_string, Command};
+use moon_utils::process::{is_windows_script, output_to_string, Command};
 use moon_utils::{path, string_vec};
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -162,9 +163,27 @@ fn create_node_target_command(
     Ok(command)
 }
 
-fn create_shell_target_command(task: &Task) -> Command {
+#[cfg(not(windows))]
+fn create_system_target_command(task: &Task, _cwd: &Path) -> Command {
     let mut cmd = Command::new(&task.command);
     cmd.args(&task.args).envs(&task.env);
+    cmd
+}
+
+#[cfg(windows)]
+fn create_system_target_command(task: &Task, cwd: &Path) -> Command {
+    let mut cmd = Command::new(&task.command);
+
+    for arg in &task.args {
+        // cmd.exe requires an absolute path to batch files
+        if is_windows_script(arg) {
+            cmd.arg(cwd.join(arg));
+        } else {
+            cmd.arg(arg);
+        }
+    }
+
+    cmd.envs(&task.env);
     cmd
 }
 
@@ -173,7 +192,7 @@ async fn create_target_command(
     project: &Project,
     task: &Task,
 ) -> Result<Command, WorkspaceError> {
-    let exec_dir = if task.options.run_from_workspace_root {
+    let working_dir = if task.options.run_from_workspace_root {
         &workspace.root
     } else {
         &project.root
@@ -181,12 +200,12 @@ async fn create_target_command(
 
     let mut command = match task.type_of {
         TaskType::Node => create_node_target_command(workspace, project, task)?,
-        _ => create_shell_target_command(task),
+        _ => create_system_target_command(task, working_dir),
     };
 
     let env_vars = create_env_vars(workspace, project, task).await?;
 
-    command.cwd(&exec_dir).envs(env_vars);
+    command.cwd(working_dir).envs(env_vars);
 
     Ok(command)
 }

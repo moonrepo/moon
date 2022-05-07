@@ -98,7 +98,9 @@ pub fn replace_home_dir(value: &str) -> String {
         let home_dir_str = home_dir.to_str().unwrap();
 
         // Replace both forward and backward slashes
-        return value.replace(home_dir_str, "~").replace(&standardize_separators(home_dir_str), "~");
+        return value
+            .replace(home_dir_str, "~")
+            .replace(&standardize_separators(home_dir_str), "~");
     }
 
     value.to_owned()

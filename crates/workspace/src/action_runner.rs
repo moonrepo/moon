@@ -3,7 +3,7 @@ use crate::actions::{install_node_deps, run_target, setup_toolchain, sync_projec
 use crate::dep_graph::{DepGraph, Node};
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
-use moon_logger::{color, debug, trace, error};
+use moon_logger::{color, debug, error, trace};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
@@ -184,7 +184,10 @@ impl ActionRunner {
                 match handle.await {
                     Ok(Ok(result)) => {
                         if result.should_abort() {
-                            error!(target: &batch_target_name, "Encountered a critical error, aborting the action runner");
+                            error!(
+                                target: &batch_target_name,
+                                "Encountered a critical error, aborting the action runner"
+                            );
                         }
 
                         if self.bail && result.error.is_some() || result.should_abort() {

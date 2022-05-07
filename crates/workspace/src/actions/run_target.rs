@@ -8,7 +8,7 @@ use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_run_target, label_run_target_failed};
 use moon_toolchain::{get_path_env_var, Tool};
-use moon_utils::process::{is_windows_script, output_to_string, Command};
+use moon_utils::process::{output_to_string, Command};
 use moon_utils::{path, string_vec};
 use std::collections::HashMap;
 use std::path::Path;
@@ -172,6 +172,8 @@ fn create_system_target_command(task: &Task, _cwd: &Path) -> Command {
 
 #[cfg(windows)]
 fn create_system_target_command(task: &Task, cwd: &Path) -> Command {
+    use moon_utils::process::is_windows_script;
+
     let mut cmd = Command::new(&task.command);
 
     for arg in &task.args {

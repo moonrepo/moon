@@ -1,13 +1,11 @@
 tasks:
   standard:
-    command: echo
-    args: 'deps=a'
-    type: system
+    command: node
+    args: -e "console.log('deps=a')"
 
   dependencyOrder:
-    command: echo
-    args: 'deps=a'
-    type: system
+    command: node
+    args: -e "console.log('deps=a')"
     deps:
       - 'depsB:dependencyOrder'
 

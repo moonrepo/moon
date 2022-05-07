@@ -5,6 +5,5 @@ dependsOn:
 
 tasks:
   standard:
-    command: echo
-    args: ''
-    type: system
+    command: node
+    args: -e "'noop'"

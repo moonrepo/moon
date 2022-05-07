@@ -6,14 +6,12 @@ dependsOn:
 tasks:
   # :scope
   all:
-    command: echo
-    args: 'scope=all'
-    type: system
+    command: node
+    args: -e "console.log('scope=all')"
 
   # ^:scope
   deps:
-    command: echo
-    args: 'scope=deps'
+    command: node
+    args: -e "console.log('scope=deps')"
     deps:
       - '^:standard'
-    type: system

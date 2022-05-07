@@ -26,7 +26,10 @@ pub fn get_fixtures_root() -> PathBuf {
 }
 
 pub fn replace_fixtures_dir(value: &str, dir: &Path) -> String {
-    value.replace(dir.to_str().unwrap(), "<WORKSPACE>")
+    let dir_str = dir.to_str().unwrap();
+
+    // Replace both forward and backward slashes
+    value.replace(dir_str, "<WORKSPACE>").replace(&path::standardize_separators(dir_str), "<WORKSPACE>")
 }
 
 // We need to do this so slashes are accurate and always forward

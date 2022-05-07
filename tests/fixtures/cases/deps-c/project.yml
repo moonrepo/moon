@@ -1,13 +1,11 @@
 tasks:
   standard:
-    command: echo
-    args: 'deps=c'
-    type: system
+    command: node
+    args: -e "console.log('deps=c')"
 
   dependencyOrder:
-    command: echo
-    args: 'deps=c'
-    type: system
+    command: node
+    args: -e "console.log('deps=c')"
 
   # Cycle detection
   taskCycle:

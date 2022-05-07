@@ -1,18 +1,15 @@
 tasks:
   # :scope
   all:
-    command: echo
-    args: 'scope=all'
-    type: system
+    command: node
+    args: -e "console.log('scope=all')"
 
   # ~:scope
   self:
-    command: echo
-    args: 'scope=self'
+    command: node
+    args: -e "console.log('scope=self')"
     deps:
       - '~:selfOther'
-    type: system
   selfOther:
-    command: echo
-    args: 'selfOther'
-    type: system
+    command: node
+    args: -e "console.log('scope=self/other')"

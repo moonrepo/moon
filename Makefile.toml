@@ -22,7 +22,6 @@ args = ["fmt", "--all", "--", "--emit=files"]
 # LINTING
 
 [tasks.lint]
-install_crate = "rustfmt"
 command = "cargo"
 args = ["clippy", "--workspace", "--all-targets"]
 
@@ -40,6 +39,7 @@ args = ["test", "--workspace"]
 [tasks.post-test]
 command = "rm"
 args = ["-rf", "./tests/fixtures/cases/.moon/cache"]
+condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
 run_task = { name = ["pre-test", "run-test"], fork = true, cleanup_task = "post-test" }
@@ -57,6 +57,7 @@ args = ["run", "-p", "moon_config"]
 [tasks.check]
 dependencies = [
     "format",
+    "lint",
     "build",
     "test"
 ]

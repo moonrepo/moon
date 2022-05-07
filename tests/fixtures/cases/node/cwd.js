@@ -1,1 +1,1 @@
-console.log(process.cwd());
+console.log(process.cwd().replace(/\\/g, '/'));

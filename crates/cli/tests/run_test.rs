@@ -460,8 +460,9 @@ mod node {
             .arg("run")
             .arg("node:retryCount")
             .assert();
+        let output = get_assert_output(&assert);
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert!(predicate::str::contains("Process ~/.moon/tools/node/16.0.0").eval(&output));
     }
 
     mod install_deps {
@@ -779,6 +780,7 @@ mod node_yarn1 {
     }
 }
 
+#[cfg(not(windows))]
 mod system {
     use super::*;
 

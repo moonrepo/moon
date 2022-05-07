@@ -9,7 +9,7 @@ tasks:
     type: system
   bash:
     command: bash
-    args: ./bash.sh
+    args: ./standard.sh
     type: system
   exitNonZero:
     command: bash

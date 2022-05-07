@@ -21,6 +21,7 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
     );
 
     fs::find_upwards(constants::CONFIG_DIRNAME, &current_dir)
+        .map(|dir| dir.parent().unwrap().to_path_buf())
 }
 
 // project.yml

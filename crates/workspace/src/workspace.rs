@@ -7,30 +7,20 @@ use moon_config::{constants, GlobalProjectConfig, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;
 use moon_toolchain::Toolchain;
+use moon_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
 fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
-    let config_dir = current_dir.join(constants::CONFIG_DIRNAME);
-
     trace!(
         target: "moon:workspace",
         "Attempting to find workspace root at {}",
         color::path(&current_dir),
     );
 
-    if config_dir.exists() {
-        return Some(current_dir);
-    }
-
-    let parent_dir = current_dir.parent();
-
-    match parent_dir {
-        Some(dir) => find_workspace_root(dir.to_path_buf()),
-        None => None,
-    }
+    fs::find_upwards(constants::CONFIG_DIRNAME, &current_dir)
 }
 
 // project.yml

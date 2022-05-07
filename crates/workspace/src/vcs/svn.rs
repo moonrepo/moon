@@ -1,9 +1,10 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
+use moon_utils::fs;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
 use std::collections::{BTreeMap, HashSet};
-use std::fs;
+use std::fs::metadata;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -117,7 +118,9 @@ impl Svn {
 impl Vcs for Svn {
     fn create_command(&self, args: Vec<&str>) -> Command {
         let mut cmd = Command::new("svn");
-        cmd.args(args).cwd(&self.working_dir);
+        cmd.args(args)
+            .cwd(&self.working_dir)
+            .include_error_messages();
         cmd
     }
 
@@ -158,7 +161,7 @@ impl Vcs for Svn {
         // svn doesnt support file hashing, so instead of generating some
         // random hash ourselves, just use the modified time.
         for file in files {
-            if let Ok(metadata) = fs::metadata(file) {
+            if let Ok(metadata) = metadata(file) {
                 if let Ok(modified) = metadata.modified() {
                     map.insert(
                         file.to_owned(),
@@ -238,5 +241,9 @@ impl Vcs for Svn {
 
     fn is_default_branch(&self, branch: &str) -> bool {
         self.default_branch == branch
+    }
+
+    fn is_enabled(&self) -> bool {
+        fs::find_upwards(".svn", &self.working_dir).is_some()
     }
 }

@@ -45,7 +45,10 @@ pub fn output_to_trimmed_string(data: &[u8]) -> String {
 
 pub struct Command {
     bin: String,
+
     cmd: TokioCommand,
+
+    full_errors: bool,
 }
 
 // This is rather annoying that we have to re-implement all these methods,
@@ -55,6 +58,7 @@ impl Command {
         Command {
             bin: String::from(bin.as_ref().to_string_lossy()),
             cmd: create_command(bin),
+            full_errors: false,
         }
     }
 
@@ -104,7 +108,7 @@ impl Command {
             .await
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
-        self.handle_nonzero_status(&output.status)?;
+        self.handle_nonzero_status(&output)?;
 
         Ok(output)
     }
@@ -132,7 +136,7 @@ impl Command {
             .await
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
-        self.handle_nonzero_status(&output.status)?;
+        self.handle_nonzero_status(&output)?;
 
         Ok(output)
     }
@@ -148,7 +152,12 @@ impl Command {
             .await
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
-        self.handle_nonzero_status(&status)?;
+        if !status.success() {
+            return Err(MoonError::ProcessNonZero(
+                self.bin.clone(),
+                status.code().unwrap_or(-1),
+            ));
+        }
 
         Ok(status)
     }
@@ -216,19 +225,30 @@ impl Command {
             output.stdout = stdout.read().await.join("").into_bytes();
         }
 
-        self.handle_nonzero_status(&output.status)?;
+        self.handle_nonzero_status(&output)?;
 
         Ok(output)
     }
 
-    fn handle_nonzero_status(&self, status: &ExitStatus) -> Result<(), MoonError> {
-        if !status.success() {
-            match status.code() {
-                Some(code) => {
-                    return Err(MoonError::ProcessNonZero(self.bin.clone(), code));
-                }
-                None => return Err(MoonError::ProcessNonZero(self.bin.clone(), -1)),
-            };
+    pub fn include_error_messages(&mut self) -> &mut Command {
+        self.full_errors = true;
+        self
+    }
+
+    fn handle_nonzero_status(&self, output: &Output) -> Result<(), MoonError> {
+        if !output.status.success() {
+            let code = output.status.code().unwrap_or(-1);
+            let message = output_to_trimmed_string(&output.stderr);
+
+            if message.is_empty() || !self.full_errors {
+                return Err(MoonError::ProcessNonZero(self.bin.clone(), code));
+            }
+
+            return Err(MoonError::ProcessNonZeroWithOutput(
+                self.bin.clone(),
+                code,
+                message,
+            ));
         }
 
         Ok(())

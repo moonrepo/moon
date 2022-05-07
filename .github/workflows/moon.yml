@@ -50,4 +50,5 @@ jobs:
           command: run
           args: -- --logLevel trace ci
         env:
+          CLICOLOR_FORCE: true
           MOON_NODE_VERSION: ${{ matrix.node-version }}

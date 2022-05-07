@@ -99,7 +99,7 @@ pub fn render_result_stats(
             ActionStatus::Passed | ActionStatus::Skipped => {
                 pass_count += 1;
             }
-            ActionStatus::Failed => {
+            ActionStatus::Failed | ActionStatus::FailedAndAbort => {
                 fail_count += 1;
             }
             ActionStatus::Invalid => {

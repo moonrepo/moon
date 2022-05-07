@@ -90,7 +90,7 @@
 - [x] add a `--no-cache` option to disable all caching
 - [ ] hashing
   - [x] use `stdin` for commands that take long arguments
-  - [ ] dont load `package.json`/`tsconfig.json` so much
+  - [x] dont load `package.json`/`tsconfig.json` so much
   - [x] delete old hashes when the hash changes
   - [ ] ignore hashes for files that are gitignored
   - [x] include local file changes in hash

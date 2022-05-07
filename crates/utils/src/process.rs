@@ -18,7 +18,7 @@ fn create_windows_cmd() -> TokioCommand {
     let mut cmd = TokioCommand::new("cmd.exe");
     cmd.arg("/d");
     cmd.arg("/s");
-    cmd.arg("/q");
+    // cmd.arg("/q");
     cmd.arg("/c");
     cmd
 }

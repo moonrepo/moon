@@ -222,7 +222,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
             ActionStatus::Passed | ActionStatus::Cached | ActionStatus::Skipped => {
                 color::success("pass")
             }
-            ActionStatus::Failed => color::failure("fail"),
+            ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
             ActionStatus::Invalid => color::invalid("warn"),
             _ => color::muted_light("oops"),
         };
@@ -236,10 +236,6 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
         } else {
             meta.push(time::elapsed(result.duration.unwrap()));
         }
-
-        // if result.exit_code > 0 {
-        //     meta.push(format!("exit code {}", result.exit_code));
-        // }
 
         term.write_line(&format!(
             "{} {} {}",

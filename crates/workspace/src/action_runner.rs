@@ -3,7 +3,7 @@ use crate::actions::{install_node_deps, run_target, setup_toolchain, sync_projec
 use crate::dep_graph::{DepGraph, Node};
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, trace, error};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
@@ -13,20 +13,37 @@ const TARGET: &str = "moon:action-runner";
 
 async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
+    action: &mut Action,
     action_node: &Node,
     primary_target: &str,
     passthrough_args: &[String],
-) -> Result<ActionStatus, WorkspaceError> {
-    let status = match action_node {
-        Node::InstallNodeDeps => install_node_deps(workspace).await?,
+) -> Result<(), WorkspaceError> {
+    let result = match action_node {
+        Node::InstallNodeDeps => install_node_deps(workspace).await,
         Node::RunTarget(target_id) => {
-            run_target(workspace, target_id, primary_target, passthrough_args).await?
+            run_target(workspace, target_id, primary_target, passthrough_args).await
         }
-        Node::SetupToolchain => setup_toolchain(workspace).await?,
-        Node::SyncProject(project_id) => sync_project(workspace, project_id).await?,
+        Node::SetupToolchain => setup_toolchain(workspace).await,
+        Node::SyncProject(project_id) => sync_project(workspace, project_id).await,
     };
 
-    Ok(status)
+    match result {
+        Ok(status) => {
+            action.pass(status);
+        }
+        Err(error) => {
+            action.fail(error.to_string());
+
+            // If these fail, we should abort instead of trying to continue
+            if matches!(action_node, Node::SetupToolchain)
+                || matches!(action_node, Node::InstallNodeDeps)
+            {
+                action.abort();
+            }
+        }
+    }
+
+    Ok(())
 }
 
 pub struct ActionRunner {
@@ -92,10 +109,11 @@ impl ActionRunner {
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
+            let batch_target_name = format!("{}:batch:{}", TARGET, batch_count);
             let actions_count = batch.len();
 
             trace!(
-                target: &format!("{}:batch:{}", TARGET, batch_count),
+                target: &batch_target_name,
                 "Running {} actions",
                 actions_count
             );
@@ -110,11 +128,11 @@ impl ActionRunner {
                 let primary_target_clone = Arc::clone(&primary_target);
 
                 action_handles.push(task::spawn(async move {
-                    let mut result = Action::new(node_index);
+                    let mut action = Action::new(node_index);
                     let own_graph = graph_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(node_index) {
-                        result.label = Some(node.label());
+                        action.label = Some(node.label());
 
                         let log_target_name =
                             format!("{}:batch:{}:{}", TARGET, batch_count, action_count);
@@ -126,42 +144,37 @@ impl ActionRunner {
                             log_action_label
                         );
 
-                        match run_action(
+                        run_action(
                             workspace_clone,
+                            &mut action,
                             node,
                             &primary_target_clone,
                             &passthrough_args_clone,
                         )
-                        .await
-                        {
-                            Ok(status) => {
-                                result.pass(status);
+                        .await?;
 
-                                trace!(
-                                    target: &log_target_name,
-                                    "Ran action {} in {:?}",
-                                    log_action_label,
-                                    result.duration.unwrap()
-                                );
-                            }
-                            Err(error) => {
-                                result.fail(error.to_string());
-
-                                trace!(
-                                    target: &log_target_name,
-                                    "Action {} failed in {:?}",
-                                    log_action_label,
-                                    result.duration.unwrap()
-                                );
-                            }
-                        };
+                        if action.has_failed() {
+                            trace!(
+                                target: &log_target_name,
+                                "Action {} failed in {:?}",
+                                log_action_label,
+                                action.duration.unwrap()
+                            );
+                        } else {
+                            trace!(
+                                target: &log_target_name,
+                                "Ran action {} in {:?}",
+                                log_action_label,
+                                action.duration.unwrap()
+                            );
+                        }
                     } else {
-                        result.status = ActionStatus::Invalid;
+                        action.status = ActionStatus::Invalid;
 
                         return Err(WorkspaceError::DepGraphUnknownNode(node_index.index()));
                     }
 
-                    Ok(result)
+                    Ok(action)
                 }));
             }
 
@@ -170,7 +183,11 @@ impl ActionRunner {
             for handle in action_handles {
                 match handle.await {
                     Ok(Ok(result)) => {
-                        if self.bail && result.error.is_some() {
+                        if result.should_abort() {
+                            error!(target: &batch_target_name, "Encountered a critical error, aborting the action runner");
+                        }
+
+                        if self.bail && result.error.is_some() || result.should_abort() {
                             return Err(WorkspaceError::ActionRunnerFailure(result.error.unwrap()));
                         }
 

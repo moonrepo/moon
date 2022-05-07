@@ -69,6 +69,9 @@ pub trait Vcs {
 
     /// Return true if the provided branch matches the default branch.
     fn is_default_branch(&self, branch: &str) -> bool;
+
+    /// Return true if the repo is currently VCS enabled.
+    fn is_enabled(&self) -> bool;
 }
 
 pub struct VcsManager {}

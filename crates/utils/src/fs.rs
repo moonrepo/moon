@@ -6,7 +6,7 @@ use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 
 pub fn clean_json(json: String) -> Result<String, MoonError> {
@@ -33,6 +33,19 @@ pub async fn create_dir_all(path: &Path) -> Result<(), MoonError> {
     }
 
     Ok(())
+}
+
+pub fn find_upwards(name: &str, dir: &Path) -> Option<PathBuf> {
+    let findable = dir.join(name);
+
+    if findable.exists() {
+        return Some(findable);
+    }
+
+    match dir.parent() {
+        Some(parent_dir) => find_upwards(name, parent_dir),
+        None => None,
+    }
 }
 
 pub async fn link_file(from_root: &Path, from: &Path, to_root: &Path) -> Result<(), MoonError> {

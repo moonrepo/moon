@@ -42,13 +42,10 @@ pub async fn create_target_hasher(
     hasher.hash_task(task);
 
     // Hash root configs first
-    hasher.hash_package_json(&workspace.load_package_json().await?);
+    hasher.hash_package_json(&workspace.package_json);
 
-    if let Some(root_tsconfig) = workspace
-        .load_tsconfig_json(&workspace.config.typescript.root_config_file_name)
-        .await?
-    {
-        hasher.hash_tsconfig_json(&root_tsconfig);
+    if let Some(root_tsconfig) = &workspace.tsconfig_json {
+        hasher.hash_tsconfig_json(root_tsconfig);
     }
 
     // Hash project configs second so they can override
@@ -86,18 +83,20 @@ pub async fn create_target_hasher(
 
     // Include local file changes so that development builds work.
     // Also run this LAST as it should take highest precedence!
-    let local_files = vcs.get_touched_files().await?;
+    if vcs.is_enabled() {
+        let local_files = vcs.get_touched_files().await?;
 
-    if !local_files.all.is_empty() {
-        // Only hash files that are within the task's inputs
-        let files = local_files
-            .all
-            .into_iter()
-            .filter(|f| fs::matches_globset(&globset, &workspace.root.join(f)))
-            .collect::<Vec<String>>();
+        if !local_files.all.is_empty() {
+            // Only hash files that are within the task's inputs
+            let files = local_files
+                .all
+                .into_iter()
+                .filter(|f| fs::matches_globset(&globset, &workspace.root.join(f)))
+                .collect::<Vec<String>>();
 
-        if !files.is_empty() {
-            hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
+            if !files.is_empty() {
+                hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
+            }
         }
     }
 

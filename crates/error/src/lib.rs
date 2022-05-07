@@ -33,6 +33,9 @@ pub enum MoonError {
     #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code.")]
     ProcessNonZero(String, i32),
 
+    #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code.\n<muted>{2}</muted>")]
+    ProcessNonZeroWithOutput(String, i32, String),
+
     #[error("{0}")]
     Unknown(#[source] IoError),
 }

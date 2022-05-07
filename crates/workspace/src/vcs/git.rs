@@ -1,5 +1,6 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
+use moon_utils::fs;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
 use std::collections::{BTreeMap, HashSet};
@@ -33,7 +34,9 @@ impl Git {
 impl Vcs for Git {
     fn create_command(&self, args: Vec<&str>) -> Command {
         let mut cmd = Command::new("git");
-        cmd.args(args).cwd(&self.working_dir);
+        cmd.args(args)
+            .cwd(&self.working_dir)
+            .include_error_messages();
         cmd
     }
 
@@ -310,5 +313,9 @@ impl Vcs for Git {
         }
 
         false
+    }
+
+    fn is_enabled(&self) -> bool {
+        fs::find_upwards(".git", &self.working_dir).is_some()
     }
 }

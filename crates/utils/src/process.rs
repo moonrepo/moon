@@ -58,6 +58,7 @@ impl Command {
 
         // Referencing a batch script that needs to be ran with cmd.exe
         } else if is_windows_script(&bin_name) {
+            println!("file exists {:#?} = {}", bin_name, std::path::PathBuf::from(&bin_name).exists());
             bin_name = String::from("cmd.exe");
             cmd = create_windows_cmd();
             cmd.arg(bin);

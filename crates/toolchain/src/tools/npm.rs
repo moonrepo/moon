@@ -56,7 +56,7 @@ impl NpmTool {
             .args(["install", "-g", &package])
             .cwd(&self.install_dir)
             .env("PATH", get_path_env_var(self.get_bin_dir()))
-            .exec_capture_output()
+            .exec_stream_output()
             .await?;
 
         Ok(())

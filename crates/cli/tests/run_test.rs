@@ -706,18 +706,18 @@ mod node_npm {
         assert_snapshot!(get_assert_output(&assert));
     }
 
-    #[test]
-    #[serial]
-    fn can_install_a_dep() {
-        let fixture = create_fixtures_sandbox("node-npm");
+    // #[test]
+    // #[serial]
+    // fn can_install_a_dep() {
+    //     let fixture = create_fixtures_sandbox("node-npm");
 
-        let assert = create_moon_command_in(fixture.path())
-            .arg("run")
-            .arg("npm:installDep")
-            .assert();
+    //     let assert = create_moon_command_in(fixture.path())
+    //         .arg("run")
+    //         .arg("npm:installDep")
+    //         .assert();
 
-        assert.success();
-    }
+    //     assert.success();
+    // }
 }
 
 mod node_pnpm {
@@ -736,18 +736,18 @@ mod node_pnpm {
         assert_snapshot!(get_assert_output(&assert));
     }
 
-    #[test]
-    #[serial]
-    fn can_install_a_dep() {
-        let fixture = create_fixtures_sandbox("node-pnpm");
+    // #[test]
+    // #[serial]
+    // fn can_install_a_dep() {
+    //     let fixture = create_fixtures_sandbox("node-pnpm");
 
-        let assert = create_moon_command_in(fixture.path())
-            .arg("run")
-            .arg("pnpm:installDep")
-            .assert();
+    //     let assert = create_moon_command_in(fixture.path())
+    //         .arg("run")
+    //         .arg("pnpm:installDep")
+    //         .assert();
 
-        assert.success();
-    }
+    //     assert.success();
+    // }
 }
 
 mod node_yarn1 {
@@ -766,18 +766,18 @@ mod node_yarn1 {
         assert_snapshot!(get_assert_output(&assert));
     }
 
-    #[test]
-    #[serial]
-    fn can_install_a_dep() {
-        let fixture = create_fixtures_sandbox("node-yarn1");
+    // #[test]
+    // #[serial]
+    // fn can_install_a_dep() {
+    //     let fixture = create_fixtures_sandbox("node-yarn1");
 
-        let assert = create_moon_command_in(fixture.path())
-            .arg("run")
-            .arg("yarn:installDep")
-            .assert();
+    //     let assert = create_moon_command_in(fixture.path())
+    //         .arg("run")
+    //         .arg("yarn:installDep")
+    //         .assert();
 
-        assert.success();
-    }
+    //     assert.success();
+    // }
 }
 
 #[cfg(not(windows))]

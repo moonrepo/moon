@@ -7,7 +7,7 @@ use moon_config::PnpmConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
 use moon_utils::process::Command;
-use std::env::{self, consts};
+use std::env;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -24,7 +24,7 @@ impl PnpmTool {
         let install_dir = toolchain.get_node().get_install_dir().clone();
         let mut bin_path = install_dir.clone();
 
-        if consts::OS == "windows" {
+        if cfg!(windows) {
             bin_path.push("pnpm.cmd");
         } else {
             bin_path.push("bin/pnpm");

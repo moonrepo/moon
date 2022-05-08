@@ -20,9 +20,9 @@ async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
 }
 
 fn get_download_file() -> &'static str {
-    if env::consts::OS == "windows" {
+    if cfg!(windows) {
         "node-v1.0.0-win-x64.zip"
-    } else if env::consts::OS == "macos" {
+    } else if cfg!(macos) {
         "node-v1.0.0-darwin-x64.tar.gz"
     } else {
         "node-v1.0.0-linux-x64.tar.gz"
@@ -49,7 +49,7 @@ async fn generates_paths() {
         .join("node")
         .join("1.0.0");
 
-    if env::consts::OS == "windows" {
+    if cfg!(windows) {
         bin_path = bin_path.join("node.exe");
     } else {
         bin_path = bin_path.join("bin").join("node");

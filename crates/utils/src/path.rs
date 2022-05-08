@@ -69,7 +69,7 @@ pub fn normalize_glob(path: &Path) -> String {
     let glob = standardize_separators(&path.to_string_lossy());
 
     // Remove UNC prefix as it breaks glob matching
-    if std::env::consts::OS == "windows" {
+    if cfg!(windows) {
         return glob.replace("//?/", "");
     }
 

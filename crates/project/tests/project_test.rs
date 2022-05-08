@@ -7,7 +7,6 @@ use moon_project::{EnvVars, FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::{BTreeMap, HashMap};
-use std::env;
 use std::path::Path;
 
 fn mock_file_groups() -> HashMap<String, FileGroup> {
@@ -829,7 +828,7 @@ mod tasks {
 
             assert_eq!(
                 *project.tasks.get("test").unwrap().args,
-                if env::consts::OS == "windows" {
+                if cfg!(windows) {
                     vec![
                         "--dirs",
                         ".\\dir",
@@ -964,7 +963,7 @@ mod tasks {
                     project_root.to_str().unwrap(),
                     "--psource",
                     // This is wonky but also still valid
-                    if env::consts::OS == "windows" {
+                    if cfg!(windows) {
                         "foo/base\\files-and-dirs"
                     } else {
                         "foo/base/files-and-dirs"

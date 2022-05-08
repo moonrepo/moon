@@ -7,7 +7,7 @@ use moon_config::NpmConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
 use moon_utils::process::Command;
-use std::env::{self, consts};
+use std::env;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -27,7 +27,7 @@ impl NpmTool {
         let mut bin_path = install_dir.clone();
         let mut npx_path = install_dir.clone();
 
-        if consts::OS == "windows" {
+        if cfg!(windows) {
             bin_path.push("npm.cmd");
             npx_path.push("npx.cmd");
         } else {
@@ -53,7 +53,7 @@ impl NpmTool {
         let package = format!("{}@{}", name, version);
 
         Command::new(self.get_bin_path())
-            .args(["install", "-g", &package])
+            .args(["install", "-g", &package, "-ddd"])
             .cwd(&self.install_dir)
             .env("PATH", get_path_env_var(self.get_bin_dir()))
             .exec_stream_output()

@@ -6,6 +6,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ system:exitNonZero
 stdout
 stderr
+▪▪▪▪ system:exitNonZero
 
 [38;5;15m[48;5;161m[1m ERROR [0m Process bash failed with a 1 exit code.
 

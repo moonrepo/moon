@@ -40,7 +40,8 @@ pub struct Command {
 
     cmd: TokioCommand,
 
-    full_errors: bool,
+    /// Convert non-zero exits to errors.
+    error: bool,
 }
 
 // This is rather annoying that we have to re-implement all these methods,
@@ -69,7 +70,7 @@ impl Command {
         Command {
             bin: bin_name,
             cmd,
-            full_errors: false,
+            error: true,
         }
     }
 
@@ -163,7 +164,7 @@ impl Command {
             .await
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
-        if !status.success() {
+        if self.error && !status.success() {
             return Err(MoonError::ProcessNonZero(
                 self.bin.clone(),
                 status.code().unwrap_or(-1),
@@ -241,25 +242,26 @@ impl Command {
         Ok(output)
     }
 
-    pub fn include_error_messages(&mut self) -> &mut Command {
-        self.full_errors = true;
+    pub fn no_error_on_failure(&mut self) -> &mut Command {
+        self.error = false;
         self
     }
 
+    pub fn output_to_error(&self, output: &Output, with_message: bool) -> MoonError {
+        let code = output.status.code().unwrap_or(-1);
+
+        if !with_message {
+            return MoonError::ProcessNonZero(self.bin.clone(), code);
+        }
+
+        let message = output_to_trimmed_string(&output.stderr);
+
+        MoonError::ProcessNonZeroWithOutput(self.bin.clone(), code, message)
+    }
+
     fn handle_nonzero_status(&self, output: &Output) -> Result<(), MoonError> {
-        if !output.status.success() {
-            let code = output.status.code().unwrap_or(-1);
-            let message = output_to_trimmed_string(&output.stderr);
-
-            if message.is_empty() || !self.full_errors {
-                return Err(MoonError::ProcessNonZero(self.bin.clone(), code));
-            }
-
-            return Err(MoonError::ProcessNonZeroWithOutput(
-                self.bin.clone(),
-                code,
-                message,
-            ));
+        if self.error && !output.status.success() {
+            return Err(self.output_to_error(output, true));
         }
 
         Ok(())

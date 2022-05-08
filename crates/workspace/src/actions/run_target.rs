@@ -8,9 +8,10 @@ use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_run_target, label_run_target_failed};
 use moon_toolchain::{get_path_env_var, Tool};
-use moon_utils::process::{output_to_string, Command};
-use moon_utils::{path, string_vec};
+use moon_utils::process::{output_to_string, Command, Output};
+use moon_utils::{is_ci, path, string_vec};
 use std::collections::HashMap;
+use std::env;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -207,7 +208,11 @@ async fn create_target_command(
 
     let env_vars = create_env_vars(workspace, project, task).await?;
 
-    command.cwd(working_dir).envs(env_vars);
+    command
+        .cwd(working_dir)
+        .envs(env_vars)
+        // We need to handle non-zero's manually
+        .no_error_on_failure();
 
     Ok(command)
 }
@@ -235,7 +240,7 @@ pub async fn run_target(
 
     if cache.item.hash == hash {
         print_target_label(target_id, "(cached)", cache.item.exit_code != 0);
-        print_cache_item(&cache.item, true);
+        print_cache_item(&cache.item);
 
         return Ok(ActionStatus::Cached);
     }
@@ -252,42 +257,44 @@ pub async fn run_target(
     // attempt the process again in case it passes.
     let attempt_count = task.options.retry_count + 1;
     let mut attempt = 1;
+    let stream_output = is_primary || is_ci() && env::var("MOON_TEST").is_err();
     let output;
 
     loop {
-        let possible_output;
         let attempt_comment = if attempt == 1 {
             String::new()
         } else {
             format!("(attempt {} of {})", attempt, attempt_count)
         };
 
-        if is_primary {
+        let possible_output = if stream_output {
             // Print label *before* output is streamed since it may stay open forever,
             // or it may use ANSI escape codes to alter the terminal.
             print_target_label(target_id, &attempt_comment, false);
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
-            possible_output = command.exec_stream_and_capture_output().await;
+            command.exec_stream_and_capture_output().await
         } else {
             // Otherwise we run the process in the background and write the output
             // once it has completed.
-            possible_output = command.exec_capture_output().await;
-
-            // Print label *after* output has been captured, so parallel tasks
-            // aren't intertwined and the labels align with the output.
-            print_target_label(target_id, &attempt_comment, possible_output.is_err());
+            command.exec_capture_output().await
         };
 
         match possible_output {
-            Ok(o) => {
-                output = o;
-                break;
-            }
-            Err(e) => {
-                if attempt >= attempt_count {
-                    return Err(WorkspaceError::Moon(e));
+            // zero and non-zero exit codes
+            Ok(out) => {
+                if stream_output {
+                    handle_streamed_output(target_id, &attempt_comment, &out);
+                } else {
+                    handle_captured_output(target_id, &attempt_comment, &out);
+                }
+
+                if out.status.success() {
+                    output = out;
+                    break;
+                } else if attempt >= attempt_count {
+                    return Err(WorkspaceError::Moon(command.output_to_error(&out, false)));
                 } else {
                     attempt += 1;
 
@@ -298,6 +305,10 @@ pub async fn run_target(
                         attempt
                     );
                 }
+            }
+            // process itself failed
+            Err(error) => {
+                return Err(WorkspaceError::Moon(error));
             }
         }
     }
@@ -312,11 +323,6 @@ pub async fn run_target(
             .await?;
     }
 
-    // Delete the old hash
-    if !cache.item.hash.is_empty() && cache.item.hash != hash {
-        workspace.cache.delete_hash(&cache.item.hash).await?;
-    }
-
     // Save the new hash
     workspace.cache.save_hash(&hash, &hasher).await?;
 
@@ -328,36 +334,65 @@ pub async fn run_target(
     cache.item.stdout = output_to_string(&output.stdout);
     cache.save().await?;
 
-    print_cache_item(&cache.item, !is_primary);
-
     Ok(ActionStatus::Passed)
 }
 
 fn print_target_label(target: &str, comment: &str, failed: bool) {
-    let label = if failed {
+    let mut label = if failed {
         label_run_target_failed(target)
     } else {
         label_run_target(target)
     };
 
-    if comment.is_empty() {
-        println!("{}", label);
+    if !comment.is_empty() {
+        label = format!("{} {}", label, color::muted(comment));
+    };
+
+    if failed {
+        eprintln!("{}", label);
     } else {
-        println!("{} {}", label, color::muted(comment));
+        println!("{}", label);
     }
 }
 
-fn print_cache_item(item: &RunTargetState, log: bool) {
-    // Only log when *not* the primary target, or a cache hit
-    if log {
-        if !item.stderr.is_empty() {
-            eprintln!("{}", item.stderr.trim());
-            eprintln!();
-        }
+fn print_cache_item(item: &RunTargetState) {
+    if !item.stderr.is_empty() {
+        eprintln!("{}", item.stderr.trim());
+        eprintln!();
+    }
 
-        if !item.stdout.is_empty() {
-            println!("{}", item.stdout.trim());
-            println!();
-        }
+    if !item.stdout.is_empty() {
+        println!("{}", item.stdout.trim());
+        println!();
+    }
+}
+
+fn print_output_std(output: &Output) {
+    let stderr = output_to_string(&output.stderr);
+    let stdout = output_to_string(&output.stdout);
+
+    if !stderr.is_empty() {
+        eprintln!("{}", stderr.trim());
+        eprintln!();
+    }
+
+    if !stdout.is_empty() {
+        println!("{}", stdout.trim());
+        println!();
+    }
+}
+
+// Print label *after* output has been captured, so parallel tasks
+// aren't intertwined and the labels align with the output.
+fn handle_captured_output(target_id: &str, attempt_comment: &str, output: &Output) {
+    print_target_label(target_id, attempt_comment, !output.status.success());
+    print_output_std(output);
+}
+
+// Only print the label when the process has failed,
+// as the actual output has already been streamed to the console.
+fn handle_streamed_output(target_id: &str, attempt_comment: &str, output: &Output) {
+    if !output.status.success() {
+        print_target_label(target_id, attempt_comment, true);
     }
 }

@@ -7,6 +7,7 @@ expression: get_assert_output(&assert)
 stdout
 This should appear!
 stderr
+▪▪▪▪ node:exitCodeNonZero
 
 [38;5;15m[48;5;161m[1m ERROR [0m Process ~/.moon/tools/node/16.0.0/bin/node failed with a 1 exit code.
 

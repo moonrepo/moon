@@ -109,6 +109,7 @@
 ## Action runner
 
 - [ ] Add a debug layer so that the node processes can be inspected
+- [ ] Write output logs for every action
 
 ## CLI
 

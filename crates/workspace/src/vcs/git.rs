@@ -34,9 +34,7 @@ impl Git {
 impl Vcs for Git {
     fn create_command(&self, args: Vec<&str>) -> Command {
         let mut cmd = Command::new("git");
-        cmd.args(args)
-            .cwd(&self.working_dir)
-            .include_error_messages();
+        cmd.args(args).cwd(&self.working_dir);
         cmd
     }
 

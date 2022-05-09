@@ -51,6 +51,15 @@ impl Command {
         let mut bin_name = String::from(bin.as_ref().to_string_lossy());
         let mut cmd;
 
+        println!(
+            "NODE_OPTIONS = {}",
+            env::var("NODE_OPTIONS").unwrap_or_default()
+        );
+        println!(
+            "PATH = {}",
+            env::var("PATH").unwrap_or_default()
+        );
+
         // Referencing cmd.exe directly
         if bin_name == "cmd" || bin_name == "cmd.exe" {
             bin_name = String::from("cmd.exe");
@@ -58,7 +67,11 @@ impl Command {
 
         // Referencing a batch script that needs to be ran with cmd.exe
         } else if is_windows_script(&bin_name) {
-            println!("file exists {:#?} = {}", bin_name, std::path::PathBuf::from(&bin_name).exists());
+            println!(
+                "file exists {:#?} = {}",
+                bin_name,
+                std::path::PathBuf::from(&bin_name).exists()
+            );
             bin_name = String::from("cmd.exe");
             cmd = create_windows_cmd();
             cmd.arg(bin);

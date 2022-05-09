@@ -1,12 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_version, get_path_env_var};
+use crate::helpers::get_bin_version;
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
-use moon_utils::process::Command;
 use std::env;
 use std::path::PathBuf;
 
@@ -51,12 +50,7 @@ impl Tool for PnpmTool {
     }
 
     async fn download(&self, _host: Option<&str>) -> Result<(), ToolchainError> {
-        trace!(
-            target: "moon:toolchain:pnpm",
-            "No download required as it comes bundled with Node.js"
-        );
-
-        Ok(()) // This is handled by node
+        Ok(())
     }
 
     async fn is_installed(&self, check_version: bool) -> Result<bool, ToolchainError> {
@@ -138,10 +132,9 @@ impl PackageManager for PnpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune
-        Command::new(self.get_bin_path())
+        self.create_command()
             .arg("prune")
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(self.get_bin_dir()))
             .exec_capture_output()
             .await?;
 
@@ -154,15 +147,13 @@ impl PackageManager for PnpmTool {
         package: &str,
         args: Vec<&str>,
     ) -> Result<(), ToolchainError> {
+        // https://pnpm.io/cli/dlx
         let mut exec_args = vec!["--package", package, "dlx"];
-
         exec_args.extend(args);
 
-        // https://pnpm.io/cli/dlx
-        Command::new(self.get_bin_path())
+        self.create_command()
             .args(exec_args)
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(self.get_bin_dir()))
             .exec_stream_output()
             .await?;
 
@@ -185,17 +176,13 @@ impl PackageManager for PnpmTool {
             args.push("--frozen-lockfile");
         }
 
-        let mut process = Command::new(self.get_bin_path());
-
-        process
-            .args(args)
-            .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(self.get_bin_dir()));
+        let mut cmd = self.create_command();
+        cmd.args(args).cwd(&toolchain.workspace_root);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
-            process.exec_capture_output().await?;
+            cmd.exec_capture_output().await?;
         } else {
-            process.exec_stream_output().await?;
+            cmd.exec_stream_output().await?;
         }
 
         Ok(())

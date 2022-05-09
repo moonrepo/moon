@@ -1,6 +1,8 @@
 use crate::errors::ToolchainError;
+use crate::helpers::get_path_env_var;
 use crate::Toolchain;
 use async_trait::async_trait;
+use moon_utils::process::Command;
 use std::path::PathBuf;
 
 #[async_trait]
@@ -46,7 +48,14 @@ pub trait Tool {
 }
 
 #[async_trait]
-pub trait PackageManager {
+pub trait PackageManager: Tool {
+    /// Create a command to run that wraps the tool binary.
+    fn create_command(&self) -> Command {
+        let mut cmd = Command::new(self.get_bin_path());
+        cmd.env("PATH", get_path_env_var(self.get_bin_dir()));
+        cmd
+    }
+
     /// Dedupe dependencies after they have been installed.
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 

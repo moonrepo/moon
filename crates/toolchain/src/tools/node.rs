@@ -139,7 +139,7 @@ impl NodeTool {
         let mut bin_path = install_dir.clone();
         let mut corepack_bin_path = install_dir.clone();
 
-        if consts::OS == "windows" {
+        if cfg!(windows) {
             bin_path.push("node.exe");
             corepack_bin_path.push("corepack.cmd");
         } else {
@@ -183,7 +183,7 @@ impl NodeTool {
     ) -> Result<PathBuf, ToolchainError> {
         let mut bin_path = starting_dir.join("node_modules").join(".bin");
 
-        if consts::OS == "windows" {
+        if cfg!(windows) {
             bin_path.push(format!("{}.cmd", package_name));
         } else {
             bin_path.push(package_name);

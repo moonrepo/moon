@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
-use moon_utils::process::Command;
+use moon_utils::process::{output_to_trimmed_string, Command};
 use std::env;
 use std::path::PathBuf;
 
@@ -52,14 +52,23 @@ impl NpmTool {
     pub async fn add_global_dep(&self, name: &str, version: &str) -> Result<(), ToolchainError> {
         let package = format!("{}@{}", name, version);
 
-        Command::new(self.get_bin_path())
+        self.create_command()
             .args(["install", "-g", &package, "-ddd"])
             .cwd(&self.install_dir)
-            .env("PATH", get_path_env_var(self.get_bin_dir()))
             .exec_stream_output()
             .await?;
 
         Ok(())
+    }
+
+    async fn get_global_dir(&self) -> Result<String, ToolchainError> {
+        let output = self
+            .create_command()
+            .args(["config", "get", "prefix"])
+            .exec_capture_output()
+            .await?;
+
+        Ok(output_to_trimmed_string(&output.stdout))
     }
 }
 
@@ -167,10 +176,9 @@ impl Tool for NpmTool {
 #[async_trait]
 impl PackageManager for NpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        Command::new(self.get_bin_path())
+        self.create_command()
             .args(["dedupe"])
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(self.get_bin_dir()))
             .exec_capture_output()
             .await?;
 
@@ -223,17 +231,13 @@ impl PackageManager for NpmTool {
 
         args.push("--no-fund");
 
-        let mut process = Command::new(self.get_bin_path());
-
-        process
-            .args(args)
-            .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(self.get_bin_dir()));
+        let mut cmd = self.create_command();
+        cmd.args(args).cwd(&toolchain.workspace_root);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
-            process.exec_capture_output().await?;
+            cmd.exec_capture_output().await?;
         } else {
-            process.exec_stream_output().await?;
+            cmd.exec_stream_output().await?;
         }
 
         Ok(())

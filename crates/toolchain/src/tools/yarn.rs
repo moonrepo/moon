@@ -1,12 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_version, get_path_env_var};
+use crate::helpers::get_bin_version;
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_logger::{color, debug, trace};
 use moon_utils::is_ci;
-use moon_utils::process::Command;
 use std::env;
 use std::path::PathBuf;
 
@@ -55,12 +54,7 @@ impl Tool for YarnTool {
     }
 
     async fn download(&self, _host: Option<&str>) -> Result<(), ToolchainError> {
-        trace!(
-            target: "moon:toolchain:yarn",
-            "No download required as it comes bundled with Node.js"
-        );
-
-        Ok(()) // This is handled by node
+        Ok(())
     }
 
     async fn is_installed(&self, check_version: bool) -> Result<bool, ToolchainError> {
@@ -146,10 +140,9 @@ impl Tool for YarnTool {
                 color::shell(&format!("yarn set version {}", self.config.version))
             );
 
-            Command::new(self.get_bin_path())
+            self.create_command()
                 .args(["set", "version", &self.config.version])
                 .cwd(&toolchain.workspace_root)
-                .env("PATH", get_path_env_var(self.get_bin_dir()))
                 .exec_capture_output()
                 .await?;
         }
@@ -198,10 +191,9 @@ impl PackageManager for YarnTool {
 
         // yarn dedupe
         } else {
-            Command::new(self.get_bin_path())
+            self.create_command()
                 .arg("dedupe")
                 .cwd(&toolchain.workspace_root)
-                .env("PATH", get_path_env_var(self.get_bin_dir()))
                 .exec_capture_output()
                 .await?;
         }
@@ -215,15 +207,13 @@ impl PackageManager for YarnTool {
         package: &str,
         args: Vec<&str>,
     ) -> Result<(), ToolchainError> {
+        // https://yarnpkg.com/cli/dlx
         let mut exec_args = vec!["dlx", "--package", package];
-
         exec_args.extend(args);
 
-        // https://yarnpkg.com/cli/dlx
-        Command::new(self.get_bin_path())
+        self.create_command()
             .args(exec_args)
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(self.get_bin_dir()))
             .exec_stream_output()
             .await?;
 
@@ -263,17 +253,13 @@ impl PackageManager for YarnTool {
             }
         }
 
-        let mut process = Command::new(self.get_bin_path());
-
-        process
-            .args(args)
-            .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(self.get_bin_dir()));
+        let mut cmd = self.create_command();
+        cmd.args(args).cwd(&toolchain.workspace_root);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
-            process.exec_capture_output().await?;
+            cmd.exec_capture_output().await?;
         } else {
-            process.exec_stream_output().await?;
+            cmd.exec_stream_output().await?;
         }
 
         Ok(())

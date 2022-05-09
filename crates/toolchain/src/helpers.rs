@@ -12,6 +12,16 @@ use std::path::{Path, PathBuf};
 use tar::Archive;
 use zip::ZipArchive;
 
+pub fn get_bin_name_suffix(name: &str, global: bool) -> String {
+    if cfg!(windows) {
+        format!("{}.cmd", name)
+    } else if global {
+        name.to_owned()
+    } else {
+        format!("bin/{}", name)
+    }
+}
+
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let output = Command::new(bin)
         .arg("--version")

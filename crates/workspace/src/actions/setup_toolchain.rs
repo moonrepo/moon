@@ -17,7 +17,7 @@ pub async fn setup_toolchain(
         "Setting up toolchain",
     );
 
-    let workspace = workspace.read().await;
+    let mut workspace = workspace.write().await;
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
     // Only check the versions of some tools every 12 hours,

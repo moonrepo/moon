@@ -4,9 +4,10 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use moon_utils::process::Command;
 use std::path::PathBuf;
+use moon_utils::is_offline;
 
 #[async_trait]
-pub trait Tool {
+pub trait Tool: Send + Sync {
     /// Returns an absolute file path to the directory containing the executable binaries.
     fn get_bin_dir(&self) -> PathBuf {
         self.get_bin_path().parent().unwrap().to_path_buf()
@@ -45,6 +46,33 @@ pub trait Tool {
     /// Returns a semver version for the currently installed binary.
     /// This is typically acquired by executing the binary with a --version argument.
     async fn get_installed_version(&self) -> Result<String, ToolchainError>;
+
+    /// Load a tool into the toolchain by downloading an artifact/binary
+    /// into the temp folder, then installing it into the tools folder.
+    /// Return `true` if the tool was newly installed.
+    async fn load(
+        &mut self, 
+        toolchain: &Toolchain,
+        check_version: bool,
+    ) -> Result<bool, ToolchainError> {
+        if self.is_downloaded() {
+            // Continue to install
+        } else if is_offline() {
+            return Err(ToolchainError::InternetConnectionRequired);
+        } else {
+            self.download(None).await?;
+        }
+
+        if self.is_installed(check_version).await? {
+            return Ok(false);
+        } else if is_offline() {
+            return Err(ToolchainError::InternetConnectionRequired);
+        } else {
+            self.install(toolchain).await?;
+        }
+
+        Ok(true)
+    }
 }
 
 #[async_trait]
@@ -70,9 +98,14 @@ pub trait PackageManager: Tool {
     /// Return the name of the lockfile.
     fn get_lockfile_name(&self) -> String;
 
+    /// Return the name of the manifest.
+    fn get_manifest_name(&self) -> String {
+        String::from("package.json")
+    }
+
     /// Return the dependency range to use when linking local workspace packages.
     fn get_workspace_dependency_range(&self) -> String;
 
-    /// Install dependencies at the root where a `package.json` exists.
+    /// Install dependencies for a defined manifest.
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 }

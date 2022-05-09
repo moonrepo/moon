@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_version, get_path_env_var};
+use crate::helpers::{get_bin_version, get_bin_name_suffix, get_path_env_var};
 use crate::tool::{PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
@@ -61,14 +61,21 @@ impl NpmTool {
         Ok(())
     }
 
-    async fn get_global_dir(&self) -> Result<String, ToolchainError> {
+    async fn find_global_bin_path(&self, name: &str) -> Result<PathBuf, ToolchainError> {
+        let bin_path = self.install_dir.join(get_bin_name_suffix(name, false));
+
+        if bin_path.exists() {
+            return Ok(bin_path);
+        }
+
+        // Get the global install dir from npm config
         let output = self
             .create_command()
             .args(["config", "get", "prefix"])
             .exec_capture_output()
             .await?;
-
-        Ok(output_to_trimmed_string(&output.stdout))
+        
+        Ok(PathBuf::from(output_to_trimmed_string(&output.stdout)).join(get_bin_name_suffix(name, true)))
     }
 }
 

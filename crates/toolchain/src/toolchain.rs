@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::tool::PackageManager;
+use crate::package_manager::PackageManager;
 use crate::tool::Tool;
 use crate::tools::node::NodeTool;
 use crate::tools::npm::NpmTool;

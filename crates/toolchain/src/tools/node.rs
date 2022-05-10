@@ -2,7 +2,7 @@ use crate::errors::ToolchainError;
 use crate::helpers::{
     download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack,
 };
-use crate::tool::Tool;
+use crate::tool::{Downloadable, Installable, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::constants::CONFIG_DIRNAME;
@@ -117,8 +117,6 @@ pub struct NodeTool {
 
     corepack_bin_path: PathBuf,
 
-    download_path: PathBuf,
-
     install_dir: PathBuf,
 
     pub config: NodeConfig,
@@ -126,11 +124,6 @@ pub struct NodeTool {
 
 impl NodeTool {
     pub fn new(toolchain: &Toolchain, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
-        let mut download_path = toolchain.temp_dir.clone();
-
-        download_path.push("node");
-        download_path.push(get_download_file(&config.version)?);
-
         let mut install_dir = toolchain.tools_dir.clone();
 
         install_dir.push("node");
@@ -157,7 +150,6 @@ impl NodeTool {
             bin_path,
             corepack_bin_path,
             config: config.to_owned(),
-            download_path,
             install_dir,
         })
     }
@@ -213,38 +205,28 @@ impl NodeTool {
 }
 
 #[async_trait]
-impl Tool for NodeTool {
-    fn is_downloaded(&self) -> bool {
-        let exists = self.download_path.exists();
-
-        if exists {
-            debug!(
-                target: "moon:toolchain:node",
-                "Binary has already been downloaded, continuing"
-            );
-        } else {
-            debug!(
-                target: "moon:toolchain:node",
-                "Binary does not exist, attempting to download"
-            );
-        }
-
-        exists
+impl Downloadable for NodeTool {
+    async fn is_downloaded(&self, toolchain: &Toolchain) -> Result<bool, ToolchainError> {
+        Ok(self.get_download_path(toolchain).await?.exists())
     }
 
-    async fn download(&self, base_host: Option<&str>) -> Result<(), ToolchainError> {
+    async fn download(
+        &self,
+        toolchain: &Toolchain,
+        base_host: Option<&str>,
+    ) -> Result<PathBuf, ToolchainError> {
         let version = &self.config.version;
         let host = base_host.unwrap_or("https://nodejs.org");
 
         // Download the node.tar.gz archive
         let download_url = get_nodejs_url(version, host, &get_download_file(version)?);
+        let download_path = self.get_download_path(toolchain).await?;
 
-        download_file_from_url(&download_url, &self.download_path).await?;
+        download_file_from_url(&download_url, &download_path).await?;
 
         // Download the SHASUMS256.txt file
         let shasums_url = get_nodejs_url(version, host, "SHASUMS256.txt");
-        let shasums_path = self
-            .download_path
+        let shasums_path = download_path
             .parent()
             .unwrap()
             .join(format!("node-v{}-SHASUMS256.txt", version));
@@ -252,26 +234,36 @@ impl Tool for NodeTool {
         download_file_from_url(&shasums_url, &shasums_path).await?;
 
         debug!(
-            target: "moon:toolchain:node",
+            target: self.get_log_target(),
             "Verifying shasum against {}",
             color::url(&shasums_url),
         );
 
         // Verify the binary
-        if let Err(error) = verify_shasum(&download_url, &self.download_path, &shasums_path) {
+        if let Err(error) = verify_shasum(&download_url, &download_path, &shasums_path) {
             error!(
-                target: "moon:toolchain:node",
+                target: self.get_log_target(),
                 "Shasum verification has failed. The downloaded file has been deleted, please try again."
             );
 
-            fs::remove_file(&self.download_path).await?;
+            fs::remove_file(&download_path).await?;
 
             return Err(error);
         }
 
-        Ok(())
+        Ok(download_path)
     }
 
+    async fn get_download_path(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError> {
+        toolchain
+            .temp_dir
+            .join("node")
+            .join(get_download_file(&self.config.version)?);
+    }
+}
+
+#[async_trait]
+impl Tool for NodeTool {
     async fn is_installed(&self, _check_version: bool) -> Result<bool, ToolchainError> {
         if self.install_dir.exists() {
             debug!(
@@ -294,7 +286,7 @@ impl Tool for NodeTool {
         let install_dir = self.get_install_dir();
         let prefix = get_download_file_name(&self.config.version)?;
 
-        unpack(&self.download_path, install_dir, &prefix).await?;
+        unpack(&download_path, install_dir, &prefix).await?;
 
         debug!(
             target: "moon:toolchain:node",
@@ -309,8 +301,8 @@ impl Tool for NodeTool {
         &self.bin_path
     }
 
-    fn get_download_path(&self) -> Option<&PathBuf> {
-        Some(&self.download_path)
+    fn get_log_target(&self) -> String {
+        String::from("moon:toolchain:node")
     }
 
     fn get_install_dir(&self) -> &PathBuf {

@@ -4,7 +4,7 @@ use crate::tool::{Executable, Installable, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug};
 use moon_utils::is_ci;
 use std::env;
 use std::path::PathBuf;
@@ -44,28 +44,43 @@ impl Installable for YarnTool {
         toolchain: &Toolchain,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
+        let target = self.get_log_target();
+
+        if !toolchain
+            .get_node()
+            .get_npm()
+            .is_global_dep_installed("yarn")
+            .await?
+        {
+            debug!(
+                target: &target,
+                "Package is not installed, attempting to install",
+            );
+
+            return Ok(false);
+        }
+
         if !check_version {
             return Ok(true);
         }
 
-        let target = self.get_log_target();
         let version = self.get_installed_version().await?;
 
-        if version == self.config.version {
+        if version != self.config.version {
             debug!(
                 target: &target,
-                "Package has already been installed and is on the correct version",
+                "Package is on the wrong version ({}), attempting to reinstall", version
             );
 
-            return Ok(true);
+            return Ok(false);
         }
 
         debug!(
             target: &target,
-            "Package is on the wrong version ({}), attempting to reinstall", version
+            "Package has already been installed and is on the correct version",
         );
 
-        Ok(false)
+        Ok(true)
     }
 
     // Yarn is installed through npm, but only v1 exists in the npm registry,
@@ -97,7 +112,7 @@ impl Installable for YarnTool {
                     color::shell(&format!("npm install -g {}", package))
                 );
 
-                npm.add_global_dep("yarn", &self.config.version).await?;
+                npm.install_global_dep("yarn", &self.config.version).await?;
             }
         } else {
             if node.is_corepack_aware() {
@@ -116,7 +131,7 @@ impl Installable for YarnTool {
                     color::shell("npm install -g yarn@latest")
                 );
 
-                npm.add_global_dep("yarn", "latest").await?;
+                npm.install_global_dep("yarn", "latest").await?;
             }
 
             debug!(
@@ -139,10 +154,18 @@ impl Installable for YarnTool {
 #[async_trait]
 impl Executable for YarnTool {
     async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let bin_path = self
-            .get_install_dir(toolchain)
-            .await?
-            .join(get_bin_name_suffix("yarn", "cmd", false));
+        let suffix = get_bin_name_suffix("yarn", "cmd", false);
+        let mut bin_path = self.get_install_dir(toolchain).await?.join(suffix);
+
+        // If bin doesn't exist in the install dir, try the global dir
+        if !bin_path.exists() {
+            bin_path = toolchain
+                .get_node()
+                .get_npm()
+                .get_global_dir()
+                .await?
+                .join(suffix);
+        }
 
         self.bin_path = Some(bin_path);
 

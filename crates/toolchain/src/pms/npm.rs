@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_logger::{color, debug};
 use moon_utils::is_ci;
-use moon_utils::process::Command;
+use moon_utils::process::{output_to_trimmed_string, Command};
 use std::env;
 use std::path::PathBuf;
 
@@ -25,15 +25,39 @@ impl NpmTool {
         })
     }
 
-    pub async fn add_global_dep(&self, name: &str, version: &str) -> Result<(), ToolchainError> {
-        let package = format!("{}@{}", name, version);
+    pub async fn get_global_dir(&self) -> Result<PathBuf, ToolchainError> {
+        let output = self
+            .create_command()
+            .args(["config", "get", "prefix"])
+            .exec_capture_output()
+            .await?;
+        let dir = output_to_trimmed_string(&output.stdout);
 
+        Ok(PathBuf::from(dir))
+    }
+
+    pub async fn install_global_dep(
+        &self,
+        package: &str,
+        version: &str,
+    ) -> Result<(), ToolchainError> {
         self.create_command()
-            .args(["install", "-g", &package])
+            .args(["install", "-g", &format!("{}@{}", package, version)])
             .exec_stream_output()
             .await?;
 
         Ok(())
+    }
+
+    pub async fn is_global_dep_installed(&self, package: &str) -> Result<bool, ToolchainError> {
+        let output = self
+            .create_command()
+            .args(["list", "-g", &package])
+            .no_error_on_failure()
+            .exec_capture_output()
+            .await?;
+
+        Ok(output.status.success())
     }
 }
 
@@ -91,18 +115,17 @@ impl Installable for NpmTool {
         }
 
         let target = self.get_log_target();
+        let node = toolchain.get_node();
         let package = format!("npm@{}", self.config.version);
 
-        if toolchain.get_node().is_corepack_aware() {
+        if node.is_corepack_aware() {
             debug!(
                 target: &target,
                 "Enabling package manager with {}",
                 color::shell(&format!("corepack prepare {} --activate", package))
             );
 
-            toolchain
-                .get_node()
-                .exec_corepack(["prepare", &package, "--activate"])
+            node.exec_corepack(["prepare", &package, "--activate"])
                 .await?;
         } else {
             debug!(
@@ -111,7 +134,7 @@ impl Installable for NpmTool {
                 color::shell(&format!("npm install -g {}", package))
             );
 
-            self.add_global_dep("npm", &self.config.version).await?;
+            self.install_global_dep("npm", &self.config.version).await?;
         }
 
         Ok(())

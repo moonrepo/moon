@@ -171,7 +171,7 @@ impl Workspace {
 
         // Setup components
         let cache = CacheEngine::create(&root_dir).await?;
-        let toolchain = Toolchain::create(&root_dir, &config).await?;
+        let toolchain = Toolchain::create(&root_dir).await?;
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
 
         Ok(Workspace {

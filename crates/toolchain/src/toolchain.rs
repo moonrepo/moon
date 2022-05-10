@@ -45,7 +45,6 @@ pub struct Toolchain {
 
 impl Toolchain {
     pub async fn create_from_dir(
-        config: &WorkspaceConfig,
         base_dir: &Path,
         root_dir: &Path,
     ) -> Result<Toolchain, ToolchainError> {
@@ -63,45 +62,17 @@ impl Toolchain {
         create_dir(&temp_dir).await?;
         create_dir(&tools_dir).await?;
 
-        // Create the instance first, so we can pass to each tool initializer
-        let mut toolchain = Toolchain {
+        Ok(Toolchain {
             dir,
             temp_dir,
             tools_dir,
             workspace_root: root_dir.to_path_buf(),
             node: None,
-            // npm: None,
-            // pnpm: None,
-            // yarn: None,
-        };
-
-        // Then set the private fields with the tool instances.
-        // Order is IMPORTANT here, as some tools rely on others already
-        // being instantiated. For example, npm requires node,
-        // and pnpm/yarn require npm!
-        toolchain.node = Some(NodeTool::new(&config.node)?);
-
-        // toolchain.npm = Some(NpmTool::new(&toolchain, &node.npm)?);
-
-        // match node.package_manager {
-        //     PM::Npm => {}
-        //     PM::Pnpm => {
-        //         toolchain.pnpm = Some(PnpmTool::new(&toolchain, node.pnpm.as_ref().unwrap())?);
-        //     }
-        //     PM::Yarn => {
-        //         toolchain.yarn = Some(YarnTool::new(&toolchain, node.yarn.as_ref().unwrap())?);
-        //     }
-        // }
-
-        Ok(toolchain)
+        })
     }
 
-    pub async fn create(
-        root_dir: &Path,
-        config: &WorkspaceConfig,
-    ) -> Result<Toolchain, ToolchainError> {
+    pub async fn create(root_dir: &Path) -> Result<Toolchain, ToolchainError> {
         Toolchain::create_from_dir(
-            config,
             &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
         )
@@ -110,19 +81,24 @@ impl Toolchain {
 
     /// Download and install all tools into the toolchain.
     /// Return a count of how many tools were installed.
-    pub async fn setup(&self, check_versions: bool) -> Result<u8, ToolchainError> {
+    pub async fn setup(
+        &mut self,
+        config: &WorkspaceConfig,
+        check_versions: bool,
+    ) -> Result<u8, ToolchainError> {
         debug!(
             target: "moon:toolchain",
             "Downloading and installing tools",
         );
 
         let mut installed = 0;
+        let mut node = NodeTool::new(&config.node)?;
 
-        if let Some(node) = &self.node {
-            if node.load(self, check_versions).await? {
-                installed += 1;
-            }
+        if node.load(self, check_versions).await? {
+            installed += 1;
         }
+
+        self.node = Some(node);
 
         Ok(installed)
     }

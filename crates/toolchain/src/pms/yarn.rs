@@ -36,7 +36,7 @@ impl Installable for YarnTool {
     }
 
     async fn get_installed_version(&self) -> Result<String, ToolchainError> {
-        get_bin_version(&self.get_bin_path()).await
+        get_bin_version(self.get_bin_path()).await
     }
 
     async fn is_installed(
@@ -155,7 +155,7 @@ impl Installable for YarnTool {
 impl Executable for YarnTool {
     async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let suffix = get_bin_name_suffix("yarn", "cmd", false);
-        let mut bin_path = self.get_install_dir(toolchain).await?.join(suffix);
+        let mut bin_path = self.get_install_dir(toolchain).await?.join(&suffix);
 
         // If bin doesn't exist in the install dir, try the global dir
         if !bin_path.exists() {
@@ -164,7 +164,7 @@ impl Executable for YarnTool {
                 .get_npm()
                 .get_global_dir()
                 .await?
-                .join(suffix);
+                .join(&suffix);
         }
 
         self.bin_path = Some(bin_path);
@@ -172,8 +172,8 @@ impl Executable for YarnTool {
         Ok(())
     }
 
-    fn get_bin_path(&self) -> PathBuf {
-        self.bin_path.unwrap()
+    fn get_bin_path(&self) -> &PathBuf {
+        self.bin_path.as_ref().unwrap()
     }
 }
 

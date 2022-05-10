@@ -74,7 +74,7 @@ pub trait Executable: Send + Sync {
     async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 
     /// Returns an absolute file path to the executable binary for the tool.
-    fn get_bin_path(&self) -> PathBuf;
+    fn get_bin_path(&self) -> &PathBuf;
 }
 
 #[async_trait]
@@ -87,7 +87,7 @@ pub trait Tool: Send + Sync + Downloadable + Installable + Executable {
     /// Return `true` if the tool was newly installed.
     async fn load(
         &mut self,
-        toolchain: &Toolchain,
+        toolchain: &mut Toolchain,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();

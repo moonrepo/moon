@@ -1,68 +1,32 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_name_suffix, get_bin_version, get_path_env_var};
+use crate::helpers::{get_bin_name_suffix, get_bin_version};
 use crate::tool::{Executable, Installable, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
-use moon_config::NpmConfig;
+use moon_config::PnpmConfig;
 use moon_logger::{color, debug};
 use moon_utils::is_ci;
-use moon_utils::process::{output_to_trimmed_string, Command};
 use std::env;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
-pub struct NpmTool {
+pub struct PnpmTool {
     bin_path: Option<PathBuf>,
 
-    pub config: NpmConfig,
+    pub config: PnpmConfig,
 }
 
-impl NpmTool {
-    pub fn new(config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
-        Ok(NpmTool {
+impl PnpmTool {
+    pub fn new(config: &PnpmConfig) -> Result<PnpmTool, ToolchainError> {
+        Ok(PnpmTool {
             bin_path: None,
             config: config.to_owned(),
         })
     }
-
-    pub async fn get_global_dir(&self) -> Result<PathBuf, ToolchainError> {
-        let output = self
-            .create_command()
-            .args(["config", "get", "prefix"])
-            .exec_capture_output()
-            .await?;
-        let dir = output_to_trimmed_string(&output.stdout);
-
-        Ok(PathBuf::from(dir))
-    }
-
-    pub async fn install_global_dep(
-        &self,
-        package: &str,
-        version: &str,
-    ) -> Result<(), ToolchainError> {
-        self.create_command()
-            .args(["install", "-g", &format!("{}@{}", package, version)])
-            .exec_stream_output()
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn is_global_dep_installed(&self, package: &str) -> Result<bool, ToolchainError> {
-        let output = self
-            .create_command()
-            .args(["list", "-g", package])
-            .no_error_on_failure()
-            .exec_capture_output()
-            .await?;
-
-        Ok(output.status.success())
-    }
 }
 
 #[async_trait]
-impl Installable for NpmTool {
+impl Installable for PnpmTool {
     async fn get_install_dir(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError> {
         toolchain.get_node().get_install_dir(toolchain).await
     }
@@ -73,50 +37,53 @@ impl Installable for NpmTool {
 
     async fn is_installed(
         &self,
-        _toolchain: &Toolchain,
+        toolchain: &Toolchain,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
+        let target = self.get_log_target();
+
+        if !toolchain
+            .get_node()
+            .get_npm()
+            .is_global_dep_installed("pnpm")
+            .await?
+        {
+            debug!(
+                target: &target,
+                "Package is not installed, attempting to install",
+            );
+
+            return Ok(false);
+        }
+
         if !check_version {
             return Ok(true);
         }
 
-        let target = self.get_log_target();
         let version = self.get_installed_version().await?;
 
-        if self.config.version == "inherit" {
+        if version != self.config.version {
             debug!(
                 target: &target,
-                "Using the version ({}) that came bundled with Node.js", version
+                "Package is on the wrong version ({}), attempting to reinstall", version
             );
 
-            return Ok(true);
-        }
-
-        if version == self.config.version {
-            debug!(
-                target: &target,
-                "Package has already been installed and is on the correct version",
-            );
-
-            return Ok(true);
+            return Ok(false);
         }
 
         debug!(
             target: &target,
-            "Package is on the wrong version ({}), attempting to reinstall", version
+            "Package has already been installed and is on the correct version",
         );
 
-        Ok(false)
+        Ok(true)
     }
 
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        if self.config.version == "inherit" {
-            return Ok(());
-        }
-
         let target = self.get_log_target();
         let node = toolchain.get_node();
-        let package = format!("npm@{}", self.config.version);
+        let npm = node.get_npm();
+        let package = format!("pnpm@{}", self.config.version);
 
         if node.is_corepack_aware() {
             debug!(
@@ -134,7 +101,8 @@ impl Installable for NpmTool {
                 color::shell(&format!("npm install -g {}", package))
             );
 
-            self.install_global_dep("npm", &self.config.version).await?;
+            npm.install_global_dep("pnpm", self.config.version.as_str())
+                .await?;
         }
 
         Ok(())
@@ -142,12 +110,20 @@ impl Installable for NpmTool {
 }
 
 #[async_trait]
-impl Executable for NpmTool {
+impl Executable for PnpmTool {
     async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let bin_path = self
-            .get_install_dir(toolchain)
-            .await?
-            .join(get_bin_name_suffix("npm", "cmd", false));
+        let suffix = get_bin_name_suffix("pnpm", "cmd", false);
+        let mut bin_path = self.get_install_dir(toolchain).await?.join(&suffix);
+
+        // If bin doesn't exist in the install dir, try the global dir
+        if !bin_path.exists() {
+            bin_path = toolchain
+                .get_node()
+                .get_npm()
+                .get_global_dir()
+                .await?
+                .join(&suffix);
+        }
 
         self.bin_path = Some(bin_path);
 
@@ -160,10 +136,12 @@ impl Executable for NpmTool {
 }
 
 #[async_trait]
-impl PackageManager for NpmTool {
+impl PackageManager for PnpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        // pnpm doesn't support deduping, but maybe prune is good here?
+        // https://pnpm.io/cli/prune
         self.create_command()
-            .args(["dedupe"])
+            .arg("prune")
             .cwd(&toolchain.workspace_root)
             .exec_capture_output()
             .await?;
@@ -177,17 +155,13 @@ impl PackageManager for NpmTool {
         package: &str,
         args: Vec<&str>,
     ) -> Result<(), ToolchainError> {
-        let mut exec_args = vec!["--silent", "--package", package, "--"];
-
+        // https://pnpm.io/cli/dlx
+        let mut exec_args = vec!["--package", package, "dlx"];
         exec_args.extend(args);
 
-        let bin_dir = self.get_bin_path().parent().unwrap().to_path_buf();
-        let npx_path = bin_dir.join(get_bin_name_suffix("corepack", "exe", false));
-
-        Command::new(&npx_path)
+        self.create_command()
             .args(exec_args)
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(bin_dir))
             .exec_stream_output()
             .await?;
 
@@ -195,33 +169,24 @@ impl PackageManager for NpmTool {
     }
 
     fn get_lockfile_name(&self) -> String {
-        String::from("package-lock.json")
+        String::from("pnpm-lock.yaml")
     }
 
     fn get_log_target(&self) -> String {
-        String::from("moon:toolchain:npm")
+        String::from("moon:toolchain:pnpm")
     }
 
     fn get_workspace_dependency_range(&self) -> String {
-        String::from("*") // Doesn't support "workspace:*"
+        // https://pnpm.io/workspaces#workspace-protocol-workspace
+        String::from("workspace:*")
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
         if is_ci() {
-            let lockfile = toolchain.workspace_root.join(self.get_lockfile_name());
-
-            // npm will error if using `ci` and a lockfile does not exist!
-            if lockfile.exists() {
-                args.clear();
-                args.push("ci");
-            }
-        } else {
-            args.push("--no-audit");
+            args.push("--frozen-lockfile");
         }
-
-        args.push("--no-fund");
 
         let mut cmd = self.create_command();
 

@@ -55,10 +55,7 @@ impl Command {
             "NODE_OPTIONS = {}",
             env::var("NODE_OPTIONS").unwrap_or_default()
         );
-        println!(
-            "PATH = {}",
-            env::var("PATH").unwrap_or_default()
-        );
+        println!("PATH = {}", env::var("PATH").unwrap_or_default());
 
         // Referencing cmd.exe directly
         if bin_name == "cmd" || bin_name == "cmd.exe" {

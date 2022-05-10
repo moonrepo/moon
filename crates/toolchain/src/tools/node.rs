@@ -4,6 +4,7 @@ use crate::helpers::{
     get_path_env_var, unpack,
 };
 use crate::pms::npm::NpmTool;
+use crate::pms::pnpm::PnpmTool;
 use crate::pms::yarn::YarnTool;
 use crate::tool::{Downloadable, Executable, Installable, PackageManager, Tool};
 use crate::Toolchain;
@@ -122,6 +123,8 @@ pub struct NodeTool {
 
     npm: Option<NpmTool>,
 
+    pnpm: Option<PnpmTool>,
+
     yarn: Option<YarnTool>,
 }
 
@@ -131,6 +134,7 @@ impl NodeTool {
             bin_path: None,
             config: config.to_owned(),
             npm: None,
+            pnpm: None,
             yarn: None,
         })
     }
@@ -157,7 +161,7 @@ impl NodeTool {
         package_name: &str,
         starting_dir: &Path,
     ) -> Result<PathBuf, ToolchainError> {
-        let mut bin_path = starting_dir
+        let bin_path = starting_dir
             .join("node_modules")
             .join(".bin")
             .join(get_bin_name_suffix(package_name, "cmd", true));
@@ -181,12 +185,12 @@ impl NodeTool {
         self.npm.as_ref().unwrap()
     }
 
-    // pub fn get_pnpm(&self) -> Option<&PnpmTool> {
-    //     match &self.pnpm {
-    //         Some(tool) => Some(tool),
-    //         None => None,
-    //     }
-    // }
+    pub fn get_pnpm(&self) -> Option<&PnpmTool> {
+        match &self.pnpm {
+            Some(tool) => Some(tool),
+            None => None,
+        }
+    }
 
     pub fn get_yarn(&self) -> Option<&YarnTool> {
         match &self.yarn {
@@ -281,7 +285,7 @@ impl Installable for NodeTool {
     }
 
     async fn get_installed_version(&self) -> Result<String, ToolchainError> {
-        Ok(get_bin_version(&self.get_bin_path()).await?)
+        Ok(get_bin_version(self.get_bin_path()).await?)
     }
 
     async fn is_installed(
@@ -322,8 +326,8 @@ impl Executable for NodeTool {
         Ok(())
     }
 
-    fn get_bin_path(&self) -> PathBuf {
-        self.bin_path.unwrap()
+    fn get_bin_path(&self) -> &PathBuf {
+        self.bin_path.as_ref().unwrap()
     }
 }
 
@@ -334,6 +338,18 @@ impl Tool for NodeTool {
     }
 
     async fn setup(&self) -> Result<(), ToolchainError> {
+        // toolchain.npm = Some(NpmTool::new(&toolchain, &node.npm)?);
+
+        // match node.package_manager {
+        //     PM::Npm => {}
+        //     PM::Pnpm => {
+        //         toolchain.pnpm = Some(PnpmTool::new(&toolchain, node.pnpm.as_ref().unwrap())?);
+        //     }
+        //     PM::Yarn => {
+        //         toolchain.yarn = Some(YarnTool::new(&toolchain, node.yarn.as_ref().unwrap())?);
+        //     }
+        // }
+
         // let check_manager_version = installed_node || check_versions;
 
         // // Enable corepack before intalling package managers (when available)

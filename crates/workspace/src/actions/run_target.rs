@@ -7,7 +7,7 @@ use moon_config::TaskType;
 use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_run_target, label_run_target_failed};
-use moon_toolchain::{get_path_env_var, Tool};
+use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::process::{output_to_string, Command, Output};
 use moon_utils::{is_ci, path, string_vec};
 use std::collections::HashMap;
@@ -94,13 +94,13 @@ fn create_node_target_command(
             args.extend(create_node_options(task));
         }
         "npm" => {
-            cmd = workspace.toolchain.get_npm().get_bin_path();
+            cmd = node.get_npm().get_bin_path();
         }
         "pnpm" => {
-            cmd = workspace.toolchain.get_pnpm().unwrap().get_bin_path();
+            cmd = node.get_pnpm().unwrap().get_bin_path();
         }
         "yarn" => {
-            cmd = workspace.toolchain.get_yarn().unwrap().get_bin_path();
+            cmd = node.get_yarn().unwrap().get_bin_path();
         }
         bin => {
             let bin_path = node.find_package_bin_path(bin, &project.root)?;
@@ -113,11 +113,10 @@ fn create_node_target_command(
     // Create the command
     let mut command = Command::new(cmd);
 
-    command
-        .args(&args)
-        .args(&task.args)
-        .envs(&task.env)
-        .env("PATH", get_path_env_var(node.get_bin_dir()));
+    command.args(&args).args(&task.args).envs(&task.env).env(
+        "PATH",
+        get_path_env_var(node.get_bin_path().parent().unwrap().to_path_buf()),
+    );
 
     Ok(command)
 }

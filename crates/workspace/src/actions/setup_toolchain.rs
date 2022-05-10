@@ -17,6 +17,15 @@ pub async fn setup_toolchain(
         "Setting up toolchain",
     );
 
+    let config;
+
+    {
+        let workspace = workspace.read().await;
+
+        // Have to clone here to fix borrow checker
+        config = workspace.config.clone();
+    }
+
     let mut workspace = workspace.write().await;
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
@@ -28,7 +37,7 @@ pub async fn setup_toolchain(
         || (cache.item.last_version_check_time + HOUR * 12) <= now;
 
     // Install all tools
-    let installed_tools = workspace.toolchain.setup(check_versions).await?;
+    let installed_tools = workspace.toolchain.setup(&config, check_versions).await?;
 
     // Update the cache with the timestamp
     if check_versions {
@@ -36,7 +45,7 @@ pub async fn setup_toolchain(
         cache.save().await?;
     }
 
-    Ok(if installed_tools {
+    Ok(if installed_tools > 0 {
         ActionStatus::Passed
     } else {
         ActionStatus::Skipped

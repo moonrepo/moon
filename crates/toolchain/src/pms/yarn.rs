@@ -1,6 +1,6 @@
 use crate::errors::ToolchainError;
-use crate::helpers::get_bin_version;
-use crate::tool::{PackageManager, Tool};
+use crate::helpers::{get_bin_name_suffix, get_bin_version};
+use crate::tool::{Executable, Installable, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
@@ -11,34 +11,16 @@ use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct YarnTool {
-    bin_path: PathBuf,
-
-    install_dir: PathBuf,
+    bin_path: Option<PathBuf>,
 
     pub config: YarnConfig,
 }
 
 impl YarnTool {
-    pub fn new(toolchain: &Toolchain, config: &YarnConfig) -> Result<YarnTool, ToolchainError> {
-        let install_dir = toolchain.get_node().get_install_dir().clone();
-        let mut bin_path = install_dir.clone();
-
-        if cfg!(windows) {
-            bin_path.push("yarn.cmd");
-        } else {
-            bin_path.push("bin/yarn");
-        }
-
-        debug!(
-            target: "moon:toolchain:yarn",
-            "Creating tool at {}",
-            color::path(&bin_path)
-        );
-
+    pub fn new(config: &YarnConfig) -> Result<YarnTool, ToolchainError> {
         Ok(YarnTool {
-            bin_path,
+            bin_path: None,
             config: config.to_owned(),
-            install_dir,
         })
     }
 
@@ -48,38 +30,40 @@ impl YarnTool {
 }
 
 #[async_trait]
-impl Tool for YarnTool {
-    fn is_downloaded(&self) -> bool {
-        true
+impl Installable for YarnTool {
+    async fn get_install_dir(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError> {
+        toolchain.get_node().get_install_dir(toolchain).await
     }
 
-    async fn download(&self, _host: Option<&str>) -> Result<(), ToolchainError> {
-        Ok(())
+    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
+        get_bin_version(&self.get_bin_path()).await
     }
 
-    async fn is_installed(&self, check_version: bool) -> Result<bool, ToolchainError> {
-        if self.bin_path.exists() {
-            if !check_version {
-                return Ok(true);
-            }
-
-            let version = self.get_installed_version().await?;
-
-            if version == self.config.version {
-                debug!(
-                    target: "moon:toolchain:yarn",
-                    "Package has already been installed and is on the correct version",
-                );
-
-                return Ok(true);
-            }
-
-            debug!(
-                target: "moon:toolchain:yarn",
-                "Package is on the wrong version ({}), attempting to reinstall",
-                version
-            );
+    async fn is_installed(
+        &self,
+        toolchain: &Toolchain,
+        check_version: bool,
+    ) -> Result<bool, ToolchainError> {
+        if !check_version {
+            return Ok(true);
         }
+
+        let target = self.get_log_target();
+        let version = self.get_installed_version().await?;
+
+        if version == self.config.version {
+            debug!(
+                target: &target,
+                "Package has already been installed and is on the correct version",
+            );
+
+            return Ok(true);
+        }
+
+        debug!(
+            target: &target,
+            "Package is on the wrong version ({}), attempting to reinstall", version
+        );
 
         Ok(false)
     }
@@ -90,15 +74,16 @@ impl Tool for YarnTool {
     // is stored *within* the repository, and the v1 package detects it.
     // Because of this, we need to always install the v1 package!
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        let target = self.get_log_target();
         let node = toolchain.get_node();
-        let npm = toolchain.get_npm();
+        let npm = node.get_npm();
 
         if self.is_v1() {
             let package = format!("yarn@{}", self.config.version);
 
             if node.is_corepack_aware() {
                 debug!(
-                    target: "moon:toolchain:yarn",
+                    target: &target,
                     "Enabling package manager with {}",
                     color::shell(&format!("corepack prepare {} --activate", package))
                 );
@@ -107,7 +92,7 @@ impl Tool for YarnTool {
                     .await?;
             } else {
                 debug!(
-                    target: "moon:toolchain:yarn",
+                    target: &target,
                     "Installing package with {}",
                     color::shell(&format!("npm install -g {}", package))
                 );
@@ -117,7 +102,7 @@ impl Tool for YarnTool {
         } else {
             if node.is_corepack_aware() {
                 debug!(
-                    target: "moon:toolchain:yarn",
+                    target: &target,
                     "Enabling package manager with {}",
                     color::shell("corepack prepare yarn --activate")
                 );
@@ -126,7 +111,7 @@ impl Tool for YarnTool {
                     .await?;
             } else {
                 debug!(
-                    target: "moon:toolchain:yarn",
+                    target: &target,
                     "Installing legacy package with {}",
                     color::shell("npm install -g yarn@latest")
                 );
@@ -135,7 +120,7 @@ impl Tool for YarnTool {
             }
 
             debug!(
-                target: "moon:toolchain:yarn",
+                target: &target,
                 "Installing package manager with {}",
                 color::shell(&format!("yarn set version {}", self.config.version))
             );
@@ -149,21 +134,23 @@ impl Tool for YarnTool {
 
         Ok(())
     }
+}
 
-    fn get_bin_path(&self) -> &PathBuf {
-        &self.bin_path
+#[async_trait]
+impl Executable for YarnTool {
+    async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        let bin_path = self
+            .get_install_dir(toolchain)
+            .await?
+            .join(get_bin_name_suffix("yarn", "cmd", false));
+
+        self.bin_path = Some(bin_path);
+
+        Ok(())
     }
 
-    fn get_download_path(&self) -> Option<&PathBuf> {
-        None
-    }
-
-    fn get_install_dir(&self) -> &PathBuf {
-        &self.install_dir
-    }
-
-    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
-        Ok(get_bin_version(self.get_bin_path()).await?)
+    fn get_bin_path(&self) -> PathBuf {
+        self.bin_path.unwrap()
     }
 }
 
@@ -180,6 +167,7 @@ impl PackageManager for YarnTool {
             {
                 // Will error if the lockfile does not exist!
                 toolchain
+                    .get_node()
                     .get_npm()
                     .exec_package(
                         toolchain,
@@ -224,6 +212,10 @@ impl PackageManager for YarnTool {
         String::from("yarn.lock")
     }
 
+    fn get_log_target(&self) -> String {
+        String::from("moon:toolchain:yarn")
+    }
+
     fn get_workspace_dependency_range(&self) -> String {
         if self.is_v1() {
             String::from("*")
@@ -254,6 +246,7 @@ impl PackageManager for YarnTool {
         }
 
         let mut cmd = self.create_command();
+
         cmd.args(args).cwd(&toolchain.workspace_root);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {

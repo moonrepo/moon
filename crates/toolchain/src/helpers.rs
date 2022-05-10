@@ -12,10 +12,10 @@ use std::path::{Path, PathBuf};
 use tar::Archive;
 use zip::ZipArchive;
 
-pub fn get_bin_name_suffix(name: &str, global: bool) -> String {
+pub fn get_bin_name_suffix(name: &str, windows_ext: &str, flat: bool) -> String {
     if cfg!(windows) {
-        format!("{}.cmd", name)
-    } else if global {
+        format!("{}.{}", name, windows_ext)
+    } else if flat {
         name.to_owned()
     } else {
         format!("bin/{}", name)

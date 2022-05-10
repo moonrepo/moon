@@ -1,8 +1,11 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{
-    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack,
+    download_file_from_url, get_bin_name_suffix, get_bin_version, get_file_sha256_hash,
+    get_path_env_var, unpack,
 };
-use crate::tool::{Downloadable, Executable, Installable, Tool};
+use crate::pms::npm::NpmTool;
+use crate::pms::yarn::YarnTool;
+use crate::tool::{Downloadable, Executable, Installable, PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::constants::CONFIG_DIRNAME;
@@ -116,6 +119,10 @@ pub struct NodeTool {
     bin_path: Option<PathBuf>,
 
     pub config: NodeConfig,
+
+    npm: Option<NpmTool>,
+
+    yarn: Option<YarnTool>,
 }
 
 impl NodeTool {
@@ -123,6 +130,8 @@ impl NodeTool {
         Ok(NodeTool {
             bin_path: None,
             config: config.to_owned(),
+            npm: None,
+            yarn: None,
         })
     }
 
@@ -132,12 +141,7 @@ impl NodeTool {
         S: AsRef<OsStr>,
     {
         let bin_dir = self.get_bin_path().parent().unwrap().to_path_buf();
-
-        let corepack_path = if cfg!(windows) {
-            bin_dir.join("corepack.exe")
-        } else {
-            bin_dir.join("bin/corepack")
-        };
+        let corepack_path = bin_dir.join(get_bin_name_suffix("corepack", "exe", false));
 
         Command::new(&corepack_path)
             .args(args)
@@ -153,13 +157,10 @@ impl NodeTool {
         package_name: &str,
         starting_dir: &Path,
     ) -> Result<PathBuf, ToolchainError> {
-        let mut bin_path = starting_dir.join("node_modules").join(".bin");
-
-        if cfg!(windows) {
-            bin_path.push(format!("{}.cmd", package_name));
-        } else {
-            bin_path.push(package_name);
-        }
+        let mut bin_path = starting_dir
+            .join("node_modules")
+            .join(".bin")
+            .join(get_bin_name_suffix(package_name, "cmd", true));
 
         if bin_path.exists() {
             return Ok(bin_path);
@@ -168,17 +169,17 @@ impl NodeTool {
         // If we've reached the root of the workspace, and still haven't found
         // a binary, just abort with an error...
         if starting_dir.join(CONFIG_DIRNAME).exists() {
-            return Err(ToolchainError::MissingNodeModuleBin(String::from(
-                package_name,
-            )));
+            return Err(ToolchainError::MissingNodeModuleBin(
+                package_name.to_owned(),
+            ));
         }
 
         self.find_package_bin_path(package_name, starting_dir.parent().unwrap())
     }
 
-    // pub fn get_npm(&self) -> &NpmTool {
-    //     self.npm.as_ref().unwrap()
-    // }
+    pub fn get_npm(&self) -> &NpmTool {
+        self.npm.as_ref().unwrap()
+    }
 
     // pub fn get_pnpm(&self) -> Option<&PnpmTool> {
     //     match &self.pnpm {
@@ -187,12 +188,24 @@ impl NodeTool {
     //     }
     // }
 
-    // pub fn get_yarn(&self) -> Option<&YarnTool> {
-    //     match &self.yarn {
-    //         Some(tool) => Some(tool),
-    //         None => None,
-    //     }
-    // }
+    pub fn get_yarn(&self) -> Option<&YarnTool> {
+        match &self.yarn {
+            Some(tool) => Some(tool),
+            None => None,
+        }
+    }
+
+    pub fn get_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
+        if self.pnpm.is_some() {
+            return self.get_pnpm().unwrap();
+        }
+
+        if self.yarn.is_some() {
+            return self.get_yarn().unwrap();
+        }
+
+        self.get_npm()
+    }
 
     pub fn is_corepack_aware(&self) -> bool {
         let cfg_version = Version::parse(&self.config.version).unwrap();
@@ -276,12 +289,12 @@ impl Installable for NodeTool {
         toolchain: &Toolchain,
         _check_version: bool,
     ) -> Result<bool, ToolchainError> {
-        Ok(self.get_install_dir().await?.exists())
+        Ok(self.get_install_dir(toolchain).await?.exists())
     }
 
     async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let download_path = self.get_download_path(toolchain).await?;
-        let install_dir = self.get_install_dir().await?;
+        let install_dir = self.get_install_dir(toolchain).await?;
         let prefix = get_download_file_name(&self.config.version)?;
 
         unpack(&download_path, &install_dir, &prefix).await?;
@@ -299,13 +312,10 @@ impl Installable for NodeTool {
 #[async_trait]
 impl Executable for NodeTool {
     async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let mut bin_path = self.get_install_dir().await?;
-
-        if cfg!(windows) {
-            bin_path.push("node.exe");
-        } else {
-            bin_path.push("bin/node");
-        }
+        let bin_path = self
+            .get_install_dir(toolchain)
+            .await?
+            .join(get_bin_name_suffix("node", "exe", false));
 
         self.bin_path = Some(bin_path);
 

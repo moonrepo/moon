@@ -36,9 +36,9 @@ pub trait Downloadable: Send + Sync {
 
 #[async_trait]
 pub trait Installable: Send + Sync {
-    /// Returns an absolute file path to the directory containing the instaled tool.
+    /// Returns an absolute file path to the directory containing the installed tool.
     /// This is typically ~/.moon/tools/<tool>/<version>.
-    async fn get_install_dir(&self) -> Result<PathBuf, ToolchainError>;
+    async fn get_install_dir(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError>;
 
     /// Returns a semver version for the currently installed binary.
     /// This is typically acquired by executing the binary with a `--version` argument.
@@ -59,7 +59,7 @@ pub trait Installable: Send + Sync {
 
     /// Delete the installation.
     async fn uninstall(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let install_dir = self.get_install_dir().await?;
+        let install_dir = self.get_install_dir(toolchain).await?;
 
         fs::remove_dir_all(&install_dir).await?;
 
@@ -190,6 +190,9 @@ pub trait PackageManager: Send + Sync + Installable + Executable {
 
     /// Return the name of the lockfile.
     fn get_lockfile_name(&self) -> String;
+
+    /// Return a unique name for logging.
+    fn get_log_target(&self) -> String;
 
     /// Return the name of the manifest.
     fn get_manifest_name(&self) -> String {

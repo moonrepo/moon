@@ -1,9 +1,6 @@
 use crate::errors::ToolchainError;
-use crate::tool::{PackageManager, Tool};
+use crate::tool::Tool;
 use crate::tools::node::NodeTool;
-// use crate::tools::npm::NpmTool;
-// use crate::tools::pnpm::PnpmTool;
-// use crate::tools::yarn::YarnTool;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::WorkspaceConfig;
 use moon_logger::{color, debug, trace};
@@ -146,19 +143,5 @@ impl Toolchain {
 
     pub fn get_node(&self) -> &NodeTool {
         self.node.as_ref().unwrap()
-    }
-
-    pub fn get_node_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
-        let node = self.get_node();
-
-        if node.pnpm.is_some() {
-            return node.get_pnpm().unwrap();
-        }
-
-        if node.yarn.is_some() {
-            return node.get_yarn().unwrap();
-        }
-
-        node.get_npm()
     }
 }

@@ -6,7 +6,9 @@ use crate::helpers::{
 use crate::pms::npm::NpmTool;
 use crate::pms::pnpm::PnpmTool;
 use crate::pms::yarn::YarnTool;
-use crate::tool::{Downloadable, Executable, Installable, PackageManager, Tool};
+use crate::traits::{
+    Downloadable, Executable, Installable, Lifecycle, Logable, PackageManager, Tool,
+};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::constants::CONFIG_DIRNAME;
@@ -121,7 +123,7 @@ pub struct NodeTool {
 
     pub config: NodeConfig,
 
-    npm: Option<NpmTool>,
+    npm: NpmTool,
 
     pnpm: Option<PnpmTool>,
 
@@ -130,13 +132,23 @@ pub struct NodeTool {
 
 impl NodeTool {
     pub fn new(config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
-        Ok(NodeTool {
+        let mut node = NodeTool {
             bin_path: None,
             config: config.to_owned(),
-            npm: None,
+            npm: NpmTool::new(&config.npm)?,
             pnpm: None,
             yarn: None,
-        })
+        };
+
+        if let Some(pnpm_config) = &config.pnpm {
+            node.pnpm = Some(PnpmTool::new(pnpm_config)?);
+        }
+
+        if let Some(yarn_config) = &config.yarn {
+            node.yarn = Some(YarnTool::new(yarn_config)?);
+        }
+
+        Ok(node)
     }
 
     pub async fn exec_corepack<I, S>(&self, args: I) -> Result<(), ToolchainError>
@@ -182,7 +194,7 @@ impl NodeTool {
     }
 
     pub fn get_npm(&self) -> &NpmTool {
-        self.npm.as_ref().unwrap()
+        &self.npm
     }
 
     pub fn get_pnpm(&self) -> Option<&PnpmTool> {
@@ -216,6 +228,12 @@ impl NodeTool {
 
         VersionReq::parse(">=16.9.0").unwrap().matches(&cfg_version)
             || VersionReq::parse("^14.19.0").unwrap().matches(&cfg_version)
+    }
+}
+
+impl Logable for NodeTool {
+    fn get_log_target(&self) -> String {
+        String::from("moon:toolchain:node")
     }
 }
 
@@ -332,50 +350,33 @@ impl Executable for NodeTool {
 }
 
 #[async_trait]
-impl Tool for NodeTool {
-    fn get_log_target(&self) -> String {
-        String::from("moon:toolchain:node")
-    }
+impl Lifecycle for NodeTool {
+    async fn setup(
+        &mut self,
+        toolchain: &mut Toolchain,
+        check_version: bool,
+    ) -> Result<u8, ToolchainError> {
+        if self.is_corepack_aware() && check_version {
+            debug!(
+                target: &self.get_log_target(),
+                "Enabling corepack for package manager control"
+            );
 
-    async fn setup(&self) -> Result<(), ToolchainError> {
-        // toolchain.npm = Some(NpmTool::new(&toolchain, &node.npm)?);
+            self.exec_corepack(["enable"]).await?;
+        }
 
-        // match node.package_manager {
-        //     PM::Npm => {}
-        //     PM::Pnpm => {
-        //         toolchain.pnpm = Some(PnpmTool::new(&toolchain, node.pnpm.as_ref().unwrap())?);
-        //     }
-        //     PM::Yarn => {
-        //         toolchain.yarn = Some(YarnTool::new(&toolchain, node.yarn.as_ref().unwrap())?);
-        //     }
-        // }
+        let mut installed = self.npm.run_setup(toolchain, check_version).await?;
 
-        // let check_manager_version = installed_node || check_versions;
+        if let Some(pnpm) = &mut self.pnpm {
+            installed += pnpm.run_setup(toolchain, check_version).await?;
+        }
 
-        // // Enable corepack before intalling package managers (when available)
-        // if node.is_corepack_aware() && check_manager_version {
-        //     debug!(
-        //         target: "moon:toolchain:node",
-        //         "Enabling corepack for package manager control"
-        //     );
+        if let Some(yarn) = &mut self.yarn {
+            installed += yarn.run_setup(toolchain, check_version).await?;
+        }
 
-        //     node.exec_corepack(["enable"]).await?;
-        // }
-
-        // // Install npm (should always be available even if using another package manager)
-        // let mut installed_pm = self
-        //     .load_tool(self.get_npm(), check_manager_version)
-        //     .await?;
-
-        // // Install pnpm and yarn *after* setting the corepack package manager
-        // if let Some(pnpm) = &self.pnpm {
-        //     installed_pm = self.load_tool(pnpm, check_manager_version).await?;
-        // }
-
-        // if let Some(yarn) = &self.yarn {
-        //     installed_pm = self.load_tool(yarn, check_manager_version).await?;
-        // }
-
-        Ok(())
+        Ok(installed)
     }
 }
+
+impl Tool for NodeTool {}

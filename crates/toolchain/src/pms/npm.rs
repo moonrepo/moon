@@ -1,6 +1,6 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{get_bin_name_suffix, get_bin_version, get_path_env_var};
-use crate::tool::{Executable, Installable, PackageManager};
+use crate::traits::{Executable, Installable, Lifecycle, Logable, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
@@ -58,6 +58,14 @@ impl NpmTool {
             .await?;
 
         Ok(output.status.success())
+    }
+}
+
+impl Lifecycle for NpmTool {}
+
+impl Logable for NpmTool {
+    fn get_log_target(&self) -> String {
+        String::from("moon:toolchain:npm")
     }
 }
 
@@ -196,10 +204,6 @@ impl PackageManager for NpmTool {
 
     fn get_lockfile_name(&self) -> String {
         String::from("package-lock.json")
-    }
-
-    fn get_log_target(&self) -> String {
-        String::from("moon:toolchain:npm")
     }
 
     fn get_workspace_dependency_range(&self) -> String {

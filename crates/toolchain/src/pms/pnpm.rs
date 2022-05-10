@@ -1,6 +1,6 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{get_bin_name_suffix, get_bin_version};
-use crate::tool::{Executable, Installable, PackageManager};
+use crate::traits::{Executable, Installable, Lifecycle, Logable, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
@@ -22,6 +22,14 @@ impl PnpmTool {
             bin_path: None,
             config: config.to_owned(),
         })
+    }
+}
+
+impl Lifecycle for PnpmTool {}
+
+impl Logable for PnpmTool {
+    fn get_log_target(&self) -> String {
+        String::from("moon:toolchain:pnpm")
     }
 }
 
@@ -170,10 +178,6 @@ impl PackageManager for PnpmTool {
 
     fn get_lockfile_name(&self) -> String {
         String::from("pnpm-lock.yaml")
-    }
-
-    fn get_log_target(&self) -> String {
-        String::from("moon:toolchain:pnpm")
     }
 
     fn get_workspace_dependency_range(&self) -> String {

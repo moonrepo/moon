@@ -1,6 +1,6 @@
 use crate::errors::ToolchainError;
-use crate::tool::Tool;
 use crate::tools::node::NodeTool;
+use crate::traits::Tool;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::WorkspaceConfig;
 use moon_logger::{color, debug, trace};
@@ -94,9 +94,7 @@ impl Toolchain {
         let mut installed = 0;
         let mut node = NodeTool::new(&config.node)?;
 
-        if node.load(self, check_versions).await? {
-            installed += 1;
-        }
+        installed += node.run_setup(self, check_versions).await?;
 
         self.node = Some(node);
 
@@ -111,7 +109,7 @@ impl Toolchain {
         );
 
         if let Some(node) = &self.node {
-            node.unload(self).await?;
+            node.run_teardown(self).await?;
         }
 
         Ok(())

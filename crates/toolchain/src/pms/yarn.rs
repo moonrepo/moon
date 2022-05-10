@@ -1,6 +1,6 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{get_bin_name_suffix, get_bin_version};
-use crate::tool::{Executable, Installable, PackageManager};
+use crate::traits::{Executable, Installable, Lifecycle, Logable, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
@@ -26,6 +26,14 @@ impl YarnTool {
 
     fn is_v1(&self) -> bool {
         self.config.version.starts_with('1')
+    }
+}
+
+impl Lifecycle for YarnTool {}
+
+impl Logable for YarnTool {
+    fn get_log_target(&self) -> String {
+        String::from("moon:toolchain:yarn")
     }
 }
 
@@ -233,10 +241,6 @@ impl PackageManager for YarnTool {
 
     fn get_lockfile_name(&self) -> String {
         String::from("yarn.lock")
-    }
-
-    fn get_log_target(&self) -> String {
-        String::from("moon:toolchain:yarn")
     }
 
     fn get_workspace_dependency_range(&self) -> String {

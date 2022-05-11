@@ -56,7 +56,10 @@ impl Installable<NodeTool> for PnpmTool {
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();
 
-        if !self.is_executable() || !node.get_npm().is_global_dep_installed("pnpm").await? {
+        if !self.is_executable()
+            || (!node.is_corepack_aware()
+                && !node.get_npm().is_global_dep_installed("pnpm").await?)
+        {
             return Ok(false);
         }
 
@@ -104,8 +107,7 @@ impl Installable<NodeTool> for PnpmTool {
                 color::shell(&format!("npm install -g {}", package))
             );
 
-            npm.install_global_dep("pnpm", self.config.version.as_str())
-                .await?;
+            npm.install_global_dep("pnpm", &self.config.version).await?;
         }
 
         Ok(())
@@ -118,8 +120,7 @@ impl Executable<NodeTool> for PnpmTool {
         // If the global has moved, be sure to reference it
         let bin_path = node
             .get_npm()
-            .get_global_dir()
-            .await?
+            .get_global_dir()?
             .join(get_bin_name_suffix("pnpm", "cmd", false));
 
         if bin_path.exists() {

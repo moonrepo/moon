@@ -115,7 +115,7 @@ fn create_node_target_command(
 
     command.args(&args).args(&task.args).envs(&task.env).env(
         "PATH",
-        get_path_env_var(node.get_bin_path().parent().unwrap().to_path_buf()),
+        get_path_env_var(node.get_bin_path().parent().unwrap()),
     );
 
     Ok(command)

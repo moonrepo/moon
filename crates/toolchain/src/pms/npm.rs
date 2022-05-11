@@ -17,6 +17,8 @@ pub struct NpmTool {
 
     pub config: NpmConfig,
 
+    global_install_dir: Option<PathBuf>,
+
     install_dir: PathBuf,
 }
 
@@ -27,19 +29,16 @@ impl NpmTool {
         Ok(NpmTool {
             bin_path: install_dir.join(get_bin_name_suffix("npm", "cmd", false)),
             config: config.to_owned(),
+            global_install_dir: None,
             install_dir,
         })
     }
 
-    pub async fn get_global_dir(&self) -> Result<PathBuf, ToolchainError> {
-        let output = self
-            .create_command()
-            .args(["config", "get", "prefix"])
-            .exec_capture_output()
-            .await?;
-        let dir = output_to_trimmed_string(&output.stdout);
-
-        Ok(PathBuf::from(dir))
+    pub fn get_global_dir(&self) -> Result<&PathBuf, ToolchainError> {
+        Ok(self
+            .global_install_dir
+            .as_ref()
+            .unwrap_or(&self.install_dir))
     }
 
     pub async fn install_global_dep(
@@ -73,7 +72,22 @@ impl Logable for NpmTool {
     }
 }
 
-impl Lifecycle<NodeTool> for NpmTool {}
+#[async_trait]
+impl Lifecycle<NodeTool> for NpmTool {
+    async fn setup(&mut self, _node: &NodeTool, check_version: bool) -> Result<u8, ToolchainError> {
+        if check_version {
+            let output = self
+                .create_command()
+                .args(["config", "get", "prefix"])
+                .exec_capture_output()
+                .await?;
+
+            self.global_install_dir = Some(PathBuf::from(output_to_trimmed_string(&output.stdout)));
+        }
+
+        Ok(0)
+    }
+}
 
 #[async_trait]
 impl Installable<NodeTool> for NpmTool {
@@ -164,8 +178,7 @@ impl Executable<NodeTool> for NpmTool {
     async fn find_bin_path(&mut self, _node: &NodeTool) -> Result<(), ToolchainError> {
         // If the global has moved, be sure to reference it
         let bin_path = self
-            .get_global_dir()
-            .await?
+            .get_global_dir()?
             .join(get_bin_name_suffix("npm", "cmd", false));
 
         if bin_path.exists() {
@@ -212,7 +225,7 @@ impl PackageManager<NodeTool> for NpmTool {
         Command::new(&npx_path)
             .args(exec_args)
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(bin_dir.clone()))
+            .env("PATH", get_path_env_var(bin_dir))
             .exec_stream_output()
             .await?;
 

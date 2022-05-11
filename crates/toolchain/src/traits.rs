@@ -210,10 +210,7 @@ pub trait PackageManager<T: Send + Sync>:
         let bin_path = self.get_bin_path();
 
         let mut cmd = Command::new(bin_path);
-        cmd.env(
-            "PATH",
-            get_path_env_var(bin_path.parent().unwrap().to_path_buf()),
-        );
+        cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
         cmd
     }
 

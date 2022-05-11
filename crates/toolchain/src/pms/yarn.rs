@@ -52,13 +52,12 @@ impl Lifecycle<NodeTool> for YarnTool {
         // isn't available yet during installation, only after!
         debug!(
             target: &self.get_log_target(),
-            "Installing package manager with {}",
+            "Updating package manager version with {}",
             color::shell(&format!("yarn set version {}", self.config.version))
         );
 
         self.create_command()
             .args(["set", "version", &self.config.version])
-            // .cwd(&toolchain.workspace_root)
             .exec_capture_output()
             .await?;
 
@@ -83,7 +82,10 @@ impl Installable<NodeTool> for YarnTool {
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();
 
-        if !self.is_executable() || !node.get_npm().is_global_dep_installed("yarn").await? {
+        if !self.is_executable()
+            || (!node.is_corepack_aware()
+                && !node.get_npm().is_global_dep_installed("yarn").await?)
+        {
             return Ok(false);
         }
 
@@ -161,8 +163,7 @@ impl Executable<NodeTool> for YarnTool {
         // If the global has moved, be sure to reference it
         let bin_path = node
             .get_npm()
-            .get_global_dir()
-            .await?
+            .get_global_dir()?
             .join(get_bin_name_suffix("yarn", "cmd", false));
 
         if bin_path.exists() {

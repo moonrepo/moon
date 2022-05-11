@@ -167,12 +167,13 @@ impl NodeTool {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let bin_dir = self.get_bin_path().parent().unwrap().to_path_buf();
-        let corepack_path = bin_dir.join(get_bin_name_suffix("corepack", "cmd", true));
+        let corepack_path = self
+            .install_dir
+            .join(get_bin_name_suffix("corepack", "cmd", true));
 
         Command::new(&corepack_path)
             .args(args)
-            .env("PATH", get_path_env_var(bin_dir))
+            .env("PATH", get_path_env_var(&self.install_dir))
             .exec_capture_output()
             .await?;
 

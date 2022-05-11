@@ -153,6 +153,9 @@ pub trait Executable: Send + Sync {
 
     /// Returns an absolute file path to the executable binary for the tool.
     fn get_bin_path(&self) -> &PathBuf;
+
+    /// Return true if the binary exists and is executable.
+    fn is_executable(&self) -> bool;
 }
 
 #[async_trait]
@@ -161,14 +164,14 @@ pub trait Lifecycle: Send + Sync {
     /// Return a count of how many sub-tools were installed.
     async fn setup(
         &mut self,
-        _toolchain: &mut Toolchain,
+        _toolchain: &Toolchain,
         _check_version: bool,
     ) -> Result<u8, ToolchainError> {
         Ok(0)
     }
 
     /// Teardown the tool once it has been uninstalled.
-    async fn teardown(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn teardown(&mut self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(())
     }
 }
@@ -182,7 +185,7 @@ pub trait Tool:
     /// of how many sub-tools were installed.
     async fn run_setup(
         &mut self,
-        toolchain: &mut Toolchain,
+        toolchain: &Toolchain,
         check_version: bool,
     ) -> Result<u8, ToolchainError> {
         let mut installed = 0;
@@ -204,7 +207,7 @@ pub trait Tool:
 
     /// Teardown the tool by removing any downloaded/installed artifacts.
     /// This can be ran manually, or automatically during a failed load.
-    async fn run_teardown(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn run_teardown(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         self.run_undownload(toolchain).await?;
         self.run_uninstall(toolchain).await?;
         self.teardown(toolchain).await?;
@@ -257,7 +260,7 @@ pub trait PackageManager: Send + Sync + Installable + Executable + Logable + Lif
     /// of how many sub-tools were installed.
     async fn run_setup(
         &mut self,
-        toolchain: &mut Toolchain,
+        toolchain: &Toolchain,
         check_version: bool,
     ) -> Result<u8, ToolchainError> {
         let mut installed = 0;
@@ -274,7 +277,7 @@ pub trait PackageManager: Send + Sync + Installable + Executable + Logable + Lif
     }
 
     /// Uninstall the package manager from the parent tool.
-    async fn run_teardown(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn run_teardown(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         self.run_uninstall(toolchain).await?;
         self.teardown(toolchain).await?;
 

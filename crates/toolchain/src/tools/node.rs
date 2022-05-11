@@ -157,7 +157,7 @@ impl NodeTool {
         S: AsRef<OsStr>,
     {
         let bin_dir = self.get_bin_path().parent().unwrap().to_path_buf();
-        let corepack_path = bin_dir.join(get_bin_name_suffix("corepack", "exe", false));
+        let corepack_path = bin_dir.join(get_bin_name_suffix("corepack", "cmd", true));
 
         Command::new(&corepack_path)
             .args(args)
@@ -193,10 +193,12 @@ impl NodeTool {
         self.find_package_bin_path(package_name, starting_dir.parent().unwrap())
     }
 
+    /// Return the `npm` package manager.
     pub fn get_npm(&self) -> &NpmTool {
         &self.npm
     }
 
+    /// Return the `pnpm` package manager.
     pub fn get_pnpm(&self) -> Option<&PnpmTool> {
         match &self.pnpm {
             Some(tool) => Some(tool),
@@ -204,6 +206,7 @@ impl NodeTool {
         }
     }
 
+    /// Return the `yarn` package manager.
     pub fn get_yarn(&self) -> Option<&YarnTool> {
         match &self.yarn {
             Some(tool) => Some(tool),
@@ -239,20 +242,19 @@ impl Logable for NodeTool {
 
 #[async_trait]
 impl Downloadable for NodeTool {
-    async fn get_download_path(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError> {
-        Ok(toolchain
-            .temp_dir
+    async fn get_download_path(&self, temp_dir: &Path) -> Result<PathBuf, ToolchainError> {
+        Ok(temp_dir
             .join("node")
             .join(get_download_file(&self.config.version)?))
     }
 
-    async fn is_downloaded(&self, toolchain: &Toolchain) -> Result<bool, ToolchainError> {
-        Ok(self.get_download_path(toolchain).await?.exists())
+    async fn is_downloaded(&self, download_path: &Path) -> Result<bool, ToolchainError> {
+        Ok(download_path.exists())
     }
 
     async fn download(
         &self,
-        toolchain: &Toolchain,
+        download_path: &Path,
         base_host: Option<&str>,
     ) -> Result<(), ToolchainError> {
         let version = &self.config.version;
@@ -261,7 +263,6 @@ impl Downloadable for NodeTool {
 
         // Download the node.tar.gz archive
         let download_url = get_nodejs_url(version, host, &get_download_file(version)?);
-        let download_path = self.get_download_path(toolchain).await?;
 
         download_file_from_url(&download_url, &download_path).await?;
 
@@ -298,8 +299,8 @@ impl Downloadable for NodeTool {
 
 #[async_trait]
 impl Installable for NodeTool {
-    async fn get_install_dir(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError> {
-        Ok(toolchain.tools_dir.join("node").join(&self.config.version))
+    async fn get_install_dir(&self, tools_dir: &Path) -> Result<PathBuf, ToolchainError> {
+        Ok(tools_dir.join("node").join(&self.config.version))
     }
 
     async fn get_installed_version(&self) -> Result<String, ToolchainError> {
@@ -308,18 +309,20 @@ impl Installable for NodeTool {
 
     async fn is_installed(
         &self,
-        toolchain: &Toolchain,
+        install_dir: &Path,
         _check_version: bool,
     ) -> Result<bool, ToolchainError> {
-        Ok(self.get_install_dir(toolchain).await?.exists())
+        Ok(install_dir.exists())
     }
 
-    async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let download_path = self.get_download_path(toolchain).await?;
-        let install_dir = self.get_install_dir(toolchain).await?;
+    async fn install(
+        &self,
+        download_path: &Path,
+        install_dir: &Path,
+    ) -> Result<(), ToolchainError> {
         let prefix = get_download_file_name(&self.config.version)?;
 
-        unpack(&download_path, &install_dir, &prefix).await?;
+        unpack(download_path, install_dir, &prefix).await?;
 
         debug!(
             target: &self.get_log_target(),
@@ -347,13 +350,17 @@ impl Executable for NodeTool {
     fn get_bin_path(&self) -> &PathBuf {
         self.bin_path.as_ref().unwrap()
     }
+
+    fn is_executable(&self) -> bool {
+        true
+    }
 }
 
 #[async_trait]
 impl Lifecycle for NodeTool {
     async fn setup(
         &mut self,
-        toolchain: &mut Toolchain,
+        toolchain: &Toolchain,
         check_version: bool,
     ) -> Result<u8, ToolchainError> {
         if self.is_corepack_aware() && check_version {

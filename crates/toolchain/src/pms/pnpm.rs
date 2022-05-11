@@ -50,11 +50,12 @@ impl Installable for PnpmTool {
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();
 
-        if !toolchain
-            .get_node()
-            .get_npm()
-            .is_global_dep_installed("pnpm")
-            .await?
+        if !self.is_executable()
+            || !toolchain
+                .get_node()
+                .get_npm()
+                .is_global_dep_installed("pnpm")
+                .await?
         {
             debug!(
                 target: &target,
@@ -140,6 +141,10 @@ impl Executable for PnpmTool {
 
     fn get_bin_path(&self) -> &PathBuf {
         self.bin_path.as_ref().unwrap()
+    }
+
+    fn is_executable(&self) -> bool {
+        self.bin_path.is_some()
     }
 }
 

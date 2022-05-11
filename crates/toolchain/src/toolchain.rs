@@ -40,13 +40,14 @@ pub struct Toolchain {
     pub workspace_root: PathBuf,
 
     // Tool instances are private, as we want to lazy load them.
-    node: Option<NodeTool>,
+    node: NodeTool,
 }
 
 impl Toolchain {
     pub async fn create_from_dir(
         base_dir: &Path,
         root_dir: &Path,
+        config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
         let dir = base_dir.join(CONFIG_DIRNAME);
         let temp_dir = dir.join("temp");
@@ -67,14 +68,18 @@ impl Toolchain {
             temp_dir,
             tools_dir,
             workspace_root: root_dir.to_path_buf(),
-            node: None,
+            node: NodeTool::new(&config.node)?,
         })
     }
 
-    pub async fn create(root_dir: &Path) -> Result<Toolchain, ToolchainError> {
+    pub async fn create(
+        root_dir: &Path,
+        config: &WorkspaceConfig,
+    ) -> Result<Toolchain, ToolchainError> {
         Toolchain::create_from_dir(
             &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
+            config,
         )
         .await
     }
@@ -82,7 +87,7 @@ impl Toolchain {
     /// Download and install all tools into the toolchain.
     /// Return a count of how many tools were installed.
     pub async fn setup(
-        &mut self,
+        &self,
         config: &WorkspaceConfig,
         check_versions: bool,
     ) -> Result<u8, ToolchainError> {
@@ -92,11 +97,8 @@ impl Toolchain {
         );
 
         let mut installed = 0;
-        let mut node = NodeTool::new(&config.node)?;
 
-        installed += node.run_setup(self, check_versions).await?;
-
-        self.node = Some(node);
+        installed += self.node.run_setup(self, check_versions).await?;
 
         Ok(installed)
     }
@@ -108,14 +110,13 @@ impl Toolchain {
             "Tearing down toolchain, uninstalling tools",
         );
 
-        if let Some(node) = &self.node {
-            node.run_teardown(self).await?;
-        }
+        self.node.run_teardown(self).await?;
 
         Ok(())
     }
 
+    /// Return the Node.js tool.
     pub fn get_node(&self) -> &NodeTool {
-        self.node.as_ref().unwrap()
+        &self.node
     }
 }

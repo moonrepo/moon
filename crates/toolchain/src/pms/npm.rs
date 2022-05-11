@@ -84,11 +84,21 @@ impl Installable for NpmTool {
         _toolchain: &Toolchain,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
+        let target = self.get_log_target();
+
+        if !self.is_executable() {
+            debug!(
+                target: &target,
+                "Package is not installed, attempting to install",
+            );
+
+            return Ok(false);
+        }
+
         if !check_version {
             return Ok(true);
         }
 
-        let target = self.get_log_target();
         let version = self.get_installed_version().await?;
 
         if self.config.version == "inherit" {
@@ -165,6 +175,10 @@ impl Executable for NpmTool {
     fn get_bin_path(&self) -> &PathBuf {
         self.bin_path.as_ref().unwrap()
     }
+
+    fn is_executable(&self) -> bool {
+        self.bin_path.is_some()
+    }
 }
 
 #[async_trait]
@@ -189,8 +203,8 @@ impl PackageManager for NpmTool {
 
         exec_args.extend(args);
 
-        let bin_dir = self.get_bin_path().parent().unwrap().to_path_buf();
-        let npx_path = bin_dir.join(get_bin_name_suffix("corepack", "exe", false));
+        let bin_dir = toolchain.get_node().get_install_dir(toolchain).await?;
+        let npx_path = bin_dir.join(get_bin_name_suffix("npx", "exe", false));
 
         Command::new(&npx_path)
             .args(exec_args)

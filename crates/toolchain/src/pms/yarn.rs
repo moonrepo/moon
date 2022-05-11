@@ -54,11 +54,12 @@ impl Installable for YarnTool {
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();
 
-        if !toolchain
-            .get_node()
-            .get_npm()
-            .is_global_dep_installed("yarn")
-            .await?
+        if !self.is_executable()
+            || !toolchain
+                .get_node()
+                .get_npm()
+                .is_global_dep_installed("yarn")
+                .await?
         {
             debug!(
                 target: &target,
@@ -182,6 +183,10 @@ impl Executable for YarnTool {
 
     fn get_bin_path(&self) -> &PathBuf {
         self.bin_path.as_ref().unwrap()
+    }
+
+    fn is_executable(&self) -> bool {
+        self.bin_path.is_some()
     }
 }
 

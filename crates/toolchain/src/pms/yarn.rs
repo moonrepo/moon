@@ -39,7 +39,30 @@ impl Logable for YarnTool {
     }
 }
 
-impl Lifecycle<NodeTool> for YarnTool {}
+#[async_trait]
+impl Lifecycle<NodeTool> for YarnTool {
+    async fn setup(&mut self, _node: &NodeTool, check_version: bool) -> Result<u8, ToolchainError> {
+        if !check_version || self.is_v1() {
+            return Ok(0);
+        }
+
+        // We must do this here instead of `install`, because the bin path
+        // isn't available yet during installation, only after!
+        debug!(
+            target: &self.get_log_target(),
+            "Installing package manager with {}",
+            color::shell(&format!("yarn set version {}", self.config.version))
+        );
+
+        self.create_command()
+            .args(["set", "version", &self.config.version])
+            // .cwd(&toolchain.workspace_root)
+            .exec_capture_output()
+            .await?;
+
+        Ok(1)
+    }
+}
 
 #[async_trait]
 impl Installable<NodeTool> for YarnTool {
@@ -59,11 +82,6 @@ impl Installable<NodeTool> for YarnTool {
         let target = self.get_log_target();
 
         if !self.is_executable() || !node.get_npm().is_global_dep_installed("yarn").await? {
-            debug!(
-                target: &target,
-                "Package is not installed, attempting to install",
-            );
-
             return Ok(false);
         }
 
@@ -98,59 +116,37 @@ impl Installable<NodeTool> for YarnTool {
     async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
         let target = self.get_log_target();
         let npm = node.get_npm();
+        let package = format!("yarn@{}", self.config.version);
 
-        if self.is_v1() {
-            let package = format!("yarn@{}", self.config.version);
-
-            if node.is_corepack_aware() {
-                debug!(
-                    target: &target,
-                    "Enabling package manager with {}",
-                    color::shell(&format!("corepack prepare {} --activate", package))
-                );
-
-                node.exec_corepack(["prepare", &package, "--activate"])
-                    .await?;
-            } else {
-                debug!(
-                    target: &target,
-                    "Installing package with {}",
-                    color::shell(&format!("npm install -g {}", package))
-                );
-
-                npm.install_global_dep("yarn", &self.config.version).await?;
-            }
-        } else {
-            if node.is_corepack_aware() {
-                debug!(
-                    target: &target,
-                    "Enabling package manager with {}",
-                    color::shell("corepack prepare yarn --activate")
-                );
-
-                node.exec_corepack(["prepare", "yarn", "--activate"])
-                    .await?;
-            } else {
-                debug!(
-                    target: &target,
-                    "Installing legacy package with {}",
-                    color::shell("npm install -g yarn@latest")
-                );
-
-                npm.install_global_dep("yarn", "latest").await?;
-            }
-
+        if node.is_corepack_aware() {
             debug!(
                 target: &target,
-                "Installing package manager with {}",
-                color::shell(&format!("yarn set version {}", self.config.version))
+                "Enabling package manager with {}",
+                color::shell(&format!("corepack prepare {} --activate", package))
             );
 
-            self.create_command()
-                .args(["set", "version", &self.config.version])
-                // .cwd(&toolchain.workspace_root)
-                .exec_capture_output()
+            node.exec_corepack(["prepare", &package, "--activate"])
                 .await?;
+
+            // v1
+        } else if self.is_v1() {
+            debug!(
+                target: &target,
+                "Installing package with {}",
+                color::shell(&format!("npm install -g {}", package))
+            );
+
+            npm.install_global_dep("yarn", &self.config.version).await?;
+
+            // v2, v3
+        } else {
+            debug!(
+                target: &target,
+                "Installing legacy package with {}",
+                color::shell("npm install -g yarn@latest")
+            );
+
+            npm.install_global_dep("yarn", "latest").await?;
         }
 
         Ok(())

@@ -1,11 +1,11 @@
 use moon_config::WorkspaceConfig;
-use moon_toolchain::tools::npm::NpmTool;
-use moon_toolchain::{Tool, Toolchain};
+use moon_toolchain::helpers::get_bin_name_suffix;
+use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
 use std::path::PathBuf;
 
-async fn create_npm_tool() -> (NpmTool, assert_fs::TempDir) {
+async fn create_npm_tool() -> (Toolchain, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
     let mut config = WorkspaceConfig::default();
@@ -13,16 +13,17 @@ async fn create_npm_tool() -> (NpmTool, assert_fs::TempDir) {
     config.node.version = String::from("1.0.0");
     config.node.npm.version = String::from("6.0.0");
 
-    let toolchain = Toolchain::create_from_dir(&config, base_dir.path(), &env::temp_dir())
+    let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
         .await
         .unwrap();
 
-    (toolchain.get_npm().to_owned(), base_dir)
+    (toolchain, base_dir)
 }
 
 #[tokio::test]
 async fn generates_paths() {
-    let (npm, temp_dir) = create_npm_tool().await;
+    let (toolchain, temp_dir) = create_npm_tool().await;
+    let npm = toolchain.get_node().get_npm();
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")
@@ -32,18 +33,13 @@ async fn generates_paths() {
             .to_str()
             .unwrap()
     )
-    .eval(npm.get_install_dir().to_str().unwrap()));
+    .eval(npm.get_install_dir().unwrap().to_str().unwrap()));
 
-    let mut bin_path = PathBuf::from(".moon")
+    let bin_path = PathBuf::from(".moon")
         .join("tools")
         .join("node")
-        .join("1.0.0");
-
-    if cfg!(windows) {
-        bin_path = bin_path.join("npm.cmd");
-    } else {
-        bin_path = bin_path.join("bin").join("npm");
-    }
+        .join("1.0.0")
+        .join(get_bin_name_suffix("npm", "cmd", false));
 
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(npm.get_bin_path().to_str().unwrap()));

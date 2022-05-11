@@ -55,11 +55,6 @@ impl Installable<NodeTool> for PnpmTool {
         let target = self.get_log_target();
 
         if !self.is_executable() || !node.get_npm().is_global_dep_installed("pnpm").await? {
-            debug!(
-                target: &target,
-                "Package is not installed, attempting to install",
-            );
-
             return Ok(false);
         }
 

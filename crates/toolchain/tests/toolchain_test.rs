@@ -9,7 +9,7 @@ async fn create_toolchain(base_dir: &Path) -> Toolchain {
 
     config.node.version = String::from("1.0.0");
 
-    Toolchain::create_from_dir(&config, base_dir, &env::temp_dir())
+    Toolchain::create_from_dir(base_dir, &env::temp_dir(), &config)
         .await
         .unwrap()
 }
@@ -51,17 +51,3 @@ async fn creates_dirs() {
 
     base_dir.close().unwrap();
 }
-
-// #[test]
-// fn loads_node_npm() {
-//     let base_dir = assert_fs::TempDir::new().unwrap();
-//     let toolchain = create_toolchain(&base_dir).await;
-
-//     assert_ne!(toolchain.get_node(), None);
-//     assert_ne!(toolchain.get_npm(), None);
-//     assert_eq!(toolchain.get_pnpm(), None);
-//     assert_eq!(toolchain.get_yarn(), None);
-//
-
-//      base_dir.close().unwrap();
-// }

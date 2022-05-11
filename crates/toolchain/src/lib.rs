@@ -1,5 +1,5 @@
 mod errors;
-mod helpers;
+pub mod helpers;
 pub mod pms;
 mod toolchain;
 pub mod tools;

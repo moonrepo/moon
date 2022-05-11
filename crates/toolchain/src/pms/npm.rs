@@ -91,11 +91,6 @@ impl Installable<NodeTool> for NpmTool {
         let target = self.get_log_target();
 
         if !self.is_executable() {
-            debug!(
-                target: &target,
-                "Package is not installed, attempting to install",
-            );
-
             return Ok(false);
         }
 

@@ -1,22 +1,21 @@
 use moon_config::WorkspaceConfig;
-use moon_toolchain::tools::node::NodeTool;
-use moon_toolchain::{Tool, Toolchain};
+use moon_toolchain::{Downloadable, Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
 use std::path::PathBuf;
 
-async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
+async fn create_node_tool() -> (Toolchain, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
     let mut config = WorkspaceConfig::default();
 
     config.node.version = String::from("1.0.0");
 
-    let toolchain = Toolchain::create_from_dir(&config, base_dir.path(), &env::temp_dir())
+    let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
         .await
         .unwrap();
 
-    (toolchain.get_node().to_owned(), base_dir)
+    (toolchain, base_dir)
 }
 
 fn get_download_file() -> &'static str {
@@ -31,7 +30,8 @@ fn get_download_file() -> &'static str {
 
 #[tokio::test]
 async fn generates_paths() {
-    let (node, temp_dir) = create_node_tool().await;
+    let (toolchain, temp_dir) = create_node_tool().await;
+    let node = toolchain.get_node();
 
     // We have to use join a lot to test on windows
     assert!(predicates::str::ends_with(
@@ -42,7 +42,7 @@ async fn generates_paths() {
             .to_str()
             .unwrap()
     )
-    .eval(node.get_install_dir().to_str().unwrap()));
+    .eval(node.get_install_dir().unwrap().to_str().unwrap()));
 
     let mut bin_path = PathBuf::from(".moon")
         .join("tools")
@@ -77,16 +77,17 @@ mod download {
 
     #[tokio::test]
     async fn is_downloaded_checks() {
-        let (node, temp_dir) = create_node_tool().await;
+        let (toolchain, temp_dir) = create_node_tool().await;
+        let node = toolchain.get_node();
 
-        assert!(!node.is_downloaded());
+        assert!(!node.is_downloaded().await.unwrap());
 
         let dl_path = node.get_download_path().unwrap();
 
         std::fs::create_dir_all(dl_path.parent().unwrap()).unwrap();
         std::fs::write(dl_path, "").unwrap();
 
-        assert!(node.is_downloaded());
+        assert!(node.is_downloaded().await.unwrap());
 
         std::fs::remove_file(dl_path).unwrap();
 
@@ -95,7 +96,8 @@ mod download {
 
     #[tokio::test]
     async fn downloads_to_temp_dir() {
-        let (node, temp_dir) = create_node_tool().await;
+        let (toolchain, temp_dir) = create_node_tool().await;
+        let node = toolchain.get_node();
 
         assert!(!node.get_download_path().unwrap().exists());
 
@@ -110,7 +112,9 @@ mod download {
             .with_body("9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-darwin-x64.tar.gz\n9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-linux-x64.tar.gz\n9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-win-x64.zip\n")
             .create();
 
-        node.download(Some(&mockito::server_url())).await.unwrap();
+        node.download(&toolchain, Some(&mockito::server_url()))
+            .await
+            .unwrap();
 
         archive.assert();
         shasums.assert();
@@ -123,7 +127,8 @@ mod download {
     #[tokio::test]
     #[should_panic(expected = "InvalidShasum")]
     async fn fails_on_invalid_shasum() {
-        let (node, temp_dir) = create_node_tool().await;
+        let (toolchain, temp_dir) = create_node_tool().await;
+        let node = toolchain.get_node();
 
         let archive = mock(
             "GET",
@@ -138,7 +143,9 @@ mod download {
             )
             .create();
 
-        node.download(Some(&mockito::server_url())).await.unwrap();
+        node.download(&toolchain, Some(&mockito::server_url()))
+            .await
+            .unwrap();
 
         archive.assert();
         shasums.assert();

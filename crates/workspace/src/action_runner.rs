@@ -153,12 +153,21 @@ impl ActionRunner {
                         )
                         .await?;
 
-                        trace!(
-                            target: &log_target_name,
-                            "Ran action {} in {:?}",
-                            log_action_label,
-                            action.duration.unwrap()
-                        );
+                        if action.has_failed() {
+                            trace!(
+                                target: &log_target_name,
+                                "Failed to run action {} in {:?}",
+                                log_action_label,
+                                action.duration.unwrap()
+                            );
+                        } else {
+                            trace!(
+                                target: &log_target_name,
+                                "Ran action {} in {:?}",
+                                log_action_label,
+                                action.duration.unwrap()
+                            );
+                        }
                     } else {
                         action.status = ActionStatus::Invalid;
 

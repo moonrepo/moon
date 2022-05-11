@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct YarnTool {
-    bin_path: Option<PathBuf>,
+    bin_path: PathBuf,
 
     pub config: YarnConfig,
 
@@ -21,10 +21,12 @@ pub struct YarnTool {
 
 impl YarnTool {
     pub fn new(node: &NodeTool, config: &YarnConfig) -> Result<YarnTool, ToolchainError> {
+        let install_dir = node.get_install_dir()?.clone();
+
         Ok(YarnTool {
-            bin_path: None,
+            bin_path: install_dir.join(get_bin_name_suffix("yarn", "cmd", false)),
             config: config.to_owned(),
-            install_dir: node.get_install_dir()?.clone(),
+            install_dir,
         })
     }
 
@@ -156,25 +158,26 @@ impl Installable<NodeTool> for YarnTool {
 #[async_trait]
 impl Executable<NodeTool> for YarnTool {
     async fn find_bin_path(&mut self, node: &NodeTool) -> Result<(), ToolchainError> {
-        let suffix = get_bin_name_suffix("yarn", "cmd", false);
-        let mut bin_path = self.install_dir.join(&suffix);
+        // If the global has moved, be sure to reference it
+        let bin_path = node
+            .get_npm()
+            .get_global_dir()
+            .await?
+            .join(get_bin_name_suffix("yarn", "cmd", false));
 
-        // If bin doesn't exist in the install dir, try the global dir
-        if !bin_path.exists() {
-            bin_path = node.get_npm().get_global_dir().await?.join(&suffix);
+        if bin_path.exists() {
+            self.bin_path = bin_path;
         }
-
-        self.bin_path = Some(bin_path);
 
         Ok(())
     }
 
     fn get_bin_path(&self) -> &PathBuf {
-        self.bin_path.as_ref().unwrap()
+        &self.bin_path
     }
 
     fn is_executable(&self) -> bool {
-        self.bin_path.is_some()
+        self.bin_path.exists()
     }
 }
 

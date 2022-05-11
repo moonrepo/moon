@@ -13,7 +13,7 @@ use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct NpmTool {
-    bin_path: Option<PathBuf>,
+    bin_path: PathBuf,
 
     pub config: NpmConfig,
 
@@ -22,10 +22,12 @@ pub struct NpmTool {
 
 impl NpmTool {
     pub fn new(node: &NodeTool, config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
+        let install_dir = node.get_install_dir()?.clone();
+
         Ok(NpmTool {
-            bin_path: None,
+            bin_path: install_dir.join(get_bin_name_suffix("npm", "cmd", false)),
             config: config.to_owned(),
-            install_dir: node.get_install_dir()?.clone(),
+            install_dir,
         })
     }
 
@@ -47,7 +49,7 @@ impl NpmTool {
     ) -> Result<(), ToolchainError> {
         self.create_command()
             .args(["install", "-g", &format!("{}@{}", package, version)])
-            .exec_stream_output()
+            .exec_capture_output()
             .await?;
 
         Ok(())
@@ -160,23 +162,25 @@ impl Installable<NodeTool> for NpmTool {
 #[async_trait]
 impl Executable<NodeTool> for NpmTool {
     async fn find_bin_path(&mut self, _node: &NodeTool) -> Result<(), ToolchainError> {
+        // If the global has moved, be sure to reference it
         let bin_path = self
-            .get_install_dir()?
+            .get_global_dir()
+            .await?
             .join(get_bin_name_suffix("npm", "cmd", false));
 
-        self.bin_path = Some(bin_path);
+        if bin_path.exists() {
+            self.bin_path = bin_path;
+        }
 
         Ok(())
     }
 
     fn get_bin_path(&self) -> &PathBuf {
-        self.bin_path
-            .as_ref()
-            .expect("npm bin path not set! Run `setup` first.")
+        &self.bin_path
     }
 
     fn is_executable(&self) -> bool {
-        self.bin_path.is_some()
+        true
     }
 }
 

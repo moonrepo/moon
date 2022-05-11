@@ -117,7 +117,7 @@ fn verify_shasum(
 
 #[derive(Clone, Debug)]
 pub struct NodeTool {
-    bin_path: Option<PathBuf>,
+    bin_path: PathBuf,
 
     pub config: NodeConfig,
 
@@ -134,14 +134,16 @@ pub struct NodeTool {
 
 impl NodeTool {
     pub fn new(toolchain: &Toolchain, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
+        let install_dir = toolchain.tools_dir.join("node").join(&config.version);
+
         let mut node = NodeTool {
-            bin_path: None,
+            bin_path: install_dir.join(get_bin_name_suffix("node", "exe", false)),
             config: config.to_owned(),
             download_path: toolchain
                 .temp_dir
                 .join("node")
                 .join(get_download_file(&config.version)?),
-            install_dir: toolchain.tools_dir.join("node").join(&config.version),
+            install_dir,
             npm: None,
             pnpm: None,
             yarn: None,
@@ -343,19 +345,11 @@ impl Installable<Toolchain> for NodeTool {
 #[async_trait]
 impl Executable<Toolchain> for NodeTool {
     async fn find_bin_path(&mut self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let bin_path = self
-            .get_install_dir()?
-            .join(get_bin_name_suffix("node", "exe", false));
-
-        self.bin_path = Some(bin_path);
-
         Ok(())
     }
 
     fn get_bin_path(&self) -> &PathBuf {
-        self.bin_path
-            .as_ref()
-            .expect("Node.js bin path not set! Run `setup` first.")
+        &self.bin_path
     }
 
     fn is_executable(&self) -> bool {

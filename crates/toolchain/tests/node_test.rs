@@ -1,4 +1,5 @@
 use moon_config::WorkspaceConfig;
+use moon_toolchain::helpers::get_bin_name_suffix;
 use moon_toolchain::{Downloadable, Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
@@ -21,7 +22,7 @@ async fn create_node_tool() -> (Toolchain, assert_fs::TempDir) {
 fn get_download_file() -> &'static str {
     if cfg!(windows) {
         "node-v1.0.0-win-x64.zip"
-    } else if cfg!(macos) {
+    } else if cfg!(target_os = "macos") {
         "node-v1.0.0-darwin-x64.tar.gz"
     } else {
         "node-v1.0.0-linux-x64.tar.gz"
@@ -44,16 +45,11 @@ async fn generates_paths() {
     )
     .eval(node.get_install_dir().unwrap().to_str().unwrap()));
 
-    let mut bin_path = PathBuf::from(".moon")
+    let bin_path = PathBuf::from(".moon")
         .join("tools")
         .join("node")
-        .join("1.0.0");
-
-    if cfg!(windows) {
-        bin_path = bin_path.join("node.exe");
-    } else {
-        bin_path = bin_path.join("bin").join("node");
-    }
+        .join("1.0.0")
+        .join(get_bin_name_suffix("node", "exe", false));
 
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(node.get_bin_path().to_str().unwrap()));

@@ -1,11 +1,11 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{get_bin_name_suffix, get_bin_version, get_path_env_var};
 use crate::tools::node::NodeTool;
-use crate::traits::{Executable, Installable, Lifecycle, Logable, PackageManager};
+use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
-use moon_logger::{color, debug};
+use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use moon_utils::process::{output_to_trimmed_string, Command};
 use std::env;
@@ -16,13 +16,16 @@ pub struct NpmTool {
     bin_path: Option<PathBuf>,
 
     pub config: NpmConfig,
+
+    install_dir: PathBuf,
 }
 
 impl NpmTool {
-    pub fn new(config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
+    pub fn new(node: &NodeTool, config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
         Ok(NpmTool {
             bin_path: None,
             config: config.to_owned(),
+            install_dir: node.get_install_dir()?.clone(),
         })
     }
 
@@ -62,18 +65,18 @@ impl NpmTool {
     }
 }
 
-impl Lifecycle for NpmTool {}
-
 impl Logable for NpmTool {
     fn get_log_target(&self) -> String {
         String::from("moon:toolchain:npm")
     }
 }
 
+impl Lifecycle<NodeTool> for NpmTool {}
+
 #[async_trait]
 impl Installable<NodeTool> for NpmTool {
-    async fn get_install_dir(&self, node: &NodeTool) -> Result<PathBuf, ToolchainError> {
-        node.get_install_dir(toolchain).await
+    fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError> {
+        Ok(&self.install_dir)
     }
 
     async fn get_installed_version(&self) -> Result<String, ToolchainError> {
@@ -82,7 +85,7 @@ impl Installable<NodeTool> for NpmTool {
 
     async fn is_installed(
         &self,
-        node: &NodeTool,
+        _node: &NodeTool,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();
@@ -128,13 +131,12 @@ impl Installable<NodeTool> for NpmTool {
         Ok(false)
     }
 
-    async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
         if self.config.version == "inherit" {
             return Ok(());
         }
 
         let target = self.get_log_target();
-        let node = toolchain.get_node();
         let package = format!("npm@{}", self.config.version);
 
         if node.is_corepack_aware() {
@@ -161,11 +163,10 @@ impl Installable<NodeTool> for NpmTool {
 }
 
 #[async_trait]
-impl Executable for NpmTool {
-    async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+impl Executable<NodeTool> for NpmTool {
+    async fn find_bin_path(&mut self, _node: &NodeTool) -> Result<(), ToolchainError> {
         let bin_path = self
-            .get_install_dir(toolchain)
-            .await?
+            .get_install_dir()?
             .join(get_bin_name_suffix("npm", "cmd", false));
 
         self.bin_path = Some(bin_path);
@@ -174,7 +175,9 @@ impl Executable for NpmTool {
     }
 
     fn get_bin_path(&self) -> &PathBuf {
-        self.bin_path.as_ref().unwrap()
+        self.bin_path
+            .as_ref()
+            .expect("npm bin path not set! Run `setup` first.")
     }
 
     fn is_executable(&self) -> bool {
@@ -183,7 +186,7 @@ impl Executable for NpmTool {
 }
 
 #[async_trait]
-impl PackageManager for NpmTool {
+impl PackageManager<NodeTool> for NpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         self.create_command()
             .args(["dedupe"])
@@ -204,13 +207,13 @@ impl PackageManager for NpmTool {
 
         exec_args.extend(args);
 
-        let bin_dir = toolchain.get_node().get_install_dir(toolchain).await?;
+        let bin_dir = toolchain.get_node().get_install_dir()?;
         let npx_path = bin_dir.join(get_bin_name_suffix("npx", "exe", false));
 
         Command::new(&npx_path)
             .args(exec_args)
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(bin_dir))
+            .env("PATH", get_path_env_var(bin_dir.clone()))
             .exec_stream_output()
             .await?;
 

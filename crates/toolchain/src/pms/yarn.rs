@@ -1,10 +1,11 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{get_bin_name_suffix, get_bin_version};
-use crate::traits::{Executable, Installable, Lifecycle, Logable, PackageManager};
+use crate::tools::node::NodeTool;
+use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
-use moon_logger::{color, debug};
+use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use std::env;
 use std::path::PathBuf;
@@ -14,13 +15,16 @@ pub struct YarnTool {
     bin_path: Option<PathBuf>,
 
     pub config: YarnConfig,
+
+    install_dir: PathBuf,
 }
 
 impl YarnTool {
-    pub fn new(config: &YarnConfig) -> Result<YarnTool, ToolchainError> {
+    pub fn new(node: &NodeTool, config: &YarnConfig) -> Result<YarnTool, ToolchainError> {
         Ok(YarnTool {
             bin_path: None,
             config: config.to_owned(),
+            install_dir: node.get_install_dir()?.clone(),
         })
     }
 
@@ -29,18 +33,18 @@ impl YarnTool {
     }
 }
 
-impl Lifecycle for YarnTool {}
-
 impl Logable for YarnTool {
     fn get_log_target(&self) -> String {
         String::from("moon:toolchain:yarn")
     }
 }
 
+impl Lifecycle<NodeTool> for YarnTool {}
+
 #[async_trait]
-impl Installable for YarnTool {
-    async fn get_install_dir(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError> {
-        toolchain.get_node().get_install_dir(toolchain).await
+impl Installable<NodeTool> for YarnTool {
+    fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError> {
+        Ok(&self.install_dir)
     }
 
     async fn get_installed_version(&self) -> Result<String, ToolchainError> {
@@ -49,18 +53,12 @@ impl Installable for YarnTool {
 
     async fn is_installed(
         &self,
-        toolchain: &Toolchain,
+        node: &NodeTool,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();
 
-        if !self.is_executable()
-            || !toolchain
-                .get_node()
-                .get_npm()
-                .is_global_dep_installed("yarn")
-                .await?
-        {
+        if !self.is_executable() || !node.get_npm().is_global_dep_installed("yarn").await? {
             debug!(
                 target: &target,
                 "Package is not installed, attempting to install",
@@ -97,9 +95,8 @@ impl Installable for YarnTool {
     // Yarn >= 2 work differently than normal packages, as their runtime code
     // is stored *within* the repository, and the v1 package detects it.
     // Because of this, we need to always install the v1 package!
-    async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
         let target = self.get_log_target();
-        let node = toolchain.get_node();
         let npm = node.get_npm();
 
         if self.is_v1() {
@@ -151,7 +148,7 @@ impl Installable for YarnTool {
 
             self.create_command()
                 .args(["set", "version", &self.config.version])
-                .cwd(&toolchain.workspace_root)
+                // .cwd(&toolchain.workspace_root)
                 .exec_capture_output()
                 .await?;
         }
@@ -161,19 +158,14 @@ impl Installable for YarnTool {
 }
 
 #[async_trait]
-impl Executable for YarnTool {
-    async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+impl Executable<NodeTool> for YarnTool {
+    async fn find_bin_path(&mut self, node: &NodeTool) -> Result<(), ToolchainError> {
         let suffix = get_bin_name_suffix("yarn", "cmd", false);
-        let mut bin_path = self.get_install_dir(toolchain).await?.join(&suffix);
+        let mut bin_path = self.install_dir.join(&suffix);
 
         // If bin doesn't exist in the install dir, try the global dir
         if !bin_path.exists() {
-            bin_path = toolchain
-                .get_node()
-                .get_npm()
-                .get_global_dir()
-                .await?
-                .join(&suffix);
+            bin_path = node.get_npm().get_global_dir().await?.join(&suffix);
         }
 
         self.bin_path = Some(bin_path);
@@ -191,7 +183,7 @@ impl Executable for YarnTool {
 }
 
 #[async_trait]
-impl PackageManager for YarnTool {
+impl PackageManager<NodeTool> for YarnTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock

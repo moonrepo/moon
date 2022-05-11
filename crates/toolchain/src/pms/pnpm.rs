@@ -1,10 +1,11 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{get_bin_name_suffix, get_bin_version};
-use crate::traits::{Executable, Installable, Lifecycle, Logable, PackageManager};
+use crate::tools::node::NodeTool;
+use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
-use moon_logger::{color, debug};
+use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use std::env;
 use std::path::PathBuf;
@@ -14,18 +15,19 @@ pub struct PnpmTool {
     bin_path: Option<PathBuf>,
 
     pub config: PnpmConfig,
+
+    install_dir: PathBuf,
 }
 
 impl PnpmTool {
-    pub fn new(config: &PnpmConfig) -> Result<PnpmTool, ToolchainError> {
+    pub fn new(node: &NodeTool, config: &PnpmConfig) -> Result<PnpmTool, ToolchainError> {
         Ok(PnpmTool {
             bin_path: None,
             config: config.to_owned(),
+            install_dir: node.get_install_dir()?.clone(),
         })
     }
 }
-
-impl Lifecycle for PnpmTool {}
 
 impl Logable for PnpmTool {
     fn get_log_target(&self) -> String {
@@ -33,10 +35,12 @@ impl Logable for PnpmTool {
     }
 }
 
+impl Lifecycle<NodeTool> for PnpmTool {}
+
 #[async_trait]
-impl Installable for PnpmTool {
-    async fn get_install_dir(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError> {
-        toolchain.get_node().get_install_dir(toolchain).await
+impl Installable<NodeTool> for PnpmTool {
+    fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError> {
+        Ok(&self.install_dir)
     }
 
     async fn get_installed_version(&self) -> Result<String, ToolchainError> {
@@ -45,18 +49,12 @@ impl Installable for PnpmTool {
 
     async fn is_installed(
         &self,
-        toolchain: &Toolchain,
+        node: &NodeTool,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();
 
-        if !self.is_executable()
-            || !toolchain
-                .get_node()
-                .get_npm()
-                .is_global_dep_installed("pnpm")
-                .await?
-        {
+        if !self.is_executable() || !node.get_npm().is_global_dep_installed("pnpm").await? {
             debug!(
                 target: &target,
                 "Package is not installed, attempting to install",
@@ -88,9 +86,8 @@ impl Installable for PnpmTool {
         Ok(true)
     }
 
-    async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
         let target = self.get_log_target();
-        let node = toolchain.get_node();
         let npm = node.get_npm();
         let package = format!("pnpm@{}", self.config.version);
 
@@ -119,19 +116,14 @@ impl Installable for PnpmTool {
 }
 
 #[async_trait]
-impl Executable for PnpmTool {
-    async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+impl Executable<NodeTool> for PnpmTool {
+    async fn find_bin_path(&mut self, node: &NodeTool) -> Result<(), ToolchainError> {
         let suffix = get_bin_name_suffix("pnpm", "cmd", false);
-        let mut bin_path = self.get_install_dir(toolchain).await?.join(&suffix);
+        let mut bin_path = self.install_dir.join(&suffix);
 
         // If bin doesn't exist in the install dir, try the global dir
         if !bin_path.exists() {
-            bin_path = toolchain
-                .get_node()
-                .get_npm()
-                .get_global_dir()
-                .await?
-                .join(&suffix);
+            bin_path = node.get_npm().get_global_dir().await?.join(&suffix);
         }
 
         self.bin_path = Some(bin_path);
@@ -149,7 +141,7 @@ impl Executable for PnpmTool {
 }
 
 #[async_trait]
-impl PackageManager for PnpmTool {
+impl PackageManager<NodeTool> for PnpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune

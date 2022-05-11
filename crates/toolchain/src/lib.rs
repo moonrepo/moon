@@ -8,4 +8,4 @@ mod traits;
 pub use errors::ToolchainError;
 pub use helpers::get_path_env_var;
 pub use toolchain::Toolchain;
-pub use traits::{Downloadable, Executable, Installable, Logable, PackageManager, Tool};
+pub use traits::{Downloadable, Executable, Installable, PackageManager, Tool};

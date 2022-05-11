@@ -90,11 +90,7 @@ impl Toolchain {
 
     /// Download and install all tools into the toolchain.
     /// Return a count of how many tools were installed.
-    pub async fn setup(
-        &self,
-        config: &WorkspaceConfig,
-        check_versions: bool,
-    ) -> Result<u8, ToolchainError> {
+    pub async fn setup(&mut self, check_versions: bool) -> Result<u8, ToolchainError> {
         debug!(
             target: "moon:toolchain",
             "Downloading and installing tools",
@@ -102,19 +98,26 @@ impl Toolchain {
 
         let mut installed = 0;
 
-        installed += self.get_node().run_setup(self, check_versions).await?;
+        if self.node.is_some() {
+            let mut node = self.node.take().unwrap();
+            installed += node.run_setup(self, check_versions).await?;
+            self.node = Some(node);
+        }
 
         Ok(installed)
     }
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.
-    pub async fn teardown(&self) -> Result<(), ToolchainError> {
+    pub async fn teardown(&mut self) -> Result<(), ToolchainError> {
         debug!(
             target: "moon:toolchain",
             "Tearing down toolchain, uninstalling tools",
         );
 
-        self.get_node().run_teardown(self).await?;
+        if self.node.is_some() {
+            let mut node = self.node.take().unwrap();
+            node.run_teardown(self).await?;
+        }
 
         Ok(())
     }

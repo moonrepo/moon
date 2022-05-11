@@ -13,25 +13,25 @@ pub trait Logable {
 }
 
 #[async_trait]
-pub trait Downloadable: Send + Sync + Logable {
+pub trait Downloadable<T: Send + Sync>: Send + Sync + Logable {
     /// Returns an absolute file path to the downloaded file.
     /// This _may not exist_, as the path is composed ahead of time.
     /// This is typically ~/.moon/temp/<file>.
-    async fn get_download_path(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError>;
+    async fn get_download_path(&self) -> Result<PathBuf, ToolchainError>;
 
     /// Determine whether the tool has already been downloaded.
-    async fn is_downloaded(&self, toolchain: &Toolchain) -> Result<bool, ToolchainError>;
+    async fn is_downloaded(&self) -> Result<bool, ToolchainError>;
 
     /// Downloads the tool into the ~/.moon/temp folder.
     async fn download(
         &self,
-        toolchain: &Toolchain,
+        parent: &T,
         host: Option<&str>, // Host to download from
     ) -> Result<(), ToolchainError>;
 
     /// Delete the downloaded file(s).
-    async fn undownload(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let download_path = self.get_download_path(toolchain).await?;
+    async fn undownload(&self, parent: &T) -> Result<(), ToolchainError> {
+        let download_path = self.get_download_path().await?;
 
         fs::remove_file(&download_path).await?;
 
@@ -39,10 +39,10 @@ pub trait Downloadable: Send + Sync + Logable {
     }
 
     /// Run the download process: check if downloaded -> download or skip.
-    async fn run_download(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn run_download(&self, parent: &T) -> Result<(), ToolchainError> {
         let target = self.get_log_target();
 
-        if self.is_downloaded(toolchain).await? {
+        if self.is_downloaded().await? {
             debug!(
                 target: &target,
                 "Tool has already been downloaded, continuing"
@@ -54,16 +54,16 @@ pub trait Downloadable: Send + Sync + Logable {
                 return Err(ToolchainError::InternetConnectionRequired);
             }
 
-            self.download(toolchain, None).await?;
+            self.download(parent, None).await?;
         }
 
         Ok(())
     }
 
     /// Run the undownload process: check if downloaded -> delete files.
-    async fn run_undownload(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        if self.is_downloaded(toolchain).await? {
-            self.undownload(toolchain).await?;
+    async fn run_undownload(&self, parent: &T) -> Result<(), ToolchainError> {
+        if self.is_downloaded().await? {
+            self.undownload(parent).await?;
 
             debug!(target: &self.get_log_target(), "Deleted download files");
         }
@@ -73,10 +73,10 @@ pub trait Downloadable: Send + Sync + Logable {
 }
 
 #[async_trait]
-pub trait Installable: Send + Sync + Logable {
+pub trait Installable<T: Send + Sync>: Send + Sync + Logable {
     /// Returns an absolute file path to the directory containing the installed tool.
     /// This is typically ~/.moon/tools/<tool>/<version>.
-    async fn get_install_dir(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError>;
+    async fn get_install_dir(&self) -> Result<PathBuf, ToolchainError>;
 
     /// Returns a semver version for the currently installed binary.
     /// This is typically acquired by executing the binary with a `--version` argument.
@@ -85,19 +85,15 @@ pub trait Installable: Send + Sync + Logable {
     /// Determine whether the tool has already been installed.
     /// If `check_version` is false, avoid running the binaries as child processes
     /// to extract the current version.
-    async fn is_installed(
-        &self,
-        toolchain: &Toolchain,
-        check_version: bool,
-    ) -> Result<bool, ToolchainError>;
+    async fn is_installed(&self, check_version: bool) -> Result<bool, ToolchainError>;
 
     /// Runs any installation steps after downloading.
     /// This is typically unzipping an archive, and running any installers/binaries.
-    async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
+    async fn install(&self, parent: &T) -> Result<(), ToolchainError>;
 
     /// Delete the installation.
-    async fn uninstall(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let install_dir = self.get_install_dir(toolchain).await?;
+    async fn uninstall(&self, parent: &T) -> Result<(), ToolchainError> {
+        let install_dir = self.get_install_dir().await?;
 
         fs::remove_dir_all(&install_dir).await?;
 
@@ -106,14 +102,10 @@ pub trait Installable: Send + Sync + Logable {
 
     /// Run the install process: check if installed & on the correct version ->
     /// install or skip. Return `true` if the tool was installed.
-    async fn run_install(
-        &self,
-        toolchain: &Toolchain,
-        check_version: bool,
-    ) -> Result<bool, ToolchainError> {
+    async fn run_install(&self, parent: &T, check_version: bool) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();
 
-        if self.is_installed(toolchain, check_version).await? {
+        if self.is_installed(check_version).await? {
             debug!(
                 target: &target,
                 "Tool has already been installed, continuing"
@@ -125,7 +117,7 @@ pub trait Installable: Send + Sync + Logable {
                 return Err(ToolchainError::InternetConnectionRequired);
             }
 
-            self.install(toolchain).await?;
+            self.install(parent).await?;
 
             return Ok(true);
         }
@@ -134,9 +126,9 @@ pub trait Installable: Send + Sync + Logable {
     }
 
     /// Run the uninstall process: check if installed -> uninstall.
-    async fn run_uninstall(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        if self.is_installed(toolchain, false).await? {
-            self.uninstall(toolchain).await?;
+    async fn run_uninstall(&self, parent: &T) -> Result<(), ToolchainError> {
+        if self.is_installed(false).await? {
+            self.uninstall(parent).await?;
 
             debug!(target: &self.get_log_target(), "Uninstalled tool");
         }
@@ -146,10 +138,10 @@ pub trait Installable: Send + Sync + Logable {
 }
 
 #[async_trait]
-pub trait Executable: Send + Sync {
+pub trait Executable<T: Send + Sync>: Send + Sync {
     /// Find the absolute file path to the binary that will be executed.
     /// This happens after a tool has been downloaded/installed.
-    async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
+    async fn find_bin_path(&mut self, parent: &T) -> Result<(), ToolchainError>;
 
     /// Returns an absolute file path to the executable binary for the tool.
     fn get_bin_path(&self) -> &PathBuf;
@@ -159,26 +151,30 @@ pub trait Executable: Send + Sync {
 }
 
 #[async_trait]
-pub trait Lifecycle: Send + Sync {
+pub trait Lifecycle<T: Send + Sync>: Send + Sync {
     /// Setup the tool once it has been downloaded and installed.
     /// Return a count of how many sub-tools were installed.
-    async fn setup(
-        &mut self,
-        _toolchain: &Toolchain,
-        _check_version: bool,
-    ) -> Result<u8, ToolchainError> {
+    async fn setup(&mut self, _parent: &T, _check_version: bool) -> Result<u8, ToolchainError> {
         Ok(0)
     }
 
     /// Teardown the tool once it has been uninstalled.
-    async fn teardown(&mut self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn teardown(&self, _parent: &T) -> Result<(), ToolchainError> {
         Ok(())
     }
 }
 
+struct ToolchainMetadata {}
+
 #[async_trait]
 pub trait Tool:
-    Send + Sync + Downloadable + Installable + Executable + Logable + Lifecycle
+    Send
+    + Sync
+    + Logable
+    + Downloadable<Toolchain>
+    + Installable<Toolchain>
+    + Executable<Toolchain>
+    + Lifecycle<Toolchain>
 {
     /// Download and install the tool within the toolchain.
     /// Once complete, trigger the setup hook, and return a count
@@ -207,7 +203,7 @@ pub trait Tool:
 
     /// Teardown the tool by removing any downloaded/installed artifacts.
     /// This can be ran manually, or automatically during a failed load.
-    async fn run_teardown(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn run_teardown(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         self.run_undownload(toolchain).await?;
         self.run_uninstall(toolchain).await?;
         self.teardown(toolchain).await?;
@@ -217,7 +213,9 @@ pub trait Tool:
 }
 
 #[async_trait]
-pub trait PackageManager: Send + Sync + Installable + Executable + Logable + Lifecycle {
+pub trait PackageManager<T: Send + Sync>:
+    Send + Sync + Logable + Installable<T> + Executable<T> + Lifecycle<T>
+{
     /// Create a command to run that wraps the binary.
     fn create_command(&self) -> Command {
         let bin_path = self.get_bin_path();
@@ -258,28 +256,24 @@ pub trait PackageManager: Send + Sync + Installable + Executable + Logable + Lif
     /// Install the package manager within the tool. Once complete,
     /// trigger the setup hook, and return a count
     /// of how many sub-tools were installed.
-    async fn run_setup(
-        &mut self,
-        toolchain: &Toolchain,
-        check_version: bool,
-    ) -> Result<u8, ToolchainError> {
+    async fn run_setup(&mut self, parent: &T, check_version: bool) -> Result<u8, ToolchainError> {
         let mut installed = 0;
 
-        if self.run_install(toolchain, check_version).await? {
+        if self.run_install(parent, check_version).await? {
             installed += 1;
         }
 
-        self.find_bin_path(toolchain).await?;
+        self.find_bin_path(parent).await?;
 
-        installed += self.setup(toolchain, check_version).await?;
+        installed += self.setup(parent, check_version).await?;
 
         Ok(installed)
     }
 
     /// Uninstall the package manager from the parent tool.
-    async fn run_teardown(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        self.run_uninstall(toolchain).await?;
-        self.teardown(toolchain).await?;
+    async fn run_teardown(&self, parent: &T) -> Result<(), ToolchainError> {
+        self.run_uninstall(parent).await?;
+        self.teardown(parent).await?;
 
         Ok(())
     }

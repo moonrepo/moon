@@ -40,7 +40,7 @@ pub struct Toolchain {
     pub workspace_root: PathBuf,
 
     // Tool instances are private, as we want to lazy load them.
-    node: NodeTool,
+    node: Option<NodeTool>,
 }
 
 impl Toolchain {
@@ -63,13 +63,17 @@ impl Toolchain {
         create_dir(&temp_dir).await?;
         create_dir(&tools_dir).await?;
 
-        Ok(Toolchain {
+        let mut toolchain = Toolchain {
             dir,
             temp_dir,
             tools_dir,
             workspace_root: root_dir.to_path_buf(),
-            node: NodeTool::new(&config.node)?,
-        })
+            node: None,
+        };
+
+        toolchain.node = Some(NodeTool::new(&toolchain, &config.node)?);
+
+        Ok(toolchain)
     }
 
     pub async fn create(
@@ -98,7 +102,7 @@ impl Toolchain {
 
         let mut installed = 0;
 
-        installed += self.node.run_setup(self, check_versions).await?;
+        installed += self.get_node().run_setup(self, check_versions).await?;
 
         Ok(installed)
     }
@@ -110,13 +114,13 @@ impl Toolchain {
             "Tearing down toolchain, uninstalling tools",
         );
 
-        self.node.run_teardown(self).await?;
+        self.get_node().run_teardown(self).await?;
 
         Ok(())
     }
 
     /// Return the Node.js tool.
     pub fn get_node(&self) -> &NodeTool {
-        &self.node
+        self.node.as_ref().unwrap()
     }
 }

@@ -1,5 +1,6 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{get_bin_name_suffix, get_bin_version, get_path_env_var};
+use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, Logable, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
@@ -70,9 +71,9 @@ impl Logable for NpmTool {
 }
 
 #[async_trait]
-impl Installable for NpmTool {
-    async fn get_install_dir(&self, toolchain: &Toolchain) -> Result<PathBuf, ToolchainError> {
-        toolchain.get_node().get_install_dir(toolchain).await
+impl Installable<NodeTool> for NpmTool {
+    async fn get_install_dir(&self, node: &NodeTool) -> Result<PathBuf, ToolchainError> {
+        node.get_install_dir(toolchain).await
     }
 
     async fn get_installed_version(&self) -> Result<String, ToolchainError> {
@@ -81,7 +82,7 @@ impl Installable for NpmTool {
 
     async fn is_installed(
         &self,
-        _toolchain: &Toolchain,
+        node: &NodeTool,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
         let target = self.get_log_target();

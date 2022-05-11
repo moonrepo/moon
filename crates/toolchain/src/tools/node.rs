@@ -123,7 +123,11 @@ pub struct NodeTool {
 
     pub config: NodeConfig,
 
-    npm: NpmTool,
+    download_path: PathBuf,
+
+    install_dir: PathBuf,
+
+    npm: Option<NpmTool>,
 
     pnpm: Option<PnpmTool>,
 
@@ -131,21 +135,28 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
+    pub fn new(toolchain: &Toolchain, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
         let mut node = NodeTool {
             bin_path: None,
             config: config.to_owned(),
-            npm: NpmTool::new(&config.npm)?,
+            download_path: toolchain
+                .temp_dir
+                .join("node")
+                .join(get_download_file(&config.version)?),
+            install_dir: toolchain.tools_dir.join("node").join(&config.version),
+            npm: None,
             pnpm: None,
             yarn: None,
         };
 
+        node.npm = Some(NpmTool::new(&node, &config.npm)?);
+
         if let Some(pnpm_config) = &config.pnpm {
-            node.pnpm = Some(PnpmTool::new(pnpm_config)?);
+            node.pnpm = Some(PnpmTool::new(&node, pnpm_config)?);
         }
 
         if let Some(yarn_config) = &config.yarn {
-            node.yarn = Some(YarnTool::new(yarn_config)?);
+            node.yarn = Some(YarnTool::new(&node, yarn_config)?);
         }
 
         Ok(node)
@@ -195,7 +206,7 @@ impl NodeTool {
 
     /// Return the `npm` package manager.
     pub fn get_npm(&self) -> &NpmTool {
-        &self.npm
+        self.npm.as_ref().unwrap()
     }
 
     /// Return the `pnpm` package manager.
@@ -214,7 +225,7 @@ impl NodeTool {
         }
     }
 
-    pub fn get_package_manager(&self) -> &(dyn PackageManager + Send + Sync) {
+    pub fn get_package_manager(&self) -> &(dyn PackageManager<Self> + Send + Sync) {
         if self.pnpm.is_some() {
             return self.get_pnpm().unwrap();
         }
@@ -241,20 +252,18 @@ impl Logable for NodeTool {
 }
 
 #[async_trait]
-impl Downloadable for NodeTool {
-    async fn get_download_path(&self, temp_dir: &Path) -> Result<PathBuf, ToolchainError> {
-        Ok(temp_dir
-            .join("node")
-            .join(get_download_file(&self.config.version)?))
+impl Downloadable<Toolchain> for NodeTool {
+    async fn get_download_path(&self) -> Result<PathBuf, ToolchainError> {
+        Ok(self.download_path)
     }
 
-    async fn is_downloaded(&self, download_path: &Path) -> Result<bool, ToolchainError> {
-        Ok(download_path.exists())
+    async fn is_downloaded(&self) -> Result<bool, ToolchainError> {
+        Ok(self.get_download_path().await?.exists())
     }
 
     async fn download(
         &self,
-        download_path: &Path,
+        toolchain: &Toolchain,
         base_host: Option<&str>,
     ) -> Result<(), ToolchainError> {
         let version = &self.config.version;
@@ -263,6 +272,7 @@ impl Downloadable for NodeTool {
 
         // Download the node.tar.gz archive
         let download_url = get_nodejs_url(version, host, &get_download_file(version)?);
+        let download_path = self.get_download_path().await?;
 
         download_file_from_url(&download_url, &download_path).await?;
 
@@ -298,31 +308,25 @@ impl Downloadable for NodeTool {
 }
 
 #[async_trait]
-impl Installable for NodeTool {
-    async fn get_install_dir(&self, tools_dir: &Path) -> Result<PathBuf, ToolchainError> {
-        Ok(tools_dir.join("node").join(&self.config.version))
+impl Installable<Toolchain> for NodeTool {
+    async fn get_install_dir(&self) -> Result<PathBuf, ToolchainError> {
+        Ok(self.install_dir)
     }
 
     async fn get_installed_version(&self) -> Result<String, ToolchainError> {
         Ok(get_bin_version(self.get_bin_path()).await?)
     }
 
-    async fn is_installed(
-        &self,
-        install_dir: &Path,
-        _check_version: bool,
-    ) -> Result<bool, ToolchainError> {
-        Ok(install_dir.exists())
+    async fn is_installed(&self, _check_version: bool) -> Result<bool, ToolchainError> {
+        Ok(self.get_install_dir().await?.exists())
     }
 
-    async fn install(
-        &self,
-        download_path: &Path,
-        install_dir: &Path,
-    ) -> Result<(), ToolchainError> {
+    async fn install(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        let download_path = self.get_download_path().await?;
+        let install_dir = self.get_install_dir().await?;
         let prefix = get_download_file_name(&self.config.version)?;
 
-        unpack(download_path, install_dir, &prefix).await?;
+        unpack(&download_path, &install_dir, &prefix).await?;
 
         debug!(
             target: &self.get_log_target(),
@@ -335,10 +339,10 @@ impl Installable for NodeTool {
 }
 
 #[async_trait]
-impl Executable for NodeTool {
+impl Executable<Toolchain> for NodeTool {
     async fn find_bin_path(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let bin_path = self
-            .get_install_dir(toolchain)
+            .get_install_dir()
             .await?
             .join(get_bin_name_suffix("node", "exe", false));
 
@@ -348,7 +352,9 @@ impl Executable for NodeTool {
     }
 
     fn get_bin_path(&self) -> &PathBuf {
-        self.bin_path.as_ref().unwrap()
+        self.bin_path
+            .as_ref()
+            .expect("Node.js bin path not set yet!")
     }
 
     fn is_executable(&self) -> bool {
@@ -357,7 +363,7 @@ impl Executable for NodeTool {
 }
 
 #[async_trait]
-impl Lifecycle for NodeTool {
+impl Lifecycle<Toolchain> for NodeTool {
     async fn setup(
         &mut self,
         toolchain: &Toolchain,
@@ -372,14 +378,18 @@ impl Lifecycle for NodeTool {
             self.exec_corepack(["enable"]).await?;
         }
 
-        let mut installed = self.npm.run_setup(toolchain, check_version).await?;
+        let mut installed = 0;
+
+        if let Some(npm) = &mut self.npm {
+            installed += npm.run_setup(self, check_version).await?;
+        }
 
         if let Some(pnpm) = &mut self.pnpm {
-            installed += pnpm.run_setup(toolchain, check_version).await?;
+            installed += pnpm.run_setup(self, check_version).await?;
         }
 
         if let Some(yarn) = &mut self.yarn {
-            installed += yarn.run_setup(toolchain, check_version).await?;
+            installed += yarn.run_setup(self, check_version).await?;
         }
 
         Ok(installed)

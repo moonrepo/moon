@@ -284,7 +284,7 @@ impl Command {
         if input.is_some() {
             command_line = format!(
                 "{} {} {}",
-                color::muted_light(&input.unwrap().replace("\n", " ")),
+                color::muted_light(&input.unwrap().replace('\n', " ")),
                 color::muted(">"),
                 color::shell(&command_line)
             );

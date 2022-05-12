@@ -34,7 +34,7 @@ cwd = "./tests/fixtures/cases"
 
 [tasks.run-test]
 command = "cargo"
-args = ["test", "--workspace", "can_install_a_dep"]
+args = ["test", "--workspace"]
 
 [tasks.post-test]
 command = "rm"

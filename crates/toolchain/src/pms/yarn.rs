@@ -254,18 +254,13 @@ impl PackageManager<NodeTool> for YarnTool {
 
         if is_ci() {
             if self.is_v1() {
+                args.push("--check-files");
                 args.push("--frozen-lockfile");
+                args.push("--ignore-engines");
                 args.push("--non-interactive");
-
-                if is_ci() {
-                    args.push("--check-files");
-                }
             } else {
+                args.push("--check-cache");
                 args.push("--immutable");
-
-                if is_ci() {
-                    args.push("--check-cache");
-                }
             }
         }
 

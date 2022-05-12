@@ -8,14 +8,14 @@ use sha2::{Digest, Sha256};
 use std::env;
 use std::fs::File;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tar::Archive;
 use zip::ZipArchive;
 
-pub fn get_bin_name_suffix(name: &str, global: bool) -> String {
+pub fn get_bin_name_suffix(name: &str, windows_ext: &str, flat: bool) -> String {
     if cfg!(windows) {
-        format!("{}.cmd", name)
-    } else if global {
+        format!("{}.{}", name, windows_ext)
+    } else if flat {
         name.to_owned()
     } else {
         format!("bin/{}", name)
@@ -25,10 +25,7 @@ pub fn get_bin_name_suffix(name: &str, global: bool) -> String {
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let output = Command::new(bin)
         .arg("--version")
-        .env(
-            "PATH",
-            get_path_env_var(bin.parent().unwrap().to_path_buf()),
-        )
+        .env("PATH", get_path_env_var(bin.parent().unwrap()))
         .exec_capture_output()
         .await?;
 
@@ -69,9 +66,9 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
 /// other binaries of the same name. Otherwise, tooling like nvm will
 /// intercept execution and break our processes. We can work around this
 /// by prepending the `PATH` environment variable.
-pub fn get_path_env_var(bin_dir: PathBuf) -> std::ffi::OsString {
+pub fn get_path_env_var(bin_dir: &Path) -> std::ffi::OsString {
     let path = env::var("PATH").unwrap_or_default();
-    let mut paths = vec![bin_dir];
+    let mut paths = vec![bin_dir.to_path_buf()];
 
     paths.extend(env::split_paths(&path).collect::<Vec<_>>());
 

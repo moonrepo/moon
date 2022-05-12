@@ -36,7 +36,7 @@ pub async fn setup_toolchain(
         cache.save().await?;
     }
 
-    Ok(if installed_tools {
+    Ok(if installed_tools > 0 {
         ActionStatus::Passed
     } else {
         ActionStatus::Skipped

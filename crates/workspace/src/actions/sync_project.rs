@@ -53,7 +53,7 @@ pub async fn sync_project(
         typescript_config = workspace.config.typescript.clone();
 
         // Sync each dependency to `tsconfig.json` and `package.json`
-        let package_manager = workspace.toolchain.get_node_package_manager();
+        let package_manager = workspace.toolchain.get_node().get_package_manager();
         let mut project_package_json = project.load_package_json().await?;
         let mut project_tsconfig_json = project
             .load_tsconfig_json(&typescript_config.project_config_file_name)

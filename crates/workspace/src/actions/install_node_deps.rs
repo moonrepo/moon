@@ -76,7 +76,7 @@ pub async fn install_node_deps(
     {
         let workspace = workspace.read().await;
         let mut cache = workspace.cache.cache_workspace_state().await?;
-        let manager = workspace.toolchain.get_node_package_manager();
+        let manager = workspace.toolchain.get_node().get_package_manager();
         let node_config = &workspace.config.node;
 
         // Create nvm/nodenv config file

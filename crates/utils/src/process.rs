@@ -51,15 +51,6 @@ impl Command {
         let mut bin_name = String::from(bin.as_ref().to_string_lossy());
         let mut cmd;
 
-        println!(
-            "NODE_OPTIONS = {}",
-            env::var("NODE_OPTIONS").unwrap_or_default()
-        );
-        println!(
-            "PATH = {}",
-            env::var("PATH").unwrap_or_default()
-        );
-
         // Referencing cmd.exe directly
         if bin_name == "cmd" || bin_name == "cmd.exe" {
             bin_name = String::from("cmd.exe");
@@ -67,11 +58,6 @@ impl Command {
 
         // Referencing a batch script that needs to be ran with cmd.exe
         } else if is_windows_script(&bin_name) {
-            println!(
-                "file exists {:#?} = {}",
-                bin_name,
-                std::path::PathBuf::from(&bin_name).exists()
-            );
             bin_name = String::from("cmd.exe");
             cmd = create_windows_cmd();
             cmd.arg(bin);
@@ -127,7 +113,7 @@ impl Command {
     }
 
     pub async fn exec_capture_output(&mut self) -> Result<Output, MoonError> {
-        self.log_command_info();
+        self.log_command_info(None);
 
         let output = self.cmd.output();
         let output = output
@@ -143,7 +129,7 @@ impl Command {
         &mut self,
         input: &str,
     ) -> Result<Output, MoonError> {
-        self.log_command_info();
+        self.log_command_info(Some(input));
 
         let mut child = self
             .cmd
@@ -168,7 +154,7 @@ impl Command {
     }
 
     pub async fn exec_stream_output(&mut self) -> Result<ExitStatus, MoonError> {
-        self.log_command_info();
+        self.log_command_info(None);
 
         let status = self
             .cmd
@@ -189,7 +175,7 @@ impl Command {
     }
 
     pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
-        self.log_command_info();
+        self.log_command_info(None);
 
         let mut child = self
             .cmd
@@ -281,7 +267,7 @@ impl Command {
         Ok(())
     }
 
-    fn log_command_info(&self) {
+    fn log_command_info(&self, input: Option<&str>) {
         // Avoid all this overhead if we're not logging
         if !logging_enabled() {
             return;
@@ -293,21 +279,49 @@ impl Command {
             .into_iter()
             .map(|a| a.to_str().unwrap())
             .collect::<Vec<_>>();
-        let command_line = path::replace_home_dir(&format!("{} {}", self.bin, args.join(" ")));
+        let mut command_line = path::replace_home_dir(&format!("{} {}", self.bin, args.join(" ")));
 
-        if let Some(cwd) = cmd.get_current_dir() {
-            trace!(
-                target: "moon:utils",
-                "Running command {} (in {})",
-                color::shell(&command_line),
-                color::path(cwd),
+        if input.is_some() {
+            command_line = format!(
+                "{} {} {}",
+                color::muted_light(&input.unwrap().replace('\n', " ")),
+                color::muted(">"),
+                color::shell(&command_line)
             );
         } else {
-            trace!(
-                target: "moon:utils",
-                "Running command {} ",
-                color::shell(&command_line),
-            );
+            command_line = color::shell(&command_line);
         }
+
+        let mut envs_list = vec![];
+
+        for (key, value) in cmd.get_envs() {
+            if value.is_some() {
+                let key_str = key.to_str().unwrap();
+
+                // This is very noisy, maybe with a verbose logging setting?
+                if key_str == "PATH" {
+                    continue;
+                }
+
+                envs_list.push(format!(
+                    "\n  {}{}{}",
+                    key_str,
+                    color::muted("="),
+                    color::muted_light(value.unwrap().to_str().unwrap())
+                ));
+            }
+        }
+
+        trace!(
+            target: "moon:utils",
+            "Running command {} (in {}){}",
+            command_line,
+            if let Some(cwd) = cmd.get_current_dir() {
+                color::path(cwd)
+            } else {
+                String::from("working dir")
+            },
+            envs_list.join("")
+        );
     }
 }

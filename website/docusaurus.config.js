@@ -1,7 +1,7 @@
 /* eslint-disable sort-keys */
 // @ts-check
 
-const path = require('path');
+// const path = require('path');
 const prismTheme = require('./prism.config');
 
 /** @type {import('@docusaurus/types').Config} */
@@ -62,11 +62,11 @@ const config = {
 					// 	label: 'Blog',
 					// 	position: 'left',
 					// },
-					{
-						to: 'api',
-						label: 'Packages',
-						position: 'left',
-					},
+					// {
+					// 	to: 'api',
+					// 	label: 'Packages',
+					// 	position: 'left',
+					// },
 				],
 			},
 			footer: {
@@ -79,10 +79,10 @@ const config = {
 								label: 'Documentation',
 								to: '/docs',
 							},
-							{
-								label: 'Packages',
-								to: '/api',
-							},
+							// {
+							// 	label: 'Packages',
+							// 	to: '/api',
+							// },
 						],
 					},
 					{
@@ -125,15 +125,15 @@ const config = {
 		}),
 
 	plugins: [
-		[
-			'docusaurus-plugin-typedoc-api',
-			{
-				projectRoot: path.join(__dirname, '..'),
-				packages: ['packages/runtime'],
-				minimal: true,
-				readme: true,
-			},
-		],
+		// [
+		// 	'docusaurus-plugin-typedoc-api',
+		// 	{
+		// 		projectRoot: path.join(__dirname, '..'),
+		// 		packages: ['packages/runtime'],
+		// 		minimal: true,
+		// 		readme: true,
+		// 	},
+		// ],
 		function tailwind() {
 			return {
 				name: 'docusaurus-tailwindcss',

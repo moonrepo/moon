@@ -107,11 +107,11 @@ const config = {
 							},
 							{
 								label: 'Discord',
-								to: 'https://discord.com',
+								to: 'https://discord.gg/qCh9MEynv2',
 							},
 							{
 								label: 'Twitter',
-								to: 'https://twitter.com/moonrepo',
+								to: 'https://twitter.com/tothemoonrepo',
 							},
 						],
 					},

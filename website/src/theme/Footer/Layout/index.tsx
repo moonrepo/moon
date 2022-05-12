@@ -72,17 +72,17 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 					</Text>
 
 					<div className="flex space-x-2">
-						<Link href="#">
+						<Link href="https://github.com/milesj/moon">
 							<span className="sr-only">GitHub</span>
 							<Icon icon={faGithub} />
 						</Link>
 
-						<Link href="#">
+						<Link href="https://discord.gg/qCh9MEynv2">
 							<span className="sr-only">Discord</span>
 							<Icon icon={faDiscord} />
 						</Link>
 
-						<Link href="#">
+						<Link href="https://twitter.com/tothemoonrepo">
 							<span className="sr-only">Twitter</span>
 							<Icon icon={faTwitter} />
 						</Link>

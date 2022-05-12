@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 // Docusaurus triggers dark mode through the `data-theme="dark"` attribute
 // on the `html` element, while Tailwind uses a `dark` class. This code
 // listens to the `data-theme` attribute for changes, and updates the class
@@ -28,16 +23,14 @@ if (typeof document !== 'undefined') {
 	window.history.pushState = new Proxy(window.history.pushState, {
 		apply: (target, thisArg, argArray) => {
 			toggle();
-
-			return target.apply(thisArg, argArray);
+			target.apply(thisArg, argArray);
 		},
 	});
 
 	window.history.replaceState = new Proxy(window.history.replaceState, {
 		apply: (target, thisArg, argArray) => {
 			toggle();
-
-			return target.apply(thisArg, argArray);
+			target.apply(thisArg, argArray);
 		},
 	});
 

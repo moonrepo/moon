@@ -135,19 +135,9 @@ fn create_node_target_command(
 
     let cmd = match task.command.as_str() {
         "node" => node.get_bin_path().clone(),
-        "npm" => workspace.toolchain.get_npm().get_bin_path().clone(),
-        "pnpm" => workspace
-            .toolchain
-            .get_pnpm()
-            .unwrap()
-            .get_bin_path()
-            .clone(),
-        "yarn" => workspace
-            .toolchain
-            .get_yarn()
-            .unwrap()
-            .get_bin_path()
-            .clone(),
+        "npm" => node.get_npm().get_bin_path().clone(),
+        "pnpm" => node.get_pnpm().unwrap().get_bin_path().clone(),
+        "yarn" => node.get_yarn().unwrap().get_bin_path().clone(),
         bin => node.find_package_bin_path(bin, &project.root)?,
     };
 
@@ -157,7 +147,10 @@ fn create_node_target_command(
     command
         .args(&task.args)
         .envs(&task.env)
-        .env("PATH", get_path_env_var(node.get_bin_dir()))
+        .env(
+            "PATH",
+            get_path_env_var(node.get_bin_path().parent().unwrap()),
+        )
         .env("NODE_OPTIONS", create_node_options(task).join(" "));
 
     Ok(command)

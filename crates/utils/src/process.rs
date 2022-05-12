@@ -281,19 +281,15 @@ impl Command {
             .collect::<Vec<_>>();
         let command_line = path::replace_home_dir(&format!("{} {}", self.bin, args.join(" ")));
 
-        if let Some(cwd) = cmd.get_current_dir() {
-            trace!(
-                target: "moon:utils",
-                "Running command {} (in {})",
-                color::shell(&command_line),
-                color::path(cwd),
-            );
-        } else {
-            trace!(
-                target: "moon:utils",
-                "Running command {} ",
-                color::shell(&command_line),
-            );
-        }
+        trace!(
+            target: "moon:utils",
+            "Running command {} (in {})",
+            color::shell(&command_line),
+            if let Some(cwd) = cmd.get_current_dir() {
+                color::path(cwd)
+            } else {
+                String::from("working dir")
+            }
+        );
     }
 }

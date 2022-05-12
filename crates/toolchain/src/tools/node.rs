@@ -169,7 +169,7 @@ impl NodeTool {
     {
         let corepack_path = self
             .install_dir
-            .join(get_bin_name_suffix("corepack", "cmd", true));
+            .join(get_bin_name_suffix("corepack", "cmd", false));
 
         Command::new(&corepack_path)
             .args(args)

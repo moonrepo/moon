@@ -173,7 +173,7 @@ impl NodeTool {
 
         Command::new(&corepack_path)
             .args(args)
-            .env("PATH", get_path_env_var(&self.install_dir))
+            .env("PATH", get_path_env_var(corepack_path.parent().unwrap()))
             .exec_capture_output()
             .await?;
 

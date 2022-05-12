@@ -7,7 +7,7 @@
     "version:apply": "node ./scripts/version/applyAndTagVersions.mjs",
     "version:bump": "yarn version check --interactive",
     "version:bump:bin": "bash ./scripts/version/bumpBinaryVersions.sh",
-    "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration=standard",
+    "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration",
     "type": "target/debug/moon --logLevel trace run :typecheck",
     "moon": "target/debug/moon --logLevel trace"
   },
@@ -16,7 +16,7 @@
     "website"
   ],
   "engines": {
-    "node": ">=12.17.0"
+    "node": ">=14.15.0"
   },
   "devDependencies": {
     "@moonrepo/cli": "workspace:*",

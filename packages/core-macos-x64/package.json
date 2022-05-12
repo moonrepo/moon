@@ -22,9 +22,6 @@
     "url": "https://github.com/milesj/moon",
     "directory": "packages/core-macos-x64"
   },
-  "engines": {
-    "node": ">=12.17.0"
-  },
   "publishConfig": {
     "access": "public"
   }

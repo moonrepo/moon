@@ -1,0 +1,16 @@
+tasks:
+  standard:
+    command: node
+    args: -e "console.log('deps=b')"
+
+  dependencyOrder:
+    command: node
+    args: -e "console.log('deps=b')"
+    deps:
+      - 'depsC:dependencyOrder'
+
+  # Cycle detection
+  taskCycle:
+    command: unknown
+    deps:
+      - 'depsC:taskCycle'

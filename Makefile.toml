@@ -1,32 +1,54 @@
 [config]
 default_to_workspace = false
+skip_core_tasks = true
 
 [tasks.clean]
 command = "cargo"
 args = ["clean"]
 
+# BUILDING
+
 [tasks.build]
 command = "cargo"
 args = ["build"]
+
+# FORMATTING
 
 [tasks.format]
 install_crate = "rustfmt"
 command = "cargo"
 args = ["fmt", "--all", "--", "--emit=files"]
 
+# LINTING
+
 [tasks.lint]
-install_crate = "rustfmt"
 command = "cargo"
 args = ["clippy", "--workspace", "--all-targets"]
-dependencies = ["format"]
 
-[tasks.test]
+# TESTING
+
+[tasks.pre-test]
+command = "cargo"
+args = ["run", "--", "--logLevel", "debug", "setup"]
+cwd = "./tests/fixtures/cases"
+
+[tasks.run-test]
 command = "cargo"
 args = ["test", "--workspace"]
+
+[tasks.post-test]
+command = "rm"
+args = ["-rf", "./tests/fixtures/cases/.moon/cache"]
+condition = { platforms = ["mac", "linux"] }
+
+[tasks.test]
+run_task = { name = ["pre-test", "run-test"], fork = true, cleanup_task = "post-test" }
 
 [tasks.test-output]
 command = "cargo"
 args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
+
+## OTHER
 
 [tasks.gen-json-schemas]
 command = "cargo"
@@ -35,6 +57,7 @@ args = ["run", "-p", "moon_config"]
 [tasks.check]
 dependencies = [
     "format",
+    "lint",
     "build",
     "test"
 ]

@@ -1,0 +1,28 @@
+projects:
+  base: 'base'
+
+  # Project/task deps
+  depsA: 'deps-a'
+  depsB: 'deps-b'
+  depsC: 'deps-c'
+  dependsOn: 'depends-on'
+
+  # Target scopes
+  targetScopeA: 'target-scope-a'
+  targetScopeB: 'target-scope-b'
+  targetScopeC: 'target-scope-c'
+
+  # Tool types
+  node: 'node'
+  system: 'system'
+  systemWindows: 'system-windows'
+
+typescript:
+  syncProjectReferences: false
+
+# Put at the bottom so we can append settings to test
+node:
+  version: '16.0.0'
+  addEnginesConstraint: false
+  dedupeOnLockfileChange: false
+  syncProjectWorkspaceDependencies: false

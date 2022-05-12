@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 54
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ node:topLevelAwait
+before
+awaiting
+after
+
+Tasks: 1 completed
+ Time: 100ms
+
+

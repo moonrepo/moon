@@ -1,0 +1,7 @@
+{
+  "name": "test-cases",
+  "private": true,
+  "workspaces": [
+    "*"
+  ]
+}

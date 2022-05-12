@@ -1,0 +1,17 @@
+dependsOn:
+  - depsA
+  - depsB
+  - depsC
+
+tasks:
+  # :scope
+  all:
+    command: node
+    args: -e "console.log('scope=all')"
+
+  # ^:scope
+  deps:
+    command: node
+    args: -e "console.log('scope=deps')"
+    deps:
+      - '^:standard'

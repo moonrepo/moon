@@ -1,5 +1,4 @@
 node:
-  # We use an old version to avoid conflicts within local dev
-  version: '10.0.0'
+  version: '16.0.0'
 
 projects: {}

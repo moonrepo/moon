@@ -1,9 +1,12 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
-use moon_utils::process::{create_command, exec_command_capture_stdout};
+use moon_utils::fs;
+use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
 use std::collections::{BTreeMap, HashSet};
+use std::fs::metadata;
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 // TODO: This code hasn't been tested yet and may not be accurate!
 
@@ -31,7 +34,9 @@ impl Svn {
     }
 
     async fn get_revision_number(&self, revision: &str) -> VcsResult<String> {
-        let output = self.run_command(vec!["info", "-r", revision], true).await?;
+        let output = self
+            .run_command(&mut self.create_command(vec!["info", "-r", revision]), true)
+            .await?;
 
         Ok(self.extract_line_from_info("Revision:", &output))
     }
@@ -96,13 +101,31 @@ impl Svn {
             untracked,
         }
     }
+
+    async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {
+        let output = command.exec_capture_output().await?;
+
+        if trim {
+            return Ok(output_to_trimmed_string(&output.stdout));
+        }
+
+        Ok(output_to_string(&output.stdout))
+    }
 }
 
 // https://edoras.sdsu.edu/doc/svn-book-html-chunk/svn.ref.svn.c.info.html
 #[async_trait]
 impl Vcs for Svn {
+    fn create_command(&self, args: Vec<&str>) -> Command {
+        let mut cmd = Command::new("svn");
+        cmd.args(args).cwd(&self.working_dir);
+        cmd
+    }
+
     async fn get_local_branch(&self) -> VcsResult<String> {
-        let output = self.run_command(vec!["info"], false).await?;
+        let output = self
+            .run_command(&mut self.create_command(vec!["info"]), false)
+            .await?;
         let url = self.extract_line_from_info("URL:", &output);
         let pattern = Regex::new("branches/([^/]+)").unwrap();
 
@@ -134,9 +157,20 @@ impl Vcs for Svn {
         let mut map = BTreeMap::new();
 
         // svn doesnt support file hashing, so instead of generating some
-        // random hash ourselves, just pass an emptry string.
+        // random hash ourselves, just use the modified time.
         for file in files {
-            map.insert(file.to_owned(), String::new());
+            if let Ok(metadata) = metadata(file) {
+                if let Ok(modified) = metadata.modified() {
+                    map.insert(
+                        file.to_owned(),
+                        modified
+                            .duration_since(SystemTime::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_millis()
+                            .to_string(),
+                    );
+                }
+            }
         }
 
         Ok(map)
@@ -146,7 +180,10 @@ impl Vcs for Svn {
         let mut map = BTreeMap::new();
 
         let output = self
-            .run_command(vec!["ls", "--recursive", "--depth", "infinity", dir], false)
+            .run_command(
+                &mut self.create_command(vec!["ls", "--recursive", "--depth", "infinity", dir]),
+                false,
+            )
             .await?;
 
         // svn doesnt support file hashing, so instead of generating some
@@ -160,7 +197,9 @@ impl Vcs for Svn {
 
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
-        let output = self.run_command(vec!["status", "wc"], false).await?;
+        let output = self
+            .run_command(&mut self.create_command(vec!["status", "wc"]), false)
+            .await?;
 
         Ok(Svn::process_touched_files(output))
     }
@@ -185,12 +224,12 @@ impl Vcs for Svn {
     ) -> VcsResult<TouchedFiles> {
         let output = self
             .run_command(
-                vec![
+                &mut self.create_command(vec![
                     "diff",
                     "-r",
                     &format!("{}:{}", base_revision, revision),
                     "--summarize",
-                ],
+                ]),
                 false,
             )
             .await?;
@@ -202,18 +241,7 @@ impl Vcs for Svn {
         self.default_branch == branch
     }
 
-    async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String> {
-        let output = exec_command_capture_stdout(
-            create_command("svn")
-                .args(args)
-                .current_dir(&self.working_dir),
-        )
-        .await?;
-
-        if trim {
-            return Ok(output.trim().to_owned());
-        }
-
-        Ok(output)
+    fn is_enabled(&self) -> bool {
+        fs::find_upwards(".svn", &self.working_dir).is_some()
     }
 }

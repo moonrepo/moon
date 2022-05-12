@@ -13,8 +13,8 @@ pub use project::{ProjectConfig, ProjectMetadataConfig, ProjectType};
 pub use types::{FilePath, FilePathOrGlob, ProjectID, TargetID, TaskID};
 pub use validator::ValidationErrors;
 pub use workspace::{
-    NodeConfig, NpmConfig, PackageManager, PnpmConfig, VcsConfig, VcsManager, WorkspaceConfig,
-    YarnConfig,
+    NodeConfig, NpmConfig, PackageManager, PnpmConfig, TypeScriptConfig, VcsConfig, VcsManager,
+    WorkspaceConfig, YarnConfig,
 };
 
 pub fn load_workspace_config_template() -> &'static str {

@@ -5,14 +5,19 @@ use moon_utils::fs;
 use std::env;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
+use std::path::PathBuf;
 
 pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Error>> {
     let working_dir = env::current_dir().unwrap();
+    let dest_path = PathBuf::from(dest);
     let dest_dir = if dest == "." {
         working_dir
+    } else if dest_path.is_absolute() {
+        dest_path
     } else {
         working_dir.join(dest)
     };
+
     let moon_dir = dest_dir.join(CONFIG_DIRNAME);
 
     if moon_dir.exists() && !force {
@@ -50,8 +55,7 @@ pub async fn init(dest: &str, force: bool) -> Result<(), Box<dyn std::error::Err
         file,
         r#"
 # Moon
-.moon/cache
-"#
+.moon/cache"#
     )?;
 
     println!(

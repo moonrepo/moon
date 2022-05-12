@@ -3,6 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolchainError {
+    #[error("Internet connection required, unable to download and install tools.")]
+    InternetConnectionRequired,
+
     #[error(
         "Shashum check has failed for <file>{0}</file>, which was downloaded from <url>{1}</url>."
     )]

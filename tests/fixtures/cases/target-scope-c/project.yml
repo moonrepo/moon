@@ -1,0 +1,5 @@
+tasks:
+  # :scope
+  all:
+    command: node
+    args: -e "console.log('scope=all')"

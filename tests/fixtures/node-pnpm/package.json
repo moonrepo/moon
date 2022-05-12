@@ -1,0 +1,7 @@
+{
+  "name": "test-node-pnpm",
+  "private": true,
+  "workspaces": [
+    "*"
+  ]
+}

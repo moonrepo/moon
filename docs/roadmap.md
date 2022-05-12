@@ -62,7 +62,8 @@
 - [x] Installs npm dependencies
 - [x] Syncs `package.json` and `tsconfig.json` for all projects
   - [x] Writes JSON preserving field order
-- [ ] Handle non-0 exit codes
+- [x] Handle non-0 exit codes
+- [x] Handle offline
 
 ## CLI
 
@@ -75,6 +76,7 @@
 - [x] `run` command to run targets
   - [x] Args after `--` are passed to the underlying command
   - [x] Only run on affected changes
+  - [x] Run multiple targets
 - [x] `ci` command for smart running affected targets (below)
 
 ## CI
@@ -87,11 +89,11 @@
 
 - [x] add a `--no-cache` option to disable all caching
 - [ ] hashing
-  - [ ] use `stdin` for commands that take long arguments
-  - [ ] dont load `package.json`/`tsconfig.json` so much
+  - [x] use `stdin` for commands that take long arguments
+  - [x] dont load `package.json`/`tsconfig.json` so much
   - [x] delete old hashes when the hash changes
   - [ ] ignore hashes for files that are gitignored
-  - [ ] include local file changes in hash
+  - [x] include local file changes in hash
 
 # 0.2.0
 
@@ -107,10 +109,10 @@
 ## Action runner
 
 - [ ] Add a debug layer so that the node processes can be inspected
+- [ ] Write output logs for every action
 
 ## CLI
 
-- [ ] `run`
-  - [ ] All projects for target (`*`)
+- [ ] `run-many`
 - [ ] `graph`
   - [ ] Spin up an interactive website with full project/task data

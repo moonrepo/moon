@@ -1,0 +1,18 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 48
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ depsC:dependencyOrder
+deps=c
+
+▪▪▪▪ depsB:dependencyOrder
+deps=b
+
+▪▪▪▪ depsA:dependencyOrder
+deps=a
+
+Tasks: 3 completed
+ Time: 100ms
+
+

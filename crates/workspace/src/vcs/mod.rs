@@ -5,6 +5,7 @@ use crate::errors::WorkspaceError;
 use async_trait::async_trait;
 use git::Git;
 use moon_config::{VcsManager as VM, WorkspaceConfig};
+use moon_utils::process::Command;
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use svn::Svn;
@@ -27,6 +28,9 @@ pub struct TouchedFiles {
 
 #[async_trait]
 pub trait Vcs {
+    /// Create a process command for the underlying vcs binary.
+    fn create_command(&self, args: Vec<&str>) -> Command;
+
     /// Get the local checkout branch name.
     async fn get_local_branch(&self) -> VcsResult<String>;
 
@@ -66,8 +70,8 @@ pub trait Vcs {
     /// Return true if the provided branch matches the default branch.
     fn is_default_branch(&self, branch: &str) -> bool;
 
-    /// Execute the underlying vcs binary.
-    async fn run_command(&self, args: Vec<&str>, trim: bool) -> VcsResult<String>;
+    /// Return true if the repo is currently VCS enabled.
+    fn is_enabled(&self) -> bool;
 }
 
 pub struct VcsManager {}

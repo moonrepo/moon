@@ -1,0 +1,24 @@
+---
+source: crates/cli/tests/project_test.rs
+assertion_line: 56
+expression: get_assert_output(&assert)
+---
+
+[38;5;16m[48;5;111m[1m BASIC [0m
+
+[38;5;248m[1mID[0m:[0m [38;5;111mbasic[0m
+[38;5;248m[1mSource[0m:[0m [38;5;36mbasic[0m
+
+[38;5;16m[48;5;15m[1m DEPENDS ON [0m
+
+ [38;5;239m-[0m [38;5;111mnoConfig[0m [38;5;248m([0m[38;5;36mno-config[0m[38;5;248m)[0m
+
+[38;5;16m[48;5;15m[1m FILE GROUPS [0m
+
+[38;5;248m[1msources[0m:[0m
+ [38;5;239m-[0m [38;5;36msrc/**/*[0m
+ [38;5;239m-[0m [38;5;36mtypes/**/*[0m
+[38;5;248m[1mtests[0m:[0m
+ [38;5;239m-[0m [38;5;36m**/*_test.rs[0m
+
+

@@ -1,11 +1,11 @@
 use moon_config::{PackageManager, WorkspaceConfig, YarnConfig};
-use moon_toolchain::tools::yarn::YarnTool;
-use moon_toolchain::{Tool, Toolchain};
+use moon_toolchain::helpers::get_bin_name_suffix;
+use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
 use std::path::PathBuf;
 
-async fn create_yarn_tool() -> (YarnTool, assert_fs::TempDir) {
+async fn create_yarn_tool() -> (Toolchain, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
     let mut config = WorkspaceConfig::default();
@@ -16,16 +16,17 @@ async fn create_yarn_tool() -> (YarnTool, assert_fs::TempDir) {
         version: String::from("6.0.0"),
     });
 
-    let toolchain = Toolchain::create_from_dir(&config, base_dir.path(), &env::temp_dir())
+    let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
         .await
         .unwrap();
 
-    (toolchain.get_yarn().unwrap().to_owned(), base_dir)
+    (toolchain, base_dir)
 }
 
 #[tokio::test]
 async fn generates_paths() {
-    let (yarn, temp_dir) = create_yarn_tool().await;
+    let (toolchain, temp_dir) = create_yarn_tool().await;
+    let yarn = toolchain.get_node().get_yarn().unwrap();
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")
@@ -35,18 +36,13 @@ async fn generates_paths() {
             .to_str()
             .unwrap()
     )
-    .eval(yarn.get_install_dir().to_str().unwrap()));
+    .eval(yarn.get_install_dir().unwrap().to_str().unwrap()));
 
-    let mut bin_path = PathBuf::from(".moon")
+    let bin_path = PathBuf::from(".moon")
         .join("tools")
         .join("node")
-        .join("1.0.0");
-
-    if env::consts::OS == "windows" {
-        bin_path = bin_path.join("yarn.cmd");
-    } else {
-        bin_path = bin_path.join("bin").join("yarn");
-    }
+        .join("1.0.0")
+        .join(get_bin_name_suffix("yarn", "cmd", false));
 
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(yarn.get_bin_path().to_str().unwrap()));

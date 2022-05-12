@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 281
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm:version
+7.0.0
+
+Tasks: 1 completed
+ Time: 100ms
+
+

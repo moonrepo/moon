@@ -12,7 +12,7 @@ pub enum WorkspaceError {
     #[error("Unknown node {0} found in dependency graph. How did this get here?")]
     DepGraphUnknownNode(usize),
 
-    #[error("Action runner failed to run: {0}")]
+    #[error("{0}")]
     ActionRunnerFailure(String),
 
     #[error(
@@ -33,13 +33,6 @@ pub enum WorkspaceError {
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     MissingWorkspaceConfigFile,
-
-    #[error(
-        "Unable to locate <file>{}/{}</file> configuration file.",
-        constants::CONFIG_DIRNAME,
-        constants::CONFIG_PROJECT_FILENAME
-    )]
-    MissingGlobalProjectConfigFile,
 
     #[error(
         "Failed to validate <file>{}/{}</file> configuration file.\n\n<muted>{0}</muted>",

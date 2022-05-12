@@ -3,7 +3,7 @@ use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
 use moon_logger::{color, trace, warn};
-use moon_utils::fs::{expand_root_path, is_glob};
+use moon_utils::path::{expand_root_path, is_glob};
 use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
     TOKEN_VAR_PATTERN,

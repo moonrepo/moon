@@ -6,7 +6,10 @@ edition = "2021"
 [dependencies]
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
+assert_cmd = "2.0"
+assert_fs = "1.0"
 async-recursion = "1.0"
+cached = "0.34"
 chrono = "0.4.19"
 chrono-humanize = "0.2.1"
 dirs = "4.0"
@@ -18,3 +21,4 @@ regex = "1.5"
 serde = "1.0"
 serde_json = { version = "1.0", features = ["preserve_order"] }
 tokio = { version = "1.16", features = ["full"] }
+

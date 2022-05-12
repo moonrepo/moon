@@ -3,23 +3,33 @@ use flate2::read::GzDecoder;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
 use moon_utils::fs;
-use moon_utils::process::{create_command, exec_command_capture_stdout};
+use moon_utils::process::{output_to_trimmed_string, Command};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs::File;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tar::Archive;
 use zip::ZipArchive;
 
-pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
-    let mut version = exec_command_capture_stdout(create_command(bin).args(["--version"]).env(
-        "PATH",
-        get_path_env_var(bin.parent().unwrap().to_path_buf()),
-    ))
-    .await?;
+pub fn get_bin_name_suffix(name: &str, windows_ext: &str, flat: bool) -> String {
+    if cfg!(windows) {
+        format!("{}.{}", name, windows_ext)
+    } else if flat {
+        name.to_owned()
+    } else {
+        format!("bin/{}", name)
+    }
+}
 
-    version = version.trim().to_owned();
+pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
+    let output = Command::new(bin)
+        .arg("--version")
+        .env("PATH", get_path_env_var(bin.parent().unwrap()))
+        .exec_capture_output()
+        .await?;
+
+    let mut version = output_to_trimmed_string(&output.stdout);
 
     if version.is_empty() {
         version = String::from("0.0.0");
@@ -56,9 +66,9 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
 /// other binaries of the same name. Otherwise, tooling like nvm will
 /// intercept execution and break our processes. We can work around this
 /// by prepending the `PATH` environment variable.
-pub fn get_path_env_var(bin_dir: PathBuf) -> std::ffi::OsString {
+pub fn get_path_env_var(bin_dir: &Path) -> std::ffi::OsString {
     let path = env::var("PATH").unwrap_or_default();
-    let mut paths = vec![bin_dir];
+    let mut paths = vec![bin_dir.to_path_buf()];
 
     paths.extend(env::split_paths(&path).collect::<Vec<_>>());
 
@@ -70,8 +80,9 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
 
     trace!(
         target: "moon:toolchain",
-        "Downloading file to {}",
-        color::path(dest.parent().unwrap()),
+        "Downloading file {} to {}",
+        color::url(url),
+        color::path(dest),
     );
 
     // Ensure parent directories exist

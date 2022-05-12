@@ -1,0 +1,15 @@
+tasks:
+  # :scope
+  all:
+    command: node
+    args: -e "console.log('scope=all')"
+
+  # ~:scope
+  self:
+    command: node
+    args: -e "console.log('scope=self')"
+    deps:
+      - '~:selfOther'
+  selfOther:
+    command: node
+    args: -e "console.log('scope=self/other')"

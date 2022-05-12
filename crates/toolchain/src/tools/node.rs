@@ -1,16 +1,20 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{
-    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack,
+    download_file_from_url, get_bin_name_suffix, get_bin_version, get_file_sha256_hash,
+    get_path_env_var, unpack,
 };
-use crate::tool::Tool;
+use crate::pms::npm::NpmTool;
+use crate::pms::pnpm::PnpmTool;
+use crate::pms::yarn::YarnTool;
+use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
-use moon_logger::{color, debug, error};
+use moon_logger::{color, debug, error, Logable};
 use moon_utils::fs;
-use moon_utils::process::{create_command, exec_command, Output};
+use moon_utils::process::Command;
 use semver::{Version, VersionReq};
 use std::env::consts;
 use std::ffi::OsStr;
@@ -115,64 +119,65 @@ fn verify_shasum(
 pub struct NodeTool {
     bin_path: PathBuf,
 
-    corepack_bin_path: PathBuf,
+    pub config: NodeConfig,
 
     download_path: PathBuf,
 
     install_dir: PathBuf,
 
-    pub config: NodeConfig,
+    npm: Option<NpmTool>,
+
+    pnpm: Option<PnpmTool>,
+
+    yarn: Option<YarnTool>,
 }
 
 impl NodeTool {
     pub fn new(toolchain: &Toolchain, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
-        let mut download_path = toolchain.temp_dir.clone();
+        let install_dir = toolchain.tools_dir.join("node").join(&config.version);
 
-        download_path.push("node");
-        download_path.push(get_download_file(&config.version)?);
+        let mut node = NodeTool {
+            bin_path: install_dir.join(get_bin_name_suffix("node", "exe", false)),
+            config: config.to_owned(),
+            download_path: toolchain
+                .temp_dir
+                .join("node")
+                .join(get_download_file(&config.version)?),
+            install_dir,
+            npm: None,
+            pnpm: None,
+            yarn: None,
+        };
 
-        let mut install_dir = toolchain.tools_dir.clone();
+        node.npm = Some(NpmTool::new(&node, &config.npm)?);
 
-        install_dir.push("node");
-        install_dir.push(&config.version);
-
-        let mut bin_path = install_dir.clone();
-        let mut corepack_bin_path = install_dir.clone();
-
-        if consts::OS == "windows" {
-            bin_path.push("node.exe");
-            corepack_bin_path.push("corepack.cmd");
-        } else {
-            bin_path.push("bin/node");
-            corepack_bin_path.push("bin/corepack");
+        if let Some(pnpm_config) = &config.pnpm {
+            node.pnpm = Some(PnpmTool::new(&node, pnpm_config)?);
         }
 
-        debug!(
-            target: "moon:toolchain:node",
-            "Creating tool at {}",
-            color::path(&bin_path)
-        );
+        if let Some(yarn_config) = &config.yarn {
+            node.yarn = Some(YarnTool::new(&node, yarn_config)?);
+        }
 
-        Ok(NodeTool {
-            bin_path,
-            corepack_bin_path,
-            config: config.to_owned(),
-            download_path,
-            install_dir,
-        })
+        Ok(node)
     }
 
-    pub async fn exec_corepack<I, S>(&self, args: I) -> Result<Output, ToolchainError>
+    pub async fn exec_corepack<I, S>(&self, args: I) -> Result<(), ToolchainError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        Ok(exec_command(
-            create_command(&self.corepack_bin_path)
-                .args(args)
-                .env("PATH", get_path_env_var(self.get_bin_dir())),
-        )
-        .await?)
+        let corepack_path = self
+            .install_dir
+            .join(get_bin_name_suffix("corepack", "cmd", false));
+
+        Command::new(&corepack_path)
+            .args(args)
+            .env("PATH", get_path_env_var(corepack_path.parent().unwrap()))
+            .exec_capture_output()
+            .await?;
+
+        Ok(())
     }
 
     pub fn find_package_bin_path(
@@ -180,13 +185,10 @@ impl NodeTool {
         package_name: &str,
         starting_dir: &Path,
     ) -> Result<PathBuf, ToolchainError> {
-        let mut bin_path = starting_dir.join("node_modules").join(".bin");
-
-        if consts::OS == "windows" {
-            bin_path.push(format!("{}.cmd", package_name));
-        } else {
-            bin_path.push(package_name);
-        }
+        let bin_path = starting_dir
+            .join("node_modules")
+            .join(".bin")
+            .join(get_bin_name_suffix(package_name, "cmd", true));
 
         if bin_path.exists() {
             return Ok(bin_path);
@@ -195,12 +197,45 @@ impl NodeTool {
         // If we've reached the root of the workspace, and still haven't found
         // a binary, just abort with an error...
         if starting_dir.join(CONFIG_DIRNAME).exists() {
-            return Err(ToolchainError::MissingNodeModuleBin(String::from(
-                package_name,
-            )));
+            return Err(ToolchainError::MissingNodeModuleBin(
+                package_name.to_owned(),
+            ));
         }
 
         self.find_package_bin_path(package_name, starting_dir.parent().unwrap())
+    }
+
+    /// Return the `npm` package manager.
+    pub fn get_npm(&self) -> &NpmTool {
+        self.npm.as_ref().unwrap()
+    }
+
+    /// Return the `pnpm` package manager.
+    pub fn get_pnpm(&self) -> Option<&PnpmTool> {
+        match &self.pnpm {
+            Some(tool) => Some(tool),
+            None => None,
+        }
+    }
+
+    /// Return the `yarn` package manager.
+    pub fn get_yarn(&self) -> Option<&YarnTool> {
+        match &self.yarn {
+            Some(tool) => Some(tool),
+            None => None,
+        }
+    }
+
+    pub fn get_package_manager(&self) -> &(dyn PackageManager<Self> + Send + Sync) {
+        if self.pnpm.is_some() {
+            return self.get_pnpm().unwrap();
+        }
+
+        if self.yarn.is_some() {
+            return self.get_yarn().unwrap();
+        }
+
+        self.get_npm()
     }
 
     pub fn is_corepack_aware(&self) -> bool {
@@ -211,46 +246,40 @@ impl NodeTool {
     }
 }
 
+impl Logable for NodeTool {
+    fn get_log_target(&self) -> String {
+        String::from("moon:toolchain:node")
+    }
+}
+
 #[async_trait]
-impl Tool for NodeTool {
-    fn is_downloaded(&self) -> bool {
-        let exists = self.download_path.exists();
-
-        if exists {
-            debug!(
-                target: "moon:toolchain:node",
-                "Binary has already been downloaded, continuing"
-            );
-        } else {
-            debug!(
-                target: "moon:toolchain:node",
-                "Binary does not exist, attempting to download"
-            );
-        }
-
-        exists
+impl Downloadable<Toolchain> for NodeTool {
+    fn get_download_path(&self) -> Result<&PathBuf, ToolchainError> {
+        Ok(&self.download_path)
     }
 
-    async fn download(&self, base_host: Option<&str>) -> Result<(), ToolchainError> {
+    async fn is_downloaded(&self) -> Result<bool, ToolchainError> {
+        Ok(self.get_download_path()?.exists())
+    }
+
+    async fn download(
+        &self,
+        _toolchain: &Toolchain,
+        base_host: Option<&str>,
+    ) -> Result<(), ToolchainError> {
         let version = &self.config.version;
         let host = base_host.unwrap_or("https://nodejs.org");
+        let target = self.get_log_target();
 
         // Download the node.tar.gz archive
         let download_url = get_nodejs_url(version, host, &get_download_file(version)?);
+        let download_path = self.get_download_path()?;
 
-        download_file_from_url(&download_url, &self.download_path).await?;
-
-        debug!(
-            target: "moon:toolchain:node",
-            "Downloading binary from {} to {}",
-            color::url(&download_url),
-            color::path(&self.download_path)
-        );
+        download_file_from_url(&download_url, download_path).await?;
 
         // Download the SHASUMS256.txt file
         let shasums_url = get_nodejs_url(version, host, "SHASUMS256.txt");
-        let shasums_path = self
-            .download_path
+        let shasums_path = download_path
             .parent()
             .unwrap()
             .join(format!("node-v{}-SHASUMS256.txt", version));
@@ -258,56 +287,65 @@ impl Tool for NodeTool {
         download_file_from_url(&shasums_url, &shasums_path).await?;
 
         debug!(
-            target: "moon:toolchain:node",
+            target: &target,
             "Verifying shasum against {}",
             color::url(&shasums_url),
         );
 
         // Verify the binary
-        if let Err(error) = verify_shasum(&download_url, &self.download_path, &shasums_path) {
+        if let Err(error) = verify_shasum(&download_url, download_path, &shasums_path) {
             error!(
-                target: "moon:toolchain:node",
+                target: &target,
                 "Shasum verification has failed. The downloaded file has been deleted, please try again."
             );
 
-            fs::remove_file(&self.download_path).await?;
+            fs::remove_file(download_path).await?;
 
             return Err(error);
         }
 
         Ok(())
     }
+}
 
-    async fn is_installed(&self, _check_version: bool) -> Result<bool, ToolchainError> {
-        if self.install_dir.exists() {
-            debug!(
-                target: "moon:toolchain:node",
-                "Download has already been installed and is on the correct version",
-            );
+#[async_trait]
+impl Installable<Toolchain> for NodeTool {
+    fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError> {
+        Ok(&self.install_dir)
+    }
 
-            return Ok(true);
-        }
+    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
+        Ok(get_bin_version(self.get_bin_path()).await?)
+    }
 
-        debug!(
-            target: "moon:toolchain:node",
-            "Download has not been installed",
-        );
-
-        Ok(false)
+    async fn is_installed(
+        &self,
+        _toolchain: &Toolchain,
+        _check_version: bool,
+    ) -> Result<bool, ToolchainError> {
+        Ok(self.get_install_dir()?.exists())
     }
 
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        let install_dir = self.get_install_dir();
+        let download_path = self.get_download_path()?;
+        let install_dir = self.get_install_dir()?;
         let prefix = get_download_file_name(&self.config.version)?;
 
-        unpack(&self.download_path, install_dir, &prefix).await?;
+        unpack(download_path, install_dir, &prefix).await?;
 
         debug!(
-            target: "moon:toolchain:node",
+            target: &self.get_log_target(),
             "Unpacked and installed to {}",
             color::path(install_dir)
         );
 
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl Executable<Toolchain> for NodeTool {
+    async fn find_bin_path(&mut self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
         Ok(())
     }
 
@@ -315,15 +353,49 @@ impl Tool for NodeTool {
         &self.bin_path
     }
 
-    fn get_download_path(&self) -> Option<&PathBuf> {
-        Some(&self.download_path)
-    }
-
-    fn get_install_dir(&self) -> &PathBuf {
-        &self.install_dir
-    }
-
-    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
-        Ok(get_bin_version(self.get_bin_path()).await?)
+    fn is_executable(&self) -> bool {
+        true
     }
 }
+
+#[async_trait]
+impl Lifecycle<Toolchain> for NodeTool {
+    async fn setup(
+        &mut self,
+        _toolchain: &Toolchain,
+        check_version: bool,
+    ) -> Result<u8, ToolchainError> {
+        if self.is_corepack_aware() && check_version {
+            debug!(
+                target: &self.get_log_target(),
+                "Enabling corepack for package manager control"
+            );
+
+            self.exec_corepack(["enable"]).await?;
+        }
+
+        let mut installed = 0;
+
+        if self.npm.is_some() {
+            let mut npm = self.npm.take().unwrap();
+            installed += npm.run_setup(self, check_version).await?;
+            self.npm = Some(npm);
+        }
+
+        if self.pnpm.is_some() {
+            let mut pnpm = self.pnpm.take().unwrap();
+            installed += pnpm.run_setup(self, check_version).await?;
+            self.pnpm = Some(pnpm);
+        }
+
+        if self.yarn.is_some() {
+            let mut yarn = self.yarn.take().unwrap();
+            installed += yarn.run_setup(self, check_version).await?;
+            self.yarn = Some(yarn);
+        }
+
+        Ok(installed)
+    }
+}
+
+impl Tool for NodeTool {}

@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 348
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ node:envVars
+MOON_FOO=abc
+MOON_BAR=123
+MOON_BAZ=true
+
+Tasks: 1 completed
+ Time: 100ms
+
+

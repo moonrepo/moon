@@ -1,0 +1,9 @@
+node:
+  # Use a unique version as to not collide with other tests
+  version: '16.1.0'
+  packageManager: 'npm'
+  npm:
+    version: '7.0.0'
+
+projects:
+  npm: npm

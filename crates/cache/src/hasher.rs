@@ -1,7 +1,7 @@
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
 use moon_project::{Project, Task};
-use moon_utils::fs;
+use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -64,9 +64,9 @@ impl Hasher {
     pub fn hash_inputs(&mut self, inputs: BTreeMap<String, String>) {
         for (file, hash) in inputs {
             // Standardize on `/` separators so that the hash is
-            // the same between windows and posix machines.
+            // the same between windows and nix machines.
             self.input_hashes
-                .insert(fs::standardize_separators(&file), hash);
+                .insert(path::standardize_separators(&file), hash);
         }
     }
 

@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 382
+expression: "get_path_safe_output(&assert, fixture.path())"
+---
+▪▪▪▪ node:unhandledPromise
+stdout
+stderr
+node:internal/process/promises:246
+          triggerUncaughtException(err, true /* fromPromise */);
+          ^
+
+[UnhandledPromiseRejection: This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). The promise rejected with the reason "Oops".] {
+  code: 'ERR_UNHANDLED_REJECTION'
+}
+▪▪▪▪ node:unhandledPromise
+
+[38;5;15m[48;5;161m[1m ERROR [0m Process ~/.moon/tools/node/16.0.0/bin/node failed with a 1 exit code.
+
+

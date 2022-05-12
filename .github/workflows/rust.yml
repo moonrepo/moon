@@ -26,8 +26,12 @@ jobs:
           components: rustfmt
       - uses: actions-rs/cargo@v1
         with:
-          command: fmt
-          args: --all -- --check
+          command: install
+          args: --debug --force cargo-make
+      - uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: format
   lint:
     name: Lint
     runs-on: ${{ matrix.os }}
@@ -53,15 +57,19 @@ jobs:
           components: clippy
       - uses: actions-rs/cargo@v1
         with:
-          command: clippy
-          args: --workspace --all-targets -- --deny warnings
+          command: install
+          args: --debug --force cargo-make
+      - uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: lint
   test:
     name: Test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-      fail-fast: true
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
@@ -79,8 +87,12 @@ jobs:
           profile: minimal
       - uses: actions-rs/cargo@v1
         with:
+          command: install
+          args: --debug --force cargo-make
+      - uses: actions-rs/cargo@v1
+        with:
           command: build
       - uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: --workspace
+          command: make
+          args: test

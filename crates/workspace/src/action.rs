@@ -5,6 +5,7 @@ pub enum ActionStatus {
     Cached,
     // CachedFromRemote, // TODO
     Failed,
+    FailedAndAbort,
     Invalid,
     Passed,
     Running,
@@ -16,8 +17,6 @@ pub struct Action {
 
     pub error: Option<String>,
 
-    pub exit_code: i8,
-
     pub label: Option<String>,
 
     pub node_index: NodeIndex,
@@ -25,10 +24,6 @@ pub struct Action {
     pub start_time: Instant,
 
     pub status: ActionStatus,
-
-    pub stderr: String,
-
-    pub stdout: String,
 }
 
 impl Action {
@@ -36,14 +31,26 @@ impl Action {
         Action {
             duration: None,
             error: None,
-            exit_code: -1,
             label: None,
             node_index,
             start_time: Instant::now(),
             status: ActionStatus::Running,
-            stderr: String::new(),
-            stdout: String::new(),
         }
+    }
+
+    pub fn abort(&mut self) {
+        self.status = ActionStatus::FailedAndAbort;
+    }
+
+    pub fn fail(&mut self, error: String) {
+        self.error = Some(error);
+        self.status = ActionStatus::Failed;
+        self.duration = Some(self.start_time.elapsed());
+    }
+
+    pub fn has_failed(&self) -> bool {
+        matches!(self.status, ActionStatus::Failed)
+            || matches!(self.status, ActionStatus::FailedAndAbort)
     }
 
     pub fn pass(&mut self, status: ActionStatus) {
@@ -51,9 +58,7 @@ impl Action {
         self.duration = Some(self.start_time.elapsed());
     }
 
-    pub fn fail(&mut self, error: String) {
-        self.error = Some(error);
-        self.status = ActionStatus::Failed;
-        self.duration = Some(self.start_time.elapsed());
+    pub fn should_abort(&self) -> bool {
+        matches!(self.status, ActionStatus::FailedAndAbort)
     }
 }

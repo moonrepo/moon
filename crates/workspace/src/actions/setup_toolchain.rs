@@ -17,9 +17,8 @@ pub async fn setup_toolchain(
         "Setting up toolchain",
     );
 
-    let workspace = workspace.read().await;
+    let mut workspace = workspace.write().await;
     let mut cache = workspace.cache.cache_workspace_state().await?;
-    let mut root_package = workspace.load_package_json().await?;
 
     // Only check the versions of some tools every 12 hours,
     // as checking every run has considerable overhead spawning all
@@ -28,10 +27,8 @@ pub async fn setup_toolchain(
     let check_versions = cache.item.last_version_check_time == 0
         || (cache.item.last_version_check_time + HOUR * 12) <= now;
 
-    let installed_tools = workspace
-        .toolchain
-        .setup(&mut root_package, check_versions)
-        .await?;
+    // Install all tools
+    let installed_tools = workspace.toolchain.setup(check_versions).await?;
 
     // Update the cache with the timestamp
     if check_versions {
@@ -39,7 +36,7 @@ pub async fn setup_toolchain(
         cache.save().await?;
     }
 
-    Ok(if installed_tools {
+    Ok(if installed_tools > 0 {
         ActionStatus::Passed
     } else {
         ActionStatus::Skipped

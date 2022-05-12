@@ -1,0 +1,7 @@
+tasks:
+  version:
+    command: pnpm
+    args: --version
+  installDep:
+    command: pnpm
+    args: add react@17.0.0

@@ -1,6 +1,8 @@
 use crate::errors::WorkspaceError;
 use moon_logger::{color, debug, trace};
-use moon_project::{ProjectGraph, Target, TargetError, TargetProject, TouchedFilePaths};
+use moon_project::{
+    ProjectGraph, ProjectID, Target, TargetError, TargetID, TargetProject, TouchedFilePaths,
+};
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
@@ -13,9 +15,9 @@ const TARGET: &str = "moon:dep-graph";
 
 pub enum Node {
     InstallNodeDeps,
-    RunTarget(String), // target id
+    RunTarget(TargetID),
     SetupToolchain,
-    SyncProject(String), // project id
+    SyncProject(ProjectID),
 }
 
 impl Node {
@@ -264,7 +266,6 @@ impl DepGraph {
     fn detect_cycle(&self) -> Result<(), WorkspaceError> {
         use petgraph::algo::kosaraju_scc;
 
-        // TODO: Not exactly accurate, revisit!!!
         let scc = kosaraju_scc(&self.graph);
         let cycle = scc
             .last()
@@ -272,7 +273,7 @@ impl DepGraph {
             .iter()
             .map(|i| self.get_node_from_index(*i).unwrap().label())
             .collect::<Vec<String>>()
-            .join(" -> ");
+            .join(" → ");
 
         Err(WorkspaceError::DepGraphCycleDetected(cycle))
     }
@@ -334,11 +335,11 @@ impl DepGraph {
         );
 
         // We should sync projects *before* running targets
-        let project_node = self.sync_project(&project.id, projects)?;
+        let sync_project_index = self.sync_project(&project.id, projects)?;
         let node = self.graph.add_node(Node::RunTarget(target_id.to_owned()));
 
         self.graph.add_edge(node, self.install_node_deps_index, ());
-        self.graph.add_edge(node, project_node, ());
+        self.graph.add_edge(node, sync_project_index, ());
 
         // Also cache so we don't run the same target multiple times
         self.index_cache.insert(target_id.to_owned(), node);
@@ -462,7 +463,7 @@ mod tests {
 
     #[test]
     #[should_panic(
-        expected = "CycleDetected(\"RunTarget(cycle:a) -> RunTarget(cycle:b) -> RunTarget(cycle:c)\")"
+        expected = "CycleDetected(\"RunTarget(cycle:a) → RunTarget(cycle:b) → RunTarget(cycle:c)\")"
     )]
     fn detects_cycles() {
         let projects = create_tasks_project_graph();

@@ -7,7 +7,6 @@ use moon_project::{EnvVars, FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::{BTreeMap, HashMap};
-use std::env;
 use std::path::Path;
 
 fn mock_file_groups() -> HashMap<String, FileGroup> {
@@ -433,7 +432,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -453,7 +452,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         },
                         &workspace_root,
                         project_source
@@ -507,7 +506,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Append),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -530,7 +529,7 @@ mod tasks {
                             inputs: Some(string_vec!["a.*", "b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Append),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         },
                         &workspace_root,
                         project_source
@@ -584,7 +583,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -607,7 +606,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*", "a.*"]),
                             outputs: Some(string_vec!["b.ts", "a.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: TaskType::Shell,
+                            type_of: TaskType::System,
                         },
                         &workspace_root,
                         project_source
@@ -829,7 +828,7 @@ mod tasks {
 
             assert_eq!(
                 *project.tasks.get("test").unwrap().args,
-                if env::consts::OS == "windows" {
+                if cfg!(windows) {
                     vec![
                         "--dirs",
                         ".\\dir",
@@ -964,7 +963,7 @@ mod tasks {
                     project_root.to_str().unwrap(),
                     "--psource",
                     // This is wonky but also still valid
-                    if env::consts::OS == "windows" {
+                    if cfg!(windows) {
                         "foo/base\\files-and-dirs"
                     } else {
                         "foo/base/files-and-dirs"

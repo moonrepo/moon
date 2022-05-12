@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 128
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ system:echo
+hello
+
+Tasks: 1 completed
+ Time: 100ms
+
+

@@ -13,7 +13,7 @@ projects:
 node:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
   # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
-  version: '16.13.0'
+  version: '18.0.0'
 
   # OPTIONAL: The package manager to use when managing dependencies.
   # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".
@@ -30,7 +30,7 @@ node:
   syncProjectWorkspaceDependencies: true
 
   # OPTIONAL: Sync `node.version` to a 3rd-party version manager's config file.
-  # Accepts "nodeenv" (.node-version), "nvm" (.nvmrc), or none.
+  # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
   # syncVersionManagerConfig: 'nvm'
 
 # OPTIONAL: Configures how Moon integrates with TypeScript.

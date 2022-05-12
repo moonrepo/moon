@@ -197,7 +197,7 @@
     "VersionManager": {
       "type": "string",
       "enum": [
-        "nodeenv",
+        "nodenv",
         "nvm"
       ]
     },

@@ -41,7 +41,7 @@ fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), Validat
 }
 
 /// https://moonrepo.dev/docs/config/workspace
-#[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct WorkspaceConfig {
     #[serde(default)]
     #[validate]

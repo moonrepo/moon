@@ -1,0 +1,9 @@
+dependsOn:
+  - depsA
+  - depsB
+  - depsC
+
+tasks:
+  standard:
+    command: node
+    args: -e "'noop'"

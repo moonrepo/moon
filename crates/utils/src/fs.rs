@@ -2,15 +2,12 @@ use async_recursion::async_recursion;
 use globset::GlobSet;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
-use path_clean::PathClean;
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tokio::fs;
-
-pub use dirs::home_dir as get_home_dir;
 
 pub fn clean_json(json: String) -> Result<String, MoonError> {
     // Remove comments
@@ -38,61 +35,17 @@ pub async fn create_dir_all(path: &Path) -> Result<(), MoonError> {
     Ok(())
 }
 
-/// If a file starts with "/", expand from the workspace root, otherwise the project root.
-pub fn expand_root_path(file: &str, workspace_root: &Path, project_root: &Path) -> PathBuf {
-    if file.starts_with('/') {
-        workspace_root.join(file.strip_prefix('/').unwrap())
-    } else {
-        project_root.join(file)
-    }
-}
+pub fn find_upwards(name: &str, dir: &Path) -> Option<PathBuf> {
+    let findable = dir.join(name);
 
-// This is not very exhaustive and may be inaccurate.
-pub fn is_glob(value: &str) -> bool {
-    let single_values = vec!['*', '?', '1'];
-    let paired_values = vec![('{', '}'), ('[', ']')];
-    let mut bytes = value.bytes();
-    let mut is_escaped = |index: usize| {
-        if index == 0 {
-            return false;
-        }
-
-        bytes.nth(index - 1).unwrap_or(b' ') == b'\\'
-    };
-
-    if value.contains("**") {
-        return true;
+    if findable.exists() {
+        return Some(findable);
     }
 
-    for single in single_values {
-        if !value.contains(single) {
-            continue;
-        }
-
-        if let Some(index) = value.find(single) {
-            if !is_escaped(index) {
-                return true;
-            }
-        }
+    match dir.parent() {
+        Some(parent_dir) => find_upwards(name, parent_dir),
+        None => None,
     }
-
-    for (open, close) in paired_values {
-        if !value.contains(open) || !value.contains(close) {
-            continue;
-        }
-
-        if let Some(index) = value.find(open) {
-            if !is_escaped(index) {
-                return true;
-            }
-        }
-    }
-
-    false
-}
-
-pub fn is_path_glob(path: &Path) -> bool {
-    is_glob(&path.to_string_lossy())
 }
 
 pub async fn link_file(from_root: &Path, from: &Path, to_root: &Path) -> Result<(), MoonError> {
@@ -149,6 +102,8 @@ pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
 // https://github.com/BurntSushi/ripgrep/issues/2001
 #[cfg(windows)]
 pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
+    use crate::path::normalize_glob;
+
     globset.is_match(&PathBuf::from(normalize_glob(path)))
 }
 
@@ -156,43 +111,6 @@ pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
     fs::metadata(path)
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))
-}
-
-pub fn normalize(path: &Path) -> PathBuf {
-    path.to_path_buf().clean()
-}
-
-pub fn normalize_glob(path: &Path) -> String {
-    // Always use forward slashes for globs
-    let glob = standardize_separators(&path.to_string_lossy());
-
-    // Remove UNC prefix as it breaks glob matching
-    if std::env::consts::OS == "windows" {
-        return glob.replace("//?/", "");
-    }
-
-    glob
-}
-
-#[cfg(not(windows))]
-pub fn normalize_separators(path: &str) -> String {
-    String::from(path)
-}
-
-#[cfg(windows)]
-pub fn normalize_separators(path: &str) -> String {
-    path.replace('/', "\\")
-}
-
-pub fn path_to_string(path: &Path) -> Result<String, MoonError> {
-    match path.to_str() {
-        Some(p) => Ok(p.to_owned()),
-        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
-    }
-}
-
-pub fn standardize_separators(path: &str) -> String {
-    path.replace('\\', "/")
 }
 
 pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
@@ -291,41 +209,4 @@ where
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    mod is_glob {
-        use super::*;
-
-        #[test]
-        fn returns_true_when_a_glob() {
-            assert!(is_glob("**"));
-            assert!(is_glob("**/src/*"));
-            assert!(is_glob("src/**"));
-            assert!(is_glob("*.ts"));
-            assert!(is_glob("file.*"));
-            assert!(is_glob("file.{js,ts}"));
-            assert!(is_glob("file.[jstx]"));
-            assert!(is_glob("file.tsx?"));
-        }
-
-        #[test]
-        fn returns_false_when_not_glob() {
-            assert!(!is_glob("dir"));
-            assert!(!is_glob("file.rs"));
-            assert!(!is_glob("dir/file.ts"));
-            assert!(!is_glob("dir/dir/file_test.rs"));
-            assert!(!is_glob("dir/dirDir/file-ts.js"));
-        }
-
-        #[test]
-        fn returns_false_when_escaped_glob() {
-            assert!(!is_glob("\\*.rs"));
-            assert!(!is_glob("file\\?.js"));
-            assert!(!is_glob("folder-\\[id\\]"));
-        }
-    }
 }

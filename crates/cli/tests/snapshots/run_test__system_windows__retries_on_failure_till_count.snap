@@ -1,0 +1,24 @@
+---
+source: crates/cli/tests/run_test.rs
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ systemWindows:retryCount
+stdout
+▪▪▪▪ systemWindows:retryCount (attempt 2 of 4)
+stdout
+▪▪▪▪ systemWindows:retryCount (attempt 3 of 4)
+stdout
+▪▪▪▪ systemWindows:retryCount (attempt 4 of 4)
+stdout
+stderr 
+▪▪▪▪ systemWindows:retryCount
+stderr 
+▪▪▪▪ systemWindows:retryCount (attempt 2 of 4)
+stderr 
+▪▪▪▪ systemWindows:retryCount (attempt 3 of 4)
+stderr 
+▪▪▪▪ systemWindows:retryCount (attempt 4 of 4)
+
+[38;5;15m[48;5;161m[1m ERROR [0m Process cmd.exe failed with a 1 exit code.
+
+

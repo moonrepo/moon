@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 44
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ node:exitCodeZero
+stdout
+This should appear!
+
+Tasks: 1 completed
+ Time: 100ms
+
+stderr
+

@@ -1,25 +1,11 @@
 import React from 'react';
 import { faDiscord, faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons';
 import Icon from '../../../ui/iconography/Icon';
-import Heading from '../../../ui/typography/Heading';
+// import Heading from '../../../ui/typography/Heading';
 import Link from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
 
 export default function FooterLayout({ style, links, logo, copyright }) {
-	// return (
-	// 	<footer className={clsx('footer')}>
-	// 		<div className="container container-fluid">
-	// 			{links}
-	// 			{(logo || copyright) && (
-	// 				<div className="footer__bottom text--center">
-	// 					{logo && <div className="margin-bottom--sm">{logo}</div>}
-	// 					{copyright}
-	// 				</div>
-	// 			)}
-	// 		</div>
-	// 	</footer>
-	// );
-
 	return (
 		<footer className="bg-gray-100 dark:bg-slate-600" aria-labelledby="footer-heading">
 			<h2 id="footer-heading" className="sr-only">
@@ -28,16 +14,12 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 
 			<div className="max-w-7xl mx-auto py-3 px-2 sm:px-3 md:py-4 md:px-4 lg:px-6">
 				<div className="lg:grid lg:grid-cols-3 lg:gap-4">
-					<div className="grid grid-cols-3 gap-4 lg:col-span-2">{links}</div>
+					<div className="grid grid-cols-3 gap-4 lg:col-span-3">{links}</div>
 
-					<div className="mt-4 lg:mt-0">
+					{/* <div className="mt-4 lg:mt-0">
 						<Heading level={6} transform="uppercase">
 							Subscribe for updates
 						</Heading>
-
-						{/* <Text className="mt-2" variant="muted">
-							The latest news, articles, and resources, sent to your inbox weekly.
-						</Text> */}
 
 						<form className="mt-2 sm:flex sm:max-w-md">
 							<label htmlFor="email" className="sr-only">
@@ -63,7 +45,7 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 								</button>
 							</div>
 						</form>
-					</div>
+					</div> */}
 				</div>
 
 				<div className="mt-3 pt-3 md:mt-4 md:pt-4 border-0 border-t border-solid border-gray-200 dark:border-slate-400 flex items-center justify-between">

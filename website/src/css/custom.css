@@ -34,6 +34,7 @@ html:root {
 	--ifm-blockquote-padding-vertical: var(--moon-padding-1);
 	--ifm-blockquote-padding-horizontal: var(--moon-padding-1_5);
 	--ifm-blockquote-border-left-width: 4px;
+	--docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, .05);
 }
 
 html[data-theme='light'] {
@@ -148,30 +149,10 @@ blockquote {
 	margin-top: var(--moon-padding-1);
 }
 
-.pagination-nav__item .icon-next,
-.pagination-nav__item--next .icon-previous {
-	display: none;
-}
-
-.pagination-nav__item--next .icon-next {
-	display: inline-block;
-}
-
 @media (min-width: 997px) {
 	html .menu {
 		padding: var(--moon-padding-1_5);
 	}
-}
-
-.docusaurus-highlight-code-line {
-	background-color: rgba(0, 0, 0, 0.05);
-	display: block;
-	margin: 0 calc(-1 * var(--ifm-pre-padding));
-	padding: 0 var(--ifm-pre-padding);
-}
-
-[data-theme='dark'] .docusaurus-highlight-code-line {
-	background-color: rgba(0, 0, 0, 0.15);
 }
 
 .markdown {

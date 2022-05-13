@@ -34,6 +34,8 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
     // And commit them... this seems like a lot of overhead?
     Command::new("git")
         .args(["commit", "-m", "'Fixtures'"])
+        .env("GIT_AUTHOR_NAME", "moon tests")
+        .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
         .current_dir(temp_dir.path())
         .spawn()
         .unwrap_or_else(|_| panic!("Failed to commit files for fixtures sandbox: {}", dir));

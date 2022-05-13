@@ -1,0 +1,7 @@
+declined:
+  - "@moonrepo/cli"
+  - "@moonrepo/core-linux-x64-gnu"
+  - "@moonrepo/core-linux-x64-musl"
+  - "@moonrepo/core-macos-x64"
+  - "@moonrepo/core-windows-x64-msvc"
+  - "@moonrepo/runtime"

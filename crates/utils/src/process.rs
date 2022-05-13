@@ -282,14 +282,7 @@ impl Command {
         let mut command_line = path::replace_home_dir(&format!("{} {}", self.bin, args.join(" ")));
 
         if input.is_some() {
-            command_line = format!(
-                "{} {} {}",
-                color::muted_light(&input.unwrap().replace('\n', " ")),
-                color::muted(">"),
-                color::shell(&command_line)
-            );
-        } else {
-            command_line = color::shell(&command_line);
+            command_line = format!("{} > {}", input.unwrap().replace('\n', " "), command_line);
         }
 
         let mut envs_list = vec![];
@@ -315,7 +308,7 @@ impl Command {
         trace!(
             target: "moon:utils",
             "Running command {} (in {}){}",
-            command_line,
+            color::shell(&command_line),
             if let Some(cwd) = cmd.get_current_dir() {
                 color::path(cwd)
             } else {

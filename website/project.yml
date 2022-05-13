@@ -2,6 +2,8 @@ tasks:
   build:
     command: 'docusaurus'
     args: 'build'
+    outputs:
+      - 'build'
   start:
     command: 'docusaurus'
     args: 'start'

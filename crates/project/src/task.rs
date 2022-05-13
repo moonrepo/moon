@@ -306,11 +306,6 @@ impl Task {
     /// Return true if this task is affected, based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, ProjectError> {
-        // We have nothing to compare against, so treat it as always affected
-        if self.inputs.is_empty() {
-            return Ok(true);
-        }
-
         trace!(
             target: &format!("moon:project:{}", self.target),
             "Checking if affected using input files: {}",
@@ -479,15 +474,6 @@ mod tests {
 
     mod is_affected {
         use super::*;
-
-        #[test]
-        fn returns_true_if_empty_inputs() {
-            let workspace_root = get_fixtures_dir("base");
-            let project_root = workspace_root.join("files-and-dirs");
-            let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
-
-            assert!(task.is_affected(&HashSet::new()).unwrap());
-        }
 
         #[test]
         fn returns_true_if_matches_file() {

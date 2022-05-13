@@ -1,0 +1,219 @@
+---
+title: Continuous integration
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+All companies and projects rely on continuous integration (CI) to ensure high quality code and to
+avoid regressions. Because this is such a critical piece of every developer's workflow, we wanted to
+support it as a first-class feature within moon, and we do just that with the
+[`moon ci`](../commands/ci) command.
+
+## How it works
+
+The `ci` command does all the heavy lifting necessary for effectively running jobs. It achieves this
+by automatically running the following steps:
+
+- Determines touched files by comparing the current HEAD against a base.
+- Determines all [targets](../concepts/target) that need to run based on touched files.
+- Additionally runs affected [targets](../concepts/target) dependencies _and_ dependents.
+- Generates an action and dependency graph.
+- Installs the toolchain, Node.js, and npm dependencies.
+- Runs all actions within the graph using a thread pool.
+- Displays stats about all passing, failed, and invalid actions.
+
+## Configuring tasks
+
+By default, _all tasks_ run in CI, as you should always be building, linting, type-checking,
+testing, so on and so forth. However, this isn't always true, so this can be disabled on a per-task
+basis through the [`runInCI`](../config/project#runinci) option.
+
+```yaml
+tasks:
+  dev:
+    command: webpack
+    args: server
+    options:
+      runInCI: false
+```
+
+> This option _must_ be set to false for tasks that spawn a long running process, like HTTP or
+> development servers. To help mitigate this, tasks named `start` or `serve` are false by default.
+
+## Integrating
+
+Although moon has an [integrated toolchain](../concepts/toolchain), we still require Node.js and
+dependencies to be installed _beforehand_, as moon is currently shipped as an
+[npm package](https://www.npmjs.com/package/@moonrepo/cli). This is unfortunate and we're looking
+into other distribution channels.
+
+With that being said, the following examples can be referenced for setting up moon and its CI
+workflow in popular services. The examples assume a
+[package script named `moon`](../install#adding-a-package-script) and are using Yarn 3, but feel
+free to replace with your chosen package manager.
+
+<Tabs groupId="ci-env">
+<TabItem value="github" label="GitHub">
+
+```yaml title=".github/workflows/ci.yml"
+name: 'Pipeline'
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+jobs:
+  ci:
+    name: 'CI'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: yarn install
+      - run: yarn moon ci
+```
+
+</TabItem>
+<TabItem value="buildkite" label="Buildkite">
+
+```yaml title=".buildkite/pipeline.yml"
+steps:
+  - label: 'CI'
+    commands:
+      - yarn install
+      - yarn moon ci
+```
+
+</TabItem>
+<TabItem value="circleci" label="CircleCI">
+
+```yaml title=".circleci/config.yml"
+version: 2.1
+orbs:
+  node: 'circleci/node@5.0.2'
+jobs:
+  ci:
+    docker:
+      - image: 'cimg/base:stable'
+    steps:
+      - checkout
+      - node/install:
+          install-yarn: true
+          node-version: '16.13'
+      - node/install-packages:
+          check-cache: always
+          pkg-manager: yarn-berry
+      - run: yarn moon ci
+workflows:
+  pipeline:
+    jobs:
+      - ci
+```
+
+</TabItem>
+<TabItem value="travisci" label="TravisCI">
+
+```yaml title=".travis.yml"
+language: node_js
+node_js:
+  - 16
+cache: yarn
+script: moon ci
+```
+
+</TabItem>
+</Tabs>
+
+## Comparing revisions
+
+By default the command will compare the current HEAD against a base revision, which is typically the
+configured [`vcs.defaultBranch`](../config/workspace#defaultbranch) (master, main, trunk, etc). Both
+of these can be customized with the `--base` and `--head` options respectively.
+
+```shell
+$ moon ci --base another-branch --head <SHA>
+```
+
+## Parallelizing tasks
+
+If your CI environment supports sharding across multiple jobs, then you can utilize moon's built in
+parallelism, by passing `--jobTotal` and `--job` options. The `--jobTotal` option is an integer of
+the total number of jobs available, and `--job` is the current index (0 based) amongst the total.
+
+When these options are passed, moon will only run affected [targets](../concepts/target) based on
+the current job slice.
+
+<Tabs groupId="ci-env">
+<TabItem value="github" label="GitHub">
+
+GitHub Actions do not support native parallelism, but it can be emulated using it's matrix.
+
+```yaml title=".github/workflows/ci.yml"
+# ...
+jobs:
+  ci:
+    # ...
+    strategy:
+      matrix:
+        index: [0, 1]
+    steps:
+      # ...
+      - run: yarn moon ci --job ${{ matrix.index }} --jobTotal 2
+```
+
+- [Documentation](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs)
+
+</TabItem>
+<TabItem value="buildkite" label="Buildkite">
+
+```yaml title=".buildkite/pipeline.yml"
+# ...
+steps:
+  - label: 'CI'
+    parallelism: 10
+    commands:
+      # ...
+      - yarn moon ci --job $$BUILDKITE_PARALLEL_JOB --jobTotal $$BUILDKITE_PARALLEL_JOB_COUNT
+```
+
+- [Documentation](https://buildkite.com/docs/tutorials/parallel-builds#parallel-jobs)
+
+</TabItem>
+<TabItem value="circleci" label="CircleCI">
+
+```yaml title=".circleci/config.yml"
+# ...
+jobs:
+  ci:
+    # ...
+    parallelism: 10
+    steps:
+      # ...
+      - run: yarn moon ci --job $CIRCLE_NODE_INDEX --jobTotal $CIRCLE_NODE_TOTAL
+```
+
+- [Documentation](https://circleci.com/docs/2.0/parallelism-faster-jobs/)
+
+</TabItem>
+<TabItem value="travisci" label="TravisCI">
+
+TravisCI does not support native parallelism, but it can be emulated using it's matrix.
+
+```yaml title=".travis.yml"
+# ...
+env:
+  global:
+    - TRAVIS_JOB_TOTAL=2
+  jobs:
+    - TRAVIS_JOB_INDEX=0
+    - TRAVIS_JOB_INDEX=1
+script: moon ci --job $TRAVIS_JOB_INDEX --jobTotal $TRAVIS_JOB_TOTAL
+```
+
+- [Documentation](https://docs.travis-ci.com/user/speeding-up-the-build/)
+
+</TabItem>
+</Tabs>
+
+> Your CI environment may provide environment variables for these 2 values.

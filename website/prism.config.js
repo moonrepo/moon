@@ -29,7 +29,7 @@ module.exports = {
 		{
 			types: ['comment'],
 			style: {
-				color: colors.gray['500'],
+				color: colors.gray['600'],
 				fontStyle: 'italic',
 			},
 		},
@@ -60,7 +60,7 @@ module.exports = {
 		{
 			types: ['number', 'boolean'],
 			style: {
-				color: colors.teal['200'],
+				color: colors.teal['300'],
 			},
 		},
 		{

@@ -100,10 +100,12 @@ impl Task {
     pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
+        let command = cloned_config.command.unwrap_or_default();
+        let is_long_running = command == "serve" || command == "start";
 
         let task = Task {
             args: cloned_config.args.unwrap_or_default(),
-            command: cloned_config.command.unwrap_or_default(),
+            command: command.clone(),
             deps: cloned_config.deps.unwrap_or_default(),
             env: cloned_config.env.unwrap_or_default(),
             inputs: cloned_config.inputs.unwrap_or_default(),
@@ -116,7 +118,7 @@ impl Task {
                 merge_inputs: cloned_options.merge_inputs.unwrap_or_default(),
                 merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
-                run_in_ci: cloned_options.run_in_ci.unwrap_or_default(),
+                run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_long_running),
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },
             outputs: cloned_config.outputs.unwrap_or_default(),

@@ -12,6 +12,11 @@ const sidebars = {
 		},
 		{
 			type: 'category',
+			label: 'Guides',
+			items: ['guides/ci'],
+		},
+		{
+			type: 'category',
 			label: 'Concepts',
 			items: [
 				'concepts/workspace',

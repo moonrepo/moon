@@ -14,16 +14,16 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
 
     // Initialize a git repo so that VCS commands work
     Command::new("git")
-        .arg("init")
+        .args(["init", "--initial-branch", "master"])
         .current_dir(temp_dir.path())
-        .output()
+        .spawn()
         .unwrap_or_else(|_| panic!("Failed to initialize git for fixtures sandbox: {}", dir));
 
     // We must also add the files to the index
     Command::new("git")
         .args(["add", "--all", "."])
         .current_dir(temp_dir.path())
-        .output()
+        .spawn()
         .unwrap_or_else(|_| {
             panic!(
                 "Failed to add files to git index for fixtures sandbox: {}",
@@ -35,7 +35,7 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
     Command::new("git")
         .args(["commit", "-m", "'Fixtures'"])
         .current_dir(temp_dir.path())
-        .output()
+        .spawn()
         .unwrap_or_else(|_| panic!("Failed to commit files for fixtures sandbox: {}", dir));
 
     temp_dir

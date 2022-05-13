@@ -38,8 +38,12 @@ tasks:
       runInCI: false
 ```
 
-> This option _must_ be set to false for tasks that spawn a long running process, like HTTP or
-> development servers. To help mitigate this, tasks named `start` or `serve` are false by default.
+:::caution
+
+This option _must_ be set to false for tasks that spawn a long running process, like HTTP or
+development servers. To help mitigate this, tasks named `start` or `serve` are false by default.
+
+:::
 
 ## Integrating
 

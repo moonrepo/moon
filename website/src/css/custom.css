@@ -34,7 +34,7 @@ html:root {
 	--ifm-blockquote-padding-vertical: var(--moon-padding-1);
 	--ifm-blockquote-padding-horizontal: var(--moon-padding-1_5);
 	--ifm-blockquote-border-left-width: 4px;
-	--docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, .05);
+	--docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.05);
 }
 
 html[data-theme='light'] {
@@ -153,6 +153,10 @@ blockquote {
 	html .menu {
 		padding: var(--moon-padding-1_5);
 	}
+}
+
+ul ul {
+	margin-top: var(--moon-padding-1);
 }
 
 .markdown {

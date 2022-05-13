@@ -7,7 +7,7 @@ use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug, trace};
-use moon_utils::{fs, path};
+use moon_utils::{fs, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -105,10 +105,10 @@ impl Task {
 
         let task = Task {
             args: cloned_config.args.unwrap_or_default(),
-            command: command.clone(),
+            command,
             deps: cloned_config.deps.unwrap_or_default(),
             env: cloned_config.env.unwrap_or_default(),
-            inputs: cloned_config.inputs.unwrap_or_default(),
+            inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
             input_globs: vec![],
             input_paths: HashSet::new(),
             options: TaskOptions {

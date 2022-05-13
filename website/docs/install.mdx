@@ -204,9 +204,13 @@ the Rust binary, _instead of_ executing the Rust binary directly.
 }
 ```
 
-> Yarn 2+ does not support executing Rust binaries through package scripts
-> ([issue](https://github.com/yarnpkg/berry/issues/882)), so we must access the full binary path and
-> execute on that.
+:::caution
+
+Yarn 2+ does not support executing Rust binaries through package scripts
+([issue](https://github.com/yarnpkg/berry/issues/882)), so we must access the full binary path and
+execute on that.
+
+:::
 
 With this script, moon can then be run with `npm run moon ...` (or `yarn run`, or `pnpm run`), but
 do note that this pattern _will not_ work with package workspaces unless the script is ran from the

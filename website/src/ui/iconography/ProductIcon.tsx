@@ -1,8 +1,9 @@
 import React from 'react';
+import { faDiscord, faGithub, faTwitter } from '@fortawesome/free-brands-svg-icons';
 import {
 	faCircle,
 	faCircleBolt,
-	faCircleDollar,
+	faCirclePlay,
 	faCirclePlus,
 	faDiagramProject,
 	faGrid2,
@@ -12,21 +13,26 @@ import {
 	faSquareSliders,
 	faSquareSlidersVertical,
 	faToolbox,
+	faTriangle,
 } from '@fortawesome/pro-regular-svg-icons';
 import { FontAwesomeIconProps } from '@fortawesome/react-fontawesome';
 import Icon from './Icon';
 
 const icons = {
+	discord: faDiscord,
+	github: faGithub,
 	'new-project': faSquarePlus,
 	'new-task': faCirclePlus,
 	project: faSquare,
 	'project-config': faSquareSlidersVertical,
 	'project-config-global': faSquareSliders,
 	'project-graph': faDiagramProject,
+	'run-task': faCirclePlay,
 	task: faCircle,
 	'task-config': faCircleBolt,
-	token: faCircleDollar,
+	token: faTriangle,
 	toolchain: faToolbox,
+	twitter: faTwitter,
 	workspace: faGrid2,
 	'workspace-config': faSliders,
 };

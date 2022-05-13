@@ -23,7 +23,7 @@ const config = {
 			({
 				docs: {
 					sidebarPath: require.resolve('./sidebars.js'),
-					// editUrl: 'https://github.com/milesj/moon/tree/master/website',
+					editUrl: 'https://github.com/milesj/moon/tree/master/website',
 				},
 				// blog: {
 				// 	showReadingTime: true,

@@ -85,8 +85,12 @@ detects a change in...
 ...the task will be ran! If the change occurs _outside_ of the project or _outside_ the list of
 inputs, the task will _not_ be ran.
 
-> Inputs are a powerful feature that can be fine-tuned to your project's need. Be as granular or
-> open as you want, the choice is yours!
+:::tip
+
+Inputs are a powerful feature that can be fine-tuned to your project's need. Be as granular or open
+as you want, the choice is yours!
+
+:::
 
 ### Outputs
 
@@ -167,21 +171,22 @@ encourage certain file structures for consuming projects!
 
 <NextSteps
 	links={[
+		{ icon: 'run-task', label: 'Run a task', url: './run-task' },
 		{
 			icon: 'project-config-global',
 			label: (
-				<>
+				<span>
 					Configure <code>.moon/project.yml</code> further
-				</>
+				</span>
 			),
 			url: './config/global-project',
 		},
 		{
 			icon: 'project-config',
 			label: (
-				<>
+				<span>
 					Configure <code>project.yml</code> further
-				</>
+				</span>
 			),
 			url: './config/project',
 		},

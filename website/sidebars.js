@@ -8,12 +8,18 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Getting started',
-			items: ['install', 'setup-workspace', 'create-project', 'create-task'],
+			items: ['install', 'setup-workspace', 'create-project', 'create-task', 'run-task'],
 		},
 		{
 			type: 'category',
 			label: 'Guides',
 			items: ['guides/ci'],
+			link: {
+				type: 'generated-index',
+				title: 'Guides',
+				slug: '/guides',
+				keywords: ['guides'],
+			},
 		},
 		{
 			type: 'category',
@@ -27,11 +33,23 @@ const sidebars = {
 				'concepts/token',
 				'concepts/cache',
 			],
+			link: {
+				type: 'generated-index',
+				title: 'Concepts',
+				slug: '/concepts',
+				keywords: ['concepts'],
+			},
 		},
 		{
 			type: 'category',
 			label: 'Config files',
 			items: ['config/workspace', 'config/global-project', 'config/project'],
+			link: {
+				type: 'generated-index',
+				title: 'Config files',
+				slug: '/config',
+				keywords: ['config'],
+			},
 		},
 		{
 			type: 'category',
@@ -46,6 +64,12 @@ const sidebars = {
 				'commands/setup',
 				'commands/teardown',
 			],
+			link: {
+				type: 'generated-index',
+				title: 'Commands',
+				slug: '/commands',
+				keywords: ['cli', 'commands'],
+			},
 		},
 	],
 };

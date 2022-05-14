@@ -41,6 +41,8 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
         .args(["commit", "-m", "'Fixtures'"])
         .env("GIT_AUTHOR_NAME", "moon tests")
         .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
+        .env("GIT_COMMITTER_NAME", "moon tests")
+        .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev")
         .current_dir(temp_dir.path())
         .output()
         .unwrap_or_else(|_| panic!("Failed to commit files for fixtures sandbox: {}", dir));

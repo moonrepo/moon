@@ -335,7 +335,7 @@ impl Task {
             let mut affected = self.input_paths.contains(file);
 
             if !affected && has_globs {
-                affected = fs::matches_globset(&globset, file);
+                affected = fs::matches_globset(&globset, file)?;
             }
 
             trace!(

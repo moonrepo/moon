@@ -45,7 +45,7 @@ jobs:
         with:
           toolchain: 1.60.0
           profile: minimal
-      - uses: moonrepo/tool-version-action@v1.0
+      - uses: moonrepo/tool-version-action@v1
         with:
           node: ${{ matrix.node-version }}
       - uses: actions-rs/cargo@v1

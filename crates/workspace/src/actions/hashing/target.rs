@@ -76,7 +76,8 @@ pub async fn create_target_hasher(
         let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
 
         // Input globs are absolute paths, so we must do the same
-        hashed_file_tree.retain(|k, _| fs::matches_globset(&globset, &workspace.root.join(k)));
+        hashed_file_tree
+            .retain(|k, _| fs::matches_globset(&globset, &workspace.root.join(k)).unwrap());
 
         hasher.hash_inputs(hashed_file_tree);
     }
@@ -90,7 +91,7 @@ pub async fn create_target_hasher(
         let files = local_files
             .all
             .into_iter()
-            .filter(|f| fs::matches_globset(&globset, &workspace.root.join(f)))
+            .filter(|f| fs::matches_globset(&globset, &workspace.root.join(f)).unwrap())
             .collect::<Vec<String>>();
 
         if !files.is_empty() {

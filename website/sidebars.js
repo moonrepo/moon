@@ -71,6 +71,7 @@ const sidebars = {
 				keywords: ['cli', 'commands'],
 			},
 		},
+		'terminology',
 	],
 };
 

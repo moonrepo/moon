@@ -93,6 +93,10 @@ pub fn path_to_string(path: &Path) -> Result<String, MoonError> {
     }
 }
 
+pub fn path_glob_to_string(path: &Path) -> Result<String, MoonError> {
+    Ok(standardize_separators(&path_to_string(path)?))
+}
+
 pub fn replace_home_dir(value: &str) -> String {
     if let Some(home_dir) = get_home_dir() {
         let home_dir_str = home_dir.to_str().unwrap();

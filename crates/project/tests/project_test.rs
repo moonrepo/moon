@@ -217,6 +217,7 @@ mod tasks {
     use moon_project::test::{
         create_expanded_task as create_expanded_task_internal, create_file_groups_config,
     };
+    use moon_utils::path;
     use moon_utils::test::wrap_glob;
     use pretty_assertions::assert_eq;
 
@@ -309,9 +310,8 @@ mod tasks {
         );
 
         // Expanded
-        task.input_globs.push(String::from(
-            workspace_root.join("tasks/no-tasks/**/*").to_string_lossy(),
-        ));
+        task.input_globs
+            .push(path::path_glob_to_string(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
 
         assert_eq!(
             project,
@@ -344,8 +344,6 @@ mod tasks {
         )
         .unwrap();
 
-        let wild_glob = String::from(workspace_root.join("tasks/basic/**/*").to_string_lossy());
-
         let mut build = Task::from_config(
             Target::format("id", "build").unwrap(),
             &mock_task_config("webpack"),
@@ -367,10 +365,17 @@ mod tasks {
         );
 
         // Expanded
-        build.input_globs.push(wild_glob.clone());
-        std.input_globs.push(wild_glob.clone());
-        test.input_globs.push(wild_glob.clone());
-        lint.input_globs.push(wild_glob.clone());
+        let wild_glob = workspace_root.join("tasks/basic/**/*");
+
+        build
+            .input_globs
+            .push(path::path_glob_to_string(&wild_glob).unwrap());
+        std.input_globs
+            .push(path::path_glob_to_string(&wild_glob).unwrap());
+        test.input_globs
+            .push(path::path_glob_to_string(&wild_glob).unwrap());
+        lint.input_globs
+            .push(path::path_glob_to_string(&wild_glob).unwrap());
 
         assert_eq!(
             project,

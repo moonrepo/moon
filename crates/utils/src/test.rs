@@ -1,4 +1,5 @@
 use crate::path;
+use crate::process::output_to_string;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -20,7 +21,7 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
         .unwrap_or_else(|_| panic!("Failed to initialize git for fixtures sandbox: {}", dir));
 
     // We must also add the files to the index
-    Command::new("git")
+    let out = Command::new("git")
         .args(["add", "--all", "."])
         .current_dir(temp_dir.path())
         .output()
@@ -31,14 +32,22 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
             )
         });
 
+    if !out.status.success() {
+        eprintln!("{}", output_to_string(&out.stderr));
+    }
+
     // And commit them... this seems like a lot of overhead?
-    Command::new("git")
+    let out = Command::new("git")
         .args(["commit", "-m", "'Fixtures'"])
         .env("GIT_AUTHOR_NAME", "moon tests")
         .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
         .current_dir(temp_dir.path())
         .output()
         .unwrap_or_else(|_| panic!("Failed to commit files for fixtures sandbox: {}", dir));
+
+    if !out.status.success() {
+        eprintln!("{}", output_to_string(&out.stderr));
+    }
 
     temp_dir
 }

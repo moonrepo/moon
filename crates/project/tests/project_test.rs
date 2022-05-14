@@ -303,6 +303,16 @@ mod tasks {
         )
         .unwrap();
 
+        let mut task = Task::from_config(
+            Target::format("id", "standard").unwrap(),
+            &mock_task_config("cmd"),
+        );
+
+        // Expanded
+        task.input_globs.push(String::from(
+            workspace_root.join("tasks/no-tasks/**/*").to_string_lossy(),
+        ));
+
         assert_eq!(
             project,
             Project {
@@ -314,13 +324,7 @@ mod tasks {
                     .unwrap(),
                 file_groups: HashMap::new(),
                 source: String::from("tasks/no-tasks"),
-                tasks: HashMap::from([(
-                    String::from("standard"),
-                    Task::from_config(
-                        Target::format("id", "standard").unwrap(),
-                        &mock_task_config("cmd")
-                    )
-                )]),
+                tasks: HashMap::from([(String::from("standard"), task)]),
             }
         );
     }
@@ -340,6 +344,34 @@ mod tasks {
         )
         .unwrap();
 
+        let wild_glob = String::from(workspace_root.join("tasks/basic/**/*").to_string_lossy());
+
+        let mut build = Task::from_config(
+            Target::format("id", "build").unwrap(),
+            &mock_task_config("webpack"),
+        );
+
+        let mut std = Task::from_config(
+            Target::format("id", "standard").unwrap(),
+            &mock_task_config("cmd"),
+        );
+
+        let mut test = Task::from_config(
+            Target::format("id", "test").unwrap(),
+            &mock_task_config("jest"),
+        );
+
+        let mut lint = Task::from_config(
+            Target::format("id", "lint").unwrap(),
+            &mock_task_config("eslint"),
+        );
+
+        // Expanded
+        build.input_globs.push(wild_glob.clone());
+        std.input_globs.push(wild_glob.clone());
+        test.input_globs.push(wild_glob.clone());
+        lint.input_globs.push(wild_glob.clone());
+
         assert_eq!(
             project,
             Project {
@@ -356,34 +388,10 @@ mod tasks {
                 file_groups: HashMap::new(),
                 source: String::from("tasks/basic"),
                 tasks: HashMap::from([
-                    (
-                        String::from("build"),
-                        Task::from_config(
-                            Target::format("id", "build").unwrap(),
-                            &mock_task_config("webpack")
-                        )
-                    ),
-                    (
-                        String::from("standard"),
-                        Task::from_config(
-                            Target::format("id", "standard").unwrap(),
-                            &mock_task_config("cmd")
-                        )
-                    ),
-                    (
-                        String::from("test"),
-                        Task::from_config(
-                            Target::format("id", "test").unwrap(),
-                            &mock_task_config("jest")
-                        )
-                    ),
-                    (
-                        String::from("lint"),
-                        Task::from_config(
-                            Target::format("id", "lint").unwrap(),
-                            &mock_task_config("eslint")
-                        )
-                    )
+                    (String::from("build"), build),
+                    (String::from("standard"), std),
+                    (String::from("test"), test),
+                    (String::from("lint"), lint)
                 ]),
             }
         );

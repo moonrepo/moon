@@ -104,7 +104,7 @@ pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
 pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
     use crate::path::normalize_glob;
 
-    globset.is_match(&PathBuf::from(normalize_glob(path)))
+    globset.is_match(&PathBuf::from(normalize_glob(path)?))
 }
 
 pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {

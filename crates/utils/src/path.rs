@@ -64,16 +64,16 @@ pub fn normalize(path: &Path) -> PathBuf {
     path.to_path_buf().clean()
 }
 
-pub fn normalize_glob(path: &Path) -> String {
+pub fn normalize_glob(path: &Path) -> Result<String, MoonError> {
     // Always use forward slashes for globs
-    let glob = standardize_separators(&path.to_string_lossy());
+    let glob = standardize_separators(&path_to_string(path)?);
 
     // Remove UNC prefix as it breaks glob matching
     if cfg!(windows) {
-        return glob.replace("//?/", "");
+        return Ok(glob.replace("//?/", ""));
     }
 
-    glob
+    Ok(glob)
 }
 
 #[cfg(not(windows))]
@@ -91,10 +91,6 @@ pub fn path_to_string(path: &Path) -> Result<String, MoonError> {
         Some(p) => Ok(p.to_owned()),
         None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
     }
-}
-
-pub fn path_glob_to_string(path: &Path) -> Result<String, MoonError> {
-    Ok(standardize_separators(&path_to_string(path)?))
 }
 
 pub fn replace_home_dir(value: &str) -> String {

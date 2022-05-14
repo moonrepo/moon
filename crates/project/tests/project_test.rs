@@ -311,7 +311,7 @@ mod tasks {
 
         // Expanded
         task.input_globs
-            .push(path::path_glob_to_string(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
+            .push(path::normalize_glob(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
 
         assert_eq!(
             project,
@@ -369,13 +369,13 @@ mod tasks {
 
         build
             .input_globs
-            .push(path::path_glob_to_string(&wild_glob).unwrap());
+            .push(path::normalize_glob(&wild_glob).unwrap());
         std.input_globs
-            .push(path::path_glob_to_string(&wild_glob).unwrap());
+            .push(path::normalize_glob(&wild_glob).unwrap());
         test.input_globs
-            .push(path::path_glob_to_string(&wild_glob).unwrap());
+            .push(path::normalize_glob(&wild_glob).unwrap());
         lint.input_globs
-            .push(path::path_glob_to_string(&wild_glob).unwrap());
+            .push(path::normalize_glob(&wild_glob).unwrap());
 
         assert_eq!(
             project,

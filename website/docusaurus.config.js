@@ -13,7 +13,7 @@ const config = {
 	onBrokenLinks: 'throw',
 	onBrokenMarkdownLinks: 'warn',
 	favicon: 'img/favicon.svg',
-	organizationName: 'milesj',
+	organizationName: 'moonrepo',
 	projectName: 'moon',
 
 	presets: [
@@ -23,13 +23,13 @@ const config = {
 			({
 				docs: {
 					sidebarPath: require.resolve('./sidebars.js'),
-					editUrl: 'https://github.com/milesj/moon/tree/master/website',
+					editUrl: 'https://github.com/moonrepo/moon/tree/master/website',
 				},
 				// blog: {
 				// 	showReadingTime: true,
 				// 	// Please change this to your repo.
 				// 	editUrl:
-				// 		'https://github.com/milesj/moon/tree/master/website',
+				// 		'https://github.com/moonrepo/moon/tree/master/website',
 				// },
 				theme: {
 					customCss: [
@@ -90,11 +90,11 @@ const config = {
 						items: [
 							{
 								label: 'Releases',
-								to: 'https://github.com/milesj/moon/releases',
+								to: 'https://github.com/moonrepo/moon/releases',
 							},
 							{
 								label: 'Discussions',
-								to: 'https://github.com/milesj/moon/discussions',
+								to: 'https://github.com/moonrepo/moon/discussions',
 							},
 						],
 					},
@@ -103,7 +103,7 @@ const config = {
 						items: [
 							{
 								label: 'GitHub',
-								to: 'https://github.com/milesj/moon',
+								to: 'https://github.com/moonrepo/moon',
 							},
 							{
 								label: 'Discord',

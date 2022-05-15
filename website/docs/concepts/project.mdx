@@ -1,0 +1,45 @@
+---
+title: Projects
+---
+
+A project is a library, application, package, binary, tool, etc, that contains source files, test
+files, assets, resources, and more. A project must exist and be configured within a
+[workspace](./workspace).
+
+## ID
+
+A project identifier is a unique resource for locating a project. The ID is explicitly configured
+within [`.moon/workspace.yml`](../config/workspace), as a key within the
+[`projects`](../config/workspace#projects) setting, and can be written in camelCase, kebab-case, or
+snake_case.
+
+IDs are used heavily by configuration and the command line to link and reference everything. They're
+also a much easier concept for remembering projects than file system paths, and they typically can
+be written with less key strokes.
+
+Lastly, a project ID can be paired with a task ID to create a [target](./target).
+
+## Configuration
+
+Projects can be configured with an optional [`project.yml`](../config/project) in the project root,
+or through the [`.moon/project.yml`](../config/global-project) which applies to all projects.
+
+### `package.json`
+
+A moon project _does not require_ a `package.json`, but when one exists, the following functionality
+is enabled.
+
+- Dependency versions are included when computing cache keys.
+- Depended on projects ([`dependsOn`](../config/project#dependson)) are mapped as npm/pnpm/yarn
+  workspace dependencies (when applicable).
+
+### `tsconfig.json`
+
+A moon project _does not require_ TypeScript or a `tsconfig.json`, but when one exists, the
+following functionality is enabled.
+
+- Depended on projects ([`dependsOn`](../config/project#dependson)) are mapped as TypeScript project
+  references (when applicable).
+
+> File name can be customized with the
+> [`typescript.projectConfigFileName`](../config/workspace#projectconfigfilename) setting.

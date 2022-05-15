@@ -66,17 +66,19 @@ pub async fn run_cli() {
         Commands::Run {
             target,
             affected,
-            local,
+            dependents,
             status,
             passthrough,
+            upstream,
         } => {
             run(
                 target,
                 RunOptions {
                     affected: *affected,
-                    local: *local,
+                    dependents: *dependents,
                     status: status.clone(),
                     passthrough: passthrough.clone(),
+                    upstream: *upstream,
                 },
             )
             .await

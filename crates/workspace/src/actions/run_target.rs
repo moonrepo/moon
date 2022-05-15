@@ -230,6 +230,13 @@ pub async fn run_target(
     let hasher = create_target_hasher(&workspace, &project, task).await?;
     let hash = hasher.to_hash();
 
+    debug!(
+        target: TARGET,
+        "Generated hash {} for target {}",
+        color::symbol(&hash),
+        color::id(target_id)
+    );
+
     if cache.item.hash == hash {
         print_target_label(target_id, "(cached)", cache.item.exit_code != 0);
         print_cache_item(&cache.item);

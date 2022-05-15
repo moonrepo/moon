@@ -1,0 +1,97 @@
+---
+title: Tasks
+---
+
+Tasks are commands that are ran in the context of a [project](./project). Underneath the hood, a
+task is simply an npm binary or a system command that is ran as a child process. Tasks are processed
+in a parallel thread pool within moon's orchestration layer.
+
+## ID
+
+A task identifier is a unique resource for locating a task _within_ a project. The ID is explicitly
+configured as a key within the [`tasks`](../config/project#tasks) setting, and can be written in
+camelCase, kebab-case, or snake_case.
+
+A task ID can be paired with a project ID to create a [target](./target).
+
+## Configuration
+
+Tasks can be configured per project through [`project.yml`](../config/project), or for all projects
+through [`.moon/project.yml`](../config/global-project).
+
+## Merge strategies
+
+When a [global task](../config/global-project#tasks) and [local task](../config/project#tasks) of
+the same name exist, they are merged into a single task. To accomplish this, one of many
+[merge strategies](../config/project#options) can be used.
+
+Merging is applied to the parameters [`args`](../config/project#args),
+[`deps`](../config/project#deps), [`env`](../config/project#env),
+[`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs), using the
+[`mergeArgs`](../config/project#mergeargs), [`mergeDeps`](../config/project#mergedeps),
+[`mergeEnv`](../config/project#mergeenv), [`mergeInputs`](../config/project#mergeinputs) and
+[`mergeOutputs`](../config/project#mergeoutputs) options respectively. Each of these options support
+one of the following strategy values.
+
+- `append` (default) - Values found in the local task are merged _after_ the values found in the
+  global task. For example, this strategy is useful for toggling flag arguments.
+- `prepend` - Values found in the local task are merged _before_ the values found in the global
+  task. For example, this strategy is useful for applying option arguments that must come before
+  positional arguments.
+- `replace` - Values found in the local task entirely _replaces_ the values in the global task. This
+  strategy is useful when you need full control.
+
+All 3 of these strategies are demonstrated below, with a somewhat contrived example, but you get the
+point.
+
+```yaml
+# Global
+tasks:
+  build:
+    command: 'webpack'
+    args:
+      - '--mode'
+      - 'production'
+      - '--color'
+    deps:
+      - 'designSystem:build'
+    inputs:
+      - '/webpack.config.js'
+    outputs:
+      - 'build/'
+
+# Local
+tasks:
+  build:
+    args: '--no-color --no-stats'
+    deps:
+      - 'reactHooks:build'
+    inputs:
+      - 'webpack.config.js'
+    options:
+      mergeArgs: 'append'
+      mergeDeps: 'prepend'
+      mergeInputs: 'replace'
+
+# Merged result
+tasks:
+  build:
+    command: 'webpack'
+    args:
+      - '--mode'
+      - 'production'
+      - '--color'
+      - '--no-color'
+      - '--no-stats'
+    deps:
+      - 'reactHooks:build'
+      - 'designSystem:build'
+    inputs:
+      - 'webpack.config.js'
+    outputs:
+      - 'build/'
+    options:
+      mergeArgs: 'append'
+      mergeDeps: 'prepend'
+      mergeInputs: 'replace'
+```

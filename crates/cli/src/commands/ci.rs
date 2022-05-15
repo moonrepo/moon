@@ -113,7 +113,7 @@ fn gather_runnable_targets(
             } else {
                 debug!(
                     target: TARGET,
-                    "Not running target {} because it either has no `outputs` or `runInCi` is false",
+                    "Not running target {} because it either has no `outputs` or `runInCI` is false",
                     color::target(&target.id),
                 );
             }

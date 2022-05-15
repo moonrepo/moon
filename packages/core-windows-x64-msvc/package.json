@@ -1,7 +1,7 @@
 {
   "name": "@moonrepo/core-windows-x64-msvc",
   "version": "0.0.2",
-  "description": "Windows binary for Moon.",
+  "description": "Windows binary for moon.",
   "keywords": [
     "moon",
     "repo",
@@ -21,9 +21,6 @@
     "type": "git",
     "url": "https://github.com/milesj/moon",
     "directory": "packages/core-windows-x64-msvc"
-  },
-  "engines": {
-    "node": ">=12.17.0"
   },
   "publishConfig": {
     "access": "public"

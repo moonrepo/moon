@@ -1,0 +1,383 @@
+---
+title: Tokens
+---
+
+Tokens are variables and functions that can be used by [`args`](../config/project#args),
+[`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs) when configuring a
+task. They provide a way of accessing file group paths, referencing values from other task fields,
+and referencing metadata about the project and task itself.
+
+## Functions
+
+A token function is labeled as such as it takes a single argument, starts with an `@`, and is
+formatted as `@name(arg)`. The following token functions are available, grouped by their
+functionality.
+
+> Token functions _must_ be the only content within a list item, as they expand to multiple file
+> paths.
+
+### File groups
+
+These functions reference file groups by name, where the name is passed as the argument.
+
+### `@dirs`
+
+> Usable in `args` and `inputs`.
+
+The `@dirs(file_group)` token will be replaced with an expanded list of directory paths, derived
+from the file group of the same name. If a glob pattern is detected within the file group, it will
+walk the file system and aggregate all directories found.
+
+When used in [`args`](../config/project#args), it will return relative or absolute paths, depending
+on run context, while [`inputs`](../config/project#inputs) will return absolute paths.
+
+```yaml
+fileGroups:
+  lintable:
+    - 'src'
+    - 'tests'
+    - 'scripts'
+
+# Configured as
+tasks:
+  lint:
+    command: 'eslint'
+    args: '@dirs(lintable) --color'
+    inputs:
+      - '@dirs(lintable)'
+
+# Resolves to
+tasks:
+  lint:
+    command: 'eslint'
+    args:
+      - 'src'
+      - 'tests'
+      - 'scripts'
+      - '--color'
+    inputs:
+      - '/path/to/project/src'
+      - '/path/to/project/tests'
+      - '/path/to/project/scripts'
+```
+
+### `@files`
+
+> Usable in `args` and `inputs`.
+
+The `@files(file_group)` token will be replaced with an expanded list of file paths, derived from
+the file group of the same name. If a glob pattern is detected within the file group, it will walk
+the file system and aggregate all files found.
+
+When used in [`args`](../config/project#args), it will return relative or absolute paths, depending
+on run context, while [`inputs`](../config/project#inputs) will return absolute paths.
+
+```yaml
+fileGroups:
+  config:
+    - '*.config.js'
+    - 'package.json'
+
+# Configured as
+tasks:
+  build:
+    command: 'webpack'
+    args: 'build @files(config)'
+    inputs:
+      - '@files(config)'
+
+# Resolves to
+tasks:
+  build:
+    command: 'webpack'
+    args:
+      - 'build'
+      - 'babel.config.js'
+      - 'webpack.config.js'
+      - 'package.json'
+    inputs:
+      - '/path/to/project/babel.config.js'
+      - '/path/to/project/webpack.config.js'
+      - '/path/to/project/package.json'
+```
+
+### `@globs`
+
+> Usable in `args` and `inputs`.
+
+The `@globs(file_group)` token will be replaced with an expanded list of glob patterns (as-is),
+derived from the file group of the same name. If a non-glob pattern is detected within the file
+group, it will be ignored.
+
+When used in [`args`](../config/project#args), it will return relative or absolute paths, depending
+on run context, while [`inputs`](../config/project#inputs) will return absolute paths _and_ also be
+used in affected files detection by matching against the patterns.
+
+```yaml
+fileGroups:
+  tests:
+    - 'tests/**/*'
+    - '**/__tests__/**/*'
+
+# Configured as
+tasks:
+  test:
+    command: 'jest'
+    args: '--testMatch @globs(tests)'
+    inputs:
+      - '@globs(tests)'
+
+# Resolves to
+tasks:
+  test:
+    command: 'jest'
+    args:
+      - '--testMatch'
+      - 'tests/**/*'
+      - '**/__tests__/**/*'
+    inputs:
+      - '/path/to/project/tests/**/*'
+      - '/path/to/project/**/__tests__/**/*'
+```
+
+### `@root`
+
+> Usable in `args` and `inputs`.
+
+The `@root(file_group)` token will be replaced with the lowest common directory, derived from the
+file group of the same name. If a glob pattern is detected within the file group, it will walk the
+file system and aggregate all directories found before reducing.
+
+When used in [`args`](../config/project#args), it will return relative paths, while
+[`inputs`](../config/project#inputs) will return absolute paths.
+
+```yaml
+fileGroups:
+  sources:
+    - 'src/app'
+    - 'src/packages'
+    - 'src/scripts'
+
+# Configured as
+tasks:
+  format:
+    command: 'prettier'
+    args: '--write @root(sources)'
+    inputs:
+      - '@root(sources)'
+
+# Resolves to
+tasks:
+  format:
+    command: 'prettier'
+    args:
+      - '--write'
+      - 'src'
+    inputs:
+      - '/path/to/project/src'
+```
+
+> When there's no directies, or too many directories, this function will return the project root
+> using `.`.
+
+### Inputs & outputs
+
+### `@in`
+
+> Usable in `args` only.
+
+The `@in(index)` token will be replaced with a single path, derived from
+[`inputs`](../config/project#inputs) by numerical index. If a glob pattern is referenced by index,
+the glob will be used as-is, instead of returning the expanded list of files.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'babel'
+    args:
+      - '--copy-files'
+      - '--config-file'
+      - '@in(1)'
+      - '@in(0)'
+    inputs:
+      - 'src'
+      - 'babel.config.js'
+
+# Resolves to
+tasks:
+  build:
+    command: 'babel'
+    args:
+      - '--copy-files'
+      - '--config-file'
+      - 'babel.config.js'
+      - 'src'
+    inputs:
+      - '/path/to/project/src'
+      - '/path/to/project/babel.config.js'
+```
+
+### `@out`
+
+> Usable in `args` only.
+
+The `@out(index)` token will be replaced with a single path, derived from
+[`outputs`](../config/project#outputs) by numerical index. If a glob pattern is referenced by index,
+the process will **fail**, as it requires literal folder and file paths.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'babel'
+    args:
+      - '.'
+      - '--out-dir'
+      - '@out(0)'
+    outputs:
+      - 'lib'
+
+# Resolves to
+tasks:
+  build:
+    command: 'babel'
+    args:
+      - '.'
+      - '--out-dir'
+      - 'lib'
+    outputs:
+      - '/path/to/project/lib'
+```
+
+## Variables
+
+> Usable in `args` only.
+
+A token variable is a value that starts with `$` and is substituted to a value derived from the
+current workspace, project, and task. And unlike token functions, token variables can be placed
+_within_ content when necessary.
+
+### `$project`
+
+ID of the project that owns the currently running task, as defined in
+[`.moon/workspace.yml`](../config/workspace).
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args: '--project $project'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--project'
+      - 'web'
+```
+
+### `$projectSource`
+
+Relative file path from the workspace root to the project root, as defined in
+[`.moon/workspace.yml`](../config/workspace).
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--cache-dir'
+      - '../../.cache/$projectSource'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--cache-dir'
+      - '../../.cache/apps/web'
+```
+
+### `$projectRoot`
+
+Absolute file path to the project root.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args: '--cwd $projectRoot'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--cwd'
+      - '/path/to/repo/apps/web'
+```
+
+### `$target`
+
+Target that is currently running. Is a combination of project and task IDs.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args: '$target'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - 'web:build'
+```
+
+### `$task`
+
+ID of the task that is currently running.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args: '--task=$task'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--task=build'
+```
+
+### `$workspaceRoot`
+
+Absolute file path to the workspace root.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--cwd'
+      - '$workspaceRoot'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--cwd'
+      - '/path/to/repo'
+```

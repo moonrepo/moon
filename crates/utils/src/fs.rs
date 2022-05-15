@@ -94,17 +94,17 @@ pub async fn link_dir(from_root: &Path, from: &Path, to_root: &Path) -> Result<(
 }
 
 #[cfg(not(windows))]
-pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
-    globset.is_match(path)
+pub fn matches_globset(globset: &GlobSet, path: &Path) -> Result<bool, MoonError> {
+    Ok(globset.is_match(path))
 }
 
 // globset doesnt match against inputs that use backwards slashes
 // https://github.com/BurntSushi/ripgrep/issues/2001
 #[cfg(windows)]
-pub fn matches_globset(globset: &GlobSet, path: &Path) -> bool {
+pub fn matches_globset(globset: &GlobSet, path: &Path) -> Result<bool, MoonError> {
     use crate::path::normalize_glob;
 
-    globset.is_match(&PathBuf::from(normalize_glob(path)))
+    Ok(globset.is_match(&PathBuf::from(normalize_glob(path)?)))
 }
 
 pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {

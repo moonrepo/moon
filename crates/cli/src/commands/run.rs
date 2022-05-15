@@ -30,23 +30,24 @@ impl Default for RunStatus {
 
 pub struct RunOptions {
     pub affected: bool,
-    pub local: bool,
+    pub dependents: bool,
     pub status: RunStatus,
     pub passthrough: Vec<String>,
+    pub upstream: bool,
 }
 
 async fn get_touched_files(
     workspace: &Workspace,
     status: &RunStatus,
-    local: bool,
+    upstream: bool,
 ) -> Result<TouchedFilePaths, WorkspaceError> {
     let vcs = workspace.detect_vcs();
 
-    let touched_files = if local {
-        vcs.get_touched_files().await?
-    } else {
+    let touched_files = if upstream {
         vcs.get_touched_files_between_revisions(vcs.get_default_branch(), "HEAD")
             .await?
+    } else {
+        vcs.get_touched_files().await?
     };
 
     let files = match status {
@@ -161,7 +162,8 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     let mut dep_graph = DepGraph::default();
 
     if options.affected {
-        let touched_files = get_touched_files(&workspace, &options.status, options.local).await?;
+        let touched_files =
+            get_touched_files(&workspace, &options.status, options.upstream).await?;
         let inserted_count =
             dep_graph.run_target(&target, &workspace.projects, Some(&touched_files))?;
 
@@ -180,6 +182,10 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
         }
     } else {
         dep_graph.run_target(&target, &workspace.projects, None)?;
+    }
+
+    if options.dependents {
+        dep_graph.run_target_dependents(&target, &workspace.projects)?;
     }
 
     // Process all tasks in the graph

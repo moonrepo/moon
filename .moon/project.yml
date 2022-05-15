@@ -12,20 +12,14 @@ fileGroups:
 tasks:
   build:
     command: 'packemon'
-    args:
-      - 'build'
-      - '--addEngines'
-      - '--addExports'
+    args: 'build'
     inputs:
       - '@globs(sources)'
       - 'package.json'
       - 'tsconfig.json'
       - '/tsconfig.options.json'
     outputs:
-      - 'dts'
       - 'mjs'
-    env:
-      NODE_ENV: production
 
   format:
     command: 'prettier'
@@ -51,21 +45,20 @@ tasks:
       - '.eslintcache'
       - '--color'
       - '--ext'
-      - '.ts,.tsx'
+      - '.js,.ts,.tsx'
       - '--fix'
       - '--ignore-path'
-      - '@in(4)'
+      - '@in(5)'
       - '--exit-on-fatal-error'
       - '--no-error-on-unmatched-pattern'
       - '--report-unused-disable-directives'
       - '.'
-    deps:
-      - 'runtime:typecheck'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
       - 'package.json'
       - 'tsconfig.json'
+      - '*.js'
       - '/.eslintignore'
       - '/.eslintrc.js'
       - '/package.json'
@@ -79,13 +72,12 @@ tasks:
       - '--preset'
       - 'jest-preset-beemo'
       - '--passWithNoTests'
+      - '.'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
       - 'package.json'
       - 'jest.config.js'
-    outputs:
-      - 'dts'
 
   typecheck:
     command: 'tsc'

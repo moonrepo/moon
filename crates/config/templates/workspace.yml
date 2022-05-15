@@ -7,7 +7,7 @@ $schema: 'https://moonrepo.dev/schemas/workspace.json'
 projects:
   example: 'packages/example'
 
-# OPTIONAL: Configures Node.js within the toolchain. Moon manages its own version of Node.js
+# OPTIONAL: Configures Node.js within the toolchain. moon manages its own version of Node.js
 # instead of relying on a version found on the host machine. This ensures deterministic
 # and reproducible builds across any machine.
 node:
@@ -33,7 +33,7 @@ node:
   # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
   # syncVersionManagerConfig: 'nvm'
 
-# OPTIONAL: Configures how Moon integrates with TypeScript.
+# OPTIONAL: Configures how moon integrates with TypeScript.
 typescript:
   # OPTIONAL: Name of `tsconfig.json` file in project root.
   projectConfigFileName: 'tsconfig.json'

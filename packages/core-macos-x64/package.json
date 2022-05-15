@@ -1,7 +1,7 @@
 {
   "name": "@moonrepo/core-macos-x64",
   "version": "0.0.2",
-  "description": "MacOS binary for Moon.",
+  "description": "MacOS binary for moon.",
   "keywords": [
     "moon",
     "repo",
@@ -21,9 +21,6 @@
     "type": "git",
     "url": "https://github.com/milesj/moon",
     "directory": "packages/core-macos-x64"
-  },
-  "engines": {
-    "node": ">=12.17.0"
   },
   "publishConfig": {
     "access": "public"

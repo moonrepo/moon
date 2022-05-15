@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap');
+
+/**
+ * Overwrite Docusaurus styles with our custom Tailwind styles.
+ */
+
+html:root {
+	--ifm-toc-border-color: transparent;
+	--ifm-font-family-base: var(--moon-font-family-sans);
+	--ifm-font-family-monospace: var(--moon-font-family-mono);
+
+	/** Navbar (same between light and dark) */
+	--ifm-navbar-background-color: var(--moon-color-slate-900);
+	--ifm-navbar-link-color: var(--moon-color-purple-50);
+	--ifm-navbar-link-hover-color: var(--moon-color-purple-400);
+
+	/* Code blocks */
+	--ifm-code-font-size: 95%;
+	--ifm-code-padding-vertical: var(--moon-padding-0_25);
+	--ifm-code-padding-horizontal: var(--moon-padding-0_5);
+
+	/* Sidebar */
+	--doc-sidebar-width: 350px;
+	--ifm-menu-link-padding-vertical: var(--moon-padding-1);
+	--ifm-menu-link-padding-horizontal: var(--moon-padding-1_5);
+
+	/* Toc */
+	--ifm-toc-padding-vertical: var(--moon-padding-1);
+	--ifm-toc-padding-horizontal: var(--moon-padding-1);
+
+	/* Markdown*/
+	--ifm-leading-desktop: 1.5;
+	--ifm-list-item-margin: var(--moon-margin-1);
+	--ifm-blockquote-padding-vertical: var(--moon-padding-1);
+	--ifm-blockquote-padding-horizontal: var(--moon-padding-1_5);
+	--ifm-blockquote-border-left-width: 4px;
+	--docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.05);
+}
+
+html[data-theme='light'] {
+	--ifm-color-primary-lightest: var(--moon-color-blurple-100);
+	--ifm-color-primary-lighter: var(--moon-color-blurple-200);
+	--ifm-color-primary-light: var(--moon-color-blurple-300);
+	--ifm-color-primary: var(--moon-color-blurple-400);
+	--ifm-color-primary-dark: var(--moon-color-blurple-600);
+	--ifm-color-primary-darker: var(--moon-color-blurple-700);
+	--ifm-color-primary-darkest: var(--moon-color-blurple-800);
+
+	--ifm-color-secondary: var(--moon-color-slate-600);
+	--ifm-color-success: var(--moon-color-green-600);
+	--ifm-color-info: var(--moon-color-teal-600);
+	--ifm-color-warning: var(--moon-color-yellow-600);
+	--ifm-color-danger: var(--moon-color-red-600);
+
+	--ifm-color-emphasis-200: var(--moon-color-gray-600);
+	--ifm-color-emphasis-300: var(--moon-color-gray-700);
+
+	/* Sidebar */
+	--ifm-menu-color-background-active: var(--moon-color-blurple-50);
+	--ifm-menu-color-background-hover: var(--moon-color-gray-50);
+	--ifm-menu-color: var(--moon-color-gray-800);
+	--ifm-menu-color-active: var(--moon-color-blurple-600);
+
+	/* Toc */
+	--ifm-toc-link-color: var(--moon-color-gray-800);
+
+	/* Markdown */
+	--ifm-link-hover-color: var(--moon-color-blurple-800);
+	--ifm-blockquote-border-color: var(--moon-color-teal-400);
+	--ifm-blockquote-background-color: var(--moon-color-gray-100);
+}
+
+html[data-theme='light'] .navbar-sidebar__item {
+	background-color: var(--moon-color-white);
+}
+
+html[data-theme='dark'] {
+	--ifm-color-primary-lightest: var(--moon-color-purple-100);
+	--ifm-color-primary-lighter: var(--moon-color-purple-200);
+	--ifm-color-primary-light: var(--moon-color-purple-300);
+	--ifm-color-primary: var(--moon-color-purple-400);
+	--ifm-color-primary-dark: var(--moon-color-purple-500);
+	--ifm-color-primary-darker: var(--moon-color-purple-600);
+	--ifm-color-primary-darkest: var(--moon-color-purple-700);
+
+	--ifm-color-secondary: var(--moon-color-slate-500);
+	--ifm-color-success: var(--moon-color-green-500);
+	--ifm-color-info: var(--moon-color-teal-500);
+	--ifm-color-warning: var(--moon-color-yellow-500);
+	--ifm-color-danger: var(--moon-color-red-500);
+
+	--ifm-color-emphasis-200: var(--moon-color-slate-600);
+	--ifm-color-emphasis-300: var(--moon-color-slate-700);
+
+	/* Backgrounds */
+	--ifm-background-color: var(--moon-color-slate-800);
+	--ifm-background-surface-color: var(--moon-color-slate-600);
+	--ifm-code-background: rgba(255, 255, 255, 0.075);
+
+	/* Sidebar */
+	--ifm-menu-color-background-active: var(--moon-color-purple-600);
+	--ifm-menu-color-background-hover: var(--moon-color-slate-600);
+	--ifm-menu-color: var(--moon-color-purple-50);
+	--ifm-menu-color-active: var(--moon-color-white);
+
+	/* Toc */
+	--ifm-toc-link-color: var(--moon-color-purple-50);
+
+	/* Markdown */
+	--ifm-link-hover-color: var(--moon-color-purple-300);
+	--ifm-blockquote-border-color: var(--moon-color-teal-300);
+	--ifm-blockquote-background-color: var(--moon-color-slate-600);
+}
+
+/**
+ * Because of Tailwind preflight, many Docusaurus styles need to be "fixed".
+ */
+
+a:hover {
+	text-decoration: none;
+}
+
+blockquote {
+	background-color: var(--ifm-blockquote-background-color);
+}
+
+.navbar__logo {
+	margin-top: -3px;
+}
+
+.navbar__items > div {
+	color: var(--moon-color-white);
+}
+
+.navbar__toggle,
+.navbar-sidebar__brand button,
+.navbar-sidebar__close {
+	color: var(--moon-color-gray-300);
+}
+
+.navbar__toggle:hover,
+.navbar-sidebar__brand button:hover,
+.navbar-sidebar__close:hover {
+	color: var(--moon-color-white);
+}
+
+.menu__list .menu__list,
+.menu__list-item:not(:first-child) {
+	margin-top: var(--moon-padding-1);
+}
+
+@media (min-width: 997px) {
+	html .menu {
+		padding: var(--moon-padding-1_5);
+	}
+}
+
+ul ul {
+	margin-top: var(--moon-padding-1);
+}
+
+.markdown {
+	position: relative;
+}

@@ -1,6 +1,7 @@
 coverage/
 
 # Build folders
+.docusaurus/
 coverage/
 build/
 cjs/
@@ -8,6 +9,7 @@ dts/
 esm/
 lib/
 mjs/
+node_modules/
 umd/
 
 # Node.js formats differently

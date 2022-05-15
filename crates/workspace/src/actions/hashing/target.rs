@@ -76,27 +76,26 @@ pub async fn create_target_hasher(
         let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
 
         // Input globs are absolute paths, so we must do the same
-        hashed_file_tree.retain(|k, _| fs::matches_globset(&globset, &workspace.root.join(k)));
+        hashed_file_tree
+            .retain(|k, _| fs::matches_globset(&globset, &workspace.root.join(k)).unwrap());
 
         hasher.hash_inputs(hashed_file_tree);
     }
 
     // Include local file changes so that development builds work.
     // Also run this LAST as it should take highest precedence!
-    if vcs.is_enabled() {
-        let local_files = vcs.get_touched_files().await?;
+    let local_files = vcs.get_touched_files().await?;
 
-        if !local_files.all.is_empty() {
-            // Only hash files that are within the task's inputs
-            let files = local_files
-                .all
-                .into_iter()
-                .filter(|f| fs::matches_globset(&globset, &workspace.root.join(f)))
-                .collect::<Vec<String>>();
+    if !local_files.all.is_empty() {
+        // Only hash files that are within the task's inputs
+        let files = local_files
+            .all
+            .into_iter()
+            .filter(|f| fs::matches_globset(&globset, &workspace.root.join(f)).unwrap())
+            .collect::<Vec<String>>();
 
-            if !files.is_empty() {
-                hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
-            }
+        if !files.is_empty() {
+            hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
         }
     }
 

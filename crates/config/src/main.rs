@@ -9,19 +9,19 @@ fn main() {
     let workspace_schema = schema_for!(WorkspaceConfig);
 
     fs::write(
-        "schemas/project.json",
+        "website/static/schemas/project.json",
         serde_json::to_string_pretty(&project_schema).unwrap(),
     )
     .unwrap();
 
     fs::write(
-        "schemas/global-project.json",
+        "website/static/schemas/global-project.json",
         serde_json::to_string_pretty(&global_project_schema).unwrap(),
     )
     .unwrap();
 
     fs::write(
-        "schemas/workspace.json",
+        "website/static/schemas/workspace.json",
         serde_json::to_string_pretty(&workspace_schema).unwrap(),
     )
     .unwrap();

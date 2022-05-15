@@ -109,6 +109,12 @@ pub enum Commands {
         #[clap(help = "Target (project:task) to run")]
         target: TargetID,
 
+        #[clap(
+            long,
+            help = "Run dependents of the same task, as well as dependencies"
+        )]
+        dependents: bool,
+
         // Affected
         #[clap(
             long,
@@ -118,13 +124,6 @@ pub enum Commands {
         affected: bool,
 
         #[clap(
-            long,
-            help = "Determine affected from local changes instead of comparing against a base",
-            help_heading = HEADING_AFFECTED
-        )]
-        local: bool,
-
-        #[clap(
             arg_enum,
             long,
             help = "Filter affected files based on a change status",
@@ -132,6 +131,13 @@ pub enum Commands {
             default_value_t
         )]
         status: RunStatus,
+
+        #[clap(
+            long,
+            help = "Determine affected against upstream by comparing against a base revision",
+            help_heading = HEADING_AFFECTED
+        )]
+        upstream: bool,
 
         // Passthrough args (after --)
         #[clap(

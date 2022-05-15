@@ -1,0 +1,196 @@
+---
+title: Create a task
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
+
+<HeaderLabel text="10 min" />
+
+The primary feature of moon is a build system, and for it to operate in any capacity, it requires
+tasks to run. In moon, a task is an npm binary or system command that is ran as a child process
+within the context of a project (is the current working directory). Tasks are defined per project
+with [`project.yml`](./config/project), or inherited by all projects with
+[`.moon/project.yml`](./config/global-project).
+
+## Configuring a task
+
+Most, if not all projects, utilize the same core tasks: linting, testing, code formatting, and
+type-checking. Because these are so universal, let's implement the type-checking task in
+[`.moon/project.yml`](./config/global-project), which will be inherited by all projects.
+
+Begin by adding a `typecheck` field to the [`tasks`](./config/project#tasks) setting. This task will
+use [TypeScript](https://www.typescriptlang.org/) and run `tsc` under the hood, since we defined the
+[`command`](./config/project#command) setting.
+
+```yaml title=".moon/project.yml" {2,3}
+tasks:
+	typecheck:
+		command: 'tsc'
+```
+
+By itself, this isn't doing much. So let's add some arguments with the
+[`args`](./config/project#args) setting. We encourage everyone to use
+[TypeScript project references](https://www.typescriptlang.org/docs/handbook/project-references.html)
+for project boundaries and strict encapsulation, and as such, we'll use it below.
+
+```yaml title=".moon/project.yml" {4}
+tasks:
+	typecheck:
+		command: 'tsc'
+		args: '--build --verbose'
+```
+
+With this, the task can be ran from the command line with
+[`moon run <project>:typecheck`](./commands/run)! This is tasks in its most simplest form, but
+continue reading on how to take full advantage of our build system.
+
+### Inputs
+
+Our task above works, but isn't very efficient as it _always_ runs, regardless of what has changed
+since the last time it has ran. This becomes problematic in continuous integration environments, not
+just locally.
+
+To mitigate this problem, moon provides a system known as inputs, which are file paths and globs
+that are used by the task when it's ran. moon will use and compare these inputs to calculate whether
+to run, or to return the previous run state from the cache.
+
+If you're a bit confused, let's demonstrate this by expanding the task with the
+[`inputs`](./config/project#inputs) setting. Since this is TypeScript, we expect a `tsconfig.json`
+to exist in the project, and probably in the workspace root too.
+
+```yaml title=".moon/project.yml" {5-11}
+tasks:
+	typecheck:
+		command: 'tsc'
+		args: '--build --verbose'
+		inputs:
+			- 'src/**/*'
+			- 'tests/**/*'
+			- 'types/**/*'
+			- 'tsconfig.json'
+			- '/tsconfig.*.json'
+			- '/tsconfig.json'
+```
+
+This list of inputs may look complicated, but they are merely run checks. For example, when moon
+detects a change in...
+
+- Any files within the `src`, `tests`, and `types` folders, relative from the project's root.
+- A `tsconfig.json` in the project's root.
+- A `tsconfig.json` or any `tsconfig.*.json` in the workspace root (denoted by the leading `/`).
+
+...the task will be ran! If the change occurs _outside_ of the project or _outside_ the list of
+inputs, the task will _not_ be ran.
+
+:::tip
+
+Inputs are a powerful feature that can be fine-tuned to your project's need. Be as granular or open
+as you want, the choice is yours!
+
+:::
+
+### Outputs
+
+Outputs are the opposite of [inputs](#inputs), as they are files and folders that are created as a
+result of running the task. With that being said, outputs are _optional_, as not all tasks require
+them, and the ones that do are typically build related.
+
+Now why is declaring outputs important? For incremental builds and smart caching! When moon
+encounters a build that has already been built, it hydrates all necessary outputs from the cache,
+then immediately exits. No more waiting for long builds!
+
+Continuing our example, since we're using TypeScript project references and it generates declaration
+files, we'll write them to a project local `dts` folder and mark it as an output. Let's expand our
+task with the [`outputs`](./config/project#outputs) setting.
+
+```yaml title=".moon/project.yml" {12,13}
+tasks:
+	typecheck:
+		command: 'tsc'
+		args: '--build --verbose'
+		inputs:
+			- 'src/**/*'
+			- 'tests/**/*'
+			- 'types/**/*'
+			- 'tsconfig.json'
+			- '/tsconfig.*.json'
+			- '/tsconfig.json'
+		outputs:
+			- 'dts'
+```
+
+## Using file groups
+
+Once you're familiar with configuring tasks, you may notice certain inputs being repeated
+constantly, like source files, test files, and configuration. To reduce the amount of boilerplate
+required, moon provides a feature known as file groups, which enables grouping of similar file types
+within a project using file glob patterns or literal file paths.
+
+File groups are defined with the [`fileGroups`](./config/project#filegroups) setting, which maps a
+list of file paths/globs to a group, like so.
+
+```yaml title=".moon/project.yml"
+fileGroups:
+	configs:
+		- '*.config.js'
+		- 'tsconfig.json'
+		- '/tsconfig.*.json'
+		- '/tsconfig.json'
+	sources:
+		- 'src/**/*'
+		- 'types/**/*'
+	tests:
+		- 'tests/**/*'
+```
+
+We can then replace the inputs in our task above with these new file groups using a syntax known as
+[tokens](./concepts/token), specifically the [`@globs`](./concepts/token#globs) and
+[`@files`](./concepts/token#files) token functions. Tokens are an advanced feature, so please refer
+to their documentation for more information!
+
+```yaml title=".moon/project.yml" {6-8}
+tasks:
+	typecheck:
+		command: 'tsc'
+		args: '--build --verbose'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- '@files(configs)'
+		outputs:
+			- 'dts'
+```
+
+With file groups (and tokens), you're able to reduce the amount of configuration required _and_
+encourage certain file structures for consuming projects!
+
+## Next steps
+
+<NextSteps
+	links={[
+		{ icon: 'run-task', label: 'Run a task', url: './run-task' },
+		{
+			icon: 'project-config-global',
+			label: (
+				<span>
+					Configure <code>.moon/project.yml</code> further
+				</span>
+			),
+			url: './config/global-project',
+		},
+		{
+			icon: 'project-config',
+			label: (
+				<span>
+					Configure <code>project.yml</code> further
+				</span>
+			),
+			url: './config/project',
+		},
+		{ icon: 'task', label: 'Learn about tasks', url: './concepts/task' },
+		{ icon: 'token', label: 'Learn about tokens', url: './concepts/token' },
+	]}
+/>

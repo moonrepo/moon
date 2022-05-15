@@ -35,7 +35,7 @@ fileGroups:
     - '**/*.mdx'
 
 # OPTIONAL: A task is an action that is ran within the context of a project, and wraps
-# around an npm or shell command. Tasks that are defined here and inherited by all projects
+# around an npm or system command. Tasks that are defined here and inherited by all projects
 # within the workspace, but can be overridden per project.
 #
 # This setting requires a map, where the key is a unique name for the task, and the value is an

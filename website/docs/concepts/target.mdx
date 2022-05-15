@@ -1,0 +1,101 @@
+---
+title: Targets
+---
+
+A target is an identifier that pairs a [project](./project) to one of its [tasks](./task), in the
+format of `project_id:task_id`.
+
+Targets are used by terminal commands...
+
+```shell
+$ moon run designSystem:build
+```
+
+And configurations for declaring cross-project or cross-task dependencies.
+
+```yaml
+tasks:
+  build:
+    command: 'webpack'
+    deps:
+      - 'designSystem:build'
+```
+
+## Project scopes
+
+While a target typically pairs project and task IDs, we also support advanced targets through a
+concept known as project scopes. Scopes allow us to easily define targets with external or many
+sources, but _are not available in all contexts_.
+
+### All projects
+
+> Only available on the command line when running targets.
+
+For situations where you want to run a specific target in _all_ projects, for example `lint`ing, you
+can utilize the all projects scope by omitting the project from the target: `:lint`.
+
+```shell
+# Run `lint` in project `app`
+$ moon run app:lint
+
+# Run `lint` in all projects
+$ moon run :lint
+```
+
+### Dependencies `^`
+
+> Only available when configuring a task.
+
+When you want to run a task for each project in your [`dependsOn`](../config/project#dependson)
+list, you can utilize the `^` scope. This will be expanded to _all_ depended on projects. If you do
+not want all projects, then you'll need to explicitly define them using identifiers.
+
+```yaml title="project.yml"
+dependsOn:
+	- 'apiClients'
+	- 'designSystem'
+
+# Configured as
+tasks:
+	build:
+		command: 'webpack'
+		deps:
+			- '^:build'
+
+# Resolves to
+tasks:
+	build:
+		command: 'webpack'
+		deps:
+			- 'apiClients:build'
+			- 'designSystem:build'
+```
+
+### Self `~`
+
+> Only available when configuring a task.
+
+When referring to another task within the current project, you can utilize the `~` scope, which will
+be expanded to the current project's identifier. This is useful for situations where the identifier
+is unknown, for example, when configuring [`.moon/project.yml`](../config/global-project). Or if you
+just want a shortcut!
+
+```yaml title=".moon/project.yml"
+# Configured as
+tasks:
+	lint:
+		command: 'eslint'
+		deps:
+			- '~:typecheck'
+	typecheck:
+		command: 'tsc'
+
+# Resolves to (assuming project is "foo")
+tasks:
+	lint:
+		command: 'eslint'
+		deps:
+			- 'foo:typecheck'
+	typecheck:
+		command: 'tsc'
+```

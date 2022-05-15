@@ -7,7 +7,7 @@ use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug, trace};
-use moon_utils::{fs, path};
+use moon_utils::{fs, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -100,13 +100,15 @@ impl Task {
     pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
+        let command = cloned_config.command.unwrap_or_default();
+        let is_long_running = command == "serve" || command == "start";
 
         let task = Task {
             args: cloned_config.args.unwrap_or_default(),
-            command: cloned_config.command.unwrap_or_default(),
+            command,
             deps: cloned_config.deps.unwrap_or_default(),
             env: cloned_config.env.unwrap_or_default(),
-            inputs: cloned_config.inputs.unwrap_or_default(),
+            inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
             input_globs: vec![],
             input_paths: HashSet::new(),
             options: TaskOptions {
@@ -116,7 +118,7 @@ impl Task {
                 merge_inputs: cloned_options.merge_inputs.unwrap_or_default(),
                 merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
-                run_in_ci: cloned_options.run_in_ci.unwrap_or_default(),
+                run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_long_running),
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },
             outputs: cloned_config.outputs.unwrap_or_default(),
@@ -266,7 +268,7 @@ impl Task {
         for input in &token_resolver.resolve(&self.inputs, None)? {
             // We cant canonicalize here as these inputs may not exist!
             if path::is_path_glob(input) {
-                self.input_globs.push(path::normalize_glob(input));
+                self.input_globs.push(path::normalize_glob(input)?);
             } else {
                 self.input_paths.insert(path::normalize(input));
             }
@@ -304,11 +306,6 @@ impl Task {
     /// Return true if this task is affected, based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, ProjectError> {
-        // We have nothing to compare against, so treat it as always affected
-        if self.inputs.is_empty() {
-            return Ok(true);
-        }
-
         trace!(
             target: &format!("moon:project:{}", self.target),
             "Checking if affected using input files: {}",
@@ -338,7 +335,7 @@ impl Task {
             let mut affected = self.input_paths.contains(file);
 
             if !affected && has_globs {
-                affected = fs::matches_globset(&globset, file);
+                affected = fs::matches_globset(&globset, file)?;
             }
 
             trace!(
@@ -477,15 +474,6 @@ mod tests {
 
     mod is_affected {
         use super::*;
-
-        #[test]
-        fn returns_true_if_empty_inputs() {
-            let workspace_root = get_fixtures_dir("base");
-            let project_root = workspace_root.join("files-and-dirs");
-            let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
-
-            assert!(task.is_affected(&HashSet::new()).unwrap());
-        }
 
         #[test]
         fn returns_true_if_matches_file() {

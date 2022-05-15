@@ -16,7 +16,7 @@ export async function getContext(): Promise<RuntimeContext> {
 	const { env } = process;
 
 	if (!env.MOON_PROJECT_RUNFILE) {
-		throw new Error('Attempting to access Moon context outside of a run process.');
+		throw new Error('Attempting to access moon context outside of a run process.');
 	}
 
 	const project = json.parse<Project>(await fs.promises.readFile(env.MOON_PROJECT_RUNFILE, 'utf8'));

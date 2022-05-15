@@ -1,0 +1,27 @@
+tasks:
+  build:
+    command: 'docusaurus'
+    args: 'build'
+    outputs:
+      - 'build'
+  start:
+    command: 'docusaurus'
+    args: 'start'
+    options:
+      runInCI: false
+  typecheck:
+    command: 'tsc'
+    args:
+      - '--build'
+      - '--pretty'
+      - '--verbose'
+    inputs:
+      - '@globs(sources)'
+      - '*.js'
+      - 'tsconfig.json'
+
+workspace:
+  inheritedTasks:
+    exclude:
+      - 'build'
+      - 'typecheck'

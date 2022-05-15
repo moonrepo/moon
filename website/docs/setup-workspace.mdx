@@ -1,0 +1,124 @@
+---
+title: Setup workspace
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
+
+<HeaderLabel text="3 min" />
+
+Once moon has been initialized, we must setup the [workspace](./concepts/workspace), which is
+denoted by the `.moon` folder and a relative `package.json` -- this is known as the workspace root.
+The workspace is in charge of:
+
+- Integrating with a version control system.
+- Defining configuration that applies to its entire tree.
+- Housing [projects](./concepts/project) to build a project graph.
+- Managing a [toolchain](./concepts/toolchain) that automatically installs Node.js and other tools.
+- Running tasks and the build system.
+
+## Configuring Node.js
+
+The most important tool within moon and its toolchain is Node.js, as it's the backbone of a
+JavaScript based repository. Let's now define the Node.js version we want to install in the
+toolchain, enforce for developers, and to utilize when running `moon` commands, by updating
+[`node.version`](./config/workspace#version) in [`.moon/workspace.yml`](./config/workspace).
+
+This setting requires an explicit semantic version and _does not_ support version ranges, so let's
+set it to the latest version. We suggest _always_ using an
+[Active LTS](https://nodejs.org/en/about/releases/) version.
+
+```yaml title=".moon/workspace.yml"
+node:
+	version: '16.14.0'
+```
+
+Let's now run [`moon --logLevel debug setup`](./commands/setup) to verify that Node.js is downloaded
+and installed correctly. Pretty cool right?
+
+## Configuring a package manager
+
+Even though Node.js is now installed, we need a package manager to install dependencies. During
+installation, we talked about [choosing a package manager](./install#choosing-a-package-manager), so
+let's use that choice here by defining [`node.packageManager`](./config/workspace#packagemanager).
+
+```yaml title=".moon/workspace.yml"
+node:
+	version: '16.14.0'
+	packageManager: 'yarn'
+```
+
+By default moon will install the latest version of a package manager, but this isn't consistently
+updated, so we suggest defining an explicit semantic version for the package manager as well,
+through the [`node.<packageManager>.version`](./config/workspace#version-1) setting.
+
+```yaml title=".moon/workspace.yml"
+node:
+	version: '16.14.0'
+	packageManager: 'yarn'
+	yarn:
+		version: '3.2.0'
+```
+
+Once again, let's run [`moon --logLevel debug setup`](./commands/setup) to verify the package
+manager is installed, and also take note that Node.js is _already_ installed. Based on the example
+configuration above, we'll be switching from npm (the default) to yarn.
+
+## Configuring a version control system
+
+> moon defaults to `git` for a VCS, so feel free to skip this if you use git.
+
+moon requires a version control system (VCS) to be present for functionality like file diffing,
+hashing, and revision comparison. The VCS and its default branch can be configured through the
+[`vcs`](./config/workspace#vcs) setting.
+
+<Tabs
+  groupId="vcs"
+  defaultValue="git"
+  values={[
+    { label: 'git', value: 'git' },
+    { label: 'svn', value: 'svn' },
+  ]}
+>
+<TabItem value="git">
+
+```yaml title=".moon/workspace.yml"
+vcs:
+	manager: 'git'
+	defaultBranch: 'origin/master'
+```
+
+</TabItem>
+<TabItem value="svn">
+
+```yaml title=".moon/workspace.yml"
+vcs:
+	manager: 'svn'
+	defaultBranch: 'trunk'
+```
+
+> SVN support is experimental and may not work properly!
+
+</TabItem>
+</Tabs>
+
+## Next steps
+
+<NextSteps
+	links={[
+		{ icon: 'new-project', label: 'Create a project', url: './create-project' },
+		{
+			icon: 'workspace-config',
+			label: (
+				<span>
+					Configure <code>.moon/workspace.yml</code> further
+				</span>
+			),
+			url: './config/workspace',
+		},
+		{ icon: 'workspace', label: 'Learn about the workspace', url: './concepts/workspace' },
+		{ icon: 'toolchain', label: 'Learn about the toolchain', url: './concepts/toolchain' },
+	]}
+/>

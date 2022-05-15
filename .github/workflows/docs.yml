@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-  pull_request:
 jobs:
   deploy:
     name: Deploy
@@ -14,7 +13,7 @@ jobs:
         with:
           cache: yarn
       - run: yarn install --immutable
-      - run: cd website && yarn run build
+      - run: yarn workspace website run build
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

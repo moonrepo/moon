@@ -1,7 +1,7 @@
 # 0.1.0
 
-- [ ] website
-  - [ ] getting started
+- [x] website
+  - [x] getting started
 
 ## Targets
 
@@ -88,19 +88,31 @@
 ## Cache
 
 - [x] add a `--no-cache` option to disable all caching
-- [ ] hashing
+- [x] hashing
   - [x] use `stdin` for commands that take long arguments
   - [x] dont load `package.json`/`tsconfig.json` so much
   - [x] delete old hashes when the hash changes
-  - [ ] ignore hashes for files that are gitignored
   - [x] include local file changes in hash
 
 # 0.2.0
+
+## Cache
+
+- [ ] hashing
+  - [ ] ignore hashes for files that are gitignored
+- [ ] add docs on caching options
+
+## Tests
+
+- [ ] add code coverage reports in CI
+- [ ] increase code coverage and add more integration tests
 
 ## Targets
 
 - [ ] macos arm/m1
 - [ ] linux x64 (musl)
+
+# Backlog
 
 ## Tasks
 
@@ -117,6 +129,7 @@
 - [ ] `graph`
   - [ ] Spin up an interactive website with full project/task data
 
-# 0.3.0
+## Node.js
 
-- new website
+- [ ] Add chrome profiling support to spawned processes
+- [ ] Publish npm packages

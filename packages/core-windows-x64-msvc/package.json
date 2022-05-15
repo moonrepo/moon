@@ -19,7 +19,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/milesj/moon",
+    "url": "https://github.com/moonrepo/moon",
     "directory": "packages/core-windows-x64-msvc"
   },
   "publishConfig": {

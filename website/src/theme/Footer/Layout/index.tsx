@@ -54,7 +54,7 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 					</Text>
 
 					<div className="flex space-x-2">
-						<Link href="https://github.com/milesj/moon">
+						<Link href="https://github.com/moonrepo/moon">
 							<span className="sr-only">GitHub</span>
 							<Icon icon={faGithub} />
 						</Link>

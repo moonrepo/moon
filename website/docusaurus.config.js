@@ -15,6 +15,8 @@ const config = {
 	favicon: 'img/favicon.svg',
 	organizationName: 'moonrepo',
 	projectName: 'moon',
+	deploymentBranch: 'gh-pages',
+	trailingSlash: false,
 
 	presets: [
 		[

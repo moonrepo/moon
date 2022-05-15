@@ -4,10 +4,11 @@ on:
   push:
     # Release packages when a tag is created
     tags:
-      - '@moonrepo/*'
+      - '*'
 
 jobs:
   publish:
+    if: ${{ startsWith(github.ref, 'refs/tags/@moonrepo') }}
     name: Publish
     runs-on: ubuntu-latest
     env:

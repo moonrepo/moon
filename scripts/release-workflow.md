@@ -5,7 +5,7 @@ binary associated with it. It's based around Yarn's official
 [release workflow](https://yarnpkg.com/features/release-workflow), but with additional steps and
 requirements.
 
-## Define version bump in pull requests
+## Defining version bumps in pull requests
 
 Any change in a package (under `packages/`) requires a deferred version bump using Yarn. If no bump
 has been defined, we have a CI check that will fail, forcing the developer to bump it before it can
@@ -20,9 +20,12 @@ This will spin up an interactive CLI in which to choose major/minor/patch for ea
 ### Handling Rust changes
 
 Since Rust code falls outside of the `packages/` directory, the version check above will not work.
-We do however want the cli/core packages to be bumped when Rust code change, so we have an
-additional CI check to enforce it. We also support another command for bumping these packages:
+We do however want the `@moonrepo/cli` and `@moonrepo/core-*` packages to be bumped when Rust code
+changes, so we have an additional CI check to enforce it.
+
+We also support another command for bumping these packages, which requires an explicit
+major/minor/patch.
 
 ```shell
-yarn version:bump:cli
+yarn version:bump:bin patch
 ```

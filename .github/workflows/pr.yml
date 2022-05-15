@@ -3,7 +3,7 @@ on:
   pull_request:
 jobs:
   version:
-    name: Version
+    name: Version check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -11,3 +11,4 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v3
       - run: yarn version check
+      - run: node scripts/version/checkBumpForRustChanges.mjs

@@ -13,7 +13,7 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Guides',
-			items: ['guides/ci'],
+			items: ['guides/ci', 'guides/open-source'],
 			link: {
 				type: 'generated-index',
 				title: 'Guides',

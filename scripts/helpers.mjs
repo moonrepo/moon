@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-
-import { spawn } from 'child_process';
 import path from 'path';
 
 export const ROOT = process.cwd();
@@ -25,17 +21,4 @@ export function getPackageFromTarget(target = TARGET) {
 
 export function getPath(...parts) {
 	return path.join(ROOT, ...parts);
-}
-
-export async function exec(cmd, args, cwd = process.cwd()) {
-	await new Promise((resolve, reject) => {
-		const child = spawn(cmd, args, {
-			cwd,
-			shell: true,
-			stdio: 'inherit',
-		});
-
-		child.on('error', reject);
-		child.on('close', resolve);
-	});
 }

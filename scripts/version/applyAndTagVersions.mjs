@@ -1,14 +1,14 @@
 import fs from 'fs/promises';
 import chalk from 'chalk';
-import { exec } from '../helpers.mjs';
+import { execa } from 'execa';
 
 async function getPackageVersions() {
-	const files = await fs.readdir('./packages');
+	const files = await fs.readdir('packages');
 	const versions = {};
 
 	await Promise.all(
 		files.map(async (file) => {
-			const pkg = JSON.parse(await fs.readFile(`./packages/${file}/package.json`, 'utf8'));
+			const pkg = JSON.parse(await fs.readFile(`packages/${file}/package.json`, 'utf8'));
 
 			versions[pkg.name] = pkg.version;
 		}),
@@ -34,8 +34,8 @@ async function createCommit(versions) {
 		commit += `\n- ${version}`;
 	});
 
-	await exec('git', ['add', '--all']);
-	await exec('git', ['commit', '-m', `'${commit}'`]);
+	await execa('git', ['add', '--all'], { stdio: 'inherit' });
+	await execa('git', ['commit', '-m', `'${commit}'`], { stdio: 'inherit' });
 }
 
 async function createTags(versions) {
@@ -43,7 +43,7 @@ async function createTags(versions) {
 
 	await Promise.all(
 		versions.map(async (version) => {
-			await exec('git', ['tag', version]);
+			await execa('git', ['tag', version]);
 		}),
 	);
 }
@@ -53,7 +53,7 @@ async function run() {
 	const prevVersions = await getPackageVersions();
 
 	// Apply them via yarn
-	await exec('yarn', ['version', 'apply', '--all']);
+	await execa('yarn', ['version', 'apply', '--all'], { stdio: 'inherit' });
 
 	// Now gather the versions again so we can diff
 	const nextVersions = await getPackageVersions();
@@ -83,7 +83,4 @@ async function run() {
 	console.log(chalk.green('Created commit and tags!'));
 }
 
-run().catch((error) => {
-	console.error(error);
-	process.exitCode = 1;
-});
+await run();

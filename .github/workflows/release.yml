@@ -11,7 +11,7 @@ on:
       - master
     # Release cli/core packages when a tag is created
     tags:
-      - '@moonrepo/cli@*'
+      - '*'
   schedule:
     # Test every night to ensure builds are good
     - cron: '0 10 * * *' # 2am PT, 10am UTC
@@ -76,6 +76,8 @@ jobs:
         run: ${{ matrix.setup }}
       - name: Add target
         run: rustup target add ${{ matrix.target }}
+      - name: Install dependencies
+        run: yarn install --immutable
       - name: Build binary
         run: node ./scripts/release/buildBinary.mjs
         shell: bash
@@ -133,6 +135,8 @@ jobs:
             .yarn/install-state.gz
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: ${{ runner.os }}-yarn-
+      - name: Install dependencies
+        run: yarn install --immutable
       - uses: actions/download-artifact@v2
         name: Download artifacts
         with:
@@ -140,8 +144,6 @@ jobs:
       - name: Sync artifact binaries
         run: node ./scripts/release/syncArtifacts.mjs
         shell: bash
-      - name: Install dependencies
-        run: yarn install --immutable
       - name: List packages
         run: ls -R ./packages/core-linux-* ./packages/core-macos-* ./packages/core-windows-*
         shell: bash

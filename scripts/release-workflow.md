@@ -29,3 +29,32 @@ major/minor/patch.
 ```shell
 yarn version:bump:bin patch
 ```
+
+## Releasing packages
+
+Releasing is currently _not ideal_, but works for the time being. An administrator with push access
+to master must run the following command from an up-to-date master branch.
+
+```shell
+yarn version:apply
+```
+
+This will apply all the deferred Yarn versions (found in `.yarn/versions`), add and commit changes,
+and create a git tag for every affected package. This must then be pushed to upstream master.
+
+```shell
+git push origin master --tags
+```
+
+At this point, the actual "publishing to npm" is done through two GitHub workflows:
+
+- [release.yml](https://github.com/moonrepo/moon/blob/master/.github/workflows/release.yml) -
+  Publishes the `@moonrepo/cli` and `@moonrepo/core-*` packages. This is our most critical workflow,
+  as it builds the Rust binary and copies it into the appropriate packages before publishing.
+- [release-npm.yml](https://github.com/moonrepo/moon/blob/master/.github/workflows/release-npm.yml) -
+  This workflow publishes all other npm packages.
+
+### Handling failed publishes
+
+This hasn't happened yet, so nothing to document. At minimum, re-runnin the workflows should be our
+first attempt at fixing the problem.

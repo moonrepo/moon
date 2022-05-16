@@ -195,4 +195,5 @@ jobs:
         with:
           fail_on_unmatched_files: true
           files: artifacts/release/*
+          tag_name: ${{ env.NPM_TAG_NAME }}
           prerelease: ${{ env.NPM_CHANNEL == 'next' }}

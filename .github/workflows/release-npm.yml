@@ -1,14 +1,11 @@
 name: Release
 
 on:
-  push:
-    # Release packages when a tag is created
-    tags:
-      - '*'
+  # Manually release packages
+  workflow_dispatch:
 
 jobs:
   publish:
-    if: ${{ startsWith(github.ref, 'refs/tags/@moonrepo') }}
     name: Publish
     runs-on: ubuntu-latest
     env:

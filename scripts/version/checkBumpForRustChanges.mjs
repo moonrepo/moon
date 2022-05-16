@@ -1,27 +1,9 @@
-/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-
 import fs from 'fs';
-import { execa } from 'execa';
 import yaml from 'yaml';
-
-console.log(process.env);
-
-async function loadChangedFiles() {
-	const mergeBase = (
-		await execa('git', ['merge-base', process.env.GITHUB_BASE_REF || 'origin/master', 'HEAD'], {
-			stdio: 'pipe',
-		})
-	).stdout;
-
-	return (
-		await execa('git', ['diff', '--name-only', mergeBase], {
-			stdio: 'pipe',
-		})
-	).stdout.split('\n');
-}
+import { getChangedFiles } from '../git.mjs';
 
 async function run() {
-	const changedFiles = await loadChangedFiles();
+	const changedFiles = await getChangedFiles();
 	const hasRustChanges = changedFiles.some(
 		(file) => file.startsWith('crates') && file.endsWith('.rs'),
 	);

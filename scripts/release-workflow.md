@@ -56,5 +56,5 @@ At this point, the actual "publishing to npm" is done through two GitHub workflo
 
 ### Handling failed publishes
 
-This hasn't happened yet, so nothing to document. At minimum, re-runnin the workflows should be our
+This hasn't happened yet, so nothing to document. At minimum, re-running the workflows should be our
 first attempt at fixing the problem.

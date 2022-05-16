@@ -35,7 +35,7 @@ async function createCommit(versions) {
 	});
 
 	await execa('git', ['add', '--all'], { stdio: 'inherit' });
-	await execa('git', ['commit', '-m', `'${commit}'`], { stdio: 'inherit' });
+	await execa('git', ['commit', '-m', commit], { stdio: 'inherit' });
 }
 
 async function createTags(versions) {

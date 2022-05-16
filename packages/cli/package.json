@@ -34,6 +34,7 @@
   },
   "optionalDependencies": {
     "@moonrepo/core-linux-x64-gnu": "^0.0.3",
+    "@moonrepo/core-linux-x64-musl": "^0.0.3",
     "@moonrepo/core-macos-x64": "^0.0.3",
     "@moonrepo/core-windows-x64-msvc": "^0.0.3"
   }

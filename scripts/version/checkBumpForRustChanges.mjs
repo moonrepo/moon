@@ -14,7 +14,9 @@ async function run() {
 	}
 
 	// Load each version file and check for the cli/core packages
-	const versions = await fs.promises.readdir('.yarn/versions');
+	const versions = fs.existsSync('.yarn/versions')
+		? await fs.promises.readdir('.yarn/versions')
+		: [];
 
 	const hasVersionBump = versions.some((version) => {
 		const contents = yaml.parse(fs.readFileSync(`.yarn/versions/${version}`, 'utf8'));

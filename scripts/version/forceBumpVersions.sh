@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-# NOTE: This bumps the version in core and cli packages locally.
-
 bump=${1:-"patch"}
 
-for package in packages/cli packages/core-*; do
+for package in packages/*; do
 	cd "./$package" || exit
 	echo "$package -> $bump"
 	yarn version $bump --deferred

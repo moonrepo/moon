@@ -16,7 +16,7 @@ on:
     # Test every night to ensure builds are good
     - cron: '0 10 * * *' # 2am PT, 10am UTC
   # Uncomment to test in PRs (its safe)
-  # pull_request:
+  pull_request:
 
 jobs:
   build:

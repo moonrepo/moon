@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 
 import fs from 'fs';
-import path from 'path';
 import { execa } from 'execa';
 import yaml from 'yaml';
 

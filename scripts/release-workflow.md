@@ -5,11 +5,11 @@ binary associated with it. It's based around Yarn's official
 [release workflow](https://yarnpkg.com/features/release-workflow), but with additional steps and
 requirements.
 
-## Defining version bumps in pull requests
+## Requiring version bumps in pull requests
 
 Any change in a package (under `packages/`) requires a deferred version bump using Yarn. If no bump
-has been defined, we have a CI check that will fail, forcing the developer to bump it before it can
-be merged. Bumping can be done by running the following command at the root:
+has been defined, we have a CI check that will fail, forcing the author to bump it before it can be
+merged. Bumping can be done by running the following command at the root:
 
 ```shell
 yarn version:bump

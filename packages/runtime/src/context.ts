@@ -10,7 +10,7 @@ export interface RuntimeContext {
 	};
 }
 
-console.log('asdsaasdsdssdssdsdsads');
+console.log('asdsaaasdsdsdsdssdssdsdsads');
 
 export async function getContext(): Promise<RuntimeContext> {
 	const { env } = process;

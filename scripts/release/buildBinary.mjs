@@ -1,12 +1,13 @@
 import fs from 'fs/promises';
-import { BINARY, exec, getPackageFromTarget, getPath, TARGET } from '../helpers.mjs';
+import execa from 'execa';
+import { BINARY, getPackageFromTarget, getPath, TARGET } from '../helpers.mjs';
 
 async function buildBinary() {
 	// Allow arbitrary args to be passed through
 	const args = process.argv.slice(2);
 
 	// Build the binary with the provided target
-	await exec('cargo', ['build', '--release', '--target', TARGET, ...args]);
+	await execa('cargo', ['build', '--release', '--target', TARGET, ...args], { stdio: 'inherit' });
 
 	// Copy the binary to the package
 	const targetPath = getPath('target', TARGET, 'release', BINARY);
@@ -22,7 +23,4 @@ async function buildBinary() {
 	await fs.chmod(artifactPath, 0o755);
 }
 
-buildBinary().catch((error) => {
-	console.error(error);
-	process.exitCode = 1;
-});
+await buildBinary();

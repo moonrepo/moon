@@ -54,6 +54,8 @@ At this point, the actual "publishing to npm" is done through two GitHub workflo
 - [release-npm.yml](https://github.com/moonrepo/moon/blob/master/.github/workflows/release-npm.yml) -
   This workflow publishes all other npm packages.
 
+Both of these workflows _must be manually triggered_ through GitHub's UI.
+
 ### Handling failed publishes
 
 This hasn't happened yet, so nothing to document. At minimum, re-running the workflows should be our

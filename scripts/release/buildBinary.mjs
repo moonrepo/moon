@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import execa from 'execa';
+import { execa } from 'execa';
 import { BINARY, getPackageFromTarget, getPath, TARGET } from '../helpers.mjs';
 
 async function buildBinary() {

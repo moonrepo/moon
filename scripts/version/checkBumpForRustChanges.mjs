@@ -4,6 +4,8 @@ import fs from 'fs';
 import { execa } from 'execa';
 import yaml from 'yaml';
 
+console.log(process.env);
+
 async function loadChangedFiles() {
 	const mergeBase = (
 		await execa('git', ['merge-base', process.env.GITHUB_BASE_REF || 'origin/master', 'HEAD'], {

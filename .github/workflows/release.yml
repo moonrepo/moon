@@ -190,7 +190,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Extract cli version
-        run: node ./scripts/release/extractCliVersion.mjs
+        run: bash ./scripts/release/extractCliVersion.sh
+        shell: bash
       # TODO changelog
       - uses: softprops/action-gh-release@v1
         name: Create GitHub release

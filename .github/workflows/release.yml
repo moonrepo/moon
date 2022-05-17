@@ -15,148 +15,148 @@ on:
   pull_request:
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            arch: x64
-            binary: moon
-          # - host: ubuntu-latest
-          #   target: x86_64-unknown-linux-musl
-          #   arch: x64
-          #   binary: moon
-          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+  # build:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - host: ubuntu-latest
+  #           target: x86_64-unknown-linux-gnu
+  #           arch: x64
+  #           binary: moon
+  #         # - host: ubuntu-latest
+  #         #   target: x86_64-unknown-linux-musl
+  #         #   arch: x64
+  #         #   binary: moon
+  #         #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
 
-          - host: macos-latest
-            target: x86_64-apple-darwin
-            arch: x64
-            binary: moon
+  #         - host: macos-latest
+  #           target: x86_64-apple-darwin
+  #           arch: x64
+  #           binary: moon
 
-          - host: windows-latest
-            target: x86_64-pc-windows-msvc
-            arch: x64
-            binary: moon.exe
-    name: Stable - ${{ matrix.target }}
-    runs-on: ${{ matrix.host }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          architecture: ${{ matrix.arch }}
-          check-latest: true
-          node-version: 16
-      - uses: actions/cache@v3
-        name: Cache cargo
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-      - uses: actions-rs/toolchain@v1
-        with:
-          override: true
-          profile: minimal
-          target: ${{ matrix.target }}
-          toolchain: stable
-      - uses: actions-rs/cargo@v1
-        name: Generate lockfile
-        with:
-          command: generate-lockfile
-      - name: Setup toolchain
-        if: ${{ matrix.setup }}
-        run: ${{ matrix.setup }}
-      - name: Add target
-        run: rustup target add ${{ matrix.target }}
-      - name: Install dependencies
-        run: yarn install --immutable
-      - name: Build binary
-        run: node ./scripts/release/buildBinary.mjs
-        shell: bash
-        env:
-          BINARY: ${{ matrix.binary }}
-          TARGET: ${{ matrix.target }}
-          RUSTFLAGS: '-C strip=symbols'
-      - uses: actions/upload-artifact@v2
-        name: Upload artifact
-        with:
-          name: binary-${{ matrix.target }}
-          path: ${{ matrix.binary }}
-          if-no-files-found: error
+  #         - host: windows-latest
+  #           target: x86_64-pc-windows-msvc
+  #           arch: x64
+  #           binary: moon.exe
+  #   name: Stable - ${{ matrix.target }}
+  #   runs-on: ${{ matrix.host }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         architecture: ${{ matrix.arch }}
+  #         check-latest: true
+  #         node-version: 16
+  #     - uses: actions/cache@v3
+  #       name: Cache cargo
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin
+  #           ~/.cargo/registry
+  #           ~/.cargo/git
+  #         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+  #         restore-keys: ${{ runner.os }}-cargo-
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         override: true
+  #         profile: minimal
+  #         target: ${{ matrix.target }}
+  #         toolchain: stable
+  #     - uses: actions-rs/cargo@v1
+  #       name: Generate lockfile
+  #       with:
+  #         command: generate-lockfile
+  #     - name: Setup toolchain
+  #       if: ${{ matrix.setup }}
+  #       run: ${{ matrix.setup }}
+  #     - name: Add target
+  #       run: rustup target add ${{ matrix.target }}
+  #     - name: Install dependencies
+  #       run: yarn install --immutable
+  #     - name: Build binary
+  #       run: node ./scripts/release/buildBinary.mjs
+  #       shell: bash
+  #       env:
+  #         BINARY: ${{ matrix.binary }}
+  #         TARGET: ${{ matrix.target }}
+  #         RUSTFLAGS: '-C strip=symbols'
+  #     - uses: actions/upload-artifact@v2
+  #       name: Upload artifact
+  #       with:
+  #         name: binary-${{ matrix.target }}
+  #         path: ${{ matrix.binary }}
+  #         if-no-files-found: error
 
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - host: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          # - host: ubuntu-latest
-          #   target: x86_64-unknown-linux-musl
-          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+  # test:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - host: ubuntu-latest
+  #           target: x86_64-unknown-linux-gnu
+  #         # - host: ubuntu-latest
+  #         #   target: x86_64-unknown-linux-musl
+  #         #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
 
-          - host: macos-latest
-            target: x86_64-apple-darwin
+  #         - host: macos-latest
+  #           target: x86_64-apple-darwin
 
-          - host: windows-latest
-            target: x86_64-pc-windows-msvc
-    needs:
-      - build
-    name: Test - ${{ matrix.target }}
-    runs-on: ${{ matrix.host }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          check-latest: true
-          node-version: 16
-      - uses: actions/cache@v3
-        name: Cache cargo
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-      - uses: actions/cache@v3
-        name: Cache node modules
-        with:
-          path: |
-            ~/.yarn
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: ${{ runner.os }}-yarn-
-      - name: Install dependencies
-        run: yarn install --immutable
-      - uses: actions/download-artifact@v2
-        name: Download artifacts
-        with:
-          path: artifacts
-      - name: Sync artifact binaries
-        run: node ./scripts/release/syncArtifacts.mjs
-        shell: bash
-      - name: List packages
-        run:
-          ls -lR ./packages/cli ./packages/core-linux-* ./packages/core-macos-*
-          ./packages/core-windows-*
-        shell: bash
-      - name: Test binary
-        run: node ./scripts/release/testBinary.mjs
-        shell: bash
-        env:
-          TARGET: ${{ matrix.target }}
+  #         - host: windows-latest
+  #           target: x86_64-pc-windows-msvc
+  #   needs:
+  #     - build
+  #   name: Test - ${{ matrix.target }}
+  #   runs-on: ${{ matrix.host }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         check-latest: true
+  #         node-version: 16
+  #     - uses: actions/cache@v3
+  #       name: Cache cargo
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin
+  #           ~/.cargo/registry
+  #           ~/.cargo/git
+  #         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+  #         restore-keys: ${{ runner.os }}-cargo-
+  #     - uses: actions/cache@v3
+  #       name: Cache node modules
+  #       with:
+  #         path: |
+  #           ~/.yarn
+  #           .yarn/install-state.gz
+  #         key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+  #         restore-keys: ${{ runner.os }}-yarn-
+  #     - name: Install dependencies
+  #       run: yarn install --immutable
+  #     - uses: actions/download-artifact@v2
+  #       name: Download artifacts
+  #       with:
+  #         path: artifacts
+  #     - name: Sync artifact binaries
+  #       run: node ./scripts/release/syncArtifacts.mjs
+  #       shell: bash
+  #     - name: List packages
+  #       run:
+  #         ls -lR ./packages/cli ./packages/core-linux-* ./packages/core-macos-*
+  #         ./packages/core-windows-*
+  #       shell: bash
+  #     - name: Test binary
+  #       run: node ./scripts/release/testBinary.mjs
+  #       shell: bash
+  #       env:
+  #         TARGET: ${{ matrix.target }}
 
   publish:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    # if: ${{ github.event_name == 'workflow_dispatch' }}
     name: Publish
     runs-on: ubuntu-latest
-    needs:
-      - test
+    # needs:
+    #   - test
     env:
       NPM_CHANNEL: latest
     steps:

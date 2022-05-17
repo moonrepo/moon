@@ -181,9 +181,13 @@ jobs:
           path: artifacts
       - name: Sync artifact binaries
         run: node ./scripts/release/syncArtifacts.mjs
-        shell: bash
+      - name: Mark binaries as executable
+        run: |
+          chmod +x packages/core-linux-x64-gnu/moon
+          chmod +x packages/core-macos-x64/moon
+          chmod +x packages/core-windows-x64-msvc/moon.exe
       - name: List binaries
-        run: ls -R artifacts
+        run: ls -lR artifacts
         shell: bash
       - name: Publish npm packages
         run: bash ./scripts/release/publishBinaryPackages.sh
@@ -191,9 +195,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Extract cli version
-        run: bash ./scripts/release/extractCliVersion.sh
-        shell: bash
       # TODO changelog
       - uses: softprops/action-gh-release@v1
         name: Create GitHub release

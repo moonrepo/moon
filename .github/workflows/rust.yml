@@ -4,6 +4,13 @@ on:
     branches:
       - master
   pull_request:
+    paths:
+      - crates/**
+      - tests/**
+      - Cargo.lock
+      - Cargo.toml
+      - Makefile.toml
+      - rust-toolchain.toml
 jobs:
   format:
     name: Format

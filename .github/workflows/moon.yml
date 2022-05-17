@@ -4,6 +4,11 @@ on:
     branches:
       - master
   pull_request:
+    paths:
+      - packages/**
+      - website/**
+      - package.json
+      - yarn.lock
 jobs:
   ci:
     name: CI

@@ -15,6 +15,3 @@ jobs:
       - run: yarn run build
       - run: yarn version check
       - run: node scripts/version/checkBumpForRustChanges.mjs
-      - name: Extract cli version
-        run: bash ./scripts/release/extractCliVersion.sh
-        shell: bash

@@ -30,6 +30,7 @@ umd/
 .moon/cache
 packages/*/moon
 packages/*/moon.exe
+!packages/cli/moon
 /moon
 /moon.exe
 

@@ -190,7 +190,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # # TODO changelog
       - uses: softprops/action-gh-release@v1
         name: Create GitHub release
         with:

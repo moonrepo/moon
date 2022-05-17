@@ -2,10 +2,10 @@
 
 # Determine release channel. If contains "alpha", "beta", or "rc",
 # then publish to next, otherwise latest.
-tag=latest
+channel=latest
 
 if git log -1 --pretty=%B | grep -e "-alpha" -e "-beta" -e "-rc"; then
-	tag=next
+	channel=next
 fi
 
 if [[ -z "${NPM_TOKEN}" ]]; then
@@ -15,8 +15,8 @@ else
 	echo "npmAuthToken: $NPM_TOKEN" >> ./.yarnrc.yml
 
 	# Update env var in GitHub actions
-	echo "NPM_CHANNEL=$tag" >> $GITHUB_ENV
+	echo "NPM_CHANNEL=$channel" >> $GITHUB_ENV
 fi
 
 # And make it available to other scripts
-export NPM_CHANNEL="$tag"
+export NPM_CHANNEL="$channel"

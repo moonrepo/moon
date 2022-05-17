@@ -18,9 +18,6 @@
   "libc": [
     "musl"
   ],
-  "files": [
-    "moon"
-  ],
   "author": "Miles Johnson",
   "license": "MIT",
   "repository": {
@@ -29,6 +26,9 @@
     "directory": "packages/core-linux-x64-musl"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "executableFiles": [
+      "moon"
+    ]
   }
 }

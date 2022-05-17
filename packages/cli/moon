@@ -1,1 +1,1 @@
-This file exists so that npm/yarn link the binary to `node_modules/.bin`
+This file exists so that package manager's link the binary to `node_modules/.bin`!

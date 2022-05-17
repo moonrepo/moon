@@ -12,7 +12,7 @@ on:
     branches:
       - master
   # Uncomment to test in PRs (its safe)
-  # pull_request:
+  pull_request:
 
 jobs:
   build:
@@ -142,7 +142,7 @@ jobs:
         shell: bash
       - name: List packages
         run:
-          ls -R ./packages/cli ./packages/core-linux-* ./packages/core-macos-*
+          ls -lR ./packages/cli ./packages/core-linux-* ./packages/core-macos-*
           ./packages/core-windows-*
         shell: bash
       - name: Test binary
@@ -187,19 +187,19 @@ jobs:
           chmod +x packages/core-macos-x64/moon
           chmod +x packages/core-windows-x64-msvc/moon.exe
       - name: List binaries
-        run: ls -lR artifacts
+        run: ls -lR ./artifacts/release ./packages/core-*
         shell: bash
-      - name: Publish npm packages
-        run: bash ./scripts/release/publishBinaryPackages.sh
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # TODO changelog
-      - uses: softprops/action-gh-release@v1
-        name: Create GitHub release
-        with:
-          fail_on_unmatched_files: true
-          files: artifacts/release/*
-          tag_name: ${{ env.NPM_TAG_NAME }}
-          prerelease: ${{ env.NPM_CHANNEL == 'next' }}
+      # - name: Publish npm packages
+      #   run: bash ./scripts/release/publishBinaryPackages.sh
+      #   shell: bash
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # # TODO changelog
+      # - uses: softprops/action-gh-release@v1
+      #   name: Create GitHub release
+      #   with:
+      #     fail_on_unmatched_files: true
+      #     files: artifacts/release/*
+      #     tag_name: ${{ env.NPM_TAG_NAME }}
+      #     prerelease: ${{ env.NPM_CHANNEL == 'next' }}

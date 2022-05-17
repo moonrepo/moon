@@ -33,6 +33,8 @@ async function syncCargoVersion(oldVersion, newVersion) {
 	toml = toml.replace(`version = "${oldVersion}"`, `version = "${newVersion}"`);
 
 	await fs.writeFile('crates/cli/Cargo.toml', toml, 'utf8');
+
+	await execa('cargo', ['check'], { stdio: 'inherit' });
 }
 
 async function createCommit(versions) {

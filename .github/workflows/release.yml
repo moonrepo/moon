@@ -182,11 +182,6 @@ jobs:
           path: artifacts
       - name: Sync artifact binaries
         run: node ./scripts/release/syncArtifacts.mjs
-      - name: Mark binaries as executable
-        run: |
-          chmod +x packages/core-linux-x64-gnu/moon
-          chmod +x packages/core-macos-x64/moon
-          chmod +x packages/core-windows-x64-msvc/moon.exe
       - name: List binaries
         run: ls -lR ./artifacts/release ./packages/core-*
         shell: bash

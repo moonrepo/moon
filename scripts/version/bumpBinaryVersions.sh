@@ -5,8 +5,8 @@
 bump=${1:-"patch"}
 
 for package in packages/cli packages/core-*; do
-	cd "./$package" || exit
 	echo "$package -> $bump"
-	yarn version $bump --deferred
+	cd "./$package" || exit
+	yarn version "$bump" --deferred
 	cd ../..
 done

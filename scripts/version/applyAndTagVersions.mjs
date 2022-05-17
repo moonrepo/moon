@@ -25,6 +25,18 @@ function logDiff(diff) {
 	});
 }
 
+async function syncCargoVersion(oldVersion, newVersion) {
+	console.log('Syncing version to cli/Cargo.toml');
+
+	let toml = await fs.readFile('crates/cli/Cargo.toml', 'utf8');
+
+	toml = toml.replace(`version = "${oldVersion}"`, `version = "${newVersion}"`);
+
+	await fs.writeFile('crates/cli/Cargo.toml', toml, 'utf8');
+
+	await execa('cargo', ['check'], { stdio: 'inherit' });
+}
+
 async function createCommit(versions) {
 	console.log('Creating git commit');
 
@@ -58,8 +70,6 @@ async function run() {
 	// Now gather the versions again so we can diff
 	const nextVersions = await getPackageVersions();
 
-	console.log(prevVersions, nextVersions);
-
 	// Diff the versions and find the new ones
 	const diff = [];
 
@@ -75,6 +85,11 @@ async function run() {
 	}
 
 	logDiff(diff);
+
+	// Sync the cli version to the cli Cargo.toml
+	if (diff.some((file) => file.includes('@moonrepo/cli'))) {
+		await syncCargoVersion(prevVersions['@moonrepo/cli'], nextVersions['@moonrepo/cli']);
+	}
 
 	// Create git commit and tags
 	await createCommit(diff);

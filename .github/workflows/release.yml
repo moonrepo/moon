@@ -142,7 +142,7 @@ jobs:
         shell: bash
       - name: List packages
         run:
-          ls -R ./packages/cli ./packages/core-linux-* ./packages/core-macos-*
+          ls -lR ./packages/cli ./packages/core-linux-* ./packages/core-macos-*
           ./packages/core-windows-*
         shell: bash
       - name: Test binary
@@ -153,7 +153,7 @@ jobs:
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}
-    name: Publish
+    name: Publish cli/core packages
     runs-on: ubuntu-latest
     needs:
       - test
@@ -181,13 +181,8 @@ jobs:
           path: artifacts
       - name: Sync artifact binaries
         run: node ./scripts/release/syncArtifacts.mjs
-      - name: Mark binaries as executable
-        run: |
-          chmod +x packages/core-linux-x64-gnu/moon
-          chmod +x packages/core-macos-x64/moon
-          chmod +x packages/core-windows-x64-msvc/moon.exe
       - name: List binaries
-        run: ls -lR artifacts
+        run: ls -lR ./artifacts/release ./packages/core-*
         shell: bash
       - name: Publish npm packages
         run: bash ./scripts/release/publishBinaryPackages.sh
@@ -195,7 +190,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # TODO changelog
       - uses: softprops/action-gh-release@v1
         name: Create GitHub release
         with:
@@ -203,3 +197,34 @@ jobs:
           files: artifacts/release/*
           tag_name: ${{ env.NPM_TAG_NAME }}
           prerelease: ${{ env.NPM_CHANNEL == 'next' }}
+
+  publish-npm:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    name: Publish npm packages
+    runs-on: ubuntu-latest
+    env:
+      NPM_CHANNEL: latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          check-latest: true
+          node-version: 16
+      - uses: actions/cache@v3
+        name: Cache node modules
+        with:
+          path: |
+            ~/.yarn
+            .yarn/install-state.gz
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build packages
+        run: yarn run build
+      - name: Publish npm packages
+        run: bash ./scripts/release/publishPackages.sh
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

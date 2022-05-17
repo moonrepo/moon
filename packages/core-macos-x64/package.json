@@ -15,9 +15,6 @@
   "cpu": [
     "x64"
   ],
-  "files": [
-    "moon"
-  ],
   "author": "Miles Johnson",
   "license": "MIT",
   "repository": {
@@ -26,6 +23,9 @@
     "directory": "packages/core-macos-x64"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "executableFiles": [
+      "moon"
+    ]
   }
 }

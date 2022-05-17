@@ -18,6 +18,9 @@
   "libc": [
     "musl"
   ],
+  "files": [
+    "moon"
+  ],
   "author": "Miles Johnson",
   "license": "MIT",
   "repository": {

@@ -16,6 +16,10 @@
   "cpu": [
     "x64"
   ],
+  "files": [
+    "moon",
+    "postinstall.js"
+  ],
   "author": "Miles Johnson",
   "license": "MIT",
   "bin": {

@@ -15,6 +15,9 @@
   "cpu": [
     "x64"
   ],
+  "files": [
+    "moon"
+  ],
   "author": "Miles Johnson",
   "license": "MIT",
   "repository": {

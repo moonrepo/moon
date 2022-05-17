@@ -28,6 +28,7 @@ async function syncArtifacts() {
 
 					await fs.mkdir(path.dirname(releasePath), { recursive: true });
 					await fs.copyFile(artifactPath, releasePath);
+					await fs.chmod(releasePath, 0o755);
 				}),
 			);
 		}),

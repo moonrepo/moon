@@ -15,12 +15,11 @@ JavaScript ecosystem, written in Rust!
 moon can be installed with npm, pnpm, or yarn.
 
 ```bash
-# Install the dependency and create the binary
+# Install the dependency
 yarn add --dev @moonrepo/cli
-yarn install
 
-# Access the Rust binary and initialize moon
-$(yarn bin moon) init
+# Initialize moon in the repo
+npx @moonrepo/cli init
 ```
 
 ## Usage

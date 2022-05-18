@@ -1,0 +1,19 @@
+# https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+name: Moon
+on:
+  pull_request:
+    paths-ignore:
+      - packages/**
+      - website/**
+      - package.json
+      - yarn.lock
+jobs:
+  ci:
+    name: CI
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: [14, 16, 18]
+    steps:
+      - run: 'echo "Not affected, skipping"'

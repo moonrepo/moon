@@ -1,0 +1,33 @@
+# https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks#handling-skipped-but-required-checks
+name: Rust
+on:
+  pull_request:
+    paths-ignore:
+      - crates/**
+      - tests/**
+      - Cargo.lock
+      - Cargo.toml
+      - Makefile.toml
+      - rust-toolchain.toml
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "Not affected, skipping"'
+  lint:
+    name: Lint
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - run: 'echo "Not affected, skipping"'
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - run: 'echo "Not affected, skipping"'

@@ -23,7 +23,7 @@ jobs:
               - rust-toolchain.toml
   format:
     needs: rust_check
-    if: ${{ steps.rust_check.outputs.affected == 'true' }}
+    if: ${{ needs.rust_check.outputs.affected == 'true' }}
     name: Format
     runs-on: ubuntu-latest
     steps:
@@ -52,7 +52,7 @@ jobs:
           args: format
   lint:
     needs: rust_check
-    if: ${{ steps.rust_check.outputs.affected == 'true' }}
+    if: ${{ needs.rust_check.outputs.affected == 'true' }}
     name: Lint
     runs-on: ${{ matrix.os }}
     strategy:
@@ -85,7 +85,7 @@ jobs:
           args: lint
   test:
     needs: rust_check
-    if: ${{ steps.rust_check.outputs.affected == 'true' }}
+    if: ${{ needs.rust_check.outputs.affected == 'true' }}
     name: Test
     runs-on: ${{ matrix.os }}
     strategy:

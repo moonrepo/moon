@@ -21,7 +21,7 @@ jobs:
               - yarn.lock
   ci:
     needs: ci_check
-    if: ${{ steps.ci_check.outputs.affected == 'true' }}
+    if: ${{ needs.ci_check.outputs.affected == 'true' }}
     name: CI
     runs-on: ${{ matrix.os }}
     strategy:

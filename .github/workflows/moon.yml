@@ -6,18 +6,22 @@ on:
   pull_request:
 jobs:
   ci_check:
-    uses: dorny/paths-filter@v2
-    id: changes
-    with:
-      filters: |
-        affected:
-          - packages/**
-          - website/**
-          - package.json
-          - yarn.lock
+    runs-on: ubuntu-latest
+    outputs:
+      affected: ${{ steps.filter.outputs.affected }}
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            affected:
+              - packages/**
+              - website/**
+              - package.json
+              - yarn.lock
   ci:
     needs: ci_check
-    if: steps.changes.outputs.affected == 'true'
+    if: ${{ steps.ci_check.outputs.affected == 'true' }}
     name: CI
     runs-on: ${{ matrix.os }}
     strategy:

@@ -6,6 +6,7 @@ on:
   pull_request:
 jobs:
   rust_check:
+    name: Affected check
     runs-on: ubuntu-latest
     outputs:
       affected: ${{ steps.filter.outputs.affected }}

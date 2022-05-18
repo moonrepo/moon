@@ -6,6 +6,7 @@ on:
   pull_request:
 jobs:
   ci_check:
+    name: Affected check
     runs-on: ubuntu-latest
     outputs:
       affected: ${{ steps.filter.outputs.affected }}

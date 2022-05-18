@@ -4,27 +4,15 @@ on:
     branches:
       - master
   pull_request:
+    paths:
+      - crates/**
+      - tests/**
+      - Cargo.lock
+      - Cargo.toml
+      - Makefile.toml
+      - rust-toolchain.toml
 jobs:
-  rust_check:
-    name: Affected check
-    runs-on: ubuntu-latest
-    outputs:
-      affected: ${{ steps.filter.outputs.affected }}
-    steps:
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            affected:
-              - crates/**
-              - tests/**
-              - Cargo.lock
-              - Cargo.toml
-              - Makefile.toml
-              - rust-toolchain.toml
   format:
-    needs: rust_check
-    if: ${{ needs.rust_check.outputs.affected == 'true' }}
     name: Format
     runs-on: ubuntu-latest
     steps:
@@ -52,8 +40,6 @@ jobs:
           command: make
           args: format
   lint:
-    needs: rust_check
-    if: ${{ needs.rust_check.outputs.affected == 'true' }}
     name: Lint
     runs-on: ${{ matrix.os }}
     strategy:
@@ -85,8 +71,6 @@ jobs:
           command: make
           args: lint
   test:
-    needs: rust_check
-    if: ${{ needs.rust_check.outputs.affected == 'true' }}
     name: Test
     runs-on: ${{ matrix.os }}
     strategy:

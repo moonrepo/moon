@@ -1,0 +1,26 @@
+name: Rust
+on:
+  pull_request:
+    paths-ignore:
+      - crates/**
+      - tests/**
+      - Cargo.lock
+      - Cargo.toml
+      - Makefile.toml
+      - rust-toolchain.toml
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "Not affected, skipping"'
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "Not affected, skipping"'
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "Not affected, skipping"'

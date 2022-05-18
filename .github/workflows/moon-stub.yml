@@ -1,0 +1,14 @@
+name: Moon
+on:
+  pull_request:
+    paths-ignore:
+      - packages/**
+      - website/**
+      - package.json
+      - yarn.lock
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "Not affected, skipping"'

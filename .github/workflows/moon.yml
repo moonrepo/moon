@@ -4,13 +4,20 @@ on:
     branches:
       - master
   pull_request:
-    paths:
-      - packages/**
-      - website/**
-      - package.json
-      - yarn.lock
 jobs:
+  ci_check:
+    uses: dorny/paths-filter@v2
+    id: changes
+    with:
+      filters: |
+        affected:
+          - packages/**
+          - website/**
+          - package.json
+          - yarn.lock
   ci:
+    needs: ci_check
+    if: steps.changes.outputs.affected == 'true'
     name: CI
     runs-on: ${{ matrix.os }}
     strategy:

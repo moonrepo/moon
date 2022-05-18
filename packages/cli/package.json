@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/cli",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "moon command line and core system.",
   "keywords": [
     "moon",
@@ -37,9 +37,9 @@
     "detect-libc": "^2.0.1"
   },
   "optionalDependencies": {
-    "@moonrepo/core-linux-x64-gnu": "^0.0.7",
+    "@moonrepo/core-linux-x64-gnu": "^0.0.8",
     "@moonrepo/core-linux-x64-musl": "^0.0.7",
-    "@moonrepo/core-macos-x64": "^0.0.7",
-    "@moonrepo/core-windows-x64-msvc": "^0.0.7"
+    "@moonrepo/core-macos-x64": "^0.0.8",
+    "@moonrepo/core-windows-x64-msvc": "^0.0.8"
   }
 }

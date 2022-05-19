@@ -54,6 +54,6 @@ vcs:
   manager: 'git'
 
   # OPTIONAL: The default branch (master/main/trunk) in the repository for comparing the
-  # local branch against. For git, this is is typically "origin/master" or "origin/main",
+  # local branch against. For git, this is is typically "master" or "main",
   # and must include the remote prefix (before /). For svn, this should always be "trunk".
-  defaultBranch: 'origin/master'
+  defaultBranch: 'master'

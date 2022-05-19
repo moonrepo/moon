@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 fn default_branch_default() -> String {
-    String::from("origin/master")
+    String::from("master")
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]

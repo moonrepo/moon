@@ -32,7 +32,7 @@ set it to the latest version. We suggest _always_ using an
 
 ```yaml title=".moon/workspace.yml"
 node:
-	version: '16.14.0'
+	version: '16.15.0'
 ```
 
 Let's now run [`moon --logLevel debug setup`](./commands/setup) to verify that Node.js is downloaded
@@ -46,7 +46,7 @@ let's use that choice here by defining [`node.packageManager`](./config/workspac
 
 ```yaml title=".moon/workspace.yml"
 node:
-	version: '16.14.0'
+	version: '16.15.0'
 	packageManager: 'yarn'
 ```
 
@@ -56,7 +56,7 @@ through the [`node.<packageManager>.version`](./config/workspace#version-1) sett
 
 ```yaml title=".moon/workspace.yml"
 node:
-	version: '16.14.0'
+	version: '16.15.0'
 	packageManager: 'yarn'
 	yarn:
 		version: '3.2.0'
@@ -87,7 +87,7 @@ hashing, and revision comparison. The VCS and its default branch can be configur
 ```yaml title=".moon/workspace.yml"
 vcs:
 	manager: 'git'
-	defaultBranch: 'origin/master'
+	defaultBranch: 'master'
 ```
 
 </TabItem>

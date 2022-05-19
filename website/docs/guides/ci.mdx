@@ -32,16 +32,17 @@ basis through the [`runInCI`](../config/project#runinci) option.
 ```yaml
 tasks:
   dev:
-    command: webpack
-    args: server
+    command: 'webpack'
+    args: 'server'
     options:
       runInCI: false
 ```
 
 :::caution
 
-This option _must_ be set to false for tasks that spawn a long running process, like HTTP or
-development servers. To help mitigate this, tasks named `start` or `serve` are false by default.
+This option _must_ be set to false for tasks that spawn a long-running or never-ending process, like
+HTTP or development servers. To help mitigate this, tasks named `start` or `serve` are false by
+default.
 
 :::
 
@@ -55,7 +56,7 @@ into other distribution channels.
 With that being said, the following examples can be referenced for setting up moon and its CI
 workflow in popular services. The examples assume a
 [package script named `moon`](../install#adding-a-package-script) and are using Yarn 3, but feel
-free to replace with your chosen package manager.
+free to replace with your chosen setup.
 
 <Tabs groupId="ci-env">
 <TabItem value="github" label="GitHub">
@@ -74,7 +75,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
-      - run: yarn install
+      - run: yarn install --immutable
       - run: yarn moon ci
 ```
 
@@ -85,7 +86,7 @@ jobs:
 steps:
   - label: 'CI'
     commands:
-      - yarn install
+      - yarn install --immutable
       - yarn moon ci
 ```
 
@@ -136,13 +137,13 @@ configured [`vcs.defaultBranch`](../config/workspace#defaultbranch) (master, mai
 of these can be customized with the `--base` and `--head` options respectively.
 
 ```shell
-$ moon ci --base another-branch --head <SHA>
+$ moon ci --base <BRANCH> --head <SHA>
 ```
 
 ## Parallelizing tasks
 
 If your CI environment supports sharding across multiple jobs, then you can utilize moon's built in
-parallelism, by passing `--jobTotal` and `--job` options. The `--jobTotal` option is an integer of
+parallelism by passing `--jobTotal` and `--job` options. The `--jobTotal` option is an integer of
 the total number of jobs available, and `--job` is the current index (0 based) amongst the total.
 
 When these options are passed, moon will only run affected [targets](../concepts/target) based on

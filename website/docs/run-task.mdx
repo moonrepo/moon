@@ -21,7 +21,7 @@ $ moon run app:typecheck
 When this command is ran, it will do the following:
 
 - Generate a directed acyclic graph, known as the action graph.
-- Insert [`deps`](./config/project#deps) targets into the graph.
+- Insert [`deps`](./config/project#deps) as targets into the graph.
 - Insert the primary target into the graph.
 - Run all tasks in the graph in parallel and in topological order (the dependency chain).
 - For each task, calculate [hashes](./concepts/cache) and either:
@@ -36,7 +36,7 @@ primary target, as their outputs may be required for the primary target to funct
 However, if you're working on a project that is shared and consumed by other projects, you may want
 to verify that downstream dependents have not been indirectly broken by any changes. This can be
 achieved by passing the `--dependents` option, which will run dependent targets (of the same task
-name) _after_ the primary target.
+ID) _after_ the primary target.
 
 ```shell
 $ moon run app:typecheck --dependents
@@ -44,10 +44,10 @@ $ moon run app:typecheck --dependents
 
 ## Running based on affected files only
 
-By default `moon run` will _always_ run the target, regardless if files have actually changed.
-However, this is typically fine because of our [smart hashing & cache layer](./concepts/cache). With
-that being said, if you'd like to _only_ run a target if files have changed, pass the `--affected`
-flag.
+By default [`moon run`](./commands/run) will _always_ run the target, regardless if files have
+actually changed. However, this is typically fine because of our
+[smart hashing & cache layer](./concepts/cache). With that being said, if you'd like to _only_ run a
+target if files have changed, pass the `--affected` flag.
 
 ```shell
 $ moon run app:typecheck --affected
@@ -59,7 +59,7 @@ configured [VCS](./config/workspace#vcs), and exit early if no files intersect w
 
 ### Using upstream changes
 
-If you'd like to determine affected files based on upstream changes, instead of local changes, pass
+If you'd like to determine affected files based on upstream changes instead of local changes, pass
 the `--upstream` flag. This will extract touched files by comparing the current `HEAD` against the
 [`vcs.defaultBranch`](./config/workspace#defaultbranch).
 

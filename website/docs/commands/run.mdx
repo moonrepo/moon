@@ -20,9 +20,13 @@ $ moon run :lint
 
 - `<target>` - [Target](../concepts/target) to run.
 - `[-- <args>]` - Additional arguments to
-  [pass to the underlying command](#passing-arguments-to-the-underlying-command).
+  [pass to the underlying command](../run-task#passing-arguments-to-the-underlying-command).
 
 ### Options
+
+- `--dependents` - Run downstream dependent targets (of the same task ID) as well.
+
+#### Affected
 
 - `--affected` - Only run target if affected by changed files, _otherwise_ will always run.
 - `--status <type>` - Filter affected based on a change status.

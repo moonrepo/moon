@@ -10,8 +10,40 @@ import NextSteps from '@site/src/components/NextSteps';
 <HeaderLabel text="5 min" />
 
 The following guide can be used for adding moon to an existing repository (with incremental
-adoption), or to a fresh repository. All that's required is [Node.js](https://nodejs.org/en/) >=
-14.15.0 and a `package.json` at the root.
+adoption), or to a fresh repository. All that's required is...
+
+- [Node.js](https://nodejs.org/en/) and basic knowledge of the ecosystem
+- [git](https://git-scm.com/), a version control system
+- A `package.json` in your repository root
+
+<Tabs
+  groupId="repo-type"
+  defaultValue="new"
+  values={[
+    { label: 'New repo', value: 'new' },
+    { label: 'Existing repo', value: 'existing' },
+  ]}
+>
+<TabItem value="new">
+
+```bash
+git init ./app
+cd ./app
+npm init
+```
+
+</TabItem>
+<TabItem value="existing">
+
+If you already have a root `package.json`, jump to the
+[installation instructions](#installing-the-cli), otherwise...
+
+```bash
+npm init
+```
+
+</TabItem>
+</Tabs>
 
 ## Choosing a package manager
 
@@ -23,7 +55,7 @@ managers.
 
 - [npm](https://docs.npmjs.com/)
 - [pnpm](https://pnpm.io/)
-- [Yarn](https://yarnpkg.com/) (v1, v2/3 in `node-modules` linker mode)
+- [Yarn](https://yarnpkg.com/) (v1, v2+ in `node-modules` linker mode)
 
 We suggest Yarn 3 for its powerful workspaces implementation, extensive support for native binaries,
 built-in package patching, and blazing speed, but feel free to choose the one that works best for
@@ -154,13 +186,13 @@ pnpm add --dev -W @moonrepo/cli
 
 We suggest _not_ installing the package globally, as adding an explicit development dependency with
 a version range ensures all developers and machines are using the same version of moon. With that
-being said, how should you access `moon`? If you'd like it to be accessible in a global-like
-fashion, we suggest one of the following patterns:
+being said, how should you access `moon`? Choose a pattern below that works best for you or your
+team!
 
 1. Update your `PATH` environment variable to include a path to the installed node module. This
-   would need to be added to every developers shell and other environments, like CI.
+   would need to be added to every developers shell, and other environments like CI.
 
-```bash title="~/.bashrc"
+```bash title="~/.zshrc"
 export PATH="/path/to/repo/node_modules/@moonrepo/cli:$PATH"
 ```
 
@@ -169,8 +201,8 @@ moon --help
 ```
 
 2. Symlink the binary to the root of the repository. This would require every developer to run the
-   binary from the repository root, which isn't the worst, but would work for other environments.
-   This can be automated through a `postinstall` script.
+   binary from the repository root (which we suggest). This can be automated through a `postinstall`
+   script.
 
 ```shell
 ln -s ./node_modules/@moonrepo/cli/moon ./moon
@@ -180,7 +212,9 @@ ln -s ./node_modules/@moonrepo/cli/moon ./moon
 ./moon --help
 ```
 
-3. Add the binary as a `package.json` script. Jump to the next section for more information.
+3. Add the binary as a `package.json` script. This pattern is the most familier for frontend
+   developers, but also requires the script to be ran from the repository root. Jump to the next
+   section for more information.
 
 ```shell
 yarn run moon --help
@@ -218,11 +252,11 @@ repository root.
 
 ### Supported targets
 
-Because moon is written in Rust, we only support targets that are explicitly compiled for, which
-are:
+Because moon is written in Rust, we only support targets that are explicitly compiled for, which are
+currently:
 
 - MacOS Intel (x64)
-- Linux (x86_64, gnu)
+- Linux (64, gnu)
 - Windows (x64)
 
 ## Initializing moon
@@ -239,7 +273,7 @@ When executed, the following operations will be applied.
 
 - Creates a `.moon` folder with associated [`.moon/workspace.yml`](./config/workspace) and
   [`.moon/project.yml`](./config/global-project) configuration files.
-- Append necessary ignore patterns to the relative `.gitignore`.
+- Appends necessary ignore patterns to the relative `.gitignore`.
 
 ## Next steps
 

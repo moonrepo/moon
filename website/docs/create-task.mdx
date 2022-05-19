@@ -9,7 +9,7 @@ import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="10 min" />
 
-The primary feature of moon is a build system, and for it to operate in any capacity, it requires
+The primary focus of moon is a build system, and for it to operate in any capacity, it requires
 tasks to run. In moon, a task is an npm binary or system command that is ran as a child process
 within the context of a project (is the current working directory). Tasks are defined per project
 with [`project.yml`](./config/project), or inherited by all projects with
@@ -17,7 +17,7 @@ with [`project.yml`](./config/project), or inherited by all projects with
 
 ## Configuring a task
 
-Most, if not all projects, utilize the same core tasks: linting, testing, code formatting, and
+Most -- if not all projects -- utilize the same core tasks: linting, testing, code formatting, and
 type-checking. Because these are so universal, let's implement the type-checking task in
 [`.moon/project.yml`](./config/global-project), which will be inherited by all projects.
 
@@ -122,12 +122,22 @@ tasks:
 			- 'dts'
 ```
 
+```json title="tsconfig.json"
+{
+	# ...
+	"compilerOptions": {
+		# ...
+		"outDir": "dts"
+	}
+}
+```
+
 ## Using file groups
 
 Once you're familiar with configuring tasks, you may notice certain inputs being repeated
 constantly, like source files, test files, and configuration. To reduce the amount of boilerplate
-required, moon provides a feature known as file groups, which enables grouping of similar file types
-within a project using file glob patterns or literal file paths.
+required, moon provides a feature known as [file groups](./concepts/file-group), which enables
+grouping of similar file types within a project using file glob patterns or literal file paths.
 
 File groups are defined with the [`fileGroups`](./config/project#filegroups) setting, which maps a
 list of file paths/globs to a group, like so.

@@ -112,7 +112,7 @@ node:
   addEnginesConstraint: true
 ```
 
-For example, say our Node.js version is "16.14.0", and when we execute a run process through the
+For example, say our Node.js version is "16.15.0", and when we execute a run process through the
 `moon` binary, it will update the root `package.json` with the below. We pin a fixed version to
 ensure other Node.js processes outside of our toolchain are utilizing the same version.
 
@@ -120,7 +120,7 @@ ensure other Node.js processes outside of our toolchain are utilizing the same v
 {
 	// ...
 	"engines": {
-		"node": "16.14.0"
+		"node": "16.15.0"
 	}
 }
 ```
@@ -274,10 +274,10 @@ vcs:
 ### `defaultBranch`
 
 Defines the default upstream branch (master/main/trunk) in the repository for comparing differences
-against. For git, this is typically "origin/master" (default) or "origin/main", and must include the
-remote prefix (before /). For svn, this should always be "trunk".
+against. For git, this is typically "master" (default) or "main", and must include the remote prefix
+(before /). For svn, this should always be "trunk".
 
 ```yaml title=".moon/workspace.yml" {2}
 vcs:
-  defaultBranch: 'origin/master'
+  defaultBranch: 'master'
 ```

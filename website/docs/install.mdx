@@ -184,47 +184,22 @@ pnpm add --dev -W @moonrepo/cli
 
 ### Accessing the `moon` binary
 
-We suggest _not_ installing the package globally, as adding an explicit development dependency with
-a version range ensures all developers and machines are using the same version of moon. With that
-being said, how should you access `moon`? Choose a pattern below that works best for you or your
-team!
-
-1. Update your `PATH` environment variable to include a path to the installed node module. This
-   would need to be added to every developers shell, and other environments like CI.
-
-```bash title="~/.zshrc"
-export PATH="/path/to/repo/node_modules/@moonrepo/cli:$PATH"
-```
+For developers, we suggest installing the `@moonrepo/cli` package globally, so that you can easily
+run `moon` commands from _any_ directory, instead of relying on `package.json` scripts. When using
+this approach, the global must be installed with npm (not pnpm or yarn)!
 
 ```shell
-moon --help
+npm install -g @moonrep/cli
 ```
 
-2. Symlink the binary to the root of the repository. This would require every developer to run the
-   binary from the repository root (which we suggest). This can be automated through a `postinstall`
-   script.
-
-```shell
-ln -s ./node_modules/@moonrepo/cli/moon ./moon
-```
-
-```shell
-./moon --help
-```
-
-3. Add the binary as a `package.json` script. This pattern is the most familier for frontend
-   developers, but also requires the script to be ran from the repository root. Jump to the next
-   section for more information.
-
-```shell
-yarn run moon --help
-```
+Don't worry though, when using the global binary, we ensure the same version of moon is being
+executed that was defined as a dependency in the repo.
 
 ### Adding a package script
 
-Another way to utilize the `moon` binary would be through a `package.json` script -- but this comes
-with a cost -- which is the overhead of launching Node.js and your chosen package manager to execute
-the Rust binary, _instead of_ executing the Rust binary directly.
+For other scenarios or environments, like CI, `moon` can be ran with through a `package.json` script
+-- but this comes with a cost -- which is the overhead of launching Node.js and your chosen package
+manager to execute the Rust binary, _instead of_ executing the Rust binary directly.
 
 ```json title="package.json"
 {

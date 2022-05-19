@@ -13,13 +13,20 @@ from Bazel and other popular build systems, but tailored for the JavaScript ecos
 
 Working in the JavaScrip ecosystem can be very involved, especially when it comes to managing a
 repository effectively. Which package manager to use? Which Node.js version to use? How to import
-node modules? How to build packages? So on and so forth. moon aims to streamline this entire
-process.
+node modules? How to build packages? So on and so forth. moon aims to streamline this entire process
+and provide a first-class developer experience.
 
-- **Automate as much as possible** - When applicable, moon will automatically install Node.js
-  modules, or [sync package dependencies](), or even [sync TypeScrit project references]().
-- **No more version mismatches** - Whether it's Node.js or npm, ensure the same version of each tool
-  is the same across _every_ developer's environment. No more wasted hours of debugging.
+- **Adopt incrementally** - moon at its core has been designed to be adopted incrementally and is
+  _not_ an "all at once adoption". Migrate project-by-project, or task-by-task, it's up to you!
+- **Avoid scripts soup** - `package.json` scripts can become unwieldy, very quickly. No more
+  duplicating the same script into every package, or reverse-engineering which root scripts to use.
+  With moon, all you need to know is the project ID, and a task ID.
+- **Ensure correct versions** - Whether it's Node.js or npm, ensure the same version of each tool is
+  the same across _every_ developer's environment. No more wasted hours of debugging.
+- **Automation built-in** - When applicable, moon will automatically install `node_modules`, or
+  [sync package dependencies](/docs/config/workspace#syncprojectworkspacedependencies), or even
+  [sync TypeScript project references](/docs/config/workspace#syncprojectreferences).
+- And the amazing list of features below!
 
 ## Features
 

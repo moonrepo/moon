@@ -21,10 +21,12 @@ Most -- if not all projects -- utilize the same core tasks: linting, testing, co
 type-checking. Because these are so universal, let's implement the type-checking task in
 [`.moon/project.yml`](./config/global-project), which will be inherited by all projects.
 
-First, install the [`typescript`](https://www.npmjs.com/package/typescript) dependency in your
-repository root! Then add a `typecheck` field to the [`tasks`](./config/project#tasks) setting. This
-task will use [TypeScript](https://www.typescriptlang.org/) and run `tsc` under the hood, since we
-defined the [`command`](./config/project#command) setting.
+> This section assumes that `typescript` is installed as a dependency in your root, and that all
+> `tsconfig.json` files have been setup correctly.
+
+Begin by adding a `typecheck` field to the [`tasks`](./config/project#tasks) setting. This task will
+use [TypeScript](https://www.typescriptlang.org/) and run `tsc` under the hood, since we defined the
+[`command`](./config/project#command) setting.
 
 ```yaml title=".moon/project.yml" {2,3}
 tasks:

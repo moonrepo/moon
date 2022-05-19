@@ -84,13 +84,13 @@ export default function Features({ header, description, features, reversed, tier
 							<ul className="m-0 p-0 list-none grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 lg:gap-4">
 								{features.map((feature) => (
 									<li key={feature.title} className="flex">
-										<Icon
-											icon={feature.icon}
-											className={cx(
-												'pt-1 w-9 text-5xl shrink-0 grow-0 justify-center flex',
-												iconColors[tier],
-											)}
-										/>
+										<div className="pt-1 w-9 shrink-0 grow-0">
+											<Icon
+												icon={feature.icon}
+												className={cx('text-5xl justify-center flex', iconColors[tier])}
+												style={{ maxWidth: 54 }}
+											/>
+										</div>
 
 										<div className="ml-1">
 											<Heading level={4} className="text-gray-900">

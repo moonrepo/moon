@@ -33,7 +33,11 @@ export default function Hero() {
 							className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-purple-600 hover:scale-110 md:text-lg transition-transform"
 						>
 							Get started
-							<Icon icon={faRocketLaunch} className="ml-1 md:ml-2 inline-block" />
+							<Icon
+								icon={faRocketLaunch}
+								className="ml-1 md:ml-2 inline-block"
+								style={{ maxWidth: 18 }}
+							/>
 						</Link>
 					</div>
 

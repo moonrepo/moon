@@ -20,7 +20,11 @@ export default function AdditionalFeatures({ header, features }: AdditionalFeatu
 						{features.map((feature) => (
 							<div key={feature.title} className="relative">
 								<dt>
-									<Icon icon={feature.icon} className="absolute h-3 w-3 text-purple-500" />
+									<Icon
+										icon={feature.icon}
+										className="absolute h-3 w-3 text-purple-500"
+										style={{ maxWidth: 16 }}
+									/>
 
 									<Heading className="ml-4 text-gray-900" level={5}>
 										{feature.title}

@@ -46,9 +46,10 @@ $ moon run :lint
 
 > Only available when configuring a task.
 
-When you want to run a task for each project in your [`dependsOn`](../config/project#dependson)
-list, you can utilize the `^` scope. This will be expanded to _all_ depended on projects. If you do
-not want all projects, then you'll need to explicitly define them using identifiers.
+When you want to include a reference for each project in your
+[`dependsOn`](../config/project#dependson) list, you can utilize the `^` scope. This will be
+expanded to _all_ depended on projects. If you do not want all projects, then you'll need to
+explicitly define them.
 
 ```yaml title="project.yml"
 dependsOn:

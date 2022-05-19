@@ -22,16 +22,17 @@ Lastly, a project ID can be paired with a task ID to create a [target](./target)
 ## Configuration
 
 Projects can be configured with an optional [`project.yml`](../config/project) in the project root,
-or through the [`.moon/project.yml`](../config/global-project) which applies to all projects.
+or through the optional [`.moon/project.yml`](../config/global-project) which applies to all
+projects.
 
 ### `package.json`
 
 A moon project _does not require_ a `package.json`, but when one exists, the following functionality
 is enabled.
 
-- Dependency versions are included when computing cache keys.
-- Depended on projects ([`dependsOn`](../config/project#dependson)) are mapped as npm/pnpm/yarn
-  workspace dependencies (when applicable).
+- Dependency versions are included when computing cache keys and hashes.
+- Depended on projects ([`dependsOn`](../config/project#dependson)) are mapped as workspace
+  dependencies (when applicable).
 
 ### `tsconfig.json`
 

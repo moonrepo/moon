@@ -5,7 +5,7 @@ use std::env;
 use validator::{Validate, ValidationError};
 
 fn default_node_version() -> String {
-    env::var("MOON_NODE_VERSION").unwrap_or_else(|_| String::from("16.14.0"))
+    env::var("MOON_NODE_VERSION").unwrap_or_else(|_| String::from("16.15.0"))
 }
 
 fn default_npm_version() -> String {

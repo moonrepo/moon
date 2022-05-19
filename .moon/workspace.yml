@@ -1,7 +1,7 @@
 $schema: '../schemas/workspace.json'
 
 node:
-  version: '16.14.0'
+  version: '16.15.0'
   packageManager: 'yarn'
   yarn:
     version: '3.2.0'
@@ -10,3 +10,6 @@ node:
 projects:
   runtime: 'packages/runtime'
   website: 'website'
+
+vcs:
+  defaultBranch: 'origin/master'

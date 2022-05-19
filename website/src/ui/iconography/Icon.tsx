@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
 import cx from 'clsx';
 import { FontAwesomeIcon, FontAwesomeIconProps } from '@fortawesome/react-fontawesome';
 
 export interface IconProps extends FontAwesomeIconProps {
 	className?: string;
-	style?: unknown;
+	style?: CSSProperties;
 }
 
 export default function Icon({ className, style, ...props }: IconProps) {

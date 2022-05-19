@@ -15,7 +15,7 @@
         "pnpm": null,
         "syncProjectWorkspaceDependencies": true,
         "syncVersionManagerConfig": null,
-        "version": "16.14.0",
+        "version": "16.15.0",
         "yarn": null
       },
       "allOf": [
@@ -46,7 +46,7 @@
     "vcs": {
       "default": {
         "manager": "git",
-        "defaultBranch": "origin/master"
+        "defaultBranch": "master"
       },
       "allOf": [
         {
@@ -110,7 +110,7 @@
           ]
         },
         "version": {
-          "default": "16.14.0",
+          "default": "16.15.0",
           "type": "string"
         },
         "yarn": {
@@ -172,7 +172,7 @@
       "type": "object",
       "properties": {
         "defaultBranch": {
-          "default": "origin/master",
+          "default": "master",
           "type": "string"
         },
         "manager": {

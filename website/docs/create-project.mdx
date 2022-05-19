@@ -48,7 +48,7 @@ A project can be configured in 1 of 2 ways:
 Both config files are optional, and can be used separately or together, the choice is yours!
 
 Now let's continue with our client and server example above. If we wanted to configure both
-projects, and defined config that's also share between the 2, we could do something like the
+projects, and define config that's also shared between the 2, we could do something like the
 following:
 
 <Tabs
@@ -87,10 +87,7 @@ tasks:
 tasks:
 	build:
 		command: 'babel'
-		args:
-			- 'src'
-			- '--out-dir'
-			- 'build'
+		args: 'src --out-dir build'
 		inputs:
 			- 'src/**/*'
 		outputs:
@@ -105,25 +102,15 @@ tasks:
 	format:
 		command: 'prettier'
 		args: '--write .'
-		inputs:
-			- 'src/**/*'
 	lint:
 		command: 'eslint'
 		args: '--no-error-on-unmatched-pattern .'
-		inputs:
-			- 'src/**/*'
 	test:
 		command: 'jest'
 		args: '--passWithNoTests .'
-		inputs:
-			- 'src/**/*'
-			- 'tests/**/*'
 	typecheck:
 		command: 'tsc'
 		args: '--build'
-		inputs:
-			- 'src/**/*'
-			- 'types/**/*'
 ```
 
 </TabItem>
@@ -131,9 +118,10 @@ tasks:
 
 ### Adding optional metadata
 
-When utilizing moon in a large monorepo or organization, ownership becomes very important. To combat
-this problem, moon supports the [`project`](./config/project#project) field within a project's
-[`project.yml`](./config/project) config.
+When utilizing moon in a large monorepo or organization, ownership becomes very important, but also
+difficult to maintain. To combat this problem, moon supports the
+[`project`](./config/project#project) field within a project's [`project.yml`](./config/project)
+config.
 
 This field is _optional_ by default, but when defined it provides metadata about the project,
 specifically around team ownership, which developers maintain the project, where to discuss it, and

@@ -15,16 +15,21 @@ repository effectively. Which package manager to use? Which Node.js version to u
 node modules? How to build packages? So on and so forth. moon aims to streamline this entire process
 and provide a first-class developer experience.
 
-- **Adopt incrementally** - moon at its core has been designed to be adopted incrementally and is
+- **Increased productivity** - With [Rust](https://www.rust-lang.org/) as our foundation, we can
+  ensure robust speeds, high performance, and low memory usage. Instead of long builds blocking you,
+  focus on your work.
+- **Exceptional developer experience** - As veterans of the JavaScript ecosystem, we're well aware
+  of the pain points and frustrations. Our goal is to mitigate and overcome these obstacles.
+- **Incremental adoption** - At its core, moon has been designed to be adopted incrementally and is
   _not_ an "all at once adoption". Migrate project-by-project, or task-by-task, it's up to you!
-- **Avoid scripts soup** - `package.json` scripts can become unwieldy, very quickly. No more
+- **Reduced scripts confusion** - `package.json` scripts can become unwieldy, very quickly. No more
   duplicating the same script into every package, or reverse-engineering which root scripts to use.
   With moon, all you need to know is the project ID, and a task ID.
 - **Ensure correct versions** - Whether it's Node.js or npm, ensure the same version of each tool is
   the same across _every_ developer's environment. No more wasted hours of debugging.
 - **Automation built-in** - When applicable, moon will automatically install `node_modules`, or sync
   package dependencies, or even sync TypeScript project references.
-- And the amazing list of features below!
+- And of course, the amazing list of features below!
 
 ## Features
 

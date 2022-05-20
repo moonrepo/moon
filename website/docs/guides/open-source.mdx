@@ -31,6 +31,8 @@ jobs:
     steps:
       # Checkout repository
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       # Install Node.js so we can install dependencies
       - uses: actions/setup-node@v3
       # Set Node.js version to use in moon

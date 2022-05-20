@@ -1,0 +1,89 @@
+---
+title: Jest
+---
+
+In this guide, you'll learn how to integrate [Jest](https://jestjs.io/) into moon.
+
+Begin by installing `jest` in your root. We suggest using the same version across the entire
+repository.
+
+```shell
+npm install --save-dev jest
+```
+
+## Adding a task
+
+Since testing is a universal workflow, add a `test` task to
+[`.moon/project.yml`](../../config/global-project) with the following parameters.
+
+```yaml title=".moon/project.yml"
+tasks:
+	test:
+		command: 'jest'
+		args:
+			# Always run code coverage
+			- '--coverage'
+			# Dont fail if a project has no tests
+			- '--passWithNoTests'
+		inputs:
+			# Source and test files
+			- 'src/**/*'
+			- 'tests/**/*'
+			# A config in the project, any format
+			- 'jest.config.*'
+```
+
+Projects can extend this task and provide additional parameters if need be, for example.
+
+```yaml title="<project>/project.yml"
+tasks:
+	test:
+		args:
+			# Disable caching for this project
+			- '--no-cache'
+```
+
+## Configuration
+
+### Root-level
+
+A root-level Jest config is not required, instead, use a [preset](#sharing) to share configuration.
+
+### Project-level
+
+A project-level Jest config can be utilized by creating a `jest.config.<js|ts|cjs|mjs>` in the
+project root. This is optional, but necessary when defining project specific settings.
+
+### Sharing
+
+To share configuration across projects, you can utilize Jest's built-in
+[`preset`](https://jestjs.io/docs/configuration#preset-string) functionality. If you're utilizing
+package workspaces, create a local package with the following content, otherwise publish the npm
+package for consumption.
+
+```js title="packages/company-jest-preset/jest-preset.js"
+module.exports = {
+	testEnvironment: 'jsdom',
+	watchman: true,
+};
+```
+
+Within your project-level Jest config, you can extend the preset to inherit the settings.
+
+```js title="<project>/jest.config.js"
+module.exports = {
+	preset: 'company-jest-preset',
+};
+```
+
+> You can take this a step further by passing the `--preset` option in the
+> [task above](#adding-a-task), so that all projects inherit the preset by default.
+
+## FAQ
+
+### How to use `projects`?
+
+With moon, there's no reason to use
+[`projects`](https://jestjs.io/docs/configuration#projects-arraystring--projectconfig) as the `test`
+task is ran _per_ project. If you'd like to test multiple projects, use
+[`moon run :test`](../../commands/run).

@@ -72,7 +72,6 @@ tasks:
       - '--preset'
       - 'jest-preset-beemo'
       - '--passWithNoTests'
-      - '.'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'

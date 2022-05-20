@@ -80,8 +80,6 @@ async fn main() {
     // Detect if we've been installed globally
     if let Ok(current_dir) = env::current_dir() {
         if is_globally_installed().await {
-            println!("Global!!");
-
             // If so, find the workspace root so we can locate the
             // locally installed `moon` binary in node modules
             if let Some(workspace_root) = find_workspace_root(&current_dir) {

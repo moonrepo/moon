@@ -199,7 +199,8 @@ executed that was defined as a dependency in the repo.
 
 For other scenarios or environments, like CI, `moon` can be ran with through a `package.json` script
 -- but this comes with a cost -- which is the overhead of launching Node.js and your chosen package
-manager to execute the Rust binary, _instead of_ executing the Rust binary directly.
+manager to execute the Rust binary, _instead of_ executing the Rust binary directly. If this is
+problematic, feel free to use the global approach below.
 
 ```json title="package.json"
 {

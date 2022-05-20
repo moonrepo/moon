@@ -46,6 +46,11 @@ const config = {
 	themeConfig:
 		/** @type {import('@docusaurus/preset-classic').ThemeConfig} */
 		({
+			algolia: {
+				apiKey: '539ec09a4ded3e5f01f88b4bc1c6e41f',
+				appId: '9D74XH4YF0',
+				indexName: 'moon',
+			},
 			navbar: {
 				// title: 'moon',
 				logo: {

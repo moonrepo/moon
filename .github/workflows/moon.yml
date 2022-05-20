@@ -56,6 +56,6 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: run
-          args: -- --logLevel trace ci
+          args: -- --log trace ci
         env:
           CLICOLOR_FORCE: true

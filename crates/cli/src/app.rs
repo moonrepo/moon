@@ -168,7 +168,7 @@ pub struct App {
     pub cache: CacheMode,
 
     #[clap(arg_enum, long, help = "Lowest log level to output", default_value_t)]
-    pub log_level: LogLevel,
+    pub log: LogLevel,
 
     #[clap(subcommand)]
     pub command: Commands,

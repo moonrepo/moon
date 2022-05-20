@@ -9,8 +9,8 @@
     "version:bump:bin": "bash ./scripts/version/bumpBinaryVersions.sh",
     "version:bump:force": "bash ./scripts/version/forceBumpAllVersions.sh",
     "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration",
-    "type": "target/debug/moon --logLevel trace run :typecheck",
-    "moon": "target/debug/moon --logLevel trace"
+    "type": "target/debug/moon --log trace run :typecheck",
+    "moon": "target/debug/moon --log trace"
   },
   "workspaces": [
     "packages/*",

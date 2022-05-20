@@ -29,7 +29,7 @@ args = ["clippy", "--workspace", "--all-targets"]
 
 [tasks.pre-test]
 command = "cargo"
-args = ["run", "--", "--logLevel", "debug", "setup"]
+args = ["run", "--", "--log", "debug", "setup"]
 cwd = "./tests/fixtures/cases"
 
 [tasks.run-test]

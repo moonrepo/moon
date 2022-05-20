@@ -36,7 +36,7 @@ pub async fn run_cli() {
     let args = App::parse();
 
     // Setup logging
-    Logger::init(map_log_level(args.log_level));
+    Logger::init(map_log_level(args.log));
 
     // Setup caching
     if env::var("MOON_CACHE").is_err() {

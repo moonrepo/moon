@@ -89,13 +89,6 @@ module.exports = {
 
 ## FAQ
 
-### How to use `projects`?
-
-With moon, there's no reason to use
-[`projects`](https://jestjs.io/docs/configuration#projects-arraystring--projectconfig) as the `test`
-task is ran _per_ project. If you'd like to test multiple projects, use
-[`moon run :test`](../../commands/run).
-
 ### How to test a single file or folder?
 
 You can filter tests by passing a file name, folder name, glob, or regex pattern after `--`. Any
@@ -105,3 +98,10 @@ ran.
 ```shell
 $ moon run <project>:test -- filename
 ```
+
+### How to use `projects`?
+
+With moon, there's no reason to use
+[`projects`](https://jestjs.io/docs/configuration#projects-arraystring--projectconfig) as the `test`
+task is ran _per_ project. If you'd like to test multiple projects, use
+[`moon run :test`](../../commands/run).

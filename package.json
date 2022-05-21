@@ -8,7 +8,7 @@
     "version:bump": "yarn version check --interactive",
     "version:bump:bin": "bash ./scripts/version/bumpBinaryVersions.sh",
     "version:bump:force": "bash ./scripts/version/forceBumpAllVersions.sh",
-    "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration",
+    "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration --declarationConfig tsconfig.build.json",
     "type": "target/debug/moon --log trace run :typecheck",
     "moon": "target/debug/moon --log trace"
   },

@@ -33,6 +33,7 @@ pub async fn create_target_hasher(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
+    passthrough_args: &[String],
 ) -> Result<Hasher, WorkspaceError> {
     let vcs = workspace.detect_vcs();
     let globset = task.create_globset()?;
@@ -40,6 +41,7 @@ pub async fn create_target_hasher(
 
     hasher.hash_project(project);
     hasher.hash_task(task);
+    hasher.hash_args(passthrough_args);
 
     // Hash root configs first
     hasher.hash_package_json(&workspace.package_json);

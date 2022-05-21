@@ -227,7 +227,7 @@ pub async fn run_target(
     let task = project.get_task(&task_id)?;
 
     // Abort early if this build has already been cached/hashed
-    let hasher = create_target_hasher(&workspace, &project, task).await?;
+    let hasher = create_target_hasher(&workspace, &project, task, passthrough_args).await?;
     let hash = hasher.to_hash();
 
     debug!(

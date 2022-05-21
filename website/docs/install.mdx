@@ -6,6 +6,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
 
 <HeaderLabel text="5 min" />
 
@@ -136,51 +137,7 @@ packages:
 The entirety of moon is packaged and shipped as a single binary through the `@moonrepo/cli` npm
 package. Begin by installing this package at the root of the repository.
 
-<Tabs
-  groupId="package-manager"
-  defaultValue="yarn"
-  values={[
-    { label: 'Yarn', value: 'yarn' },
-    { label: 'Yarn (classic)', value: 'yarn1' },
-    { label: 'npm', value: 'npm' },
-    { label: 'pnpm', value: 'pnpm' },
-  ]}
->
-<TabItem value="yarn">
-
-```shell
-yarn add --dev @moonrepo/cli
-```
-
-</TabItem>
-<TabItem value="yarn1">
-
-```shell
-yarn add --dev @moonrepo/cli
-
-# If using workspaces
-yarn add --dev -W @moonrepo/cli
-```
-
-</TabItem>
-<TabItem value="npm">
-
-```bash
-npm install --save-dev @moonrepo/cli
-```
-
-</TabItem>
-<TabItem value="pnpm">
-
-```shell
-pnpm add --dev @moonrepo/cli
-
-# If using workspaces
-pnpm add --dev -W @moonrepo/cli
-```
-
-</TabItem>
-</Tabs>
+<AddDepsTabs dep="@moonrepo/cli" dev />
 
 ### Accessing the `moon` binary
 
@@ -200,7 +157,7 @@ executed that was defined as a dependency in the repo.
 For other scenarios or environments, like CI, `moon` can be ran with through a `package.json` script
 -- but this comes with a cost -- which is the overhead of launching Node.js and your chosen package
 manager to execute the Rust binary, _instead of_ executing the Rust binary directly. If this is
-problematic, feel free to use the global approach below.
+problematic, feel free to use the global approach above.
 
 ```json title="package.json"
 {

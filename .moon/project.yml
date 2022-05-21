@@ -7,7 +7,7 @@ fileGroups:
     - 'src/**/*'
     - 'types/**/*'
   tests:
-    - 'tests/**/*.test.*'
+    - 'tests/**/*'
 
 tasks:
   build:
@@ -56,13 +56,13 @@ tasks:
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
-      - 'package.json'
-      - 'tsconfig.json'
       - '*.js'
+      - '.eslintrc.js'
+      - 'tsconfig.json'
       - '/.eslintignore'
       - '/.eslintrc.js'
-      - '/package.json'
       - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
 
   test:
     command: 'jest'
@@ -72,24 +72,20 @@ tasks:
       - '--preset'
       - 'jest-preset-beemo'
       - '--passWithNoTests'
-      - '.'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
-      - 'package.json'
       - 'jest.config.js'
 
   typecheck:
     command: 'tsc'
     args:
       - '--build'
-      - '--pretty'
       - '--verbose'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
       - 'tsconfig.json'
-      - 'tsconfig.*.json'
       - '/tsconfig.options.json'
     outputs:
       - 'dts'

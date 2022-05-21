@@ -52,9 +52,19 @@ tasks:
 			- '/.eslintrc.*'
 ```
 
+Projects can extend this task and provide additional parameters if need be, for example.
+
+```yaml title="<project>/project.yml"
+tasks:
+	lint:
+		args:
+			# Enable caching for this project
+			- '--cache'
+```
+
 ### TypeScript integration
 
-If you're using the [`@typescript-eslint`](https://typescript-eslint.io/) packages, and want to
+If you're using the [`@typescript-eslint`](https://typescript-eslint.io) packages, and want to
 enable type-safety based lint rules, we suggest something similar to the official
 [monorepo configuration](https://typescript-eslint.io/docs/linting/monorepo).
 
@@ -63,14 +73,15 @@ Create a `tsconfig.eslint.json` in your repository root, extend your shared comp
 
 ```json title="tsconfig.eslint.json"
 {
-  "extends": "./tsconfig.options.json",
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "include": [
-    "apps/**/*"
-    "packages/**/*"
-  ]
+	"extends": "./tsconfig.options.json",
+	"compilerOptions": {
+		"emitDeclarationOnly": false,
+		"noEmit": true
+	},
+	"include": [
+		"apps/**/*"
+		"packages/**/*"
+	]
 }
 ```
 
@@ -189,7 +200,7 @@ folder path to operate, and in the task above we pass `.` (current directory). I
 passed, then nothing would be linted.
 
 This has the unintended side-effect of not being able to filter down lintable targets by passing
-arbitray file paths. This is something we hope to resolve in the future.
+arbitrary file paths. This is something we hope to resolve in the future.
 
 ### Should we use `overrides`?
 

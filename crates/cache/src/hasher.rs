@@ -60,12 +60,14 @@ impl Hasher {
     }
 
     pub fn hash_args(&mut self, passthrough_args: &[String]) {
-        for arg in passthrough_args {
-            self.args.push(arg.clone());
-        }
+        if !passthrough_args.is_empty() {
+            for arg in passthrough_args {
+                self.args.push(arg.clone());
+            }
 
-        // Sort vectors to be deterministic
-        self.args.sort();
+            // Sort vectors to be deterministic
+            self.args.sort();
+        }
     }
 
     /// Hash a mapping of input file paths to unique file hashes.

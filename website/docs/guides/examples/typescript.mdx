@@ -46,6 +46,16 @@ tasks:
 			- 'dts'
 ```
 
+Projects can extend this task and provide additional parameters if need be, for example.
+
+```yaml title="<project>/project.yml"
+tasks:
+	typecheck:
+		args:
+			# Force build every time
+			- '--force'
+```
+
 ## Configuration
 
 ### Root-level

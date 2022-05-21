@@ -21,7 +21,7 @@ const sidebars = {
 					label: 'Examples',
 					collapsed: false,
 					collapsible: false,
-					items: ['guides/examples/jest'],
+					items: ['guides/examples/eslint', 'guides/examples/jest'],
 				},
 			],
 			link: {

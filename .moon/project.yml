@@ -52,17 +52,16 @@ tasks:
       - '--exit-on-fatal-error'
       - '--no-error-on-unmatched-pattern'
       - '--report-unused-disable-directives'
-      - '.'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
-      - 'package.json'
-      - 'tsconfig.json'
       - '*.js'
+      - '.eslintrc.js'
+      - 'tsconfig.json'
       - '/.eslintignore'
       - '/.eslintrc.js'
-      - '/package.json'
       - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
 
   test:
     command: 'jest'
@@ -75,7 +74,6 @@ tasks:
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
-      - 'package.json'
       - 'jest.config.js'
 
   typecheck:

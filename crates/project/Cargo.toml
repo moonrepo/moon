@@ -8,16 +8,16 @@ moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-common-path = "1.0"
-globset = "0.4"
-globwalk = "0.8"
-itertools = "0.10"
-petgraph = "0.6"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = { version = "1.0", features = ["preserve_order"] }
-thiserror = "1.0"
+common-path = "1.0.0"
+globset = "0.4.8"
+globwalk = "0.8.1"
+itertools = "0.10.3"
+petgraph = "0.6.0"
+serde = { version = "1.0.137", features = ["derive"] }
+serde_json = { version = "1.0.81", features = ["preserve_order"] }
+thiserror = "1.0.31"
 
 [dev-dependencies]
-insta = "1.8"
-pretty_assertions = "1.1"
-tokio = { version = "1.16", features = ["test-util"] }
+insta = "1.14.0"
+pretty_assertions = "1.2.1"
+tokio = { version = "1.18.2", features = ["test-util"] }

@@ -1,5 +1,6 @@
 ---
-title: ESLint
+title: ESLint example
+sidebar_label: ESLint
 ---
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
@@ -34,6 +35,8 @@ tasks:
 			# Only 1 ignore file is supported, so use the root
 			- '--ignore-path'
 			- '@in(5)'
+			# Run in current dir
+			- '.'
 		inputs:
 			# Source and test files
 			- 'src/**/*'
@@ -56,7 +59,7 @@ enable type-safety based lint rules, we suggest something similar to the officia
 [monorepo configuration](https://typescript-eslint.io/docs/linting/monorepo).
 
 Create a `tsconfig.eslint.json` in your repository root, extend your shared compiler options (we use
-`tsconfig.options.json`), and include all your projects.
+[`tsconfig.options.json`](./typescript)), and include all your project files.
 
 ```json title="tsconfig.eslint.json"
 {
@@ -71,7 +74,7 @@ Create a `tsconfig.eslint.json` in your repository root, extend your shared comp
 }
 ```
 
-And append the following inputs to your `lint` task.
+Append the following inputs to your `lint` task.
 
 ```yaml title=".moon/project.yml"
 tasks:
@@ -133,7 +136,7 @@ project.
 module.exports = {
 	// Patterns to ignore (alongside the root .eslintignore)
 	ignorePatterns: ['build', 'lib'],
-	// Custom rules for this project
+	// Project specific rules
 	rules: {
 		'no-console': 'off',
 	},
@@ -145,7 +148,7 @@ module.exports = {
 > setting should **not** extend the root-level config, as ESLint will automatically merge configs
 > while traversing upwards!
 
-### Sharing settings
+### Sharing
 
 To share configuration across projects, you have 3 options:
 

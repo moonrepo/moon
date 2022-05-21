@@ -1,5 +1,6 @@
 ---
-title: Jest
+title: Jest example
+sidebar_label: Jest
 ---
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
@@ -47,15 +48,21 @@ tasks:
 
 ### Root-level
 
-A root-level Jest config is not required, instead, use a [preset](#sharing-settings) to share
-configuration.
+A root-level Jest config is not required, instead, use a [preset](#sharing) to share configuration.
 
 ### Project-level
 
 A project-level Jest config can be utilized by creating a `jest.config.<js|ts|cjs|mjs>` in the
 project root. This is optional, but necessary when defining project specific settings.
 
-### Sharing settings
+```js title="<project>/jest.config.js"
+module.exports = {
+	// Project specific settings
+	testEnvironment: 'node',
+};
+```
+
+### Sharing
 
 To share configuration across projects, you can utilize Jest's built-in
 [`preset`](https://jestjs.io/docs/configuration#preset-string) functionality. If you're utilizing
@@ -88,3 +95,13 @@ With moon, there's no reason to use
 [`projects`](https://jestjs.io/docs/configuration#projects-arraystring--projectconfig) as the `test`
 task is ran _per_ project. If you'd like to test multiple projects, use
 [`moon run :test`](../../commands/run).
+
+### How to test a single file or folder?
+
+You can filter tests by passing a file name, folder name, glob, or regex pattern after `--`. Any
+passed files are relative from the project's root, regardless of where the `moon` command is being
+ran.
+
+```shell
+$ moon run <project>:test -- filename
+```

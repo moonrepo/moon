@@ -1,0 +1,147 @@
+---
+title: TypeScript example
+sidebar_label: TypeScript
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+
+In this guide, you'll learn how to integrate [TypeScript](https://eslint.org/) into moon. We'll be
+using [project references](https://www.typescriptlang.org/docs/handbook/project-references.html), as
+it ensures that only affected projects are built, and not the entire repository.
+
+Begin by installing `typescript` and any pre-configured tsconfig packages in your root. We suggest
+using the same version across the entire repository.
+
+<AddDepsTabs dep="typescript tsconfig-beemo" dev />
+
+## Setup
+
+Since type-checking is a universal workflow, add a `typecheck` task to
+[`.moon/project.yml`](../../config/global-project) with the following parameters.
+
+```yaml title=".moon/project.yml"
+tasks:
+	typecheck:
+		command: 'tsc'
+		args:
+			# Use incremental builds with project references
+			- '--build'
+			# Use verbose logging to see affected projects
+			- '--verbose'
+		inputs:
+			# Source and test files
+			- 'src/**/*'
+			- 'tests/**/*'
+			# Type declarations
+			- 'types/**/*'
+			# Project configs
+			- 'tsconfig.json'
+			- 'tsconfig.*.json'
+			# Root configs (extended from only)
+			- '/tsconfig.options.json'
+		outputs:
+			# Matches `compilerOptions.outDir`
+			- 'dts'
+```
+
+## Configuration
+
+### Root-level
+
+Multiple root-level TypeScript configs are _required_, as we need to define compiler options that
+are shared across the repository, and we need to house a list of all project references.
+
+To start, let's create a `tsconfig.options.json` that will contain our compiler options. In our
+example, we'll extend [tsconfig-beemo](https://www.npmjs.com/package/tsconfig-beemo) for
+convenience. Specifically, the `tsconfig.workspaces.json` config, which enables ECMAScript modules,
+composite mode, declaration emitting, and incremental builds.
+
+```json title="tsconfig.options.json"
+{
+	"extends": "tsconfig-beemo/tsconfig.workspaces.json",
+	"compilerOptions": {
+		// Your custom options
+		"moduleResolution": "nodenext",
+		"target": "es2022"
+	}
+}
+```
+
+We'll also need the standard `tsconfig.json` to house our project references. This is used by
+editors and tooling for deep integrations.
+
+```json title="tsconfig.json"
+{
+	"extends": "./tsconfig.options.json",
+	"files": [],
+	// All project references in the repo
+	"references": []
+}
+```
+
+> The [`typescript.rootConfigFileName`](../../config/workspace#rootconfigfilename) setting can be
+> used to change the root-level config name and the
+> [`typescript.syncProjectReferences`](../../config/workspace#syncprojectreferences) setting will
+> automatically keep project references in sync!
+
+### Project-level
+
+Every project will require a `tsconfig.json`, as TypeScript itself requires it. The following
+`tsconfig.json` will typecheck the entire project, including source and test files.
+
+```json title="<project>/tsconfig.json"
+{
+	// Extend the root compiler options
+	"extends": "../../tsconfig.options.json",
+	"compilerOptions": {
+		// Declarations are written here
+		"outDir": "dts",
+		// Typecheck the entire project
+		"rootDir": "."
+	},
+	// Exclude build folders
+	"exclude": ["dts"],
+	// Include all files in the project
+	"include": ["**/*"],
+	// Reference project dependencies
+	"references": []
+}
+```
+
+Be sure to exclude all build and output folders (`dts`, `lib`, `esm`, `dist`, etc), so that
+TypeScript doesn't inadvertently include them in the typechecker.
+
+> The [`typescript.projectConfigFileName`](../../config/workspace#projectconfigfilename) setting can
+> be used to change the project-level config name.
+
+### Sharing
+
+To share configuration across projects, you have 3 options:
+
+- Define settings in a [root-level config](#root-level). This only applies to the parent repository.
+- Create and publish an
+  [`tsconfig base`](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html#tsconfig-bases)
+  npm package. This can be used in any repository.
+- A combination of 1 and 2.
+
+For options 2 and 3, if you're utilizing package workspaces, create a local package with the
+following content.
+
+```json title="packages/tsconfig-company/tsconfig.json"
+{
+	"compilerOptions": {
+		// ...
+		"lib": ["esnext"]
+	}
+}
+```
+
+Within another `tsconfig.json`, you can extend this package to inherit the settings.
+
+```json title="tsconfig.json"
+{
+	"extends": "tsconfig-company/tsconfig.json"
+}
+```

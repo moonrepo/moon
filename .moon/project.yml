@@ -7,7 +7,7 @@ fileGroups:
     - 'src/**/*'
     - 'types/**/*'
   tests:
-    - 'tests/**/*.test.*'
+    - 'tests/**/*'
 
 tasks:
   build:
@@ -52,6 +52,7 @@ tasks:
       - '--exit-on-fatal-error'
       - '--no-error-on-unmatched-pattern'
       - '--report-unused-disable-directives'
+      - '.'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
@@ -80,13 +81,11 @@ tasks:
     command: 'tsc'
     args:
       - '--build'
-      - '--pretty'
       - '--verbose'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
       - 'tsconfig.json'
-      - 'tsconfig.*.json'
       - '/tsconfig.options.json'
     outputs:
       - 'dts'

@@ -20,8 +20,8 @@ const sidebars = {
 					type: 'category',
 					label: 'Examples',
 					collapsed: false,
-					collapsible: false,
-					items: ['guides/examples/eslint', 'guides/examples/jest'],
+					collapsible: true,
+					items: ['guides/examples/eslint', 'guides/examples/jest', 'guides/examples/typescript'],
 				},
 			],
 			link: {

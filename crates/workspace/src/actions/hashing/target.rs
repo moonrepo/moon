@@ -93,7 +93,11 @@ pub async fn create_target_hasher(
         let files = local_files
             .all
             .into_iter()
-            .filter(|f| fs::matches_globset(&globset, &workspace.root.join(f)).unwrap())
+            .filter(|f| {
+                // Delete files will crash `git hash-object`
+                !local_files.deleted.contains(f)
+                    && fs::matches_globset(&globset, &workspace.root.join(f)).unwrap()
+            })
             .collect::<Vec<String>>();
 
         if !files.is_empty() {

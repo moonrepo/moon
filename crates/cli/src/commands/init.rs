@@ -13,7 +13,8 @@ use std::env;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use wax::{Glob, Pattern};
+use tera::{Context, Tera};
+use wax::Glob;
 
 type AnyError = Box<dyn std::error::Error>;
 
@@ -65,7 +66,30 @@ async fn verify_package_manager(dest_dir: &Path) -> Result<(String, String), Any
         }
     }
 
-    // If no value, ask for explicit input
+    // If no value, detect based on files
+    if pm_type.is_empty() {
+        // yarn
+        if dest_dir.join("yarn.lock").exists()
+            || dest_dir.join(".yarn").exists()
+            || dest_dir.join(".yarnrc").exists()
+            || dest_dir.join(".yarnrc.yml").exists()
+        {
+            pm_type = String::from("yarn");
+
+            // pnpm
+        } else if dest_dir.join("pnpm-lock.yaml").exists()
+            || dest_dir.join("pnpm-workspace.yaml").exists()
+            || dest_dir.join(".pnpmfile.cjs").exists()
+        {
+            pm_type = String::from("pnpm");
+
+            // npm
+        } else if dest_dir.join("package-lock.json").exists() {
+            pm_type = String::from("npm");
+        }
+    }
+
+    // If no value again, ask for explicit input
     if pm_type.is_empty() {
         let items = vec!["npm", "pnpm", "yarn"];
         let index = Select::new()
@@ -134,7 +158,13 @@ fn inherit_projects_from_workspaces(
             let glob = Glob::new(&pattern).unwrap();
 
             for entry in glob.walk(dest_dir, usize::MAX) {
-                let entry = entry?;
+                let entry = match entry {
+                    Ok(e) => e,
+                    // Will crash if the dir doesnt exist
+                    Err(_) => {
+                        continue;
+                    }
+                };
 
                 if entry.file_type().is_dir() {
                     let source = entry
@@ -209,25 +239,31 @@ pub async fn init(dest: &str, force: bool) -> Result<(), AnyError> {
     let node_version = detect_node_version(&dest_dir)?;
     let projects = detect_projects(&dest_dir).await?;
 
-    println!("moon_dir={:#?}", moon_dir);
-    println!("package_manager={:#?}", package_manager);
-    println!("node_version={:#?}", node_version);
-    println!("projects={:#?}", projects);
+    // Generate a template
+    let mut context = Context::new();
+    context.insert("package_manager", &package_manager.0);
+    context.insert("package_manager_version", &package_manager.1);
+    context.insert("node_version", &node_version);
+    context.insert("projects", &projects);
+
+    let mut tera = Tera::default();
+    tera.add_raw_template("workspace", load_workspace_config_template())?;
+    tera.add_raw_template("project", load_global_project_config_template())?;
 
     // Create config files
-    //     fs::create_dir_all(&moon_dir).await?;
+    fs::create_dir_all(&moon_dir).await?;
 
-    //     fs::write(
-    //         &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
-    //         load_workspace_config_template(),
-    //     )
-    //     .await?;
+    fs::write(
+        &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
+        tera.render("workspace", &context)?,
+    )
+    .await?;
 
-    //     fs::write(
-    //         &moon_dir.join(CONFIG_PROJECT_FILENAME),
-    //         load_global_project_config_template(),
-    //     )
-    //     .await?;
+    fs::write(
+        &moon_dir.join(CONFIG_PROJECT_FILENAME),
+        tera.render("project", &context)?,
+    )
+    .await?;
 
     //     // Append to ignore file
     //     let mut file = OpenOptions::new()

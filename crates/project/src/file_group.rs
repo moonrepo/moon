@@ -1,11 +1,11 @@
 use crate::errors::{ProjectError, TokenError};
 use common_path::common_path_all;
 use globwalk::GlobWalkerBuilder;
-use moon_utils::path::{expand_root_path, is_glob};
+use moon_utils::glob;
+use moon_utils::path::expand_root_path;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-use wax::Glob;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct FileGroup {
@@ -57,7 +57,7 @@ impl FileGroup {
         let mut globs = vec![];
 
         for file in &self.files {
-            if is_glob(file) {
+            if glob::is_glob(file) {
                 globs.push(expand_root_path(file, workspace_root, project_root));
             }
         }
@@ -100,7 +100,7 @@ impl FileGroup {
         let mut list = vec![];
 
         for file in &self.files {
-            if is_glob(file) {
+            if glob::is_glob(file) {
                 let root = if file.starts_with('/') {
                     workspace_root
                 } else {

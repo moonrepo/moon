@@ -1,3 +1,4 @@
+use crate::glob;
 use crate::path;
 use crate::process::output_to_string;
 use std::env;
@@ -76,7 +77,7 @@ pub fn replace_fixtures_dir(value: &str, dir: &Path) -> String {
 
 // We need to do this so slashes are accurate and always forward
 pub fn wrap_glob(path: &Path) -> PathBuf {
-    PathBuf::from(path::normalize_glob(path).unwrap())
+    PathBuf::from(glob::normalize(path).unwrap())
 }
 
 pub fn create_moon_command(fixture: &str) -> assert_cmd::Command {

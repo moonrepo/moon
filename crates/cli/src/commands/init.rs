@@ -168,38 +168,6 @@ fn inherit_projects_from_workspaces(
         }
     }
 
-    // for pattern in workspaces {
-    //     if path::is_glob(&pattern) {
-    //         let glob = Glob::new(&pattern).unwrap();
-
-    //         for entry in glob.walk(dest_dir, usize::MAX) {
-    //             let entry = match entry {
-    //                 Ok(e) => e,
-    //                 // Will crash if the dir doesnt exist
-    //                 Err(_) => {
-    //                     continue;
-    //                 }
-    //             };
-
-    //             if entry.file_type().is_dir() {
-    //                 let (id, source) = infer_project_name_and_source(
-    //                     &entry
-    //                         .path()
-    //                         .strip_prefix(dest_dir)
-    //                         .unwrap()
-    //                         .to_string_lossy(),
-    //                 );
-
-    //                 projects.insert(id, source);
-    //             }
-    //         }
-    //     } else {
-    //         let (id, source) = infer_project_name_and_source(&pattern);
-
-    //         projects.insert(id, source);
-    //     }
-    // }
-
     Ok(())
 }
 

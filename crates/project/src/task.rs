@@ -7,7 +7,7 @@ use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug, trace};
-use moon_utils::{fs, path, string_vec};
+use moon_utils::{fs, glob, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -267,8 +267,8 @@ impl Task {
 
         for input in &token_resolver.resolve(&self.inputs, None)? {
             // We cant canonicalize here as these inputs may not exist!
-            if path::is_path_glob(input) {
-                self.input_globs.push(path::normalize_glob(input)?);
+            if glob::is_path_glob(input) {
+                self.input_globs.push(glob::normalize(input)?);
             } else {
                 self.input_paths.insert(path::normalize(input));
             }
@@ -290,7 +290,7 @@ impl Task {
         );
 
         for output in &token_resolver.resolve(&self.outputs, None)? {
-            if path::is_path_glob(output) {
+            if glob::is_path_glob(output) {
                 return Err(ProjectError::NoOutputGlob(
                     output.to_owned(),
                     self.target.clone(),

@@ -140,13 +140,13 @@ fn detect_node_version(dest_dir: &Path) -> Result<String, AnyError> {
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
-fn infer_project_name_from_source(source: &str) -> String {
+fn infer_project_name_and_source(source: &str) -> (String, String) {
     let source = path::standardize_separators(source);
 
     if source.contains('/') {
-        source.split('/').last().unwrap().to_owned()
+        (source.split('/').last().unwrap().to_owned(), source)
     } else {
-        source
+        (source.clone(), source)
     }
 }
 
@@ -171,20 +171,21 @@ fn inherit_projects_from_workspaces(
                 };
 
                 if entry.file_type().is_dir() {
-                    let source = entry
-                        .path()
-                        .strip_prefix(dest_dir)
-                        .unwrap()
-                        .to_string_lossy();
-
-                    projects.insert(
-                        infer_project_name_from_source(&source),
-                        String::from(source),
+                    let (id, source) = infer_project_name_and_source(
+                        &entry
+                            .path()
+                            .strip_prefix(dest_dir)
+                            .unwrap()
+                            .to_string_lossy(),
                     );
+
+                    projects.insert(id, source);
                 }
             }
         } else {
-            projects.insert(infer_project_name_from_source(&pattern), pattern.to_owned());
+            let (id, source) = infer_project_name_and_source(&pattern);
+
+            projects.insert(id, source);
         }
     }
 

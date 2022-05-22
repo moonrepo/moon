@@ -207,11 +207,11 @@ mod node {
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
-        fs::create_dir_all(root.join("packages/foo")).unwrap();
-        fs::write(&root.join("packages/foo/README"), "Hello").unwrap();
+        fs::create_dir_all(root.join("packages").join("foo")).unwrap();
+        fs::write(&root.join("packages").join("foo").join("README"), "Hello").unwrap();
 
         fs::create_dir_all(root.join("app")).unwrap();
-        fs::write(&root.join("app/README"), "World").unwrap();
+        fs::write(&root.join("app").join("README"), "World").unwrap();
 
         fs::write(
             &root.join("package.json"),
@@ -238,11 +238,11 @@ mod node {
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
-        fs::create_dir_all(root.join("packages/bar")).unwrap();
-        fs::write(&root.join("packages/bar/README"), "Hello").unwrap();
+        fs::create_dir_all(root.join("packages").join("bar")).unwrap();
+        fs::write(&root.join("packages").join("bar").join("README"), "Hello").unwrap();
 
         fs::create_dir_all(root.join("app")).unwrap();
-        fs::write(&root.join("app/README"), "World").unwrap();
+        fs::write(&root.join("app").join("README"), "World").unwrap();
 
         fs::write(
             &root.join("package.json"),

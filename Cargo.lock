@@ -1408,7 +1408,6 @@ version = "0.1.0"
 dependencies = [
  "common-path",
  "globset",
- "globwalk",
  "insta",
  "itertools",
  "moon_config",

@@ -1,6 +1,5 @@
 use crate::errors::{ProjectError, TokenError};
 use common_path::common_path_all;
-use globwalk::GlobWalkerBuilder;
 use moon_utils::glob;
 use moon_utils::path::expand_root_path;
 use serde::{Deserialize, Serialize};
@@ -106,21 +105,16 @@ impl FileGroup {
                 } else {
                     project_root
                 };
-                let walker = GlobWalkerBuilder::from_patterns(&root, &[file])
-                    .follow_links(false)
-                    .build()?;
 
-                for entry in walker {
-                    let entry_path = entry.unwrap(); // Handle error?
-
+                for path in glob::walk(root, &[file.clone()]) {
                     let allowed = if is_dir {
-                        entry_path.file_type().is_dir()
+                        path.is_dir()
                     } else {
-                        entry_path.file_type().is_file()
+                        path.is_file()
                     };
 
                     if allowed {
-                        list.push(entry_path.into_path());
+                        list.push(path);
                     }
                 }
             } else {

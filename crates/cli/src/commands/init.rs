@@ -6,6 +6,7 @@ use moon_config::{
     load_global_project_config_template, load_workspace_config_template,
 };
 use moon_logger::color;
+use moon_terminal::create_theme;
 use moon_utils::fs;
 use moon_utils::path;
 use std::collections::BTreeMap;
@@ -21,8 +22,10 @@ type AnyError = Box<dyn std::error::Error>;
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
 fn verify_dest_dir(dest_dir: &Path, yes: bool, force: bool) -> Result<Option<PathBuf>, AnyError> {
+    let theme = create_theme();
+
     if yes
-        || Confirm::new()
+        || Confirm::with_theme(&theme)
             .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
             .interact()?
     {
@@ -30,7 +33,7 @@ fn verify_dest_dir(dest_dir: &Path, yes: bool, force: bool) -> Result<Option<Pat
 
         if !force
             && moon_dir.exists()
-            && !Confirm::new()
+            && !Confirm::with_theme(&theme)
                 .with_prompt("Moon has already been initialized, overwrite it?")
                 .interact()?
         {
@@ -95,8 +98,8 @@ async fn detect_package_manager(dest_dir: &Path, yes: bool) -> Result<(String, S
             pm_type = String::from("npm");
         } else {
             let items = vec!["npm", "pnpm", "yarn"];
-            let index = Select::new()
-                .with_prompt("Package manager?")
+            let index = Select::with_theme(&create_theme())
+                .with_prompt("Which package manager?")
                 .items(&items)
                 .default(0)
                 .interact_opt()?
@@ -202,8 +205,11 @@ async fn detect_projects(dest_dir: &Path, yes: bool) -> Result<BTreeMap<String, 
         if let Ok(pkg) = PackageJson::load(&pkg_path).await {
             if let Some(workspaces) = pkg.workspaces {
                 if yes
-                    || Confirm::new()
-                        .with_prompt("Inherit projects from package.json workspaces?")
+                    || Confirm::with_theme(&create_theme())
+                        .with_prompt(format!(
+                            "Inherit projects from {} workspaces?",
+                            color::file("package.json")
+                        ))
                         .interact()?
                 {
                     let packages = match workspaces {

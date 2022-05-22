@@ -3,7 +3,6 @@ use common_path::common_path_all;
 use moon_utils::glob;
 use moon_utils::path::expand_root_path;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -118,22 +117,16 @@ impl FileGroup {
                     }
                 }
             } else {
-                let file_path = expand_root_path(file, workspace_root, project_root);
+                let path = expand_root_path(file, workspace_root, project_root);
 
-                let allowed = match fs::metadata(&file_path) {
-                    Ok(meta) => {
-                        if is_dir {
-                            meta.is_dir()
-                        } else {
-                            meta.is_file()
-                        }
-                    }
-                    // Branch exists for logging
-                    Err(_) => false,
+                let allowed = if is_dir {
+                    path.is_dir()
+                } else {
+                    path.is_file()
                 };
 
                 if allowed {
-                    list.push(file_path.to_owned());
+                    list.push(path.to_owned());
                 }
             }
         }

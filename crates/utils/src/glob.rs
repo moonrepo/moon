@@ -1,7 +1,32 @@
 use crate::path::{path_to_string, standardize_separators};
 use moon_error::MoonError;
 use std::path::{Path, PathBuf};
-use wax::Glob;
+use wax::{Any, Pattern};
+
+pub use wax::Glob;
+
+pub struct GlobSet<'t> {
+    any: Any<'t>,
+    // globs: Vec<Glob<'t>>,
+}
+
+impl<'t> GlobSet<'t> {
+    pub fn new(patterns: &'t [String]) -> Self {
+        let globs = patterns
+            .iter()
+            .map(|p| Glob::new(p).unwrap())
+            .collect::<Vec<Glob>>();
+
+        GlobSet {
+            any: wax::any::<Glob, _>(globs).unwrap(),
+            // globs,
+        }
+    }
+
+    pub fn is_match(&self, path: &Path) -> bool {
+        self.any.is_match(path)
+    }
+}
 
 // This is not very exhaustive and may be inaccurate.
 pub fn is_glob(value: &str) -> bool {
@@ -72,6 +97,8 @@ pub fn split_patterns(patterns: &[String]) -> (Vec<String>, Vec<String>) {
     for pattern in patterns {
         if pattern.starts_with('!') {
             negations.push(pattern.strip_prefix('!').unwrap().to_owned());
+        } else if pattern.starts_with('/') {
+            expressions.push(pattern.strip_prefix('/').unwrap().to_owned());
         } else {
             expressions.push(pattern.clone());
         }

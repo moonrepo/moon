@@ -1,5 +1,5 @@
+use crate::glob::GlobSet;
 use async_recursion::async_recursion;
-use globset::GlobSet;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
@@ -102,7 +102,7 @@ pub fn matches_globset(globset: &GlobSet, path: &Path) -> Result<bool, MoonError
 // https://github.com/BurntSushi/ripgrep/issues/2001
 #[cfg(windows)]
 pub fn matches_globset(globset: &GlobSet, path: &Path) -> Result<bool, MoonError> {
-    use crate::path::normalize_glob;
+    use crate::glob::normalize;
 
     Ok(globset.is_match(&PathBuf::from(normalize_glob(path)?)))
 }

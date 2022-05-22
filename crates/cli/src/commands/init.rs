@@ -9,15 +9,13 @@ use moon_lang::is_using_package_manager;
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
 use moon_logger::color;
 use moon_terminal::create_theme;
-use moon_utils::fs;
-use moon_utils::path;
+use moon_utils::{fs, glob, path};
 use std::collections::BTreeMap;
 use std::env;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
-use wax::Glob;
 
 type AnyError = Box<dyn std::error::Error>;
 
@@ -150,37 +148,47 @@ fn inherit_projects_from_workspaces(
     workspaces: Vec<String>,
     projects: &mut BTreeMap<String, String>,
 ) -> Result<(), AnyError> {
-    for pattern in workspaces {
-        if path::is_glob(&pattern) {
-            let glob = Glob::new(&pattern).unwrap();
-
-            for entry in glob.walk(dest_dir, usize::MAX) {
-                let entry = match entry {
-                    Ok(e) => e,
-                    // Will crash if the dir doesnt exist
-                    Err(_) => {
-                        continue;
-                    }
-                };
-
-                if entry.file_type().is_dir() {
-                    let (id, source) = infer_project_name_and_source(
-                        &entry
-                            .path()
-                            .strip_prefix(dest_dir)
-                            .unwrap()
-                            .to_string_lossy(),
-                    );
-
-                    projects.insert(id, source);
-                }
-            }
-        } else {
-            let (id, source) = infer_project_name_and_source(&pattern);
+    for path in glob::walk(dest_dir, &workspaces) {
+        if path.is_dir() {
+            let (id, source) = infer_project_name_and_source(
+                &path.strip_prefix(dest_dir).unwrap().to_string_lossy(),
+            );
 
             projects.insert(id, source);
         }
     }
+
+    // for pattern in workspaces {
+    //     if path::is_glob(&pattern) {
+    //         let glob = Glob::new(&pattern).unwrap();
+
+    //         for entry in glob.walk(dest_dir, usize::MAX) {
+    //             let entry = match entry {
+    //                 Ok(e) => e,
+    //                 // Will crash if the dir doesnt exist
+    //                 Err(_) => {
+    //                     continue;
+    //                 }
+    //             };
+
+    //             if entry.file_type().is_dir() {
+    //                 let (id, source) = infer_project_name_and_source(
+    //                     &entry
+    //                         .path()
+    //                         .strip_prefix(dest_dir)
+    //                         .unwrap()
+    //                         .to_string_lossy(),
+    //                 );
+
+    //                 projects.insert(id, source);
+    //             }
+    //         }
+    //     } else {
+    //         let (id, source) = infer_project_name_and_source(&pattern);
+
+    //         projects.insert(id, source);
+    //     }
+    // }
 
     Ok(())
 }

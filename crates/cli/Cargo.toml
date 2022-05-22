@@ -28,6 +28,7 @@ itertools = "0.10.3"
 strum = "0.24.0"
 strum_macros = "0.24.0"
 tokio = { version = "1.18.2", features = ["full"] }
+wax = "0.4.0"
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }

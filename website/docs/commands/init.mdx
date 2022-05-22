@@ -3,7 +3,8 @@ title: init
 ---
 
 The `init [dest]` command will initialize moon into a repository and scaffold config files by
-creating a `.moon` folder.
+creating a `.moon` folder. By default, moon will automatically infer the Node.js version, package
+manager, and potential projects based on existing files.
 
 ```shell
 $ moon init
@@ -19,4 +20,4 @@ $ moon init ./app
 
 ### Options
 
-- `--force` - Overwrite existing config files if they exist.
+- `--force` - Avoid any prompts and overwrite existing config files if they exist.

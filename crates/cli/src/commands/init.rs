@@ -20,14 +20,16 @@ type AnyError = Box<dyn std::error::Error>;
 
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
-fn verify_dest_dir(dest_dir: &Path) -> Result<Option<PathBuf>, AnyError> {
-    if Confirm::new()
-        .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
-        .interact()?
+fn verify_dest_dir(dest_dir: &Path, force: bool) -> Result<Option<PathBuf>, AnyError> {
+    if force
+        || Confirm::new()
+            .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
+            .interact()?
     {
         let moon_dir = dest_dir.join(CONFIG_DIRNAME);
 
-        if moon_dir.exists()
+        if !force
+            && moon_dir.exists()
             && !Confirm::new()
                 .with_prompt("Moon has already been initialized, overwrite it?")
                 .interact()?
@@ -43,7 +45,10 @@ fn verify_dest_dir(dest_dir: &Path) -> Result<Option<PathBuf>, AnyError> {
 
 /// Verify the package manager to use. If a `package.json` exists,
 /// and the `packageManager` field is defined, use that.
-async fn verify_package_manager(dest_dir: &Path) -> Result<(String, String), AnyError> {
+async fn detect_package_manager(
+    dest_dir: &Path,
+    force: bool,
+) -> Result<(String, String), AnyError> {
     let pkg_path = dest_dir.join("package.json");
     let mut pm_type = String::new();
     let mut pm_version = String::new();
@@ -90,7 +95,9 @@ async fn verify_package_manager(dest_dir: &Path) -> Result<(String, String), Any
     }
 
     // If no value again, ask for explicit input
-    if pm_type.is_empty() {
+    if force {
+        pm_type = String::from("npm");
+    } else if pm_type.is_empty() {
         let items = vec!["npm", "pnpm", "yarn"];
         let index = Select::new()
             .with_prompt("Package manager?")
@@ -189,16 +196,20 @@ fn inherit_projects_from_workspaces(
 
 /// Detect potential projects (for existing repos only) by
 /// inspecting the `workspaces` field in a root `package.json`.
-async fn detect_projects(dest_dir: &Path) -> Result<BTreeMap<String, String>, AnyError> {
+async fn detect_projects(
+    dest_dir: &Path,
+    force: bool,
+) -> Result<BTreeMap<String, String>, AnyError> {
     let pkg_path = dest_dir.join("package.json");
     let mut projects = BTreeMap::new();
 
     if pkg_path.exists() {
         if let Ok(pkg) = PackageJson::load(&pkg_path).await {
             if let Some(workspaces) = pkg.workspaces {
-                if Confirm::new()
-                    .with_prompt("Inherit projects from package.json workspaces?")
-                    .interact()?
+                if force
+                    || Confirm::new()
+                        .with_prompt("Inherit projects from package.json workspaces?")
+                        .interact()?
                 {
                     let packages = match workspaces {
                         Workspaces::Array(list) => list,
@@ -231,13 +242,13 @@ pub async fn init(dest: &str, force: bool) -> Result<(), AnyError> {
 
     // Extract template variables
     let dest_dir = path::normalize(&dest_dir);
-    let moon_dir = match verify_dest_dir(&dest_dir)? {
+    let moon_dir = match verify_dest_dir(&dest_dir, force)? {
         Some(dir) => dir,
         None => return Ok(()),
     };
-    let package_manager = verify_package_manager(&dest_dir).await?;
+    let package_manager = detect_package_manager(&dest_dir, force).await?;
     let node_version = detect_node_version(&dest_dir)?;
-    let projects = detect_projects(&dest_dir).await?;
+    let projects = detect_projects(&dest_dir, force).await?;
 
     // Generate a template
     let mut context = Context::new();
@@ -265,22 +276,22 @@ pub async fn init(dest: &str, force: bool) -> Result<(), AnyError> {
     )
     .await?;
 
-    //     // Append to ignore file
-    //     let mut file = OpenOptions::new()
-    //         .create(true)
-    //         .append(true)
-    //         .open(dest_dir.join(".gitignore"))?;
+    // Append to ignore file
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dest_dir.join(".gitignore"))?;
 
-    //     writeln!(
-    //         file,
-    //         r#"
-    // # Moon
-    // .moon/cache"#
-    //     )?;
+    writeln!(
+        file,
+        r#"
+# Moon
+.moon/cache"#
+    )?;
 
     println!(
         "Moon has successfully been initialized in {}",
-        color::path(&dest_dir.canonicalize().unwrap()),
+        color::path(&dest_dir),
     );
 
     Ok(())

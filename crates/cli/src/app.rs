@@ -23,7 +23,7 @@ pub enum Commands {
         #[clap(help = "Destination to initialize in", default_value = ".")]
         dest: String,
 
-        #[clap(long, help = "Overwrite existing configurations")]
+        #[clap(long, help = "Avoid prompts and overwrite existing configurations")]
         force: bool,
     },
 

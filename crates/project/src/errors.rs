@@ -38,9 +38,6 @@ pub enum ProjectError {
     Moon(#[from] MoonError),
 
     #[error(transparent)]
-    GlobSet(#[from] globset::Error),
-
-    #[error(transparent)]
     Target(#[from] TargetError),
 
     #[error(transparent)]

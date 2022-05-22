@@ -9,13 +9,11 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 common-path = "1.0.0"
-globset = "0.4.8"
 itertools = "0.10.3"
 petgraph = "0.6.0"
 serde = { version = "1.0.137", features = ["derive"] }
 serde_json = { version = "1.0.81", features = ["preserve_order"] }
 thiserror = "1.0.31"
-wax = "0.4.0"
 
 [dev-dependencies]
 insta = "1.14.0"

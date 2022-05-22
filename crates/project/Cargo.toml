@@ -10,7 +10,6 @@ moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 common-path = "1.0.0"
 globset = "0.4.8"
-globwalk = "0.8.1"
 itertools = "0.10.3"
 petgraph = "0.6.0"
 serde = { version = "1.0.137", features = ["derive"] }

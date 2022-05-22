@@ -23,8 +23,11 @@ pub enum Commands {
         #[clap(help = "Destination to initialize in", default_value = ".")]
         dest: String,
 
-        #[clap(long, help = "Avoid prompts and overwrite existing configurations")]
+        #[clap(long, help = "Overwrite existing configurations")]
         force: bool,
+
+        #[clap(long, help = "Skip prompts and use default values")]
+        yes: bool,
     },
 
     // moon bin <tool>

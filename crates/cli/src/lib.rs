@@ -60,7 +60,7 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::Init { dest, force } => init(dest, *force).await,
+        Commands::Init { dest, force, yes } => init(dest, *yes, *force).await,
         Commands::Project { id, json } => project(id, *json).await,
         Commands::ProjectGraph { id } => project_graph(id).await,
         Commands::Run {

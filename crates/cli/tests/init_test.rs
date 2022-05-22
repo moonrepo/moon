@@ -24,6 +24,7 @@ fn creates_files_in_dest() {
 
     let assert = create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .assert();
 
@@ -46,6 +47,7 @@ fn creates_workspace_config_from_template() {
 
     create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .assert();
 
@@ -65,6 +67,7 @@ fn creates_project_config_from_template() {
 
     create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .assert();
 
@@ -84,6 +87,7 @@ fn creates_gitignore_file() {
 
     create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .assert();
 
@@ -105,6 +109,7 @@ fn appends_existing_gitignore_file() {
 
     create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .assert();
 
@@ -123,12 +128,14 @@ fn doesnt_overwrite_existing_config() {
 
     create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .assert();
 
     // Run again
     let assert = create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .assert();
 
@@ -146,12 +153,14 @@ fn does_overwrite_existing_config_if_force_passed() {
 
     create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .assert();
 
     // Run again
     let assert = create_moon_command("init-sandbox")
         .arg("init")
+        .arg("--yes")
         .arg(&root)
         .arg("--force")
         .assert();

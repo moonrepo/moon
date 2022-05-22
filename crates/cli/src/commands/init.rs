@@ -20,8 +20,8 @@ type AnyError = Box<dyn std::error::Error>;
 
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
-fn verify_dest_dir(dest_dir: &Path, force: bool) -> Result<Option<PathBuf>, AnyError> {
-    if force
+fn verify_dest_dir(dest_dir: &Path, yes: bool, force: bool) -> Result<Option<PathBuf>, AnyError> {
+    if yes
         || Confirm::new()
             .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
             .interact()?
@@ -45,10 +45,7 @@ fn verify_dest_dir(dest_dir: &Path, force: bool) -> Result<Option<PathBuf>, AnyE
 
 /// Verify the package manager to use. If a `package.json` exists,
 /// and the `packageManager` field is defined, use that.
-async fn detect_package_manager(
-    dest_dir: &Path,
-    force: bool,
-) -> Result<(String, String), AnyError> {
+async fn detect_package_manager(dest_dir: &Path, yes: bool) -> Result<(String, String), AnyError> {
     let pkg_path = dest_dir.join("package.json");
     let mut pm_type = String::new();
     let mut pm_version = String::new();
@@ -57,8 +54,6 @@ async fn detect_package_manager(
     if pkg_path.exists() {
         if let Ok(pkg) = PackageJson::load(&pkg_path).await {
             if let Some(pm) = pkg.package_manager {
-                let pm = pm.clone();
-
                 if pm.contains('@') {
                     let mut parts = pm.split('@');
 
@@ -95,7 +90,7 @@ async fn detect_package_manager(
     }
 
     // If no value again, ask for explicit input
-    if force {
+    if yes {
         pm_type = String::from("npm");
     } else if pm_type.is_empty() {
         let items = vec!["npm", "pnpm", "yarn"];
@@ -124,7 +119,7 @@ async fn detect_package_manager(
 }
 
 /// Detect the Node.js version from local configuration files,
-/// otherwise fallback the configuration default.
+/// otherwise fallback to the configuration default.
 fn detect_node_version(dest_dir: &Path) -> Result<String, AnyError> {
     let nvmrc_path = dest_dir.join(".nvmrc");
 
@@ -196,17 +191,14 @@ fn inherit_projects_from_workspaces(
 
 /// Detect potential projects (for existing repos only) by
 /// inspecting the `workspaces` field in a root `package.json`.
-async fn detect_projects(
-    dest_dir: &Path,
-    force: bool,
-) -> Result<BTreeMap<String, String>, AnyError> {
+async fn detect_projects(dest_dir: &Path, yes: bool) -> Result<BTreeMap<String, String>, AnyError> {
     let pkg_path = dest_dir.join("package.json");
     let mut projects = BTreeMap::new();
 
     if pkg_path.exists() {
         if let Ok(pkg) = PackageJson::load(&pkg_path).await {
             if let Some(workspaces) = pkg.workspaces {
-                if force
+                if yes
                     || Confirm::new()
                         .with_prompt("Inherit projects from package.json workspaces?")
                         .interact()?
@@ -229,7 +221,7 @@ async fn detect_projects(
     Ok(projects)
 }
 
-pub async fn init(dest: &str, force: bool) -> Result<(), AnyError> {
+pub async fn init(dest: &str, yes: bool, force: bool) -> Result<(), AnyError> {
     let working_dir = env::current_dir().unwrap();
     let dest_path = PathBuf::from(dest);
     let dest_dir = if dest == "." {
@@ -242,13 +234,13 @@ pub async fn init(dest: &str, force: bool) -> Result<(), AnyError> {
 
     // Extract template variables
     let dest_dir = path::normalize(&dest_dir);
-    let moon_dir = match verify_dest_dir(&dest_dir, force)? {
+    let moon_dir = match verify_dest_dir(&dest_dir, yes, force)? {
         Some(dir) => dir,
         None => return Ok(()),
     };
-    let package_manager = detect_package_manager(&dest_dir, force).await?;
+    let package_manager = detect_package_manager(&dest_dir, yes).await?;
     let node_version = detect_node_version(&dest_dir)?;
-    let projects = detect_projects(&dest_dir, force).await?;
+    let projects = detect_projects(&dest_dir, yes).await?;
 
     // Generate a template
     let mut context = Context::new();

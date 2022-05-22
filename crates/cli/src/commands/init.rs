@@ -90,18 +90,20 @@ async fn detect_package_manager(dest_dir: &Path, yes: bool) -> Result<(String, S
     }
 
     // If no value again, ask for explicit input
-    if yes {
-        pm_type = String::from("npm");
-    } else if pm_type.is_empty() {
-        let items = vec!["npm", "pnpm", "yarn"];
-        let index = Select::new()
-            .with_prompt("Package manager?")
-            .items(&items)
-            .default(0)
-            .interact_opt()?
-            .unwrap_or(0);
+    if pm_type.is_empty() {
+        if yes {
+            pm_type = String::from("npm");
+        } else {
+            let items = vec!["npm", "pnpm", "yarn"];
+            let index = Select::new()
+                .with_prompt("Package manager?")
+                .items(&items)
+                .default(0)
+                .interact_opt()?
+                .unwrap_or(0);
 
-        pm_type = String::from(items[index]);
+            pm_type = String::from(items[index]);
+        }
     }
 
     // If no version, fallback to configuration default

@@ -5,6 +5,7 @@ use moon_utils::path::{expand_root_path, is_glob};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+use wax::Glob;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct FileGroup {

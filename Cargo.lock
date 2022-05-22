@@ -1404,6 +1404,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
+ "wax",
 ]
 
 [[package]]
@@ -1460,6 +1461,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "wax",
 ]
 
 [[package]]

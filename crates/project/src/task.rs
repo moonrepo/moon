@@ -2,7 +2,6 @@ use crate::errors::{ProjectError, TargetError};
 use crate::target::{Target, TargetProject};
 use crate::token::TokenResolver;
 use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
-use globset::{Glob, GlobSet, GlobSetBuilder};
 use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
@@ -138,14 +137,8 @@ impl Task {
     }
 
     /// Create a globset of all input globs to match with.
-    pub fn create_globset(&self) -> Result<GlobSet, ProjectError> {
-        let mut glob_builder = GlobSetBuilder::new();
-
-        for glob in &self.input_globs {
-            glob_builder.add(Glob::new(glob)?);
-        }
-
-        Ok(glob_builder.build()?)
+    pub fn create_globset(&self) -> Result<glob::GlobSet, ProjectError> {
+        Ok(glob::GlobSet::new(&self.input_globs))
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.

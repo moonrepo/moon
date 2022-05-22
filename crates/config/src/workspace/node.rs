@@ -4,20 +4,20 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use validator::{Validate, ValidationError};
 
-fn default_node_version() -> String {
+pub fn default_node_version() -> String {
     env::var("MOON_NODE_VERSION").unwrap_or_else(|_| String::from("16.15.0"))
 }
 
-fn default_npm_version() -> String {
+pub fn default_npm_version() -> String {
     // Use the version bundled with node by default
     env::var("MOON_NPM_VERSION").unwrap_or_else(|_| String::from("inherit"))
 }
 
-fn default_pnpm_version() -> String {
+pub fn default_pnpm_version() -> String {
     env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| String::from("6.32.2"))
 }
 
-fn default_yarn_version() -> String {
+pub fn default_yarn_version() -> String {
     env::var("MOON_YARN_VERSION").unwrap_or_else(|_| String::from("3.2.0"))
 }
 

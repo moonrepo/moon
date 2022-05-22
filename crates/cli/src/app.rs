@@ -25,6 +25,9 @@ pub enum Commands {
 
         #[clap(long, help = "Overwrite existing configurations")]
         force: bool,
+
+        #[clap(long, help = "Skip prompts and use default values")]
+        yes: bool,
     },
 
     // moon bin <tool>

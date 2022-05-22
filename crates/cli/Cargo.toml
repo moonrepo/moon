@@ -20,18 +20,20 @@ moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-clap = { version = "3.1", features = ["derive", "wrap_help"] }
-console = "0.15"
-dialoguer = "0.9"
-indicatif = "0.16"
-itertools = "0.10"
-strum = "0.23"
-strum_macros = "0.23"
-tokio = { version = "1.16", features = ["full"] }
+clap = { version = "3.1.18", features = ["derive", "wrap_help"] }
+console = "0.15.0"
+dialoguer = "0.10.1"
+indicatif = "0.16.2"
+itertools = "0.10.3"
+strum = "0.24.0"
+strum_macros = "0.24.0"
+tera = "1.15.0"
+tokio = { version = "1.18.2", features = ["full"] }
+wax = "0.4.0"
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
-assert_cmd = "2.0"
-insta = "1.8"
-predicates = "2.0"
-serial_test = "0.6"
+assert_cmd = "2.0.4"
+insta = "1.14.0"
+predicates = "2.1.1"
+serial_test = "0.6.0"

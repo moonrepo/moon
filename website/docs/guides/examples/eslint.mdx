@@ -193,14 +193,16 @@ module.exports = {
 
 ## FAQ
 
-### How to test a single file or folder?
+### How to lint a single file or folder?
 
 Unfortunately, this isn't currently possible, as the `eslint` binary itself requires a file or
-folder path to operate, and in the task above we pass `.` (current directory). If this was not
+folder path to operate on, and in the task above we pass `.` (current directory). If this was not
 passed, then nothing would be linted.
 
 This has the unintended side-effect of not being able to filter down lintable targets by passing
 arbitrary file paths. This is something we hope to resolve in the future.
+
+To work around this limitation, you can create another lint task.
 
 ### Should we use `overrides`?
 

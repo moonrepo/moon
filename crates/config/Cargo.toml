@@ -15,17 +15,17 @@ crate-type = ["rlib"]
 [dependencies]
 moon_error = { path = "../error"}
 moon_utils = { path = "../utils"}
-figment = { version = "0.10", features = ["test", "yaml"] }
-json = "0.12"
-regex = "1.5"
-schemars = "0.8"
-semver = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = { version = "1.0", features = ["preserve_order"] }
-serde_yaml = "0.8"
-shell-words = "1.1"
-validator = { version = "0.14", features = ["derive"] }
+figment = { version = "0.10.6", features = ["test", "yaml"] }
+json = "0.12.4"
+regex = "1.5.6"
+schemars = "0.8.10"
+semver = "1.0.9"
+serde = { version = "1.0.137", features = ["derive"] }
+serde_json = { version = "1.0.81", features = ["preserve_order"] }
+serde_yaml = "0.8.24"
+shell-words = "1.1.0"
+validator = { version = "0.15.0", features = ["derive"] }
 
 [dev-dependencies]
-assert_fs = "1.0"
-tokio = { version = "1.16", features = ["test-util"] }
+assert_fs = "1.0.7"
+tokio = { version = "1.18.2", features = ["test-util"] }

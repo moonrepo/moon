@@ -12,6 +12,9 @@ pub use project::task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskTy
 pub use project::{ProjectConfig, ProjectMetadataConfig, ProjectType};
 pub use types::{FilePath, FilePathOrGlob, ProjectID, TargetID, TaskID};
 pub use validator::ValidationErrors;
+pub use workspace::node::{
+    default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
+};
 pub use workspace::{
     NodeConfig, NpmConfig, PackageManager, PnpmConfig, TypeScriptConfig, VcsConfig, VcsManager,
     WorkspaceConfig, YarnConfig,

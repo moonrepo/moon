@@ -34,10 +34,10 @@ impl<'t> GlobSet<'t> {
 
     #[cfg(windows)]
     pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
-        let path = PathBuf::from(normalize(path)?);
-        let cpath = CandidatePath::from(path.as_os_str());
+        let path = PathBuf::from(standardize_separators(&path_to_string(path)?));
+        let candid = CandidatePath::from(path.as_os_str());
 
-        Ok(self.any.is_match(cpath))
+        Ok(self.any.is_match(candid))
     }
 }
 

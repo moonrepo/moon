@@ -7,7 +7,7 @@ use regex::Regex;
 pub use wax::Glob;
 
 lazy_static! {
-    pub static ref WINDOWS_PREFIX: Regex = Regex::new("^(//?/)?[A-Z]:").unwrap();
+    pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"(//\?/)?[A-Z]:/").unwrap();
 }
 
 pub struct GlobSet<'t> {
@@ -176,6 +176,15 @@ mod tests {
             assert!(!is_glob("\\*.rs"));
             assert!(!is_glob("file\\?.js"));
             assert!(!is_glob("folder-\\[id\\]"));
+        }
+    }
+
+    mod windows_prefix {
+        use super::*;
+
+        #[test]
+        fn removes_unc_and_drive_prefix() {
+            assert_eq!(WINDOWS_PREFIX.replace_all("//?/D:/Projects/moon", "").to_string(), String::from("Projects/moon"));
         }
     }
 }

@@ -7,12 +7,16 @@ patterns or literal file paths. These groups are then used by [tasks](./task) to
 functionality like cache computation, affected files since last change, deterministic builds, and
 more.
 
-File groups can be defined in 2 locations:
+## Configuration
 
-- In [`.moon/project.yml`](../config/global-project), which will be inherited by all projects.
-- In [`project.yml](../config/project), which is unique to that project.
+File groups can be configured per project through [`project.yml`](../config/project), or for all
+projects through [`.moon/project.yml`](../config/global-project).
 
-### Inherited file groups
+## Inheritance and merging
+
+When a file group of the same name exists in both [configuration files](#configuration), the
+project-level group will override the workspace-level group, and all other workspace-level groups
+will be inherited as-is.
 
 A primary scenario in which to define file groups at the project-level is when you want to
 _override_ file groups defined at the workspace-level. For example, say we want to override the
@@ -34,8 +38,6 @@ fileGroups:
   sources:
     - 'lib/**/*'
     - 'types/**/*'
-  # Inherit `tests` as-is
+  tests:
+    # Inherited as-is
 ```
-
-File groups defined in `project.yml` will override file groups defined in `.moon/project.yml` of the
-same name, and _will not_ merge the value arrays.

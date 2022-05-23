@@ -6,7 +6,7 @@ use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_logger::{color, debug, trace};
-use moon_utils::{fs, glob, path, string_vec};
+use moon_utils::{glob, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -328,7 +328,7 @@ impl Task {
             let mut affected = self.input_paths.contains(file);
 
             if !affected && has_globs {
-                affected = fs::matches_globset(&globset, file)?;
+                affected = globset.is_match(file);
             }
 
             trace!(

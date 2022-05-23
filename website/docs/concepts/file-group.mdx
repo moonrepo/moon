@@ -1,0 +1,41 @@
+---
+title: File groups
+---
+
+File groups are a mechanism for grouping similar types of files within a project using file glob
+patterns or literal file paths. These groups are then used by [tasks](./task) to calculate
+functionality like cache computation, affected files since last change, deterministic builds, and
+more.
+
+File groups can be defined in 2 locations:
+
+- In [`.moon/project.yml`](../config/global-project), which will be inherited by all projects.
+- In [`project.yml](../config/project), which is unique to that project.
+
+### Inherited file groups
+
+A primary scenario in which to define file groups at the project-level is when you want to
+_override_ file groups defined at the workspace-level. For example, say we want to override the
+`sources` file group because our source folder is named "lib" and not "src", we would define our
+file groups as followed.
+
+```yaml title=".moon/project.yml"
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*.test.*'
+    - '**/__tests__/**/*'
+```
+
+```yaml title="project.yml"
+fileGroups:
+  sources:
+    - 'lib/**/*'
+    - 'types/**/*'
+  # Inherit `tests` as-is
+```
+
+File groups defined in `project.yml` will override file groups defined in `.moon/project.yml` of the
+same name, and _will not_ merge the value arrays.

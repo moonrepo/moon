@@ -1,0 +1,70 @@
+---
+title: File patterns
+---
+
+## Globs
+
+Globs in moon are [Rust-based globs](https://github.com/olson-sean-k/wax), _not_ JavaScript-based.
+This may result in different or unexpected results. The following guidelines must be met when using
+globs:
+
+- Must use forward slashes (`/`) for path separators, even on Windows.
+- Must _not_ start with or use any relative path parts, `.` or `..`.
+
+### Supported syntax
+
+- `*` - Matches zero or more characters, but does not match the `/` character. Will attempt to match
+  the longest possible text (eager).
+- `$` - Like `*`, but will attempt to match the shortest possible text (lazy).
+- `**` - Matches zero or more directories.
+- `?` - Matches exactly one character, but not `/`.
+- `[abc]` - Matches one case-sensitive character listed in the brackets.
+- `[!xyz]` - Like the above, but will match any character _not_ listed.
+- `[a-z]` - Matches one case-sensitive character in range in the brackets.
+- `[!x-z]` - Like the above, but will match any character _not_ in range.
+- `{glob,glob}` - Matches one or more comma separated list of sub-glob patterns.
+- `<glob:#>` - Matches a sub-glob within a defined bounds (represented by `#`).
+- `!` - At the start of a pattern, will negate previous positive patterns.
+
+> The biggest difference between JavaScript and Rust globs is `?`. In JavaScript, this marks the
+> preceding character as optional, while in Rust it matches exactly 1 character.
+
+### Examples
+
+```bash
+README.{md,mdx,txt}
+src/**/*
+tests/**/*.?js
+!**/__tests__/**/*
+logs/<[0-9]:4>-<[0-9]:2>-<[0-9]:2>.log
+```
+
+## Project relative
+
+When configuring [`fileGroups`](../config/project#filegroups), [`inputs`](../config/project#inputs),
+and [`outputs`](../config/project#outputs), all listed file paths and globs are relative from the
+project root they will be ran in. The _must not_ start with `./`, or traverse upwards with `..`.
+
+```bash
+# Valid
+src/**/*
+package.json
+
+# Invalid
+./src/**/*
+../utils
+```
+
+## Workspace relative
+
+When configuring [`fileGroups`](../config/project#filegroups), [`inputs`](../config/project#inputs),
+and [`outputs`](../config/project#outputs), a listed file path or glob can be prefixed with `/` to
+resolve relative from the workspace root, and _not_ the project root.
+
+```bash
+# In project
+package.json
+
+# In workspace
+/package.json
+```

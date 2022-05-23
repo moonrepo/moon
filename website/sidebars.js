@@ -37,6 +37,7 @@ const sidebars = {
 			items: [
 				'concepts/cache',
 				'concepts/file-group',
+				'concepts/file-pattern',
 				'concepts/project',
 				'concepts/target',
 				'concepts/task',

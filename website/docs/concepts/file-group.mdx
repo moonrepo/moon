@@ -2,10 +2,10 @@
 title: File groups
 ---
 
-File groups are a mechanism for grouping similar types of files within a project using file glob
-patterns or literal file paths. These groups are then used by [tasks](./task) to calculate
-functionality like cache computation, affected files since last change, deterministic builds, and
-more.
+File groups are a mechanism for grouping similar types of files within a project using
+[file glob patterns or literal file paths](./file-pattern). These groups are then used by
+[tasks](./task) to calculate functionality like cache computation, affected files since last change,
+deterministic builds, and more.
 
 ## Configuration
 
@@ -35,9 +35,12 @@ fileGroups:
 
 ```yaml title="project.yml"
 fileGroups:
+  # Overrides global
   sources:
     - 'lib/**/*'
     - 'types/**/*'
+  # Inherited as-is
   tests:
-    # Inherited as-is
+    - 'tests/**/*.test.*'
+    - '**/__tests__/**/*'
 ```

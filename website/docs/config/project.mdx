@@ -38,25 +38,26 @@ _is not required_ for the following reasons:
 - File groups defined in [`.moon/project.yml`](./global-project) will be inherited by all projects.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
-list of globs or paths. Globs and paths are relative to a project (even when defined
+list of [globs or paths](../concepts/file-pattern). Globs and paths are
+[relative to a project](../concepts/file-pattern#project-relative) (even when defined
 [globally](./global-project)).
 
 ```yaml title="project.yml"
 fileGroups:
   configs:
-    - '*.{js,json}'
+    - '*.config.{js,cjs,mjs}'
+    - '*.json'
   sources:
     - 'src/**/*'
     - 'types/**/*'
   tests:
-    - 'tests/**/*.test.*'
+    - 'tests/**/*'
     - '**/__tests__/**/*'
   assets:
     - 'assets/**/*'
     - 'images/**/*'
     - 'static/**/*'
     - '**/*.{scss,css}'
-    - '**/*'
 ```
 
 > The code snippet above is merely an example of file groups. Feel free to use those groups as-is,
@@ -249,9 +250,8 @@ The `inputs` field is a list of file paths/globs that are used to calculate whet
 task based on files that have been touched since the last time the task has been ran. If _not_
 defined, then all files within a project are considered an input (`**/*`).
 
-By default inputs are relative from the _project root_, and can reference
-[file groups](#filegroups). To reference files from the workspace root (for example, config files),
-prefix the path with a "/".
+Inputs support
+[project and workspace relative file patterns](../concepts/file-pattern#project-relative).
 
 ```yaml title="project.yml" {4-10}
 tasks:
@@ -274,8 +274,7 @@ The `outputs` field is a list of files and folders that are _created_ as a resul
 task, excluding internal cache files that are created from the underlying command (for example,
 `.eslintcache`).
 
-By default outputs are relative from the _project root_. To output files to the workspace root
-(should rarely be used), prefix the path with a "/".
+Outputs require [project relative file patterns](../concepts/file-pattern#project-relative).
 
 ```yaml title="project.yml" {4-6}
 tasks:

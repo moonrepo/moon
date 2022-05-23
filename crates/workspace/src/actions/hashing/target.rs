@@ -77,7 +77,7 @@ pub async fn create_target_hasher(
         let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
 
         // Input globs are absolute paths, so we must do the same
-        hashed_file_tree.retain(|k, _| globset.is_match(&workspace.root.join(k)));
+        hashed_file_tree.retain(|k, _| globset.matches(&workspace.root.join(k)).unwrap_or(false));
 
         hasher.hash_inputs(hashed_file_tree);
     }
@@ -92,8 +92,8 @@ pub async fn create_target_hasher(
             .all
             .into_iter()
             .filter(|f| {
-                // Delete files will crash `git hash-object`
-                !local_files.deleted.contains(f) && globset.is_match(&workspace.root.join(f))
+                // Deleted files will crash `git hash-object`
+                !local_files.deleted.contains(f) && globset.matches(&workspace.root.join(f)).unwrap_or(false)
             })
             .collect::<Vec<String>>();
 

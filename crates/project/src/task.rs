@@ -328,7 +328,7 @@ impl Task {
             let mut affected = self.input_paths.contains(file);
 
             if !affected && has_globs {
-                affected = globset.is_match(file);
+                affected = globset.matches(file)?;
             }
 
             trace!(

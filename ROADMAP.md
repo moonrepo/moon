@@ -1,3 +1,43 @@
+# Backlog
+
+## Tasks
+
+- [ ] Add `@cache` token
+
+## Action runner
+
+- [ ] Add a debug layer so that the node processes can be inspected
+- [ ] Write output logs for every action
+
+## CLI
+
+- [ ] `run-many`
+- [ ] `graph`
+  - [ ] Spin up an interactive website with full project/task data
+
+## Node.js
+
+- [ ] Add chrome profiling support to spawned processes
+- [ ] Publish npm packages
+
+# 0.2.0
+
+## Cache
+
+- [ ] hashing
+  - [ ] ignore hashes for files that are gitignored
+- [ ] add docs on caching options
+
+## Tests
+
+- [ ] add code coverage reports in CI
+- [ ] increase code coverage and add more integration tests
+
+## Targets
+
+- [ ] macos arm/m1
+- [ ] linux x64 (musl)
+
 # 0.1.0
 
 - [x] website
@@ -93,43 +133,3 @@
   - [x] dont load `package.json`/`tsconfig.json` so much
   - [x] delete old hashes when the hash changes
   - [x] include local file changes in hash
-
-# 0.2.0
-
-## Cache
-
-- [ ] hashing
-  - [ ] ignore hashes for files that are gitignored
-- [ ] add docs on caching options
-
-## Tests
-
-- [ ] add code coverage reports in CI
-- [ ] increase code coverage and add more integration tests
-
-## Targets
-
-- [ ] macos arm/m1
-- [ ] linux x64 (musl)
-
-# Backlog
-
-## Tasks
-
-- [ ] Add `@cache` token
-
-## Action runner
-
-- [ ] Add a debug layer so that the node processes can be inspected
-- [ ] Write output logs for every action
-
-## CLI
-
-- [ ] `run-many`
-- [ ] `graph`
-  - [ ] Spin up an interactive website with full project/task data
-
-## Node.js
-
-- [ ] Add chrome profiling support to spawned processes
-- [ ] Publish npm packages

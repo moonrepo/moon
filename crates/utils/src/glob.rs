@@ -1,39 +1,44 @@
 use crate::path::{path_to_string, standardize_separators};
 use moon_error::MoonError;
 use std::path::{Path, PathBuf};
-use wax::{Any, Pattern};
-
+use wax::{Any, CandidatePath, Pattern};
+use lazy_static::lazy_static;
+use regex::Regex;
 pub use wax::Glob;
+
+lazy_static! {
+    pub static ref WINDOWS_PREFIX: Regex = Regex::new("^(//?/)?[A-Z]:").unwrap();
+}
 
 pub struct GlobSet<'t> {
     any: Any<'t>,
-    // globs: Vec<Glob<'t>>,
 }
 
 impl<'t> GlobSet<'t> {
     pub fn new(patterns: &'t [String]) -> Self {
-        let globs = patterns
-            .iter()
-            .map(|p| Glob::new(p).unwrap())
-            .collect::<Vec<Glob>>();
+        let mut globs = vec![];
+
+        for pattern in patterns {
+            globs.push(Glob::new(pattern).unwrap());
+        }
 
         GlobSet {
             any: wax::any::<Glob, _>(globs).unwrap(),
-            // globs,
         }
     }
 
-    // #[cfg(not(windows))]
-    pub fn is_match(&self, path: &Path) -> bool {
-        self.any.is_match(path)
+    #[cfg(not(windows))]
+    pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
+        Ok(self.any.is_match(path))
     }
 
-    // #[cfg(windows)]
-    // pub fn is_match(&self, path: &Path) -> bool {
-    //     let path = PathBuf::from(normalize(path).unwrap());
+    #[cfg(windows)]
+    pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
+        let path = PathBuf::from(normalize(path)?);
+        let cpath = CandidatePath::from(path.as_os_str());
 
-    //     self.any.is_match(path)
-    // }
+        Ok(self.any.is_match(cpath))
+    }
 }
 
 // This is not very exhaustive and may be inaccurate.
@@ -88,9 +93,9 @@ pub fn normalize(path: &Path) -> Result<String, MoonError> {
     // Always use forward slashes for globs
     let glob = standardize_separators(&path_to_string(path)?);
 
-    // Remove UNC prefix as it breaks glob matching
+    // Remove UNC and drive prefix as it breaks glob matching
     if cfg!(windows) {
-        return Ok(glob.replace("//?/", ""));
+        return Ok(WINDOWS_PREFIX.replace_all(&glob, "").to_string());
     }
 
     Ok(glob)

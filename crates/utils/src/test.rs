@@ -3,26 +3,37 @@ use crate::path;
 use crate::process::output_to_string;
 use std::env;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Output};
+
+fn handle_command(out: Output) {
+    if !out.status.success() {
+        eprintln!("{}", output_to_string(&out.stderr));
+    }
+}
 
 pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
     use assert_fs::prelude::*;
 
     let temp_dir = assert_fs::fixture::TempDir::new().unwrap();
+    let git_bin = if cfg!(windows) {
+        "git.exe"
+    } else {
+        "git"
+    };
 
     temp_dir
         .copy_from(get_fixtures_dir(dir), &["**/*"])
         .unwrap();
 
     // Initialize a git repo so that VCS commands work
-    Command::new("git")
+    handle_command(Command::new(git_bin)
         .args(["init", "--initial-branch", "master"])
         .current_dir(temp_dir.path())
         .output()
-        .unwrap_or_else(|_| panic!("Failed to initialize git for fixtures sandbox: {}", dir));
+        .unwrap_or_else(|_| panic!("Failed to initialize git for fixtures sandbox: {}", dir)));
 
     // We must also add the files to the index
-    let out = Command::new("git")
+    handle_command(Command::new(git_bin)
         .args(["add", "--all", "."])
         .current_dir(temp_dir.path())
         .output()
@@ -31,14 +42,11 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
                 "Failed to add files to git index for fixtures sandbox: {}",
                 dir
             )
-        });
+        }));
 
-    if !out.status.success() {
-        eprintln!("{}", output_to_string(&out.stderr));
-    }
-
+    
     // And commit them... this seems like a lot of overhead?
-    let out = Command::new("git")
+   handle_command(Command::new(git_bin)
         .args(["commit", "-m", "'Fixtures'"])
         .env("GIT_AUTHOR_NAME", "moon tests")
         .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
@@ -46,11 +54,7 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
         .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev")
         .current_dir(temp_dir.path())
         .output()
-        .unwrap_or_else(|_| panic!("Failed to commit files for fixtures sandbox: {}", dir));
-
-    if !out.status.success() {
-        eprintln!("{}", output_to_string(&out.stderr));
-    }
+        .unwrap_or_else(|_| panic!("Failed to commit files for fixtures sandbox: {}", dir)));
 
     temp_dir
 }

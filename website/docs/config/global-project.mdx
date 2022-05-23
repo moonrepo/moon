@@ -20,23 +20,23 @@ projects to place source files in a `src` folder, and all test files in `tests`.
 ```yaml title=".moon/project.yml"
 fileGroups:
   configs:
-    - '*.{js,json}'
+    - '*.config.{js,cjs,mjs}'
+    - '*.json'
   sources:
     - 'src/**/*'
     - 'types/**/*'
   tests:
-    - 'tests/**/*.test.*'
+    - 'tests/**/*'
     - '**/__tests__/**/*'
   assets:
     - 'assets/**/*'
     - 'images/**/*'
     - 'static/**/*'
     - '**/*.{scss,css}'
-    - '**/*'
 ```
 
-> Relative file paths and globs used within a file group are relative from the inherited project's
-> root, and not the workspace.
+> File paths and globs used within a file group are relative from the inherited project's root, and
+> not the workspace.
 
 ## `tasks`
 
@@ -64,7 +64,7 @@ tasks:
 
   test:
     command: 'jest'
-    args: '--passWithNoTests .'
+    args: '--passWithNoTests'
 
   typecheck:
     command: 'tsc'

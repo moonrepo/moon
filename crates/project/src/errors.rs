@@ -1,5 +1,6 @@
 use moon_config::{constants, ValidationErrors};
 use moon_error::MoonError;
+use moon_utils::glob::GlobError;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -33,6 +34,9 @@ pub enum ProjectError {
 
     #[error("Task <id>{0}</id> has not been configured for project <id>{1}</id>.")]
     UnconfiguredTask(String, String),
+
+    #[error(transparent)]
+    Glob(#[from] GlobError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

@@ -138,7 +138,7 @@ impl Task {
 
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> Result<glob::GlobSet, ProjectError> {
-        Ok(glob::GlobSet::new(&self.input_globs))
+        Ok(glob::GlobSet::new(&self.input_globs)?)
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.

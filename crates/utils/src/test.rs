@@ -6,11 +6,10 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 fn handle_command(dir: &str, msg: &str, out: std::io::Result<Output>) {
-    let out = out
-        .unwrap_or_else(|e| {
-            println!("{:#?}", e);
-            panic!("{}: {}", msg, dir);
-        });
+    let out = out.unwrap_or_else(|e| {
+        println!("{:#?}", e);
+        panic!("{}: {}", msg, dir);
+    });
 
     if !out.status.success() {
         eprintln!("{}", output_to_string(&out.stdout));
@@ -22,37 +21,45 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
     use assert_fs::prelude::*;
 
     let temp_dir = assert_fs::fixture::TempDir::new().unwrap();
-    let git_bin = if cfg!(windows) {
-        "git.exe"
-    } else {
-        "git"
-    };
+    let git_bin = if cfg!(windows) { "git.exe" } else { "git" };
 
     temp_dir
         .copy_from(get_fixtures_dir(dir), &["**/*"])
         .unwrap();
 
     // Initialize a git repo so that VCS commands work
-    handle_command(dir, "Failed to initialize git for fixtures sandbox", Command::new(git_bin)
-        .args(["init", "--initial-branch", "master"])
-        .current_dir(temp_dir.path())
-        .output());
+    handle_command(
+        dir,
+        "Failed to initialize git for fixtures sandbox",
+        Command::new(git_bin)
+            .args(["init", "--initial-branch", "master"])
+            .current_dir(temp_dir.path())
+            .output(),
+    );
 
     // We must also add the files to the index
-    handle_command(dir, "Failed to add files to git index for fixtures sandbox", Command::new(git_bin)
-        .args(["add", "--all", "."])
-        .current_dir(temp_dir.path())
-        .output());
+    handle_command(
+        dir,
+        "Failed to add files to git index for fixtures sandbox",
+        Command::new(git_bin)
+            .args(["add", "--all", "."])
+            .current_dir(temp_dir.path())
+            .output(),
+    );
 
     // And commit them... this seems like a lot of overhead?
-   handle_command(dir, "Failed to commit files for fixtures sandbox", Command::new(git_bin)
-        .args(["commit", "-m", "'Fixtures'"])
-        .env("GIT_AUTHOR_NAME", "moon tests")
-        .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
-        .env("GIT_COMMITTER_NAME", "moon tests")
-        .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev")
-        .current_dir(temp_dir.path())
-        .output());
+    handle_command(
+        dir,
+        "Failed to commit files for fixtures sandbox",
+        Command::new(git_bin)
+            .args(["commit", "-m", "'Fixtures'"])
+            .env("GIT_AUTHOR_NAME", "moon tests")
+            .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
+            .env("GIT_COMMITTER_NAME", "moon tests")
+            .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev")
+            .current_dir(temp_dir.path())
+            .output(),
+    );
 
     temp_dir
 }

@@ -148,7 +148,7 @@ fn inherit_projects_from_workspaces(
     workspaces: Vec<String>,
     projects: &mut BTreeMap<String, String>,
 ) -> Result<(), AnyError> {
-    for path in glob::walk(dest_dir, &workspaces) {
+    for path in glob::walk(dest_dir, &workspaces)? {
         if path.is_dir() {
             let (id, source) = infer_project_name_and_source(
                 &path.strip_prefix(dest_dir).unwrap().to_string_lossy(),

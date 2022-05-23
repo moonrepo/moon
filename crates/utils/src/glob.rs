@@ -23,9 +23,17 @@ impl<'t> GlobSet<'t> {
         }
     }
 
+    // #[cfg(not(windows))]
     pub fn is_match(&self, path: &Path) -> bool {
         self.any.is_match(path)
     }
+
+    // #[cfg(windows)]
+    // pub fn is_match(&self, path: &Path) -> bool {
+    //     let path = PathBuf::from(normalize(path).unwrap());
+
+    //     self.any.is_match(path)
+    // }
 }
 
 // This is not very exhaustive and may be inaccurate.

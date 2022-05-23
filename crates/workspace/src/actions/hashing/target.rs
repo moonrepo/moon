@@ -1,7 +1,6 @@
 use crate::{Workspace, WorkspaceError};
 use moon_cache::Hasher;
 use moon_project::{ExpandedFiles, Project, Task};
-use moon_utils::fs;
 use moon_utils::path::path_to_string;
 use std::path::Path;
 
@@ -78,8 +77,7 @@ pub async fn create_target_hasher(
         let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
 
         // Input globs are absolute paths, so we must do the same
-        hashed_file_tree
-            .retain(|k, _| fs::matches_globset(&globset, &workspace.root.join(k)).unwrap());
+        hashed_file_tree.retain(|k, _| globset.is_match(&workspace.root.join(k)));
 
         hasher.hash_inputs(hashed_file_tree);
     }
@@ -95,8 +93,7 @@ pub async fn create_target_hasher(
             .into_iter()
             .filter(|f| {
                 // Delete files will crash `git hash-object`
-                !local_files.deleted.contains(f)
-                    && fs::matches_globset(&globset, &workspace.root.join(f)).unwrap()
+                !local_files.deleted.contains(f) && globset.is_match(&workspace.root.join(f))
             })
             .collect::<Vec<String>>();
 

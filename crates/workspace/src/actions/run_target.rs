@@ -131,6 +131,8 @@ fn create_node_target_command(
     project: &Project,
     task: &Task,
 ) -> Result<Command, WorkspaceError> {
+    use moon_lang_node::node;
+
     let node = workspace.toolchain.get_node();
 
     let cmd = match task.command.as_str() {
@@ -151,7 +153,10 @@ fn create_node_target_command(
             "PATH",
             get_path_env_var(node.get_bin_path().parent().unwrap()),
         )
-        .env("NODE_OPTIONS", create_node_options(task).join(" "));
+        .env(
+            "NODE_OPTIONS",
+            node::extend_node_options_env_var(create_node_options(task).join(" ")),
+        );
 
     Ok(command)
 }

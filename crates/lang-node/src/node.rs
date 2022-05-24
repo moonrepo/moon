@@ -1,7 +1,14 @@
 use crate::NODE;
 use moon_lang::LangError;
-use std::env::consts;
+use std::env::{self, consts};
 use std::path::{Path, PathBuf};
+
+pub fn extend_node_options_env_var(next: String) -> String {
+    match env::var("NODE_OPTIONS") {
+        Ok(prev) => format!("{} {}", prev, next),
+        Err(_) => next,
+    }
+}
 
 pub fn find_package(starting_dir: &Path, package_name: &str) -> Option<PathBuf> {
     let pkg_path = starting_dir.join(NODE.vendor_dir).join(package_name);

@@ -1,4 +1,5 @@
 use crate::validators::validate_semver_version;
+use moon_lang_node::NPM;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -14,7 +15,7 @@ pub fn default_npm_version() -> String {
 }
 
 pub fn default_pnpm_version() -> String {
-    env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| String::from("6.32.2"))
+    env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| NPM.default_version.to_string())
 }
 
 pub fn default_yarn_version() -> String {

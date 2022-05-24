@@ -5,6 +5,7 @@ use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
+use moon_lang_node::NPM;
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use moon_utils::process::{output_to_trimmed_string, Command};
@@ -233,7 +234,11 @@ impl PackageManager<NodeTool> for NpmTool {
     }
 
     fn get_lockfile_name(&self) -> String {
-        String::from("package-lock.json")
+        String::from(NPM.lock_filenames[0])
+    }
+
+    fn get_manifest_name(&self) -> String {
+        String::from(NPM.manifest_filename)
     }
 
     fn get_workspace_dependency_range(&self) -> String {

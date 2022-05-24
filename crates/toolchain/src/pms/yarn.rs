@@ -5,6 +5,7 @@ use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
+use moon_lang_node::YARN;
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use std::env;
@@ -200,7 +201,7 @@ impl PackageManager<NodeTool> for YarnTool {
                     .exec_package(
                         toolchain,
                         "yarn-deduplicate",
-                        vec!["yarn-deduplicate", "yarn.lock"],
+                        vec!["yarn-deduplicate", YARN.lock_filenames[0]],
                     )
                     .await?;
             }
@@ -237,7 +238,11 @@ impl PackageManager<NodeTool> for YarnTool {
     }
 
     fn get_lockfile_name(&self) -> String {
-        String::from("yarn.lock")
+        String::from(YARN.lock_filenames[0])
+    }
+
+    fn get_manifest_name(&self) -> String {
+        String::from(YARN.manifest_filename)
     }
 
     fn get_workspace_dependency_range(&self) -> String {

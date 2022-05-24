@@ -5,6 +5,7 @@ use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
+use moon_lang_node::PNPM;
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use std::env;
@@ -173,7 +174,11 @@ impl PackageManager<NodeTool> for PnpmTool {
     }
 
     fn get_lockfile_name(&self) -> String {
-        String::from("pnpm-lock.yaml")
+        String::from(PNPM.lock_filenames[0])
+    }
+
+    fn get_manifest_name(&self) -> String {
+        String::from(PNPM.manifest_filename)
     }
 
     fn get_workspace_dependency_range(&self) -> String {

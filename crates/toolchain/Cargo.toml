@@ -6,6 +6,8 @@ edition = "2021"
 [dependencies]
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
+moon_lang = { path = "../lang" }
+moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 async-trait = "0.1.53"

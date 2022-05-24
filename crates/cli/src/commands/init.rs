@@ -5,6 +5,7 @@ use moon_config::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
     load_global_project_config_template, load_workspace_config_template,
 };
+use moon_lang_node::{NODENV, NVMRC};
 use moon_logger::color;
 use moon_terminal::create_theme;
 use moon_utils::fs;
@@ -126,13 +127,13 @@ async fn detect_package_manager(dest_dir: &Path, yes: bool) -> Result<(String, S
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
 fn detect_node_version(dest_dir: &Path) -> Result<String, AnyError> {
-    let nvmrc_path = dest_dir.join(".nvmrc");
+    let nvmrc_path = dest_dir.join(NVMRC.version_filename);
 
     if nvmrc_path.exists() {
         return Ok(read_to_string(nvmrc_path)?.trim().to_owned());
     }
 
-    let node_version_path = dest_dir.join(".node-version");
+    let node_version_path = dest_dir.join(NODENV.version_filename);
 
     if node_version_path.exists() {
         return Ok(read_to_string(node_version_path)?.trim().to_owned());

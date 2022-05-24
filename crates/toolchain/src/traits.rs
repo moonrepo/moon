@@ -226,10 +226,10 @@ pub trait PackageManager<T: Send + Sync>:
     ) -> Result<(), ToolchainError>;
 
     /// Return the name of the lockfile.
-    fn get_lockfile_name(&self) -> String;
+    fn get_lock_filename(&self) -> String;
 
     /// Return the name of the manifest.
-    fn get_manifest_name(&self) -> String;
+    fn get_manifest_filename(&self) -> String;
 
     /// Return the dependency range to use when linking local workspace packages.
     fn get_workspace_dependency_range(&self) -> String;

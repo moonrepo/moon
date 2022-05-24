@@ -11,85 +11,16 @@ use async_trait::async_trait;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
+use moon_lang::LangError;
 use moon_lang_node::{node, NODE};
 use moon_logger::{color, debug, error, Logable};
 use moon_utils::fs;
 use moon_utils::process::Command;
 use semver::{Version, VersionReq};
-use std::env::consts;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-
-fn get_download_file_ext() -> &'static str {
-    if consts::OS == "windows" {
-        "zip"
-    } else {
-        "tar.gz"
-    }
-}
-
-#[allow(unused_assignments)]
-fn get_download_file_name(version: &str) -> Result<String, ToolchainError> {
-    let mut platform = "";
-
-    if consts::OS == "linux" {
-        platform = "linux"
-    } else if consts::OS == "windows" {
-        platform = "win";
-    } else if consts::OS == "macos" {
-        platform = "darwin"
-    } else {
-        return Err(ToolchainError::UnsupportedPlatform(
-            consts::OS.to_string(),
-            String::from("Node.js"),
-        ));
-    }
-
-    let mut arch = "";
-
-    if consts::ARCH == "x86" {
-        arch = "x86"
-    } else if consts::ARCH == "x86_64" {
-        arch = "x64"
-    } else if consts::ARCH == "arm" {
-        arch = "arm64"
-    } else if consts::ARCH == "powerpc64" {
-        arch = "ppc64le"
-    } else if consts::ARCH == "s390x" {
-        arch = "s390x"
-    } else {
-        return Err(ToolchainError::UnsupportedArchitecture(
-            consts::ARCH.to_string(),
-            String::from("Node.js"),
-        ));
-    }
-
-    Ok(format!(
-        "node-v{version}-{platform}-{arch}",
-        version = version,
-        platform = platform,
-        arch = arch,
-    ))
-}
-
-fn get_download_file(version: &str) -> Result<String, ToolchainError> {
-    Ok(format!(
-        "{}.{}",
-        get_download_file_name(version)?,
-        get_download_file_ext()
-    ))
-}
-
-fn get_nodejs_url(version: &str, host: &str, path: &str) -> String {
-    format!(
-        "{host}/dist/v{version}/{path}",
-        host = host,
-        version = version,
-        path = path,
-    )
-}
 
 // https://github.com/nodejs/node#verifying-binaries
 fn verify_shasum(
@@ -109,10 +40,10 @@ fn verify_shasum(
         }
     }
 
-    Err(ToolchainError::InvalidShasum(
+    Err(ToolchainError::Lang(LangError::InvalidShasum(
         String::from(download_path.to_string_lossy()),
         String::from(download_url),
-    ))
+    )))
 }
 
 #[derive(Clone, Debug)]
@@ -142,7 +73,7 @@ impl NodeTool {
             download_path: toolchain
                 .temp_dir
                 .join("node")
-                .join(get_download_file(&config.version)?),
+                .join(node::get_download_file(&config.version)?),
             install_dir,
             npm: None,
             pnpm: None,
@@ -271,13 +202,13 @@ impl Downloadable<Toolchain> for NodeTool {
         let target = self.get_log_target();
 
         // Download the node.tar.gz archive
-        let download_url = get_nodejs_url(version, host, &get_download_file(version)?);
+        let download_url = node::get_nodejs_url(version, host, &node::get_download_file(version)?);
         let download_path = self.get_download_path()?;
 
         download_file_from_url(&download_url, download_path).await?;
 
         // Download the SHASUMS256.txt file
-        let shasums_url = get_nodejs_url(version, host, "SHASUMS256.txt");
+        let shasums_url = node::get_nodejs_url(version, host, "SHASUMS256.txt");
         let shasums_path = download_path
             .parent()
             .unwrap()
@@ -328,7 +259,7 @@ impl Installable<Toolchain> for NodeTool {
     async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let download_path = self.get_download_path()?;
         let install_dir = self.get_install_dir()?;
-        let prefix = get_download_file_name(&self.config.version)?;
+        let prefix = node::get_download_file_name(&self.config.version)?;
 
         unpack(download_path, install_dir, &prefix).await?;
 

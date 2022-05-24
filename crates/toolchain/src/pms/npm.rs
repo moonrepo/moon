@@ -233,11 +233,11 @@ impl PackageManager<NodeTool> for NpmTool {
         Ok(())
     }
 
-    fn get_lockfile_name(&self) -> String {
+    fn get_lock_filename(&self) -> String {
         String::from(NPM.lock_filenames[0])
     }
 
-    fn get_manifest_name(&self) -> String {
+    fn get_manifest_filename(&self) -> String {
         String::from(NPM.manifest_filename)
     }
 
@@ -249,7 +249,7 @@ impl PackageManager<NodeTool> for NpmTool {
         let mut args = vec!["install"];
 
         if is_ci() {
-            let lockfile = toolchain.workspace_root.join(self.get_lockfile_name());
+            let lockfile = toolchain.workspace_root.join(self.get_lock_filename());
 
             // npm will error if using `ci` and a lockfile does not exist!
             if lockfile.exists() {

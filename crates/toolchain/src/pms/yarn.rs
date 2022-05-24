@@ -191,7 +191,7 @@ impl PackageManager<NodeTool> for YarnTool {
         if self.is_v1() {
             if toolchain
                 .workspace_root
-                .join(self.get_lockfile_name())
+                .join(self.get_lock_filename())
                 .exists()
             {
                 // Will error if the lockfile does not exist!
@@ -237,11 +237,11 @@ impl PackageManager<NodeTool> for YarnTool {
         Ok(())
     }
 
-    fn get_lockfile_name(&self) -> String {
+    fn get_lock_filename(&self) -> String {
         String::from(YARN.lock_filenames[0])
     }
 
-    fn get_manifest_name(&self) -> String {
+    fn get_manifest_filename(&self) -> String {
         String::from(YARN.manifest_filename)
     }
 

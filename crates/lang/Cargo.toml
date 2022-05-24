@@ -4,5 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-serde_json = { version = "1.0.81", default-features = false }
 thiserror = "1.0.31"

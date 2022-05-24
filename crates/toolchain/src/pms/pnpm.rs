@@ -173,11 +173,11 @@ impl PackageManager<NodeTool> for PnpmTool {
         Ok(())
     }
 
-    fn get_lockfile_name(&self) -> String {
+    fn get_lock_filename(&self) -> String {
         String::from(PNPM.lock_filenames[0])
     }
 
-    fn get_manifest_name(&self) -> String {
+    fn get_manifest_filename(&self) -> String {
         String::from(PNPM.manifest_filename)
     }
 

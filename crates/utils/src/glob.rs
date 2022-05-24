@@ -1,8 +1,14 @@
 use crate::path::{path_to_string, standardize_separators};
+use lazy_static::lazy_static;
 use moon_error::MoonError;
+use regex::Regex;
 use std::path::{Path, PathBuf};
 pub use wax::Glob;
 use wax::{Any, GlobError as WaxGlobError, Pattern};
+
+lazy_static! {
+    pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"(//\?/)?[A-Z]:").unwrap();
+}
 
 pub type GlobError = WaxGlobError<'static>;
 
@@ -23,14 +29,23 @@ impl<'t> GlobSet<'t> {
         })
     }
 
+    #[cfg(not(windows))]
     pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
         Ok(self.any.is_match(path))
+    }
+
+    #[cfg(windows)]
+    pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
+        let path = PathBuf::from(standardize_separators(&path_to_string(path)?));
+        let candid = wax::CandidatePath::from(path.as_os_str());
+
+        Ok(self.any.is_match(candid))
     }
 }
 
 // This is not very exhaustive and may be inaccurate.
 pub fn is_glob(value: &str) -> bool {
-    let single_values = vec!['*', '?', '!'];
+    let single_values = vec!['*', '?', '1'];
     let paired_values = vec![('{', '}'), ('[', ']')];
     let mut bytes = value.bytes();
     let mut is_escaped = |index: usize| {
@@ -80,9 +95,9 @@ pub fn normalize(path: &Path) -> Result<String, MoonError> {
     // Always use forward slashes for globs
     let glob = standardize_separators(&path_to_string(path)?);
 
-    // Remove UNC prefix as it breaks glob matching
+    // Remove UNC and drive prefix as it breaks glob matching
     if cfg!(windows) {
-        return Ok(glob.replace("//?/", ""));
+        return Ok(WINDOWS_PREFIX.replace_all(&glob, "").to_string());
     }
 
     Ok(glob)
@@ -163,6 +178,20 @@ mod tests {
             assert!(!is_glob("\\*.rs"));
             assert!(!is_glob("file\\?.js"));
             assert!(!is_glob("folder-\\[id\\]"));
+        }
+    }
+
+    mod windows_prefix {
+        use super::*;
+
+        #[test]
+        fn removes_unc_and_drive_prefix() {
+            assert_eq!(
+                WINDOWS_PREFIX
+                    .replace_all("//?/D:/Projects/moon", "")
+                    .to_string(),
+                String::from("/Projects/moon")
+            );
         }
     }
 }

@@ -1,7 +1,6 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{
-    download_file_from_url, get_bin_name_suffix, get_bin_version, get_file_sha256_hash,
-    get_path_env_var, unpack,
+    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack,
 };
 use crate::pms::npm::NpmTool;
 use crate::pms::pnpm::PnpmTool;
@@ -12,7 +11,7 @@ use async_trait::async_trait;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
-use moon_lang_node::NODE;
+use moon_lang_node::{node, NODE};
 use moon_logger::{color, debug, error, Logable};
 use moon_utils::fs;
 use moon_utils::process::Command;
@@ -138,7 +137,7 @@ impl NodeTool {
         let install_dir = toolchain.tools_dir.join("node").join(&config.version);
 
         let mut node = NodeTool {
-            bin_path: install_dir.join(get_bin_name_suffix("node", "exe", false)),
+            bin_path: install_dir.join(node::get_bin_name_suffix("node", "cmd", false)),
             config: config.to_owned(),
             download_path: toolchain
                 .temp_dir
@@ -170,7 +169,7 @@ impl NodeTool {
     {
         let corepack_path = self
             .install_dir
-            .join(get_bin_name_suffix("corepack", "cmd", false));
+            .join(node::get_bin_name_suffix("corepack", "cmd", false));
 
         Command::new(&corepack_path)
             .args(args)
@@ -188,7 +187,7 @@ impl NodeTool {
     ) -> Result<PathBuf, ToolchainError> {
         let bin_path = starting_dir
             .join(NODE.vendor_bins_dir)
-            .join(get_bin_name_suffix(package_name, "cmd", true));
+            .join(node::get_bin_name_suffix(package_name, "cmd", true));
 
         if bin_path.exists() {
             return Ok(bin_path);

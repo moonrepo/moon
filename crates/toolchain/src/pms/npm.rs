@@ -1,11 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_name_suffix, get_bin_version, get_path_env_var};
+use crate::helpers::{get_bin_version, get_path_env_var};
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
-use moon_lang_node::NPM;
+use moon_lang_node::{node, NPM};
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use moon_utils::process::{output_to_trimmed_string, Command};
@@ -28,7 +28,7 @@ impl NpmTool {
         let install_dir = node.get_install_dir()?.clone();
 
         Ok(NpmTool {
-            bin_path: install_dir.join(get_bin_name_suffix("npm", "cmd", false)),
+            bin_path: install_dir.join(node::get_bin_name_suffix("npm", "cmd", false)),
             config: config.to_owned(),
             global_install_dir: None,
             install_dir,
@@ -180,7 +180,7 @@ impl Executable<NodeTool> for NpmTool {
         // If the global has moved, be sure to reference it
         let bin_path = self
             .get_global_dir()?
-            .join(get_bin_name_suffix("npm", "cmd", false));
+            .join(node::get_bin_name_suffix("npm", "cmd", false));
 
         if bin_path.exists() {
             self.bin_path = bin_path;
@@ -221,7 +221,7 @@ impl PackageManager<NodeTool> for NpmTool {
         exec_args.extend(args);
 
         let bin_dir = toolchain.get_node().get_install_dir()?;
-        let npx_path = bin_dir.join(get_bin_name_suffix("npx", "exe", false));
+        let npx_path = bin_dir.join(node::get_bin_name_suffix("npx", "exe", false));
 
         Command::new(&npx_path)
             .args(exec_args)

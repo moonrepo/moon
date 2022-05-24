@@ -1,3 +1,5 @@
+pub mod node;
+
 use moon_lang::{Language, PackageManager, VersionManager};
 
 pub const NODE: Language = Language {

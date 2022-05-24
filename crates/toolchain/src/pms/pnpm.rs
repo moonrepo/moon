@@ -1,11 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_name_suffix, get_bin_version};
+use crate::helpers::get_bin_version;
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
-use moon_lang_node::PNPM;
+use moon_lang_node::{node, PNPM};
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use std::env;
@@ -25,7 +25,7 @@ impl PnpmTool {
         let install_dir = node.get_install_dir()?.clone();
 
         Ok(PnpmTool {
-            bin_path: install_dir.join(get_bin_name_suffix("pnpm", "cmd", false)),
+            bin_path: install_dir.join(node::get_bin_name_suffix("pnpm", "cmd", false)),
             config: config.to_owned(),
             install_dir,
         })
@@ -122,7 +122,7 @@ impl Executable<NodeTool> for PnpmTool {
         let bin_path = node
             .get_npm()
             .get_global_dir()?
-            .join(get_bin_name_suffix("pnpm", "cmd", false));
+            .join(node::get_bin_name_suffix("pnpm", "cmd", false));
 
         if bin_path.exists() {
             self.bin_path = bin_path;

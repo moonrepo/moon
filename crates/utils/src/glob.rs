@@ -29,23 +29,14 @@ impl<'t> GlobSet<'t> {
         })
     }
 
-    #[cfg(not(windows))]
     pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
         Ok(self.any.is_match(path))
-    }
-
-    #[cfg(windows)]
-    pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
-        let path = PathBuf::from(standardize_separators(&path_to_string(path)?));
-        let candid = wax::CandidatePath::from(path.as_os_str());
-
-        Ok(self.any.is_match(candid))
     }
 }
 
 // This is not very exhaustive and may be inaccurate.
 pub fn is_glob(value: &str) -> bool {
-    let single_values = vec!['*', '?', '1'];
+    let single_values = vec!['*', '?', '!'];
     let paired_values = vec![('{', '}'), ('[', ']')];
     let mut bytes = value.bytes();
     let mut is_escaped = |index: usize| {
@@ -97,7 +88,7 @@ pub fn normalize(path: &Path) -> Result<String, MoonError> {
 
     // Remove UNC and drive prefix as it breaks glob matching
     if cfg!(windows) {
-        return Ok(WINDOWS_PREFIX.replace_all(&glob, "").to_string());
+        return Ok(WINDOWS_PREFIX.replace_all(&glob, "**").to_string());
     }
 
     Ok(glob)
@@ -188,9 +179,9 @@ mod tests {
         fn removes_unc_and_drive_prefix() {
             assert_eq!(
                 WINDOWS_PREFIX
-                    .replace_all("//?/D:/Projects/moon", "")
+                    .replace_all("//?/D:/Projects/moon", "**")
                     .to_string(),
-                String::from("/Projects/moon")
+                String::from("**/Projects/moon")
             );
         }
     }

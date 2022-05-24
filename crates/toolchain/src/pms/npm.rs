@@ -1,10 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_name_suffix, get_bin_version, get_path_env_var};
+use crate::helpers::{get_bin_version, get_path_env_var};
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
+use moon_lang_node::{node, NPM};
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use moon_utils::process::{output_to_trimmed_string, Command};
@@ -27,7 +28,7 @@ impl NpmTool {
         let install_dir = node.get_install_dir()?.clone();
 
         Ok(NpmTool {
-            bin_path: install_dir.join(get_bin_name_suffix("npm", "cmd", false)),
+            bin_path: install_dir.join(node::get_bin_name_suffix("npm", "cmd", false)),
             config: config.to_owned(),
             global_install_dir: None,
             install_dir,
@@ -179,7 +180,7 @@ impl Executable<NodeTool> for NpmTool {
         // If the global has moved, be sure to reference it
         let bin_path = self
             .get_global_dir()?
-            .join(get_bin_name_suffix("npm", "cmd", false));
+            .join(node::get_bin_name_suffix("npm", "cmd", false));
 
         if bin_path.exists() {
             self.bin_path = bin_path;
@@ -220,7 +221,7 @@ impl PackageManager<NodeTool> for NpmTool {
         exec_args.extend(args);
 
         let bin_dir = toolchain.get_node().get_install_dir()?;
-        let npx_path = bin_dir.join(get_bin_name_suffix("npx", "exe", false));
+        let npx_path = bin_dir.join(node::get_bin_name_suffix("npx", "cmd", false));
 
         Command::new(&npx_path)
             .args(exec_args)
@@ -232,8 +233,12 @@ impl PackageManager<NodeTool> for NpmTool {
         Ok(())
     }
 
-    fn get_lockfile_name(&self) -> String {
-        String::from("package-lock.json")
+    fn get_lock_filename(&self) -> String {
+        String::from(NPM.lock_filenames[0])
+    }
+
+    fn get_manifest_filename(&self) -> String {
+        String::from(NPM.manifest_filename)
     }
 
     fn get_workspace_dependency_range(&self) -> String {
@@ -244,7 +249,7 @@ impl PackageManager<NodeTool> for NpmTool {
         let mut args = vec!["install"];
 
         if is_ci() {
-            let lockfile = toolchain.workspace_root.join(self.get_lockfile_name());
+            let lockfile = toolchain.workspace_root.join(self.get_lock_filename());
 
             // npm will error if using `ci` and a lockfile does not exist!
             if lockfile.exists() {

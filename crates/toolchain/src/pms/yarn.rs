@@ -1,10 +1,11 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{get_bin_name_suffix, get_bin_version};
+use crate::helpers::get_bin_version;
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
+use moon_lang_node::{node, YARN};
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use std::env;
@@ -24,7 +25,7 @@ impl YarnTool {
         let install_dir = node.get_install_dir()?.clone();
 
         Ok(YarnTool {
-            bin_path: install_dir.join(get_bin_name_suffix("yarn", "cmd", false)),
+            bin_path: install_dir.join(node::get_bin_name_suffix("yarn", "cmd", false)),
             config: config.to_owned(),
             install_dir,
         })
@@ -164,7 +165,7 @@ impl Executable<NodeTool> for YarnTool {
         let bin_path = node
             .get_npm()
             .get_global_dir()?
-            .join(get_bin_name_suffix("yarn", "cmd", false));
+            .join(node::get_bin_name_suffix("yarn", "cmd", false));
 
         if bin_path.exists() {
             self.bin_path = bin_path;
@@ -190,7 +191,7 @@ impl PackageManager<NodeTool> for YarnTool {
         if self.is_v1() {
             if toolchain
                 .workspace_root
-                .join(self.get_lockfile_name())
+                .join(self.get_lock_filename())
                 .exists()
             {
                 // Will error if the lockfile does not exist!
@@ -200,7 +201,7 @@ impl PackageManager<NodeTool> for YarnTool {
                     .exec_package(
                         toolchain,
                         "yarn-deduplicate",
-                        vec!["yarn-deduplicate", "yarn.lock"],
+                        vec!["yarn-deduplicate", YARN.lock_filenames[0]],
                     )
                     .await?;
             }
@@ -236,8 +237,12 @@ impl PackageManager<NodeTool> for YarnTool {
         Ok(())
     }
 
-    fn get_lockfile_name(&self) -> String {
-        String::from("yarn.lock")
+    fn get_lock_filename(&self) -> String {
+        String::from(YARN.lock_filenames[0])
+    }
+
+    fn get_manifest_filename(&self) -> String {
+        String::from(YARN.manifest_filename)
     }
 
     fn get_workspace_dependency_range(&self) -> String {

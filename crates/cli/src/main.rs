@@ -1,5 +1,6 @@
 use moon_cli::run_cli;
 use moon_config::constants;
+use moon_lang_node::NODE;
 use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
@@ -84,7 +85,7 @@ async fn main() {
             // locally installed `moon` binary in node modules
             if let Some(workspace_root) = find_workspace_root(&current_dir) {
                 let moon_bin = workspace_root
-                    .join("node_modules")
+                    .join(NODE.vendor_dir)
                     .join("@moonrepo")
                     .join("cli")
                     .join("moon");

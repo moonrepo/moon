@@ -1331,6 +1331,8 @@ dependencies = [
  "itertools",
  "moon_cache",
  "moon_config",
+ "moon_lang",
+ "moon_lang_node",
  "moon_logger",
  "moon_project",
  "moon_terminal",
@@ -1354,6 +1356,7 @@ dependencies = [
  "figment",
  "json",
  "moon_error",
+ "moon_lang_node",
  "moon_utils",
  "regex",
  "schemars",
@@ -1372,6 +1375,20 @@ version = "0.1.0"
 dependencies = [
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "moon_lang"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
+name = "moon_lang_node"
+version = "0.1.0"
+dependencies = [
+ "moon_lang",
 ]
 
 [[package]]
@@ -1427,6 +1444,8 @@ dependencies = [
  "mockito",
  "moon_config",
  "moon_error",
+ "moon_lang",
+ "moon_lang_node",
  "moon_logger",
  "moon_utils",
  "predicates",
@@ -1473,6 +1492,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_error",
+ "moon_lang_node",
  "moon_logger",
  "moon_project",
  "moon_terminal",

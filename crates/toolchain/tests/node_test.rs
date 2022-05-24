@@ -1,5 +1,5 @@
 use moon_config::WorkspaceConfig;
-use moon_toolchain::helpers::get_bin_name_suffix;
+use moon_lang_node::node;
 use moon_toolchain::{Downloadable, Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
@@ -49,7 +49,7 @@ async fn generates_paths() {
         .join("tools")
         .join("node")
         .join("1.0.0")
-        .join(get_bin_name_suffix("node", "exe", false));
+        .join(node::get_bin_name_suffix("node", "exe", false));
 
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(node.get_bin_path().to_str().unwrap()));

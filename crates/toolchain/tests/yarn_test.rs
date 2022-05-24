@@ -1,5 +1,5 @@
 use moon_config::{PackageManager, WorkspaceConfig, YarnConfig};
-use moon_toolchain::helpers::get_bin_name_suffix;
+use moon_lang_node::node;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
@@ -42,7 +42,7 @@ async fn generates_paths() {
         .join("tools")
         .join("node")
         .join("1.0.0")
-        .join(get_bin_name_suffix("yarn", "cmd", false));
+        .join(node::get_bin_name_suffix("yarn", "cmd", false));
 
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(yarn.get_bin_path().to_str().unwrap()));

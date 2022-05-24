@@ -82,7 +82,7 @@ pub async fn install_node_deps(
 
         // Create nvm/nodenv config file
         if let Some(version_manager) = &node_config.sync_version_manager_config {
-            let rc_name = version_manager.get_config_file_name();
+            let rc_name = version_manager.get_config_filename();
             let rc_path = workspace.root.join(&rc_name);
 
             fs::write(&rc_path, &node_config.version).await?;
@@ -95,7 +95,7 @@ pub async fn install_node_deps(
         }
 
         // Get the last modified time of the root lockfile
-        let lockfile = workspace.root.join(manager.get_lockfile_name());
+        let lockfile = workspace.root.join(manager.get_lock_filename());
         let mut last_modified = 0;
 
         if lockfile.exists() {

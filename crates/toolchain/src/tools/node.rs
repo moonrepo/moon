@@ -67,7 +67,7 @@ impl NodeTool {
         let install_dir = toolchain.tools_dir.join("node").join(&config.version);
 
         let mut node = NodeTool {
-            bin_path: install_dir.join(node::get_bin_name_suffix("node", "cmd", false)),
+            bin_path: install_dir.join(node::get_bin_name_suffix("node", "exe", false)),
             config: config.to_owned(),
             download_path: toolchain
                 .temp_dir

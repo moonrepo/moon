@@ -221,7 +221,7 @@ impl PackageManager<NodeTool> for NpmTool {
         exec_args.extend(args);
 
         let bin_dir = toolchain.get_node().get_install_dir()?;
-        let npx_path = bin_dir.join(node::get_bin_name_suffix("npx", "exe", false));
+        let npx_path = bin_dir.join(node::get_bin_name_suffix("npx", "cmd", false));
 
         Command::new(&npx_path)
             .args(exec_args)

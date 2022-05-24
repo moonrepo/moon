@@ -14,6 +14,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 moon_error = { path = "../error"}
+moon_lang_node = { path = "../lang-node" }
 moon_utils = { path = "../utils"}
 figment = { version = "0.10.6", features = ["test", "yaml"] }
 json = "0.12.4"

@@ -1,11 +1,12 @@
 use crate::validators::validate_semver_version;
+use moon_lang_node::{NODE, NODENV, NVMRC, PNPM, YARN};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
 use validator::{Validate, ValidationError};
 
 pub fn default_node_version() -> String {
-    env::var("MOON_NODE_VERSION").unwrap_or_else(|_| String::from("16.15.0"))
+    env::var("MOON_NODE_VERSION").unwrap_or_else(|_| NODE.default_version.to_string())
 }
 
 pub fn default_npm_version() -> String {
@@ -14,11 +15,11 @@ pub fn default_npm_version() -> String {
 }
 
 pub fn default_pnpm_version() -> String {
-    env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| String::from("6.32.2"))
+    env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| PNPM.default_version.to_string())
 }
 
 pub fn default_yarn_version() -> String {
-    env::var("MOON_YARN_VERSION").unwrap_or_else(|_| String::from("3.2.0"))
+    env::var("MOON_YARN_VERSION").unwrap_or_else(|_| YARN.default_version.to_string())
 }
 
 fn default_bool_true() -> bool {
@@ -67,10 +68,10 @@ pub enum VersionManager {
 }
 
 impl VersionManager {
-    pub fn get_config_file_name(&self) -> String {
+    pub fn get_config_filename(&self) -> String {
         match self {
-            VersionManager::Nodenv => String::from(".node-version"),
-            VersionManager::Nvm => String::from(".nvmrc"),
+            VersionManager::Nodenv => String::from(NODENV.version_filename),
+            VersionManager::Nvm => String::from(NVMRC.version_filename),
         }
     }
 }

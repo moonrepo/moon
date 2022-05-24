@@ -93,7 +93,8 @@ pub async fn create_target_hasher(
             .into_iter()
             .filter(|f| {
                 // Deleted files will crash `git hash-object`
-                !local_files.deleted.contains(f) && globset.matches(&workspace.root.join(f)).unwrap_or(false)
+                !local_files.deleted.contains(f)
+                    && globset.matches(&workspace.root.join(f)).unwrap_or(false)
             })
             .collect::<Vec<String>>();
 

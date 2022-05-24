@@ -1,30 +1,32 @@
 use crate::path::{path_to_string, standardize_separators};
-use moon_error::MoonError;
-use std::path::{Path, PathBuf};
-use wax::{Any, CandidatePath, Pattern};
 use lazy_static::lazy_static;
+use moon_error::MoonError;
 use regex::Regex;
+use std::path::{Path, PathBuf};
 pub use wax::Glob;
+use wax::{Any, GlobError as WaxGlobError, Pattern};
 
 lazy_static! {
-    pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"(//\?/)?[A-Z]:/").unwrap();
+    pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"(//\?/)?[A-Z]:").unwrap();
 }
+
+pub type GlobError = WaxGlobError<'static>;
 
 pub struct GlobSet<'t> {
     any: Any<'t>,
 }
 
 impl<'t> GlobSet<'t> {
-    pub fn new(patterns: &'t [String]) -> Self {
+    pub fn new(patterns: &'t [String]) -> Result<Self, GlobError> {
         let mut globs = vec![];
 
         for pattern in patterns {
-            globs.push(Glob::new(pattern).unwrap());
+            globs.push(Glob::new(pattern).map_err(WaxGlobError::into_owned)?);
         }
 
-        GlobSet {
+        Ok(GlobSet {
             any: wax::any::<Glob, _>(globs).unwrap(),
-        }
+        })
     }
 
     #[cfg(not(windows))]
@@ -35,7 +37,7 @@ impl<'t> GlobSet<'t> {
     #[cfg(windows)]
     pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
         let path = PathBuf::from(standardize_separators(&path_to_string(path)?));
-        let candid = CandidatePath::from(path.as_os_str());
+        let candid = wax::CandidatePath::from(path.as_os_str());
 
         Ok(self.any.is_match(candid))
     }
@@ -120,12 +122,12 @@ pub fn split_patterns(patterns: &[String]) -> (Vec<String>, Vec<String>) {
     (expressions, negations)
 }
 
-pub fn walk(base_dir: &Path, patterns: &[String]) -> Vec<PathBuf> {
+pub fn walk(base_dir: &Path, patterns: &[String]) -> Result<Vec<PathBuf>, GlobError> {
     let (expressions, _negations) = split_patterns(patterns);
     let mut paths = vec![];
 
     for expression in expressions {
-        let glob = Glob::new(&expression).unwrap();
+        let glob = Glob::new(&expression).map_err(WaxGlobError::into_owned)?;
 
         for entry in glob.walk(base_dir, usize::MAX)
         // .not(&negations)
@@ -140,7 +142,7 @@ pub fn walk(base_dir: &Path, patterns: &[String]) -> Vec<PathBuf> {
         }
     }
 
-    paths
+    Ok(paths)
 }
 
 #[cfg(test)]
@@ -184,7 +186,12 @@ mod tests {
 
         #[test]
         fn removes_unc_and_drive_prefix() {
-            assert_eq!(WINDOWS_PREFIX.replace_all("//?/D:/Projects/moon", "").to_string(), String::from("Projects/moon"));
+            assert_eq!(
+                WINDOWS_PREFIX
+                    .replace_all("//?/D:/Projects/moon", "")
+                    .to_string(),
+                String::from("/Projects/moon")
+            );
         }
     }
 }

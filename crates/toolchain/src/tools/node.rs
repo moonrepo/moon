@@ -8,11 +8,10 @@ use crate::pms::yarn::YarnTool;
 use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
-use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
 use moon_lang::LangError;
-use moon_lang_node::{node, NODE};
+use moon_lang_node::node;
 use moon_logger::{color, debug, error, Logable};
 use moon_utils::fs;
 use moon_utils::process::Command;
@@ -111,28 +110,17 @@ impl NodeTool {
         Ok(())
     }
 
-    pub fn find_package_bin_path(
+    pub fn find_package_bin(
         &self,
         package_name: &str,
         starting_dir: &Path,
     ) -> Result<PathBuf, ToolchainError> {
-        let bin_path = starting_dir
-            .join(NODE.vendor_bins_dir)
-            .join(node::get_bin_name_suffix(package_name, "cmd", true));
-
-        if bin_path.exists() {
-            return Ok(bin_path);
-        }
-
-        // If we've reached the root of the workspace, and still haven't found
-        // a binary, just abort with an error...
-        if starting_dir.join(CONFIG_DIRNAME).exists() {
-            return Err(ToolchainError::MissingNodeModuleBin(
+        match node::find_package_bin(starting_dir, package_name) {
+            Some(path) => Ok(path),
+            None => Err(ToolchainError::MissingNodeModuleBin(
                 package_name.to_owned(),
-            ));
+            )),
         }
-
-        self.find_package_bin_path(package_name, starting_dir.parent().unwrap())
     }
 
     /// Return the `npm` package manager.

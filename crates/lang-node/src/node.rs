@@ -1,5 +1,35 @@
+use crate::NODE;
 use moon_lang::LangError;
 use std::env::consts;
+use std::path::{Path, PathBuf};
+
+pub fn find_package(starting_dir: &Path, package_name: &str) -> Option<PathBuf> {
+    let pkg_path = starting_dir.join(NODE.vendor_dir).join(package_name);
+
+    if pkg_path.exists() {
+        return Some(pkg_path);
+    }
+
+    match starting_dir.parent() {
+        Some(dir) => find_package_bin(dir, package_name),
+        None => None,
+    }
+}
+
+pub fn find_package_bin(starting_dir: &Path, package_name: &str) -> Option<PathBuf> {
+    let bin_path = starting_dir
+        .join(NODE.vendor_bins_dir)
+        .join(get_bin_name_suffix(package_name, "cmd", true));
+
+    if bin_path.exists() {
+        return Some(bin_path);
+    }
+
+    match starting_dir.parent() {
+        Some(dir) => find_package_bin(dir, package_name),
+        None => None,
+    }
+}
 
 pub fn get_bin_name_suffix(name: &str, windows_ext: &str, flat: bool) -> String {
     if cfg!(windows) {

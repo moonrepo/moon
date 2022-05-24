@@ -103,7 +103,7 @@ fn create_node_target_command(
             cmd = node.get_yarn().unwrap().get_bin_path();
         }
         bin => {
-            let bin_path = node.find_package_bin_path(bin, &project.root)?;
+            let bin_path = node.find_package_bin(bin, &project.root)?;
 
             args.extend(create_node_options(task));
             args.push(path::path_to_string(&bin_path)?);
@@ -138,7 +138,7 @@ fn create_node_target_command(
         "npm" => node.get_npm().get_bin_path().clone(),
         "pnpm" => node.get_pnpm().unwrap().get_bin_path().clone(),
         "yarn" => node.get_yarn().unwrap().get_bin_path().clone(),
-        bin => node.find_package_bin_path(bin, &project.root)?,
+        bin => node.find_package_bin(bin, &project.root)?,
     };
 
     // Create the command

@@ -12,6 +12,7 @@ use async_trait::async_trait;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::NodeConfig;
 use moon_error::map_io_to_fs_error;
+use moon_lang_node::NODE;
 use moon_logger::{color, debug, error, Logable};
 use moon_utils::fs;
 use moon_utils::process::Command;
@@ -186,8 +187,7 @@ impl NodeTool {
         starting_dir: &Path,
     ) -> Result<PathBuf, ToolchainError> {
         let bin_path = starting_dir
-            .join("node_modules")
-            .join(".bin")
+            .join(NODE.vendor_bins_dir)
             .join(get_bin_name_suffix(package_name, "cmd", true));
 
         if bin_path.exists() {

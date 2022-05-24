@@ -5,7 +5,8 @@ use moon_config::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
     load_global_project_config_template, load_workspace_config_template,
 };
-use moon_lang_node::{NODENV, NVMRC};
+use moon_lang::is_using_package_manager;
+use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
 use moon_logger::color;
 use moon_terminal::create_theme;
 use moon_utils::fs;
@@ -72,23 +73,11 @@ async fn detect_package_manager(dest_dir: &Path, yes: bool) -> Result<(String, S
 
     // If no value, detect based on files
     if pm_type.is_empty() {
-        // yarn
-        if dest_dir.join("yarn.lock").exists()
-            || dest_dir.join(".yarn").exists()
-            || dest_dir.join(".yarnrc").exists()
-            || dest_dir.join(".yarnrc.yml").exists()
-        {
+        if is_using_package_manager(dest_dir, &YARN) {
             pm_type = String::from("yarn");
-
-            // pnpm
-        } else if dest_dir.join("pnpm-lock.yaml").exists()
-            || dest_dir.join("pnpm-workspace.yaml").exists()
-            || dest_dir.join(".pnpmfile.cjs").exists()
-        {
+        } else if is_using_package_manager(dest_dir, &PNPM) {
             pm_type = String::from("pnpm");
-
-            // npm
-        } else if dest_dir.join("package-lock.json").exists() {
+        } else if is_using_package_manager(dest_dir, &NPM) {
             pm_type = String::from("npm");
         }
     }

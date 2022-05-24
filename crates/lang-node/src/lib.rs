@@ -1,4 +1,10 @@
-use moon_lang::{PackageManager, VersionManager};
+use moon_lang::{Language, PackageManager, VersionManager};
+
+pub const NODE: Language = Language {
+    default_version: "16.15.0",
+    vendor_bins_dir: "node_modules/.bin",
+    vendor_dir: "node_modules",
+};
 
 // Package managers
 

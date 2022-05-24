@@ -14,6 +14,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }

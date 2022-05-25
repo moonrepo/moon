@@ -1,5 +1,7 @@
+use crate::errors::WorkspaceError;
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
+use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use moon_utils::fs;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
@@ -8,15 +10,30 @@ use std::path::{Path, PathBuf};
 
 pub struct Git {
     default_branch: String,
+    ignore: Option<Gitignore>,
     working_dir: PathBuf,
 }
 
 impl Git {
-    pub fn new(default_branch: &str, working_dir: &Path) -> Self {
-        Git {
-            default_branch: String::from(default_branch),
-            working_dir: working_dir.to_path_buf(),
+    pub fn new(default_branch: &str, working_dir: &Path) -> VcsResult<Self> {
+        let mut ignore: Option<Gitignore> = None;
+        let ignore_path = working_dir.join(".gitignore");
+
+        if ignore_path.exists() {
+            let builder = GitignoreBuilder::new(working_dir);
+
+            if let Some(error) = builder.add(ignore_path) {
+                return Err(WorkspaceError::Ignore(error));
+            }
+
+            ignore = Some(builder.build().map_err(|e| WorkspaceError::Ignore(e))?);
         }
+
+        Ok(Git {
+            default_branch: String::from(default_branch),
+            ignore,
+            working_dir: working_dir.to_path_buf(),
+        })
     }
 
     async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {

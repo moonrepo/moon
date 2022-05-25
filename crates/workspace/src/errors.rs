@@ -1,3 +1,4 @@
+use ignore::Error as IgnoreError;
 use moon_config::{constants, ValidationErrors};
 use moon_error::MoonError;
 use moon_project::ProjectError;
@@ -47,6 +48,9 @@ pub enum WorkspaceError {
         constants::CONFIG_PROJECT_FILENAME
     )]
     InvalidGlobalProjectConfigFile(ValidationErrors),
+
+    #[error(transparent)]
+    Ignore(#[from] IgnoreError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

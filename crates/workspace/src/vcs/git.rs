@@ -111,7 +111,7 @@ impl Vcs for Git {
 
         for (index, hash) in output.split('\n').enumerate() {
             if !hash.is_empty() {
-                map.insert(files[index].clone(), hash.to_owned());
+                map.insert(objects[index].clone(), hash.to_owned());
             }
         }
 
@@ -371,17 +371,20 @@ mod test {
             let fixture = create_fixtures_sandbox("ignore");
             let git = Git::new("master", fixture.path()).unwrap();
 
-            let hashes = git
-                .get_file_hashes(&string_vec!["foo", "bar", "baz"])
-                .await
-                .unwrap();
-
             assert_eq!(
-                hashes,
-                BTreeMap::from([(
-                    "foo".to_owned(),
-                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
-                )])
+                git.get_file_hashes(&string_vec!["foo", "bar", "dir/baz", "dir/qux"])
+                    .await
+                    .unwrap(),
+                BTreeMap::from([
+                    (
+                        "dir/qux".to_owned(),
+                        "100b0dec8c53a40e4de7714b2c612dad5fad9985".to_owned()
+                    ),
+                    (
+                        "foo".to_owned(),
+                        "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
+                    )
+                ])
             );
         }
     }
@@ -394,18 +397,20 @@ mod test {
             let fixture = create_fixtures_sandbox("ignore");
             let git = Git::new("master", fixture.path()).unwrap();
 
-            let hashes = git.get_file_tree_hashes(".").await.unwrap();
-
             assert_eq!(
-                hashes,
+                git.get_file_tree_hashes(".").await.unwrap(),
                 BTreeMap::from([
                     (
                         ".gitignore".to_owned(),
                         "589c59be54beff591804a008c972e76dea31d2d1".to_owned()
                     ),
                     (
+                        "dir/qux".to_owned(),
+                        "100b0dec8c53a40e4de7714b2c612dad5fad9985".to_owned()
+                    ),
+                    (
                         "foo".to_owned(),
-                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                        "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
                     )
                 ])
             );

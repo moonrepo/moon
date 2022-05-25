@@ -37,7 +37,7 @@
 
 ## Targets
 
-- [ ] macos arm/m1
+- [x] macos arm/m1
 - [ ] linux x64 (musl)
 
 # 0.1.0

@@ -1,0 +1,31 @@
+{
+  "name": "@moonrepo/core-macos-arm64",
+  "version": "0.1.0",
+  "description": "MacOS ARM64 (M1) binary for moon.",
+  "keywords": [
+    "moon",
+    "repo",
+    "macos",
+    "darwin",
+    "arm64"
+  ],
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moonrepo/moon",
+    "directory": "packages/core-macos-arm64"
+  },
+  "publishConfig": {
+    "access": "public",
+    "executableFiles": [
+      "moon"
+    ]
+  }
+}

@@ -19,14 +19,8 @@ async fn create_node_tool() -> (Toolchain, assert_fs::TempDir) {
     (toolchain, base_dir)
 }
 
-fn get_download_file() -> &'static str {
-    if cfg!(windows) {
-        "node-v1.0.0-win-x64.zip"
-    } else if cfg!(target_os = "macos") {
-        "node-v1.0.0-darwin-x64.tar.gz"
-    } else {
-        "node-v1.0.0-linux-x64.tar.gz"
-    }
+fn get_download_file() -> String {
+    node::get_download_file("1.0.0").unwrap()
 }
 
 #[tokio::test]

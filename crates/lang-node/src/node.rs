@@ -56,7 +56,6 @@ pub fn get_download_file_ext() -> &'static str {
     }
 }
 
-// #[allow(unused_assignments)]
 pub fn get_download_file_name(version: &str) -> Result<String, LangError> {
     let platform;
 

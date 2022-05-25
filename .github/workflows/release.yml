@@ -2,7 +2,6 @@ name: Release
 
 env:
   APP_NAME: moon
-  MACOSX_DEPLOYMENT_TARGET: '10.13'
 
 on:
   # Manually release cli/core packages
@@ -24,6 +23,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             arch: x64
             binary: moon
+
           # - host: ubuntu-latest
           #   target: x86_64-unknown-linux-musl
           #   arch: x64
@@ -34,10 +34,16 @@ jobs:
             target: x86_64-apple-darwin
             arch: x64
             binary: moon
+            setup: |
+              export MACOSX_DEPLOYMENT_TARGET="10.13";
+
           - host: macos-latest
             target: aarch64-apple-darwin
             arch: x64
             binary: moon
+            setup: |
+              export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
+              export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
 
           - host: windows-latest
             target: x86_64-pc-windows-msvc

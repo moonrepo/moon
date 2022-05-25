@@ -23,6 +23,10 @@ fn get_download_file() -> String {
     node::get_download_file("1.0.0").unwrap()
 }
 
+fn create_shasums(hash: &str) -> String {
+    format!("{hash}  node-v1.0.0-darwin-arm64.tar.gz\n{hash}  node-v1.0.0-darwin-x64.tar.gz\n{hash}  node-v1.0.0-linux-x64.tar.gz\n{hash}  node-v1.0.0-win-x64.zip\n", hash = hash)
+}
+
 #[tokio::test]
 async fn generates_paths() {
     let (toolchain, temp_dir) = create_node_tool().await;
@@ -99,7 +103,9 @@ mod download {
         .create();
 
         let shasums = mock("GET", "/dist/v1.0.0/SHASUMS256.txt")
-            .with_body("9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-darwin-x64.tar.gz\n9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-linux-x64.tar.gz\n9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd  node-v1.0.0-win-x64.zip\n")
+            .with_body(create_shasums(
+                "9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd",
+            ))
             .create();
 
         node.download(&toolchain, Some(&mockito::server_url()))
@@ -128,9 +134,7 @@ mod download {
         .create();
 
         let shasums = mock("GET", "/dist/v1.0.0/SHASUMS256.txt")
-            .with_body(
-                "fakehash  node-v1.0.0-darwin-x64.tar.gz\nfakehash  node-v1.0.0-linux-x64.tar.gz\nfakehash  node-v1.0.0-win-x64.zip\n",
-            )
+            .with_body(create_shasums("fakehash"))
             .create();
 
         node.download(&toolchain, Some(&mockito::server_url()))

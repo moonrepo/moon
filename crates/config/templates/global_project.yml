@@ -40,7 +40,7 @@ fileGroups:
 # and the value is an object of task parameters.
 tasks:
   # Name of the task.
-  name:
+  noop:
     # The name of the binary/command on your system.
     command: 'noop'
 

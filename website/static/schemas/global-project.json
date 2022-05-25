@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "GlobalProjectConfig",
-  "description": "https://moonrepo.dev/docs/config/global-project",
+  "description": "Docs: https://moonrepo.dev/docs/config/global-project",
   "type": "object",
   "properties": {
     "fileGroups": {

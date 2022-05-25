@@ -92,10 +92,11 @@ jobs:
         with:
           toolchain: 1.61.0
           profile: minimal
+          components: llvm-tools-preview
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: --debug --force cargo-make
+          args: cargo-make cargo-binutils
       - uses: actions-rs/cargo@v1
         with:
           command: build

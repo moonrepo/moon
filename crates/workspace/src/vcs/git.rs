@@ -36,6 +36,18 @@ impl Git {
         })
     }
 
+    fn is_file_ignored(&self, file: &str) -> bool {
+        if self.ignore.is_some() {
+            self.ignore
+                .as_ref()
+                .unwrap()
+                .matched(file, false)
+                .is_ignore()
+        } else {
+            false
+        }
+    }
+
     async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {
         let output = command.exec_capture_output().await?;
 
@@ -81,6 +93,11 @@ impl Vcs for Git {
     }
 
     async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
+        let files = files
+            .iter()
+            .filter(|file| !self.is_file_ignored(file))
+            .collect::<Vec<_>>();
+
         let output = self
             .create_command(vec!["hash-object", "--stdin-paths"])
             .exec_capture_output_with_input(&files.join("\n"))
@@ -115,7 +132,9 @@ impl Vcs for Git {
             let hash = last_parts.next().unwrap();
             let file = last_parts.next().unwrap();
 
-            map.insert(file.to_owned(), hash.to_owned());
+            if !self.is_file_ignored(&file) {
+                map.insert(file.to_owned(), hash.to_owned());
+            }
         }
 
         Ok(map)

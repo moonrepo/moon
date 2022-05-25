@@ -29,7 +29,7 @@ node:
   # OPTIONAL: The version of the package manager (above) to use.
   npm:
     version: '{{ package_manager_version }}'
-  {%- endif -%}
+  {%- endif %}
 
   # OPTIONAL: Add `node.version` as a constaint in the root `package.json` `engines`.
   addEnginesConstraint: true

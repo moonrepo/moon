@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "WorkspaceConfig",
-  "description": "https://moonrepo.dev/docs/config/workspace",
+  "description": "Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
   "properties": {
     "node": {
@@ -146,7 +146,7 @@
       "type": "object",
       "properties": {
         "version": {
-          "default": "6.32.2",
+          "default": "7.1.5",
           "type": "string"
         }
       }
@@ -203,7 +203,7 @@
       "type": "object",
       "properties": {
         "version": {
-          "default": "3.2.0",
+          "default": "3.2.1",
           "type": "string"
         }
       }

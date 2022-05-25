@@ -5,7 +5,7 @@ Contributions are always welcome, no matter how large or small!
 ## Prerequisites
 
 - Node.js >= v14.15
-- Rust >= 1.60
+- Rust >= 1.61
 
 ## Setup
 

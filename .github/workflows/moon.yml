@@ -48,7 +48,7 @@ jobs:
           restore-keys: ${{ runner.os }}-moon-node@${{ matrix.node-version }}-
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.60.0
+          toolchain: 1.61.0
           profile: minimal
       - uses: moonrepo/tool-version-action@v1
         with:

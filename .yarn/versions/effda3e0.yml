@@ -1,6 +1,0 @@
-releases:
-  "@moonrepo/cli": patch
-
-declined:
-  - "@moonrepo/runtime"
-  - website

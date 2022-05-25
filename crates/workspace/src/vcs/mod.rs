@@ -77,14 +77,17 @@ pub trait Vcs {
 pub struct VcsManager {}
 
 impl VcsManager {
-    pub fn load(config: &WorkspaceConfig, working_dir: &Path) -> Box<dyn Vcs + Send + Sync> {
+    pub fn load(
+        config: &WorkspaceConfig,
+        working_dir: &Path,
+    ) -> Result<Box<dyn Vcs + Send + Sync>, WorkspaceError> {
         let vcs_config = &config.vcs;
         let manager = &vcs_config.manager;
         let default_branch = &vcs_config.default_branch;
 
-        match manager {
+        Ok(match manager {
             VM::Svn => Box::new(Svn::new(default_branch, working_dir)),
-            _ => Box::new(Git::new(default_branch, working_dir)),
-        }
+            _ => Box::new(Git::new(default_branch, working_dir)?),
+        })
     }
 }

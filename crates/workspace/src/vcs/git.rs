@@ -1,5 +1,7 @@
+use crate::errors::WorkspaceError;
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
+use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use moon_utils::fs;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
@@ -8,14 +10,41 @@ use std::path::{Path, PathBuf};
 
 pub struct Git {
     default_branch: String,
+    ignore: Option<Gitignore>,
     working_dir: PathBuf,
 }
 
 impl Git {
-    pub fn new(default_branch: &str, working_dir: &Path) -> Self {
-        Git {
+    pub fn new(default_branch: &str, working_dir: &Path) -> VcsResult<Self> {
+        let mut ignore: Option<Gitignore> = None;
+        let ignore_path = working_dir.join(".gitignore");
+
+        if ignore_path.exists() {
+            let mut builder = GitignoreBuilder::new(working_dir);
+
+            if let Some(error) = builder.add(ignore_path) {
+                return Err(WorkspaceError::Ignore(error));
+            }
+
+            ignore = Some(builder.build().map_err(WorkspaceError::Ignore)?);
+        }
+
+        Ok(Git {
             default_branch: String::from(default_branch),
+            ignore,
             working_dir: working_dir.to_path_buf(),
+        })
+    }
+
+    fn is_file_ignored(&self, file: &str) -> bool {
+        if self.ignore.is_some() {
+            self.ignore
+                .as_ref()
+                .unwrap()
+                .matched(file, false)
+                .is_ignore()
+        } else {
+            false
         }
     }
 
@@ -64,9 +93,17 @@ impl Vcs for Git {
     }
 
     async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
+        let mut objects = vec![];
+
+        for file in files {
+            if !self.is_file_ignored(file) {
+                objects.push(file.clone());
+            }
+        }
+
         let output = self
             .create_command(vec!["hash-object", "--stdin-paths"])
-            .exec_capture_output_with_input(&files.join("\n"))
+            .exec_capture_output_with_input(&objects.join("\n"))
             .await?;
         let output = output_to_trimmed_string(&output.stdout);
 
@@ -74,7 +111,7 @@ impl Vcs for Git {
 
         for (index, hash) in output.split('\n').enumerate() {
             if !hash.is_empty() {
-                map.insert(files[index].clone(), hash.to_owned());
+                map.insert(objects[index].clone(), hash.to_owned());
             }
         }
 
@@ -98,7 +135,9 @@ impl Vcs for Git {
             let hash = last_parts.next().unwrap();
             let file = last_parts.next().unwrap();
 
-            map.insert(file.to_owned(), hash.to_owned());
+            if !self.is_file_ignored(file) {
+                map.insert(file.to_owned(), hash.to_owned());
+            }
         }
 
         Ok(map)
@@ -315,5 +354,66 @@ impl Vcs for Git {
 
     fn is_enabled(&self) -> bool {
         fs::find_upwards(".git", &self.working_dir).is_some()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use moon_utils::string_vec;
+    use moon_utils::test::create_fixtures_sandbox;
+
+    mod get_file_hashes {
+        use super::*;
+
+        #[tokio::test]
+        async fn filters_ignored_files() {
+            let fixture = create_fixtures_sandbox("ignore");
+            let git = Git::new("master", fixture.path()).unwrap();
+
+            assert_eq!(
+                git.get_file_hashes(&string_vec!["foo", "bar", "dir/baz", "dir/qux"])
+                    .await
+                    .unwrap(),
+                BTreeMap::from([
+                    (
+                        "dir/qux".to_owned(),
+                        "100b0dec8c53a40e4de7714b2c612dad5fad9985".to_owned()
+                    ),
+                    (
+                        "foo".to_owned(),
+                        "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
+                    )
+                ])
+            );
+        }
+    }
+
+    mod get_file_tree_hashes {
+        use super::*;
+
+        #[tokio::test]
+        async fn filters_ignored_files() {
+            let fixture = create_fixtures_sandbox("ignore");
+            let git = Git::new("master", fixture.path()).unwrap();
+
+            assert_eq!(
+                git.get_file_tree_hashes(".").await.unwrap(),
+                BTreeMap::from([
+                    (
+                        ".gitignore".to_owned(),
+                        "589c59be54beff591804a008c972e76dea31d2d1".to_owned()
+                    ),
+                    (
+                        "dir/qux".to_owned(),
+                        "100b0dec8c53a40e4de7714b2c612dad5fad9985".to_owned()
+                    ),
+                    (
+                        "foo".to_owned(),
+                        "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
+                    )
+                ])
+            );
+        }
     }
 }

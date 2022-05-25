@@ -16,6 +16,7 @@ moon_utils = { path = "../utils" }
 async-trait = "0.1.53"
 chrono = "0.4.19"
 futures = "0.3.21"
+ignore = "0.4.18"
 pathdiff = "0.2.1"
 petgraph = "0.6.0"
 regex = "1.5.6"

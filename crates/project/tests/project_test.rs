@@ -217,7 +217,7 @@ mod tasks {
     use moon_project::test::{
         create_expanded_task as create_expanded_task_internal, create_file_groups_config,
     };
-    use moon_utils::path;
+    use moon_utils::glob;
     use moon_utils::test::wrap_glob;
     use pretty_assertions::assert_eq;
 
@@ -311,7 +311,7 @@ mod tasks {
 
         // Expanded
         task.input_globs
-            .push(path::normalize_glob(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
+            .push(glob::normalize(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
 
         assert_eq!(
             project,
@@ -367,15 +367,10 @@ mod tasks {
         // Expanded
         let wild_glob = workspace_root.join("tasks/basic/**/*");
 
-        build
-            .input_globs
-            .push(path::normalize_glob(&wild_glob).unwrap());
-        std.input_globs
-            .push(path::normalize_glob(&wild_glob).unwrap());
-        test.input_globs
-            .push(path::normalize_glob(&wild_glob).unwrap());
-        lint.input_globs
-            .push(path::normalize_glob(&wild_glob).unwrap());
+        build.input_globs.push(glob::normalize(&wild_glob).unwrap());
+        std.input_globs.push(glob::normalize(&wild_glob).unwrap());
+        test.input_globs.push(glob::normalize(&wild_glob).unwrap());
+        lint.input_globs.push(glob::normalize(&wild_glob).unwrap());
 
         assert_eq!(
             project,

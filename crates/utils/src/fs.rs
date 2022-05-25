@@ -1,5 +1,4 @@
 use async_recursion::async_recursion;
-use globset::GlobSet;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
@@ -91,20 +90,6 @@ pub async fn link_dir(from_root: &Path, from: &Path, to_root: &Path) -> Result<(
     }
 
     Ok(())
-}
-
-#[cfg(not(windows))]
-pub fn matches_globset(globset: &GlobSet, path: &Path) -> Result<bool, MoonError> {
-    Ok(globset.is_match(path))
-}
-
-// globset doesnt match against inputs that use backwards slashes
-// https://github.com/BurntSushi/ripgrep/issues/2001
-#[cfg(windows)]
-pub fn matches_globset(globset: &GlobSet, path: &Path) -> Result<bool, MoonError> {
-    use crate::path::normalize_glob;
-
-    Ok(globset.is_match(&PathBuf::from(normalize_glob(path)?)))
 }
 
 pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {

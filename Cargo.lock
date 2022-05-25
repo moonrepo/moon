@@ -1345,7 +1345,6 @@ dependencies = [
  "strum_macros",
  "tera",
  "tokio",
- "wax",
 ]
 
 [[package]]
@@ -1407,8 +1406,6 @@ name = "moon_project"
 version = "0.1.0"
 dependencies = [
  "common-path",
- "globset",
- "globwalk",
  "insta",
  "itertools",
  "moon_config",
@@ -1469,7 +1466,6 @@ dependencies = [
  "chrono",
  "chrono-humanize",
  "dirs",
- "globset",
  "json_comments",
  "lazy_static",
  "moon_error",
@@ -1479,6 +1475,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "wax",
 ]
 
 [[package]]

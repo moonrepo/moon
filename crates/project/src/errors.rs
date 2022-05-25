@@ -1,5 +1,6 @@
 use moon_config::{constants, ValidationErrors};
 use moon_error::MoonError;
+use moon_utils::glob::GlobError;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -35,13 +36,10 @@ pub enum ProjectError {
     UnconfiguredTask(String, String),
 
     #[error(transparent)]
+    Glob(#[from] GlobError),
+
+    #[error(transparent)]
     Moon(#[from] MoonError),
-
-    #[error(transparent)]
-    GlobWalk(#[from] globwalk::GlobError),
-
-    #[error(transparent)]
-    GlobSet(#[from] globset::Error),
 
     #[error(transparent)]
     Target(#[from] TargetError),

@@ -13,33 +13,30 @@ in the workspace. Projects can override or merge with these settings within thei
 > For more information on file group configuration, refer to the
 > [`fileGroups`](./project#filegroups) section in the [`project.yml`](./project) doc.
 
-As mentioned in the link above, file groups are a mechanism for grouping similar types of files
-within a project using file glob patterns or literal file paths. File groups defined here enables
-enforcement of organizational patterns and file locations.
-
-For example, encourage all projects to place source files in a `src` folder, and all test files in
-`tests`.
+Defines [file groups](../concepts/file-group) that will be inherited by all projects, and also
+enables enforcement of organizational patterns and file locations. For example, encourage all
+projects to place source files in a `src` folder, and all test files in `tests`.
 
 ```yaml title=".moon/project.yml"
 fileGroups:
   configs:
-    - '*.{js,json}'
+    - '*.config.{js,cjs,mjs}'
+    - '*.json'
   sources:
     - 'src/**/*'
     - 'types/**/*'
   tests:
-    - 'tests/**/*.test.*'
+    - 'tests/**/*'
     - '**/__tests__/**/*'
   assets:
     - 'assets/**/*'
     - 'images/**/*'
     - 'static/**/*'
     - '**/*.{scss,css}'
-    - '**/*'
 ```
 
-> Relative file paths and globs used within a file group are relative from the inherited project's
-> root, and not the workspace.
+> File paths and globs used within a file group are relative from the inherited project's root, and
+> not the workspace.
 
 ## `tasks`
 
@@ -67,7 +64,7 @@ tasks:
 
   test:
     command: 'jest'
-    args: '--passWithNoTests .'
+    args: '--passWithNoTests'
 
   typecheck:
     command: 'tsc'

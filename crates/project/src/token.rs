@@ -3,7 +3,8 @@ use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
 use moon_logger::{color, trace, warn};
-use moon_utils::path::{expand_root_path, is_glob};
+use moon_utils::glob;
+use moon_utils::path::expand_root_path;
 use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
     TOKEN_VAR_PATTERN,
@@ -358,7 +359,7 @@ impl<'a> TokenResolver<'a> {
                 }
             };
 
-            if is_glob(input) {
+            if glob::is_glob(input) {
                 match task.input_globs.iter().find(|g| g.ends_with(input)) {
                     Some(g) => {
                         results.push(PathBuf::from(g));

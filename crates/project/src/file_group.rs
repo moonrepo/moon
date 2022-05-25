@@ -1,9 +1,8 @@
 use crate::errors::{ProjectError, TokenError};
 use common_path::common_path_all;
-use globwalk::GlobWalkerBuilder;
-use moon_utils::path::{expand_root_path, is_glob};
+use moon_utils::glob;
+use moon_utils::path::expand_root_path;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -56,7 +55,7 @@ impl FileGroup {
         let mut globs = vec![];
 
         for file in &self.files {
-            if is_glob(file) {
+            if glob::is_glob(file) {
                 globs.push(expand_root_path(file, workspace_root, project_root));
             }
         }
@@ -99,46 +98,35 @@ impl FileGroup {
         let mut list = vec![];
 
         for file in &self.files {
-            if is_glob(file) {
+            if glob::is_glob(file) {
                 let root = if file.starts_with('/') {
                     workspace_root
                 } else {
                     project_root
                 };
-                let walker = GlobWalkerBuilder::from_patterns(&root, &[file])
-                    .follow_links(false)
-                    .build()?;
 
-                for entry in walker {
-                    let entry_path = entry.unwrap(); // Handle error?
-
+                for path in glob::walk(root, &[file.clone()])? {
                     let allowed = if is_dir {
-                        entry_path.file_type().is_dir()
+                        path.is_dir()
                     } else {
-                        entry_path.file_type().is_file()
+                        path.is_file()
                     };
 
                     if allowed {
-                        list.push(entry_path.into_path());
+                        list.push(path);
                     }
                 }
             } else {
-                let file_path = expand_root_path(file, workspace_root, project_root);
+                let path = expand_root_path(file, workspace_root, project_root);
 
-                let allowed = match fs::metadata(&file_path) {
-                    Ok(meta) => {
-                        if is_dir {
-                            meta.is_dir()
-                        } else {
-                            meta.is_file()
-                        }
-                    }
-                    // Branch exists for logging
-                    Err(_) => false,
+                let allowed = if is_dir {
+                    path.is_dir()
+                } else {
+                    path.is_file()
                 };
 
                 if allowed {
-                    list.push(file_path.to_owned());
+                    list.push(path.to_owned());
                 }
             }
         }

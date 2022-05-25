@@ -116,6 +116,13 @@ mod caching {
             .await
             .unwrap();
 
+        assert_snapshot!(read_to_string(
+            fixture
+                .path()
+                .join(format!(".moon/cache/hashes/{}.json", state.item.hash))
+        )
+        .unwrap());
+
         assert_eq!(state.item.exit_code, 0);
         assert_eq!(state.item.stdout, "stdout");
         assert_eq!(state.item.stderr, "stderr");

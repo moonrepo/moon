@@ -20,13 +20,13 @@ impl Git {
         let ignore_path = working_dir.join(".gitignore");
 
         if ignore_path.exists() {
-            let builder = GitignoreBuilder::new(working_dir);
+            let mut builder = GitignoreBuilder::new(working_dir);
 
             if let Some(error) = builder.add(ignore_path) {
                 return Err(WorkspaceError::Ignore(error));
             }
 
-            ignore = Some(builder.build().map_err(|e| WorkspaceError::Ignore(e))?);
+            ignore = Some(builder.build().map_err(WorkspaceError::Ignore)?);
         }
 
         Ok(Git {
@@ -93,14 +93,17 @@ impl Vcs for Git {
     }
 
     async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
-        let files = files
-            .iter()
-            .filter(|file| !self.is_file_ignored(file))
-            .collect::<Vec<_>>();
+        let mut objects = vec![];
+
+        for file in files {
+            if !self.is_file_ignored(file) {
+                objects.push(file.clone());
+            }
+        }
 
         let output = self
             .create_command(vec!["hash-object", "--stdin-paths"])
-            .exec_capture_output_with_input(&files.join("\n"))
+            .exec_capture_output_with_input(&objects.join("\n"))
             .await?;
         let output = output_to_trimmed_string(&output.stdout);
 
@@ -132,7 +135,7 @@ impl Vcs for Git {
             let hash = last_parts.next().unwrap();
             let file = last_parts.next().unwrap();
 
-            if !self.is_file_ignored(&file) {
+            if !self.is_file_ignored(file) {
                 map.insert(file.to_owned(), hash.to_owned());
             }
         }

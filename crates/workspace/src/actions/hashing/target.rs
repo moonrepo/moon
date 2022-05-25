@@ -34,7 +34,7 @@ pub async fn create_target_hasher(
     task: &Task,
     passthrough_args: &[String],
 ) -> Result<Hasher, WorkspaceError> {
-    let vcs = workspace.detect_vcs();
+    let vcs = workspace.detect_vcs()?;
     let globset = task.create_globset()?;
     let mut hasher = Hasher::new(workspace.config.node.version.clone());
 

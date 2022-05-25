@@ -24,8 +24,8 @@
 
 ## Cache
 
-- [ ] hashing
-  - [ ] ignore hashes for files that are gitignored
+- [x] hashing
+  - [x] ignore hashes for files that are gitignored
 - [ ] add docs on caching options
 
 ## Tests

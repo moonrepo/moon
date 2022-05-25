@@ -46,15 +46,12 @@ and create a git tag for every affected package. This must then be pushed to ups
 git push origin master --tags
 ```
 
-At this point, the actual "publishing to npm" is done through two GitHub workflows:
+At this point, the actual "publishing to npm" is done through the
+[release.yml](https://github.com/moonrepo/moon/blob/master/.github/workflows/release.yml) GitHub
+workflows. This is our most critical workflow, as it builds the Rust binary and copies it into the
+appropriate packages before publishing.
 
-- [release.yml](https://github.com/moonrepo/moon/blob/master/.github/workflows/release.yml) -
-  Publishes the `@moonrepo/cli` and `@moonrepo/core-*` packages. This is our most critical workflow,
-  as it builds the Rust binary and copies it into the appropriate packages before publishing.
-- [release-npm.yml](https://github.com/moonrepo/moon/blob/master/.github/workflows/release-npm.yml) -
-  This workflow publishes all other npm packages.
-
-Both of these workflows _must be manually triggered_ through GitHub's UI.
+This workflow _must be manually triggered_ through GitHub's UI.
 
 ### Handling failed publishes
 

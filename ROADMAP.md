@@ -22,6 +22,8 @@
 
 # 0.2.0
 
+- [ ] add header to docs homepage
+
 ## Cache
 
 - [x] hashing

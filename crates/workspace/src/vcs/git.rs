@@ -356,3 +356,59 @@ impl Vcs for Git {
         fs::find_upwards(".git", &self.working_dir).is_some()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use moon_utils::string_vec;
+    use moon_utils::test::create_fixtures_sandbox;
+
+    mod get_file_hashes {
+        use super::*;
+
+        #[tokio::test]
+        async fn filters_ignored_files() {
+            let fixture = create_fixtures_sandbox("ignore");
+            let git = Git::new("master", fixture.path()).unwrap();
+
+            let hashes = git
+                .get_file_hashes(&string_vec!["foo", "bar", "baz"])
+                .await
+                .unwrap();
+
+            assert_eq!(
+                hashes,
+                BTreeMap::from([(
+                    "foo".to_owned(),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                )])
+            );
+        }
+    }
+
+    mod get_file_tree_hashes {
+        use super::*;
+
+        #[tokio::test]
+        async fn filters_ignored_files() {
+            let fixture = create_fixtures_sandbox("ignore");
+            let git = Git::new("master", fixture.path()).unwrap();
+
+            let hashes = git.get_file_tree_hashes(".").await.unwrap();
+
+            assert_eq!(
+                hashes,
+                BTreeMap::from([
+                    (
+                        ".gitignore".to_owned(),
+                        "589c59be54beff591804a008c972e76dea31d2d1".to_owned()
+                    ),
+                    (
+                        "foo".to_owned(),
+                        "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                    )
+                ])
+            );
+        }
+    }
+}

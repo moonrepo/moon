@@ -13,14 +13,12 @@ fileGroups:
   configs:
     - '*.{js,json}'
 
-  # List of non-test JavaScript/TypeScript source files.
-  # This may include runtime, published, or distributable files.
+  # List of non-test source files.
   sources:
     - 'src/**/*'
     - 'types/**/*'
 
-  # List of non-source JavaScript/TypeScript test files.
-  # This may include unit tests, E2E tests, stories, etc.
+  # List of non-source test files.
   tests:
     - 'tests/**/*.test.*'
     - '**/__tests__/**/*'
@@ -50,7 +48,7 @@ tasks:
     args: []
 
     # OPTIONAL: List of targets that will be executed *before* this task.
-    dependsOn: []
+    deps: []
 
     # OPTIONAL: Map of environment variables to pass when executing the command.
     env: {}
@@ -67,5 +65,5 @@ tasks:
     outputs: []
 
     # OPTIONAL: The type of command to run, and where to locate it.
-    # Accepts "node" or "shell".
+    # Accepts "node" or "system".
     type: 'node'

@@ -317,7 +317,7 @@
       "type": "string",
       "enum": [
         "node",
-        "shell"
+        "system"
       ]
     }
   }

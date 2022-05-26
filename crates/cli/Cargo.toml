@@ -22,7 +22,7 @@ moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-clap = { version = "3.1.18", features = ["derive", "wrap_help"] }
+clap = { version = "3.1.18", features = ["derive", "env", "wrap_help"] }
 console = "0.15.0"
 dialoguer = "0.10.1"
 indicatif = "0.16.2"

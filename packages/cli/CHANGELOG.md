@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Hashing will now ignore files that matched a pattern found in the root `.gitignore`.
+- Added support for the `MOON_LOG` environment variable.
 - Updated the JSON schemas to use the new package manager versions.
 
 #### 🐞 Fixes

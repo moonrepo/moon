@@ -113,8 +113,8 @@ jobs:
             host: macos-latest
 
           - target: aarch64-apple-darwin
-            host: ubuntu-latest
-            image: arm64v8/node
+            host: macos-latest
+            # image: arm64v8/node
 
           - target: x86_64-pc-windows-msvc
             host: windows-latest
@@ -163,13 +163,17 @@ jobs:
           TARGET: ${{ matrix.target }}
       - name: Test binary
         if: ${{ matrix.image }}
-        uses: addnab/docker-run-action@v3
-        with:
-          registry: docker.io
-          image: ${{ matrix.image }}
-          # options: --user 0:0 -v ${{ env.RUNNER_TEMP }}/.cargo/git:/root/.cargo/git -v ${{ env.RUNNER_TEMP }}/.cargo/registry:/root/.cargo/registry -v ${{ github.workspace }}:/build -w /build
-          options: -e TARGET=${{ matrix.target }}
-          run: node ./scripts/release/testBinary.mjs
+        run: |
+          sudo apt-get install qemu binfmt-support qemu-user-static
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker run --rm -v "/var/run/docker.sock":"/var/run/docker.sock" -e TARGET=${{ matrix.target }} ${{ matrix.image }} -c "node ./scripts/release/testBinary.mjs"
+        # uses: addnab/docker-run-action@v3
+        # with:
+        #   registry: docker.io
+        #   image: ${{ matrix.image }}
+        #   # options: --user 0:0 -v ${{ env.RUNNER_TEMP }}/.cargo/git:/root/.cargo/git -v ${{ env.RUNNER_TEMP }}/.cargo/registry:/root/.cargo/registry -v ${{ github.workspace }}:/build -w /build
+        #   options: -e TARGET=${{ matrix.target }}
+        #   run: node ./scripts/release/testBinary.mjs
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

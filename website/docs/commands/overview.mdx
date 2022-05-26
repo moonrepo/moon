@@ -1,0 +1,24 @@
+---
+title: Overview
+---
+
+The following options are available for _all_ moon commands.
+
+- `--cache <mode>` - The mode for [cache operations](#caching).
+- `--help` - Display the help menu for the current command.
+- `--log <level>` - The lowest [log level to output](#logging).
+- `--version` - Display the version of the CLI.
+
+Global options _must_ be passed after the `moon` before and before the command.
+
+```shell
+$ moon --log error <command>
+```
+
+## Caching
+
+- `off` - Turn off caching entirely. Every task will run fresh.
+- `read` - Read existing items from the cache, but do not write to them.
+- `write` (default) - Read and write items to the cache.
+
+## Logging

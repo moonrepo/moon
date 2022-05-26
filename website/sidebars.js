@@ -67,6 +67,7 @@ const sidebars = {
 			type: 'category',
 			label: 'Commands',
 			items: [
+				'commands/overview',
 				'commands/bin',
 				'commands/ci',
 				'commands/init',

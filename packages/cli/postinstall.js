@@ -38,10 +38,6 @@ try {
 	}
 } catch {
 	pkgPath = path.join(__dirname, '../../target/release');
-
-	if (!fs.existsSync(path.join(pkgPath, binary))) {
-		pkgPath = path.join(__dirname, '../../target/debug');
-	}
 }
 
 try {

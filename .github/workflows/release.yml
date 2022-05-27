@@ -12,7 +12,7 @@ on:
     branches:
       - master
   # Uncomment to test in PRs (its safe)
-  # pull_request:
+  pull_request:
 
 jobs:
   build:
@@ -141,9 +141,7 @@ jobs:
         run: node ./scripts/release/syncArtifacts.mjs
         shell: bash
       - name: List packages
-        run:
-          ls -lR ./packages/cli ./packages/core-linux-* ./packages/core-macos-*
-          ./packages/core-windows-*
+        run: ls -lR ./packages/cli ./packages/core-*
         shell: bash
       - name: Test binary
         run: node ./scripts/release/testBinary.mjs
@@ -152,7 +150,7 @@ jobs:
           TARGET: ${{ matrix.target }}
 
   publish:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    # if: ${{ github.event_name == 'workflow_dispatch' }}
     name: Publish cli/core packages
     runs-on: ubuntu-latest
     needs:
@@ -182,21 +180,21 @@ jobs:
       - name: Sync artifact binaries
         run: node ./scripts/release/syncArtifacts.mjs
       - name: List binaries
-        run: ls -lR ./artifacts/release ./packages/core-*
+        run: ls -lR ./artifacts/release ./packages/cli ./packages/core-*
         shell: bash
-      - name: Publish npm packages
-        run: bash ./scripts/release/publishBinaryPackages.sh
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - uses: softprops/action-gh-release@v1
-        name: Create GitHub release
-        with:
-          fail_on_unmatched_files: true
-          files: artifacts/release/*
-          tag_name: ${{ env.NPM_TAG_NAME }}
-          prerelease: ${{ env.NPM_CHANNEL == 'next' }}
+      # - name: Publish npm packages
+      #   run: bash ./scripts/release/publishBinaryPackages.sh
+      #   shell: bash
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - uses: softprops/action-gh-release@v1
+      #   name: Create GitHub release
+      #   with:
+      #     fail_on_unmatched_files: true
+      #     files: artifacts/release/*
+      #     tag_name: ${{ env.NPM_TAG_NAME }}
+      #     prerelease: ${{ env.NPM_CHANNEL == 'next' }}
 
   publish-npm:
     if: ${{ github.event_name == 'workflow_dispatch' }}

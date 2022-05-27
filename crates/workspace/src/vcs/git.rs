@@ -36,6 +36,28 @@ impl Git {
         })
     }
 
+    async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<String> {
+        let candidates = [
+            base.to_owned(),
+            format!("origin/{}", base),
+            format!("upstream/{}", base),
+        ];
+
+        for candidate in candidates {
+            if let Ok(hash) = self
+                .run_command(
+                    &mut self.create_command(vec!["merge-base", &candidate, head]),
+                    true,
+                )
+                .await
+            {
+                return Ok(hash);
+            }
+        }
+
+        Ok(base.to_owned())
+    }
+
     fn is_file_ignored(&self, file: &str) -> bool {
         if self.ignore.is_some() {
             self.ignore
@@ -260,6 +282,8 @@ impl Vcs for Git {
         base_revision: &str,
         revision: &str,
     ) -> VcsResult<TouchedFiles> {
+        let base = self.get_merge_base(base_revision, revision).await?;
+
         let output = self
             .run_command(
                 &mut self.create_command(vec![
@@ -271,7 +295,7 @@ impl Vcs for Git {
                     // We use this option so that file names with special characters
                     // are displayed as-is and are not quoted/escaped
                     "-z",
-                    base_revision,
+                    &base,
                     revision,
                 ]),
                 false,

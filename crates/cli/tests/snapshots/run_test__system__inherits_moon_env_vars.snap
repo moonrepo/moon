@@ -1,11 +1,12 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 771
+assertion_line: 895
 expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ system:envVarsMoon
 MOON_CACHE=write
 MOON_CACHE_DIR=<WORKSPACE>/.moon/cache
+MOON_LOG=info
 MOON_PROJECT_ID=system
 MOON_PROJECT_ROOT=<WORKSPACE>/system
 MOON_PROJECT_RUNFILE=<WORKSPACE>/.moon/cache/runs/system/runfile.json

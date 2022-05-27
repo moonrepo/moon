@@ -36,6 +36,10 @@ pub async fn run_cli() {
     let args = App::parse();
 
     // Setup logging
+    if env::var("MOON_LOG").is_err() {
+        env::set_var("MOON_LOG", args.log.to_string().to_lowercase());
+    }
+
     Logger::init(map_log_level(args.log));
 
     // Setup caching

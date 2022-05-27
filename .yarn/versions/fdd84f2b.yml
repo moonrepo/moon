@@ -1,0 +1,3 @@
+releases:
+  "@moonrepo/cli": patch
+  website: minor

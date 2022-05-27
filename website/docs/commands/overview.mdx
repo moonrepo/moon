@@ -1,0 +1,57 @@
+---
+title: Overview
+---
+
+The following options are available for _all_ moon commands.
+
+- `--cache <mode>` - The mode for [cache operations](#caching).
+- `--help` - Display the help menu for the current command.
+- `--log <level>` - The lowest [log level to output](#logging).
+- `--version` - Display the version of the CLI.
+
+Global options _must_ be passed after the `moon` binary and before the command.
+
+```shell
+$ moon --log error <command>
+```
+
+## Caching
+
+We provide a powerful [caching layer](../concepts/cache), but sometimes you need to debug failing or
+broken tasks, and this cache may get in the way. To circumvent this, we support the `--cache` global
+option, or the `MOON_CACHE` environment variable, both of which accept one of the following values.
+
+- `off` - Turn off caching entirely. Every task will run fresh, including dependency installs.
+- `read` - Read existing items from the cache, but do not write to them.
+- `write` (default) - Read and write items to the cache.
+
+```shell
+$ moon --cache off run app:build
+# Or
+$ MOON_CACHE=off moon run app:build
+```
+
+## Logging
+
+By default, moon aims to output as little as possible, as we want to preserve the original output of
+the command's being ran, excluding warnings and errors. This is managed through log levels, which
+can be defined with the `--log` global option, or the `MOON_LOG` environment level. The following
+levels are supported, in priority order.
+
+- `off` - Turn off logging entirely.
+- `error` - Only show error logs.
+- `warn` - Only show warning logs and above.
+- `info` (default) - Only show info logs and above.
+- `debug` - Only show debug logs and above.
+- `trace` - Show all logs, including network requests and child processes.
+
+```shell
+$ moon --log trace run app:build
+# Or
+$ MOON_LOG=trace moon run app:build
+```
+
+## Debugging
+
+At this point in time, moon provides no debugging utilities besides [logging](#logging) with the
+`debug`/`trace` levels.

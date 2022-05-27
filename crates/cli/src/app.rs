@@ -167,10 +167,22 @@ pub enum Commands {
     rename_all = "camelCase"
 )]
 pub struct App {
-    #[clap(arg_enum, long, help = "Mode for cache operations", default_value_t)]
+    #[clap(
+        arg_enum,
+        long,
+        env = "MOON_CACHE",
+        help = "Mode for cache operations",
+        default_value_t
+    )]
     pub cache: CacheMode,
 
-    #[clap(arg_enum, long, help = "Lowest log level to output", default_value_t)]
+    #[clap(
+        arg_enum,
+        long,
+        env = "MOON_LOG",
+        help = "Lowest log level to output",
+        default_value_t
+    )]
     pub log: LogLevel,
 
     #[clap(subcommand)]

@@ -78,7 +78,7 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
 async fn main() {
     let mut run = true;
 
-    println!("Trigger CI!");
+    // Trigger CI!
 
     // Detect if we've been installed globally
     if let Ok(current_dir) = env::current_dir() {

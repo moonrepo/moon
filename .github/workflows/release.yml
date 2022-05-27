@@ -119,7 +119,7 @@ jobs:
               sudo apt-get install binfmt-support qemu qemu-user-static
               docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
               docker run --rm -t arm64v8/ubuntu uname -m
-              docker run --rm -t -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/home/runner/work/moon/moon":"/work" -e "TARGET=aarch64-apple-darwin" --entrypoint node arm64v8/node -c "/work/scripts/release/testBinary.mjs"
+              docker run --rm -t -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/home/runner/work/moon/moon":"/work" -e "TARGET=aarch64-apple-darwin" --entrypoint node arm64v8/node -c "-e 'console.log(123)'"
 
           - target: x86_64-pc-windows-msvc
             host: windows-latest

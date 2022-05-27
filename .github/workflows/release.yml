@@ -76,7 +76,6 @@ jobs:
         run: yarn install --immutable
       - name: Build binary
         run: node ./scripts/release/buildBinary.mjs
-        shell: bash
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
@@ -139,15 +138,11 @@ jobs:
           path: artifacts
       - name: Sync artifact binaries
         run: node ./scripts/release/syncArtifacts.mjs
-        shell: bash
       - name: List packages
-        run:
-          ls -lR ./packages/cli ./packages/core-linux-* ./packages/core-macos-*
-          ./packages/core-windows-*
+        run: ls -lR ./packages/cli ./packages/core-*
         shell: bash
       - name: Test binary
         run: node ./scripts/release/testBinary.mjs
-        shell: bash
         env:
           TARGET: ${{ matrix.target }}
 
@@ -182,7 +177,7 @@ jobs:
       - name: Sync artifact binaries
         run: node ./scripts/release/syncArtifacts.mjs
       - name: List binaries
-        run: ls -lR ./artifacts/release ./packages/core-*
+        run: ls -lR ./artifacts/release ./packages/cli ./packages/core-*
         shell: bash
       - name: Publish npm packages
         run: bash ./scripts/release/publishBinaryPackages.sh

@@ -114,12 +114,10 @@ jobs:
 
           - target: aarch64-apple-darwin
             host: ubuntu-latest
-            docker: |
-              uname -m
+            test: |
               sudo apt-get install binfmt-support qemu qemu-user-static
               docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-              docker run --rm -t arm64v8/ubuntu uname -m
-              docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/home/runner/work/moon/moon":"/work" -e "TARGET=aarch64-apple-darwin" --entrypoint bash arm64v8/node -c "ls -la /work"
+              docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/home/runner/work/moon/moon":"/work" -e "TARGET=aarch64-apple-darwin" --entrypoint bash arm64v8/node -c "/work/scripts/release/testBinary.mjs"
 
           - target: x86_64-pc-windows-msvc
             host: windows-latest
@@ -162,20 +160,13 @@ jobs:
         run: ls -lR ./packages/cli ./packages/core-*
         shell: bash
       - name: Test binary
-        if: ${{ !matrix.docker }}
+        if: ${{ !matrix.test }}
         run: node ./scripts/release/testBinary.mjs
         env:
           TARGET: ${{ matrix.target }}
       - name: Test binary
-        if: ${{ matrix.docker }}
-        run: ${{ matrix.docker }}
-        # uses: addnab/docker-run-action@v3
-        # with:
-        #   registry: docker.io
-        #   image: ${{ matrix.image }}
-        #   # options: --user 0:0 -v ${{ env.RUNNER_TEMP }}/.cargo/git:/root/.cargo/git -v ${{ env.RUNNER_TEMP }}/.cargo/registry:/root/.cargo/registry -v ${{ github.workspace }}:/build -w /build
-        #   options: -e TARGET=${{ matrix.target }}
-        #   run: node ./scripts/release/testBinary.mjs
+        if: ${{ matrix.test }}
+        run: ${{ matrix.test }}
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

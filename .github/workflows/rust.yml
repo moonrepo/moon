@@ -96,7 +96,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: cargo-make grcov
+          args: --force cargo-make grcov
       - uses: actions-rs/cargo@v1
         with:
           command: build

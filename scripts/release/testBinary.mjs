@@ -6,8 +6,6 @@ import { BINARY, getPackageFromTarget, getPath } from '../helpers.mjs';
 async function testBinary() {
 	const binaryPath = getPath('node_modules', '@moonrepo', getPackageFromTarget(), BINARY);
 
-	console.log(binaryPath);
-
 	// Ensure its "linked" in the package
 	await execa(binaryPath, ['--help'], { stdio: 'inherit' });
 }

@@ -53,7 +53,7 @@ const managementFeatures: Feature[] = [
 	{
 		title: 'Multi-platform',
 		icon: faMicrochip,
-		description: 'Runs on common development platforms: Linux, MacOS, and Windows.',
+		description: 'Runs on common development platforms: Linux, macOS, and Windows.',
 	},
 ];
 

@@ -5,6 +5,7 @@ export const { BINARY = process.platform === 'win32' ? 'moon.exe' : 'moon', TARG
 	process.env;
 
 const targetToPackage = {
+	'aarch64-apple-darwin': 'core-macos-arm64',
 	'x86_64-apple-darwin': 'core-macos-x64',
 	'x86_64-pc-windows-msvc': 'core-windows-x64-msvc',
 	'x86_64-unknown-linux-gnu': 'core-linux-x64-gnu',

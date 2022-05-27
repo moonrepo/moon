@@ -56,7 +56,6 @@ pub fn get_download_file_ext() -> &'static str {
     }
 }
 
-// #[allow(unused_assignments)]
 pub fn get_download_file_name(version: &str) -> Result<String, LangError> {
     let platform;
 
@@ -79,7 +78,7 @@ pub fn get_download_file_name(version: &str) -> Result<String, LangError> {
         arch = "x86"
     } else if consts::ARCH == "x86_64" {
         arch = "x64"
-    } else if consts::ARCH == "arm" {
+    } else if consts::ARCH == "arm" || consts::ARCH == "aarch64" {
         arch = "arm64"
     } else if consts::ARCH == "powerpc64" {
         arch = "ppc64le"

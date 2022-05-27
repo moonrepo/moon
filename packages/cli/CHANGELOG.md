@@ -7,6 +7,7 @@
 - Added support for macOS silicon (`aarch64-apple-darwin`).
 - Added support for the `MOON_LOG` environment variable.
 - Updated the JSON schemas to use the new package manager versions.
+- Updated git file diffing to use `git merge-base` as the base reference.
 - Hashing will now ignore files that matched a pattern found in the root `.gitignore`.
 
 #### 🐞 Fixes

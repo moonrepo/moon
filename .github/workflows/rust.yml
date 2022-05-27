@@ -96,11 +96,21 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: cargo-make cargo-binutils
+          args: cargo-make grcov
       - uses: actions-rs/cargo@v1
         with:
           command: build
+        env:
+          RUSTFLAGS: '-Cinstrument-coverage'
       - uses: actions-rs/cargo@v1
         with:
           command: make
           args: test
+        env:
+          RUSTFLAGS: '-Cinstrument-coverage'
+          LLVM_PROFILE_FILE: 'moon-%p-%m.profraw'
+      - name: Generating code coverage
+        run: |
+          ls -la target/debug
+          ls -la .
+          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./target/debug/coverage/

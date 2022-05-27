@@ -22,13 +22,13 @@
 
 # 0.2.0
 
-- [ ] add header to docs homepage
+- [x] add header to docs homepage
 
 ## Cache
 
 - [x] hashing
   - [x] ignore hashes for files that are gitignored
-- [ ] add docs on caching options
+- [x] add docs on caching options
 
 ## Tests
 

@@ -139,6 +139,6 @@ jobs:
           RUSTFLAGS: '-Cinstrument-coverage'
           LLVM_PROFILE_FILE: 'moon-%p-%m.profraw'
       - name: Generating code coverage
-        run: |
-          mkdir ./coverage
-          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./coverage
+        run:
+          grcov . -s . --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
+          ./coverage

@@ -50,7 +50,7 @@ async fn gather_touched_files(
         vcs.get_touched_files_against_previous_revision(default_branch)
             .await?
 
-        // On a branch, so compare branch against default branch
+        // On a branch, so compare branch against base/default branch
     } else {
         let base = options
             .base

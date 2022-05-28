@@ -5,6 +5,9 @@ import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
 import Icon from '../../ui/iconography/Icon';
 import HeroTerminal from './HeroTerminal';
 
+// eslint-disable-next-line import/no-extraneous-dependencies
+const { version } = require('@moonrepo/cli/package.json') as { version: string };
+
 export default function Hero() {
 	const { siteConfig } = useDocusaurusContext();
 
@@ -49,7 +52,7 @@ export default function Hero() {
 								className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 md:text-lg group transition-transform"
 							>
 								<span className="opacity-50">v</span>
-								{(require('@moonrepo/cli/package.json') as { version: string }).version}
+								{version}
 							</Link>
 						</div>
 					</div>

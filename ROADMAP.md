@@ -1,57 +1,59 @@
 # Backlog
 
-## Tasks
+### Tasks
 
 - [ ] Add `@cache` token
 
-## Action runner
+### Action runner
 
 - [ ] Add a debug layer so that the node processes can be inspected
 - [ ] Write output logs for every action
 
-## CLI
+### CLI
 
 - [ ] `run-many`
 - [ ] `graph`
   - [ ] Spin up an interactive website with full project/task data
 
-## Node.js
+### Node.js
 
 - [ ] Add chrome profiling support to spawned processes
 - [ ] Publish npm packages
 
-# 0.2.0
+### Tests
 
-- [x] add header to docs homepage
-
-## Cache
-
-- [x] hashing
-  - [x] ignore hashes for files that are gitignored
-- [x] add docs on caching options
-
-## Tests
-
-- [ ] add code coverage reports in CI
 - [ ] increase code coverage and add more integration tests
 
-## Targets
+# 0.2.0
 
-- [x] macos arm/m1
-- [ ] linux x64 (musl)
+- [x] Add header to docs homepage
+
+### Cache
+
+- [x] Ignore hashes for files that are gitignored
+- [x] Add docs on caching options
+
+### Tests
+
+- [x] Add code coverage reports in CI
+
+### Targets
+
+- [x] macOS arm64
+- [ ] Linux x64 (musl)
 
 # 0.1.0
 
 - [x] website
   - [x] getting started
 
-## Targets
+### Targets
 
 - [x] macos x64
 - [x] linux x64 (gnu)
 - [x] windows x64
 
-## Projects
+### Projects
 
 - [x] Can define metadata
 - [x] File groups
@@ -65,13 +67,13 @@
 - [x] Lazy loads `package.json`
 - [x] Lazy loads `tsconfig.json`
 
-## Project graph
+### Project graph
 
 - [x] Lazy load projects when needed
 - [x] Get direct dependencies
 - [x] Get direct dependents
 
-## Tasks
+### Tasks
 
 - [x] Command (and type)
 - [x] Args
@@ -91,7 +93,7 @@
 - [x] Self referencing targets (`~`)
 - [x] Deps referencing targets (`^`)
 
-## Action runner
+### Action runner
 
 - [x] Sorts dep graph topologically
   - [x] Groups into batches and parallelizes
@@ -107,7 +109,7 @@
 - [x] Handle non-0 exit codes
 - [x] Handle offline
 
-## CLI
+### CLI
 
 - [x] `init` command to scafflold a new project
 - [x] `project` command for displaying info
@@ -121,13 +123,13 @@
   - [x] Run multiple targets
 - [x] `ci` command for smart running affected targets (below)
 
-## CI
+### CI
 
 - [x] Compares PR against default branch
 - [x] Runs tasks if `outputs` defined or `run_in_ci` is true
 - [x] Runs dependencies AND dependents
 
-## Cache
+### Cache
 
 - [x] add a `--no-cache` option to disable all caching
 - [x] hashing

@@ -140,10 +140,10 @@ jobs:
           LLVM_PROFILE_FILE: 'moon-%p-%m.profraw'
       - name: Generating code coverage
         run:
-          grcov . -s . --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
-          ./lcov.info
+          grcov . -s . --binary-path ./target/debug -t cobertura --branch --ignore-not-existing -o
+          ./coverage.xml
       - name: Uploading code coverage
         uses: codecov/codecov-action@v3.1.0
         with:
-          files: ./lcov.info
+          files: ./coverage.xml
           flags: rust

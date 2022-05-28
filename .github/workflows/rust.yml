@@ -75,8 +75,37 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [macos-latest, windows-latest]
       fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        name: Cache cargo
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.61.0
+          profile: minimal
+      - uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: --force cargo-make
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+      - uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: test
+  test-coverage:
+    name: Test coverage
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
@@ -111,6 +140,5 @@ jobs:
           LLVM_PROFILE_FILE: 'moon-%p-%m.profraw'
       - name: Generating code coverage
         run: |
-          ls -la target/debug
-          ls -la .
-          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./target/debug/coverage/
+          mkdir ./coverage
+          grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./coverage

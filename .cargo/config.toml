@@ -1,5 +1,2 @@
-[build]
-profiler = true
-
 [target.x86_64-unknown-linux-musl]
 crt_static = false

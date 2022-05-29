@@ -21,7 +21,6 @@ We also require the following 3rd-party Cargo commands, which can be installed w
 ```
 cargo install --force cargo-make # Required
 cargo install --force cargo-insta # For testing snapshots
-cargo install --force cargo-binutils # For testing code coverage
 ```
 
 Once setup, we suggest building the Rust binary, as it's required for everything else.

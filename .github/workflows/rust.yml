@@ -92,14 +92,29 @@ jobs:
         with:
           toolchain: 1.61.0
           profile: minimal
+          components: llvm-tools-preview
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: --debug --force cargo-make
+          args: --force cargo-make grcov
       - uses: actions-rs/cargo@v1
         with:
           command: build
+        env:
+          RUSTFLAGS: '-Cinstrument-coverage'
       - uses: actions-rs/cargo@v1
         with:
           command: make
           args: test
+        env:
+          RUSTFLAGS: '-Cinstrument-coverage'
+          LLVM_PROFILE_FILE: 'moon-%p-%m.profraw'
+      - name: Generating code coverage
+        run:
+          grcov . -s . --binary-path ./target/debug -t cobertura --branch --ignore-not-existing -o
+          ./coverage.xml
+      - name: Uploading code coverage
+        uses: codecov/codecov-action@v3.1.0
+        with:
+          files: ./coverage.xml
+          flags: rust,${{ matrix.os }}

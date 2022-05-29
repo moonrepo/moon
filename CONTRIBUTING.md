@@ -19,8 +19,8 @@ Moon is built on Rust and requires `rustup` and `cargo` to exist in your environ
 We also require the following 3rd-party Cargo commands, which can be installed with the following.
 
 ```
-cargo install --force cargo-make
-cargo install --force cargo-insta
+cargo install --force cargo-make # Required
+cargo install --force cargo-insta # For testing snapshots
 ```
 
 Once setup, we suggest building the Rust binary, as it's required for everything else.

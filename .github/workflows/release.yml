@@ -94,10 +94,7 @@ jobs:
       - name: Build binary
         if: ${{ matrix.image }}
         run: |
-          docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "${{
-            github.workspace }}":"/var/work" -e "TARGET=${{ matrix.target }}" -e "BINARY=${{
-            matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols" --entrypoint node ${{ matrix.image }}
-            -c "/var/work/scripts/release/buildBinary.mjs"
+          docker run --user 0:0 --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "${{ github.workspace }}":"/build" -w /build -e "TARGET=${{ matrix.target }}" -e "BINARY=${{ matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols" --entrypoint node ${{ matrix.image }} -c "/build/scripts/release/buildBinary.mjs"
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:
@@ -115,7 +112,8 @@ jobs:
 
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            setup: yarn config set supportedArchitectures.libc "musl"
+            image: node:lts-alpine
 
           - target: x86_64-apple-darwin
             host: macos-latest
@@ -156,6 +154,9 @@ jobs:
             .yarn/install-state.gz
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: ${{ runner.os }}-yarn-
+      - name: Setup toolchain
+        if: ${{ matrix.setup }}
+        run: ${{ matrix.setup }}
       - name: Install dependencies
         run: yarn install --immutable
       - uses: actions/download-artifact@v2
@@ -176,7 +177,7 @@ jobs:
         if: ${{ matrix.image }}
         run: |
           ${{ matrix.docker_setup }}
-          docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "${{ github.workspace }}":"/var/work" -e "TARGET=${{ matrix.target }}" --entrypoint node ${{ matrix.image }} -c "/var/work/scripts/release/testBinary.mjs"
+          docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "${{ github.workspace }}":"/build" -w /build -e "TARGET=${{ matrix.target }}" --entrypoint node ${{ matrix.image }} -c "/build/scripts/release/testBinary.mjs"
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

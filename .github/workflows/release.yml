@@ -107,7 +107,7 @@ jobs:
         uses: mosteo-actions/docker-run@v1
         with:
           image: ${{ matrix.image }}
-          params: -a stdout -e TARGET -e BINARY -e RUSTFLAGS
+          params: -e TARGET -e BINARY -e RUSTFLAGS
           command: node ./scripts/release/buildBinary.mjs
         env:
           BINARY: ${{ matrix.binary }}

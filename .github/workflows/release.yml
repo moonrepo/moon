@@ -97,8 +97,8 @@ jobs:
         with:
           image: ${{ matrix.image }}
           registry: gcr.io
-          options:
-            --user 0:0 -a stdout -v ${{ github.workspace }}:/build -w /build -e "TARGET=${{
+          options: |
+            --user 0:0 -a stdout -v "${{ github.workspace }}":"/build" -w /build -e "TARGET=${{
             matrix.target }}" -e "BINARY=${{ matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols"
           shell: node
           run: /build/scripts/release/buildBinary.mjs
@@ -185,8 +185,8 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ matrix.image }}
-          options:
-            --user 0:0 -a stdout -v ${{ github.workspace }}:/build -w /build -e "TARGET=${{
+          options: |
+            --user 0:0 -a stdout -v "${{ github.workspace }}":"/build" -w /build -e "TARGET=${{
             matrix.target }}"
           shell: node
           run: |

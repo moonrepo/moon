@@ -28,7 +28,7 @@ jobs:
             host: ubuntu-latest
             arch: x64
             binary: moon
-            image: nodejs-rust:lts-alpine
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
 
           - target: x86_64-apple-darwin
             host: macos-latest
@@ -96,9 +96,9 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ matrix.image }}
-          registry: gcr.io
-          options: |
-            --user 0:0 -a stdout -e "TARGET=${{ matrix.target }}" -e "BINARY=${{ matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols"
+          # registry: gcr.io
+          # options: |
+          # --user 0:0 -a stdout -e "TARGET=${{ matrix.target }}" -e "BINARY=${{ matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols"
           run: node /github/workspace/scripts/release/buildBinary.mjs
       - uses: actions/upload-artifact@v2
         name: Upload artifact

@@ -40,7 +40,7 @@
 ### Targets
 
 - [x] macOS arm64
-- [ ] Linux x64 (musl)
+- [x] Linux x64 (musl)
 
 # 0.1.0
 

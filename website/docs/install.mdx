@@ -187,10 +187,11 @@ repository root.
 Because moon is written in Rust, we only support targets that are explicitly compiled for, which are
 currently:
 
-- macOS 64-bit - Intel
-- macOS 64-bit - Silicon (M1)
-- Linux 64-bit - GNU
-- Windows 64-bit
+- macOS 64-bit - Intel (`x86_64-apple-darwin`)
+- macOS 64-bit - Silicon (`aarch64-apple-darwin`)
+- Linux 64-bit - GNU (`x86_64-unknown-linux-gnu`)
+- Linux 64-bit - musl (`x86_64-unknown-linux-musl`)
+- Windows 64-bit (`x86_64-pc-windows-msvc`)
 
 ## Initializing moon
 

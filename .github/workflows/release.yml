@@ -100,7 +100,8 @@ jobs:
           # options: |
           # --user 0:0 -a stdout -e "TARGET=${{ matrix.target }}" -e "BINARY=${{ matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols"
           # run: node /github/workspace/scripts/release/buildBinary.mjs
-          run: echo $PWD && ls -la .
+          options: -v "/home/runner/work/moon/moon":"/build"
+          run: echo $PWD && ls -la . build
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:

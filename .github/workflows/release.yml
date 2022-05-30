@@ -90,37 +90,13 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-          RUSTFLAGS: '-C strip=symbols'
-      # - name: Build binary with Docker
-      #   if: ${{ matrix.image }}
-      #   uses: addnab/docker-run-action@v3
-      #   with:
-      #     image: ${{ matrix.image }}
-      #     options: -e TARGET -e BINARY -e RUSTFLAGS -v /home/runner/work/moon/moon:/build
-      #     run: node /build/scripts/release/buildBinary.mjs
-      #   env:
-      #     BINARY: ${{ matrix.binary }}
-      #     TARGET: ${{ matrix.target }}
-      #     RUSTFLAGS: '-C strip=symbols'
       - name: Build binary with Docker
         if: ${{ matrix.image }}
         uses: mosteo-actions/docker-run@v1
         with:
           image: ${{ matrix.image }}
-          params: -e TARGET -e BINARY -e RUSTFLAGS
+          params: -e TARGET=${{ matrix.target }} -e BINARY=${{ matrix.binary }}
           command: node ./scripts/release/buildBinary.mjs
-        env:
-          BINARY: ${{ matrix.binary }}
-          TARGET: ${{ matrix.target }}
-          RUSTFLAGS: '-C strip=symbols'
-      # - name: Build binary with Docker
-      #   if: ${{ matrix.image }}
-      #   run: |
-      #     docker run -e TARGET -e BINARY -e RUSTFLAGS -v /home/runner/work/moon/moon:/build --entrypoint node ${{ matrix.image }} -c /build/scripts/release/buildBinary.mjs
-      #   env:
-      #     BINARY: ${{ matrix.binary }}
-      #     TARGET: ${{ matrix.target }}
-      #     RUSTFLAGS: '-C strip=symbols'
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:

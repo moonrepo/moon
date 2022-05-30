@@ -2,6 +2,10 @@ import fs from 'fs/promises';
 import { execa } from 'execa';
 import { BINARY, getPackageFromTarget, getPath, TARGET } from '../helpers.mjs';
 
+if (process.env.CI) {
+	process.env.RUSTFLAGS = '-C strip=symbols';
+}
+
 async function buildBinary() {
 	// Allow arbitrary args to be passed through
 	const args = process.argv.slice(2);

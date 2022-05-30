@@ -1,10 +1,15 @@
 use chrono::Duration;
 use chrono_humanize::HumanTime;
+use std::env;
 use std::time::Duration as StdDuration;
 
 pub use chrono;
 
 pub fn elapsed(duration: StdDuration) -> String {
+    if env::var("MOON_TEST").is_ok() {
+        return String::from("100ms"); // Snapshots
+    }
+
     let secs = duration.as_secs();
     let nanos = duration.subsec_nanos();
 

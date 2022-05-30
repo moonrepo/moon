@@ -364,7 +364,7 @@ fn print_target_label(target: &str, attempt: &Attempt, attempt_total: u8, checkp
     let mut comments = vec![];
 
     if attempt.index > 1 {
-        comments.push(format!("attempt {} of {}", attempt.index, attempt_total));
+        comments.push(format!("{}/{}", attempt.index, attempt_total));
     }
 
     if let Some(duration) = attempt.duration {

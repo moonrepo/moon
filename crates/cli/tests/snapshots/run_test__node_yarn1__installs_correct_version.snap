@@ -1,8 +1,9 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 383
+assertion_line: 772
 expression: get_assert_output(&assert)
 ---
+▪▪▪▪ yarn install
 ▪▪▪▪ yarn:version
 1.22.0
 

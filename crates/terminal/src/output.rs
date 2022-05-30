@@ -3,35 +3,40 @@ use moon_logger::color;
 
 const STEP_CHAR: &str = "▪";
 
+const PASS_COLORS: [u8; 4] = [57, 63, 69, 75];
+const FAIL_COLORS: [u8; 4] = [124, 125, 126, 127];
+const MUTED_COLORS: [u8; 4] = [240, 242, 244, 246];
+
+pub enum Checkpoint {
+    Fail,
+    Pass,
+    Start,
+}
+
 pub fn label_moon() -> String {
     format!(
         "{}{}{}{}",
-        style("M").color256(57).bold(),
-        style("O").color256(63).bold(),
-        style("O").color256(69).bold(),
-        style("N").color256(75).bold(),
+        style("m").color256(PASS_COLORS[0]).bold(),
+        style("o").color256(PASS_COLORS[1]).bold(),
+        style("o").color256(PASS_COLORS[2]).bold(),
+        style("n").color256(PASS_COLORS[3]).bold(),
     )
 }
 
-pub fn label_run_target(target_id: &str) -> String {
-    format!(
-        "{}{}{}{} {}",
-        color::paint(57, STEP_CHAR),
-        color::paint(63, STEP_CHAR),
-        color::paint(69, STEP_CHAR),
-        color::paint(75, STEP_CHAR),
-        style(target_id).bold()
-    )
-}
+pub fn label_checkpoint(label: &str, checkpoint: Checkpoint) -> String {
+    let colors = match checkpoint {
+        Checkpoint::Fail => FAIL_COLORS,
+        Checkpoint::Pass => PASS_COLORS,
+        Checkpoint::Start => MUTED_COLORS,
+    };
 
-pub fn label_run_target_failed(target_id: &str) -> String {
     format!(
         "{}{}{}{} {}",
-        color::paint(124, STEP_CHAR),
-        color::paint(125, STEP_CHAR),
-        color::paint(126, STEP_CHAR),
-        color::paint(127, STEP_CHAR),
-        style(target_id).bold()
+        color::paint(colors[0], STEP_CHAR),
+        color::paint(colors[1], STEP_CHAR),
+        color::paint(colors[2], STEP_CHAR),
+        color::paint(colors[3], STEP_CHAR),
+        style(label).bold()
     )
 }
 

@@ -6,7 +6,7 @@ use moon_cache::RunTargetState;
 use moon_config::TaskType;
 use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
-use moon_terminal::output::{label_run_target, label_run_target_failed};
+use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::process::{output_to_string, Command, Output};
 use moon_utils::{is_ci, path, string_vec};
@@ -243,7 +243,16 @@ pub async fn run_target(
     );
 
     if cache.item.hash == hash {
-        print_target_label(target_id, "(cached)", cache.item.exit_code != 0);
+        print_target_label(
+            target_id,
+            "cached",
+            if cache.item.exit_code == 0 {
+                Checkpoint::Pass
+            } else {
+                Checkpoint::Fail
+            },
+        );
+
         print_cache_item(&cache.item);
 
         return Ok(ActionStatus::Cached);
@@ -268,18 +277,20 @@ pub async fn run_target(
         let attempt_comment = if attempt == 1 {
             String::new()
         } else {
-            format!("(attempt {} of {})", attempt, attempt_count)
+            format!("attempt {} of {}", attempt, attempt_count)
         };
 
         let possible_output = if stream_output {
             // Print label *before* output is streamed since it may stay open forever,
             // or it may use ANSI escape codes to alter the terminal.
-            print_target_label(target_id, &attempt_comment, false);
+            print_target_label(target_id, &attempt_comment, Checkpoint::Pass);
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
             command.exec_stream_and_capture_output().await
         } else {
+            print_target_label(target_id, &attempt_comment, Checkpoint::Start);
+
             // Otherwise we run the process in the background and write the output
             // once it has completed.
             command.exec_capture_output().await
@@ -341,15 +352,14 @@ pub async fn run_target(
     Ok(ActionStatus::Passed)
 }
 
-fn print_target_label(target: &str, comment: &str, failed: bool) {
-    let mut label = if failed {
-        label_run_target_failed(target)
-    } else {
-        label_run_target(target)
-    };
+fn print_target_label(target: &str, comment: &str, checkpoint: Checkpoint) {
+    let failed = matches!(checkpoint, Checkpoint::Fail);
+    let mut label = label_checkpoint(target, checkpoint);
 
     if !comment.is_empty() {
-        label = format!("{} {}", label, color::muted(comment));
+        let metadata = color::muted(&format!("({})", comment));
+
+        label = format!("{} {}", label, metadata);
     };
 
     if failed {
@@ -389,7 +399,16 @@ fn print_output_std(output: &Output) {
 // Print label *after* output has been captured, so parallel tasks
 // aren't intertwined and the labels align with the output.
 fn handle_captured_output(target_id: &str, attempt_comment: &str, output: &Output) {
-    print_target_label(target_id, attempt_comment, !output.status.success());
+    print_target_label(
+        target_id,
+        attempt_comment,
+        if output.status.success() {
+            Checkpoint::Pass
+        } else {
+            Checkpoint::Fail
+        },
+    );
+
     print_output_std(output);
 }
 
@@ -397,6 +416,6 @@ fn handle_captured_output(target_id: &str, attempt_comment: &str, output: &Outpu
 // as the actual output has already been streamed to the console.
 fn handle_streamed_output(target_id: &str, attempt_comment: &str, output: &Output) {
     if !output.status.success() {
-        print_target_label(target_id, attempt_comment, true);
+        print_target_label(target_id, attempt_comment, Checkpoint::Fail);
     }
 }

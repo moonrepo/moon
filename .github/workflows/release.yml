@@ -96,7 +96,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ matrix.image }}
-          options: -a stdout -e TARGET -e BINARY -e RUSTFLAGS -v /home/runner/work/moon/moon:/build
+          options: -e TARGET -e BINARY -e RUSTFLAGS -v /home/runner/work/moon/moon:/build
           run: node /build/scripts/release/buildBinary.mjs
         env:
           BINARY: ${{ matrix.binary }}
@@ -185,7 +185,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ matrix.image }}
-          options: -a stdout -e TARGET -v /home/runner/work/moon/moon:/build
+          options: -e TARGET -v /home/runner/work/moon/moon:/build
           run: |
             ${{ matrix.docker-setup }}
             node /build/scripts/release/testBinary.mjs

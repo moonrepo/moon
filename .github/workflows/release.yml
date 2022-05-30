@@ -96,12 +96,10 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ matrix.image }}
-          # registry: gcr.io
-          # options: |
-          # --user 0:0 -a stdout -e "TARGET=${{ matrix.target }}" -e "BINARY=${{ matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols"
-          # run: node /github/workspace/scripts/release/buildBinary.mjs
-          options: -v /home/runner/work/moon/moon:/build
-          run: echo $PWD && ls -la . /build
+          options: |
+            -a stdout -e TARGET=${{ matrix.target }} -e BINARY=${{ matrix.binary }} -e
+            RUSTFLAGS=-Cstrip=symbols -v /home/runner/work/moon/moon:/build
+          run: node /build/scripts/release/buildBinary.mjs
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:
@@ -185,10 +183,10 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ matrix.image }}
-          options: --user 0:0 -a stdout -e "TARGET=${{ matrix.target }}"
+          options: -a stdout -e TARGET=${{ matrix.target }} -v /home/runner/work/moon/moon:/build
           run: |
             ${{ matrix.docker-setup }}
-            node /github/workspace/scripts/release/testBinary.mjs
+            node /build/scripts/release/testBinary.mjs
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

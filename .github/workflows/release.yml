@@ -99,7 +99,8 @@ jobs:
           # registry: gcr.io
           # options: |
           # --user 0:0 -a stdout -e "TARGET=${{ matrix.target }}" -e "BINARY=${{ matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols"
-          run: node /github/workspace/scripts/release/buildBinary.mjs
+          # run: node /github/workspace/scripts/release/buildBinary.mjs
+          run: ls -la /github /github/workspace
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:

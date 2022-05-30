@@ -21,7 +21,14 @@ async fn run_action(
     let result = match action_node {
         Node::InstallNodeDeps => install_node_deps(workspace).await,
         Node::RunTarget(target_id) => {
-            run_target(workspace, target_id, primary_target, passthrough_args).await
+            run_target(
+                workspace,
+                action,
+                target_id,
+                primary_target,
+                passthrough_args,
+            )
+            .await
         }
         Node::SetupToolchain => setup_toolchain(workspace).await,
         Node::SyncProject(project_id) => sync_project(workspace, project_id).await,

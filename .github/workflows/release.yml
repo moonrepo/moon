@@ -24,11 +24,11 @@ jobs:
             arch: x64
             binary: moon
 
-          # - host: ubuntu-latest
-          #   target: x86_64-unknown-linux-musl
-          #   arch: x64
-          #   binary: moon
-          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-latest
+            arch: x64
+            binary: moon
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
 
           - target: x86_64-apple-darwin
             host: macos-latest
@@ -85,11 +85,19 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
       - name: Build binary
+        if: ${{ !matrix.image }}
         run: node ./scripts/release/buildBinary.mjs
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
           RUSTFLAGS: '-C strip=symbols'
+      - name: Build binary
+        if: ${{ matrix.image }}
+        run: |
+          docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "${{
+            github.workspace }}":"/var/work" -e "TARGET=${{ matrix.target }}" -e "BINARY=${{
+            matrix.binary }}" -e "RUSTFLAGS=-C strip=symbols" --entrypoint node ${{ matrix.image }}
+            -c "/var/work/scripts/release/buildBinary.mjs"
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:
@@ -105,19 +113,19 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             host: ubuntu-latest
 
-          # - host: ubuntu-latest
-          #   target: x86_64-unknown-linux-musl
-          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-latest
+            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
 
           - target: x86_64-apple-darwin
             host: macos-latest
 
           - target: aarch64-apple-darwin
             host: ubuntu-latest
-            test: |
+            image: arm64v8/node
+            docker_setup: |
               sudo apt-get install binfmt-support qemu qemu-user-static
               docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-              docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/home/runner/work/moon/moon":"/var/work" -e "TARGET=aarch64-apple-darwin" --entrypoint node arm64v8/node -c "/var/work/scripts/release/testBinary.mjs"
 
           - target: x86_64-pc-windows-msvc
             host: windows-latest
@@ -160,13 +168,15 @@ jobs:
         run: ls -lR ./packages/cli ./packages/core-*
         shell: bash
       - name: Test binary
-        if: ${{ !matrix.test }}
+        if: ${{ !matrix.image }}
         run: node ./scripts/release/testBinary.mjs
         env:
           TARGET: ${{ matrix.target }}
       - name: Test binary
-        if: ${{ matrix.test }}
-        run: ${{ matrix.test }}
+        if: ${{ matrix.image }}
+        run: |
+          ${{ matrix.docker_setup }}
+          docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "${{ github.workspace }}":"/var/work" -e "TARGET=${{ matrix.target }}" --entrypoint node ${{ matrix.image }} -c "/var/work/scripts/release/testBinary.mjs"
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

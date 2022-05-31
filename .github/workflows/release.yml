@@ -96,7 +96,7 @@ jobs:
         with:
           image: ${{ matrix.image }}
           params: -e TARGET=${{ matrix.target }} -e BINARY=${{ matrix.binary }}
-          command: node ./scripts/release/buildBinary.mjs
+          command: apt-get install node && node ./scripts/release/buildBinary.mjs
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:

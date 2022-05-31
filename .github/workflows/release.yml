@@ -160,20 +160,18 @@ jobs:
         shell: bash
       - name: Test binary
         if: ${{ !matrix.image }}
-        run: node ./scripts/release/testBinary.mjs
+        run: bash ./scripts/release/testBinary.sh
         env:
           TARGET: ${{ matrix.target }}
       - name: Test binary with Docker
         if: ${{ matrix.image }}
-        uses: addnab/docker-run-action@v3
+        uses: mosteo-actions/docker-run@v1
         with:
           image: ${{ matrix.image }}
-          options: -e TARGET -v /home/runner/work/moon/moon:/build
+          params: -e TARGET=${{ matrix.target }}
           run: |
             ${{ matrix.docker-setup }}
-            node /build/scripts/release/testBinary.mjs
-        env:
-          TARGET: ${{ matrix.target }}
+            bash ./scripts/release/testBinary.sh
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

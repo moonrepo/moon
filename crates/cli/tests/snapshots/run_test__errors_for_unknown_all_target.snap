@@ -1,0 +1,7 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 59
+expression: get_assert_output(&assert)
+---
+No tasks found for target :unknown
+

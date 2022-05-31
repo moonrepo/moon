@@ -21,25 +21,21 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             host: ubuntu-latest
-            arch: x64
             binary: moon
 
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
-            arch: x64
             binary: moon
             image: ekidd/rust-musl-builder
 
           - target: x86_64-apple-darwin
             host: macos-latest
-            arch: x64
             binary: moon
             setup: |
               export MACOSX_DEPLOYMENT_TARGET="10.13";
 
           - target: aarch64-apple-darwin
             host: macos-latest
-            arch: x64
             binary: moon
             setup: |
               export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
@@ -47,17 +43,11 @@ jobs:
 
           - target: x86_64-pc-windows-msvc
             host: windows-latest
-            arch: x64
             binary: moon.exe
     name: Stable - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          architecture: ${{ matrix.arch }}
-          check-latest: true
-          node-version: 16
       - uses: actions/cache@v3
         name: Cache cargo
         with:
@@ -82,11 +72,9 @@ jobs:
         run: ${{ matrix.setup }}
       - name: Add target
         run: rustup target add ${{ matrix.target }}
-      - name: Install dependencies
-        run: yarn install --immutable
       - name: Build binary
         if: ${{ !matrix.image }}
-        run: node ./scripts/release/buildBinary.mjs
+        run: bash ./scripts/release/buildBinary.sh
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
@@ -96,7 +84,7 @@ jobs:
         with:
           image: ${{ matrix.image }}
           params: -e TARGET=${{ matrix.target }} -e BINARY=${{ matrix.binary }}
-          command: sudo apt-get install nodejs && node ./scripts/release/buildBinary.mjs
+          command: bash ./scripts/release/buildBinary.sh
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:

@@ -28,7 +28,7 @@ jobs:
             host: ubuntu-latest
             arch: x64
             binary: moon
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            image: ekidd/rust-musl-builder
 
           - target: x86_64-apple-darwin
             host: macos-latest

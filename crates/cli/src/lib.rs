@@ -37,8 +37,6 @@ pub async fn run_cli() {
     // Create app and parse arguments
     let args = App::parse();
 
-    println!("{:#?}", args);
-
     // Setup logging
     if env::var("MOON_LOG").is_err() {
         env::set_var("MOON_LOG", args.log.to_string().to_lowercase());

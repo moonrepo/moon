@@ -26,7 +26,7 @@ jobs:
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
             binary: moon
-            image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            image: clux/muslrust:stable
 
           - target: x86_64-apple-darwin
             host: macos-latest

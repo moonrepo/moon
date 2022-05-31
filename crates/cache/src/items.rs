@@ -1,5 +1,6 @@
 use crate::helpers::{is_readable, is_writable};
 use moon_error::MoonError;
+use moon_logger::{color, trace};
 use moon_utils::fs;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -15,14 +16,18 @@ pub struct CacheItem<T: DeserializeOwned + Serialize> {
 
 impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     pub async fn load(path: PathBuf, default: T) -> Result<CacheItem<T>, MoonError> {
-        let item: T;
+        let mut item: T = default;
 
-        if is_readable() && path.exists() {
-            item = fs::read_json(&path).await?;
-        } else {
-            item = default;
+        if is_readable() {
+            if path.exists() {
+                trace!(target: "moon:cache:item", "Cache hit for {}, reading", color::path(&path));
 
-            fs::create_dir_all(path.parent().unwrap()).await?;
+                item = fs::read_json(&path).await?;
+            } else {
+                trace!(target: "moon:cache:item", "Cache miss for {}, does not exist", color::path(&path));
+
+                fs::create_dir_all(path.parent().unwrap()).await?;
+            }
         }
 
         Ok(CacheItem { item, path })
@@ -30,6 +35,8 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
 
     pub async fn save(&self) -> Result<(), MoonError> {
         if is_writable() {
+            trace!(target: "moon:cache:item", "Writing cache {}", color::path(&self.path));
+
             fs::write_json(&self.path, &self.item, false).await?;
         }
 

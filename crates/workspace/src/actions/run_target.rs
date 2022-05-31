@@ -263,7 +263,7 @@ pub async fn run_target(
     if cache.item.hash == hash {
         debug!(
             target: LOG_TARGET,
-            "Cache/hash hit for {}, aborting run",
+            "Hash exists for {}, aborting run",
             color::id(target_id),
         );
 

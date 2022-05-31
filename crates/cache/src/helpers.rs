@@ -1,6 +1,8 @@
 use moon_logger::warn;
 use std::env;
 
+pub const LOG_TARGET: &str = "moon:cache";
+
 static mut LOGGED_WARNING: bool = false;
 
 pub fn get_cache_env_var() -> String {
@@ -15,7 +17,7 @@ pub fn get_cache_env_var() -> String {
                 LOGGED_WARNING = true;
 
                 warn!(
-                    target: "moon:cache",
+                    target: LOG_TARGET,
                     "Unknown MOON_CACHE environment variable value \"{}\", falling back to write mode",
                     var
                 );

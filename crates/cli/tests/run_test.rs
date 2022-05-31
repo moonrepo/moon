@@ -50,6 +50,16 @@ fn errors_for_unknown_task_in_project() {
 }
 
 #[test]
+fn errors_for_unknown_all_target() {
+    let assert = create_moon_command("cases")
+        .arg("run")
+        .arg(":unknown")
+        .assert();
+
+    assert_snapshot!(get_assert_output(&assert));
+}
+
+#[test]
 fn errors_for_cycle_in_task_deps() {
     let assert = create_moon_command("cases")
         .arg("run")

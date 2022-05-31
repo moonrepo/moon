@@ -102,8 +102,8 @@ jobs:
 
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
-            setup: yarn config set supportedArchitectures.libc "musl"
             image: node:lts-alpine
+            setup: yarn config set supportedArchitectures.libc "musl"
 
           - target: x86_64-apple-darwin
             host: macos-latest
@@ -111,7 +111,7 @@ jobs:
           - target: aarch64-apple-darwin
             host: ubuntu-latest
             image: arm64v8/node
-            docker-setup: |
+            setup: |
               sudo apt-get install binfmt-support qemu qemu-user-static
               docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
@@ -169,9 +169,7 @@ jobs:
         with:
           image: ${{ matrix.image }}
           params: -e TARGET=${{ matrix.target }}
-          run: |
-            ${{ matrix.docker-setup }}
-            bash ./scripts/release/testBinary.sh
+          command: bash ./scripts/release/testBinary.sh
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

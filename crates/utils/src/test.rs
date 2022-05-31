@@ -106,8 +106,8 @@ pub fn create_moon_command_in(path: &Path) -> assert_cmd::Command {
     // Standardize file system paths for testing snapshots
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Uncomment for debugging
-    // cmd.arg("--log");
-    // cmd.arg("trace");
+    cmd.env("MOON_LOG", "off");
+    // cmd.env("MOON_LOG", "trace")
     cmd
 }
 

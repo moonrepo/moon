@@ -5,7 +5,7 @@ use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
 use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_logger::{color, debug, map_list, trace};
+use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_utils::{glob, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -83,7 +83,6 @@ pub struct Task {
 
     pub input_paths: ExpandedFiles,
 
-    /// Logging target label.
     #[serde(skip)]
     pub log_target: String,
 
@@ -97,6 +96,12 @@ pub struct Task {
 
     #[serde(rename = "type")]
     pub type_of: TaskType,
+}
+
+impl Logable for Task {
+    fn get_log_target(&self) -> &str {
+        &self.log_target
+    }
 }
 
 impl Task {

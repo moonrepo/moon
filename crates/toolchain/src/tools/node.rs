@@ -55,6 +55,8 @@ pub struct NodeTool {
 
     install_dir: PathBuf,
 
+    log_target: String,
+
     npm: Option<NpmTool>,
 
     pnpm: Option<PnpmTool>,
@@ -74,6 +76,7 @@ impl NodeTool {
                 .join("node")
                 .join(node::get_download_file(&config.version)?),
             install_dir,
+            log_target: String::from("moon:toolchain:node"),
             npm: None,
             pnpm: None,
             yarn: None,
@@ -165,8 +168,8 @@ impl NodeTool {
 }
 
 impl Logable for NodeTool {
-    fn get_log_target(&self) -> String {
-        String::from("moon:toolchain:node")
+    fn get_log_target(&self) -> &str {
+        &self.log_target
     }
 }
 
@@ -187,7 +190,7 @@ impl Downloadable<Toolchain> for NodeTool {
     ) -> Result<(), ToolchainError> {
         let version = &self.config.version;
         let host = base_host.unwrap_or("https://nodejs.org");
-        let target = self.get_log_target();
+        let log_target = self.get_log_target();
 
         // Download the node.tar.gz archive
         let download_url = node::get_nodejs_url(version, host, &node::get_download_file(version)?);
@@ -205,7 +208,7 @@ impl Downloadable<Toolchain> for NodeTool {
         download_file_from_url(&shasums_url, &shasums_path).await?;
 
         debug!(
-            target: &target,
+            target: log_target,
             "Verifying shasum against {}",
             color::url(&shasums_url),
         );
@@ -213,7 +216,7 @@ impl Downloadable<Toolchain> for NodeTool {
         // Verify the binary
         if let Err(error) = verify_shasum(&download_url, download_path, &shasums_path) {
             error!(
-                target: &target,
+                target: log_target,
                 "Shasum verification has failed. The downloaded file has been deleted, please try again."
             );
 
@@ -252,7 +255,7 @@ impl Installable<Toolchain> for NodeTool {
         unpack(download_path, install_dir, &prefix).await?;
 
         debug!(
-            target: &self.get_log_target(),
+            target: self.get_log_target(),
             "Unpacked and installed to {}",
             color::path(install_dir)
         );
@@ -285,7 +288,7 @@ impl Lifecycle<Toolchain> for NodeTool {
     ) -> Result<u8, ToolchainError> {
         if self.is_corepack_aware() && check_version {
             debug!(
-                target: &self.get_log_target(),
+                target: self.get_log_target(),
                 "Enabling corepack for package manager control"
             );
 

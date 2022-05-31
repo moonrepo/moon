@@ -51,11 +51,10 @@ fn no_config() {
         project,
         Project {
             id: String::from("no-config"),
-            config: None,
             root: workspace_root.join("projects/no-config"),
             file_groups: mock_file_groups(),
             source: String::from("projects/no-config"),
-            tasks: HashMap::new(),
+            ..Project::default()
         }
     );
 }
@@ -79,7 +78,7 @@ fn empty_config() {
             root: workspace_root.join("projects/empty-config"),
             file_groups: mock_file_groups(),
             source: String::from("projects/empty-config"),
-            tasks: HashMap::new(),
+            ..Project::default()
         }
     );
 }
@@ -115,7 +114,7 @@ fn basic_config() {
             root: project_root,
             file_groups,
             source: String::from("projects/basic"),
-            tasks: HashMap::new(),
+            ..Project::default()
         }
     );
 }
@@ -149,7 +148,7 @@ fn advanced_config() {
             root: workspace_root.join("projects/advanced"),
             file_groups: mock_file_groups(),
             source: String::from("projects/advanced"),
-            tasks: HashMap::new(),
+            ..Project::default()
         }
     );
 }
@@ -184,7 +183,7 @@ fn overrides_global_file_groups() {
                 FileGroup::new("tests", string_vec!["**/*_test.rs"],)
             )]),
             source: String::from("projects/basic"),
-            tasks: HashMap::new(),
+            ..Project::default()
         }
     );
 }
@@ -322,9 +321,9 @@ mod tasks {
                     .join("tasks/no-tasks")
                     .canonicalize()
                     .unwrap(),
-                file_groups: HashMap::new(),
                 source: String::from("tasks/no-tasks"),
                 tasks: HashMap::from([(String::from("standard"), task)]),
+                ..Project::default()
             }
         );
     }
@@ -385,7 +384,6 @@ mod tasks {
                     ..ProjectConfig::default()
                 }),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
-                file_groups: HashMap::new(),
                 source: String::from("tasks/basic"),
                 tasks: HashMap::from([
                     (String::from("build"), build),
@@ -393,6 +391,7 @@ mod tasks {
                     (String::from("test"), test),
                     (String::from("lint"), lint)
                 ]),
+                ..Project::default()
             }
         );
     }
@@ -446,7 +445,6 @@ mod tasks {
                     ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
-                file_groups: HashMap::new(),
                 source: String::from(project_source),
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -467,6 +465,7 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
+                ..Project::default()
             }
         );
     }
@@ -520,7 +519,6 @@ mod tasks {
                     ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
-                file_groups: HashMap::new(),
                 source: String::from(project_source),
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -544,6 +542,7 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
+                ..Project::default()
             }
         );
     }
@@ -597,7 +596,6 @@ mod tasks {
                     ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
-                file_groups: HashMap::new(),
                 source: String::from(project_source),
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -621,6 +619,7 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
+                ..Project::default()
             }
         );
     }
@@ -683,7 +682,6 @@ mod tasks {
                     ..ProjectConfig::default()
                 }),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
-                file_groups: HashMap::new(),
                 source: String::from(project_source),
                 tasks: HashMap::from([(
                     String::from("standard"),
@@ -713,6 +711,7 @@ mod tasks {
                     )
                     .unwrap()
                 )]),
+                ..Project::default()
             }
         );
     }

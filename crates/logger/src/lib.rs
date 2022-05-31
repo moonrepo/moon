@@ -13,7 +13,7 @@ pub fn logging_enabled() -> bool {
 
 pub trait Logable {
     /// Return a unique name for logging.
-    fn get_log_target(&self) -> String;
+    fn get_log_target(&self) -> &str;
 }
 
 pub fn map_list<T, F>(files: &Vec<T>, fmt: F) -> String

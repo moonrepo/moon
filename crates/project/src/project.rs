@@ -8,7 +8,7 @@ use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
 use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, trace, Logable};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -247,6 +247,12 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
+}
+
+impl Logable for Project {
+    fn get_log_target(&self) -> &str {
+        &self.log_target
+    }
 }
 
 impl Project {

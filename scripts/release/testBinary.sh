@@ -13,5 +13,8 @@ echo "Package: $package"
 echo "Binary: $binary"
 
 # Ensure its "linked" in the package
-"$PWD/node_modules/@moonrepo/$package/$binary" --help
+binPath="$PWD/node_modules/@moonrepo/$package/$binary"
+
+chmod +x "$binPath"
+binPath --help
 

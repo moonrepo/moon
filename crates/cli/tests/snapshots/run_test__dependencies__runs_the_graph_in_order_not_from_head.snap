@@ -1,9 +1,11 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 58
+assertion_line: 161
 expression: get_assert_output(&assert)
 ---
+▪▪▪▪ npm install
 ▪▪▪▪ depsC:dependencyOrder
+▪▪▪▪ depsC:dependencyOrder (100ms)
 deps=c
 
 ▪▪▪▪ depsB:dependencyOrder

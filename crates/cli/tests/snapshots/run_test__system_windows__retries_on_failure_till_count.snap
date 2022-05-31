@@ -2,22 +2,23 @@
 source: crates/cli/tests/run_test.rs
 expression: get_assert_output(&assert)
 ---
+▪▪▪▪ npm install
 ▪▪▪▪ systemWindows:retryCount
 stdout
-▪▪▪▪ systemWindows:retryCount (attempt 2 of 4)
+▪▪▪▪ systemWindows:retryCount (2/4)
 stdout
-▪▪▪▪ systemWindows:retryCount (attempt 3 of 4)
+▪▪▪▪ systemWindows:retryCount (3/4)
 stdout
-▪▪▪▪ systemWindows:retryCount (attempt 4 of 4)
+▪▪▪▪ systemWindows:retryCount (4/4)
 stdout
 stderr 
-▪▪▪▪ systemWindows:retryCount
+▪▪▪▪ systemWindows:retryCount (100ms)
 stderr 
-▪▪▪▪ systemWindows:retryCount (attempt 2 of 4)
+▪▪▪▪ systemWindows:retryCount (2/4, 100ms)
 stderr 
-▪▪▪▪ systemWindows:retryCount (attempt 3 of 4)
+▪▪▪▪ systemWindows:retryCount (3/4, 100ms)
 stderr 
-▪▪▪▪ systemWindows:retryCount (attempt 4 of 4)
+▪▪▪▪ systemWindows:retryCount (4/4, 100ms)
 
 [38;5;15m[48;5;161m[1m ERROR [0m Process cmd.exe failed with a 1 exit code.
 

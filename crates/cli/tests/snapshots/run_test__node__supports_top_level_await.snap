@@ -1,8 +1,9 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 54
+assertion_line: 303
 expression: get_assert_output(&assert)
 ---
+▪▪▪▪ npm install
 ▪▪▪▪ node:topLevelAwait
 before
 awaiting

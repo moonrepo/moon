@@ -4,6 +4,7 @@ use crate::workspace::Workspace;
 use moon_config::PackageManager;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, warn};
+use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_utils::{fs, is_offline};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -121,6 +122,14 @@ pub async fn install_node_deps(
 
                 return Ok(ActionStatus::Skipped);
             }
+
+            let install_command = match workspace.config.node.package_manager {
+                PackageManager::Npm => "npm install",
+                PackageManager::Pnpm => "pnpm install",
+                PackageManager::Yarn => "yarn install",
+            };
+
+            println!("{}", label_checkpoint(install_command, Checkpoint::Pass));
 
             manager.install_dependencies(&workspace.toolchain).await?;
 

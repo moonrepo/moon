@@ -1,8 +1,9 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 795
+assertion_line: 907
 expression: "get_path_safe_output(&assert, fixture.path())"
 ---
+▪▪▪▪ npm install
 ▪▪▪▪ system:runFromProject
 <WORKSPACE>/system
 

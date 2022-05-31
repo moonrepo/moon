@@ -1,8 +1,9 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 216
+assertion_line: 871
 expression: get_assert_output(&assert)
 ---
+▪▪▪▪ npm install
 ▪▪▪▪ system:passthroughArgs
 -aBc --opt value --optCamel=value foo 'bar baz' --opt-kebab 123
 

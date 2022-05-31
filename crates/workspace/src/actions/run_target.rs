@@ -1,4 +1,4 @@
-use crate::action::ActionStatus;
+use crate::action::{Action, ActionStatus, Attempt};
 use crate::actions::hashing::create_target_hasher;
 use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
@@ -6,10 +6,10 @@ use moon_cache::RunTargetState;
 use moon_config::TaskType;
 use moon_logger::{color, debug};
 use moon_project::{Project, Target, Task};
-use moon_terminal::output::{label_run_target, label_run_target_failed};
+use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::process::{output_to_string, Command, Output};
-use moon_utils::{is_ci, path, string_vec};
+use moon_utils::{is_ci, path, string_vec, time};
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
@@ -216,6 +216,7 @@ async fn create_target_command(
 
 pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
+    action: &mut Action,
     target_id: &str,
     primary_target: &str,
     passthrough_args: &[String],
@@ -243,7 +244,19 @@ pub async fn run_target(
     );
 
     if cache.item.hash == hash {
-        print_target_label(target_id, "(cached)", cache.item.exit_code != 0);
+        println!(
+            "{} {}",
+            label_checkpoint(
+                target_id,
+                if cache.item.exit_code == 0 {
+                    Checkpoint::Pass
+                } else {
+                    Checkpoint::Fail
+                }
+            ),
+            color::muted("(cached)")
+        );
+
         print_cache_item(&cache.item);
 
         return Ok(ActionStatus::Cached);
@@ -259,54 +272,57 @@ pub async fn run_target(
     // Run the command as a child process and capture its output.
     // If the process fails and `retry_count` is greater than 0,
     // attempt the process again in case it passes.
-    let attempt_count = task.options.retry_count + 1;
-    let mut attempt = 1;
+    let attempt_total = task.options.retry_count + 1;
+    let mut attempt_index = 1;
+    let mut attempts = vec![];
     let stream_output = is_primary || is_ci() && env::var("MOON_TEST").is_err();
     let output;
 
     loop {
-        let attempt_comment = if attempt == 1 {
-            String::new()
-        } else {
-            format!("(attempt {} of {})", attempt, attempt_count)
-        };
+        let mut attempt = Attempt::new(attempt_index);
 
         let possible_output = if stream_output {
             // Print label *before* output is streamed since it may stay open forever,
             // or it may use ANSI escape codes to alter the terminal.
-            print_target_label(target_id, &attempt_comment, false);
+            print_target_label(target_id, &attempt, attempt_total, Checkpoint::Pass);
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
             command.exec_stream_and_capture_output().await
         } else {
+            print_target_label(target_id, &attempt, attempt_total, Checkpoint::Start);
+
             // Otherwise we run the process in the background and write the output
             // once it has completed.
             command.exec_capture_output().await
         };
 
+        attempt.done();
+
         match possible_output {
             // zero and non-zero exit codes
             Ok(out) => {
                 if stream_output {
-                    handle_streamed_output(target_id, &attempt_comment, &out);
+                    handle_streamed_output(target_id, &attempt, attempt_total, &out);
                 } else {
-                    handle_captured_output(target_id, &attempt_comment, &out);
+                    handle_captured_output(target_id, &attempt, attempt_total, &out);
                 }
+
+                attempts.push(attempt);
 
                 if out.status.success() {
                     output = out;
                     break;
-                } else if attempt >= attempt_count {
+                } else if attempt_index >= attempt_total {
                     return Err(WorkspaceError::Moon(command.output_to_error(&out, false)));
                 } else {
-                    attempt += 1;
+                    attempt_index += 1;
 
                     debug!(
                         target: TARGET,
                         "Target {} failed, running again with attempt {}",
                         color::target(target_id),
-                        attempt
+                        attempt_index
                     );
                 }
             }
@@ -329,6 +345,7 @@ pub async fn run_target(
 
     // Save the new hash
     workspace.cache.save_hash(&hash, &hasher).await?;
+    action.attempts = Some(attempts);
 
     // Write the cache with the result and output
     cache.item.exit_code = output.status.code().unwrap_or(0);
@@ -341,15 +358,23 @@ pub async fn run_target(
     Ok(ActionStatus::Passed)
 }
 
-fn print_target_label(target: &str, comment: &str, failed: bool) {
-    let mut label = if failed {
-        label_run_target_failed(target)
-    } else {
-        label_run_target(target)
-    };
+fn print_target_label(target: &str, attempt: &Attempt, attempt_total: u8, checkpoint: Checkpoint) {
+    let failed = matches!(checkpoint, Checkpoint::Fail);
+    let mut label = label_checkpoint(target, checkpoint);
+    let mut comments = vec![];
 
-    if !comment.is_empty() {
-        label = format!("{} {}", label, color::muted(comment));
+    if attempt.index > 1 {
+        comments.push(format!("{}/{}", attempt.index, attempt_total));
+    }
+
+    if let Some(duration) = attempt.duration {
+        comments.push(time::elapsed(duration));
+    }
+
+    if !comments.is_empty() {
+        let metadata = color::muted(&format!("({})", comments.join(", ")));
+
+        label = format!("{} {}", label, metadata);
     };
 
     if failed {
@@ -388,15 +413,25 @@ fn print_output_std(output: &Output) {
 
 // Print label *after* output has been captured, so parallel tasks
 // aren't intertwined and the labels align with the output.
-fn handle_captured_output(target_id: &str, attempt_comment: &str, output: &Output) {
-    print_target_label(target_id, attempt_comment, !output.status.success());
+fn handle_captured_output(target_id: &str, attempt: &Attempt, attempt_total: u8, output: &Output) {
+    print_target_label(
+        target_id,
+        attempt,
+        attempt_total,
+        if output.status.success() {
+            Checkpoint::Pass
+        } else {
+            Checkpoint::Fail
+        },
+    );
+
     print_output_std(output);
 }
 
 // Only print the label when the process has failed,
 // as the actual output has already been streamed to the console.
-fn handle_streamed_output(target_id: &str, attempt_comment: &str, output: &Output) {
+fn handle_streamed_output(target_id: &str, attempt: &Attempt, attempt_total: u8, output: &Output) {
     if !output.status.success() {
-        print_target_label(target_id, attempt_comment, true);
+        print_target_label(target_id, attempt, attempt_total, Checkpoint::Fail);
     }
 }

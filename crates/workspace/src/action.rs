@@ -1,6 +1,28 @@
 use petgraph::graph::NodeIndex;
 use std::time::{Duration, Instant};
 
+pub struct Attempt {
+    pub duration: Option<Duration>,
+
+    pub index: u8,
+
+    pub start_time: Instant,
+}
+
+impl Attempt {
+    pub fn new(index: u8) -> Self {
+        Attempt {
+            duration: None,
+            index,
+            start_time: Instant::now(),
+        }
+    }
+
+    pub fn done(&mut self) {
+        self.duration = Some(self.start_time.elapsed());
+    }
+}
+
 pub enum ActionStatus {
     Cached,
     // CachedFromRemote, // TODO
@@ -13,6 +35,8 @@ pub enum ActionStatus {
 }
 
 pub struct Action {
+    pub attempts: Option<Vec<Attempt>>,
+
     pub duration: Option<Duration>,
 
     pub error: Option<String>,
@@ -29,6 +53,7 @@ pub struct Action {
 impl Action {
     pub fn new(node_index: NodeIndex) -> Self {
         Action {
+            attempts: None,
             duration: None,
             error: None,
             label: None,

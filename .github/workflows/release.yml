@@ -169,7 +169,7 @@ jobs:
         with:
           image: ${{ matrix.image }}
           params: -e TARGET=${{ matrix.target }}
-          command: bash ./scripts/release/testBinary.sh
+          command: ./scripts/release/testBinary.sh
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

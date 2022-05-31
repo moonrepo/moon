@@ -165,11 +165,14 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
 
         if inserted_count == 0 {
             if matches!(options.status, RunStatus::All) {
-                println!("Target {} not affected by touched files", target_id);
+                println!(
+                    "Target {} not affected by touched files",
+                    color::target(target_id)
+                );
             } else {
                 println!(
                     "Target {} not affected by touched files (using status {})",
-                    target_id,
+                    color::target(target_id),
                     color::symbol(&options.status.to_string().to_lowercase())
                 );
             }
@@ -177,7 +180,13 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
             return Ok(());
         }
     } else {
-        dep_graph.run_target(&target, &workspace.projects, None)?;
+        let inserted_count = dep_graph.run_target(&target, &workspace.projects, None)?;
+
+        if inserted_count == 0 {
+            println!("No tasks found for target {}", color::target(target_id));
+
+            return Ok(());
+        }
     }
 
     if options.dependents {

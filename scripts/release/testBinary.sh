@@ -13,5 +13,8 @@ echo "Package: $package"
 echo "Binary: $binary"
 
 # Ensure its "linked" in the package
-"$PWD/packages/$package/$binary" --help
+binPath="$PWD/packages/$package/$binary"
+
+chmod +x "$binPath"
+"$binPath" --help
 

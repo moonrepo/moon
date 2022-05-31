@@ -102,7 +102,7 @@ jobs:
 
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
-            image: node:lts-alpine
+            image: clux/muslrust:stable
             setup: yarn config set supportedArchitectures.libc "musl"
 
           - target: x86_64-apple-darwin
@@ -169,7 +169,7 @@ jobs:
         with:
           image: ${{ matrix.image }}
           params: -e TARGET=${{ matrix.target }}
-          command: ./scripts/release/testBinary.sh
+          command: bash ./scripts/release/testBinary.sh
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

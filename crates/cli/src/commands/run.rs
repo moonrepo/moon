@@ -27,6 +27,7 @@ impl Default for RunStatus {
     }
 }
 
+#[derive(Debug)]
 pub struct RunOptions {
     pub affected: bool,
     pub dependents: bool,
@@ -153,6 +154,8 @@ pub fn render_result_stats(
 pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std::error::Error>> {
     let target = Target::parse(target_id)?;
     let workspace = Workspace::load().await?;
+
+    println!("run {:#?}", options);
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();

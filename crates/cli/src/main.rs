@@ -1,4 +1,4 @@
-use moon_cli::run_cli;
+use moon_cli::{run_cli, BIN_NAME};
 use moon_config::constants;
 use moon_lang_node::NODE;
 use std::env;
@@ -55,7 +55,7 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
         .enumerate()
         .filter(|(i, arg)| {
             if *i == 0 {
-                !arg.ends_with("moon")
+                !arg.ends_with(BIN_NAME)
             } else {
                 true
             }
@@ -79,6 +79,8 @@ async fn main() {
     let mut run = true;
 
     // Trigger CI!
+
+    println!("{:#?}", env::args());
 
     // Detect if we've been installed globally
     if let Ok(current_dir) = env::current_dir() {

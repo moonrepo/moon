@@ -18,6 +18,8 @@ async fn run_action(
     primary_target: &str,
     passthrough_args: &[String],
 ) -> Result<(), WorkspaceError> {
+    println!("run_action = {:#?}", passthrough_args);
+
     let result = match action_node {
         Node::InstallNodeDeps => install_node_deps(workspace).await,
         Node::RunTarget(target_id) => {

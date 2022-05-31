@@ -1,7 +1,7 @@
 use clap::ArgEnum;
 use strum_macros::Display;
 
-#[derive(ArgEnum, Clone, Display)]
+#[derive(ArgEnum, Clone, Debug, Display)]
 pub enum CacheMode {
     Off,
     Read,
@@ -14,7 +14,7 @@ impl Default for CacheMode {
     }
 }
 
-#[derive(ArgEnum, Clone, Display)]
+#[derive(ArgEnum, Clone, Debug, Display)]
 pub enum LogLevel {
     Off,
     Error,

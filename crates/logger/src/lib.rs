@@ -16,7 +16,7 @@ pub trait Logable {
     fn get_log_target(&self) -> &str;
 }
 
-pub fn map_list<T, F>(files: &Vec<T>, fmt: F) -> String
+pub fn map_list<T, F>(files: &[T], fmt: F) -> String
 where
     F: Fn(&T) -> String,
 {

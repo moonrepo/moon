@@ -2,10 +2,9 @@ use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::project::Project;
 use crate::types::TouchedFilePaths;
-use itertools::Itertools;
 use moon_config::constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_config::{GlobalProjectConfig, ProjectID};
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, map_list, trace};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -227,11 +226,7 @@ impl ProjectGraph {
             trace!(
                 target: LOG_TARGET,
                 "Adding dependencies {} to project {}",
-                depends_on
-                    .clone()
-                    .into_iter()
-                    .map(|d| color::symbol(&d))
-                    .join(", "),
+                map_list(&depends_on, |d| color::symbol(d)),
                 color::id(id),
             );
 

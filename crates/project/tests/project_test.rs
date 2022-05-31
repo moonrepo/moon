@@ -51,6 +51,7 @@ fn no_config() {
         project,
         Project {
             id: String::from("no-config"),
+            log_target: String::from("moon:project:no-config"),
             root: workspace_root.join("projects/no-config"),
             file_groups: mock_file_groups(),
             source: String::from("projects/no-config"),
@@ -75,6 +76,7 @@ fn empty_config() {
         Project {
             id: String::from("empty-config"),
             config: Some(ProjectConfig::default()),
+            log_target: String::from("moon:project:empty-config"),
             root: workspace_root.join("projects/empty-config"),
             file_groups: mock_file_groups(),
             source: String::from("projects/empty-config"),
@@ -111,6 +113,7 @@ fn basic_config() {
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 ..ProjectConfig::default()
             }),
+            log_target: String::from("moon:project:basic"),
             root: project_root,
             file_groups,
             source: String::from("projects/basic"),
@@ -145,6 +148,7 @@ fn advanced_config() {
                 }),
                 ..ProjectConfig::default()
             }),
+            log_target: String::from("moon:project:advanced"),
             root: workspace_root.join("projects/advanced"),
             file_groups: mock_file_groups(),
             source: String::from("projects/advanced"),
@@ -177,6 +181,7 @@ fn overrides_global_file_groups() {
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 ..ProjectConfig::default()
             }),
+            log_target: String::from("moon:project:basic"),
             root: workspace_root.join("projects/basic"),
             file_groups: HashMap::from([(
                 String::from("tests"),
@@ -283,6 +288,7 @@ mod tasks {
         let mut task =
             create_expanded_task_internal(workspace_root, &project_root, Some(config)).unwrap();
 
+        task.log_target = format!("moon:project:{}", target);
         task.target = target;
 
         Ok(task)
@@ -317,6 +323,7 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig::default()),
+                log_target: String::from("moon:project:id"),
                 root: workspace_root
                     .join("tasks/no-tasks")
                     .canonicalize()
@@ -383,6 +390,7 @@ mod tasks {
                     ]),
                     ..ProjectConfig::default()
                 }),
+                log_target: String::from("moon:project:id"),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 source: String::from("tasks/basic"),
                 tasks: HashMap::from([
@@ -444,6 +452,7 @@ mod tasks {
                     )]),
                     ..ProjectConfig::default()
                 }),
+                log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
                 tasks: HashMap::from([(
@@ -518,6 +527,7 @@ mod tasks {
                     )]),
                     ..ProjectConfig::default()
                 }),
+                log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
                 tasks: HashMap::from([(
@@ -595,6 +605,7 @@ mod tasks {
                     )]),
                     ..ProjectConfig::default()
                 }),
+                log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
                 tasks: HashMap::from([(
@@ -681,6 +692,7 @@ mod tasks {
                     )]),
                     ..ProjectConfig::default()
                 }),
+                log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
                 tasks: HashMap::from([(
@@ -1186,6 +1198,7 @@ mod workspace {
             task.target = "id:foo".to_owned();
             task.command = "a".to_owned();
             task.args.push("renamed-and-merge-foo".to_owned());
+            task.log_target = String::from("moon:project:id:foo");
 
             assert_eq!(*project.get_task("foo").unwrap(), task);
 

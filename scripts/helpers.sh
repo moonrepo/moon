@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+echo "OS: $(uname)"
+echo "Arch: $(uname -m)"
+
 function getBinaryName() {
 	if [[ -z "${BINARY}" ]]; then
 		case "$(uname -s)" in

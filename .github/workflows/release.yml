@@ -38,7 +38,10 @@ jobs:
             host: macos-latest
             binary: moon
             setup: |
+              export CC=$(xcrun -f clang);
+              export CXX=$(xcrun -f clang++);
               export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
+              export CFLAGS="-isysroot $SDKROOT -isystem $SDKROOT";
               export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
 
           - target: x86_64-pc-windows-msvc

@@ -21,43 +21,36 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             host: ubuntu-latest
-            arch: x64
             binary: moon
 
-          # - host: ubuntu-latest
-          #   target: x86_64-unknown-linux-musl
-          #   arch: x64
-          #   binary: moon
-          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-latest
+            binary: moon
+            image: clux/muslrust:stable
 
           - target: x86_64-apple-darwin
             host: macos-latest
-            arch: x64
             binary: moon
             setup: |
               export MACOSX_DEPLOYMENT_TARGET="10.13";
 
           - target: aarch64-apple-darwin
             host: macos-latest
-            arch: x64
             binary: moon
             setup: |
+              export CC=$(xcrun -f clang);
+              export CXX=$(xcrun -f clang++);
               export SDKROOT=$(xcrun -sdk macosx --show-sdk-path);
+              export CFLAGS="-isysroot $SDKROOT -isystem $SDKROOT";
               export MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version);
 
           - target: x86_64-pc-windows-msvc
             host: windows-latest
-            arch: x64
             binary: moon.exe
     name: Stable - ${{ matrix.target }}
     runs-on: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          architecture: ${{ matrix.arch }}
-          check-latest: true
-          node-version: 16
       - uses: actions/cache@v3
         name: Cache cargo
         with:
@@ -82,14 +75,19 @@ jobs:
         run: ${{ matrix.setup }}
       - name: Add target
         run: rustup target add ${{ matrix.target }}
-      - name: Install dependencies
-        run: yarn install --immutable
       - name: Build binary
-        run: node ./scripts/release/buildBinary.mjs
+        if: ${{ !matrix.image }}
+        run: bash ./scripts/release/buildBinary.sh
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-          RUSTFLAGS: '-C strip=symbols'
+      - name: Build binary with Docker
+        if: ${{ matrix.image }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ${{ matrix.image }}
+          params: -e TARGET=${{ matrix.target }} -e BINARY=${{ matrix.binary }}
+          command: bash ./scripts/release/buildBinary.sh
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:
@@ -105,19 +103,20 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             host: ubuntu-latest
 
-          # - host: ubuntu-latest
-          #   target: x86_64-unknown-linux-musl
-          #   image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+          - target: x86_64-unknown-linux-musl
+            host: ubuntu-latest
+            image: clux/muslrust:stable
+            setup: yarn config set supportedArchitectures.libc "musl"
 
           - target: x86_64-apple-darwin
             host: macos-latest
 
-          - target: aarch64-apple-darwin
-            host: ubuntu-latest
-            test: |
-              sudo apt-get install binfmt-support qemu qemu-user-static
-              docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-              docker run --rm -t -a stdout -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/home/runner/work/moon/moon":"/var/work" -e "TARGET=aarch64-apple-darwin" --entrypoint node arm64v8/node -c "/var/work/scripts/release/testBinary.mjs"
+          # - target: aarch64-apple-darwin
+          #   host: ubuntu-latest
+          #   image: arm64v8/node
+          #   setup: |
+          #     sudo apt-get install binfmt-support qemu qemu-user-static
+          #     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
           - target: x86_64-pc-windows-msvc
             host: windows-latest
@@ -148,6 +147,9 @@ jobs:
             .yarn/install-state.gz
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: ${{ runner.os }}-yarn-
+      - name: Setup toolchain
+        if: ${{ matrix.setup }}
+        run: ${{ matrix.setup }}
       - name: Install dependencies
         run: yarn install --immutable
       - uses: actions/download-artifact@v2
@@ -160,13 +162,17 @@ jobs:
         run: ls -lR ./packages/cli ./packages/core-*
         shell: bash
       - name: Test binary
-        if: ${{ !matrix.test }}
-        run: node ./scripts/release/testBinary.mjs
+        if: ${{ !matrix.image }}
+        run: bash ./scripts/release/testBinary.sh
         env:
           TARGET: ${{ matrix.target }}
-      - name: Test binary
-        if: ${{ matrix.test }}
-        run: ${{ matrix.test }}
+      - name: Test binary with Docker
+        if: ${{ matrix.image }}
+        uses: mosteo-actions/docker-run@v1
+        with:
+          image: ${{ matrix.image }}
+          params: -e TARGET=${{ matrix.target }}
+          command: bash ./scripts/release/testBinary.sh
 
   publish:
     if: ${{ github.event_name == 'workflow_dispatch' }}

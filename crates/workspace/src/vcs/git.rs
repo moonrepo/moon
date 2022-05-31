@@ -149,6 +149,10 @@ impl Vcs for Git {
             .await?;
         let mut map = BTreeMap::new();
 
+        if output.is_empty() {
+            return Ok(map);
+        }
+
         for line in output.split('\n') {
             // <mode> <type> <hash>\t<file>
             let parts = line.split(' ');

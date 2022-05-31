@@ -18,6 +18,8 @@ use moon_logger::{LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use std::env;
 
+pub use app::BIN_NAME;
+
 // This is annoying, but clap requires applying the `ArgEnum`
 // trait onto the enum, which we can't apply to the log package.
 fn map_log_level(level: LogLevel) -> LevelFilter {

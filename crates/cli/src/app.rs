@@ -7,6 +7,8 @@ use clap::{Parser, Subcommand};
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
 
+pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
+
 const HEADING_AFFECTED: &str = "Affected by changes";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
@@ -151,11 +153,11 @@ pub enum Commands {
     },
 }
 
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 #[clap(
-    bin_name = "moon",
+    bin_name = BIN_NAME,
     name = label_moon(),
-    about = "Take your monorepo to the moon!",
+    about = "Take your repo to the moon!",
     version
 )]
 #[clap(

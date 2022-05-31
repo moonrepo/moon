@@ -11,6 +11,7 @@
 - Updated git file diffing to use `git merge-base` as the base reference.
 - Updated `moon run` to exit early if there are no tasks for the provided target.
 - Hashing will now ignore files that matched a pattern found in the root `.gitignore`.
+- Passthrough args can now be defined for multi-target runs (`:target`).
 
 #### 🐞 Fixes
 

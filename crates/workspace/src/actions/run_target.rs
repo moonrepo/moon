@@ -264,10 +264,7 @@ pub async fn run_target(
 
     // Build the command to run based on the task
     let mut command = create_target_command(&workspace, &project, task).await?;
-
-    if is_primary && !passthrough_args.is_empty() {
-        command.args(passthrough_args);
-    }
+    command.args(passthrough_args);
 
     // Run the command as a child process and capture its output.
     // If the process fails and `retry_count` is greater than 0,

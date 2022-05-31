@@ -29,6 +29,7 @@ jobs:
             arch: x64
             binary: moon
             image: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            cross: true
 
           - target: x86_64-apple-darwin
             host: macos-latest
@@ -77,6 +78,11 @@ jobs:
         name: Generate lockfile
         with:
           command: generate-lockfile
+      - uses: actions-rs/cargo@v1
+        if: ${{ matrix.cross }}
+        with:
+          command: install
+          args: --force cross
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
@@ -85,18 +91,19 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
       - name: Build binary
-        if: ${{ !matrix.image }}
+        # if: ${{ !matrix.image }}
         run: node ./scripts/release/buildBinary.mjs
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      - name: Build binary with Docker
-        if: ${{ matrix.image }}
-        uses: mosteo-actions/docker-run@v1
-        with:
-          image: ${{ matrix.image }}
-          params: -e TARGET=${{ matrix.target }} -e BINARY=${{ matrix.binary }}
-          command: node ./scripts/release/buildBinary.mjs
+          CROSS: ${{ matrix.cross }}
+      # - name: Build binary with Docker
+      #   if: ${{ matrix.image }}
+      #   uses: mosteo-actions/docker-run@v1
+      #   with:
+      #     image: ${{ matrix.image }}
+      #     params: -e TARGET=${{ matrix.target }} -e BINARY=${{ matrix.binary }}
+      #     command: node ./scripts/release/buildBinary.mjs
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:

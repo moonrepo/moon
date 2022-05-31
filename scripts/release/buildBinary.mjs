@@ -11,7 +11,11 @@ async function buildBinary() {
 	const args = process.argv.slice(2);
 
 	// Build the binary with the provided target
-	await execa('cargo', ['build', '--release', '--target', TARGET, ...args], { stdio: 'inherit' });
+	await execa(
+		process.env.CROSS ? 'cross' : 'cargo',
+		['build', '--release', '--target', TARGET, ...args],
+		{ stdio: 'inherit' },
+	);
 
 	// Copy the binary to the package
 	const targetPath = getPath('target', TARGET, 'release', BINARY);

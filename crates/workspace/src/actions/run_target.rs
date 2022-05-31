@@ -41,7 +41,7 @@ async fn create_env_vars(
         path::path_to_string(&project.root)?,
     );
     env_vars.insert("MOON_PROJECT_SOURCE".to_owned(), project.source.clone());
-    env_vars.insert("MOON_RUN_LOG_TARGET".to_owned(), task.target.clone());
+    env_vars.insert("MOON_TARGET".to_owned(), task.target.clone());
     env_vars.insert(
         "MOON_TOOLCHAIN_DIR".to_owned(),
         path::path_to_string(&workspace.toolchain.dir)?,

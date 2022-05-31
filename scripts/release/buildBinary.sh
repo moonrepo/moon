@@ -2,6 +2,8 @@
 
 dir=$(dirname $0)
 
+export RUSTFLAGS="-C strip=symbols"
+
 source "$dir/../helpers.sh"
 
 target="$TARGET"
@@ -14,8 +16,8 @@ echo "Binary: $binary"
 echo "Args: $@"
 
 # Build the binary with the provided target
-export RUSTFLAGS="-C strip=symbols"
-cargo build --release --target $target $@
+rustup target add "$target"
+cargo build --release --target "$target" $@
 
 targetBin="$PWD/target/$target/release/$binary"
 packageBin="$PWD/packages/$package/$binary"

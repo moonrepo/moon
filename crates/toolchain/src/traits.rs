@@ -56,9 +56,9 @@ pub trait Downloadable<T: Send + Sync>: Send + Sync + Logable {
     /// Run the undownload process: check if downloaded -> delete files.
     async fn run_undownload(&self, parent: &T) -> Result<(), ToolchainError> {
         if self.is_downloaded().await? {
-            self.undownload(parent).await?;
+            debug!(target: &self.get_log_target(), "Deleting downloaded files");
 
-            debug!(target: &self.get_log_target(), "Deleted download files");
+            self.undownload(parent).await?;
         }
 
         Ok(())
@@ -119,9 +119,9 @@ pub trait Installable<T: Send + Sync>: Send + Sync + Logable {
     /// Run the uninstall process: check if installed -> uninstall.
     async fn run_uninstall(&self, parent: &T) -> Result<(), ToolchainError> {
         if self.is_installed(parent, false).await? {
-            self.uninstall(parent).await?;
+            debug!(target: &self.get_log_target(), "Uninstalling tool");
 
-            debug!(target: &self.get_log_target(), "Uninstalled tool");
+            self.uninstall(parent).await?;
         }
 
         Ok(())

@@ -1,5 +1,5 @@
 use crate::errors::WorkspaceError;
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, trace, warn};
 use moon_project::{
     ProjectGraph, ProjectID, Target, TargetError, TargetID, TargetProject, TouchedFilePaths,
 };
@@ -298,7 +298,7 @@ impl DepGraph {
             let globally_affected = projects.is_globally_affected(touched);
 
             if globally_affected {
-                trace!(
+                warn!(
                     target: TARGET,
                     "Moon files touched, marking all targets as affected",
                 );

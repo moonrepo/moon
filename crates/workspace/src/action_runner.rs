@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tokio::task;
 
-const TARGET: &str = "moon:action-runner";
+const LOG_TARGET: &str = "moon:action-runner";
 
 async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
@@ -67,7 +67,7 @@ pub struct ActionRunner {
 
 impl ActionRunner {
     pub fn new(workspace: Workspace) -> Self {
-        debug!(target: TARGET, "Creating action runner",);
+        debug!(target: LOG_TARGET, "Creating action runner",);
 
         ActionRunner {
             bail: false,
@@ -87,7 +87,7 @@ impl ActionRunner {
         let workspace = self.workspace.read().await;
 
         // Delete all previously created runfiles
-        trace!(target: TARGET, "Deleting stale runfiles");
+        trace!(target: LOG_TARGET, "Deleting stale runfiles");
 
         workspace.cache.delete_runfiles().await?;
 
@@ -108,7 +108,7 @@ impl ActionRunner {
         self.cleanup().await?;
 
         debug!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Running {} actions across {} batches", node_count, batches_count
         );
 
@@ -116,7 +116,7 @@ impl ActionRunner {
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
-            let batch_target_name = format!("{}:batch:{}", TARGET, batch_count);
+            let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_count);
             let actions_count = batch.len();
 
             trace!(
@@ -142,7 +142,7 @@ impl ActionRunner {
                         action.label = Some(node.label());
 
                         let log_target_name =
-                            format!("{}:batch:{}:{}", TARGET, batch_count, action_count);
+                            format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
                         let log_action_label = color::muted_light(&node.label());
 
                         trace!(
@@ -216,7 +216,7 @@ impl ActionRunner {
         self.duration = Some(start.elapsed());
 
         debug!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Finished running {} actions in {:?}",
             node_count,
             self.duration.unwrap()

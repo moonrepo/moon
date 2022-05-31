@@ -15,3 +15,10 @@ pub trait Logable {
     /// Return a unique name for logging.
     fn get_log_target(&self) -> String;
 }
+
+pub fn map_list<T, F>(files: &Vec<T>, fmt: F) -> String
+where
+    F: Fn(&T) -> String,
+{
+    files.iter().map(fmt).collect::<Vec<_>>().join(", ")
+}

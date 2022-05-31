@@ -9,7 +9,7 @@ use moon_utils::{fs, is_offline};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const TARGET: &str = "moon:action:install-node-deps";
+const LOG_TARGET: &str = "moon:action:install-node-deps";
 
 /// Add `packageManager` to root `package.json`.
 fn add_package_manager(workspace: &mut Workspace) -> bool {
@@ -30,7 +30,7 @@ fn add_package_manager(workspace: &mut Workspace) -> bool {
         && workspace.package_json.set_package_manager(&manager_version)
     {
         debug!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Adding package manager version to root {}",
             color::file("package.json")
         );
@@ -49,7 +49,7 @@ fn add_engines_constraint(workspace: &mut Workspace) -> bool {
             .add_engine("node", &workspace.config.node.version)
     {
         debug!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Adding engines version constraint to root {}",
             color::file("package.json")
         );
@@ -89,7 +89,7 @@ pub async fn install_node_deps(
             fs::write(&rc_path, &node_config.version).await?;
 
             debug!(
-                target: TARGET,
+                target: LOG_TARGET,
                 "Syncing Node.js version to root {}",
                 color::file(&rc_name)
             );
@@ -112,11 +112,11 @@ pub async fn install_node_deps(
         // Install deps if the lockfile has been modified
         // since the last time dependencies were installed!
         if last_modified == 0 || last_modified > cache.item.last_node_install_time {
-            debug!(target: TARGET, "Installing Node.js dependencies");
+            debug!(target: LOG_TARGET, "Installing Node.js dependencies");
 
             if is_offline() {
                 warn!(
-                    target: TARGET,
+                    target: LOG_TARGET,
                     "No internet connection, assuming offline and skipping install"
                 );
 
@@ -134,7 +134,7 @@ pub async fn install_node_deps(
             manager.install_dependencies(&workspace.toolchain).await?;
 
             if node_config.dedupe_on_lockfile_change {
-                debug!(target: TARGET, "Dedupeing dependencies");
+                debug!(target: LOG_TARGET, "Dedupeing dependencies");
 
                 manager.dedupe_dependencies(&workspace.toolchain).await?;
             }
@@ -147,7 +147,7 @@ pub async fn install_node_deps(
         }
 
         debug!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Lockfile has not changed since last install, skipping Node.js dependencies",
         );
     }

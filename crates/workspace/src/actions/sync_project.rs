@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const TARGET: &str = "moon:action:sync-project";
+const LOG_TARGET: &str = "moon:action:sync-project";
 
 fn sync_root_tsconfig(
     tsconfig: &mut TsConfigJson,
@@ -24,7 +24,7 @@ fn sync_root_tsconfig(
         && tsconfig.add_project_ref(&project.source, &typescript_config.project_config_file_name)
     {
         debug!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Syncing {} as a project reference to the root {}",
             color::id(&project.id),
             color::file(&typescript_config.root_config_file_name)
@@ -78,7 +78,7 @@ pub async fn sync_project(
                         )
                     {
                         debug!(
-                            target: TARGET,
+                            target: LOG_TARGET,
                             "Syncing {} as a dependency to {}'s {}",
                             color::id(&dep_id),
                             color::id(project_id),
@@ -107,7 +107,7 @@ pub async fn sync_project(
                         && tsconfig_json.add_project_ref(&dep_ref_path, tsconfig_branch_name)
                     {
                         debug!(
-                            target: TARGET,
+                            target: LOG_TARGET,
                             "Syncing {} as a project reference to {}'s {}",
                             color::id(&dep_id),
                             color::id(project_id),

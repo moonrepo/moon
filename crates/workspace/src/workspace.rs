@@ -11,6 +11,8 @@ use moon_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
 
+const LOG_TARGET: &str = "moon:workspace";
+
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
 fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
@@ -31,14 +33,13 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
         .join(constants::CONFIG_PROJECT_FILENAME);
 
     trace!(
-        target: "moon:workspace",
+        target: LOG_TARGET,
         "Attempting to find {} in {}",
-        color::file(
-            &format!("{}/{}",
-                constants::CONFIG_DIRNAME,
-                constants::CONFIG_PROJECT_FILENAME,
-            )
-        ),
+        color::file(&format!(
+            "{}/{}",
+            constants::CONFIG_DIRNAME,
+            constants::CONFIG_PROJECT_FILENAME,
+        )),
         color::path(root_dir)
     );
 
@@ -59,14 +60,13 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
         .join(constants::CONFIG_WORKSPACE_FILENAME);
 
     trace!(
-        target: "moon:workspace",
-        "Attempting to find {} in {}",
-        color::file(
-            &format!("{}/{}",
-                constants::CONFIG_DIRNAME,
-                constants::CONFIG_WORKSPACE_FILENAME,
-            )
-        ),
+        target: LOG_TARGET,
+        "Loading {} from {}",
+        color::file(&format!(
+            "{}/{}",
+            constants::CONFIG_DIRNAME,
+            constants::CONFIG_WORKSPACE_FILENAME,
+        )),
         color::path(root_dir)
     );
 
@@ -85,8 +85,8 @@ async fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceErro
     let package_json_path = root_dir.join("package.json");
 
     trace!(
-        target: "moon:workspace",
-        "Attempting to find {} in {}",
+        target: LOG_TARGET,
+        "Loading {} from {}",
         color::file("package.json"),
         color::path(root_dir),
     );
@@ -106,7 +106,7 @@ async fn load_tsconfig_json(
     let tsconfig_json_path = root_dir.join(tsconfig_name);
 
     trace!(
-        target: "moon:workspace",
+        target: LOG_TARGET,
         "Attempting to find {} in {}",
         color::file(tsconfig_name),
         color::path(root_dir),
@@ -156,7 +156,7 @@ impl Workspace {
         };
 
         debug!(
-            target: "moon:workspace",
+            target: LOG_TARGET,
             "Creating workspace at {} (from working directory {})",
             color::path(&root_dir),
             color::path(&working_dir)

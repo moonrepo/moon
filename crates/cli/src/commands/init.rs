@@ -9,7 +9,7 @@ use moon_lang::is_using_package_manager;
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
 use moon_logger::color;
 use moon_terminal::create_theme;
-use moon_utils::{fs, glob, path};
+use moon_utils::{fs, glob, path, regex};
 use std::collections::BTreeMap;
 use std::env;
 use std::fs::{read_to_string, OpenOptions};
@@ -154,7 +154,7 @@ fn inherit_projects_from_workspaces(
                 &path.strip_prefix(dest_dir).unwrap().to_string_lossy(),
             );
 
-            projects.insert(id, source);
+            projects.insert(regex::clean_id(&id), source);
         }
     }
 

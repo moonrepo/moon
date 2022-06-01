@@ -3,10 +3,9 @@
 use json;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use moon_utils::{fs, path::standardize_separators};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
-use std::fmt;
 use std::path::{Path, PathBuf};
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
@@ -306,7 +305,7 @@ pub struct CompilerOptions {
     pub jsx: Option<Jsx>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub lib: Option<Vec<Lib>>,
+    pub lib: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub list_emitted_files: Option<bool>,
@@ -535,6 +534,7 @@ pub enum Module {
     Es2022,
     EsNext,
     Node12,
+    Node16,
     NodeNext,
     None,
     System,
@@ -559,6 +559,7 @@ impl<'de> Deserialize<'de> for Module {
             "ES2022" => Module::Es2020,
             "ESNEXT" => Module::EsNext,
             "NODE12" => Module::Node12,
+            "NODE16" => Module::Node16,
             "NODENEXT" => Module::NodeNext,
             "NONE" => Module::None,
             "SYSTEM" => Module::System,
@@ -577,6 +578,7 @@ pub enum ModuleResolution {
     Classic,
     Node,
     Node12,
+    Node16,
     NodeNext,
 }
 
@@ -591,6 +593,7 @@ impl<'de> Deserialize<'de> for ModuleResolution {
         let r = match s.as_str() {
             "CLASSIC" => ModuleResolution::Classic,
             "NODE12" => ModuleResolution::Node12,
+            "NODE16" => ModuleResolution::Node16,
             "NODENEXT" => ModuleResolution::NodeNext,
             _ => ModuleResolution::Node,
         };
@@ -659,173 +662,6 @@ impl<'de> Deserialize<'de> for Target {
     }
 }
 
-// https://www.typescriptlang.org/tsconfig#lib
-#[derive(Clone, Debug, PartialEq)]
-pub enum Lib {
-    Dom,
-    DomIterable,
-    Es5,
-    Es6,
-    Es7,
-    Es2015,
-    Es2015Core,
-    Es2015Collection,
-    Es2015Generator,
-    Es2015Iterable,
-    Es2015Promise,
-    Es2015Proxy,
-    Es2015Reflect,
-    Es2015Symbol,
-    Es2015SymbolWellKnown,
-    Es2016,
-    Es2016ArrayInclude,
-    Es2017,
-    Es2017Intl,
-    Es2017Object,
-    Es2017SharedMemory,
-    Es2017String,
-    Es2017TypedArrays,
-    Es2018,
-    Es2018Intl,
-    Es2018Promise,
-    Es2018RegExp,
-    Es2019,
-    Es2019Array,
-    Es2019Object,
-    Es2019String,
-    Es2019Symbol,
-    Es2020,
-    Es2020String,
-    Es2020SymbolWellknown,
-    Es2021,
-    Es2021Promise,
-    Es2021String,
-    Es2021Weakref,
-    Es2022,
-    EsNext,
-    EsNextArray,
-    EsNextAsyncIterable,
-    EsNextIntl,
-    EsNextSymbol,
-    ScriptHost,
-    WebWorker,
-    Other(String),
-}
-
-impl fmt::Display for Lib {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl<'de> Deserialize<'de> for Lib {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let s = s.to_uppercase();
-
-        let d = match s.as_str() {
-            "DOM" => Lib::Dom,
-            "DOM.ITERABLE" => Lib::DomIterable,
-            "ES5" => Lib::Es5,
-            "ES6" => Lib::Es6,
-            "ES7" => Lib::Es7,
-            "ES2015" => Lib::Es2015,
-            "ES2015.CORE" => Lib::Es2015Core,
-            "ES2015.COLLECTION" => Lib::Es2015Collection,
-            "ES2015.GENERATOR" => Lib::Es2015Generator,
-            "ES2015.ITERABLE" => Lib::Es2015Iterable,
-            "ES2015.PROMISE" => Lib::Es2015Promise,
-            "ES2015.PROXY" => Lib::Es2015Proxy,
-            "ES2015.REFLECT" => Lib::Es2015Reflect,
-            "ES2015.SYMBOL" => Lib::Es2015Symbol,
-            "ES2015.SYMBOL.WELLKNOWN" => Lib::Es2015SymbolWellKnown,
-            "ES2016" => Lib::Es2016,
-            "ES2016.ARRAY.INCLUDE" => Lib::Es2016ArrayInclude,
-            "ES2017" => Lib::Es2017,
-            "ES2017.INTL" => Lib::Es2017Intl,
-            "ES2017.OBJECT" => Lib::Es2017Object,
-            "ES2017.SHAREDMEMORY" => Lib::Es2017SharedMemory,
-            "ES2017.STRING" => Lib::Es2017String,
-            "ES2017.TYPEDARRAYS" => Lib::Es2017TypedArrays,
-            "ES2018" => Lib::Es2018,
-            "ES2018.INTL" => Lib::Es2018Intl,
-            "ES2018.PROMISE" => Lib::Es2018Promise,
-            "ES2018.REGEXP" => Lib::Es2018RegExp,
-            "ES2019" => Lib::Es2019,
-            "ES2019.ARRAY" => Lib::Es2019Array,
-            "ES2019.OBJECT" => Lib::Es2019Object,
-            "ES2019.STRING" => Lib::Es2019String,
-            "ES2019.SYMBOL" => Lib::Es2019Symbol,
-            "ES2020" => Lib::Es2020,
-            "ES2020.STRING" => Lib::Es2020String,
-            "ES2020.SYMBOL.WELLKNOWN" => Lib::Es2020SymbolWellknown,
-            "ES2021" => Lib::Es2021,
-            "ES2021.PROMISE" => Lib::Es2021Promise,
-            "ES2021.STRING" => Lib::Es2021String,
-            "ES2021.WEAKREF" => Lib::Es2021Weakref,
-            "ES2022" => Lib::Es2022,
-            "ESNEXT" => Lib::EsNext,
-            "ESNEXT.ARRAY" => Lib::EsNextArray,
-            "ESNEXT.ASYNCITERABLE" => Lib::EsNextAsyncIterable,
-            "ESNEXT.INTL" => Lib::EsNextIntl,
-            "ESNEXT.SYMBOL" => Lib::EsNextSymbol,
-            "SCRIPTHOST" => Lib::ScriptHost,
-            "WEBWORKER" => Lib::WebWorker,
-            other => Lib::Other(other.to_string()),
-        };
-
-        Ok(d)
-    }
-}
-
-impl Serialize for Lib {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let value = match self {
-            Lib::DomIterable => "DOM.ITERABLE".to_owned(),
-            Lib::Es2015Core => "ES2015.CORE".to_owned(),
-            Lib::Es2015Collection => "ES2015.COLLECTION".to_owned(),
-            Lib::Es2015Generator => "ES2015.GENERATOR".to_owned(),
-            Lib::Es2015Iterable => "ES2015.ITERABLE".to_owned(),
-            Lib::Es2015Promise => "ES2015.PROMISE".to_owned(),
-            Lib::Es2015Proxy => "ES2015.PROXY".to_owned(),
-            Lib::Es2015Reflect => "ES2015.REFLECT".to_owned(),
-            Lib::Es2015Symbol => "ES2015.SYMBOL".to_owned(),
-            Lib::Es2015SymbolWellKnown => "ES2015.SYMBOL.WELLKNOWN".to_owned(),
-            Lib::Es2016ArrayInclude => "ES2016.ARRAY.INCLUDE".to_owned(),
-            Lib::Es2017Intl => "ES2017.INTL".to_owned(),
-            Lib::Es2017Object => "ES2017.OBJECT".to_owned(),
-            Lib::Es2017SharedMemory => "ES2017.SHAREDMEMORY".to_owned(),
-            Lib::Es2017String => "ES2017.STRING".to_owned(),
-            Lib::Es2017TypedArrays => "ES2017.TYPEDARRAYS".to_owned(),
-            Lib::Es2018Intl => "ES2018.INTL".to_owned(),
-            Lib::Es2018Promise => "ES2018.PROMISE".to_owned(),
-            Lib::Es2018RegExp => "ES2018.REGEXP".to_owned(),
-            Lib::Es2019Array => "ES2019.ARRAY".to_owned(),
-            Lib::Es2019Object => "ES2019.OBJECT".to_owned(),
-            Lib::Es2019String => "ES2019.STRING".to_owned(),
-            Lib::Es2019Symbol => "ES2019.SYMBOL".to_owned(),
-            Lib::Es2020String => "ES2020.STRING".to_owned(),
-            Lib::Es2020SymbolWellknown => "ES2020.SYMBOL.WELLKNOWN".to_owned(),
-            Lib::Es2021Promise => "ES2021.PROMISE".to_owned(),
-            Lib::Es2021String => "ES2021.STRING".to_owned(),
-            Lib::Es2021Weakref => "ES2021.WEAKREF".to_owned(),
-            Lib::EsNextArray => "ESNEXT.ARRAY".to_owned(),
-            Lib::EsNextAsyncIterable => "ESNEXT.ASYNCITERABLE".to_owned(),
-            Lib::EsNextIntl => "ESNEXT.INTL".to_owned(),
-            Lib::EsNextSymbol => "ESNEXT.SYMBOL".to_owned(),
-            other => format!("{:?}", other),
-        };
-
-        serializer.serialize_str(value.to_lowercase().as_str())
-    }
-}
-
 // https://github.com/serde-rs/json/issues/858
 // `serde-json` does NOT preserve original order when serializing the struct,
 // so we need to hack around this by using the `json` crate and manually
@@ -866,6 +702,7 @@ async fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(),
 mod test {
     use super::*;
     // use assert_fs::prelude::*;
+    use moon_utils::string_vec;
     use moon_utils::test::get_fixtures_dir;
 
     // #[tokio::test]
@@ -905,15 +742,15 @@ mod test {
                 module_resolution: Some(ModuleResolution::Node12),
                 jsx: Some(Jsx::ReactJsxdev),
                 target: Some(Target::Es6),
-                lib: Some(vec![
-                    Lib::Dom,
-                    Lib::Es2015Generator,
-                    Lib::Es2016ArrayInclude,
-                    Lib::Es2017SharedMemory,
-                    Lib::Es2018Intl,
-                    Lib::Es2019Symbol,
-                    Lib::Es2020SymbolWellknown,
-                    Lib::Es2021Weakref,
+                lib: Some(string_vec![
+                    "dom",
+                    "es2015.generator",
+                    "es2016.array.include",
+                    "es2017.sharedmemory",
+                    "es2018.intl",
+                    "es2019.symbol",
+                    "es2020.symbol.wellknown",
+                    "es2021.weakref",
                 ]),
                 ..CompilerOptions::default()
             }),
@@ -969,15 +806,15 @@ mod test {
         let expected = TsConfigJson {
             compiler_options: Some(CompilerOptions {
                 jsx: Some(Jsx::ReactNative),
-                lib: Some(vec![
-                    Lib::Dom,
-                    Lib::Es2015Collection,
-                    Lib::Es2016,
-                    Lib::Es2017TypedArrays,
-                    Lib::Es2018Promise,
-                    Lib::Es2019String,
-                    Lib::Es2020,
-                    Lib::Es2021Weakref,
+                lib: Some(string_vec![
+                    "dom",
+                    "es2015.collection",
+                    "es2016",
+                    "es2017.typedarrays",
+                    "es2018.promise",
+                    "es2019.string",
+                    "es2020",
+                    "es2021.weakref",
                 ]),
                 module: Some(Module::Es2015),
                 module_resolution: Some(ModuleResolution::Classic),

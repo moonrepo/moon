@@ -146,7 +146,7 @@ fileGroups:
     mod file_groups {
         #[test]
         #[should_panic(
-            expected = "Invalid field `fileGroups`. Expected a map type, received unsigned int `123`."
+            expected = "Invalid field <id>fileGroups</id>: Expected a map type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -160,7 +160,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `fileGroups.sources`. Expected a sequence type, received unsigned int `123`."
+            expected = "Invalid field <id>fileGroups.sources</id>: Expected a sequence type, received unsigned int `123`."
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -181,7 +181,7 @@ fileGroups:
     mod tasks {
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks`. Expected a map type, received unsigned int `123`."
+            expected = "Invalid field <id>tasks</id>: Expected a map type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -201,7 +201,7 @@ tasks: 123
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks.test`. Expected struct TaskConfig type, received unsigned int `123`."
+            expected = "Invalid field <id>tasks.test</id>: Expected struct TaskConfig type, received unsigned int `123`."
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -222,7 +222,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks.test.command`. Expected a string type, received unsigned int `123`."
+            expected = "Invalid field <id>tasks.test.command</id>: Expected a string type, received unsigned int `123`."
         )]
         fn invalid_value_field() {
             figment::Jail::expect_with(|jail| {
@@ -244,7 +244,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks.test.command`. An npm/system command is required."
+            expected = "Invalid field <id>tasks.test.command</id>: An npm/system command is required."
         )]
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {

@@ -127,7 +127,7 @@ const config = {
 						],
 					},
 				],
-				copyright: `Copyright © ${new Date().getFullYear()} moon.`,
+				copyright: `Copyright © ${new Date().getFullYear()} moon. moonrepo LLC.`,
 			},
 			prism: {
 				theme: prismTheme,

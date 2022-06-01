@@ -24,6 +24,7 @@ const sidebars = {
 					items: [
 						'guides/examples/eslint',
 						'guides/examples/jest',
+						'guides/examples/packemon',
 						'guides/examples/prettier',
 						'guides/examples/typescript',
 					],

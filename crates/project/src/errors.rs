@@ -1,4 +1,4 @@
-use moon_config::{constants, ValidationErrors};
+use moon_config::constants;
 use moon_error::MoonError;
 use moon_utils::glob::GlobError;
 use std::path::PathBuf;
@@ -10,10 +10,10 @@ pub enum ProjectError {
     DependencyCycleDetected,
 
     #[error(
-        "Failed to validate <file>{0}/{}</file> configuration file.\n\n<muted>{0}</muted>",
+        "Failed to validate <file>{0}/{}</file> configuration file.\n\n{1}",
         constants::CONFIG_PROJECT_FILENAME
     )]
-    InvalidConfigFile(String, ValidationErrors),
+    InvalidConfigFile(String, String),
 
     #[error("Failed to parse and open <file>{0}/package.json</file>: {1}")]
     InvalidPackageJson(String, String),

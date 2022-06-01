@@ -1,5 +1,5 @@
 use ignore::Error as IgnoreError;
-use moon_config::{constants, ValidationErrors};
+use moon_config::constants;
 use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_toolchain::ToolchainError;
@@ -36,18 +36,18 @@ pub enum WorkspaceError {
     MissingWorkspaceConfigFile,
 
     #[error(
-        "Failed to validate <file>{}/{}</file> configuration file.\n\n<muted>{0}</muted>",
+        "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
-    InvalidWorkspaceConfigFile(ValidationErrors),
+    InvalidWorkspaceConfigFile(String),
 
     #[error(
-        "Failed to validate <file>{}/{}</file> configuration file.\n\n<muted>{0}</muted>",
+        "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_PROJECT_FILENAME
     )]
-    InvalidGlobalProjectConfigFile(ValidationErrors),
+    InvalidGlobalProjectConfigFile(String),
 
     #[error(transparent)]
     Ignore(#[from] IgnoreError),

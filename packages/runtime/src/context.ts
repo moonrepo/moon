@@ -10,8 +10,6 @@ export interface RuntimeContext {
 	};
 }
 
-console.log('asdsaasdsdssdssdsdsads');
-
 export async function getContext(): Promise<RuntimeContext> {
 	const { env } = process;
 
@@ -26,7 +24,7 @@ export async function getContext(): Promise<RuntimeContext> {
 			...project,
 			root: Path.create(project.root),
 		},
-		target: env.MOON_RUN_TARGET!,
+		target: env.MOON_TARGET!,
 		workspace: {
 			root: Path.create(env.MOON_WORKSPACE_ROOT ?? process.cwd()),
 		},

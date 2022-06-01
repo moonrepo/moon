@@ -21,7 +21,19 @@ const sidebars = {
 					label: 'Examples',
 					collapsed: false,
 					collapsible: true,
-					items: ['guides/examples/eslint', 'guides/examples/jest', 'guides/examples/typescript'],
+					items: [
+						'guides/examples/eslint',
+						'guides/examples/jest',
+						'guides/examples/packemon',
+						'guides/examples/prettier',
+						'guides/examples/typescript',
+					],
+					link: {
+						type: 'generated-index',
+						title: 'Examples',
+						slug: '/guides/examples',
+						keywords: ['guides', 'examples', 'tools'],
+					},
 				},
 			],
 			link: {

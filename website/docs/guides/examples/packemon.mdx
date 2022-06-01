@@ -1,0 +1,161 @@
+---
+title: Packemon example
+sidebar_label: Packemon
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+
+In this guide, you'll learn how to integrate [Packemon](https://packemon.dev/) into moon.
+
+Begin by installing `packemon` in your root. We suggest using the same version across the entire
+repository.
+
+<AddDepsTabs dep="packemon" dev />
+
+## Setup
+
+Package building does not apply to every project, only packages, so where you place the build task
+is up to you. The following patterns are suggested:
+
+- A `buildPackage` task in [`.moon/project.yml`](../../config/global-project), which can be
+  inherited by package based projects.
+- A `build` task in each [`project.yml`](../../config/project).
+
+<Tabs
+  groupId="config-type"
+  defaultValue="global"
+  values={[
+    { label: 'Globally inherited', value: 'global' },
+    { label: 'Per project', value: 'local' },
+  ]}
+>
+<TabItem value="global">
+
+```yaml title=".moon/project.yml"
+buildPackage:
+	command: 'packemon'
+	args:
+		- 'pack'
+		# Add `engines` field to package
+		- '--addEngines'
+		# Add `exports` field to package
+		- '--addExports'
+		# Generate TypeScript declarations
+		- '--declaration'
+		- '--declarationConfig'
+		- 'tsconfig.build.json'
+	inputs:
+		# Source files only
+		- 'src/**/*'
+		- 'package.json'
+		# A build specific tsconfig
+		- 'tsconfig.build.json'
+		- '/tsconfig.options.json'
+	outputs:
+		# Matches `compilerOptions.outDir`
+		- 'dts'
+	env:
+		NODE_ENV: 'production'
+```
+
+With this being defined globally, all package-based projects can inherit this task and rename it as
+follows.
+
+```yaml title="packages/*/project.yml"
+# Rename the `buildPackage` task to `build` for this project
+workspace:
+	inheritedTasks:
+		rename:
+			buildPackage: 'build'
+
+# Define additional compiled files unique to this project
+tasks:
+	build:
+		outputs:
+			- 'cjs'
+```
+
+However, for other project types like applications, this task will need to be _excluded_, otherwise
+it will run and fail in CI.
+
+```yaml title="apps/*/project.yml"
+# Exclude the `buildPackage` task for this project
+workspace:
+	inheritedTasks:
+		exclude: ['buildPackage']
+```
+
+</TabItem>
+<TabItem value="local">
+
+```yaml title="packages/*/project.yml"
+build:
+	command: 'packemon'
+	args:
+		- 'pack'
+		# Add `engines` field to package
+		- '--addEngines'
+		# Add `exports` field to package
+		- '--addExports'
+		# Generate TypeScript declarations
+		- '--declaration'
+		- '--declarationConfig'
+		- 'tsconfig.build.json'
+	inputs:
+		# Source files only
+		- 'src/**/*'
+		- 'package.json'
+		# A build specific tsconfig
+		- 'tsconfig.build.json'
+		- '/tsconfig.options.json'
+	outputs:
+		# Compiled files: lib, esm, cjs, mjs, etc
+		- 'lib'
+		# Matches `compilerOptions.outDir`
+		- 'dts'
+	env:
+		NODE_ENV: 'production'
+```
+
+</TabItem>
+</Tabs>
+
+### TypeScript integration
+
+Packemon has built-in support for TypeScript, but to _not_ conflict with a
+[typecheck task](./typescript), a separate `tsconfig.json` file is required, which we named
+`tsconfig.build.json`.
+
+This config is necessary to _only_ compile source files, and to not include unwanted files in the
+declaration output directory (`dts`).
+
+```json title="tsconfig.build.json"
+{
+	"extends": "../../tsconfig.options.json",
+	"compilerOptions": {
+		"outDir": "dts",
+		"rootDir": "src"
+	},
+	"include": ["src/**/*"],
+	"references": []
+}
+```
+
+### Build targets
+
+To configure the target platform(s) and format(s), you must define a
+[`packemon` block](https://packemon.dev/docs/config) in the project's `package.json`. The chosen
+formats must also be listed as `outputs` in the task.
+
+```json title="package.json"
+{
+	"name": "package",
+	// ...
+	"packemon": {
+		"format": "esm",
+		"platform": "browser"
+	}
+}
+```

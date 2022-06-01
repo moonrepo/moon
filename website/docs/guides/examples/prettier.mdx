@@ -1,0 +1,93 @@
+---
+title: Prettier example
+sidebar_label: Prettier
+---
+
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+
+In this guide, you'll learn how to integrate [Prettier](https://prettier.io/) into moon.
+
+Begin by installing `prettier` in your root. We suggest using the same version across the entire
+repository.
+
+<AddDepsTabs dep="prettier" dev />
+
+## Setup
+
+Since code formatting is a universal workflow, add a `format` task to
+[`.moon/project.yml`](../../config/global-project) with the following parameters.
+
+```yaml title=".moon/project.yml"
+tasks:
+	format:
+		command: 'prettier'
+		args:
+			# Use the same config for the entire repo
+			- '--config'
+			- '@in(4)'
+			# Use the same ignore patterns as well
+			- '--ignore-path'
+			- '@in(3)'
+			# Fail for unformatted code
+			- '--check'
+			# Run in current dir
+			- '.'
+		inputs:
+			# Source and test files
+			- 'src/**/*'
+			- 'tests/**/*'
+			# Config and other files
+			- '**/*.{md,mdx,yml,yaml,json}'
+			# Root configs, any format
+			- '/.prettierignore'
+			- '/.prettierrc.*'
+```
+
+## Configuration
+
+### Root-level
+
+The root-level Prettier config is _required_, as it defines conventions and standards to apply to
+the entire repository.
+
+```js title=".prettierrc.js"
+module.exports = {
+	arrowParens: 'always',
+	semi: true,
+	singleQuote: true,
+	tabWidth: 2,
+	trailingComma: 'all',
+	useTabs: true,
+};
+```
+
+The `.prettierignore` file must also be defined at the root, as
+[only 1 ignore file](https://prettier.io/docs/en/ignore.html#ignoring-files-prettierignore) can
+exist in a repository. We ensure this ignore file is used by passing `--ignore-path` above.
+
+```bash title=".prettierignore"
+node_modules/
+*.min.js
+*.map
+*.snap
+```
+
+### Project-level
+
+We suggest _against_ project-level configurations, as the entire repository should be formatted
+using the same standards. However, if you're migrating code and need an escape hatch,
+[overrides in the root](https://prettier.io/docs/en/configuration.html#configuration-overrides) will
+work.
+
+## FAQ
+
+### How to use `--write`?
+
+Unfortunately, this isn't currently possible, as the `prettier` binary itself requires either the
+`--check` or `--write` options, and since we're configuring `--check` in the task above, that takes
+precedence. This is also the preferred pattern as checks will run (and fail) in CI.
+
+To work around this limitation, we suggest the following alternatives:
+
+- Configure your editor to run Prettier on save.
+- Define another task to write the formatted code, like `format-write`.

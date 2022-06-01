@@ -90,6 +90,10 @@ const config = {
 							// 	label: 'Packages',
 							// 	to: '/api',
 							// },
+							{
+								label: 'Example repository',
+								href: 'https://github.com/moonrepo/examples',
+							},
 						],
 					},
 					{
@@ -123,7 +127,7 @@ const config = {
 						],
 					},
 				],
-				copyright: `Copyright © ${new Date().getFullYear()} moon.`,
+				copyright: `Copyright © ${new Date().getFullYear()} moon. moonrepo LLC.`,
 			},
 			prism: {
 				theme: prismTheme,

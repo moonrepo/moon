@@ -1,9 +1,12 @@
 use crate::errors::{ProjectError, TokenError};
 use common_path::common_path_all;
+use moon_logger::{color, map_list, trace};
 use moon_utils::glob;
 use moon_utils::path::expand_root_path;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+
+const LOG_TARGET: &str = "moon:project:file-group";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct FileGroup {
@@ -14,6 +17,13 @@ pub struct FileGroup {
 
 impl FileGroup {
     pub fn new(id: &str, files: Vec<String>) -> FileGroup {
+        trace!(
+            target: LOG_TARGET,
+            "Creating file group {} with files: {}",
+            color::id(id),
+            map_list(&files, |f| color::file(f))
+        );
+
         FileGroup {
             files,
             id: id.to_owned(),

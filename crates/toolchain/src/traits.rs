@@ -33,15 +33,18 @@ pub trait Downloadable<T: Send + Sync>: Send + Sync + Logable {
 
     /// Run the download process: check if downloaded -> download or skip.
     async fn run_download(&self, parent: &T) -> Result<(), ToolchainError> {
-        let target = self.get_log_target();
+        let log_target = self.get_log_target();
 
         if self.is_downloaded().await? {
             debug!(
-                target: &target,
+                target: log_target,
                 "Tool has already been downloaded, continuing"
             );
         } else {
-            debug!(target: &target, "Tool has not been downloaded, attempting");
+            debug!(
+                target: log_target,
+                "Tool has not been downloaded, attempting"
+            );
 
             if is_offline() {
                 return Err(ToolchainError::InternetConnectionRequired);
@@ -56,9 +59,9 @@ pub trait Downloadable<T: Send + Sync>: Send + Sync + Logable {
     /// Run the undownload process: check if downloaded -> delete files.
     async fn run_undownload(&self, parent: &T) -> Result<(), ToolchainError> {
         if self.is_downloaded().await? {
-            self.undownload(parent).await?;
+            debug!(target: self.get_log_target(), "Deleting downloaded files");
 
-            debug!(target: &self.get_log_target(), "Deleted download files");
+            self.undownload(parent).await?;
         }
 
         Ok(())
@@ -94,15 +97,18 @@ pub trait Installable<T: Send + Sync>: Send + Sync + Logable {
     /// Run the install process: check if installed & on the correct version ->
     /// install or skip. Return `true` if the tool was installed.
     async fn run_install(&self, parent: &T, check_version: bool) -> Result<bool, ToolchainError> {
-        let target = self.get_log_target();
+        let log_target = self.get_log_target();
 
         if self.is_installed(parent, check_version).await? {
             debug!(
-                target: &target,
+                target: log_target,
                 "Tool has already been installed, continuing"
             );
         } else {
-            debug!(target: &target, "Tool has not been installed, attempting");
+            debug!(
+                target: log_target,
+                "Tool has not been installed, attempting"
+            );
 
             if is_offline() {
                 return Err(ToolchainError::InternetConnectionRequired);
@@ -119,9 +125,9 @@ pub trait Installable<T: Send + Sync>: Send + Sync + Logable {
     /// Run the uninstall process: check if installed -> uninstall.
     async fn run_uninstall(&self, parent: &T) -> Result<(), ToolchainError> {
         if self.is_installed(parent, false).await? {
-            self.uninstall(parent).await?;
+            debug!(target: self.get_log_target(), "Uninstalling tool");
 
-            debug!(target: &self.get_log_target(), "Uninstalled tool");
+            self.uninstall(parent).await?;
         }
 
         Ok(())

@@ -1,9 +1,10 @@
 use crate::hasher::Hasher;
-use crate::helpers::is_writable;
+use crate::helpers::{is_writable, LOG_TARGET};
 use crate::items::{CacheItem, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
+use moon_logger::{color, debug, trace};
 use moon_utils::fs;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -30,6 +31,12 @@ impl CacheEngine {
         let hashes_dir = dir.join("hashes");
         let runs_dir = dir.join("runs");
         let outputs_dir = dir.join("out");
+
+        debug!(
+            target: LOG_TARGET,
+            "Creating cache engine at {}",
+            color::path(&dir)
+        );
 
         fs::create_dir_all(&hashes_dir).await?;
         fs::create_dir_all(&runs_dir).await?;
@@ -81,8 +88,12 @@ impl CacheEngine {
 
     pub async fn delete_hash(&self, hash: &str) -> Result<(), MoonError> {
         if is_writable() {
+            let path = self.hashes_dir.join(format!("{}.json", hash));
+
+            trace!(target: "moon:cache:hash", "Deleting hash {}", color::path(&path));
+
             // Remove the hash file itself
-            fs::remove_file(&self.hashes_dir.join(format!("{}.json", hash))).await?;
+            fs::remove_file(&path).await?;
 
             // And the output with the hash
             fs::remove_dir_all(&self.outputs_dir.join(hash)).await?;
@@ -98,7 +109,11 @@ impl CacheEngine {
             let path = entry.path();
 
             if path.is_dir() {
-                fs::remove_file(&path.join("runfile.json")).await?;
+                let runfile = path.join("runfile.json");
+
+                trace!(target: "moon:cache:runfile", "Deleting runfile {}", color::path(&runfile));
+
+                fs::remove_file(&runfile).await?;
             }
         }
 
@@ -116,6 +131,13 @@ impl CacheEngine {
 
             fs::create_dir_all(&dest_root).await?;
 
+            trace!(
+                target: LOG_TARGET,
+                "Hardlinking output {} to {}",
+                color::path(source_path),
+                color::path(&dest_root)
+            );
+
             if source_path.is_file() {
                 fs::link_file(source_root, source_path, &dest_root).await?;
             } else {
@@ -128,12 +150,11 @@ impl CacheEngine {
 
     pub async fn save_hash(&self, hash: &str, hasher: &Hasher) -> Result<(), MoonError> {
         if is_writable() {
-            fs::write_json(
-                &self.hashes_dir.join(format!("{}.json", hash)),
-                &hasher,
-                true,
-            )
-            .await?;
+            let path = self.hashes_dir.join(format!("{}.json", hash));
+
+            trace!(target: "moon:cache:hash", "Creating hash {}", color::path(&path));
+
+            fs::write_json(&path, &hasher, true).await?;
         }
 
         Ok(())

@@ -8,7 +8,7 @@ use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
 use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, trace, Logable};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -22,13 +22,14 @@ pub type TasksMap = HashMap<TaskID, Task>;
 
 // project.yml
 fn load_project_config(
+    log_target: &str,
     project_root: &Path,
     project_source: &str,
 ) -> Result<Option<ProjectConfig>, ProjectError> {
     let config_path = project_root.join(CONFIG_PROJECT_FILENAME);
 
     trace!(
-        target: "moon:project",
+        target: log_target,
         "Attempting to find {} in {}",
         color::file(CONFIG_PROJECT_FILENAME),
         color::path(project_root),
@@ -48,10 +49,13 @@ fn load_project_config(
 }
 
 fn create_file_groups_from_config(
+    log_target: &str,
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
 ) -> FileGroupsMap {
     let mut file_groups = HashMap::<String, FileGroup>::new();
+
+    debug!(target: log_target, "Creating file groups");
 
     // Add global file groups first
     for (group_id, files) in &global_config.file_groups {
@@ -65,6 +69,12 @@ fn create_file_groups_from_config(
     if let Some(local_config) = config {
         for (group_id, files) in &local_config.file_groups {
             if file_groups.contains_key(group_id) {
+                debug!(
+                    target: log_target,
+                    "Merging file group {} with global config",
+                    color::id(group_id)
+                );
+
                 // Group already exists, so merge with it
                 file_groups
                     .get_mut(group_id)
@@ -81,6 +91,7 @@ fn create_file_groups_from_config(
 }
 
 fn create_tasks_from_config(
+    log_target: &str,
     config: &Option<ProjectConfig>,
     global_config: &GlobalProjectConfig,
     workspace_root: &Path,
@@ -90,6 +101,8 @@ fn create_tasks_from_config(
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
     let mut depends_on = vec![];
+
+    debug!(target: log_target, "Creating tasks");
 
     // Gather inheritance configs
     let mut include_all = true;
@@ -118,8 +131,19 @@ fn create_tasks_from_config(
         // ["a"] = Include "a"
         if !include_all {
             if include.is_empty() {
+                trace!(
+                    target: log_target,
+                    "Not inheriting global tasks, empty `include` set"
+                );
+
                 break;
             } else if !include.contains(task_id) {
+                trace!(
+                    target: log_target,
+                    "Not inheriting global task {}, not explicitly included",
+                    color::id(task_id)
+                );
+
                 continue;
             }
         }
@@ -127,11 +151,26 @@ fn create_tasks_from_config(
         // None, [] = Exclude none
         // ["a"] = Exclude "a"
         if !exclude.is_empty() && exclude.contains(task_id) {
+            trace!(
+                target: log_target,
+                "Not inheriting global task {}, explicitly excluded",
+                color::id(task_id)
+            );
+
             continue;
         }
 
         let task_name = if rename.contains_key(task_id) {
-            rename.get(task_id).unwrap()
+            let renamed_task_id = rename.get(task_id).unwrap();
+
+            trace!(
+                target: log_target,
+                "Renaming global task {} to {}",
+                color::id(task_id),
+                color::id(renamed_task_id)
+            );
+
+            renamed_task_id
         } else {
             task_id
         };
@@ -146,6 +185,12 @@ fn create_tasks_from_config(
     if let Some(local_config) = config {
         for (task_id, task_config) in &local_config.tasks {
             if tasks.contains_key(task_id) {
+                debug!(
+                    target: log_target,
+                    "Merging task {} with global config",
+                    color::id(task_id)
+                );
+
                 // Task already exists, so merge with it
                 tasks.get_mut(task_id).unwrap().merge(task_config);
             } else {
@@ -161,6 +206,11 @@ fn create_tasks_from_config(
     // Expand deps, args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
         let data = TokenSharedData::new(file_groups, workspace_root, project_root);
+
+        debug!(
+            target: &task.log_target,
+            "Expanding deps, inputs, outputs, and args",
+        );
 
         task.expand_deps(project_id, &depends_on)?;
         task.expand_inputs(TokenResolver::for_inputs(&data))?;
@@ -185,6 +235,10 @@ pub struct Project {
     /// Unique ID for the project. Is the LHS of the `projects` setting.
     pub id: ProjectID,
 
+    /// Logging target label.
+    #[serde(skip)]
+    pub log_target: String,
+
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
 
@@ -195,6 +249,12 @@ pub struct Project {
     pub tasks: TasksMap,
 }
 
+impl Logable for Project {
+    fn get_log_target(&self) -> &str {
+        &self.log_target
+    }
+}
+
 impl Project {
     pub fn new(
         id: &str,
@@ -203,9 +263,10 @@ impl Project {
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
         let root = workspace_root.join(&path::normalize_separators(source));
+        let log_target = format!("moon:project:{}", id);
 
         debug!(
-            target: &format!("moon:project:{}", id),
+            target: &log_target,
             "Loading project from {} (id = {}, path = {})",
             color::path(&root),
             color::id(id),
@@ -216,9 +277,10 @@ impl Project {
             return Err(ProjectError::MissingProject(String::from(source)));
         }
 
-        let config = load_project_config(&root, source)?;
-        let file_groups = create_file_groups_from_config(&config, global_config);
+        let config = load_project_config(&log_target, &root, source)?;
+        let file_groups = create_file_groups_from_config(&log_target, &config, global_config);
         let tasks = create_tasks_from_config(
+            &log_target,
             &config,
             global_config,
             workspace_root,
@@ -231,6 +293,7 @@ impl Project {
             config,
             file_groups,
             id: String::from(id),
+            log_target,
             root,
             source: String::from(source),
             tasks,
@@ -279,7 +342,7 @@ impl Project {
             let affected = file.starts_with(&self.root);
 
             trace!(
-                target: &format!("moon:project:{}", self.id),
+                target: &self.log_target,
                 "Is affected by {} = {}",
                 color::path(file),
                 if affected {
@@ -302,7 +365,7 @@ impl Project {
         let package_path = self.root.join("package.json");
 
         trace!(
-            target: &format!("moon:project:{}", self.id),
+            target: &self.log_target,
             "Attempting to find {} in {}",
             color::file("package.json"),
             color::path(&self.root),
@@ -329,7 +392,7 @@ impl Project {
         let tsconfig_path = self.root.join(tsconfig_name);
 
         trace!(
-            target: &format!("moon:project:{}", self.id),
+            target: &self.log_target,
             "Attempting to find {} in {}",
             color::file(tsconfig_name),
             color::path(&self.root),

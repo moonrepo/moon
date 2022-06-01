@@ -13,5 +13,12 @@ pub fn logging_enabled() -> bool {
 
 pub trait Logable {
     /// Return a unique name for logging.
-    fn get_log_target(&self) -> String;
+    fn get_log_target(&self) -> &str;
+}
+
+pub fn map_list<T, F>(files: &[T], fmt: F) -> String
+where
+    F: Fn(&T) -> String,
+{
+    files.iter().map(fmt).collect::<Vec<_>>().join(", ")
 }

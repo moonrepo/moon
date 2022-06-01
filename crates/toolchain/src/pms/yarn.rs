@@ -18,6 +18,8 @@ pub struct YarnTool {
     pub config: YarnConfig,
 
     install_dir: PathBuf,
+
+    log_target: String,
 }
 
 impl YarnTool {
@@ -28,6 +30,7 @@ impl YarnTool {
             bin_path: install_dir.join(node::get_bin_name_suffix("yarn", "cmd", false)),
             config: config.to_owned(),
             install_dir,
+            log_target: String::from("moon:toolchain:yarn"),
         })
     }
 
@@ -37,8 +40,8 @@ impl YarnTool {
 }
 
 impl Logable for YarnTool {
-    fn get_log_target(&self) -> String {
-        String::from("moon:toolchain:yarn")
+    fn get_log_target(&self) -> &str {
+        &self.log_target
     }
 }
 
@@ -52,7 +55,7 @@ impl Lifecycle<NodeTool> for YarnTool {
         // We must do this here instead of `install`, because the bin path
         // isn't available yet during installation, only after!
         debug!(
-            target: &self.get_log_target(),
+            target: self.get_log_target(),
             "Updating package manager version with {}",
             color::shell(&format!("yarn set version {}", self.config.version))
         );
@@ -81,8 +84,6 @@ impl Installable<NodeTool> for YarnTool {
         node: &NodeTool,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
-        let target = self.get_log_target();
-
         if !self.is_executable()
             || (!node.is_corepack_aware()
                 && !node.get_npm().is_global_dep_installed("yarn").await?)
@@ -94,11 +95,12 @@ impl Installable<NodeTool> for YarnTool {
             return Ok(true);
         }
 
+        let log_target = self.get_log_target();
         let version = self.get_installed_version().await?;
 
         if version != self.config.version {
             debug!(
-                target: &target,
+                target: log_target,
                 "Package is on the wrong version ({}), attempting to reinstall", version
             );
 
@@ -106,7 +108,7 @@ impl Installable<NodeTool> for YarnTool {
         }
 
         debug!(
-            target: &target,
+            target: log_target,
             "Package has already been installed and is on the correct version",
         );
 
@@ -119,13 +121,13 @@ impl Installable<NodeTool> for YarnTool {
     // is stored *within* the repository, and the v1 package detects it.
     // Because of this, we need to always install the v1 package!
     async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
-        let target = self.get_log_target();
+        let log_target = self.get_log_target();
         let npm = node.get_npm();
         let package = format!("yarn@{}", self.config.version);
 
         if node.is_corepack_aware() {
             debug!(
-                target: &target,
+                target: log_target,
                 "Enabling package manager with {}",
                 color::shell(&format!("corepack prepare {} --activate", package))
             );
@@ -136,7 +138,7 @@ impl Installable<NodeTool> for YarnTool {
             // v1
         } else if self.is_v1() {
             debug!(
-                target: &target,
+                target: log_target,
                 "Installing package with {}",
                 color::shell(&format!("npm install -g {}", package))
             );
@@ -146,7 +148,7 @@ impl Installable<NodeTool> for YarnTool {
             // v2, v3
         } else {
             debug!(
-                target: &target,
+                target: log_target,
                 "Installing legacy package with {}",
                 color::shell("npm install -g yarn@latest")
             );

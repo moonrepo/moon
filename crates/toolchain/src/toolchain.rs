@@ -1,4 +1,5 @@
 use crate::errors::ToolchainError;
+use crate::helpers::LOG_TARGET;
 use crate::tools::node::NodeTool;
 use crate::traits::Tool;
 use moon_config::constants::CONFIG_DIRNAME;
@@ -9,6 +10,12 @@ use moon_utils::path::get_home_dir;
 use std::path::{Path, PathBuf};
 
 async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
+    trace!(
+        target: LOG_TARGET,
+        "Creating directory {}",
+        color::path(dir)
+    );
+
     if dir.exists() {
         if dir.is_file() {
             fs::remove_file(dir).await?;
@@ -16,8 +23,6 @@ async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     } else {
         fs::create_dir_all(dir).await?;
     }
-
-    trace!(target: "moon:toolchain", "Created directory {}", color::path(dir));
 
     Ok(())
 }
@@ -54,7 +59,7 @@ impl Toolchain {
         let tools_dir = dir.join("tools");
 
         debug!(
-            target: "moon:toolchain",
+            target: LOG_TARGET,
             "Creating toolchain at {}",
             color::path(&dir)
         );
@@ -91,10 +96,7 @@ impl Toolchain {
     /// Download and install all tools into the toolchain.
     /// Return a count of how many tools were installed.
     pub async fn setup(&mut self, check_versions: bool) -> Result<u8, ToolchainError> {
-        debug!(
-            target: "moon:toolchain",
-            "Downloading and installing tools",
-        );
+        debug!(target: LOG_TARGET, "Downloading and installing tools",);
 
         let mut installed = 0;
 
@@ -110,7 +112,7 @@ impl Toolchain {
     /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&mut self) -> Result<(), ToolchainError> {
         debug!(
-            target: "moon:toolchain",
+            target: LOG_TARGET,
             "Tearing down toolchain, uninstalling tools",
         );
 

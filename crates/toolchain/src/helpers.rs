@@ -12,6 +12,8 @@ use std::path::Path;
 use tar::Archive;
 use zip::ZipArchive;
 
+pub const LOG_TARGET: &str = "moon:toolchain";
+
 pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
     let output = Command::new(bin)
         .arg("--version")
@@ -33,6 +35,12 @@ pub async fn get_bin_version(bin: &Path) -> Result<String, ToolchainError> {
 }
 
 pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
+    trace!(
+        target: LOG_TARGET,
+        "Calculating sha256 for file {}",
+        color::path(path),
+    );
+
     let handle_error = |e: io::Error| map_io_to_fs_error(e, path.to_path_buf());
 
     let mut file = File::open(path).map_err(handle_error)?;
@@ -43,9 +51,8 @@ pub fn get_file_sha256_hash(path: &Path) -> Result<String, ToolchainError> {
     let hash = format!("{:x}", sha.finalize());
 
     trace!(
-        target: "moon:toolchain",
-        "Calculating sha256 for file {} -> {}",
-        color::path(path),
+        target: LOG_TARGET,
+        "Calculated hash {}",
         color::symbol(&hash)
     );
 
@@ -69,7 +76,7 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
     let handle_error = |e: io::Error| map_io_to_fs_error(e, dest.to_path_buf());
 
     trace!(
-        target: "moon:toolchain",
+        target: LOG_TARGET,
         "Downloading file {} to {}",
         color::url(url),
         color::path(dest),
@@ -95,6 +102,13 @@ pub fn unpack_tar(
     output_dir: &Path,
     prefix: &str,
 ) -> Result<(), ToolchainError> {
+    trace!(
+        target: LOG_TARGET,
+        "Unpacking archive {} to {}",
+        color::path(input_file),
+        color::path(output_dir),
+    );
+
     // Open .tar.gz file
     let tar_gz =
         File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
@@ -127,6 +141,13 @@ pub fn unpack_zip(
     output_dir: &Path,
     prefix: &str,
 ) -> Result<(), ToolchainError> {
+    trace!(
+        target: LOG_TARGET,
+        "Unzipping archive {} to {}",
+        color::path(input_file),
+        color::path(output_dir),
+    );
+
     // Open .zip file
     let zip =
         File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;

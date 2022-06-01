@@ -2,7 +2,7 @@ use crate::errors::{ProjectError, TokenError};
 use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
-use moon_logger::{color, trace, warn};
+use moon_logger::{color, warn};
 use moon_utils::glob;
 use moon_utils::path::expand_root_path;
 use moon_utils::regex::{
@@ -202,12 +202,12 @@ impl<'a> TokenResolver<'a> {
         let func = matches.get(1).unwrap().as_str(); // name
         let arg = matches.get(2).unwrap().as_str(); // arg
 
-        trace!(
-            target: "moon:token",
-            "Resolving token function {} for {}",
-            color::id(token),
-            self.context.context_label(),
-        );
+        // trace!(
+        //     target: "moon:token",
+        //     "Resolving token function {} for {}",
+        //     color::id(token),
+        //     self.context.context_label(),
+        // );
 
         match func {
             "dirs" => {
@@ -247,13 +247,13 @@ impl<'a> TokenResolver<'a> {
         let token = matches.get(0).unwrap().as_str(); // $var
         let var = matches.get(1).unwrap().as_str(); // var
 
-        trace!(
-            target: "moon:token",
-            "Resolving token variable {} for {} value {}",
-            color::id(token),
-            self.context.context_label(),
-            color::file(value)
-        );
+        // trace!(
+        //     target: "moon:token",
+        //     "Resolving token variable {} for {} value {}",
+        //     color::id(token),
+        //     self.context.context_label(),
+        //     color::file(value)
+        // );
 
         let (project_id, task_id) = Target::parse(&task.target)?.ids()?;
         let workspace_root = self.data.workspace_root;

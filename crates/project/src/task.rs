@@ -5,7 +5,7 @@ use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
 use moon_config::{
     FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_utils::{glob, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -83,6 +83,9 @@ pub struct Task {
 
     pub input_paths: ExpandedFiles,
 
+    #[serde(skip)]
+    pub log_target: String,
+
     pub options: TaskOptions,
 
     pub outputs: Vec<FilePath>,
@@ -95,12 +98,19 @@ pub struct Task {
     pub type_of: TaskType,
 }
 
+impl Logable for Task {
+    fn get_log_target(&self) -> &str {
+        &self.log_target
+    }
+}
+
 impl Task {
     pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
         let command = cloned_config.command.unwrap_or_default();
         let is_long_running = command == "serve" || command == "start";
+        let log_target = format!("moon:project:{}", target);
 
         let task = Task {
             args: cloned_config.args.unwrap_or_default(),
@@ -110,6 +120,7 @@ impl Task {
             inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
             input_globs: vec![],
             input_paths: HashSet::new(),
+            log_target,
             options: TaskOptions {
                 merge_args: cloned_options.merge_args.unwrap_or_default(),
                 merge_deps: cloned_options.merge_deps.unwrap_or_default(),
@@ -127,7 +138,7 @@ impl Task {
         };
 
         debug!(
-            target: &format!("moon:project:{}", target),
+            target: &task.log_target,
             "Creating task {} with command {}",
             color::target(&target),
             color::shell(&task.command)
@@ -146,12 +157,6 @@ impl Task {
         if self.args.is_empty() {
             return Ok(());
         }
-
-        trace!(
-            target: &format!("moon:project:{}", self.target),
-            "Expanding args for task {}",
-            color::target(&self.target),
-        );
 
         let mut args: Vec<String> = vec![];
         let run_in_project = !self.options.run_from_workspace_root;
@@ -202,12 +207,6 @@ impl Task {
             return Ok(());
         }
 
-        trace!(
-            target: &format!("moon:project:{}", self.target),
-            "Expanding deps for task {}",
-            color::target(&self.target),
-        );
-
         let mut deps: Vec<String> = vec![];
 
         // Dont use a `HashSet` as we want to preserve order
@@ -252,12 +251,6 @@ impl Task {
             return Ok(());
         }
 
-        trace!(
-            target: &format!("moon:project:{}", self.target),
-            "Expanding inputs for task {}",
-            color::target(&self.target),
-        );
-
         for input in &token_resolver.resolve(&self.inputs, None)? {
             // We cant canonicalize here as these inputs may not exist!
             if glob::is_path_glob(input) {
@@ -275,12 +268,6 @@ impl Task {
         if self.outputs.is_empty() {
             return Ok(());
         }
-
-        trace!(
-            target: &format!("moon:project:{}", self.target),
-            "Expanding outputs for task {}",
-            color::target(&self.target),
-        );
 
         for output in &token_resolver.resolve(&self.outputs, None)? {
             if glob::is_path_glob(output) {
@@ -300,13 +287,9 @@ impl Task {
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, ProjectError> {
         trace!(
-            target: &format!("moon:project:{}", self.target),
+            target: &self.log_target,
             "Checking if affected using input files: {}",
-            self.input_paths
-                .iter()
-                .map(|p| color::path(p))
-                .collect::<Vec<_>>()
-                .join(", ")
+            map_list(&Vec::from_iter(self.input_paths.iter()), |p| color::path(p))
         );
 
         let has_globs = !self.input_globs.is_empty();
@@ -314,13 +297,9 @@ impl Task {
 
         if has_globs {
             trace!(
-                target: &format!("moon:project:{}", self.target),
+                target: &self.log_target,
                 "Checking if affected using input globs: {}",
-                self.input_globs
-                    .iter()
-                    .map(|p| color::file(p))
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                map_list(&self.input_globs, |f| color::file(f))
             );
         }
 
@@ -332,7 +311,7 @@ impl Task {
             }
 
             trace!(
-                target: &format!("moon:project:{}", self.target),
+                target: &self.log_target,
                 "Is affected by {} = {}",
                 color::path(file),
                 if affected {

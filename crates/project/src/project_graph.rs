@@ -2,10 +2,9 @@ use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::project::Project;
 use crate::types::TouchedFilePaths;
-use itertools::Itertools;
 use moon_config::constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_config::{GlobalProjectConfig, ProjectID};
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, map_list, trace};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -17,6 +16,7 @@ use std::sync::{Arc, RwLock, RwLockWriteGuard};
 type GraphType = DiGraph<Project, ()>;
 type IndicesType = HashMap<ProjectID, NodeIndex>;
 
+const LOG_TARGET: &str = "moon:project-graph";
 const READ_ERROR: &str = "Failed to acquire a read lock";
 const WRITE_ERROR: &str = "Failed to acquire a write lock";
 
@@ -47,7 +47,7 @@ impl ProjectGraph {
         projects_config: &HashMap<ProjectID, String>,
     ) -> ProjectGraph {
         debug!(
-            target: "moon:project-graph",
+            target: LOG_TARGET,
             "Creating project graph with {} projects",
             projects_config.len(),
         );
@@ -194,7 +194,7 @@ impl ProjectGraph {
         // Already loaded, abort early
         if indices.contains_key(id) || id == ROOT_NODE_ID {
             trace!(
-                target: "moon:project-graph",
+                target: LOG_TARGET,
                 "Project {} already exists in the project graph",
                 color::id(id),
             );
@@ -203,7 +203,7 @@ impl ProjectGraph {
         }
 
         trace!(
-            target: "moon:project-graph",
+            target: LOG_TARGET,
             "Project {} does not exist in the project graph, attempting to load",
             color::id(id),
         );
@@ -224,9 +224,9 @@ impl ProjectGraph {
 
         if !depends_on.is_empty() {
             trace!(
-                target: "moon:project-graph",
+                target: LOG_TARGET,
                 "Adding dependencies {} to project {}",
-                depends_on.clone().into_iter().map(|d| color::symbol(&d)).join(", "),
+                map_list(&depends_on, |d| color::symbol(d)),
                 color::id(id),
             );
 

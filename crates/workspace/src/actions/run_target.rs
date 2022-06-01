@@ -4,7 +4,7 @@ use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
-use moon_logger::{color, debug};
+use moon_logger::{color, debug, trace, warn};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_toolchain::{get_path_env_var, Executable};
@@ -16,7 +16,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const TARGET: &str = "moon:action:run-target";
+const LOG_TARGET: &str = "moon:action:run-target";
 
 async fn create_env_vars(
     workspace: &Workspace,
@@ -24,6 +24,12 @@ async fn create_env_vars(
     task: &Task,
 ) -> Result<HashMap<String, String>, WorkspaceError> {
     let mut env_vars = HashMap::new();
+
+    trace!(
+        target: LOG_TARGET,
+        "Creating {} environment variables",
+        color::shell("MOON_*")
+    );
 
     env_vars.insert(
         "MOON_CACHE_DIR".to_owned(),
@@ -35,7 +41,7 @@ async fn create_env_vars(
         path::path_to_string(&project.root)?,
     );
     env_vars.insert("MOON_PROJECT_SOURCE".to_owned(), project.source.clone());
-    env_vars.insert("MOON_RUN_TARGET".to_owned(), task.target.clone());
+    env_vars.insert("MOON_TARGET".to_owned(), task.target.clone());
     env_vars.insert(
         "MOON_TOOLCHAIN_DIR".to_owned(),
         path::path_to_string(&workspace.toolchain.dir)?,
@@ -198,6 +204,13 @@ async fn create_target_command(
         &project.root
     };
 
+    debug!(
+        target: LOG_TARGET,
+        "Creating {} command (in working directory {})",
+        color::target(&task.target),
+        color::path(working_dir)
+    );
+
     let mut command = match task.type_of {
         TaskType::Node => create_node_target_command(workspace, project, task)?,
         _ => create_system_target_command(task, working_dir),
@@ -221,7 +234,11 @@ pub async fn run_target(
     primary_target: &str,
     passthrough_args: &[String],
 ) -> Result<ActionStatus, WorkspaceError> {
-    debug!(target: TARGET, "Running target {}", color::id(target_id));
+    debug!(
+        target: LOG_TARGET,
+        "Running target {}",
+        color::id(target_id)
+    );
 
     let workspace = workspace.read().await;
     let mut cache = workspace.cache.cache_run_target_state(target_id).await?;
@@ -237,23 +254,22 @@ pub async fn run_target(
     let hash = hasher.to_hash();
 
     debug!(
-        target: TARGET,
+        target: LOG_TARGET,
         "Generated hash {} for target {}",
         color::symbol(&hash),
         color::id(target_id)
     );
 
     if cache.item.hash == hash {
+        debug!(
+            target: LOG_TARGET,
+            "Hash exists for {}, aborting run",
+            color::id(target_id),
+        );
+
         println!(
             "{} {}",
-            label_checkpoint(
-                target_id,
-                if cache.item.exit_code == 0 {
-                    Checkpoint::Pass
-                } else {
-                    Checkpoint::Fail
-                }
-            ),
+            label_checkpoint(target_id, Checkpoint::Pass),
             color::muted("(cached)")
         );
 
@@ -315,8 +331,8 @@ pub async fn run_target(
                 } else {
                     attempt_index += 1;
 
-                    debug!(
-                        target: TARGET,
+                    warn!(
+                        target: LOG_TARGET,
                         "Target {} failed, running again with attempt {}",
                         color::target(target_id),
                         attempt_index

@@ -18,6 +18,8 @@ pub struct PnpmTool {
     pub config: PnpmConfig,
 
     install_dir: PathBuf,
+
+    log_target: String,
 }
 
 impl PnpmTool {
@@ -28,13 +30,14 @@ impl PnpmTool {
             bin_path: install_dir.join(node::get_bin_name_suffix("pnpm", "cmd", false)),
             config: config.to_owned(),
             install_dir,
+            log_target: String::from("moon:toolchain:pnpm"),
         })
     }
 }
 
 impl Logable for PnpmTool {
-    fn get_log_target(&self) -> String {
-        String::from("moon:toolchain:pnpm")
+    fn get_log_target(&self) -> &str {
+        &self.log_target
     }
 }
 
@@ -55,8 +58,6 @@ impl Installable<NodeTool> for PnpmTool {
         node: &NodeTool,
         check_version: bool,
     ) -> Result<bool, ToolchainError> {
-        let target = self.get_log_target();
-
         if !self.is_executable()
             || (!node.is_corepack_aware()
                 && !node.get_npm().is_global_dep_installed("pnpm").await?)
@@ -68,11 +69,12 @@ impl Installable<NodeTool> for PnpmTool {
             return Ok(true);
         }
 
+        let log_target = self.get_log_target();
         let version = self.get_installed_version().await?;
 
         if version != self.config.version {
             debug!(
-                target: &target,
+                target: log_target,
                 "Package is on the wrong version ({}), attempting to reinstall", version
             );
 
@@ -80,7 +82,7 @@ impl Installable<NodeTool> for PnpmTool {
         }
 
         debug!(
-            target: &target,
+            target: log_target,
             "Package has already been installed and is on the correct version",
         );
 
@@ -88,13 +90,13 @@ impl Installable<NodeTool> for PnpmTool {
     }
 
     async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
-        let target = self.get_log_target();
+        let log_target = self.get_log_target();
         let npm = node.get_npm();
         let package = format!("pnpm@{}", self.config.version);
 
         if node.is_corepack_aware() {
             debug!(
-                target: &target,
+                target: log_target,
                 "Enabling package manager with {}",
                 color::shell(&format!("corepack prepare {} --activate", package))
             );
@@ -103,7 +105,7 @@ impl Installable<NodeTool> for PnpmTool {
                 .await?;
         } else {
             debug!(
-                target: &target,
+                target: log_target,
                 "Installing package manager with {}",
                 color::shell(&format!("npm install -g {}", package))
             );

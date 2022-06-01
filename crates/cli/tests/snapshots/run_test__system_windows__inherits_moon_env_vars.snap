@@ -4,7 +4,7 @@ expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ systemWindows:envVarsMoon
-MOON_RUN_TARGET=systemWindows:envVarsMoon
+MOON_TARGET=systemWindows:envVarsMoon
 MOON_PROJECT_ID=systemWindows
 
 Tasks: 1 completed

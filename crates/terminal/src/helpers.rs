@@ -23,13 +23,14 @@ pub fn replace_style_tokens(value: &str) -> String {
         let inner = caps.get(2).map_or("", |m| m.as_str());
 
         match token {
+            "accent" => color::muted(inner),
             "file" => color::file(inner),
             "id" => color::id(inner),
             "muted" => color::muted_light(inner),
             "path" => color::path(Path::new(inner)),
-            "target" => color::target(inner),
             "shell" => color::shell(inner),
             "symbol" => color::symbol(inner),
+            "target" => color::target(inner),
             "url" => color::url(inner),
             _ => String::from(inner),
         }

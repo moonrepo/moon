@@ -69,6 +69,40 @@ fn errors_for_cycle_in_task_deps() {
     assert_snapshot!(get_assert_output(&assert));
 }
 
+mod configs {
+    use super::*;
+
+    #[test]
+    fn bubbles_up_invalid_workspace_config() {
+        let assert = create_moon_command("config-invalid-workspace")
+            .arg("run")
+            .arg("project:task")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn bubbles_up_invalid_global_project_config() {
+        let assert = create_moon_command("config-invalid-global-project")
+            .arg("run")
+            .arg("project:task")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn bubbles_up_invalid_project_config() {
+        let assert = create_moon_command("config-invalid-project")
+            .arg("run")
+            .arg("test:task")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+}
+
 mod caching {
     use super::*;
     use moon_cache::{CacheItem, RunTargetState};

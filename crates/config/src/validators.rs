@@ -76,7 +76,7 @@ pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), Validat
         return Err(create_validation_error(
             "no_absolute",
             key,
-            String::from("Absolute paths are not supported. Root paths must start with `/`."),
+            String::from("Absolute paths are not supported. Root paths must start with \"/\"."),
         ));
     } else if path.starts_with("..") {
         return Err(create_validation_error(

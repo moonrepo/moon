@@ -7,9 +7,9 @@ use moon_config::{
 };
 use moon_lang::is_using_package_manager;
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
-use moon_logger::color;
+use moon_logger::{color, warn};
 use moon_terminal::create_theme;
-use moon_utils::{fs, glob, path};
+use moon_utils::{fs, glob, path, regex};
 use std::collections::BTreeMap;
 use std::env;
 use std::fs::{read_to_string, OpenOptions};
@@ -153,8 +153,19 @@ fn inherit_projects_from_workspaces(
             let (id, source) = infer_project_name_and_source(
                 &path.strip_prefix(dest_dir).unwrap().to_string_lossy(),
             );
+            let id = regex::clean_id(&id);
 
-            projects.insert(id, source);
+            if let Some(existing_source) = projects.get(&id) {
+                warn!(
+                    target: "moon:init",
+                    "A project already exists for {} at source {}. Skipping conflicting source {}.",
+                    color::id(&id),
+                    color::file(existing_source),
+                    color::file(&source)
+                );
+            } else {
+                projects.insert(id, source);
+            }
         }
     }
 

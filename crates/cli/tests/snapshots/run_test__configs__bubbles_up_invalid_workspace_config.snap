@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 656
+assertion_line: 82
 expression: get_assert_output(&assert)
 ---
 
@@ -8,6 +8,6 @@ expression: get_assert_output(&assert)
 
 Failed to validate .moon/workspace.yml configuration file.
 
-  ▪ Invalid field node.syncVersionManagerConfig: Unknown option invalid.
+  ▪ Invalid field projects: Expected a map type, received bool true.
 
 

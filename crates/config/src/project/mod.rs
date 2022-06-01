@@ -220,7 +220,7 @@ fileGroups:
     mod depends_on {
         #[test]
         #[should_panic(
-            expected = "Invalid field `dependsOn`. Expected a sequence type, received unsigned int `123`."
+            expected = "Invalid field <id>dependsOn</id>: Expected a sequence type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -236,7 +236,7 @@ fileGroups:
     mod file_groups {
         #[test]
         #[should_panic(
-            expected = "Invalid field `fileGroups`. Expected a map type, received unsigned int `123`."
+            expected = "Invalid field <id>fileGroups</id>: Expected a map type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -250,7 +250,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `fileGroups.sources`. Expected a sequence type, received unsigned int `123`."
+            expected = "Invalid field <id>fileGroups.sources</id>: Expected a sequence type, received unsigned int `123`."
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -308,7 +308,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks`. Expected a map type, received unsigned int `123`."
+            expected = "Invalid field <id>tasks</id>: Expected a map type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -322,7 +322,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks.test`. Expected struct TaskConfig type, received unsigned int `123`."
+            expected = "Invalid field <id>tasks.test</id>: Expected struct TaskConfig type, received unsigned int `123`."
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -341,7 +341,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks.test.command`. Expected a string type, received unsigned int `123`."
+            expected = "Invalid field <id>tasks.test.command</id>: Expected a string type, received unsigned int `123`."
         )]
         fn invalid_value_field() {
             figment::Jail::expect_with(|jail| {
@@ -363,7 +363,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `tasks.test.command`. An npm/system command is required."
+            expected = "Invalid field <id>tasks.test.command</id>: An npm/system command is required."
         )]
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {
@@ -387,7 +387,7 @@ tasks:
     mod project {
         #[test]
         #[should_panic(
-            expected = "Invalid field `project`. Expected struct ProjectMetadataConfig type, received unsigned int `123`."
+            expected = "Invalid field <id>project</id>: Expected struct ProjectMetadataConfig type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -401,7 +401,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `project.name`. Expected a string type, received unsigned int `123`."
+            expected = "Invalid field <id>project.name</id>: Expected a string type, received unsigned int `123`."
         )]
         fn invalid_name_type() {
             figment::Jail::expect_with(|jail| {
@@ -424,7 +424,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `project.description`. Expected a string type, received bool true."
+            expected = "Invalid field <id>project.description</id>: Expected a string type, received bool true."
         )]
         fn invalid_description_type() {
             figment::Jail::expect_with(|jail| {
@@ -447,7 +447,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `project.owner`. Expected a string type, received map."
+            expected = "Invalid field <id>project.owner</id>: Expected a string type, received map."
         )]
         fn invalid_owner_type() {
             figment::Jail::expect_with(|jail| {
@@ -470,7 +470,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `project.maintainers`. Expected a sequence type, received string \"abc\"."
+            expected = "Invalid field <id>project.maintainers</id>: Expected a sequence type, received string \"abc\"."
         )]
         fn invalid_maintainers_type() {
             figment::Jail::expect_with(|jail| {
@@ -493,7 +493,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `project.channel`. Expected a string type, received unsigned int `123`."
+            expected = "Invalid field <id>project.channel</id>: Expected a string type, received unsigned int `123`."
         )]
         fn invalid_channel_type() {
             figment::Jail::expect_with(|jail| {
@@ -515,7 +515,7 @@ project:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field `project.channel`. Must start with a #.")]
+        #[should_panic(expected = "Invalid field <id>project.channel</id>: Must start with a #.")]
         fn channel_leading_hash() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -540,7 +540,7 @@ project:
     mod workspace {
         #[test]
         #[should_panic(
-            expected = "Invalid field `workspace`. Expected struct ProjectWorkspaceConfig type, received unsigned int `123`."
+            expected = "Invalid field <id>workspace</id>: Expected struct ProjectWorkspaceConfig type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -554,7 +554,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `workspace.inheritedTasks`. Expected struct ProjectWorkspaceInheritedTasksConfig type, received unsigned int `123`."
+            expected = "Invalid field <id>workspace.inheritedTasks</id>: Expected struct ProjectWorkspaceInheritedTasksConfig type, received unsigned int `123`."
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -573,7 +573,7 @@ workspace:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `workspace.inheritedTasks.include`. Expected a sequence type, received string \"abc\"."
+            expected = "Invalid field <id>workspace.inheritedTasks.include</id>: Expected a sequence type, received string \"abc\"."
         )]
         fn invalid_nested_value_type() {
             figment::Jail::expect_with(|jail| {

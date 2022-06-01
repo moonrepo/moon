@@ -192,7 +192,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `node`. Expected struct NodeConfig type, received unsigned int `123`."
+            expected = "Invalid field <id>node</id>: Expected struct NodeConfig type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -206,7 +206,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.version`. Must be a valid semantic version."
+            expected = "Invalid field <id>node.version</id>: Must be a valid semantic version."
         )]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
@@ -227,7 +227,7 @@ projects:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.version`. Must be a valid semantic version."
+            expected = "Invalid field <id>node.version</id>: Must be a valid semantic version."
         )]
         fn no_patch_version() {
             figment::Jail::expect_with(|jail| {
@@ -248,7 +248,7 @@ projects:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.version`. Must be a valid semantic version."
+            expected = "Invalid field <id>node.version</id>: Must be a valid semantic version."
         )]
         fn no_minor_version() {
             figment::Jail::expect_with(|jail| {
@@ -268,7 +268,9 @@ projects:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field `node.packageManager`. Unknown option `what`.")]
+        #[should_panic(
+            expected = "Invalid field <id>node.packageManager</id>: Unknown option <id>what</id>."
+        )]
         fn invalid_package_manager() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -331,7 +333,7 @@ projects: {}"#,
     mod npm {
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.npm`. Expected struct NpmConfig type, received string \"foo\"."
+            expected = "Invalid field <id>node.npm</id>: Expected struct NpmConfig type, received string \"foo\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -351,7 +353,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.npm.version`. Must be a valid semantic version."
+            expected = "Invalid field <id>node.npm.version</id>: Must be a valid semantic version."
         )]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
@@ -399,7 +401,7 @@ projects: {}"#,
     mod pnpm {
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.pnpm`. Expected struct PnpmConfig type, received string \"foo\"."
+            expected = "Invalid field <id>node.pnpm</id>: Expected struct PnpmConfig type, received string \"foo\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -419,7 +421,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.pnpm.version`. Must be a valid semantic version."
+            expected = "Invalid field <id>node.pnpm.version</id>: Must be a valid semantic version."
         )]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
@@ -468,7 +470,7 @@ projects: {}"#,
     mod yarn {
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.yarn`. Expected struct YarnConfig type, received string \"foo\"."
+            expected = "Invalid field <id>node.yarn</id>: Expected struct YarnConfig type, received string \"foo\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -488,7 +490,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `node.yarn.version`. Must be a valid semantic version."
+            expected = "Invalid field <id>node.yarn.version</id>: Must be a valid semantic version."
         )]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
@@ -539,7 +541,7 @@ projects: {}"#,
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `projects`. Expected a map type, received string \"apps/*\"."
+            expected = "Invalid field <id>projects</id>: Expected a map type, received string \"apps/*\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -555,7 +557,9 @@ projects: {}"#,
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field `projects`. Absolute paths are not supported.")]
+        #[should_panic(
+            expected = "Invalid field <id>projects</id>: Absolute paths are not supported."
+        )]
         fn no_abs_paths() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -574,7 +578,7 @@ projects:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `projects`. Parent relative paths are not supported."
+            expected = "Invalid field <id>projects</id>: Parent relative paths are not supported."
         )]
         fn no_parent_paths() {
             figment::Jail::expect_with(|jail| {
@@ -654,7 +658,7 @@ vcs:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `vcs`. Expected struct VcsConfig type, received unsigned int `123`."
+            expected = "Invalid field <id>vcs</id>: Expected struct VcsConfig type, received unsigned int `123`."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -672,7 +676,9 @@ vcs: 123"#,
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field `vcs.manager`. Unknown option `unknown`.")]
+        #[should_panic(
+            expected = "Invalid field <id>vcs.manager</id>: Unknown option <id>unknown</id>."
+        )]
         fn invalid_manager_option() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -691,7 +697,7 @@ vcs:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field `vcs.defaultBranch`. Expected a string type, received unsigned int `123`."
+            expected = "Invalid field <id>vcs.defaultBranch</id>: Expected a string type, received unsigned int `123`."
         )]
         fn invalid_default_branch_type() {
             figment::Jail::expect_with(|jail| {

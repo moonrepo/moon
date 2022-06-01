@@ -7,7 +7,7 @@ use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
-use moon_config::{FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
+use moon_config::{format_errors, FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
@@ -40,7 +40,7 @@ fn load_project_config(
             Ok(cfg) => Ok(Some(cfg)),
             Err(error) => Err(ProjectError::InvalidConfigFile(
                 String::from(project_source),
-                error,
+                format_errors(&error, "  "),
             )),
         };
     }

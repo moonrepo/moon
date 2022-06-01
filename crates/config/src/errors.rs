@@ -1,7 +1,8 @@
 use figment::error::Kind;
 use figment::Error as FigmentError;
+use serde_yaml::{to_value, Value};
 use std::borrow::Cow;
-use validator::{ValidationError, ValidationErrors};
+use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
 
 pub fn create_validation_error(code: &'static str, path: &str, message: String) -> ValidationError {
     let mut error = ValidationError::new(code);
@@ -9,6 +10,71 @@ pub fn create_validation_error(code: &'static str, path: &str, message: String) 
     // Is there a better way to do this?
     error.add_param(Cow::from("path"), &path.to_owned());
     error
+}
+
+fn format_yaml_value(value: Value) -> String {
+    match value {
+        Value::Null => String::from("null"),
+        Value::Bool(_) => String::from("boolean"),
+        Value::Number(_) => String::from("number"),
+        Value::String(msg) => msg,
+        Value::Sequence(array) => format!("array of {:?}", array),
+        Value::Mapping(object) => format!("object of {:?}", object),
+    }
+}
+
+fn format_validation_error(error: &ValidationError) -> String {
+    let mut message = "".to_owned();
+
+    if let Some(path) = error.params.get("path") {
+        let value = format_yaml_value(to_value(&path).unwrap());
+
+        if !value.is_empty() {
+            let msg = format!("Invalid field <id>{}</id>: ", value);
+            message.push_str(msg.as_str());
+        }
+    }
+
+    if let Some(msg_internal) = &error.message {
+        let msg = format!("{}", msg_internal);
+        message.push_str(msg.as_str());
+    } else {
+        let msg = format!("Unknown failure [{}].", error.code);
+        message.push_str(msg.as_str());
+    }
+
+    message
+}
+
+pub fn format_errors(errors: &ValidationErrors, indent: &str) -> String {
+    let mut list = vec![];
+    let mut push = |message: String, reset: bool| {
+        if reset {
+            list.push(message);
+        } else {
+            list.push(format!("{}<accent>▪</accent> {}", indent, message));
+        }
+    };
+
+    for value in errors.errors().values() {
+        match value {
+            ValidationErrorsKind::Struct(obj) => {
+                push(format_errors(obj, &format!("{}{}", indent, indent)), true);
+            }
+            ValidationErrorsKind::List(items) => {
+                for item in items.values() {
+                    push(format_errors(item, &format!("{}{}", indent, indent)), true);
+                }
+            }
+            ValidationErrorsKind::Field(fields) => {
+                for field in fields {
+                    push(format_validation_error(field), false);
+                }
+            }
+        }
+    }
+
+    list.join("\n")
 }
 
 pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> ValidationErrors {
@@ -19,22 +85,22 @@ pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> V
         Kind::DuplicateField(field) => create_validation_error(
             "duplicate_field",
             path.as_str(),
-            format!("Duplicate field `{}`.", field),
+            format!("Duplicate field <id>{}</id>.", field),
         ),
         Kind::MissingField(field) => create_validation_error(
             "missing_field",
             path.as_str(),
-            format!("Missing field `{}`.", field),
+            format!("Missing field <id>{}</id>.", field),
         ),
         Kind::UnknownField(field, _) => create_validation_error(
             "unknown_field",
             path.as_str(),
-            format!("Unknown field `{}`.", field),
+            format!("Unknown field <id>{}</id>.", field),
         ),
         Kind::UnknownVariant(field, _) => create_validation_error(
             "unknown_field_variant",
             path.as_str(),
-            format!("Unknown option `{}`.", field),
+            format!("Unknown option <id>{}</id>.", field),
         ),
 
         // Values
@@ -71,12 +137,12 @@ pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> V
         Kind::Unsupported(a) => create_validation_error(
             "unsupported",
             path.as_str(),
-            format!("Unsupported type/value `{}`.", a),
+            format!("Unsupported type/value <muted>{}</muted>.", a),
         ),
         Kind::UnsupportedKey(key, _) => create_validation_error(
             "unsupported_key",
             path.as_str(),
-            format!("Unsupported key `{}`.", key),
+            format!("Unsupported key <symbol>{}</symbol>.", key),
         ),
     };
 
@@ -94,44 +160,10 @@ pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> V
 
 #[cfg(test)]
 pub mod tests {
+    use super::*;
     use figment::error::Kind;
     use figment::Error;
-    use serde_yaml::{to_value, Value};
-    use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
-
-    fn format_yaml_value(value: Value) -> String {
-        match value {
-            Value::Null => String::from("null"),
-            Value::Bool(_) => String::from("boolean"),
-            Value::Number(_) => String::from("number"),
-            Value::String(msg) => msg,
-            Value::Sequence(array) => format!("array of {:?}", array),
-            Value::Mapping(object) => format!("object of {:?}", object),
-        }
-    }
-
-    fn format_validation_error(error: &ValidationError) -> String {
-        let mut message = "".to_owned();
-
-        if let Some(path) = error.params.get("path") {
-            let value = format_yaml_value(to_value(&path).unwrap());
-
-            if !value.is_empty() {
-                let msg = format!("Invalid field `{}`. ", value);
-                message.push_str(msg.as_str());
-            }
-        }
-
-        if error.message.is_some() {
-            let msg = format!("{}", error.message.as_ref().unwrap());
-            message.push_str(msg.as_str());
-        } else {
-            let msg = format!("Unknown failure [{}].", error.code);
-            message.push_str(msg.as_str());
-        }
-
-        message
-    }
+    use validator::{ValidationErrors, ValidationErrorsKind};
 
     fn extract_first_error(errors: &ValidationErrors) -> String {
         for val in errors.errors().values() {

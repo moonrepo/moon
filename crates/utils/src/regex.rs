@@ -4,6 +4,7 @@ use regex::Regex;
 lazy_static! {
     // Capture group for IDs/names/etc
     static ref ID_GROUP: &'static str = "([A-Za-z]{1}[0-9A-Za-z_-]*)";
+    static ref ID_CLEAN: Regex = Regex::new("[^a-z0-9_-]+").unwrap();
 
     pub static ref ID_PATTERN: Regex = Regex::new(&format!("^{}$", *ID_GROUP)).unwrap();
     pub static ref TARGET_PATTERN: Regex = Regex::new(
@@ -15,6 +16,10 @@ lazy_static! {
     pub static ref TOKEN_FUNC_PATTERN: Regex = Regex::new(&format!("^@([a-z]+)\\({}\\)$", *TOKEN_GROUP)).unwrap();
     pub static ref TOKEN_FUNC_ANYWHERE_PATTERN: Regex = Regex::new(&format!("@([a-z]+)\\({}\\)", *TOKEN_GROUP)).unwrap();
     pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$([a-zA-Z]+)").unwrap();
+}
+
+pub fn clean_id(id: &str) -> String {
+    ID_CLEAN.replace(id, "").to_string()
 }
 
 pub fn matches_id(id: &str) -> bool {

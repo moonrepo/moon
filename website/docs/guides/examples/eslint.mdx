@@ -34,7 +34,7 @@ tasks:
 			- '--exit-on-fatal-error'
 			# Only 1 ignore file is supported, so use the root
 			- '--ignore-path'
-			- '@in(5)'
+			- '@in(4)'
 			# Run in current dir
 			- '.'
 		inputs:
@@ -44,11 +44,9 @@ tasks:
 			# Other config files
 			- '*.config.*'
 			# Project configs, any format
-			- '.eslintrc'
 			- '.eslintrc.*'
 			# Root configs, any format
 			- '/.eslintignore'
-			- '/.eslintrc'
 			- '/.eslintrc.*'
 ```
 

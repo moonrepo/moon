@@ -90,6 +90,10 @@ const config = {
 							// 	label: 'Packages',
 							// 	to: '/api',
 							// },
+							{
+								label: 'Example repository',
+								href: 'https://github.com/moonrepo/examples',
+							},
 						],
 					},
 					{

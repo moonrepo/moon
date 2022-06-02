@@ -37,6 +37,16 @@ async function syncCargoVersion(oldVersion, newVersion) {
 	await execa('cargo', ['check'], { stdio: 'inherit' });
 }
 
+async function releaseChangelog(newVersion) {
+	console.log('Releasing version in changelog');
+
+	let changelog = await fs.readFile('packages/cli/CHANGELOG.md', 'utf8');
+
+	changelog = changelog.replace('## Unreleased', `## ${newVersion}`);
+
+	await fs.writeFile('packages/cli/CHANGELOG.md', changelog, 'utf8');
+}
+
 async function createCommit(versions) {
 	console.log('Creating git commit');
 
@@ -89,6 +99,7 @@ async function run() {
 	// Sync the cli version to the cli Cargo.toml
 	if (diff.some((file) => file.includes('@moonrepo/cli'))) {
 		await syncCargoVersion(prevVersions['@moonrepo/cli'], nextVersions['@moonrepo/cli']);
+		await releaseChangelog(nextVersions['@moonrepo/cli']);
 	}
 
 	// Create git commit and tags

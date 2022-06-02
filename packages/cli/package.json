@@ -8,19 +8,6 @@
     "cli",
     "core"
   ],
-  "os": [
-    "linux",
-    "win32",
-    "darwin"
-  ],
-  "cpu": [
-    "arm64",
-    "x64"
-  ],
-  "libc": [
-    "glibc",
-    "musl"
-  ],
   "files": [
     "moon",
     "postinstall.js"

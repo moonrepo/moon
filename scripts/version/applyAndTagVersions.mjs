@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import chalk from 'chalk';
 import { execa } from 'execa';
@@ -47,6 +48,31 @@ async function releaseChangelog(newVersion) {
 	await fs.writeFile('packages/cli/CHANGELOG.md', changelog, 'utf8');
 }
 
+async function removeLocalBuilds() {
+	console.log('Removing local builds');
+
+	try {
+		await Promise.all(
+			['linux-x64-gnu', 'linux-x64-musl', 'macos-arm64', 'macos-x64', 'windows-x64-msvc'].map(
+				async (target) => {
+					const binPath = `packages/core-${target}/moon${target.includes('windows') ? '.exe' : ''}`;
+
+					if (existsSync(binPath)) {
+						await fs.unlink(binPath);
+					}
+				},
+			),
+		);
+
+		if (existsSync('target/release')) {
+			await fs.rmdir('target/release');
+		}
+		// eslint-disable-next-line @typescript-eslint/no-implicit-any-catch
+	} catch (error) {
+		console.error(error.message);
+	}
+}
+
 async function createCommit(versions) {
 	console.log('Creating git commit');
 
@@ -71,6 +97,9 @@ async function createTags(versions) {
 }
 
 async function run() {
+	// Delete local builds so we dont inadvertently release it
+	await removeLocalBuilds();
+
 	// Gather the versions before we apply the new ones
 	const prevVersions = await getPackageVersions();
 

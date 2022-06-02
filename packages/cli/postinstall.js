@@ -28,25 +28,21 @@ if (process.platform === 'linux') {
 
 const binary = process.platform === 'win32' ? 'moon.exe' : 'moon';
 const triple = parts.join('-');
-let pkgPath;
+
+const pkgPath = path.dirname(require.resolve(`@moonrepo/core-${triple}/package.json`));
+const binPath = path.join(pkgPath, binary);
 
 try {
-	pkgPath = path.dirname(require.resolve(`@moonrepo/core-${triple}/package.json`));
-
-	if (!fs.existsSync(path.join(pkgPath, binary))) {
-		throw new Error('Target not built.');
+	if (fs.existsSync(binPath)) {
+		try {
+			fs.linkSync(binPath, path.join(__dirname, binary));
+		} catch {
+			fs.copyFileSync(binPath, path.join(__dirname, binary));
+		}
+	} else {
+		throw new Error();
 	}
 } catch {
-	pkgPath = path.join(__dirname, '../../target/release');
-}
-
-try {
-	fs.linkSync(path.join(pkgPath, binary), path.join(__dirname, binary));
-} catch {
-	try {
-		fs.copyFileSync(path.join(pkgPath, binary), path.join(__dirname, binary));
-	} catch {
-		console.error('Failed to find "moon" binary.');
-		// process.exit(1);
-	}
+	console.error('Failed to find "moon" binary.');
+	// process.exit(1);
 }

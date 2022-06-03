@@ -3,6 +3,7 @@ use chrono::prelude::*;
 use chrono::Local;
 use fern::Dispatch;
 use log::LevelFilter;
+use std::env;
 use std::io;
 
 static mut FIRST_LOG: bool = true;
@@ -37,11 +38,17 @@ impl Logger {
                     }
                 }
 
+                let formatted_timestamp = if env::var("MOON_TEST").is_ok() {
+                    String::from("YYYY-MM-DD") // Snapshots
+                } else {
+                    current_timestamp.format(date_format).to_string()
+                };
+
                 let prefix = format!(
                     "{}{} {}{}",
                     color::muted("["),
                     color::log_level(record.level()),
-                    color::muted(&current_timestamp.format(date_format).to_string()),
+                    color::muted(&formatted_timestamp),
                     color::muted("]"),
                 );
 

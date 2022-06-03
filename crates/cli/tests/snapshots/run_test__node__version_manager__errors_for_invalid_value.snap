@@ -1,10 +1,10 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 656
+assertion_line: 690
 expression: get_assert_output(&assert)
 ---
 
-[38;5;15m[48;5;161m[1m ERROR [0m
+ ERROR 
 
 Failed to validate .moon/workspace.yml configuration file.
 

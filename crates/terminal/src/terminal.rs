@@ -40,11 +40,6 @@ impl ExtendedTerm for Term {
             .attr(Attribute::Bold)
             .color256(Color::Black as u8);
 
-        // Dont show styles in tests unless we force it
-        if env::var("MOON_TEST").is_ok() {
-            style = style.force_styling(true);
-        }
-
         match kind {
             Label::Brand => {
                 style = style.on_color256(Color::Purple as u8);

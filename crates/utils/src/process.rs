@@ -181,10 +181,6 @@ impl Command {
             .cmd
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
-            .envs(env::vars())
-            // Inherit ANSI colors since they're stripped from pipes
-            .env("FORCE_COLOR", env::var("FORCE_COLOR").unwrap_or_default())
-            .env("TERM", env::var("TERM").unwrap_or_default())
             .spawn()
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 

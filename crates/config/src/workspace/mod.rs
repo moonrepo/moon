@@ -25,14 +25,16 @@ pub use typescript::TypeScriptConfig;
 use validator::{Validate, ValidationError, ValidationErrors};
 pub use vcs::{VcsConfig, VcsManager};
 
-const FLAG_PROJECTS_USING_GLOB: &str = "MOON_PROJECTS_USING_GLOBS";
-
 type ProjectsMap = HashMap<String, FilePath>;
 
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
 fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
+    if projects.contains_key(constants::FLAG_PROJECTS_USING_GLOB) {
+        return Ok(());
+    }
+
     for (key, value) in projects {
         validate_id(&format!("projects.{}", key), key)?;
 
@@ -120,7 +122,10 @@ impl<'de> de::Visitor<'de> for DeserializeProjects {
         // We want to defer globbing so that we can cache it through
         // our engine, so we must fake this here until config resolving
         // has completed. Annoying, but a serde limitation.
-        map.insert(FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned());
+        map.insert(
+            constants::FLAG_PROJECTS_USING_GLOB.to_owned(),
+            "true".to_owned(),
+        );
 
         Ok(map)
     }
@@ -707,7 +712,10 @@ projects:
                 assert_eq!(
                     config.projects,
                     HashMap::from([
-                        (FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned()),
+                        (
+                            constants::FLAG_PROJECTS_USING_GLOB.to_owned(),
+                            "true".to_owned()
+                        ),
                         ("A".to_owned(), "apps/*".to_owned()),
                         ("B".to_owned(), "packages/*".to_owned())
                     ])

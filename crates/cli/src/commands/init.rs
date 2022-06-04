@@ -7,10 +7,11 @@ use moon_config::{
 };
 use moon_lang::is_using_package_manager;
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
-use moon_logger::{color, warn};
+use moon_logger::color;
+use moon_project::{detect_projects_with_globs, ProjectsSourceMap};
 use moon_terminal::create_theme;
-use moon_utils::{fs, glob, path, regex};
-use std::collections::BTreeMap;
+use moon_utils::{fs, path};
+use std::collections::HashMap;
 use std::env;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
@@ -129,54 +130,11 @@ fn detect_node_version(dest_dir: &Path) -> Result<String, AnyError> {
     Ok(default_node_version())
 }
 
-/// Infer a project name from a source path, by using the name of
-/// the project folder.
-fn infer_project_name_and_source(source: &str) -> (String, String) {
-    let source = path::standardize_separators(source);
-
-    if source.contains('/') {
-        (source.split('/').last().unwrap().to_owned(), source)
-    } else {
-        (source.clone(), source)
-    }
-}
-
-/// For each pattern in the workspaces list, glob the file system
-/// for potential projects, and infer their name and source.
-fn inherit_projects_from_workspaces(
-    dest_dir: &Path,
-    workspaces: Vec<String>,
-    projects: &mut BTreeMap<String, String>,
-) -> Result<(), AnyError> {
-    for path in glob::walk(dest_dir, &workspaces)? {
-        if path.is_dir() {
-            let (id, source) = infer_project_name_and_source(
-                &path.strip_prefix(dest_dir).unwrap().to_string_lossy(),
-            );
-            let id = regex::clean_id(&id);
-
-            if let Some(existing_source) = projects.get(&id) {
-                warn!(
-                    target: "moon:init",
-                    "A project already exists for {} at source {}. Skipping conflicting source {}.",
-                    color::id(&id),
-                    color::file(existing_source),
-                    color::file(&source)
-                );
-            } else {
-                projects.insert(id, source);
-            }
-        }
-    }
-
-    Ok(())
-}
-
 /// Detect potential projects (for existing repos only) by
 /// inspecting the `workspaces` field in a root `package.json`.
-async fn detect_projects(dest_dir: &Path, yes: bool) -> Result<BTreeMap<String, String>, AnyError> {
+async fn detect_projects(dest_dir: &Path, yes: bool) -> Result<ProjectsSourceMap, AnyError> {
     let pkg_path = dest_dir.join("package.json");
-    let mut projects = BTreeMap::new();
+    let mut projects = HashMap::new();
 
     if pkg_path.exists() {
         if let Ok(pkg) = PackageJson::load(&pkg_path).await {
@@ -194,7 +152,7 @@ async fn detect_projects(dest_dir: &Path, yes: bool) -> Result<BTreeMap<String, 
                         Workspaces::Object(object) => object.packages.unwrap_or_default(),
                     };
 
-                    inherit_projects_from_workspaces(dest_dir, packages, &mut projects)?;
+                    detect_projects_with_globs(dest_dir, packages, &mut projects)?;
                 }
             }
         }

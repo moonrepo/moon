@@ -63,6 +63,7 @@ impl CacheEngine {
                 target: String::from(target_id),
                 ..RunTargetState::default()
             },
+            0,
         )
         .await
     }
@@ -71,6 +72,7 @@ impl CacheEngine {
         CacheItem::load(
             self.dir.join("projectsState.json"),
             ProjectsState::default(),
+            90000, // Cache for 3 minutes
         )
         .await
     }
@@ -79,6 +81,7 @@ impl CacheEngine {
         CacheItem::load(
             self.dir.join("workspaceState.json"),
             WorkspaceState::default(),
+            0,
         )
         .await
     }

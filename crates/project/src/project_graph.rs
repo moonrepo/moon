@@ -38,6 +38,8 @@ async fn load_projects_from_cache(
 
     // Return the values from the cache
     if !cache.item.projects.is_empty() {
+        debug!(target: LOG_TARGET, "Loading projects from cache");
+
         return Ok(cache.item.projects);
     }
 
@@ -52,6 +54,12 @@ async fn load_projects_from_cache(
             }
         })
         .collect::<Vec<String>>();
+
+    debug!(
+        target: LOG_TARGET,
+        "Finding projects with globs: {}",
+        map_list(&globs, |g| color::file(g))
+    );
 
     // Generate a new projects map by globbing the filesystem
     let mut map = HashMap::new();

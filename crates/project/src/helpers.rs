@@ -1,5 +1,6 @@
 use crate::errors::ProjectError;
 use crate::types::ProjectsSourceMap;
+use moon_error::MoonError;
 use moon_logger::{color, warn};
 use moon_utils::{glob, path, regex};
 use std::path::Path;
@@ -16,7 +17,7 @@ pub fn infer_project_name_and_source(source: &str) -> (String, String) {
     }
 }
 
-/// For each pattern in the workspaces list, glob the file system
+/// For each pattern in the globs list, glob the file system
 /// for potential projects, and infer their name and source.
 pub fn detect_projects_with_globs(
     workspace_root: &Path,
@@ -25,12 +26,13 @@ pub fn detect_projects_with_globs(
 ) -> Result<(), ProjectError> {
     for project_root in glob::walk(workspace_root, &globs)? {
         if project_root.is_dir() {
-            let (id, source) = infer_project_name_and_source(
-                &project_root
-                    .strip_prefix(workspace_root)
-                    .unwrap()
-                    .to_string_lossy(),
-            );
+            let project_source = project_root
+                .strip_prefix(workspace_root)
+                .unwrap()
+                .to_str()
+                .ok_or_else(|| MoonError::PathInvalidUTF8(project_root.clone()))?;
+
+            let (id, source) = infer_project_name_and_source(project_source);
             let id = regex::clean_id(&id);
 
             if let Some(existing_source) = projects.get(&id) {

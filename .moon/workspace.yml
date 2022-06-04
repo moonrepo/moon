@@ -9,6 +9,7 @@ node:
 
 projects:
   - 'packages/*'
+  - '!packages/core-*'
   - 'website'
   # runtime: 'packages/runtime'
   # website: 'website'

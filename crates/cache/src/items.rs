@@ -8,6 +8,15 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
+const LOG_TARGET: &str = "moon:cache:item";
+
+fn to_millis(time: SystemTime) -> u128 {
+    match time.duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(d) => d.as_millis(),
+        Err(_) => 0,
+    }
+}
+
 #[derive(Debug)]
 pub struct CacheItem<T: DeserializeOwned + Serialize> {
     pub item: T,
@@ -16,16 +25,41 @@ pub struct CacheItem<T: DeserializeOwned + Serialize> {
 }
 
 impl<T: DeserializeOwned + Serialize> CacheItem<T> {
-    pub async fn load(path: PathBuf, default: T) -> Result<CacheItem<T>, MoonError> {
+    pub async fn load(
+        path: PathBuf,
+        default: T,
+        stale_ms: u128,
+    ) -> Result<CacheItem<T>, MoonError> {
         let mut item: T = default;
 
         if is_readable() {
             if path.exists() {
-                trace!(target: "moon:cache:item", "Cache hit for {}, reading", color::path(&path));
+                // If stale, treat as a cache miss
+                if stale_ms > 0
+                    && to_millis(SystemTime::now())
+                        - to_millis(fs::metadata(&path).await?.modified().unwrap())
+                        > stale_ms
+                {
+                    trace!(
+                        target: LOG_TARGET,
+                        "Cache skip for {}, marked as stale",
+                        color::path(&path)
+                    );
+                } else {
+                    trace!(
+                        target: LOG_TARGET,
+                        "Cache hit for {}, reading",
+                        color::path(&path)
+                    );
 
-                item = fs::read_json(&path).await?;
+                    item = fs::read_json(&path).await?;
+                }
             } else {
-                trace!(target: "moon:cache:item", "Cache miss for {}, does not exist", color::path(&path));
+                trace!(
+                    target: LOG_TARGET,
+                    "Cache miss for {}, does not exist",
+                    color::path(&path)
+                );
 
                 fs::create_dir_all(path.parent().unwrap()).await?;
             }
@@ -36,7 +70,11 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
 
     pub async fn save(&self) -> Result<(), MoonError> {
         if is_writable() {
-            trace!(target: "moon:cache:item", "Writing cache {}", color::path(&self.path));
+            trace!(
+                target: LOG_TARGET,
+                "Writing cache {}",
+                color::path(&self.path)
+            );
 
             fs::write_json(&self.path, &self.item, false).await?;
         }
@@ -45,14 +83,11 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     }
 
     pub fn now_millis(&self) -> u128 {
-        self.to_millis(SystemTime::now())
+        to_millis(SystemTime::now())
     }
 
     pub fn to_millis(&self, time: SystemTime) -> u128 {
-        match time.duration_since(SystemTime::UNIX_EPOCH) {
-            Ok(d) => d.as_millis(),
-            Err(_) => 0,
-        }
+        to_millis(time)
     }
 }
 

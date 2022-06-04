@@ -108,15 +108,17 @@ impl<'de> de::Visitor<'de> for DeserializeProjects {
         V: SeqAccess<'de>,
     {
         let mut map = HashMap::new();
-        let mut index: u8 = 0;
+        let mut index: u8 = 65; // ASCII A
 
         while let Some(elem) = visitor.next_element()? {
-            map.insert(index.to_string(), elem);
+            // We can't use an integer as a key, as our project ID
+            // validation will fail, so convert integers to ASCII chars.
+            map.insert((index as char).to_string(), elem);
             index += 1;
         }
 
         // We want to defer globbing so that we can cache it through
-        // the engine, so we must fake this here until config resolving
+        // our engine, so we must fake this here until config resolving
         // has completed. Annoying, but a serde limitation.
         map.insert(FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned());
 
@@ -390,7 +392,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.version, String::from("4.5.6"),);
+                assert_eq!(config.node.version, String::from("4.5.6"));
 
                 Ok(())
             });
@@ -458,7 +460,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.npm.version, String::from("4.5.6"),);
+                assert_eq!(config.node.npm.version, String::from("4.5.6"));
 
                 Ok(())
             });
@@ -527,7 +529,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.pnpm.unwrap().version, String::from("4.5.6"),);
+                assert_eq!(config.node.pnpm.unwrap().version, String::from("4.5.6"));
 
                 Ok(())
             });
@@ -596,7 +598,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.yarn.unwrap().version, String::from("4.5.6"),);
+                assert_eq!(config.node.yarn.unwrap().version, String::from("4.5.6"));
 
                 Ok(())
             });
@@ -604,11 +606,12 @@ projects: {}"#,
     }
 
     mod projects {
+        use super::*;
         use std::collections::HashMap;
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>projects</id>: Expected a map type, received string \"apps/*\"."
+            expected = "Invalid field <id>projects</id>: Expected a sequence of project globs or a map of projects type, received string \"apps/*\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -682,6 +685,32 @@ projects:
                         (String::from("app"), String::from("apps/app")),
                         (String::from("foo"), String::from("./packages/foo"))
                     ]),
+                );
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_globs() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects:
+    - 'apps/*'
+    - 'packages/*'"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config.projects,
+                    HashMap::from([
+                        (FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned()),
+                        ("A".to_owned(), "apps/*".to_owned()),
+                        ("B".to_owned(), "packages/*".to_owned())
+                    ])
                 );
 
                 Ok(())

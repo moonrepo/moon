@@ -20,8 +20,7 @@ node:
   # OPTIONAL: The package manager to use when managing dependencies.
   # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".
   packageManager: '{{ package_manager }}'
-
-  {% if package_manager != "npm" -%}
+{% if package_manager != "npm" -%}
   # OPTIONAL: The version of the package manager (above) to use.
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
@@ -29,8 +28,7 @@ node:
   # OPTIONAL: The version of the package manager (above) to use.
   npm:
     version: '{{ package_manager_version }}'
-  {%- endif %}
-
+{%- endif %}
   # OPTIONAL: Add `node.version` as a constaint in the root `package.json` `engines`.
   addEnginesConstraint: true
 

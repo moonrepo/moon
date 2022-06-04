@@ -56,7 +56,10 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
 }
 
 // workspace.yml
-fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceError> {
+fn load_workspace_config(
+    root_dir: &Path,
+    cache: &CacheEngine,
+) -> Result<WorkspaceConfig, WorkspaceError> {
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_WORKSPACE_FILENAME);
@@ -166,15 +169,17 @@ impl Workspace {
             color::path(&working_dir)
         );
 
+        // Setup cache first
+        let cache = CacheEngine::create(&root_dir).await?;
+
         // Load configs
-        let config = load_workspace_config(&root_dir)?;
+        let config = load_workspace_config(&root_dir, &cache)?;
         let project_config = load_global_project_config(&root_dir)?;
         let package_json = load_package_json(&root_dir).await?;
         let tsconfig_json =
             load_tsconfig_json(&root_dir, &config.typescript.root_config_file_name).await?;
 
         // Setup components
-        let cache = CacheEngine::create(&root_dir).await?;
         let toolchain = Toolchain::create(&root_dir, &config).await?;
         let projects = ProjectGraph::new(&root_dir, project_config, &config.projects);
 

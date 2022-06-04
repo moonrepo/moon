@@ -1,6 +1,6 @@
 use crate::hasher::Hasher;
 use crate::helpers::{is_writable, LOG_TARGET};
-use crate::items::{CacheItem, RunTargetState, WorkspaceState};
+use crate::items::{CacheItem, ProjectsState, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
@@ -64,6 +64,14 @@ impl CacheEngine {
                 target: String::from(target_id),
                 ..RunTargetState::default()
             },
+        )
+        .await
+    }
+
+    pub async fn cache_projects_state(&self) -> Result<CacheItem<ProjectsState>, MoonError> {
+        CacheItem::load(
+            self.dir.join("projectsState.json"),
+            ProjectsState::default(),
         )
         .await
     }

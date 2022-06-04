@@ -4,6 +4,7 @@ use moon_logger::{color, trace};
 use moon_utils::fs;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
@@ -69,6 +70,13 @@ pub struct RunTargetState {
     pub stdout: String,
 
     pub target: String,
+}
+
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectsState {
+    #[serde(default)]
+    pub projects: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]

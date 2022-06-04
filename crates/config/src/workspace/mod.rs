@@ -1,5 +1,4 @@
 // .moon/workspace.yml
-#![allow(rustdoc::bare_urls)]
 
 pub mod node;
 mod typescript;
@@ -7,7 +6,7 @@ mod vcs;
 
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
-use crate::types::FilePath;
+use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
@@ -16,18 +15,24 @@ use figment::{
 };
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::de::{self, MapAccess, SeqAccess};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 use std::env;
+use std::fmt;
 use std::path::PathBuf;
 pub use typescript::TypeScriptConfig;
 use validator::{Validate, ValidationError, ValidationErrors};
 pub use vcs::{VcsConfig, VcsManager};
 
+const FLAG_PROJECTS_USING_GLOB: &str = "MOON_PROJECTS_USING_GLOBS";
+
+type ProjectsMap = HashMap<String, FilePath>;
+
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
-fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), ValidationError> {
+fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
     for (key, value) in projects {
         validate_id(&format!("projects.{}", key), key)?;
 
@@ -48,8 +53,9 @@ pub struct WorkspaceConfig {
     pub node: NodeConfig,
 
     #[serde(default)]
+    #[serde(deserialize_with = "deserialize_projects")]
     #[validate(custom = "validate_projects")]
-    pub projects: HashMap<String, FilePath>,
+    pub projects: ProjectsMap,
 
     #[serde(default)]
     #[validate]
@@ -62,6 +68,67 @@ pub struct WorkspaceConfig {
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]
     pub schema: String,
+}
+
+// SERDE
+
+#[derive(JsonSchema)]
+#[serde(untagged)]
+enum ProjectsField {
+    #[allow(dead_code)]
+    Map(ProjectsMap),
+    #[allow(dead_code)]
+    Globs(Vec<FileGlob>),
+}
+
+struct DeserializeProjects;
+
+impl<'de> de::Visitor<'de> for DeserializeProjects {
+    type Value = ProjectsMap;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a sequence of project globs or a map of projects")
+    }
+
+    fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: MapAccess<'de>,
+    {
+        let mut map = HashMap::with_capacity(visitor.size_hint().unwrap_or(0));
+
+        while let Some((key, value)) = visitor.next_entry()? {
+            map.insert(key, value);
+        }
+
+        Ok(map)
+    }
+
+    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: SeqAccess<'de>,
+    {
+        let mut map = HashMap::new();
+        let mut index: u8 = 0;
+
+        while let Some(elem) = visitor.next_element()? {
+            map.insert(index.to_string(), elem);
+            index += 1;
+        }
+
+        // We want to defer globbing so that we can cache it through
+        // the engine, so we must fake this here until config resolving
+        // has completed. Annoying, but a serde limitation.
+        map.insert(FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned());
+
+        Ok(map)
+    }
+}
+
+fn deserialize_projects<'de, D>(deserializer: D) -> Result<ProjectsMap, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    deserializer.deserialize_any(DeserializeProjects)
 }
 
 impl Provider for WorkspaceConfig {

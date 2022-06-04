@@ -1,0 +1,11 @@
+[package]
+name = "moon_hasher"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../config"}
+moon_project = { path = "../project"}
+moon_utils = { path = "../utils"}
+serde = { version = "1.0.137", features = ["derive"] }
+sha2 = "0.10.2"

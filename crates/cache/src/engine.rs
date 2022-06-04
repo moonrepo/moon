@@ -1,4 +1,3 @@
-use crate::hasher::Hasher;
 use crate::helpers::{is_writable, LOG_TARGET};
 use crate::items::{CacheItem, ProjectsState, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
@@ -156,7 +155,10 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub async fn save_hash(&self, hash: &str, hasher: &Hasher) -> Result<(), MoonError> {
+    pub async fn save_hash<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>
+    where
+        T: ?Sized + Serialize,
+    {
         if is_writable() {
             let path = self.hashes_dir.join(format!("{}.json", hash));
 
@@ -590,14 +592,19 @@ mod tests {
 
     mod save_hash {
         use super::*;
-        use crate::Hasher;
+        use serde::Deserialize;
+
+        #[derive(Default, Deserialize, Serialize)]
+        struct TestHasher {
+            field: String,
+        }
 
         #[tokio::test]
         #[serial]
         async fn creates_hash_file() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let hasher = Hasher::default();
+            let hasher = TestHasher::default();
 
             cache.save_hash("abc123", &hasher).await.unwrap();
 
@@ -611,7 +618,7 @@ mod tests {
         async fn doesnt_create_if_cache_off() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let hasher = Hasher::default();
+            let hasher = TestHasher::default();
 
             run_with_env("off", || cache.save_hash("abc123", &hasher))
                 .await
@@ -627,7 +634,7 @@ mod tests {
         async fn doesnt_create_if_cache_readonly() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let hasher = Hasher::default();
+            let hasher = TestHasher::default();
 
             run_with_env("read", || cache.save_hash("abc123", &hasher))
                 .await

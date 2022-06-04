@@ -2,6 +2,7 @@ use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::project::Project;
 use crate::types::TouchedFilePaths;
+use moon_cache::CacheEngine;
 use moon_config::constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_config::{GlobalProjectConfig, ProjectID};
 use moon_logger::{color, debug, map_list, trace};
@@ -45,6 +46,7 @@ impl ProjectGraph {
         workspace_root: &Path,
         global_config: GlobalProjectConfig,
         projects_config: &HashMap<ProjectID, String>,
+        // cache: &CacheEngine,
     ) -> ProjectGraph {
         debug!(
             target: LOG_TARGET,

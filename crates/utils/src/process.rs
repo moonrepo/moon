@@ -5,7 +5,7 @@ use std::env;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::Arc;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::sync::RwLock;
 use tokio::task;
@@ -175,6 +175,79 @@ impl Command {
     }
 
     pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
+        self.log_command_info(None);
+
+        let mut child = self
+            .cmd
+            .stderr(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+
+        let mut captured_stdout = vec![];
+        let mut captured_stderr = vec![];
+
+        {
+            // We need to log the child process output to the parent terminal
+            // AND capture stdout/stderr so that we can cache it for future runs.
+            // This doesn't seem to be supported natively by `Stdio`, so I have
+            // this *real ugly* implementation to solve it. There's gotta be a
+            // better way to do this?
+            // https://stackoverflow.com/a/49063262
+            let mut stdout = BufReader::new(child.stdout.as_mut().unwrap());
+            let mut stderr = BufReader::new(child.stderr.as_mut().unwrap());
+
+            loop {
+                let stdout_fill = stdout.poll_fill_buf().await?;
+                let stderr_fill = stderr.poll_fill_buf().await?;
+
+                let (stdout_bytes, stderr_bytes) = match (stdout_fill, stderr_fill) {
+                    (stdout_data, stderr_data) => {
+                        captured_stdout
+                            .write_all(stdout_data)
+                            .expect("Couldn't write");
+                        captured_stderr
+                            .write_all(stderr_data)
+                            .expect("Couldn't write");
+
+                        (stdout_data.len(), stderr_data.len())
+                    }
+                    other => panic!("Some better error handling here... {:?}", other),
+                };
+
+                // if stdout_bytes == 0 && stderr_bytes == 0 {
+                //     // Seems less-than-ideal; should be some way of
+                //     // telling if the child has actually exited vs just
+                //     // not outputting anything.
+                //     break;
+                // }
+
+                // stdout.consume(stdout_bytes);
+                // stderr.consume(stderr_bytes);
+                break;
+            }
+        }
+
+        // Attempt to capture the child output
+        let mut output = child
+            .wait_with_output()
+            .await
+            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+
+        // if output.stderr.is_empty() {
+        //     output.stderr = stderr.read().await.join("").into_bytes();
+        // }
+
+        // if output.stdout.is_empty() {
+        //     output.stdout = stdout.read().await.join("").into_bytes();
+        // }
+
+        self.handle_nonzero_status(&output)?;
+
+        Ok(output)
+    }
+
+    pub async fn exec_stream_and_capture_output_old(&mut self) -> Result<Output, MoonError> {
         self.log_command_info(None);
 
         let mut child = self

@@ -257,7 +257,7 @@ pub enum StringArrayOrObject<T> {
     Object(T),
 }
 
-pub type Bin = StringOrArray<BinSet>;
+pub type Bin = StringOrObject<BinSet>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Bug {

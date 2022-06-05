@@ -112,13 +112,13 @@ jobs:
           LLVM_PROFILE_FILE: 'moon-%p-%m.profraw'
       - name: Generate code coverage
         run:
-          grcov . -s . --binary-path ./target/debug -t cobertura --branch --ignore-not-existing -o
-          ./report.xml
+          grcov . -s . --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
+          ./report.info
       - uses: actions/upload-artifact@v2
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}
-          path: ./report.xml
+          path: ./report.info
           if-no-files-found: error
   coverage:
     name: Code coverage

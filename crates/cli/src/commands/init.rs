@@ -147,12 +147,12 @@ async fn detect_projects(dest_dir: &Path, yes: bool) -> Result<ProjectsSourceMap
                         ))
                         .interact()?
                 {
-                    let packages = match workspaces {
+                    let globs = match workspaces {
                         Workspaces::Array(list) => list,
                         Workspaces::Object(object) => object.packages.unwrap_or_default(),
                     };
 
-                    detect_projects_with_globs(dest_dir, packages, &mut projects)?;
+                    detect_projects_with_globs(dest_dir, &globs, &mut projects)?;
                 }
             }
         }

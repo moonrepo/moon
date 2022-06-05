@@ -21,10 +21,10 @@ pub fn infer_project_name_and_source(source: &str) -> (String, String) {
 /// for potential projects, and infer their name and source.
 pub fn detect_projects_with_globs(
     workspace_root: &Path,
-    globs: Vec<String>,
+    globs: &[String],
     projects: &mut ProjectsSourceMap,
 ) -> Result<(), ProjectError> {
-    for project_root in glob::walk(workspace_root, &globs)? {
+    for project_root in glob::walk(workspace_root, globs)? {
         if project_root.is_dir() {
             let project_source = project_root
                 .strip_prefix(workspace_root)

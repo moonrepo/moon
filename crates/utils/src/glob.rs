@@ -4,7 +4,7 @@ use moon_error::MoonError;
 use regex::Regex;
 use std::path::{Path, PathBuf};
 pub use wax::Glob;
-use wax::{Any, GlobError as WaxGlobError, Pattern};
+use wax::{Any, GlobError as WaxGlobError, LinkBehavior, Pattern};
 
 lazy_static! {
     pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"(//\?/)?[A-Z]:").unwrap();
@@ -21,7 +21,7 @@ impl<'t> GlobSet<'t> {
         let mut globs = vec![];
 
         for pattern in patterns {
-            globs.push(Glob::new(pattern).map_err(WaxGlobError::into_owned)?);
+            globs.push(Glob::new(pattern).map_err(|e| e.into_owned())?);
         }
 
         Ok(GlobSet {
@@ -118,10 +118,15 @@ pub fn walk(base_dir: &Path, patterns: &[String]) -> Result<Vec<PathBuf>, GlobEr
     let mut paths = vec![];
 
     for expression in expressions {
-        let glob = Glob::new(&expression).map_err(WaxGlobError::into_owned)?;
+        let glob = Glob::new(&expression).map_err(|e| e.into_owned())?;
+        // let negs = negations.clone();
 
-        for entry in glob.walk(base_dir, usize::MAX)
-        // .not(&negations)
+        for entry in glob.walk_with_behavior(base_dir, LinkBehavior::ReadFile)
+        // .not(
+        //     negs.into_iter()
+        //         .map(|n| Glob::new(&n).unwrap())
+        //         .collect::<Vec<Glob>>(),
+        // )?
         {
             match entry {
                 Ok(e) => paths.push(e.into_path()),

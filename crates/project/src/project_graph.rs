@@ -64,9 +64,10 @@ async fn load_projects_from_cache(
     // Generate a new projects map by globbing the filesystem
     let mut map = HashMap::new();
 
-    detect_projects_with_globs(workspace_root, globs, &mut map)?;
+    detect_projects_with_globs(workspace_root, &globs, &mut map)?;
 
     // Update the cache
+    cache.item.globs = globs;
     cache.item.projects = map.clone();
     cache.save().await?;
 

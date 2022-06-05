@@ -384,14 +384,17 @@ impl DepGraph {
 mod tests {
     use super::*;
     use insta::assert_snapshot;
+    use moon_cache::CacheEngine;
     use moon_config::GlobalProjectConfig;
     use moon_project::ProjectGraph;
     use moon_utils::test::get_fixtures_dir;
     use std::collections::HashMap;
 
-    fn create_project_graph() -> ProjectGraph {
-        ProjectGraph::new(
-            &get_fixtures_dir("projects"),
+    async fn create_project_graph() -> ProjectGraph {
+        let workspace_root = get_fixtures_dir("projects");
+
+        ProjectGraph::create(
+            &workspace_root,
             GlobalProjectConfig::default(),
             &HashMap::from([
                 ("advanced".to_owned(), "advanced".to_owned()),
@@ -403,17 +406,21 @@ mod tests {
                 ("baz".to_owned(), "deps/baz".to_owned()),
                 ("tasks".to_owned(), "tasks".to_owned()),
             ]),
+            &CacheEngine::create(&workspace_root).await.unwrap(),
         )
+        .await
+        .unwrap()
     }
 
-    fn create_tasks_project_graph() -> ProjectGraph {
+    async fn create_tasks_project_graph() -> ProjectGraph {
+        let workspace_root = get_fixtures_dir("tasks");
         let global_config = GlobalProjectConfig {
             file_groups: HashMap::from([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
             ..GlobalProjectConfig::default()
         };
 
-        ProjectGraph::new(
-            &get_fixtures_dir("tasks"),
+        ProjectGraph::create(
+            &workspace_root,
             global_config,
             &HashMap::from([
                 ("basic".to_owned(), "basic".to_owned()),
@@ -430,7 +437,10 @@ mod tests {
                 ("mergeReplace".to_owned(), "merge-replace".to_owned()),
                 ("no-tasks".to_owned(), "no-tasks".to_owned()),
             ]),
+            &CacheEngine::create(&workspace_root).await.unwrap(),
         )
+        .await
+        .unwrap()
     }
 
     fn sort_batches(batches: BatchedTopoSort) -> BatchedTopoSort {
@@ -461,12 +471,12 @@ mod tests {
         );
     }
 
-    #[test]
+    #[tokio::test]
     #[should_panic(
         expected = "CycleDetected(\"RunTarget(cycle:a) → RunTarget(cycle:b) → RunTarget(cycle:c)\")"
     )]
-    fn detects_cycles() {
-        let projects = create_tasks_project_graph();
+    async fn detects_cycles() {
+        let projects = create_tasks_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -488,9 +498,9 @@ mod tests {
     mod run_target {
         use super::*;
 
-        #[test]
-        fn single_targets() {
-            let projects = create_project_graph();
+        #[tokio::test]
+        async fn single_targets() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph
@@ -522,9 +532,9 @@ mod tests {
             );
         }
 
-        #[test]
-        fn deps_chain_target() {
-            let projects = create_tasks_project_graph();
+        #[tokio::test]
+        async fn deps_chain_target() {
+            let projects = create_tasks_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph
@@ -571,9 +581,9 @@ mod tests {
             );
         }
 
-        #[test]
-        fn avoids_dupe_targets() {
-            let projects = create_project_graph();
+        #[tokio::test]
+        async fn avoids_dupe_targets() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph
@@ -607,9 +617,9 @@ mod tests {
             );
         }
 
-        #[test]
-        fn runs_all_projects_for_target_all_scope() {
-            let projects = create_tasks_project_graph();
+        #[tokio::test]
+        async fn runs_all_projects_for_target_all_scope() {
+            let projects = create_tasks_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph
@@ -649,10 +659,10 @@ mod tests {
             );
         }
 
-        #[test]
+        #[tokio::test]
         #[should_panic(expected = "Project(Target(NoProjectDepsInRunContext))")]
-        fn errors_for_target_deps_scope() {
-            let projects = create_project_graph();
+        async fn errors_for_target_deps_scope() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph
@@ -660,10 +670,10 @@ mod tests {
                 .unwrap();
         }
 
-        #[test]
+        #[tokio::test]
         #[should_panic(expected = "Project(Target(NoProjectSelfInRunContext))")]
-        fn errors_for_target_self_scope() {
-            let projects = create_project_graph();
+        async fn errors_for_target_self_scope() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph
@@ -671,10 +681,10 @@ mod tests {
                 .unwrap();
         }
 
-        #[test]
+        #[tokio::test]
         #[should_panic(expected = "Project(UnconfiguredID(\"unknown\"))")]
-        fn errors_for_unknown_project() {
-            let projects = create_project_graph();
+        async fn errors_for_unknown_project() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph
@@ -684,10 +694,10 @@ mod tests {
             assert_snapshot!(graph.to_dot());
         }
 
-        #[test]
+        #[tokio::test]
         #[should_panic(expected = "Project(UnconfiguredTask(\"build\", \"tasks\"))")]
-        fn errors_for_unknown_task() {
-            let projects = create_project_graph();
+        async fn errors_for_unknown_task() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph
@@ -701,9 +711,9 @@ mod tests {
     mod run_target_if_touched {
         use super::*;
 
-        #[test]
-        fn skips_if_untouched_project() {
-            let projects = create_tasks_project_graph();
+        #[tokio::test]
+        async fn skips_if_untouched_project() {
+            let projects = create_tasks_project_graph().await;
 
             let mut touched_files = HashSet::new();
             touched_files.insert(get_fixtures_dir("tasks").join("input-a/a.ts"));
@@ -728,9 +738,9 @@ mod tests {
             assert_snapshot!(graph.to_dot());
         }
 
-        #[test]
-        fn skips_if_untouched_task() {
-            let projects = create_tasks_project_graph();
+        #[tokio::test]
+        async fn skips_if_untouched_task() {
+            let projects = create_tasks_project_graph().await;
 
             let mut touched_files = HashSet::new();
             touched_files.insert(get_fixtures_dir("tasks").join("input-a/a2.ts"));
@@ -767,9 +777,9 @@ mod tests {
     mod sync_project {
         use super::*;
 
-        #[test]
-        fn isolated_projects() {
-            let projects = create_project_graph();
+        #[tokio::test]
+        async fn isolated_projects() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph.sync_project("advanced", &projects).unwrap();
@@ -805,9 +815,9 @@ mod tests {
             );
         }
 
-        #[test]
-        fn projects_with_deps() {
-            let projects = create_project_graph();
+        #[tokio::test]
+        async fn projects_with_deps() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph.sync_project("foo", &projects).unwrap();
@@ -840,9 +850,9 @@ mod tests {
             );
         }
 
-        #[test]
-        fn projects_with_tasks() {
-            let projects = create_project_graph();
+        #[tokio::test]
+        async fn projects_with_tasks() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph.sync_project("noConfig", &projects).unwrap();
@@ -868,9 +878,9 @@ mod tests {
             );
         }
 
-        #[test]
-        fn avoids_dupe_projects() {
-            let projects = create_project_graph();
+        #[tokio::test]
+        async fn avoids_dupe_projects() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph.sync_project("advanced", &projects).unwrap();
@@ -880,10 +890,10 @@ mod tests {
             assert_snapshot!(graph.to_dot());
         }
 
-        #[test]
+        #[tokio::test]
         #[should_panic(expected = "Project(UnconfiguredID(\"unknown\"))")]
-        fn errors_for_unknown_project() {
-            let projects = create_project_graph();
+        async fn errors_for_unknown_project() {
+            let projects = create_project_graph().await;
 
             let mut graph = DepGraph::default();
             graph.sync_project("unknown", &projects).unwrap();

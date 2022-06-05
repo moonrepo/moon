@@ -115,6 +115,8 @@ jobs:
           grcov . -s . --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
           ./report.info
       - uses: actions/upload-artifact@v2
+        # Windows fails to compile right now...
+        if: ${{ matrix.os != 'windows-latest' }}
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}

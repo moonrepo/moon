@@ -5,6 +5,7 @@ on:
       - master
   pull_request:
     paths:
+      - .github/workflows/rust.yml
       - crates/**
       - tests/**
       - Cargo.lock

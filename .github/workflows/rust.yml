@@ -117,7 +117,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         name: Upload coverage report
         with:
-          name: report-${{ matrix.os }}.xml
+          name: coverage-${{ matrix.os }}
           path: ./report.xml
           if-no-files-found: error
   coverage:

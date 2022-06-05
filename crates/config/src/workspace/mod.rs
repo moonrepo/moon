@@ -14,7 +14,9 @@ use figment::{
     Figment, Metadata, Profile, Provider,
 };
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
-use schemars::JsonSchema;
+use schemars::gen::SchemaGenerator;
+use schemars::schema::Schema;
+use schemars::{schema_for, JsonSchema};
 use serde::de::{self, MapAccess, SeqAccess};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
@@ -56,6 +58,7 @@ pub struct WorkspaceConfig {
 
     #[serde(default)]
     #[serde(deserialize_with = "deserialize_projects")]
+    #[schemars(schema_with = "make_projects_schema")]
     #[validate(custom = "validate_projects")]
     pub projects: ProjectsMap,
 
@@ -70,72 +73,6 @@ pub struct WorkspaceConfig {
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]
     pub schema: String,
-}
-
-// SERDE
-
-#[derive(JsonSchema)]
-#[serde(untagged)]
-enum ProjectsField {
-    #[allow(dead_code)]
-    Map(ProjectsMap),
-    #[allow(dead_code)]
-    Globs(Vec<FileGlob>),
-}
-
-struct DeserializeProjects;
-
-impl<'de> de::Visitor<'de> for DeserializeProjects {
-    type Value = ProjectsMap;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a sequence of project globs or a map of projects")
-    }
-
-    fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: MapAccess<'de>,
-    {
-        let mut map = HashMap::with_capacity(visitor.size_hint().unwrap_or(0));
-
-        while let Some((key, value)) = visitor.next_entry()? {
-            map.insert(key, value);
-        }
-
-        Ok(map)
-    }
-
-    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        let mut map = HashMap::new();
-        let mut index: u8 = 65; // ASCII A
-
-        while let Some(elem) = visitor.next_element()? {
-            // We can't use an integer as a key, as our project ID
-            // validation will fail, so convert integers to ASCII chars.
-            map.insert((index as char).to_string(), elem);
-            index += 1;
-        }
-
-        // We want to defer globbing so that we can cache it through
-        // our engine, so we must fake this here until config resolving
-        // has completed. Annoying, but a serde limitation.
-        map.insert(
-            constants::FLAG_PROJECTS_USING_GLOB.to_owned(),
-            "true".to_owned(),
-        );
-
-        Ok(map)
-    }
-}
-
-fn deserialize_projects<'de, D>(deserializer: D) -> Result<ProjectsMap, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    deserializer.deserialize_any(DeserializeProjects)
 }
 
 impl Provider for WorkspaceConfig {
@@ -194,6 +131,80 @@ impl WorkspaceConfig {
 
         Ok(config)
     }
+}
+
+// SERDE
+
+struct DeserializeProjects;
+
+impl<'de> de::Visitor<'de> for DeserializeProjects {
+    type Value = ProjectsMap;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a sequence of globs or a map of projects")
+    }
+
+    fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: MapAccess<'de>,
+    {
+        let mut map = HashMap::with_capacity(visitor.size_hint().unwrap_or(0));
+
+        while let Some((key, value)) = visitor.next_entry()? {
+            map.insert(key, value);
+        }
+
+        Ok(map)
+    }
+
+    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: SeqAccess<'de>,
+    {
+        let mut map = HashMap::new();
+        let mut index: u8 = 65; // ASCII A
+
+        while let Some(elem) = visitor.next_element()? {
+            // We can't use an integer as a key, as our project ID
+            // validation will fail, so convert integers to ASCII chars.
+            map.insert((index as char).to_string(), elem);
+            index += 1;
+        }
+
+        // We want to defer globbing so that we can cache it through
+        // our engine, so we must fake this here until config resolving
+        // has completed. Annoying, but a serde limitation.
+        map.insert(
+            constants::FLAG_PROJECTS_USING_GLOB.to_owned(),
+            "true".to_owned(),
+        );
+
+        Ok(map)
+    }
+}
+
+fn deserialize_projects<'de, D>(deserializer: D) -> Result<ProjectsMap, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    deserializer.deserialize_any(DeserializeProjects)
+}
+
+// JSON SCHEMA
+
+#[derive(JsonSchema)]
+#[serde(untagged)]
+enum ProjectsField {
+    #[allow(dead_code)]
+    Map(ProjectsMap),
+    #[allow(dead_code)]
+    Globs(Vec<FileGlob>),
+}
+
+fn make_projects_schema(_gen: &mut SchemaGenerator) -> Schema {
+    let root = schema_for!(ProjectsField);
+
+    Schema::Object(root.schema)
 }
 
 #[cfg(test)]

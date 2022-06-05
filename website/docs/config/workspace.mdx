@@ -3,6 +3,8 @@ title: .moon/workspace.yml
 toc_max_heading_level: 6
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 
 The `.moon/workspace.yml` file configures available projects and their locations, the toolchain, and
@@ -10,13 +12,26 @@ the workspace development environment.
 
 ## `projects`<RequiredLabel />
 
-> `Record<string, string>`
+> `Record<string, string> | string[]`
 
-Defines the location of all [projects](../concepts/project) within the workspace. Each project
-requires a unique ID as the map key, where this ID is used heavily on the command line and within
-the project graph for uniquely identifying the project amongst all projects. The map value (known as
-the project source) is a file system path to the project folder, relative from the workspace root,
-and must be contained within the workspace boundary.
+Defines the location of all [projects](../concepts/project) within the workspace. Supports either a
+manual map of projects (default), _or_ a list of globs in which to automatically locate projects.
+
+<Tabs
+  groupId="projects-type"
+  defaultValue="manual"
+  values={[
+    { label: 'Manual', value: 'manual' },
+    { label: 'Automatic', value: 'auto' },
+  ]}
+>
+<TabItem value="manual">
+
+When using a map, each project must be _manually_ configured and requires a unique
+[ID](../concepts/project#id) as the map key, where this ID is used heavily on the command line and
+within the project graph for uniquely identifying the project amongst all projects. The map value
+(known as the project source) is a file system path to the project folder, relative from the
+workspace root, and must be contained within the workspace boundary.
 
 ```yaml title=".moon/workspace.yml"
 projects:
@@ -26,15 +41,29 @@ projects:
   web: 'apps/web'
 ```
 
-Unlike packages in the JavaScript ecosystem, a moon project _does not_ require a `package.json`, and
-is not coupled to Yarn workspaces (or similar architectures).
+</TabItem>
+<TabItem value="auto">
 
-> **Why doesn't moon auto-detect projects?** moon _does not_ automatically detect projects using
-> file system globs for the following reasons:
->
-> - Depth-first scans are expensive, especially when the workspace continues to grow.
-> - CI and other machines may inadvertently detect more projects because of left over artifacts.
-> - Centralizing a manifest of projects allows for an easy review and approval process.
+If manually mapping projects is too tedious or cumbersome, you may provide a list of
+[globs](../concepts/file-pattern#globs) to automatically locate all project folders, relative from
+the workspace root.
+
+When using this approach, the project ID is derived from the project folder name, and is cleaned to
+our [supported characters](../concepts/project#id) . Furthermore, globbing **does risk the chance of
+collision**, and when that happens, we log a warning and skip the conflicting project from being
+configured in the project graph.
+
+```yaml title=".moon/workspace.yml"
+projects:
+  - 'apps/*'
+  - 'packages/*'
+```
+
+</TabItem>
+</Tabs>
+
+> Unlike packages in the JavaScript ecosystem, a moon project _does not_ require a `package.json`,
+> and is not coupled to Yarn workspaces (or similar architectures).
 
 ## `node`
 

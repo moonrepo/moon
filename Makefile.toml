@@ -51,6 +51,7 @@ args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
 
 [tasks.create-coverage-dir]
 script = "mkdir ./coverage"
+condition = { platforms = ["mac", "linux"] }
 
 [tasks.test-coverage]
 env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "moon-%p-%m.profraw" }

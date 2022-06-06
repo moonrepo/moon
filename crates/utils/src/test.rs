@@ -105,9 +105,8 @@ pub fn create_moon_command_in(path: &Path) -> assert_cmd::Command {
     cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
     // Standardize file system paths for testing snapshots
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
-    // Uncomment for debugging
-    cmd.env("MOON_LOG", "off");
-    // cmd.env("MOON_LOG", "trace")
+    // Enable logging for code coverage
+    cmd.env("MOON_LOG", "trace");
     cmd
 }
 
@@ -116,7 +115,24 @@ pub fn get_assert_output(assert: &assert_cmd::assert::Assert) -> String {
 }
 
 pub fn get_assert_stderr_output(assert: &assert_cmd::assert::Assert) -> String {
-    String::from_utf8(assert.get_output().stderr.to_owned()).unwrap()
+    let mut output = String::new();
+
+    for line in String::from_utf8(assert.get_output().stderr.to_owned())
+        .unwrap()
+        .split('\n')
+    {
+        if !line.starts_with("[error")
+            && !line.starts_with("[warn")
+            && !line.starts_with("[info")
+            && !line.starts_with("[debug")
+            && !line.starts_with("[trace")
+        {
+            output.push_str(line);
+            output.push('\n');
+        }
+    }
+
+    output
 }
 
 pub fn get_assert_stdout_output(assert: &assert_cmd::assert::Assert) -> String {

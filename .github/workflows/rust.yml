@@ -114,14 +114,14 @@ jobs:
       - name: Generate code coverage
         if: ${{ matrix.os != 'windows-latest' }}
         run:
-          grcov . -s . --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
-          ./report.txt
+          grcov . -s . --binary-path ./target/debug -t cobertura --branch --ignore-not-existing -o
+          ./report.xml
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.os != 'windows-latest' }}
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}
-          path: ./report.txt
+          path: ./report.xml
           if-no-files-found: error
   coverage:
     name: Code coverage

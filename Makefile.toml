@@ -50,7 +50,7 @@ args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
 # CODE COVERAGE
 
 [tasks.create-coverage-dir]
-script = "mkdir ./coverage"
+script = "mkdir -p ./coverage"
 condition = { platforms = ["mac", "linux"] }
 
 [tasks.test-coverage]
@@ -59,7 +59,7 @@ run_task = { name = ["build", "test", "create-coverage-dir"] }
 
 [tasks.generate-report]
 command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "lcov", "--branch", "--ignore-not-existing", "-o", "./coverage/report.txt"]
+args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "cobertura", "--branch", "--ignore-not-existing", "-o", "./coverage/report.xml"]
 
 [tasks.generate-html]
 command = "grcov"

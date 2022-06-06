@@ -116,8 +116,8 @@ Once installed, run `cargo make test-coverage`, which is a lengthy and time cons
 will build the binary in debug mode with instrumentation enabled, run all unit and integration
 tests, and generate _a ton_ of `*.profraw` files in the repository (do not commit these!).
 
-From here you can generate an LCOV HTML coverage report to `./coverage` with
-`cargo make generate-html`. Open the `index.html` file to browse line-by-line coverage.
+From here you can generate an HTML coverage report to `./coverage` with `cargo make generate-html`.
+Open the `index.html` file to browse line-by-line coverage.
 
 Once done, run `cargo make clean-profraw` to cleanup and remove all the `*.profraw` files.
 

@@ -113,14 +113,14 @@ jobs:
       - name: Generate code coverage
         run:
           grcov . -s . --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
-          ./report.info
+          ./report.txt
       - uses: actions/upload-artifact@v2
         # Windows fails to compile right now...
         if: ${{ matrix.os != 'windows-latest' }}
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}
-          path: ./report.info
+          path: ./report.txt
           if-no-files-found: error
   coverage:
     name: Code coverage
@@ -137,3 +137,4 @@ jobs:
         with:
           directory: coverage
           flags: rust
+          verbose: true

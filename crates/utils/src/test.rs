@@ -119,16 +119,18 @@ pub fn get_assert_stderr_output(assert: &assert_cmd::assert::Assert) -> String {
 
     // We need to always show logs for proper code coverage,
     // but this breaks snapshots, and as such, we need to manually
-    // filter out the log lines!
+    // filter out log lines and env vars!
     for line in String::from_utf8(assert.get_output().stderr.to_owned())
         .unwrap()
         .split('\n')
     {
         if !line.starts_with("[error")
-            && !line.starts_with("[warn")
-            && !line.starts_with("[info")
+            && !line.starts_with("[ warn")
+            && !line.starts_with("[ info")
             && !line.starts_with("[debug")
             && !line.starts_with("[trace")
+            && !line.starts_with("  MOON_")
+            && !line.starts_with("  NODE_")
         {
             output.push_str(line);
             output.push('\n');

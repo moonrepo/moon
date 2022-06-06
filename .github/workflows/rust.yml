@@ -110,12 +110,13 @@ jobs:
         env:
           RUSTFLAGS: '-Cinstrument-coverage'
           LLVM_PROFILE_FILE: 'moon-%p-%m.profraw'
+      # Windows fails to compile right now...
       - name: Generate code coverage
+        if: ${{ matrix.os != 'windows-latest' }}
         run:
           grcov . -s . --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
           ./report.txt
       - uses: actions/upload-artifact@v2
-        # Windows fails to compile right now...
         if: ${{ matrix.os != 'windows-latest' }}
         name: Upload coverage report
         with:
@@ -135,6 +136,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          directory: coverage
+          directory: ./coverage
           flags: rust
           verbose: true

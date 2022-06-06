@@ -27,7 +27,7 @@ args = ["clippy", "--workspace", "--all-targets"]
 
 # TESTING
 
-[tasks.pre-test]
+[tasks.setup-test]
 command = "cargo"
 args = ["run", "--", "--log", "debug", "setup"]
 cwd = "./tests/fixtures/cases"
@@ -36,13 +36,12 @@ cwd = "./tests/fixtures/cases"
 command = "cargo"
 args = ["test", "--workspace"]
 
-[tasks.post-test]
-command = "rm"
-args = ["-rf", "./tests/fixtures/cases/.moon/cache"]
+[tasks.clean-test]
+script = "rm -rf ./tests/fixtures/cases/.moon/cache"
 condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
-run_task = { name = ["pre-test", "run-test"], fork = true, cleanup_task = "post-test" }
+run_task = { name = ["clean-test", "setup-test", "run-test", "clean-test"] }
 
 [tasks.test-output]
 command = "cargo"
@@ -50,9 +49,12 @@ args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
 
 # CODE COVERAGE
 
+[tasks.create-coverage-dir]
+script = "mkdir ./coverage"
+
 [tasks.test-coverage]
 env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "moon-%p-%m.profraw" }
-run_task = { name = ["build", "test"] }
+run_task = { name = ["build", "test", "create-coverage-dir"] }
 
 [tasks.generate-report]
 command = "grcov"

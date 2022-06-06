@@ -100,28 +100,21 @@ jobs:
           args: --force cargo-make grcov
       - uses: actions-rs/cargo@v1
         with:
-          command: build
-        env:
-          RUSTFLAGS: '-Cinstrument-coverage'
-      - uses: actions-rs/cargo@v1
-        with:
           command: make
-          args: test
-        env:
-          RUSTFLAGS: '-Cinstrument-coverage'
-          LLVM_PROFILE_FILE: 'moon-%p-%m.profraw'
+          args: test-coverage
       # Windows fails to compile right now...
       - name: Generate code coverage
         if: ${{ matrix.os != 'windows-latest' }}
-        run:
-          grcov . -s . --binary-path ./target/debug -t cobertura --branch --ignore-not-existing -o
-          ./report.xml
+        uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: generate-report
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.os != 'windows-latest' }}
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}
-          path: ./report.xml
+          path: ./coverage/report.txt
           if-no-files-found: error
   coverage:
     name: Code coverage
@@ -136,6 +129,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          directory: ./coverage
+          files: ./coverage/coverage-ubuntu-latest/report.txt,./coverage/coverage-macos-latest/report.txt
           flags: rust
           verbose: true

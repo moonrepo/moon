@@ -48,6 +48,23 @@ run_task = { name = ["pre-test", "run-test"], fork = true, cleanup_task = "post-
 command = "cargo"
 args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
 
+# CODE COVERAGE
+
+[tasks.test-coverage]
+env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "moon-%p-%m.profraw" }
+run_task = { name = ["build", "test"] }
+
+[tasks.generate-report]
+command = "grcov"
+args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "lcov", "--branch", "--ignore-not-existing", "-o", "./coverage/report.txt"]
+
+[tasks.generate-html]
+command = "grcov"
+args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "html", "--branch", "--ignore-not-existing", "-o", "./coverage"]
+
+[tasks.clean-profraw]
+script = "rm -rf *.profraw crates/**/*.profraw tests/fixtures/**/*.profraw"
+
 ## OTHER
 
 [tasks.gen-json-schemas]

@@ -100,6 +100,26 @@ common tasks.
 - `cargo make format` - Formats code.
 - `cargo make lint` - Runs the linter.
 - `cargo make test` - Runs unit and integration tests.
+- `cargo make test-coverage` - Run tests and also generate code coverage reports.
+
+#### Code coverage
+
+We support source based code coverage with [grcov](https://github.com/mozilla/grcov) via unit and
+integration testing. To begin, install the necessary tooling:
+
+```
+rustup component add llvm-tools-preview
+cargo install --force grcov
+```
+
+Once installed, run `cargo make test-coverage`, which is a lengthy and time consuming process. This
+will build the binary in debug mode with instrumentation enabled, run all unit and integration
+tests, and generate _a ton_ of `*.profraw` files in the repository (do not commit these!).
+
+From here you can generate an LCOV HTML coverage report to `./coverage` with
+`cargo make generate-html`. Open the `index.html` file to browse line-by-line coverage.
+
+Once done, run `cargo make clean-profraw` to cleanup and remove all the `*.profraw` files.
 
 ### Node.js
 

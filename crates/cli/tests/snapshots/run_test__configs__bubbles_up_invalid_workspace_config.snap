@@ -8,6 +8,6 @@ expression: get_assert_output(&assert)
 
 Failed to validate .moon/workspace.yml configuration file.
 
-  ▪ Invalid field projects: Expected a sequence of project globs or a map of projects type, received bool true.
+  ▪ Invalid field projects: Expected a sequence of globs or a map of projects type, received bool true.
 
 

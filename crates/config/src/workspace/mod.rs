@@ -627,7 +627,7 @@ projects: {}"#,
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>projects</id>: Expected a sequence of project globs or a map of projects type, received string \"apps/*\"."
+            expected = "Invalid field <id>projects</id>: Expected a sequence of globs or a map of projects type, received string \"apps/*\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {

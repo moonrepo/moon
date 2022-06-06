@@ -4,7 +4,7 @@ mod enums;
 
 use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};
-use crate::commands::init::init;
+use crate::commands::init::{init, InitOptions};
 use crate::commands::project::project;
 use crate::commands::project_graph::project_graph;
 use crate::commands::run::{run, RunOptions};
@@ -66,7 +66,24 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::Init { dest, force, yes } => init(dest, *yes, *force).await,
+        Commands::Init {
+            dest,
+            force,
+            inherit_projects,
+            package_manager,
+            yes,
+        } => {
+            init(
+                dest,
+                InitOptions {
+                    yes: *yes,
+                    force: *force,
+                    inherit_projects: inherit_projects.clone(),
+                    package_manager: package_manager.clone(),
+                },
+            )
+            .await
+        }
         Commands::Project { id, json } => project(id, *json).await,
         Commands::ProjectGraph { id } => project_graph(id).await,
         Commands::Run {

@@ -21,4 +21,12 @@ $ moon init ./app
 ### Options
 
 - `--force` - Overwrite existing config files if they exist.
+- `--inheritProjects <as>` - Sets the default value on whether to inherit projects from
+  `package.json` workspaces. Supports:
+  - `none` - Do not inherit projects.
+  - `globs-list` - Inherit globs as-is and configure as a list.
+  - `projects-map` - Glob the file system for projects and configure as a map.
+- `--packageManager <type>` - Sets the default value for which package manager to use, if none were
+  detected.
+  - Types: `npm`, `pnpm`, `yarn`
 - `--yes` - Skip all prompts and use default values.

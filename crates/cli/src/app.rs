@@ -30,13 +30,10 @@ pub enum Commands {
         #[clap(long, help = "Overwrite existing configurations")]
         force: bool,
 
-        #[clap(long, help = "Skip prompts and use default values")]
-        yes: bool,
-
         #[clap(
             arg_enum,
             long,
-            help = "Inherit projects from `package.json` workspaces as",
+            help = "Inherit projects from `package.json` workspaces",
             default_value_t
         )]
         inherit_projects: InheritProjectsAs,
@@ -48,6 +45,9 @@ pub enum Commands {
             default_value_t
         )]
         package_manager: PackageManager,
+
+        #[clap(long, help = "Skip prompts and use default values")]
+        yes: bool,
     },
 
     // moon bin <tool>

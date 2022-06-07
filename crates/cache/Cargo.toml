@@ -12,5 +12,6 @@ serde = { version = "1.0.137", features = ["derive"] }
 
 [dev-dependencies]
 assert_fs = "1.0.7"
+filetime = "0.2.16"
 tokio = { version = "1.18.2", features = ["test-util"] }
 serial_test = "0.6.0"

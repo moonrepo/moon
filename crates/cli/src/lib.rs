@@ -76,10 +76,10 @@ pub async fn run_cli() {
             init(
                 dest,
                 InitOptions {
-                    yes: *yes,
                     force: *force,
                     inherit_projects: inherit_projects.clone(),
                     package_manager: package_manager.clone(),
+                    yes: *yes,
                 },
             )
             .await

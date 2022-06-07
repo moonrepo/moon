@@ -1,4 +1,4 @@
-use crate::helpers::{is_readable, is_writable};
+use crate::helpers::{is_readable, is_writable, to_millis};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_utils::fs;
@@ -9,13 +9,6 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 
 const LOG_TARGET: &str = "moon:cache:item";
-
-fn to_millis(time: SystemTime) -> u128 {
-    match time.duration_since(SystemTime::UNIX_EPOCH) {
-        Ok(d) => d.as_millis(),
-        Err(_) => 0,
-    }
-}
 
 #[derive(Debug)]
 pub struct CacheItem<T: DeserializeOwned + Serialize> {

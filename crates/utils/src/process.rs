@@ -291,17 +291,14 @@ impl Command {
             if value.is_some() {
                 let key_str = key.to_str().unwrap();
 
-                // This is very noisy, maybe with a verbose logging setting?
-                if key_str == "PATH" {
-                    continue;
+                if key_str.starts_with("MOON_") || key_str.starts_with("NODE_") {
+                    envs_list.push(format!(
+                        "\n  {}{}{}",
+                        key_str,
+                        color::muted("="),
+                        color::muted_light(value.unwrap().to_str().unwrap())
+                    ));
                 }
-
-                envs_list.push(format!(
-                    "\n  {}{}{}",
-                    key_str,
-                    color::muted("="),
-                    color::muted_light(value.unwrap().to_str().unwrap())
-                ));
             }
         }
 

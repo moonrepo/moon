@@ -1,14 +1,8 @@
 use insta::assert_snapshot;
 use moon_utils::test::{create_moon_command, get_assert_output, get_assert_stderr_output};
 
-fn force_ansi_colors() {
-    std::env::set_var("CLICOLOR_FORCE", "1");
-}
-
 #[test]
 fn unknown_project() {
-    force_ansi_colors();
-
     let assert = create_moon_command("projects")
         .arg("project")
         .arg("unknown")
@@ -21,8 +15,6 @@ fn unknown_project() {
 
 #[test]
 fn empty_config() {
-    force_ansi_colors();
-
     let assert = create_moon_command("projects")
         .arg("project")
         .arg("emptyConfig")
@@ -33,8 +25,6 @@ fn empty_config() {
 
 #[test]
 fn no_config() {
-    force_ansi_colors();
-
     let assert = create_moon_command("projects")
         .arg("project")
         .arg("noConfig")
@@ -45,8 +35,6 @@ fn no_config() {
 
 #[test]
 fn basic_config() {
-    force_ansi_colors();
-
     // with dependsOn and fileGroups
     let assert = create_moon_command("projects")
         .arg("project")
@@ -58,8 +46,6 @@ fn basic_config() {
 
 #[test]
 fn advanced_config() {
-    force_ansi_colors();
-
     // with project metadata
     let assert = create_moon_command("projects")
         .arg("project")
@@ -71,8 +57,6 @@ fn advanced_config() {
 
 #[test]
 fn depends_on_paths() {
-    force_ansi_colors();
-
     // shows dependsOn paths when they exist
     let assert = create_moon_command("projects")
         .arg("project")
@@ -84,8 +68,6 @@ fn depends_on_paths() {
 
 #[test]
 fn with_tasks() {
-    force_ansi_colors();
-
     let assert = create_moon_command("projects")
         .arg("project")
         .arg("tasks")

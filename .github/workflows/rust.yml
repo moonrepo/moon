@@ -99,7 +99,6 @@ jobs:
         env:
           RUSTFLAGS: -Cinstrument-coverage
       - uses: actions-rs/cargo@v1
-        working-directory: ./tests/fixtures/cases
         with:
           command: run
           args: -- --log debug setup

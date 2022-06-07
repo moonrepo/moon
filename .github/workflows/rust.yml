@@ -31,11 +31,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
+        name: Setup toolchain
         with:
           toolchain: 1.61.0
           profile: minimal
           components: rustfmt
       - uses: actions-rs/cargo@v1
+        name: Check formatting
         with:
           command: fmt
           args: --all
@@ -58,11 +60,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
+        name: Setup toolchain
         with:
           toolchain: 1.61.0
           profile: minimal
           components: clippy
       - uses: actions-rs/cargo@v1
+        name: Run linter
         with:
           command: clippy
           args: --workspace --all-targets
@@ -85,24 +89,30 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
+        name: Setup toolchain
         with:
           toolchain: 1.61.0
           profile: minimal
           components: llvm-tools-preview
       - uses: actions-rs/cargo@v1
+        name: Install grcov
         with:
           command: install
           args: --force grcov
       - uses: actions-rs/cargo@v1
+        name: Build debug binary
         with:
           command: build
         env:
           RUSTFLAGS: -Cinstrument-coverage
-      - uses: actions-rs/cargo@v1
+      - uses: marcopolo/cargo@master
+        name: Setup moon toolchain
         with:
           command: run
           args: -- --log debug setup
+          working-directory: ./tests/fixtures/cases
       - uses: actions-rs/cargo@v1
+        name: Run tests
         with:
           command: test
           args: --workspace

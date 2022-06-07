@@ -49,17 +49,13 @@ args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
 
 # CODE COVERAGE
 
-[tasks.create-coverage-dir]
-script = "mkdir -p ./coverage"
-condition = { platforms = ["mac", "linux"] }
-
 [tasks.test-coverage]
 env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "moon-%p-%m.profraw" }
-run_task = { name = ["build", "test", "create-coverage-dir"] }
+run_task = { name = ["build", "test"] }
 
 [tasks.generate-report]
 command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "cobertura", "--branch", "--ignore-not-existing", "-o", "./coverage/report.xml"]
+args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "cobertura", "--branch", "--ignore-not-existing", "-o", "./coverage.xml"]
 
 [tasks.generate-html]
 command = "grcov"

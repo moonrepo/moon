@@ -1,3 +1,6 @@
+# Keep commands in sync with Makefile.toml! We don't use `cargo-make`
+# in CI as it adds roughly 10 minutes to the overall time.
+
 name: Rust
 on:
   push:
@@ -28,18 +31,16 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
+        name: Setup toolchain
         with:
           toolchain: 1.61.0
           profile: minimal
           components: rustfmt
       - uses: actions-rs/cargo@v1
+        name: Check formatting
         with:
-          command: install
-          args: --debug --force cargo-make
-      - uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: format
+          command: fmt
+          args: --all
   lint:
     name: Lint
     runs-on: ${{ matrix.os }}
@@ -59,18 +60,16 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
+        name: Setup toolchain
         with:
           toolchain: 1.61.0
           profile: minimal
           components: clippy
       - uses: actions-rs/cargo@v1
+        name: Run linter
         with:
-          command: install
-          args: --debug --force cargo-make
-      - uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: lint
+          command: clippy
+          args: --workspace --all-targets
   test:
     name: Test
     runs-on: ${{ matrix.os }}
@@ -90,25 +89,42 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
+        name: Setup toolchain
         with:
           toolchain: 1.61.0
           profile: minimal
           components: llvm-tools-preview
       - uses: actions-rs/cargo@v1
+        name: Install grcov
         with:
           command: install
-          args: --force cargo-make grcov
+          args: --force grcov
       - uses: actions-rs/cargo@v1
+        name: Build debug binary
         with:
-          command: make
-          args: test-coverage
+          command: build
+        env:
+          RUSTFLAGS: -Cinstrument-coverage
+      - uses: marcopolo/cargo@master
+        name: Setup moon toolchain
+        with:
+          command: run
+          args: -- --log debug setup
+          working-directory: ./tests/fixtures/cases
+      - uses: actions-rs/cargo@v1
+        name: Run tests
+        with:
+          command: test
+          args: --workspace
+        env:
+          RUSTFLAGS: -Cinstrument-coverage
+          LLVM_PROFILE_FILE: moon-%p-%m.profraw
       # Windows fails to compile right now...
       - name: Generate code coverage
         if: ${{ matrix.os != 'windows-latest' }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: generate-report
+        run:
+          grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
+          ./report.txt
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.os != 'windows-latest' }}
         name: Upload coverage report

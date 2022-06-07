@@ -102,7 +102,6 @@ jobs:
         with:
           command: make
           args: test-coverage
-      - run: ls -la .
       # Windows fails to compile right now...
       - name: Generate code coverage
         if: ${{ matrix.os != 'windows-latest' }}
@@ -128,7 +127,6 @@ jobs:
         name: Download coverage reports
         with:
           path: coverage
-      - run: ls -laR ./coverage
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:

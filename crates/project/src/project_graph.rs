@@ -1,8 +1,12 @@
 use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
+use crate::helpers::detect_projects_with_globs;
 use crate::project::Project;
-use crate::types::TouchedFilePaths;
-use moon_config::constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use crate::types::{ProjectsSourceMap, TouchedFilePaths};
+use moon_cache::CacheEngine;
+use moon_config::constants::{
+    CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME, FLAG_PROJECTS_USING_GLOB,
+};
 use moon_config::{GlobalProjectConfig, ProjectID};
 use moon_logger::{color, debug, map_list, trace};
 use petgraph::dot::{Config, Dot};
@@ -19,6 +23,56 @@ type IndicesType = HashMap<ProjectID, NodeIndex>;
 const LOG_TARGET: &str = "moon:project-graph";
 const READ_ERROR: &str = "Failed to acquire a read lock";
 const WRITE_ERROR: &str = "Failed to acquire a write lock";
+
+async fn load_projects_from_cache(
+    workspace_root: &Path,
+    projects: &ProjectsSourceMap,
+    engine: &CacheEngine,
+) -> Result<ProjectsSourceMap, ProjectError> {
+    // Projects were mapped manually and are not using globs
+    if !projects.contains_key(FLAG_PROJECTS_USING_GLOB) {
+        return Ok(projects.clone());
+    }
+
+    let mut cache = engine.cache_projects_state().await?;
+
+    // Return the values from the cache
+    if !cache.item.projects.is_empty() {
+        debug!(target: LOG_TARGET, "Loading projects from cache");
+
+        return Ok(cache.item.projects);
+    }
+
+    // Extract globs from our fake projects map
+    let globs = projects
+        .iter()
+        .filter_map(|(key, value)| {
+            if key == FLAG_PROJECTS_USING_GLOB {
+                None
+            } else {
+                Some(value.clone())
+            }
+        })
+        .collect::<Vec<String>>();
+
+    debug!(
+        target: LOG_TARGET,
+        "Finding projects with globs: {}",
+        map_list(&globs, |g| color::file(g))
+    );
+
+    // Generate a new projects map by globbing the filesystem
+    let mut map = HashMap::new();
+
+    detect_projects_with_globs(workspace_root, &globs, &mut map)?;
+
+    // Update the cache
+    cache.item.globs = globs;
+    cache.item.projects = map.clone();
+    cache.save().await?;
+
+    Ok(map)
+}
 
 pub struct ProjectGraph {
     /// The global project configuration that all projects inherit from.
@@ -41,11 +95,12 @@ pub struct ProjectGraph {
 }
 
 impl ProjectGraph {
-    pub fn new(
+    pub async fn create(
         workspace_root: &Path,
         global_config: GlobalProjectConfig,
-        projects_config: &HashMap<ProjectID, String>,
-    ) -> ProjectGraph {
+        projects_config: &ProjectsSourceMap,
+        cache: &CacheEngine,
+    ) -> Result<ProjectGraph, ProjectError> {
         debug!(
             target: LOG_TARGET,
             "Creating project graph with {} projects",
@@ -62,13 +117,14 @@ impl ProjectGraph {
             ..Project::default()
         });
 
-        ProjectGraph {
+        Ok(ProjectGraph {
             global_config,
             graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(HashMap::new())),
-            projects_config: projects_config.clone(),
+            projects_config: load_projects_from_cache(workspace_root, projects_config, cache)
+                .await?,
             workspace_root: workspace_root.to_path_buf(),
-        }
+        })
     }
 
     /// Return a list of all configured project IDs in ascending order.

@@ -1,5 +1,6 @@
 use moon_logger::warn;
 use std::env;
+use std::time::SystemTime;
 
 pub const LOG_TARGET: &str = "moon:cache";
 
@@ -34,6 +35,13 @@ pub fn is_readable() -> bool {
 
 pub fn is_writable() -> bool {
     get_cache_env_var() == "write"
+}
+
+pub fn to_millis(time: SystemTime) -> u128 {
+    match time.duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(d) => d.as_millis(),
+        Err(_) => 0,
+    }
 }
 
 #[cfg(test)]

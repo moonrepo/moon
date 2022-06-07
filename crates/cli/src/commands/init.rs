@@ -1,3 +1,4 @@
+use clap::ArgEnum;
 use dialoguer::{Confirm, Select};
 use moon_config::constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_config::package::{PackageJson, Workspaces};
@@ -7,31 +8,85 @@ use moon_config::{
 };
 use moon_lang::is_using_package_manager;
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
-use moon_logger::{color, warn};
+use moon_logger::color;
+use moon_project::detect_projects_with_globs;
 use moon_terminal::create_theme;
-use moon_utils::{fs, glob, path, regex};
-use std::collections::BTreeMap;
+use moon_utils::{fs, path};
+use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
+#[derive(ArgEnum, Clone, Debug)]
+pub enum PackageManager {
+    Npm,
+    Pnpm,
+    Yarn,
+}
+
+impl PackageManager {
+    fn get_option_index(&self) -> usize {
+        match self {
+            PackageManager::Npm => 0,
+            PackageManager::Pnpm => 1,
+            PackageManager::Yarn => 2,
+        }
+    }
+}
+
+impl Default for PackageManager {
+    fn default() -> Self {
+        PackageManager::Npm
+    }
+}
+
+#[derive(ArgEnum, Clone, Debug)]
+pub enum InheritProjectsAs {
+    None,
+    GlobsList,
+    ProjectsMap,
+}
+
+impl InheritProjectsAs {
+    fn get_option_index(&self) -> usize {
+        match self {
+            InheritProjectsAs::None => 0,
+            InheritProjectsAs::GlobsList => 1,
+            InheritProjectsAs::ProjectsMap => 2,
+        }
+    }
+}
+
+impl Default for InheritProjectsAs {
+    fn default() -> Self {
+        InheritProjectsAs::None
+    }
+}
+
+pub struct InitOptions {
+    pub force: bool,
+    pub inherit_projects: InheritProjectsAs,
+    pub package_manager: PackageManager,
+    pub yes: bool,
+}
+
 type AnyError = Box<dyn std::error::Error>;
 
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
-fn verify_dest_dir(dest_dir: &Path, yes: bool, force: bool) -> Result<Option<PathBuf>, AnyError> {
+fn verify_dest_dir(dest_dir: &Path, options: &InitOptions) -> Result<Option<PathBuf>, AnyError> {
     let theme = create_theme();
 
-    if yes
+    if options.yes
         || Confirm::with_theme(&theme)
             .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
             .interact()?
     {
         let moon_dir = dest_dir.join(CONFIG_DIRNAME);
 
-        if !force
+        if !options.force
             && moon_dir.exists()
             && !Confirm::with_theme(&theme)
                 .with_prompt("Moon has already been initialized, overwrite it?")
@@ -48,7 +103,10 @@ fn verify_dest_dir(dest_dir: &Path, yes: bool, force: bool) -> Result<Option<Pat
 
 /// Verify the package manager to use. If a `package.json` exists,
 /// and the `packageManager` field is defined, use that.
-async fn detect_package_manager(dest_dir: &Path, yes: bool) -> Result<(String, String), AnyError> {
+async fn detect_package_manager(
+    dest_dir: &Path,
+    options: &InitOptions,
+) -> Result<(String, String), AnyError> {
     let pkg_path = dest_dir.join("package.json");
     let mut pm_type = String::new();
     let mut pm_version = String::new();
@@ -82,19 +140,21 @@ async fn detect_package_manager(dest_dir: &Path, yes: bool) -> Result<(String, S
 
     // If no value again, ask for explicit input
     if pm_type.is_empty() {
-        if yes {
-            pm_type = String::from("npm");
+        let items = vec!["npm", "pnpm", "yarn"];
+        let default_index = options.package_manager.get_option_index();
+
+        let index = if options.yes {
+            default_index
         } else {
-            let items = vec!["npm", "pnpm", "yarn"];
-            let index = Select::with_theme(&create_theme())
+            Select::with_theme(&create_theme())
                 .with_prompt("Which package manager?")
                 .items(&items)
-                .default(0)
+                .default(default_index)
                 .interact_opt()?
-                .unwrap_or(0);
+                .unwrap_or(default_index)
+        };
 
-            pm_type = String::from(items[index]);
-        }
+        pm_type = String::from(items[index]);
     }
 
     // If no version, fallback to configuration default
@@ -129,85 +189,69 @@ fn detect_node_version(dest_dir: &Path) -> Result<String, AnyError> {
     Ok(default_node_version())
 }
 
-/// Infer a project name from a source path, by using the name of
-/// the project folder.
-fn infer_project_name_and_source(source: &str) -> (String, String) {
-    let source = path::standardize_separators(source);
-
-    if source.contains('/') {
-        (source.split('/').last().unwrap().to_owned(), source)
-    } else {
-        (source.clone(), source)
-    }
-}
-
-/// For each pattern in the workspaces list, glob the file system
-/// for potential projects, and infer their name and source.
-fn inherit_projects_from_workspaces(
-    dest_dir: &Path,
-    workspaces: Vec<String>,
-    projects: &mut BTreeMap<String, String>,
-) -> Result<(), AnyError> {
-    for path in glob::walk(dest_dir, &workspaces)? {
-        if path.is_dir() {
-            let (id, source) = infer_project_name_and_source(
-                &path.strip_prefix(dest_dir).unwrap().to_string_lossy(),
-            );
-            let id = regex::clean_id(&id);
-
-            if let Some(existing_source) = projects.get(&id) {
-                warn!(
-                    target: "moon:init",
-                    "A project already exists for {} at source {}. Skipping conflicting source {}.",
-                    color::id(&id),
-                    color::file(existing_source),
-                    color::file(&source)
-                );
-            } else {
-                projects.insert(id, source);
-            }
-        }
-    }
-
-    Ok(())
-}
-
 /// Detect potential projects (for existing repos only) by
 /// inspecting the `workspaces` field in a root `package.json`.
-async fn detect_projects(dest_dir: &Path, yes: bool) -> Result<BTreeMap<String, String>, AnyError> {
+async fn detect_projects(
+    dest_dir: &Path,
+    options: &InitOptions,
+) -> Result<(BTreeMap<String, String>, Vec<String>), AnyError> {
     let pkg_path = dest_dir.join("package.json");
-    let mut projects = BTreeMap::new();
+    let mut projects = HashMap::new();
+    let mut project_globs = vec![];
 
     if pkg_path.exists() {
         if let Ok(pkg) = PackageJson::load(&pkg_path).await {
             if let Some(workspaces) = pkg.workspaces {
-                if yes
-                    || Confirm::with_theme(&create_theme())
+                let items = vec![
+                    "Don't inherit",
+                    "As a list of globs",
+                    "As a map of project locations",
+                ];
+                let default_index = options.inherit_projects.get_option_index();
+
+                let index = if options.yes {
+                    default_index
+                } else {
+                    Select::with_theme(&create_theme())
                         .with_prompt(format!(
                             "Inherit projects from {} workspaces?",
                             color::file("package.json")
                         ))
-                        .interact()?
-                {
-                    let packages = match workspaces {
-                        Workspaces::Array(list) => list,
-                        Workspaces::Object(object) => object.packages.unwrap_or_default(),
-                    };
+                        .items(&items)
+                        .default(default_index)
+                        .interact_opt()?
+                        .unwrap_or(default_index)
+                };
 
-                    inherit_projects_from_workspaces(dest_dir, packages, &mut projects)?;
+                let globs = match workspaces {
+                    Workspaces::Array(list) => list,
+                    Workspaces::Object(object) => object.packages.unwrap_or_default(),
+                };
+
+                if index == 1 {
+                    project_globs.extend(globs);
+                } else if index == 2 {
+                    detect_projects_with_globs(dest_dir, &globs, &mut projects)?;
                 }
             }
         }
     }
 
-    if projects.is_empty() {
+    if projects.is_empty() && project_globs.is_empty() {
         projects.insert("example".to_owned(), "apps/example".to_owned());
     }
 
-    Ok(projects)
+    // Sort the projects for template rendering
+    let mut sorted_projects = BTreeMap::new();
+
+    for (key, value) in projects {
+        sorted_projects.insert(key, value);
+    }
+
+    Ok((sorted_projects, project_globs))
 }
 
-pub async fn init(dest: &str, yes: bool, force: bool) -> Result<(), AnyError> {
+pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     let working_dir = env::current_dir().unwrap();
     let dest_path = PathBuf::from(dest);
     let dest_dir = if dest == "." {
@@ -220,13 +264,13 @@ pub async fn init(dest: &str, yes: bool, force: bool) -> Result<(), AnyError> {
 
     // Extract template variables
     let dest_dir = path::normalize(&dest_dir);
-    let moon_dir = match verify_dest_dir(&dest_dir, yes, force)? {
+    let moon_dir = match verify_dest_dir(&dest_dir, &options)? {
         Some(dir) => dir,
         None => return Ok(()),
     };
-    let package_manager = detect_package_manager(&dest_dir, yes).await?;
+    let package_manager = detect_package_manager(&dest_dir, &options).await?;
     let node_version = detect_node_version(&dest_dir)?;
-    let projects = detect_projects(&dest_dir, yes).await?;
+    let (projects, project_globs) = detect_projects(&dest_dir, &options).await?;
 
     // Generate a template
     let mut context = Context::new();
@@ -234,6 +278,7 @@ pub async fn init(dest: &str, yes: bool, force: bool) -> Result<(), AnyError> {
     context.insert("package_manager_version", &package_manager.1);
     context.insert("node_version", &node_version);
     context.insert("projects", &projects);
+    context.insert("project_globs", &project_globs);
 
     let mut tera = Tera::default();
     tera.add_raw_template("workspace", load_workspace_config_template())?;

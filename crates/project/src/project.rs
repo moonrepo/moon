@@ -373,11 +373,8 @@ impl Project {
 
         if package_path.exists() {
             return match PackageJson::load(&package_path).await {
-                Ok(json) => Ok(Some(json)),
-                Err(error) => Err(ProjectError::InvalidPackageJson(
-                    String::from(&self.source),
-                    error.to_string(),
-                )),
+                Ok(cfg) => Ok(Some(cfg)),
+                Err(error) => Err(ProjectError::Moon(error)),
             };
         }
 
@@ -401,11 +398,7 @@ impl Project {
         if tsconfig_path.exists() {
             return match TsConfigJson::load(&tsconfig_path).await {
                 Ok(cfg) => Ok(Some(cfg)),
-                Err(error) => Err(ProjectError::InvalidTsConfigJson(
-                    String::from(&self.source),
-                    String::from(tsconfig_name),
-                    error.to_string(),
-                )),
+                Err(error) => Err(ProjectError::Moon(error)),
             };
         }
 

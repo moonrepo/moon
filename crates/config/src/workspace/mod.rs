@@ -1,5 +1,4 @@
 // .moon/workspace.yml
-#![allow(rustdoc::bare_urls)]
 
 pub mod node;
 mod typescript;
@@ -7,7 +6,7 @@ mod vcs;
 
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
-use crate::types::FilePath;
+use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
@@ -15,19 +14,29 @@ use figment::{
     Figment, Metadata, Profile, Provider,
 };
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use schemars::gen::SchemaGenerator;
+use schemars::schema::Schema;
+use schemars::{schema_for, JsonSchema};
+use serde::de::{self, MapAccess, SeqAccess};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 use std::env;
+use std::fmt;
 use std::path::PathBuf;
 pub use typescript::TypeScriptConfig;
 use validator::{Validate, ValidationError, ValidationErrors};
 pub use vcs::{VcsConfig, VcsManager};
 
+type ProjectsMap = HashMap<String, FilePath>;
+
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
-fn validate_projects(projects: &HashMap<String, FilePath>) -> Result<(), ValidationError> {
+fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
+    if projects.contains_key(constants::FLAG_PROJECTS_USING_GLOB) {
+        return Ok(());
+    }
+
     for (key, value) in projects {
         validate_id(&format!("projects.{}", key), key)?;
 
@@ -48,8 +57,10 @@ pub struct WorkspaceConfig {
     pub node: NodeConfig,
 
     #[serde(default)]
+    #[serde(deserialize_with = "deserialize_projects")]
+    #[schemars(schema_with = "make_projects_schema")]
     #[validate(custom = "validate_projects")]
-    pub projects: HashMap<String, FilePath>,
+    pub projects: ProjectsMap,
 
     #[serde(default)]
     #[validate]
@@ -120,6 +131,80 @@ impl WorkspaceConfig {
 
         Ok(config)
     }
+}
+
+// SERDE
+
+struct DeserializeProjects;
+
+impl<'de> de::Visitor<'de> for DeserializeProjects {
+    type Value = ProjectsMap;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a sequence of globs or a map of projects")
+    }
+
+    fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: MapAccess<'de>,
+    {
+        let mut map = HashMap::with_capacity(visitor.size_hint().unwrap_or(0));
+
+        while let Some((key, value)) = visitor.next_entry()? {
+            map.insert(key, value);
+        }
+
+        Ok(map)
+    }
+
+    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: SeqAccess<'de>,
+    {
+        let mut map = HashMap::new();
+        let mut index: u8 = 65; // ASCII A
+
+        while let Some(elem) = visitor.next_element()? {
+            // We can't use an integer as a key, as our project ID
+            // validation will fail, so convert integers to ASCII chars.
+            map.insert((index as char).to_string(), elem);
+            index += 1;
+        }
+
+        // We want to defer globbing so that we can cache it through
+        // our engine, so we must fake this here until config resolving
+        // has completed. Annoying, but a serde limitation.
+        map.insert(
+            constants::FLAG_PROJECTS_USING_GLOB.to_owned(),
+            "true".to_owned(),
+        );
+
+        Ok(map)
+    }
+}
+
+fn deserialize_projects<'de, D>(deserializer: D) -> Result<ProjectsMap, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    deserializer.deserialize_any(DeserializeProjects)
+}
+
+// JSON SCHEMA
+
+#[derive(JsonSchema)]
+#[serde(untagged)]
+enum ProjectsField {
+    #[allow(dead_code)]
+    Map(ProjectsMap),
+    #[allow(dead_code)]
+    Globs(Vec<FileGlob>),
+}
+
+fn make_projects_schema(_gen: &mut SchemaGenerator) -> Schema {
+    let root = schema_for!(ProjectsField);
+
+    Schema::Object(root.schema)
 }
 
 #[cfg(test)]
@@ -323,7 +408,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.version, String::from("4.5.6"),);
+                assert_eq!(config.node.version, String::from("4.5.6"));
 
                 Ok(())
             });
@@ -391,7 +476,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.npm.version, String::from("4.5.6"),);
+                assert_eq!(config.node.npm.version, String::from("4.5.6"));
 
                 Ok(())
             });
@@ -460,7 +545,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.pnpm.unwrap().version, String::from("4.5.6"),);
+                assert_eq!(config.node.pnpm.unwrap().version, String::from("4.5.6"));
 
                 Ok(())
             });
@@ -529,7 +614,7 @@ projects: {}"#,
 
                 let config = super::load_jailed_config()?;
 
-                assert_eq!(config.node.yarn.unwrap().version, String::from("4.5.6"),);
+                assert_eq!(config.node.yarn.unwrap().version, String::from("4.5.6"));
 
                 Ok(())
             });
@@ -537,11 +622,12 @@ projects: {}"#,
     }
 
     mod projects {
+        use super::*;
         use std::collections::HashMap;
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>projects</id>: Expected a map type, received string \"apps/*\"."
+            expected = "Invalid field <id>projects</id>: Expected a sequence of globs or a map of projects type, received string \"apps/*\"."
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -615,6 +701,35 @@ projects:
                         (String::from("app"), String::from("apps/app")),
                         (String::from("foo"), String::from("./packages/foo"))
                     ]),
+                );
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_globs() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+projects:
+    - 'apps/*'
+    - 'packages/*'"#,
+                )?;
+
+                let config = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config.projects,
+                    HashMap::from([
+                        (
+                            constants::FLAG_PROJECTS_USING_GLOB.to_owned(),
+                            "true".to_owned()
+                        ),
+                        ("A".to_owned(), "apps/*".to_owned()),
+                        ("B".to_owned(), "packages/*".to_owned())
+                    ])
                 );
 
                 Ok(())

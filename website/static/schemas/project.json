@@ -147,7 +147,7 @@
       "type": "object",
       "properties": {
         "args": {
-          "title": "Args",
+          "title": "ArgsField",
           "default": null,
           "anyOf": [
             {

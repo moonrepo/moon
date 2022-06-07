@@ -10,8 +10,8 @@ files, assets, resources, and more. A project must exist and be configured withi
 
 A project identifier is a unique resource for locating a project. The ID is explicitly configured
 within [`.moon/workspace.yml`](../config/workspace), as a key within the
-[`projects`](../config/workspace#projects) setting, and can be written in camelCase, kebab-case, or
-snake_case.
+[`projects`](../config/workspace#projects) setting, and can be written in camel/kebab/snake case.
+IDs support `a-z`, `A-Z`, `0-9`, `_`, `-`, and must start with a character.
 
 IDs are used heavily by configuration and the command line to link and reference everything. They're
 also a much easier concept for remembering projects than file system paths, and they typically can

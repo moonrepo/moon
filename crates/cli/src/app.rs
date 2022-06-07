@@ -1,6 +1,7 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
 use crate::commands::bin::BinTools;
+use crate::commands::init::{InheritProjectsAs, PackageManager};
 use crate::commands::run::RunStatus;
 use crate::enums::{CacheMode, LogLevel};
 use clap::{Parser, Subcommand};
@@ -19,7 +20,8 @@ pub enum Commands {
     // moon init
     #[clap(
         name = "init",
-        about = "Initialize a new moon repository and scaffold config files."
+        about = "Initialize a new moon repository and scaffold config files.",
+        rename_all = "camelCase"
     )]
     Init {
         #[clap(help = "Destination to initialize in", default_value = ".")]
@@ -27,6 +29,22 @@ pub enum Commands {
 
         #[clap(long, help = "Overwrite existing configurations")]
         force: bool,
+
+        #[clap(
+            arg_enum,
+            long,
+            help = "Inherit projects from `package.json` workspaces",
+            default_value_t
+        )]
+        inherit_projects: InheritProjectsAs,
+
+        #[clap(
+            arg_enum,
+            long,
+            help = "Package manager to configure and use",
+            default_value_t
+        )]
+        package_manager: PackageManager,
 
         #[clap(long, help = "Skip prompts and use default values")]
         yes: bool,

@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Hasher {
+pub struct TargetHasher {
     // Task `command`
     command: String,
 
@@ -50,12 +50,12 @@ pub struct Hasher {
     version: String,
 }
 
-impl Hasher {
+impl TargetHasher {
     pub fn new(node_version: String) -> Self {
-        Hasher {
+        TargetHasher {
             node_version,
             version: String::from("1"),
-            ..Hasher::default()
+            ..TargetHasher::default()
         }
     }
 
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn returns_default_hash() {
-        let hasher = Hasher::new(String::from("0.0.0"));
+        let hasher = TargetHasher::new(String::from("0.0.0"));
 
         assert_eq!(
             hasher.to_hash(),
@@ -187,15 +187,15 @@ mod tests {
 
     #[test]
     fn returns_same_hash_if_called_again() {
-        let hasher = Hasher::new(String::from("0.0.0"));
+        let hasher = TargetHasher::new(String::from("0.0.0"));
 
         assert_eq!(hasher.to_hash(), hasher.to_hash());
     }
 
     #[test]
     fn returns_different_hash_for_diff_contents() {
-        let hasher1 = Hasher::new(String::from("0.0.0"));
-        let hasher2 = Hasher::new(String::from("1.0.0"));
+        let hasher1 = TargetHasher::new(String::from("0.0.0"));
+        let hasher2 = TargetHasher::new(String::from("1.0.0"));
 
         assert_ne!(hasher1.to_hash(), hasher2.to_hash());
     }
@@ -208,10 +208,10 @@ mod tests {
             let mut package1 = PackageJson::default();
             package1.add_dependency("react".to_owned(), "17.0.0".to_owned(), true);
 
-            let mut hasher1 = Hasher::new(String::from("0.0.0"));
+            let mut hasher1 = TargetHasher::new(String::from("0.0.0"));
             hasher1.hash_package_json(&package1);
 
-            let mut hasher2 = Hasher::new(String::from("0.0.0"));
+            let mut hasher2 = TargetHasher::new(String::from("0.0.0"));
             hasher2.hash_package_json(&package1);
             hasher2.hash_package_json(&package1);
 
@@ -226,11 +226,11 @@ mod tests {
             let mut package2 = PackageJson::default();
             package2.add_dependency("react-dom".to_owned(), "17.0.0".to_owned(), true);
 
-            let mut hasher1 = Hasher::new(String::from("0.0.0"));
+            let mut hasher1 = TargetHasher::new(String::from("0.0.0"));
             hasher1.hash_package_json(&package2);
             hasher1.hash_package_json(&package1);
 
-            let mut hasher2 = Hasher::new(String::from("0.0.0"));
+            let mut hasher2 = TargetHasher::new(String::from("0.0.0"));
             hasher2.hash_package_json(&package1);
             hasher2.hash_package_json(&package2);
 
@@ -245,7 +245,7 @@ mod tests {
             let mut package2 = PackageJson::default();
             package2.add_dependency("react".to_owned(), "18.0.0".to_owned(), true);
 
-            let mut hasher1 = Hasher::new(String::from("0.0.0"));
+            let mut hasher1 = TargetHasher::new(String::from("0.0.0"));
             hasher1.hash_package_json(&package1);
 
             let hash1 = hasher1.to_hash();

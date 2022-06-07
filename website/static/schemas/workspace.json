@@ -25,11 +25,22 @@
       ]
     },
     "projects": {
+      "title": "ProjectsField",
       "default": {},
-      "type": "object",
-      "additionalProperties": {
-        "type": "string"
-      }
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "typescript": {
       "default": {

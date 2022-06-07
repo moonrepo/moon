@@ -156,7 +156,7 @@ mod caching {
 
         assert!(cache_path.exists());
 
-        let state = CacheItem::load(cache_path, RunTargetState::default())
+        let state = CacheItem::load(cache_path, RunTargetState::default(), 0)
             .await
             .unwrap();
 

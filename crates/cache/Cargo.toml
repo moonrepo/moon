@@ -7,12 +7,11 @@ edition = "2021"
 moon_config = { path = "../config"}
 moon_error = { path = "../error"}
 moon_logger = { path = "../logger"}
-moon_project = { path = "../project"}
 moon_utils = { path = "../utils"}
 serde = { version = "1.0.137", features = ["derive"] }
-sha2 = "0.10.2"
 
 [dev-dependencies]
 assert_fs = "1.0.7"
+filetime = "0.2.16"
 tokio = { version = "1.18.2", features = ["test-util"] }
 serial_test = "0.6.0"

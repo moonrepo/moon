@@ -55,7 +55,7 @@ run_task = { name = ["build", "test"] }
 
 [tasks.generate-report]
 command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "cobertura", "--branch", "--ignore-not-existing", "-o", "./coverage.xml"]
+args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "lcov", "--branch", "--ignore-not-existing", "-o", "./report.txt"]
 
 [tasks.generate-html]
 command = "grcov"

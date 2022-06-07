@@ -1,3 +1,6 @@
+# Keep commands in sync with Makefile.toml! We don't use `cargo-make`
+# in CI as it adds roughly 10 minutes to the overall time.
+
 name: Rust
 on:
   push:
@@ -34,12 +37,8 @@ jobs:
           components: rustfmt
       - uses: actions-rs/cargo@v1
         with:
-          command: install
-          args: --debug --force cargo-make
-      - uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: format
+          command: fmt
+          args: --all
   lint:
     name: Lint
     runs-on: ${{ matrix.os }}
@@ -65,12 +64,8 @@ jobs:
           components: clippy
       - uses: actions-rs/cargo@v1
         with:
-          command: install
-          args: --debug --force cargo-make
-      - uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: lint
+          command: clippy
+          args: --workspace --all-targets
   test:
     name: Test
     runs-on: ${{ matrix.os }}
@@ -97,18 +92,30 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: install
-          args: --force cargo-make grcov
+          args: --force grcov
       - uses: actions-rs/cargo@v1
         with:
-          command: make
-          args: test-coverage
+          command: build
+        env:
+          RUSTFLAGS: -Cinstrument-coverage
+      - uses: actions-rs/cargo@v1
+        working-directory: ./tests/fixtures/cases
+        with:
+          command: run
+          args: -- --log debug setup
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace
+        env:
+          RUSTFLAGS: -Cinstrument-coverage
+          LLVM_PROFILE_FILE: moon-%p-%m.profraw
       # Windows fails to compile right now...
       - name: Generate code coverage
         if: ${{ matrix.os != 'windows-latest' }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: generate-report
+        run:
+          grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
+          ./report.txt
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.os != 'windows-latest' }}
         name: Upload coverage report

@@ -47,10 +47,21 @@ const config = {
 		/** @type {import('@docusaurus/preset-classic').ThemeConfig} */
 		({
 			algolia: {
-				apiKey: '539ec09a4ded3e5f01f88b4bc1c6e41f',
-				appId: '9D74XH4YF0',
-				indexName: 'moon',
+				apiKey: 'dfe3e44100d7dfc6d7d3b644e8b09581',
+				appId: '400S075OEM',
+				indexName: 'moonrepo',
 			},
+			metadata: [
+				{
+					name: 'keywords',
+					content:
+						'moon, repo, build, system, ci, times, devx, developer, experience, tooling, tools',
+				},
+				{
+					name: 'og:image',
+					content: 'https://moonrepo.dev/img/hero/slate-bg.jpg',
+				},
+			],
 			navbar: {
 				// title: 'moon',
 				logo: {

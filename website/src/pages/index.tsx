@@ -173,11 +173,14 @@ const additionalFeatures: Feature[] = [
 	},
 ];
 
+const description =
+	'Reduces build times and repository maintenance costs through high-quality developer tooling.';
+
 export default function Home() {
 	const { siteConfig } = useDocusaurusContext();
 
 	return (
-		<Layout title={siteConfig.tagline} description={siteConfig.tagline}>
+		<Layout title={siteConfig.tagline} description={description}>
 			<Hero />
 
 			<main>

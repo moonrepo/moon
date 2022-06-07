@@ -165,7 +165,7 @@ impl CacheEngine {
         if is_writable() {
             let path = self.hashes_dir.join(format!("{}.json", hash));
 
-            trace!(target: "moon:cache:hash", "Creating hash {}", color::path(&path));
+            trace!(target: "moon:cache:hash", "Writing hash {}", color::path(&path));
 
             fs::write_json(&path, &hasher, true).await?;
         }

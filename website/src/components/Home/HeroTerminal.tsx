@@ -1,6 +1,6 @@
 /* eslint-disable sort-keys */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const COMMAND_TO_RUN = '$ moon run :build';
 
@@ -70,11 +70,32 @@ export default function HeroTerminal() {
 	const [lines, setLines] = useState<LineProps[]>([]);
 	const [startTime, setStartTime] = useState(0);
 	const [stopTime, setStopTime] = useState(0);
+	const isMounted = useRef(false);
+
+	useEffect(() => {
+		isMounted.current = true;
+
+		return () => {
+			isMounted.current = false;
+		};
+	}, []);
+
+	const runTimeout = useCallback((handler: () => void, delay: number) => {
+		if (!isMounted.current) {
+			return;
+		}
+
+		setTimeout(() => {
+			if (isMounted.current) {
+				handler();
+			}
+		}, delay);
+	}, []);
 
 	// Emulate the command being typed into the box
 	useEffect(() => {
 		if (typingIndex < COMMAND_TO_RUN.length) {
-			setTimeout(() => {
+			runTimeout(() => {
 				setTypingIndex((prev) => prev + 1);
 			}, 125);
 		} else {
@@ -92,7 +113,7 @@ export default function HeroTerminal() {
 		if (targetIndex >= TARGETS_CHAIN.length) {
 			setStopTime(Date.now());
 
-			setTimeout(() => {
+			runTimeout(() => {
 				setTypingIndex(0);
 				setTargetIndex(-1);
 				setLines([]);
@@ -109,13 +130,13 @@ export default function HeroTerminal() {
 		targets.forEach(([target, duration]) => {
 			setLines((prev) => [...prev, { type: 'start', message: target }]);
 
-			setTimeout(() => {
+			runTimeout(() => {
 				setLines((prev) => [...prev, { type: 'finish', message: target, time: duration }]);
 			}, duration);
 		});
 
 		// Set a delay to start the next targets
-		setTimeout(() => {
+		runTimeout(() => {
 			setTargetIndex((prev) => prev + 1);
 		}, longestDuration + 100);
 	}, [targetIndex]);

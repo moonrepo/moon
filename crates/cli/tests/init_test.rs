@@ -1,3 +1,4 @@
+use insta::assert_snapshot;
 use moon_utils::test::{create_fixtures_sandbox, create_moon_command_in};
 use predicates::prelude::*;
 use serial_test::serial;
@@ -109,31 +110,6 @@ fn appends_existing_gitignore_file() {
     );
 }
 
-// TODO: how to bypass stdin?
-// #[test]
-// #[serial]
-// fn doesnt_overwrite_existing_config() {
-//     let fixture = create_fixtures_sandbox("init-sandbox");
-//     let root = fixture.path();
-
-//     create_moon_command_in(root)
-//         .arg("init")
-//         .arg("--yes")
-//         .arg(&root)
-//         .assert();
-
-//     // Run again
-//     let assert = create_moon_command_in(root)
-//         .arg("init")
-//         .arg("--yes")
-//         .arg(&root)
-//         .assert();
-
-//     assert.success().code(0).stdout(predicate::str::starts_with(
-//         "Moon has already been initialized in",
-//     ));
-// }
-
 #[test]
 #[serial]
 fn does_overwrite_existing_config_if_force_passed() {
@@ -215,20 +191,19 @@ mod node {
 
         fs::write(
             &root.join("package.json"),
-            r#"{"workspaces":["packages/*", "app"]}"#,
+            r#"{"workspaces": ["packages/*", "app"] }"#,
         )
         .unwrap();
 
         create_moon_command_in(root)
             .arg("init")
             .arg("--yes")
+            .arg("--inheritProjects")
+            .arg("projects-map")
             .arg(&root)
             .assert();
 
-        let content = fs::read_to_string(workspace_config).unwrap();
-
-        assert!(predicate::str::contains("foo: 'packages/foo'").eval(&content));
-        assert!(predicate::str::contains("app: 'app'").eval(&content));
+        assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
     #[test]
@@ -253,13 +228,72 @@ mod node {
         create_moon_command_in(root)
             .arg("init")
             .arg("--yes")
+            .arg("--inheritProjects")
+            .arg("projects-map")
             .arg(&root)
             .assert();
 
-        let content = fs::read_to_string(workspace_config).unwrap();
+        assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
+    }
 
-        assert!(predicate::str::contains("bar: 'packages/bar'").eval(&content));
-        assert!(predicate::str::contains("app: 'app'").eval(&content));
+    #[test]
+    #[serial]
+    fn infers_globs_from_workspaces() {
+        let fixture = create_fixtures_sandbox("init-sandbox");
+        let root = fixture.path();
+        let workspace_config = root.join(".moon").join("workspace.yml");
+
+        fs::create_dir_all(root.join("packages").join("foo")).unwrap();
+        fs::write(&root.join("packages").join("foo").join("README"), "Hello").unwrap();
+
+        fs::create_dir_all(root.join("app")).unwrap();
+        fs::write(&root.join("app").join("README"), "World").unwrap();
+
+        fs::write(
+            &root.join("package.json"),
+            r#"{"workspaces": ["packages/*", "app"] }"#,
+        )
+        .unwrap();
+
+        create_moon_command_in(root)
+            .arg("init")
+            .arg("--yes")
+            .arg("--inheritProjects")
+            .arg("globs-list")
+            .arg(&root)
+            .assert();
+
+        assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
+    }
+
+    #[test]
+    #[serial]
+    fn infers_globs_from_workspaces_expanded() {
+        let fixture = create_fixtures_sandbox("init-sandbox");
+        let root = fixture.path();
+        let workspace_config = root.join(".moon").join("workspace.yml");
+
+        fs::create_dir_all(root.join("packages").join("bar")).unwrap();
+        fs::write(&root.join("packages").join("bar").join("README"), "Hello").unwrap();
+
+        fs::create_dir_all(root.join("app")).unwrap();
+        fs::write(&root.join("app").join("README"), "World").unwrap();
+
+        fs::write(
+            &root.join("package.json"),
+            r#"{"workspaces": { "packages": ["packages/*", "app"] }}"#,
+        )
+        .unwrap();
+
+        create_moon_command_in(root)
+            .arg("init")
+            .arg("--yes")
+            .arg("--inheritProjects")
+            .arg("globs-list")
+            .arg(&root)
+            .assert();
+
+        assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
     mod package_manager {

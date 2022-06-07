@@ -186,9 +186,9 @@ dependencies = [
 
 [[package]]
 name = "brownstone"
-version = "1.1.0"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "030ea61398f34f1395ccbeb046fb68c87b631d1f34567fed0f0f11fa35d18d8d"
+checksum = "c5839ee4f953e811bfdcf223f509cb2c6a3e1447959b0bff459405575bc17f22"
 dependencies = [
  "arrayvec",
 ]
@@ -1307,14 +1307,13 @@ name = "moon_cache"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
+ "filetime",
  "moon_config",
  "moon_error",
  "moon_logger",
- "moon_project",
  "moon_utils",
  "serde",
  "serial_test",
- "sha2",
  "tokio",
 ]
 
@@ -1377,6 +1376,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_hasher"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_project",
+ "moon_utils",
+ "serde",
+ "sha2",
+]
+
+[[package]]
 name = "moon_lang"
 version = "0.1.0"
 dependencies = [
@@ -1408,6 +1418,7 @@ dependencies = [
  "common-path",
  "insta",
  "itertools",
+ "moon_cache",
  "moon_config",
  "moon_error",
  "moon_logger",
@@ -1490,6 +1501,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_lang_node",
  "moon_logger",
  "moon_project",
@@ -1533,9 +1545,9 @@ dependencies = [
 
 [[package]]
 name = "nom-supreme"
-version = "0.6.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aadc66631948f6b65da03be4c4cd8bd104d481697ecbb9bbd65719b1ec60bc9f"
+checksum = "2bd3ae6c901f1959588759ff51c95d24b491ecb9ff91aa9c2ef4acc5b1dcab27"
 dependencies = [
  "brownstone",
  "indent_write",
@@ -2936,9 +2948,9 @@ checksum = "d554b7f530dee5964d9a9468d95c1f8b8acae4f282807e7d27d4b03099a46744"
 
 [[package]]
 name = "wax"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97a4ecdf7da7e42385f844503bac3e9a2a066838e3cb66c5f28ce03bafb2f90d"
+checksum = "06c7a3bac6110ac062b7b422a442b7ee23e07209e2784a036654cab1e71bbafc"
 dependencies = [
  "bstr",
  "const_format",

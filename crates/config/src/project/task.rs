@@ -130,15 +130,6 @@ pub struct TaskConfig {
 
 // SERDE
 
-#[derive(JsonSchema)]
-#[serde(untagged)]
-enum Args {
-    #[allow(dead_code)]
-    Str(String),
-    #[allow(dead_code)]
-    Vec(Vec<String>),
-}
-
 struct DeserializeArgs;
 
 impl<'de> de::Visitor<'de> for DeserializeArgs {
@@ -179,38 +170,21 @@ where
     Ok(Some(deserializer.deserialize_any(DeserializeArgs)?))
 }
 
+// JSON SCHEMA
+
+#[derive(JsonSchema)]
+#[serde(untagged)]
+enum ArgsField {
+    #[allow(dead_code)]
+    Str(String),
+    #[allow(dead_code)]
+    Vec(Vec<String>),
+}
+
 fn make_args_schema(_gen: &mut SchemaGenerator) -> Schema {
-    let root = schema_for!(Args);
+    let root = schema_for!(ArgsField);
 
     Schema::Object(root.schema)
-
-    // let mut schema: SchemaObject = <String>::json_schema(gen).into();
-    // schema.instance_type = None;
-    // schema.subschemas = Some(Box::new(SubschemaValidation {
-    //     one_of: Some(vec![
-    //         Schema::Object(SchemaObject {
-    //             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
-    //             ..SchemaObject::default()
-    //         }),
-    //         Schema::Object(SchemaObject {
-    //             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
-    //             array: Some(Box::new(ArrayValidation {
-    //                 items: Some(SingleOrVec::Single(Box::new(Schema::Object(
-    //                     SchemaObject {
-    //                         instance_type: Some(SingleOrVec::Single(Box::new(
-    //                             InstanceType::String,
-    //                         ))),
-    //                         ..SchemaObject::default()
-    //                     },
-    //                 )))),
-    //                 ..ArrayValidation::default()
-    //             })),
-    //             ..SchemaObject::default()
-    //         }),
-    //     ]),
-    //     ..SubschemaValidation::default()
-    // }));
-    // schema.into()
 }
 
 #[cfg(test)]

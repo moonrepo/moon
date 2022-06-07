@@ -8,8 +8,12 @@ node:
   addEnginesConstraint: false
 
 projects:
-  runtime: 'packages/runtime'
-  website: 'website'
+  - 'packages/*'
+  - '!packages/cli'
+  - '!packages/core-*'
+  - 'website'
+  # runtime: 'packages/runtime'
+  # website: 'website'
 
 vcs:
   defaultBranch: 'master'

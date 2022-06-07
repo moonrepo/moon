@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+pub type FileGlob = String;
+
 pub type FilePath = String;
 
 pub type FilePathOrGlob = String;

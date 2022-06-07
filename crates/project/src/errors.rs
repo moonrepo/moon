@@ -15,12 +15,6 @@ pub enum ProjectError {
     )]
     InvalidConfigFile(String, String),
 
-    #[error("Failed to parse and open <file>{0}/package.json</file>: {1}")]
-    InvalidPackageJson(String, String),
-
-    #[error("Failed to parse and open <file>{0}/{1}</file>: {2}")]
-    InvalidTsConfigJson(String, String, String),
-
     #[error("No project exists at path <file>{0}</file>.")]
     MissingProject(String),
 

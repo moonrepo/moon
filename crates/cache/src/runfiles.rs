@@ -14,7 +14,7 @@ impl CacheRunfile {
         path: PathBuf,
         data: &T,
     ) -> Result<CacheRunfile, MoonError> {
-        trace!(target: "moon:cache:runfile", "Creating runfile {}", color::path(&path));
+        trace!(target: "moon:cache:runfile", "Writing runfile {}", color::path(&path));
 
         fs::create_dir_all(path.parent().unwrap()).await?;
 

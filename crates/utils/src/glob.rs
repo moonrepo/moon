@@ -4,7 +4,7 @@ use moon_error::MoonError;
 use regex::Regex;
 use std::path::{Path, PathBuf};
 pub use wax::Glob;
-use wax::{Any, GlobError as WaxGlobError, Pattern};
+use wax::{Any, GlobError as WaxGlobError, LinkBehavior, Negation, Pattern};
 
 lazy_static! {
     pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"(//\?/)?[A-Z]:").unwrap();
@@ -21,7 +21,7 @@ impl<'t> GlobSet<'t> {
         let mut globs = vec![];
 
         for pattern in patterns {
-            globs.push(Glob::new(pattern).map_err(WaxGlobError::into_owned)?);
+            globs.push(create_glob(pattern)?);
         }
 
         Ok(GlobSet {
@@ -32,6 +32,10 @@ impl<'t> GlobSet<'t> {
     pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
         Ok(self.any.is_match(path))
     }
+}
+
+pub fn create_glob(pattern: &str) -> Result<Glob, GlobError> {
+    Ok(Glob::new(pattern).map_err(|e| e.into_owned())?)
 }
 
 // This is not very exhaustive and may be inaccurate.
@@ -96,35 +100,39 @@ pub fn normalize(path: &Path) -> Result<String, MoonError> {
 
 /// Wax currently doesn't support negated globs (starts with !),
 /// so we must extract them manually.
-pub fn split_patterns(patterns: &[String]) -> (Vec<String>, Vec<String>) {
+pub fn split_patterns(patterns: &[String]) -> Result<(Vec<Glob>, Vec<Glob>), GlobError> {
     let mut expressions = vec![];
     let mut negations = vec![];
 
     for pattern in patterns {
         if pattern.starts_with('!') {
-            negations.push(pattern.strip_prefix('!').unwrap().to_owned());
+            negations.push(create_glob(pattern.strip_prefix('!').unwrap())?);
         } else if pattern.starts_with('/') {
-            expressions.push(pattern.strip_prefix('/').unwrap().to_owned());
+            expressions.push(create_glob(pattern.strip_prefix('/').unwrap())?);
         } else {
-            expressions.push(pattern.clone());
+            expressions.push(create_glob(pattern)?);
         }
     }
 
-    (expressions, negations)
+    Ok((expressions, negations))
 }
 
 pub fn walk(base_dir: &Path, patterns: &[String]) -> Result<Vec<PathBuf>, GlobError> {
-    let (expressions, _negations) = split_patterns(patterns);
+    let (globs, negations) = split_patterns(patterns)?;
+    let negation = Negation::try_from_patterns(negations).unwrap();
     let mut paths = vec![];
 
-    for expression in expressions {
-        let glob = Glob::new(&expression).map_err(WaxGlobError::into_owned)?;
-
-        for entry in glob.walk(base_dir, usize::MAX)
-        // .not(&negations)
-        {
+    for glob in globs {
+        for entry in glob.walk_with_behavior(base_dir, LinkBehavior::ReadFile) {
             match entry {
-                Ok(e) => paths.push(e.into_path()),
+                Ok(e) => {
+                    // Filter out negated results
+                    if negation.target(&e).is_some() {
+                        continue;
+                    }
+
+                    paths.push(e.into_path());
+                }
                 Err(_) => {
                     // Will crash if the file doesnt exist
                     continue;

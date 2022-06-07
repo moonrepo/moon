@@ -11,7 +11,7 @@ pub use errors::format_errors;
 pub use project::global::GlobalProjectConfig;
 pub use project::task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
 pub use project::{ProjectConfig, ProjectMetadataConfig, ProjectType};
-pub use types::{FilePath, FilePathOrGlob, ProjectID, TargetID, TaskID};
+pub use types::{FileGlob, FilePath, FilePathOrGlob, ProjectID, TargetID, TaskID};
 pub use validator::ValidationErrors;
 pub use workspace::node::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,

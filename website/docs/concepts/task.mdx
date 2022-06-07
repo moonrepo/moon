@@ -10,7 +10,7 @@ in a parallel thread pool within moon's orchestration layer.
 
 A task identifier is a unique resource for locating a task _within_ a project. The ID is explicitly
 configured as a key within the [`tasks`](../config/project#tasks) setting, and can be written in
-camelCase, kebab-case, or snake_case.
+camel/kebab/snake case. IDs support `a-z`, `A-Z`, `0-9`, `_`, `-`, and must start with a character.
 
 A task ID can be paired with a project ID to create a [target](./target).
 

@@ -1,6 +1,7 @@
 mod constants;
 mod errors;
 mod file_group;
+mod helpers;
 mod project;
 mod project_graph;
 mod target;
@@ -11,6 +12,7 @@ mod types;
 
 pub use constants::ROOT_NODE_ID;
 pub use errors::{ProjectError, TargetError};
+pub use helpers::*;
 pub use types::*;
 
 // Projects

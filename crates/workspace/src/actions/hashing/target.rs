@@ -1,5 +1,5 @@
 use crate::{Workspace, WorkspaceError};
-use moon_cache::Hasher;
+use moon_hasher::TargetHasher;
 use moon_project::{ExpandedFiles, Project, Task};
 use moon_utils::path::path_to_string;
 use std::path::Path;
@@ -33,10 +33,10 @@ pub async fn create_target_hasher(
     project: &Project,
     task: &Task,
     passthrough_args: &[String],
-) -> Result<Hasher, WorkspaceError> {
+) -> Result<TargetHasher, WorkspaceError> {
     let vcs = workspace.detect_vcs()?;
     let globset = task.create_globset()?;
-    let mut hasher = Hasher::new(workspace.config.node.version.clone());
+    let mut hasher = TargetHasher::new(workspace.config.node.version.clone());
 
     hasher.hash_project(project);
     hasher.hash_task(task);

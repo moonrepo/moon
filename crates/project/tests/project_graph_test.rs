@@ -1,14 +1,15 @@
 use insta::assert_snapshot;
+use moon_cache::CacheEngine;
 use moon_config::GlobalProjectConfig;
 use moon_project::ProjectGraph;
 use moon_utils::string_vec;
 use moon_utils::test::get_fixtures_dir;
 use std::collections::HashMap;
 
-fn get_dependencies_graph() -> ProjectGraph {
+async fn get_dependencies_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependencies");
 
-    ProjectGraph::new(
+    ProjectGraph::create(
         &workspace_root,
         GlobalProjectConfig::default(),
         &HashMap::from([
@@ -17,13 +18,16 @@ fn get_dependencies_graph() -> ProjectGraph {
             ("c".to_owned(), "c".to_owned()),
             ("d".to_owned(), "d".to_owned()),
         ]),
+        &CacheEngine::create(&workspace_root).await.unwrap(),
     )
+    .await
+    .unwrap()
 }
 
-fn get_dependents_graph() -> ProjectGraph {
+async fn get_dependents_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependents");
 
-    ProjectGraph::new(
+    ProjectGraph::create(
         &workspace_root,
         GlobalProjectConfig::default(),
         &HashMap::from([
@@ -32,15 +36,18 @@ fn get_dependents_graph() -> ProjectGraph {
             ("c".to_owned(), "c".to_owned()),
             ("d".to_owned(), "d".to_owned()),
         ]),
+        &CacheEngine::create(&workspace_root).await.unwrap(),
     )
+    .await
+    .unwrap()
 }
 
 mod get_dependencies_of {
     use super::*;
 
-    #[test]
-    fn returns_dep_list() {
-        let graph = get_dependencies_graph();
+    #[tokio::test]
+    async fn returns_dep_list() {
+        let graph = get_dependencies_graph().await;
 
         let a = graph.load("a").unwrap();
         let b = graph.load("b").unwrap();
@@ -60,9 +67,9 @@ mod get_dependencies_of {
 mod get_dependents_of {
     use super::*;
 
-    #[test]
-    fn returns_dep_list() {
-        let graph = get_dependents_graph();
+    #[tokio::test]
+    async fn returns_dep_list() {
+        let graph = get_dependents_graph().await;
 
         let a = graph.load("a").unwrap();
         let b = graph.load("b").unwrap();
@@ -82,9 +89,9 @@ mod get_dependents_of {
 mod to_dot {
     use super::*;
 
-    #[test]
-    fn renders_tree() {
-        let graph = get_dependencies_graph();
+    #[tokio::test]
+    async fn renders_tree() {
+        let graph = get_dependencies_graph().await;
 
         graph.load("a").unwrap();
         graph.load("b").unwrap();

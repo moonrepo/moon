@@ -1,6 +1,5 @@
-use crate::hasher::Hasher;
 use crate::helpers::{is_writable, LOG_TARGET};
-use crate::items::{CacheItem, RunTargetState, WorkspaceState};
+use crate::items::{CacheItem, ProjectsState, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
 use moon_config::constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
@@ -64,6 +63,16 @@ impl CacheEngine {
                 target: String::from(target_id),
                 ..RunTargetState::default()
             },
+            0,
+        )
+        .await
+    }
+
+    pub async fn cache_projects_state(&self) -> Result<CacheItem<ProjectsState>, MoonError> {
+        CacheItem::load(
+            self.dir.join("projectsState.json"),
+            ProjectsState::default(),
+            90000, // Cache for 3 minutes
         )
         .await
     }
@@ -72,6 +81,7 @@ impl CacheEngine {
         CacheItem::load(
             self.dir.join("workspaceState.json"),
             WorkspaceState::default(),
+            0,
         )
         .await
     }
@@ -148,11 +158,14 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub async fn save_hash(&self, hash: &str, hasher: &Hasher) -> Result<(), MoonError> {
+    pub async fn save_hash<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>
+    where
+        T: ?Sized + Serialize,
+    {
         if is_writable() {
             let path = self.hashes_dir.join(format!("{}.json", hash));
 
-            trace!(target: "moon:cache:hash", "Creating hash {}", color::path(&path));
+            trace!(target: "moon:cache:hash", "Writing hash {}", color::path(&path));
 
             fs::write_json(&path, &hasher, true).await?;
         }
@@ -164,7 +177,7 @@ impl CacheEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::helpers::run_with_env;
+    use crate::helpers::{run_with_env, to_millis};
     use assert_fs::prelude::*;
     use serial_test::serial;
     use std::fs;
@@ -580,16 +593,155 @@ mod tests {
         }
     }
 
+    mod cache_projects_state {
+        use super::*;
+        use filetime::{set_file_mtime, FileTime};
+        use moon_utils::string_vec;
+        use std::collections::HashMap;
+        use std::time::SystemTime;
+
+        #[tokio::test]
+        #[serial]
+        async fn creates_parent_dir_on_call() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = cache.cache_projects_state().await.unwrap();
+
+            assert!(!item.path.exists());
+            assert!(item.path.parent().unwrap().exists());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        #[serial]
+        async fn loads_cache_if_it_exists() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/projectsState.json")
+                .write_str(r#"{"globs":["**/*"],"projects":{"foo":"bar"}}"#)
+                .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = cache.cache_projects_state().await.unwrap();
+
+            assert_eq!(
+                item.item,
+                ProjectsState {
+                    globs: string_vec!["**/*"],
+                    projects: HashMap::from([("foo".to_owned(), "bar".to_owned())]),
+                }
+            );
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        #[serial]
+        async fn loads_cache_if_it_exists_and_cache_is_readonly() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/projectsState.json")
+                .write_str(r#"{"globs":["**/*"],"projects":{"foo":"bar"}}"#)
+                .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = run_with_env("read", || cache.cache_projects_state())
+                .await
+                .unwrap();
+
+            assert_eq!(
+                item.item,
+                ProjectsState {
+                    globs: string_vec!["**/*"],
+                    projects: HashMap::from([("foo".to_owned(), "bar".to_owned())]),
+                }
+            );
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        #[serial]
+        async fn doesnt_load_if_it_exists_but_cache_is_off() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/projectsState.json")
+                .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
+                .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = run_with_env("off", || cache.cache_projects_state())
+                .await
+                .unwrap();
+
+            assert_eq!(item.item, ProjectsState::default());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        #[serial]
+        async fn doesnt_load_if_it_exists_but_cache_is_stale() {
+            let dir = assert_fs::TempDir::new().unwrap();
+
+            dir.child(".moon/cache/projectsState.json")
+                .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
+                .unwrap();
+
+            let now = to_millis(SystemTime::now()) - 100000;
+
+            set_file_mtime(
+                dir.path().join(".moon/cache/projectsState.json"),
+                FileTime::from_unix_time((now / 1000) as i64, 0),
+            )
+            .unwrap();
+
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let item = cache.cache_projects_state().await.unwrap();
+
+            assert_eq!(item.item, ProjectsState::default());
+
+            dir.close().unwrap();
+        }
+
+        #[tokio::test]
+        #[serial]
+        async fn saves_to_cache() {
+            let dir = assert_fs::TempDir::new().unwrap();
+            let cache = CacheEngine::create(dir.path()).await.unwrap();
+            let mut item = cache.cache_projects_state().await.unwrap();
+
+            item.item
+                .projects
+                .insert("foo".to_owned(), "bar".to_owned());
+
+            run_with_env("", || item.save()).await.unwrap();
+
+            assert_eq!(
+                fs::read_to_string(item.path).unwrap(),
+                r#"{"globs":[],"projects":{"foo":"bar"}}"#
+            );
+
+            dir.close().unwrap();
+        }
+    }
+
     mod save_hash {
         use super::*;
-        use crate::Hasher;
+        use serde::Deserialize;
+
+        #[derive(Default, Deserialize, Serialize)]
+        struct TestHasher {
+            field: String,
+        }
 
         #[tokio::test]
         #[serial]
         async fn creates_hash_file() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let hasher = Hasher::default();
+            let hasher = TestHasher::default();
 
             cache.save_hash("abc123", &hasher).await.unwrap();
 
@@ -603,7 +755,7 @@ mod tests {
         async fn doesnt_create_if_cache_off() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let hasher = Hasher::default();
+            let hasher = TestHasher::default();
 
             run_with_env("off", || cache.save_hash("abc123", &hasher))
                 .await
@@ -619,7 +771,7 @@ mod tests {
         async fn doesnt_create_if_cache_readonly() {
             let dir = assert_fs::TempDir::new().unwrap();
             let cache = CacheEngine::create(dir.path()).await.unwrap();
-            let hasher = Hasher::default();
+            let hasher = TestHasher::default();
 
             run_with_env("read", || cache.save_hash("abc123", &hasher))
                 .await

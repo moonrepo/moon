@@ -29,7 +29,7 @@ indicatif = "0.16.2"
 itertools = "0.10.3"
 strum = "0.24.0"
 strum_macros = "0.24.0"
-tera = "1.15.0"
+tera = { version = "1.15.0", features = ["preserve_order"] }
 tokio = { version = "1.18.2", features = ["full"] }
 
 [dev-dependencies]

@@ -49,11 +49,19 @@ fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionRunnerConfig {
     #[serde(default = "default_bool_true")]
     pub inherit_colors_for_piped_tasks: bool,
+}
+
+impl Default for ActionRunnerConfig {
+    fn default() -> Self {
+        ActionRunnerConfig {
+            inherit_colors_for_piped_tasks: true,
+        }
+    }
 }
 
 /// Docs: https://moonrepo.dev/docs/config/workspace

@@ -6,7 +6,7 @@
   "properties": {
     "actionRunner": {
       "default": {
-        "inheritColorsForPipedTasks": false
+        "inheritColorsForPipedTasks": true
       },
       "allOf": [
         {

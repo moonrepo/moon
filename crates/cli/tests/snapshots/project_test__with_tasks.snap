@@ -4,17 +4,17 @@ assertion_line: 76
 expression: get_assert_output(&assert)
 ---
 
-[38;5;16m[48;5;111m[1m TASKS [0m
+ TASKS 
 
 ID: tasks
 Source: tasks
 
-[38;5;16m[48;5;15m[1m TASKS [0m
+ TASKS 
 
 lint: eslint --cache --report-unused-disable-directives
 test: jest --cache --color
 
-[38;5;16m[48;5;15m[1m FILE GROUPS [0m
+ FILE GROUPS 
 
 sources:
  - src/**/*

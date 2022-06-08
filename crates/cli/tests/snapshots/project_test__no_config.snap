@@ -4,12 +4,12 @@ assertion_line: 33
 expression: get_assert_output(&assert)
 ---
 
-[38;5;16m[48;5;111m[1m NOCONFIG [0m
+ NOCONFIG 
 
 ID: noConfig
 Source: no-config
 
-[38;5;16m[48;5;15m[1m FILE GROUPS [0m
+ FILE GROUPS 
 
 sources:
  - src/**/*

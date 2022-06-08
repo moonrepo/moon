@@ -1,13 +1,11 @@
 use crate::path;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, trace};
-use std::env;
 use std::ffi::OsStr;
 use std::path::Path;
-use std::sync::Arc;
-use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader};
+use std::sync::{Arc, RwLock};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command as TokioCommand;
-use tokio::sync::RwLock;
 use tokio::task;
 
 pub use std::process::{ExitStatus, Output, Stdio};
@@ -184,112 +182,47 @@ impl Command {
             .spawn()
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
-        let mut captured_stdout = vec![];
-        let mut captured_stderr = vec![];
-
-        {
-            // We need to log the child process output to the parent terminal
-            // AND capture stdout/stderr so that we can cache it for future runs.
-            // This doesn't seem to be supported natively by `Stdio`, so I have
-            // this *real ugly* implementation to solve it. There's gotta be a
-            // better way to do this?
-            // https://stackoverflow.com/a/49063262
-            let mut stdout = BufReader::new(child.stdout.as_mut().unwrap());
-            let mut stderr = BufReader::new(child.stderr.as_mut().unwrap());
-
-            loop {
-                let stdout_fill = stdout.poll_fill_buf().await?;
-                let stderr_fill = stderr.poll_fill_buf().await?;
-
-                let (stdout_bytes, stderr_bytes) = match (stdout_fill, stderr_fill) {
-                    (stdout_data, stderr_data) => {
-                        captured_stdout
-                            .write_all(stdout_data)
-                            .expect("Couldn't write");
-                        captured_stderr
-                            .write_all(stderr_data)
-                            .expect("Couldn't write");
-
-                        (stdout_data.len(), stderr_data.len())
-                    }
-                    other => panic!("Some better error handling here... {:?}", other),
-                };
-
-                // if stdout_bytes == 0 && stderr_bytes == 0 {
-                //     // Seems less-than-ideal; should be some way of
-                //     // telling if the child has actually exited vs just
-                //     // not outputting anything.
-                //     break;
-                // }
-
-                // stdout.consume(stdout_bytes);
-                // stderr.consume(stderr_bytes);
-                break;
-            }
-        }
-
-        // Attempt to capture the child output
-        let mut output = child
-            .wait_with_output()
-            .await
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
-
-        // if output.stderr.is_empty() {
-        //     output.stderr = stderr.read().await.join("").into_bytes();
-        // }
-
-        // if output.stdout.is_empty() {
-        //     output.stdout = stdout.read().await.join("").into_bytes();
-        // }
-
-        self.handle_nonzero_status(&output)?;
-
-        Ok(output)
-    }
-
-    pub async fn exec_stream_and_capture_output_old(&mut self) -> Result<Output, MoonError> {
-        self.log_command_info(None);
-
-        let mut child = self
-            .cmd
-            .stderr(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
-
         // We need to log the child process output to the parent terminal
         // AND capture stdout/stderr so that we can cache it for future runs.
         // This doesn't seem to be supported natively by `Stdio`, so I have
         // this *real ugly* implementation to solve it. There's gotta be a
         // better way to do this?
         // https://stackoverflow.com/a/49063262
-        let err = BufReader::new(child.stderr.take().unwrap());
-        let out = BufReader::new(child.stdout.take().unwrap());
-
-        // Spawn additional threads for logging the buffer
-        let stderr = Arc::new(RwLock::new(vec![]));
-        let stdout = Arc::new(RwLock::new(vec![]));
-        let stderr_clone = Arc::clone(&stderr);
-        let stdout_clone = Arc::clone(&stdout);
+        let stderr = BufReader::new(child.stderr.take().unwrap());
+        let stdout = BufReader::new(child.stdout.take().unwrap());
+        let captured_stderr = Arc::new(RwLock::new(vec![]));
+        let captured_stdout = Arc::new(RwLock::new(vec![]));
+        let captured_stderr_clone = Arc::clone(&captured_stderr);
+        let captured_stdout_clone = Arc::clone(&captured_stdout);
 
         task::spawn(async move {
-            let mut lines = err.lines();
-            let mut stderr_write = stderr_clone.write().await;
+            let mut lines = stderr.lines();
+            let mut captured_lines = vec![];
 
             while let Some(line) = lines.next_line().await.unwrap() {
                 eprintln!("{}", line);
-                stderr_write.push(line);
+                captured_lines.push(line);
             }
+
+            captured_stderr_clone
+                .write()
+                .unwrap()
+                .extend(captured_lines);
         });
 
         task::spawn(async move {
-            let mut lines = out.lines();
-            let mut stdout_write = stdout_clone.write().await;
+            let mut lines = stdout.lines();
+            let mut captured_lines = vec![];
 
             while let Some(line) = lines.next_line().await.unwrap() {
                 println!("{}", line);
-                stdout_write.push(line);
+                captured_lines.push(line);
             }
+
+            captured_stdout_clone
+                .write()
+                .unwrap()
+                .extend(captured_lines);
         });
 
         // Attempt to capture the child output
@@ -299,11 +232,11 @@ impl Command {
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
         if output.stderr.is_empty() {
-            output.stderr = stderr.read().await.join("").into_bytes();
+            output.stderr = captured_stderr.read().unwrap().join("\n").into_bytes();
         }
 
         if output.stdout.is_empty() {
-            output.stdout = stdout.read().await.join("").into_bytes();
+            output.stdout = captured_stdout.read().unwrap().join("\n").into_bytes();
         }
 
         self.handle_nonzero_status(&output)?;

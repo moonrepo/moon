@@ -3,7 +3,6 @@ use console::{measure_text_width, style, Attribute, Style, Term};
 use core::fmt::Debug;
 use moon_logger::color;
 use moon_logger::color::Color;
-use std::env;
 use std::io;
 
 pub enum Label {

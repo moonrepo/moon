@@ -1,6 +1,7 @@
 mod app;
 mod commands;
 mod enums;
+mod helpers;
 
 use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};
@@ -10,14 +11,12 @@ use crate::commands::project_graph::project_graph;
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::teardown::teardown;
+use crate::helpers::setup_colors;
 use app::{App, Commands};
 use clap::Parser;
 use console::Term;
 use enums::LogLevel;
-use moon_logger::{
-    color::{no_color, supports_color},
-    LevelFilter, Logger,
-};
+use moon_logger::{LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use std::env;
 
@@ -40,18 +39,7 @@ pub async fn run_cli() {
     // Create app and parse arguments
     let args = App::parse();
 
-    // Setup colors
-    if no_color() {
-        env::set_var("CLICOLOR", "0"); // https://github.com/mitsuhiko/clicolors-control/issues/19
-    } else if args.color {
-        env::set_var("CLICOLOR_FORCE", "1");
-        env::set_var(
-            "FORCE_COLOR",
-            env::var("MOON_COLOR").unwrap_or_else(|_| supports_color().to_string()),
-        );
-    } else {
-        env::set_var("CLICOLOR", supports_color().to_string());
-    }
+    setup_colors(args.color);
 
     // Setup logging
     if env::var("MOON_LOG").is_err() {

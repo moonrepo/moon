@@ -9,9 +9,8 @@ use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::process::{output_to_string, Command, Output};
-use moon_utils::{is_ci, path, string_vec, time};
+use moon_utils::{is_ci, is_test_env, path, string_vec, time};
 use std::collections::HashMap;
-use std::env;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -296,7 +295,7 @@ pub async fn run_target(
     let attempt_total = task.options.retry_count + 1;
     let mut attempt_index = 1;
     let mut attempts = vec![];
-    let stream_output = is_primary || is_ci() && env::var("MOON_TEST").is_err();
+    let stream_output = is_primary || is_ci() && !is_test_env();
     let output;
 
     loop {

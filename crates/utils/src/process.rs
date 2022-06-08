@@ -256,6 +256,20 @@ impl Command {
             self.env("CLICOLOR", &color_level);
         }
 
+        if let Ok(term) = env::var("TERM") {
+            self.env("TERM", term);
+        }
+
+        if let Ok(colorterm) = env::var("COLORTERM") {
+            self.env("COLORTERM", colorterm);
+        }
+
+        // Force a terminal width so that we have consistent sizing
+        // in our cached output, and its the same across all machines
+        // https://help.gnome.org/users/gnome-terminal/stable/app-terminal-sizes.html.en
+        self.env("COLUMNS", "80");
+        self.env("LINES", "24");
+
         self
     }
 

@@ -40,3 +40,7 @@ pub fn is_offline() -> bool {
 
     offline
 }
+
+pub fn is_test_env() -> bool {
+    env::var("MOON_TEST").is_ok()
+}

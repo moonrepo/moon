@@ -1,12 +1,12 @@
+use crate::is_test_env;
 use chrono::Duration;
 use chrono_humanize::HumanTime;
-use std::env;
 use std::time::Duration as StdDuration;
 
 pub use chrono;
 
 pub fn elapsed(duration: StdDuration) -> String {
-    if env::var("MOON_TEST").is_ok() {
+    if is_test_env() {
         return String::from("100ms"); // Snapshots
     }
 

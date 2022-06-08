@@ -1,6 +1,7 @@
 use crate::path;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, trace};
+use std::env;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::{Arc, RwLock};
@@ -242,6 +243,20 @@ impl Command {
         self.handle_nonzero_status(&output)?;
 
         Ok(output)
+    }
+
+    pub fn inherit_colors(&mut self) -> &mut Command {
+        if env::var("NO_COLOR").is_ok() {
+            self.env("NO_COLOR", "1");
+        } else {
+            let color_level =
+                env::var("FORCE_COLOR").unwrap_or_else(|_| color::supports_color().to_string());
+
+            self.env("FORCE_COLOR", &color_level);
+            self.env("CLICOLOR", &color_level);
+        }
+
+        self
     }
 
     pub fn no_error_on_failure(&mut self) -> &mut Command {

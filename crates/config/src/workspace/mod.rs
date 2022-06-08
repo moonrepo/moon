@@ -7,7 +7,7 @@ mod vcs;
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
 use crate::types::{FileGlob, FilePath};
-use crate::validators::{validate_child_relative_path, validate_id};
+use crate::validators::{default_bool_true, validate_child_relative_path, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
@@ -49,9 +49,21 @@ fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
     Ok(())
 }
 
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct ActionRunnerConfig {
+    #[serde(default = "default_bool_true")]
+    pub inherit_colors_for_piped_tasks: bool,
+}
+
 /// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceConfig {
+    #[serde(default)]
+    #[validate]
+    pub action_runner: ActionRunnerConfig,
+
     #[serde(default)]
     #[validate]
     pub node: NodeConfig,
@@ -229,6 +241,7 @@ mod tests {
             assert_eq!(
                 config,
                 WorkspaceConfig {
+                    action_runner: ActionRunnerConfig::default(),
                     node: NodeConfig::default(),
                     projects: HashMap::new(),
                     typescript: TypeScriptConfig::default(),
@@ -260,6 +273,7 @@ node:
                 assert_eq!(
                     config,
                     WorkspaceConfig {
+                        action_runner: ActionRunnerConfig::default(),
                         node: NodeConfig {
                             package_manager: PackageManager::Yarn,
                             ..NodeConfig::default()
@@ -756,6 +770,7 @@ vcs:
                 assert_eq!(
                     config,
                     WorkspaceConfig {
+                        action_runner: ActionRunnerConfig::default(),
                         node: NodeConfig::default(),
                         projects: HashMap::new(),
                         typescript: TypeScriptConfig::default(),

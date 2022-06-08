@@ -282,6 +282,14 @@ pub async fn run_target(
     let mut command = create_target_command(&workspace, &project, task).await?;
     command.args(passthrough_args);
 
+    if workspace
+        .config
+        .action_runner
+        .inherit_colors_for_piped_tasks
+    {
+        command.inherit_colors();
+    }
+
     // Run the command as a child process and capture its output.
     // If the process fails and `retry_count` is greater than 0,
     // attempt the process again in case it passes.

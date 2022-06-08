@@ -1,4 +1,4 @@
-use crate::validators::validate_semver_version;
+use crate::validators::{default_bool_true, validate_semver_version};
 use moon_lang_node::{NODE, NODENV, NVMRC, PNPM, YARN};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -20,10 +20,6 @@ pub fn default_pnpm_version() -> String {
 
 pub fn default_yarn_version() -> String {
     env::var("MOON_YARN_VERSION").unwrap_or_else(|_| YARN.default_version.to_string())
-}
-
-fn default_bool_true() -> bool {
-    true
 }
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {

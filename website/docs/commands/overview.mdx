@@ -50,11 +50,24 @@ $ MOON_COLOR=2 moon run app:build
 ```
 
 When forcing colors with `MOON_COLOR` or `FORCE_COLOR`, you may set it to one of the following
-numerical values for the desired level of color support.
+numerical values for the desired level of color support. This is automatically inferred if you use
+`--color`.
 
 - `1` - 16 colors (standard terminal colors)
 - `2` - 256 colors
 - `3` - 16 million colors (truecolor)
+
+### Piped output
+
+When tasks (child processes) are piped, colors and ANSI escape sequences are lost, since the target
+is not a TTY and we do not implement a PTY. This is a common pattern this is quite annoying.
+However, many tools and CLIs support a `--color` option to work around this limitation and to always
+force colors, even when not a TTY.
+
+To mitigate this problem as a whole, and to avoid requiring `--color` for every task, moon supports
+the [`actionRunner.inheritColorsForPipedTasks`](../config/workspace#inheritcolorsforpipedtasks)
+configuration setting. When enabled, all piped child processes will inherit the color settings of
+the currently running terminal.
 
 ## Debugging
 

@@ -17,3 +17,6 @@ projects:
 
 vcs:
   defaultBranch: 'master'
+
+actionRunner:
+  inheritColorsForPipedTasks: true

@@ -5,6 +5,10 @@ use std::collections::HashMap;
 use std::path::Path;
 use validator::{Validate, ValidationError, ValidationErrors};
 
+pub fn default_bool_true() -> bool {
+    true
+}
+
 // Extend validator lib
 pub trait VecValidate {
     fn validate(&self) -> Result<(), ValidationErrors>;

@@ -10,6 +10,25 @@ import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 The `.moon/workspace.yml` file configures available projects and their locations, the toolchain, and
 the workspace development environment.
 
+## `actionRunner`
+
+> `ActionRunnerConfig`
+
+Configures aspects of the action runner.
+
+### `inheritColorsForPipedTasks`
+
+> `boolean`
+
+Force colors to be inherited from the current terminal for all tasks that are ran as a child process
+and their output is piped to the action runner.
+[View more about color handling in moon](../commands/overview#colors).
+
+```yaml title=".moon/workspace.yml" {2}
+actionRunner:
+  inheritColorsForPipedTasks: true
+```
+
 ## `projects`<RequiredLabel />
 
 > `Record<string, string> | string[]`

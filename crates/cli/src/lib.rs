@@ -14,7 +14,10 @@ use app::{App, Commands};
 use clap::Parser;
 use console::Term;
 use enums::LogLevel;
-use moon_logger::{LevelFilter, Logger};
+use moon_logger::{
+    color::{no_color, supports_color},
+    LevelFilter, Logger,
+};
 use moon_terminal::ExtendedTerm;
 use std::env;
 
@@ -36,6 +39,19 @@ fn map_log_level(level: LogLevel) -> LevelFilter {
 pub async fn run_cli() {
     // Create app and parse arguments
     let args = App::parse();
+
+    // Setup colors
+    if no_color() {
+        env::set_var("CLICOLOR", "0"); // https://github.com/mitsuhiko/clicolors-control/issues/19
+    } else if args.color {
+        env::set_var("CLICOLOR_FORCE", "1");
+        env::set_var(
+            "FORCE_COLOR",
+            env::var("MOON_COLOR").unwrap_or_else(|_| supports_color().to_string()),
+        );
+    } else {
+        env::set_var("CLICOLOR", supports_color().to_string());
+    }
 
     // Setup logging
     if env::var("MOON_LOG").is_err() {

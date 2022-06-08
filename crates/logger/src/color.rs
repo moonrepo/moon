@@ -155,10 +155,6 @@ pub fn supports_color() -> u8 {
         return 2;
     }
 
-    if env::var("CI").is_ok() {
-        return 2;
-    }
-
     0
 }
 

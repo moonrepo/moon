@@ -5,6 +5,7 @@ title: Overview
 The following options are available for _all_ moon commands.
 
 - `--cache <mode>` - The mode for [cache operations](#caching).
+- `--color` - Force [colored output](#colors) for moon (not tasks).
 - `--help` - Display the help menu for the current command.
 - `--log <level>` - The lowest [log level to output](#logging).
 - `--version` - Display the version of the CLI.
@@ -31,6 +32,35 @@ $ moon --cache off run app:build
 $ MOON_CACHE=off moon run app:build
 ```
 
+## Colors
+
+Colored output is a complicated subject, with differing implementations and standards across tooling
+and operating systems. moon aims to normalize this as much as possible, by doing the following:
+
+- By default, moon colors are inherited from your terminal settings (`TERM` and `COLORTERM`
+  environment variables).
+- Colors can be force enabled by passing the `--color` option (preferred), or `MOON_COLOR` or
+  `FORCE_COLOR` environment variables.
+- Colors can be disabled entirely by passing a `NO_COLOR=1` environment variable.
+
+```shell
+$ moon --color run app:build
+# Or
+$ MOON_COLOR=2 moon run app:build
+```
+
+When forcing colors with `MOON_COLOR` or `FORCE_COLOR`, you may set it to one of the following
+numerical values for the desired level of color support.
+
+- `1` - 16 colors (standard terminal colors)
+- `2` - 256 colors
+- `3` - 16 million colors (truecolor)
+
+## Debugging
+
+At this point in time, moon provides no debugging utilities besides [logging](#logging) with the
+`debug`/`trace` levels.
+
 ## Logging
 
 By default, moon aims to output as little as possible, as we want to preserve the original output of
@@ -50,8 +80,3 @@ $ moon --log trace run app:build
 # Or
 $ MOON_LOG=trace moon run app:build
 ```
-
-## Debugging
-
-At this point in time, moon provides no debugging utilities besides [logging](#logging) with the
-`debug`/`trace` levels.

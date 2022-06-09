@@ -1,3 +1,4 @@
+use console::{set_colors_enabled, set_colors_enabled_stderr};
 use moon_logger::color::{no_color, supports_color};
 use std::env;
 
@@ -7,6 +8,9 @@ fn setup_no_colors() {
     env::set_var("CLICOLOR", "0");
     env::remove_var("CLICOLOR_FORCE");
     env::remove_var("FORCE_COLOR");
+
+    set_colors_enabled(false);
+    set_colors_enabled_stderr(false);
 }
 
 pub fn setup_colors(force: bool) {
@@ -44,6 +48,9 @@ pub fn setup_colors(force: bool) {
             env::set_var("FORCE_COLOR", &color_level);
         }
 
+        set_colors_enabled(true);
+        set_colors_enabled_stderr(true);
+
         return;
     }
 
@@ -54,8 +61,8 @@ pub fn setup_colors(force: bool) {
 #[cfg(test)]
 mod test {
     use super::*;
-    use serial_test::serial;
     use lazy_static::lazy_static;
+    use serial_test::serial;
 
     lazy_static! {
         pub static ref DEFAULT_TERM: String = env::var("TERM").unwrap_or_default();
@@ -104,7 +111,6 @@ mod test {
 
                 setup_colors(true);
 
-                assert!(env::var("CLICOLOR").is_err());
                 assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "2");
                 assert_eq!(env::var("FORCE_COLOR").unwrap(), "2");
                 assert!(env::var("NO_COLOR").is_err());
@@ -154,7 +160,6 @@ mod test {
 
                     setup_colors(false);
 
-                    assert!(env::var("CLICOLOR").is_err());
                     assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "1");
                     assert_eq!(env::var("FORCE_COLOR").unwrap(), "1");
                     assert!(env::var("NO_COLOR").is_err());
@@ -171,7 +176,6 @@ mod test {
 
                     setup_colors(false);
 
-                    assert!(env::var("CLICOLOR").is_err());
                     assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "1");
                     assert_eq!(env::var("FORCE_COLOR").unwrap(), "1");
                     assert!(env::var("NO_COLOR").is_err());
@@ -188,7 +192,7 @@ mod test {
             #[serial]
             fn inherits_from_term() {
                 env::set_var("TERM", "xterm-256");
-                
+
                 setup_colors(false);
 
                 assert_eq!(env::var("CLICOLOR").unwrap(), "2");

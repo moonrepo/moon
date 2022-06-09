@@ -55,6 +55,11 @@ pub fn setup_colors(force: bool) {
 mod test {
     use super::*;
     use serial_test::serial;
+    use lazy_static::lazy_static;
+
+    lazy_static! {
+        pub static ref DEFAULT_TERM: String = env::var("TERM").unwrap_or_default();
+    }
 
     fn reset_vars() {
         env::remove_var("NO_COLOR");
@@ -62,6 +67,7 @@ mod test {
         env::remove_var("CLICOLOR_FORCE");
         env::remove_var("FORCE_COLOR");
         env::remove_var("MOON_COLOR");
+        env::set_var("TERM", DEFAULT_TERM.clone());
     }
 
     mod setup_color {
@@ -94,7 +100,8 @@ mod test {
             #[test]
             #[serial]
             fn forces_via_arg() {
-                println!("forces_via_arg");
+                env::set_var("TERM", "xterm-256");
+
                 setup_colors(true);
 
                 assert!(env::var("CLICOLOR").is_err());
@@ -180,6 +187,8 @@ mod test {
             #[test]
             #[serial]
             fn inherits_from_term() {
+                env::set_var("TERM", "xterm-256");
+                
                 setup_colors(false);
 
                 assert_eq!(env::var("CLICOLOR").unwrap(), "2");

@@ -1328,6 +1328,7 @@ dependencies = [
  "indicatif",
  "insta",
  "itertools",
+ "lazy_static",
  "moon_cache",
  "moon_config",
  "moon_lang",

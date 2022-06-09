@@ -36,5 +36,6 @@ tokio = { version = "1.18.2", features = ["full"] }
 moon_cache = { path = "../cache" }
 assert_cmd = "2.0.4"
 insta = "1.14.0"
+lazy_static = "1.4.0"
 predicates = "2.1.1"
 serial_test = "0.6.0"

@@ -25,10 +25,6 @@ pub enum Color {
 }
 
 pub fn paint(color: u8, value: &str) -> String {
-    if no_color() || supports_color() < 2 {
-        return value.to_owned();
-    }
-
     style(value).color256(color).to_string()
 }
 
@@ -85,10 +81,6 @@ pub fn target(value: &str) -> String {
 
 // Based on https://github.com/debug-js/debug/blob/master/src/common.js#L41
 pub fn log_target(value: &str) -> String {
-    if no_color() {
-        return value.to_owned();
-    }
-
     let mut hash: u32 = 0;
 
     for b in value.bytes() {

@@ -133,6 +133,10 @@ pub fn supports_color() -> u8 {
         return 0;
     }
 
+    if env::var("MOON_TEST").is_ok() {
+        return 2;
+    }
+
     if let Ok(var) = env::var("TERM") {
         if var == "dumb" {
             return 0;

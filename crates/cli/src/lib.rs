@@ -53,6 +53,10 @@ pub async fn run_cli() {
         env::set_var("MOON_CACHE", args.cache.to_string().to_lowercase());
     }
 
+    for (k, v) in env::vars() {
+        println!("{}={}", k, v);
+    }
+
     // Match and run subcommand
     let result = match &args.command {
         Commands::Bin { tool } => bin(tool).await,

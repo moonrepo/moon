@@ -1,9 +1,9 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 14
+assertion_line: 39
 expression: get_assert_output(&assert)
 ---
 
-[38;5;15m[48;5;161m[1m ERROR [0m No project has been configured with the ID unknown.
+ ERROR  No project has been configured with the ID unknown.
 
 

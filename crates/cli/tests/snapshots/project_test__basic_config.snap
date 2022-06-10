@@ -4,16 +4,16 @@ assertion_line: 44
 expression: get_assert_output(&assert)
 ---
 
-[38;5;16m[48;5;111m[1m BASIC [0m
+ BASIC 
 
 ID: basic
 Source: basic
 
-[38;5;16m[48;5;15m[1m DEPENDS ON [0m
+ DEPENDS ON 
 
  - noConfig (no-config)
 
-[38;5;16m[48;5;15m[1m FILE GROUPS [0m
+ FILE GROUPS 
 
 sources:
  - src/**/*

@@ -4,6 +4,16 @@
   "description": "Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
   "properties": {
+    "actionRunner": {
+      "default": {
+        "inheritColorsForPipedTasks": true
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/ActionRunnerConfig"
+        }
+      ]
+    },
     "node": {
       "default": {
         "addEnginesConstraint": true,
@@ -67,6 +77,15 @@
     }
   },
   "definitions": {
+    "ActionRunnerConfig": {
+      "type": "object",
+      "properties": {
+        "inheritColorsForPipedTasks": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
     "NodeConfig": {
       "type": "object",
       "properties": {

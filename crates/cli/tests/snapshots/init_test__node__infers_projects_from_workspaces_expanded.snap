@@ -1,19 +1,19 @@
 ---
 source: crates/cli/tests/init_test.rs
-assertion_line: 261
+assertion_line: 236
 expression: "fs::read_to_string(workspace_config).unwrap()"
 ---
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
 
-# A map of all projects found within the workspace. Each entry requires a unique project ID
-# as the map key, and a file system path to the project folder as the map value. File paths
-# are relative from the workspace root, and cannot reference projects located outside the
-# workspace boundary.
+# REQUIRED: A map of all projects found within the workspace, or a list or file system globs.
+# When using a map, each entry requires a unique project ID as the map key, and a file system
+# path to the project folder as the map value. File paths are relative from the workspace root,
+# and cannot reference projects located outside the workspace boundary.
 projects:
   app: 'app'
   bar: 'packages/bar'
 
-# OPTIONAL: Configures Node.js within the toolchain. moon manages its own version of Node.js
+# Configures Node.js within the toolchain. moon manages its own version of Node.js
 # instead of relying on a version found on the host machine. This ensures deterministic
 # and reproducible builds across any machine.
 node:
@@ -21,48 +21,54 @@ node:
   # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
   version: '16.15.0'
 
-  # OPTIONAL: The package manager to use when managing dependencies.
+  # The package manager to use when managing dependencies.
   # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".
   packageManager: 'npm'
 
   
 
-  # OPTIONAL: Add `node.version` as a constaint in the root `package.json` `engines`.
+  # Add `node.version` as a constaint in the root `package.json` `engines`.
   addEnginesConstraint: true
 
-  # OPTIONAL: Dedupe dependencies after the lockfile has changed.
+  # Dedupe dependencies after the lockfile has changed.
   dedupeOnLockfileChange: true
 
-  # OPTIONAL: Sync a project's `dependsOn` as normal dependencies within the project's
+  # Sync a project's `dependsOn` as normal dependencies within the project's
   # `package.json`. Will use "workspace:*" ranges when available in the package manager.
   syncProjectWorkspaceDependencies: true
 
-  # OPTIONAL: Sync `node.version` to a 3rd-party version manager's config file.
+  # Sync `node.version` to a 3rd-party version manager's config file.
   # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
   # syncVersionManagerConfig: 'nvm'
 
-# OPTIONAL: Configures how moon integrates with TypeScript.
+# Configures how moon integrates with TypeScript.
 typescript:
-  # OPTIONAL: Name of `tsconfig.json` file in project root.
+  # Name of `tsconfig.json` file in project root.
   projectConfigFileName: 'tsconfig.json'
 
-  # OPTIONAL: Name of `tsconfig.json` file in workspace root.
+  # Name of `tsconfig.json` file in workspace root.
   rootConfigFileName: 'tsconfig.json'
 
-  # OPTIONAL: Sync a project's `dependsOn` as TypeScript project references within the
+  # Sync a project's `dependsOn` as TypeScript project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
   syncProjectReferences: true
 
-# OPTIONAL: Configures the version control system to utilize within the workspace. A VCS
+# Configures the version control system to utilize within the workspace. A VCS
 # is required for determining touched (added, modified, etc) files, calculating file hashes,
 # computing affected files, and much more.
 vcs:
-  # OPTIONAL: The manager/binary to use when managing the repository.
+  # The manager/binary to use when managing the repository.
   # Accepts "git", or "svn". Defaults to "git".
   manager: 'git'
 
-  # OPTIONAL: The default branch (master/main/trunk) in the repository for comparing the
+  # The default branch (master/main/trunk) in the repository for comparing the
   # local branch against. For git, this is is typically "master" or "main",
   # and must include the remote prefix (before /). For svn, this should always be "trunk".
   defaultBranch: 'master'
+
+# Configures aspects of the action runner.
+actionRunner:
+  # Force colors to be inherited for all tasks that are ran as a child process
+  # and their output is piped to the action runner.
+  inheritColorsForPipedTasks: true
 

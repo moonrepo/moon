@@ -4,10 +4,9 @@ use moon_logger::{color, logging_enabled, trace};
 use std::env;
 use std::ffi::OsStr;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command as TokioCommand;
-use tokio::sync::RwLock;
 use tokio::task;
 
 pub use std::process::{ExitStatus, Output, Stdio};
@@ -181,10 +180,6 @@ impl Command {
             .cmd
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
-            .envs(env::vars())
-            // Inherit ANSI colors since they're stripped from pipes
-            .env("FORCE_COLOR", env::var("FORCE_COLOR").unwrap_or_default())
-            .env("TERM", env::var("TERM").unwrap_or_default())
             .spawn()
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
@@ -194,33 +189,41 @@ impl Command {
         // this *real ugly* implementation to solve it. There's gotta be a
         // better way to do this?
         // https://stackoverflow.com/a/49063262
-        let err = BufReader::new(child.stderr.take().unwrap());
-        let out = BufReader::new(child.stdout.take().unwrap());
-
-        // Spawn additional threads for logging the buffer
-        let stderr = Arc::new(RwLock::new(vec![]));
-        let stdout = Arc::new(RwLock::new(vec![]));
-        let stderr_clone = Arc::clone(&stderr);
-        let stdout_clone = Arc::clone(&stdout);
+        let stderr = BufReader::new(child.stderr.take().unwrap());
+        let stdout = BufReader::new(child.stdout.take().unwrap());
+        let captured_stderr = Arc::new(RwLock::new(vec![]));
+        let captured_stdout = Arc::new(RwLock::new(vec![]));
+        let captured_stderr_clone = Arc::clone(&captured_stderr);
+        let captured_stdout_clone = Arc::clone(&captured_stdout);
 
         task::spawn(async move {
-            let mut lines = err.lines();
-            let mut stderr_write = stderr_clone.write().await;
+            let mut lines = stderr.lines();
+            let mut captured_lines = vec![];
 
             while let Some(line) = lines.next_line().await.unwrap() {
                 eprintln!("{}", line);
-                stderr_write.push(line);
+                captured_lines.push(line);
             }
+
+            captured_stderr_clone
+                .write()
+                .unwrap()
+                .extend(captured_lines);
         });
 
         task::spawn(async move {
-            let mut lines = out.lines();
-            let mut stdout_write = stdout_clone.write().await;
+            let mut lines = stdout.lines();
+            let mut captured_lines = vec![];
 
             while let Some(line) = lines.next_line().await.unwrap() {
                 println!("{}", line);
-                stdout_write.push(line);
+                captured_lines.push(line);
             }
+
+            captured_stdout_clone
+                .write()
+                .unwrap()
+                .extend(captured_lines);
         });
 
         // Attempt to capture the child output
@@ -230,16 +233,33 @@ impl Command {
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
         if output.stderr.is_empty() {
-            output.stderr = stderr.read().await.join("").into_bytes();
+            output.stderr = captured_stderr.read().unwrap().join("\n").into_bytes();
         }
 
         if output.stdout.is_empty() {
-            output.stdout = stdout.read().await.join("").into_bytes();
+            output.stdout = captured_stdout.read().unwrap().join("\n").into_bytes();
         }
 
         self.handle_nonzero_status(&output)?;
 
         Ok(output)
+    }
+
+    pub fn inherit_colors(&mut self) -> &mut Command {
+        if let Ok(level) = env::var("FORCE_COLOR") {
+            self.env("FORCE_COLOR", &level);
+            self.env("CLICOLOR_FORCE", &level);
+        } else if env::var("NO_COLOR").is_ok() {
+            self.env("NO_COLOR", "1");
+        }
+
+        // Force a terminal width so that we have consistent sizing
+        // in our cached output, and its the same across all machines
+        // https://help.gnome.org/users/gnome-terminal/stable/app-terminal-sizes.html.en
+        self.env("COLUMNS", "80");
+        self.env("LINES", "24");
+
+        self
     }
 
     pub fn no_error_on_failure(&mut self) -> &mut Command {

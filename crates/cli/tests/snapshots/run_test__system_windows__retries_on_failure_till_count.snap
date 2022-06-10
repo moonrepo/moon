@@ -20,6 +20,7 @@ stderr
 stderr 
 ▪▪▪▪ systemWindows:retryCount (4/4, 100ms)
 
-[38;5;15m[48;5;161m[1m ERROR [0m Process cmd.exe failed with a 1 exit code.
+ ERROR  Process cmd.exe failed with a 1 exit code.
+
 
 

@@ -3,7 +3,6 @@ use console::{measure_text_width, style, Attribute, Style, Term};
 use core::fmt::Debug;
 use moon_logger::color;
 use moon_logger::color::Color;
-use std::env;
 use std::io;
 
 pub enum Label {
@@ -39,11 +38,6 @@ impl ExtendedTerm for Term {
         let mut style = Style::new()
             .attr(Attribute::Bold)
             .color256(Color::Black as u8);
-
-        // Dont show styles in tests unless we force it
-        if env::var("MOON_TEST").is_ok() {
-            style = style.force_styling(true);
-        }
 
         match kind {
             Label::Brand => {

@@ -2,7 +2,7 @@
 // https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
 
 pub use console::style;
-use console::{colors_enabled, pad_str, Alignment};
+use console::{pad_str, Alignment};
 use dirs::home_dir as get_home_dir;
 use log::Level;
 use std::env;
@@ -25,10 +25,6 @@ pub enum Color {
 }
 
 pub fn paint(color: u8, value: &str) -> String {
-    if no_color() || supports_color() < 2 {
-        return value.to_owned();
-    }
-
     style(value).color256(color).to_string()
 }
 
@@ -85,10 +81,6 @@ pub fn target(value: &str) -> String {
 
 // Based on https://github.com/debug-js/debug/blob/master/src/common.js#L41
 pub fn log_target(value: &str) -> String {
-    if no_color() {
-        return value.to_owned();
-    }
-
     let mut hash: u32 = 0;
 
     for b in value.bytes() {
@@ -124,18 +116,13 @@ pub fn no_color() -> bool {
     env::var("NO_COLOR").is_ok()
 }
 
-// 0 = no
 // 1 = 8
 // 2 = 256
 // 3 = 16m
 pub fn supports_color() -> u8 {
-    if no_color() {
-        return 0;
-    }
-
     if let Ok(var) = env::var("TERM") {
         if var == "dumb" {
-            return 0;
+            return 1;
         } else if var.contains("truecolor") {
             return 3;
         } else if var.contains("256") {
@@ -151,15 +138,7 @@ pub fn supports_color() -> u8 {
         }
     }
 
-    if colors_enabled() {
-        return 2;
-    }
-
-    if env::var("CI").is_ok() {
-        return 2;
-    }
-
-    0
+    2
 }
 
 pub const COLOR_LIST: [u8; 76] = [

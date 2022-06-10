@@ -4,12 +4,12 @@ assertion_line: 23
 expression: get_assert_output(&assert)
 ---
 
-[38;5;16m[48;5;111m[1m EMPTYCONFIG [0m
+ EMPTYCONFIG 
 
 ID: emptyConfig
 Source: empty-config
 
-[38;5;16m[48;5;15m[1m FILE GROUPS [0m
+ FILE GROUPS 
 
 sources:
  - src/**/*

@@ -4,17 +4,17 @@ assertion_line: 66
 expression: get_assert_output(&assert)
 ---
 
-[38;5;16m[48;5;111m[1m FOO [0m
+ FOO 
 
 ID: foo
 Source: deps/foo
 
-[38;5;16m[48;5;15m[1m DEPENDS ON [0m
+ DEPENDS ON 
 
  - bar (deps/bar)
  - baz (deps/baz)
 
-[38;5;16m[48;5;15m[1m FILE GROUPS [0m
+ FILE GROUPS 
 
 sources:
  - src/**/*

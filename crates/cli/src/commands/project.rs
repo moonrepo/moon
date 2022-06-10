@@ -2,8 +2,8 @@ use console::Term;
 use itertools::Itertools;
 use moon_logger::color;
 use moon_terminal::{ExtendedTerm, Label};
+use moon_utils::is_test_env;
 use moon_workspace::Workspace;
-use std::env;
 
 pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
@@ -23,7 +23,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
     term.render_entry("Source", &color::file(&project.source))?;
 
     // Dont show in test snapshots
-    if env::var("MOON_TEST").is_err() {
+    if !is_test_env() {
         term.render_entry("Root", &color::path(&project.root))?;
     }
 

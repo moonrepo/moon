@@ -196,6 +196,9 @@ pub struct App {
     )]
     pub cache: CacheMode,
 
+    #[clap(long, env = "MOON_COLOR", help = "Force colored output for moon")]
+    pub color: bool,
+
     #[clap(
         arg_enum,
         long,

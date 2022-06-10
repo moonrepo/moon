@@ -5,6 +5,7 @@ title: Overview
 The following options are available for _all_ moon commands.
 
 - `--cache <mode>` - The mode for [cache operations](#caching).
+- `--color` - Force [colored output](#colors) for moon (not tasks).
 - `--help` - Display the help menu for the current command.
 - `--log <level>` - The lowest [log level to output](#logging).
 - `--version` - Display the version of the CLI.
@@ -31,6 +32,48 @@ $ moon --cache off run app:build
 $ MOON_CACHE=off moon run app:build
 ```
 
+## Colors
+
+Colored output is a complicated subject, with differing implementations and standards across tooling
+and operating systems. moon aims to normalize this as much as possible, by doing the following:
+
+- By default, moon colors are inherited from your terminal settings (`TERM` and `COLORTERM`
+  environment variables).
+- Colors can be force enabled by passing the `--color` option (preferred), or `MOON_COLOR` or
+  `FORCE_COLOR` environment variables.
+
+```shell
+$ moon --color run app:build
+# Or
+$ MOON_COLOR=2 moon run app:build
+```
+
+When forcing colors with `MOON_COLOR` or `FORCE_COLOR`, you may set it to one of the following
+numerical values for the desired level of color support. This is automatically inferred if you use
+`--color`.
+
+- `0` - No colors
+- `1` - 16 colors (standard terminal colors)
+- `2` - 256 colors
+- `3` - 16 million colors (truecolor)
+
+### Piped output
+
+When tasks (child processes) are piped, colors and ANSI escape sequences are lost, since the target
+is not a TTY and we do not implement a PTY. This is a common pattern this is quite annoying.
+However, many tools and CLIs support a `--color` option to work around this limitation and to always
+force colors, even when not a TTY.
+
+To mitigate this problem as a whole, and to avoid requiring `--color` for every task, moon supports
+the [`actionRunner.inheritColorsForPipedTasks`](../config/workspace#inheritcolorsforpipedtasks)
+configuration setting. When enabled, all piped child processes will inherit the color settings of
+the currently running terminal.
+
+## Debugging
+
+At this point in time, moon provides no debugging utilities besides [logging](#logging) with the
+`debug`/`trace` levels.
+
 ## Logging
 
 By default, moon aims to output as little as possible, as we want to preserve the original output of
@@ -50,8 +93,3 @@ $ moon --log trace run app:build
 # Or
 $ MOON_LOG=trace moon run app:build
 ```
-
-## Debugging
-
-At this point in time, moon provides no debugging utilities besides [logging](#logging) with the
-`debug`/`trace` levels.

@@ -66,7 +66,7 @@ script = "rm -rf *.profraw crates/**/*.profraw tests/fixtures/**/*.profraw"
 
 ## OTHER
 
-[tasks.gen-json-schemas]
+[tasks.json-schemas]
 command = "cargo"
 args = ["run", "-p", "moon_config"]
 

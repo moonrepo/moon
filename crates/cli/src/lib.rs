@@ -1,6 +1,7 @@
 mod app;
 mod commands;
 mod enums;
+mod helpers;
 
 use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};
@@ -10,6 +11,7 @@ use crate::commands::project_graph::project_graph;
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::teardown::teardown;
+use crate::helpers::setup_colors;
 use app::{App, Commands};
 use clap::Parser;
 use console::Term;
@@ -36,6 +38,8 @@ fn map_log_level(level: LogLevel) -> LevelFilter {
 pub async fn run_cli() {
     // Create app and parse arguments
     let args = App::parse();
+
+    setup_colors(args.color);
 
     // Setup logging
     if env::var("MOON_LOG").is_err() {

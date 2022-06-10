@@ -4,7 +4,7 @@ assertion_line: 55
 expression: get_assert_output(&assert)
 ---
 
-[38;5;16m[48;5;111m[1m ADVANCED [0m
+ ADVANCED 
 
 ID: advanced
 Source: advanced
@@ -16,7 +16,7 @@ Maintainers:
  - Bruce Wayne
 Channel: #batcave
 
-[38;5;16m[48;5;15m[1m FILE GROUPS [0m
+ FILE GROUPS 
 
 sources:
  - src/**/*

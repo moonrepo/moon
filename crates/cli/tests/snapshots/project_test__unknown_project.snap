@@ -4,7 +4,7 @@ assertion_line: 11
 expression: get_assert_stderr_output(&assert)
 ---
 
-[38;5;15m[48;5;161m[1m ERROR [0m No project has been configured with the ID unknown.
+ ERROR  No project has been configured with the ID unknown.
 
 
 

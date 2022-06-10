@@ -124,15 +124,10 @@ pub fn no_color() -> bool {
     env::var("NO_COLOR").is_ok()
 }
 
-// 0 = no
 // 1 = 8
 // 2 = 256
 // 3 = 16m
 pub fn supports_color() -> u8 {
-    if no_color() {
-        return 0;
-    }
-
     if env::var("MOON_TEST").is_ok() {
         return 2;
     }

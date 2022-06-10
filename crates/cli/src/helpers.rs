@@ -6,21 +6,12 @@ fn setup_no_colors() {
     env::set_var("NO_COLOR", "1");
     // https://github.com/mitsuhiko/clicolors-control/issues/19
     env::set_var("CLICOLOR", "0");
-    env::remove_var("CLICOLOR_FORCE");
-    env::remove_var("FORCE_COLOR");
 
     set_colors_enabled(false);
     set_colors_enabled_stderr(false);
 }
 
 pub fn setup_colors(force: bool) {
-    // If requesting no color, remove forced env vars
-    if no_color() {
-        setup_no_colors();
-
-        return;
-    }
-
     let supported_level = supports_color().to_string();
 
     // If being forced by --color or other env vars
@@ -43,19 +34,22 @@ pub fn setup_colors(force: bool) {
         if color_level == "0" {
             setup_no_colors();
         } else {
+            set_colors_enabled(true);
+            set_colors_enabled_stderr(true);
+
             // https://bixense.com/clicolors/
             env::set_var("CLICOLOR_FORCE", &color_level);
             env::set_var("FORCE_COLOR", &color_level);
         }
 
-        set_colors_enabled(true);
-        set_colors_enabled_stderr(true);
-
         return;
     }
 
-    // Otherwise inherit from terminal
-    env::set_var("CLICOLOR", supported_level);
+    if no_color() {
+        setup_no_colors();
+    } else {
+        env::set_var("CLICOLOR", supported_level);
+    }
 }
 
 #[cfg(test)]
@@ -79,16 +73,12 @@ mod test {
 
             #[test]
             #[serial]
-            fn removes_forced_vars() {
-                env::set_var("CLICOLOR_FORCE", "1");
-                env::set_var("FORCE_COLOR", "1");
+            fn sets_vars() {
                 env::set_var("NO_COLOR", "1");
 
                 setup_colors(false);
 
                 assert_eq!(env::var("CLICOLOR").unwrap(), "0");
-                assert!(env::var("CLICOLOR_FORCE").is_err());
-                assert!(env::var("FORCE_COLOR").is_err());
                 assert_eq!(env::var("NO_COLOR").unwrap(), "1");
 
                 reset_vars();
@@ -112,6 +102,20 @@ mod test {
 
             #[test]
             #[serial]
+            fn forces_over_no_color() {
+                env::set_var("NO_COLOR", "1");
+
+                setup_colors(true);
+
+                assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "2");
+                assert_eq!(env::var("FORCE_COLOR").unwrap(), "2");
+                assert_eq!(env::var("NO_COLOR").unwrap(), "1");
+
+                reset_vars();
+            }
+
+            #[test]
+            #[serial]
             fn disables_if_zero() {
                 for var in ["MOON_COLOR", "FORCE_COLOR"] {
                     env::set_var(var, "0");
@@ -119,8 +123,6 @@ mod test {
                     setup_colors(false);
 
                     assert_eq!(env::var("CLICOLOR").unwrap(), "0");
-                    assert!(env::var("CLICOLOR_FORCE").is_err());
-                    assert!(env::var("FORCE_COLOR").is_err());
                     assert_eq!(env::var("NO_COLOR").unwrap(), "1");
 
                     reset_vars();
@@ -136,8 +138,6 @@ mod test {
                     setup_colors(false);
 
                     assert_eq!(env::var("CLICOLOR").unwrap(), "0");
-                    assert!(env::var("CLICOLOR_FORCE").is_err());
-                    assert!(env::var("FORCE_COLOR").is_err());
                     assert_eq!(env::var("NO_COLOR").unwrap(), "1");
 
                     reset_vars();
@@ -154,7 +154,6 @@ mod test {
 
                     assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "1");
                     assert_eq!(env::var("FORCE_COLOR").unwrap(), "1");
-                    assert!(env::var("NO_COLOR").is_err());
 
                     reset_vars();
                 }
@@ -170,7 +169,6 @@ mod test {
 
                     assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "1");
                     assert_eq!(env::var("FORCE_COLOR").unwrap(), "1");
-                    assert!(env::var("NO_COLOR").is_err());
 
                     reset_vars();
                 }

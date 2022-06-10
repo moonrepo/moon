@@ -246,22 +246,11 @@ impl Command {
     }
 
     pub fn inherit_colors(&mut self) -> &mut Command {
-        if env::var("NO_COLOR").is_ok() {
+        if let Ok(level) = env::var("FORCE_COLOR") {
+            self.env("FORCE_COLOR", &level);
+            self.env("CLICOLOR_FORCE", &level);
+        } else if env::var("NO_COLOR").is_ok() {
             self.env("NO_COLOR", "1");
-        } else {
-            let color_level =
-                env::var("FORCE_COLOR").unwrap_or_else(|_| color::supports_color().to_string());
-
-            self.env("FORCE_COLOR", &color_level);
-            self.env("CLICOLOR", &color_level);
-        }
-
-        if let Ok(term) = env::var("TERM") {
-            self.env("TERM", term);
-        }
-
-        if let Ok(colorterm) = env::var("COLORTERM") {
-            self.env("COLORTERM", colorterm);
         }
 
         // Force a terminal width so that we have consistent sizing

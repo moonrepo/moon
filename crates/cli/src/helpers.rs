@@ -31,6 +31,8 @@ pub fn setup_colors(force: bool) {
             color_level = "0".to_owned();
         }
 
+        println!("FORCE ====== {}", color_level);
+
         if color_level == "0" {
             setup_no_colors();
         } else {
@@ -46,8 +48,11 @@ pub fn setup_colors(force: bool) {
     }
 
     if no_color() {
+        println!("NO COLORRRRRR");
+
         setup_no_colors();
     } else {
+        println!("DEFAULT COLOR");
         env::set_var("CLICOLOR", supported_level);
     }
 }

@@ -2,7 +2,7 @@
 // https://upload.wikimedia.org/wikipedia/commons/1/15/Xterm_256color_chart.svg
 
 pub use console::style;
-use console::{colors_enabled, pad_str, Alignment};
+use console::{pad_str, Alignment};
 use dirs::home_dir as get_home_dir;
 use log::Level;
 use std::env;
@@ -126,7 +126,7 @@ pub fn supports_color() -> u8 {
 
     if let Ok(var) = env::var("TERM") {
         if var == "dumb" {
-            return 0;
+            return 1;
         } else if var.contains("truecolor") {
             return 3;
         } else if var.contains("256") {
@@ -142,11 +142,7 @@ pub fn supports_color() -> u8 {
         }
     }
 
-    if colors_enabled() {
-        return 2;
-    }
-
-    0
+    1
 }
 
 pub const COLOR_LIST: [u8; 76] = [

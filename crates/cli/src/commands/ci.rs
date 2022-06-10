@@ -194,13 +194,6 @@ pub struct CiOptions {
 }
 
 pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
-    println!();
-    println!();
-
-    for (k, v) in std::env::vars() {
-        println!("{}={}", k, v);
-    }
-
     let workspace = Workspace::load().await?;
     let touched_files = gather_touched_files(&workspace, &options).await?;
     let targets = gather_runnable_targets(&workspace, &touched_files)?;

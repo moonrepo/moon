@@ -120,10 +120,6 @@ pub fn no_color() -> bool {
 // 2 = 256
 // 3 = 16m
 pub fn supports_color() -> u8 {
-    if env::var("MOON_TEST").is_ok() {
-        return 2;
-    }
-
     if let Ok(var) = env::var("TERM") {
         if var == "dumb" {
             return 1;
@@ -142,7 +138,7 @@ pub fn supports_color() -> u8 {
         }
     }
 
-    1
+    2
 }
 
 pub const COLOR_LIST: [u8; 76] = [

@@ -174,22 +174,5 @@ mod test {
                 }
             }
         }
-
-        mod default_color {
-            use super::*;
-
-            #[test]
-            #[serial]
-            fn inherits_from_term() {
-                setup_colors(false);
-
-                assert_eq!(env::var("CLICOLOR").unwrap(), "2");
-                assert!(env::var("CLICOLOR_FORCE").is_err());
-                assert!(env::var("FORCE_COLOR").is_err());
-                assert!(env::var("NO_COLOR").is_err());
-
-                reset_vars();
-            }
-        }
     }
 }

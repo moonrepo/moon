@@ -1,5 +1,5 @@
 mod app;
-mod commands;
+pub mod commands;
 mod enums;
 mod helpers;
 

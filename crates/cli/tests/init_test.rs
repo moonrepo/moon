@@ -1,12 +1,13 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_fixtures_sandbox, create_moon_command_in};
+use moon_cli::commands::init::{init, InheritProjectsAs, InitOptions};
+use moon_utils::test::create_fixtures_sandbox;
 use predicates::prelude::*;
 use serial_test::serial;
 use std::fs;
 
-#[test]
+#[tokio::test]
 #[serial]
-fn creates_files_in_dest() {
+async fn creates_files_in_dest() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
     let workspace_config = root.join(".moon").join("workspace.yml");
@@ -17,33 +18,37 @@ fn creates_files_in_dest() {
     assert!(!project_config.exists());
     assert!(!gitignore.exists());
 
-    let assert = create_moon_command_in(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(&root)
-        .assert();
-
-    assert.success().code(0).stdout(predicate::str::starts_with(
-        "Moon has successfully been initialized in",
-    ));
+    init(
+        root.to_str().unwrap(),
+        InitOptions {
+            yes: true,
+            ..InitOptions::default()
+        },
+    )
+    .await
+    .unwrap();
 
     assert!(workspace_config.exists());
     assert!(project_config.exists());
     assert!(gitignore.exists());
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn creates_workspace_config_from_template() {
+async fn creates_workspace_config_from_template() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
     let workspace_config = root.join(".moon").join("workspace.yml");
 
-    create_moon_command_in(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(&root)
-        .assert();
+    init(
+        root.to_str().unwrap(),
+        InitOptions {
+            yes: true,
+            ..InitOptions::default()
+        },
+    )
+    .await
+    .unwrap();
 
     assert!(
         predicate::str::contains("https://moonrepo.dev/schemas/workspace.json")
@@ -51,18 +56,22 @@ fn creates_workspace_config_from_template() {
     );
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn creates_project_config_from_template() {
+async fn creates_project_config_from_template() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
     let project_config = root.join(".moon").join("project.yml");
 
-    create_moon_command_in(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(&root)
-        .assert();
+    init(
+        root.to_str().unwrap(),
+        InitOptions {
+            yes: true,
+            ..InitOptions::default()
+        },
+    )
+    .await
+    .unwrap();
 
     assert!(
         predicate::str::contains("https://moonrepo.dev/schemas/global-project.json")
@@ -70,18 +79,22 @@ fn creates_project_config_from_template() {
     );
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn creates_gitignore_file() {
+async fn creates_gitignore_file() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
     let gitignore = root.join(".gitignore");
 
-    create_moon_command_in(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(&root)
-        .assert();
+    init(
+        root.to_str().unwrap(),
+        InitOptions {
+            yes: true,
+            ..InitOptions::default()
+        },
+    )
+    .await
+    .unwrap();
 
     assert_eq!(
         fs::read_to_string(gitignore).unwrap(),
@@ -89,20 +102,24 @@ fn creates_gitignore_file() {
     );
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn appends_existing_gitignore_file() {
+async fn appends_existing_gitignore_file() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
     let gitignore = root.join(".gitignore");
 
     fs::write(&gitignore, "*.js\n*.log").unwrap();
 
-    create_moon_command_in(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(&root)
-        .assert();
+    init(
+        root.to_str().unwrap(),
+        InitOptions {
+            yes: true,
+            ..InitOptions::default()
+        },
+    )
+    .await
+    .unwrap();
 
     assert_eq!(
         fs::read_to_string(gitignore).unwrap(),
@@ -110,75 +127,87 @@ fn appends_existing_gitignore_file() {
     );
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn does_overwrite_existing_config_if_force_passed() {
+async fn does_overwrite_existing_config_if_force_passed() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
 
-    create_moon_command_in(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(&root)
-        .assert();
+    init(
+        root.to_str().unwrap(),
+        InitOptions {
+            yes: true,
+            ..InitOptions::default()
+        },
+    )
+    .await
+    .unwrap();
 
     // Run again
-    let assert = create_moon_command_in(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(&root)
-        .arg("--force")
-        .assert();
-
-    assert.success().code(0).stdout(predicate::str::starts_with(
-        "Moon has successfully been initialized in",
-    ));
+    init(
+        root.to_str().unwrap(),
+        InitOptions {
+            force: true,
+            yes: true,
+            ..InitOptions::default()
+        },
+    )
+    .await
+    .unwrap();
 }
 
 mod node {
     use super::*;
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn infers_version_from_nvm() {
+    async fn infers_version_from_nvm() {
         let fixture = create_fixtures_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
         fs::write(&root.join(".nvmrc"), "1.2.3").unwrap();
 
-        create_moon_command_in(root)
-            .arg("init")
-            .arg("--yes")
-            .arg(&root)
-            .assert();
+        init(
+            root.to_str().unwrap(),
+            InitOptions {
+                yes: true,
+                ..InitOptions::default()
+            },
+        )
+        .await
+        .unwrap();
 
         assert!(predicate::str::contains("version: '1.2.3'")
             .eval(&fs::read_to_string(workspace_config).unwrap()));
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn infers_version_from_nodenv() {
+    async fn infers_version_from_nodenv() {
         let fixture = create_fixtures_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
         fs::write(&root.join(".node-version"), "1.2.3").unwrap();
 
-        create_moon_command_in(root)
-            .arg("init")
-            .arg("--yes")
-            .arg(&root)
-            .assert();
+        init(
+            root.to_str().unwrap(),
+            InitOptions {
+                yes: true,
+                ..InitOptions::default()
+            },
+        )
+        .await
+        .unwrap();
 
         assert!(predicate::str::contains("version: '1.2.3'")
             .eval(&fs::read_to_string(workspace_config).unwrap()));
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn infers_projects_from_workspaces() {
+    async fn infers_projects_from_workspaces() {
         let fixture = create_fixtures_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
@@ -195,20 +224,23 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
-            .arg("init")
-            .arg("--yes")
-            .arg("--inheritProjects")
-            .arg("projects-map")
-            .arg(&root)
-            .assert();
+        init(
+            root.to_str().unwrap(),
+            InitOptions {
+                inherit_projects: InheritProjectsAs::ProjectsMap,
+                yes: true,
+                ..InitOptions::default()
+            },
+        )
+        .await
+        .unwrap();
 
         assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn infers_projects_from_workspaces_expanded() {
+    async fn infers_projects_from_workspaces_expanded() {
         let fixture = create_fixtures_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
@@ -225,20 +257,23 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
-            .arg("init")
-            .arg("--yes")
-            .arg("--inheritProjects")
-            .arg("projects-map")
-            .arg(&root)
-            .assert();
+        init(
+            root.to_str().unwrap(),
+            InitOptions {
+                inherit_projects: InheritProjectsAs::ProjectsMap,
+                yes: true,
+                ..InitOptions::default()
+            },
+        )
+        .await
+        .unwrap();
 
         assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn infers_globs_from_workspaces() {
+    async fn infers_globs_from_workspaces() {
         let fixture = create_fixtures_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
@@ -255,20 +290,23 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
-            .arg("init")
-            .arg("--yes")
-            .arg("--inheritProjects")
-            .arg("globs-list")
-            .arg(&root)
-            .assert();
+        init(
+            root.to_str().unwrap(),
+            InitOptions {
+                inherit_projects: InheritProjectsAs::GlobsList,
+                yes: true,
+                ..InitOptions::default()
+            },
+        )
+        .await
+        .unwrap();
 
         assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn infers_globs_from_workspaces_expanded() {
+    async fn infers_globs_from_workspaces_expanded() {
         let fixture = create_fixtures_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
@@ -285,13 +323,16 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
-            .arg("init")
-            .arg("--yes")
-            .arg("--inheritProjects")
-            .arg("globs-list")
-            .arg(&root)
-            .assert();
+        init(
+            root.to_str().unwrap(),
+            InitOptions {
+                inherit_projects: InheritProjectsAs::GlobsList,
+                yes: true,
+                ..InitOptions::default()
+            },
+        )
+        .await
+        .unwrap();
 
         assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
@@ -299,28 +340,32 @@ mod node {
     mod package_manager {
         use super::*;
 
-        #[test]
+        #[tokio::test]
         #[serial]
-        fn infers_npm() {
+        async fn infers_npm() {
             let fixture = create_fixtures_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
             fs::write(&root.join("package-lock.json"), "").unwrap();
 
-            create_moon_command_in(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(&root)
-                .assert();
+            init(
+                root.to_str().unwrap(),
+                InitOptions {
+                    yes: true,
+                    ..InitOptions::default()
+                },
+            )
+            .await
+            .unwrap();
 
             assert!(predicate::str::contains("packageManager: 'npm'")
                 .eval(&fs::read_to_string(workspace_config).unwrap()));
         }
 
-        #[test]
+        #[tokio::test]
         #[serial]
-        fn infers_npm_from_package() {
+        async fn infers_npm_from_package() {
             let fixture = create_fixtures_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
@@ -331,11 +376,15 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(&root)
-                .assert();
+            init(
+                root.to_str().unwrap(),
+                InitOptions {
+                    yes: true,
+                    ..InitOptions::default()
+                },
+            )
+            .await
+            .unwrap();
 
             let content = fs::read_to_string(workspace_config).unwrap();
 
@@ -343,28 +392,32 @@ mod node {
             assert!(predicate::str::contains("version: '4.5.6'").eval(&content));
         }
 
-        #[test]
+        #[tokio::test]
         #[serial]
-        fn infers_pnpm() {
+        async fn infers_pnpm() {
             let fixture = create_fixtures_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
             fs::write(&root.join("pnpm-lock.yaml"), "").unwrap();
 
-            create_moon_command_in(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(&root)
-                .assert();
+            init(
+                root.to_str().unwrap(),
+                InitOptions {
+                    yes: true,
+                    ..InitOptions::default()
+                },
+            )
+            .await
+            .unwrap();
 
             assert!(predicate::str::contains("packageManager: 'pnpm'")
                 .eval(&fs::read_to_string(workspace_config).unwrap()));
         }
 
-        #[test]
+        #[tokio::test]
         #[serial]
-        fn infers_pnpm_from_package() {
+        async fn infers_pnpm_from_package() {
             let fixture = create_fixtures_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
@@ -375,11 +428,15 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(&root)
-                .assert();
+            init(
+                root.to_str().unwrap(),
+                InitOptions {
+                    yes: true,
+                    ..InitOptions::default()
+                },
+            )
+            .await
+            .unwrap();
 
             let content = fs::read_to_string(workspace_config).unwrap();
 
@@ -387,28 +444,32 @@ mod node {
             assert!(predicate::str::contains("version: '4.5.6'").eval(&content));
         }
 
-        #[test]
+        #[tokio::test]
         #[serial]
-        fn infers_yarn() {
+        async fn infers_yarn() {
             let fixture = create_fixtures_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
             fs::write(&root.join("yarn.lock"), "").unwrap();
 
-            create_moon_command_in(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(&root)
-                .assert();
+            init(
+                root.to_str().unwrap(),
+                InitOptions {
+                    yes: true,
+                    ..InitOptions::default()
+                },
+            )
+            .await
+            .unwrap();
 
             assert!(predicate::str::contains("packageManager: 'yarn'")
                 .eval(&fs::read_to_string(workspace_config).unwrap()));
         }
 
-        #[test]
+        #[tokio::test]
         #[serial]
-        fn infers_yarn_from_package() {
+        async fn infers_yarn_from_package() {
             let fixture = create_fixtures_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
@@ -419,11 +480,15 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(&root)
-                .assert();
+            init(
+                root.to_str().unwrap(),
+                InitOptions {
+                    yes: true,
+                    ..InitOptions::default()
+                },
+            )
+            .await
+            .unwrap();
 
             let content = fs::read_to_string(workspace_config).unwrap();
 

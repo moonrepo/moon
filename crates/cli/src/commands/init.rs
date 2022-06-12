@@ -65,6 +65,7 @@ impl Default for InheritProjectsAs {
     }
 }
 
+#[derive(Default)]
 pub struct InitOptions {
     pub force: bool,
     pub inherit_projects: InheritProjectsAs,

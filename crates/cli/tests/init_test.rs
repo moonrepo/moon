@@ -6,7 +6,6 @@ use serial_test::serial;
 use std::fs;
 
 #[tokio::test]
-#[serial]
 async fn creates_files_in_dest() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
@@ -34,7 +33,6 @@ async fn creates_files_in_dest() {
 }
 
 #[tokio::test]
-#[serial]
 async fn creates_workspace_config_from_template() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
@@ -57,7 +55,6 @@ async fn creates_workspace_config_from_template() {
 }
 
 #[tokio::test]
-#[serial]
 async fn creates_project_config_from_template() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
@@ -80,7 +77,6 @@ async fn creates_project_config_from_template() {
 }
 
 #[tokio::test]
-#[serial]
 async fn creates_gitignore_file() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
@@ -103,7 +99,6 @@ async fn creates_gitignore_file() {
 }
 
 #[tokio::test]
-#[serial]
 async fn appends_existing_gitignore_file() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();
@@ -128,7 +123,6 @@ async fn appends_existing_gitignore_file() {
 }
 
 #[tokio::test]
-#[serial]
 async fn does_overwrite_existing_config_if_force_passed() {
     let fixture = create_fixtures_sandbox("init-sandbox");
     let root = fixture.path();

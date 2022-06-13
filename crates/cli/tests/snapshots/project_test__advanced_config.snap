@@ -8,7 +8,7 @@ expression: get_assert_output(&assert)
 
 ID: advanced
 Source: advanced
-Type: Library
+Type: Application
 Name: Advanced
 Description: Advanced example.
 Owner: Batman

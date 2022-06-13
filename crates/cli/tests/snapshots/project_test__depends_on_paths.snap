@@ -8,6 +8,7 @@ expression: get_assert_output(&assert)
 
 ID: foo
 Source: deps/foo
+Type: Library
 
  DEPENDS ON 
 

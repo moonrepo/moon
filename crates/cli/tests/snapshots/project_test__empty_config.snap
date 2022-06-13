@@ -8,6 +8,7 @@ expression: get_assert_output(&assert)
 
 ID: emptyConfig
 Source: empty-config
+Type: Library
 
  FILE GROUPS 
 

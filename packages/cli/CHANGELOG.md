@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Moved the `project.type` setting in `project.yml` to the top-level. Is now simply `type`.
+
 #### 🚀 Updates
 
 - Added support for a list of globs when configuring `projects` in `.moon/workspace.yml`.

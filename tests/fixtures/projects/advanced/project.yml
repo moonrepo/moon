@@ -5,3 +5,5 @@ project:
   channel: '#batcave'
   owner: 'Batman'
   maintainers: ['Bruce Wayne']
+
+type: 'application'

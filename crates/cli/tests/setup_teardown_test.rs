@@ -1,9 +1,12 @@
+use moon_cli::commands::setup::setup;
+use moon_cli::commands::teardown::teardown;
 use moon_utils::is_ci;
 use moon_utils::path::get_home_dir;
-use moon_utils::test::{create_fixtures_sandbox, create_moon_command_in};
+use moon_utils::test::create_fixtures_sandbox;
+use std::env;
 
-#[test]
-fn sets_up_and_tears_down() {
+#[tokio::test]
+async fn sets_up_and_tears_down() {
     // This is heavy so avoid in local tests for now
     if !is_ci() {
         return;
@@ -19,21 +22,16 @@ fn sets_up_and_tears_down() {
 
     let fixture = create_fixtures_sandbox("cases");
 
-    let setup = create_moon_command_in(fixture.path())
-        .arg("setup")
-        .env("MOON_NODE_VERSION", node_version)
-        .assert();
+    env::set_var("MOON_NODE_VERSION", node_version);
+    env::set_current_dir(fixture.path()).unwrap();
 
-    setup.success().code(0);
+    setup().await.unwrap();
 
     assert!(node_dir.exists());
 
-    let teardown = create_moon_command_in(fixture.path())
-        .arg("teardown")
-        .env("MOON_NODE_VERSION", node_version)
-        .assert();
+    teardown().await.unwrap();
 
-    teardown.success().code(0);
+    env::remove_var("MOON_NODE_VERSION");
 
     assert!(!node_dir.exists());
 }

@@ -3,6 +3,9 @@
   "title": "ProjectConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
+  "required": [
+    "type"
+  ],
   "properties": {
     "dependsOn": {
       "default": [],
@@ -38,6 +41,9 @@
         "$ref": "#/definitions/TaskConfig"
       }
     },
+    "type": {
+      "$ref": "#/definitions/ProjectType"
+    },
     "workspace": {
       "default": {
         "inheritedTasks": {
@@ -61,8 +67,7 @@
         "description",
         "maintainers",
         "name",
-        "owner",
-        "type"
+        "owner"
       ],
       "properties": {
         "channel": {
@@ -82,9 +87,6 @@
         },
         "owner": {
           "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/ProjectType"
         }
       }
     },
@@ -93,7 +95,8 @@
       "enum": [
         "application",
         "library",
-        "tool"
+        "tool",
+        "unknown"
       ]
     },
     "ProjectWorkspaceConfig": {

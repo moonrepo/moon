@@ -60,6 +60,20 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
+pub enum ProjectLanguage {
+    JavaScript,
+    TypeScript,
+    Unknown,
+}
+
+impl Default for ProjectLanguage {
+    fn default() -> Self {
+        ProjectLanguage::TypeScript
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum ProjectType {
     Application,
     Library,
@@ -115,6 +129,9 @@ pub struct ProjectConfig {
     #[serde(default)]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
+
+    #[serde(default)]
+    pub language: ProjectLanguage,
 
     #[validate]
     pub project: Option<ProjectMetadataConfig>,

@@ -4,3 +4,5 @@ dependsOn:
 fileGroups:
   tests:
     - '**/*_test.rs'
+
+language: javascript

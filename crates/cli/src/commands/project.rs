@@ -28,6 +28,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
     }
 
     if let Some(config) = project.config {
+        term.render_entry("Language", &term.format(&config.language))?;
         term.render_entry("Type", &term.format(&config.type_of))?;
 
         if let Some(meta) = config.project {

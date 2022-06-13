@@ -4,18 +4,19 @@ assertion_line: 76
 expression: get_assert_output(&assert)
 ---
 
- TASKS 
+ TASKS
 
 ID: tasks
 Source: tasks
 Type: Library
+Language: TypeScript
 
- TASKS 
+ TASKS
 
 lint: eslint --cache --report-unused-disable-directives
 test: jest --cache --color
 
- FILE GROUPS 
+ FILE GROUPS
 
 sources:
  - src/**/*

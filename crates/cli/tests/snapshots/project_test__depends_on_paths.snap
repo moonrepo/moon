@@ -4,18 +4,19 @@ assertion_line: 66
 expression: get_assert_output(&assert)
 ---
 
- FOO 
+ FOO
 
 ID: foo
 Source: deps/foo
 Type: Library
+Language: TypeScript
 
- DEPENDS ON 
+ DEPENDS ON
 
  - bar (deps/bar)
  - baz (deps/baz)
 
- FILE GROUPS 
+ FILE GROUPS
 
 sources:
  - src/**/*

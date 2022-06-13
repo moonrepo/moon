@@ -139,13 +139,13 @@ fn advanced_config() {
             id: String::from("advanced"),
             config: Some(ProjectConfig {
                 project: Some(ProjectMetadataConfig {
-                    type_of: ProjectType::Library,
                     name: String::from("Advanced"),
                     description: String::from("Advanced example."),
                     owner: String::from("Batman"),
                     maintainers: string_vec!["Bruce Wayne"],
                     channel: String::from("#batcave"),
                 }),
+                type_of: ProjectType::Application,
                 ..ProjectConfig::default()
             }),
             log_target: String::from("moon:project:advanced"),

@@ -64,13 +64,17 @@ pub enum ProjectType {
     Application,
     Library,
     Tool,
+    Unknown,
+}
+
+impl Default for ProjectType {
+    fn default() -> Self {
+        ProjectType::Library
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
-    #[serde(rename = "type")]
-    pub type_of: ProjectType,
-
     pub name: String,
 
     pub description: String,
@@ -119,6 +123,9 @@ pub struct ProjectConfig {
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: HashMap<String, TaskConfig>,
+
+    #[serde(rename = "type")]
+    pub type_of: ProjectType,
 
     #[serde(default)]
     #[validate]

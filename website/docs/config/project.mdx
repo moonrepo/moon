@@ -73,7 +73,6 @@ when defined, all fields within it _must_ be defined as well.
 
 ```yaml title="project.yml"
 project:
-  type: 'tool'
   name: 'moon'
   description: 'A monorepo management tool.'
   channel: '#moon'
@@ -118,16 +117,6 @@ A human readable name of the project. This is _different_ from the unique projec
 
 The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
 suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
-
-### `type`
-
-> `ProjectType`
-
-The type of project. Supports the following values:
-
-- `application` - A backend or frontend application that communicates over HTTP, TCP, RPC, etc.
-- `library` - A self-contained, shareable, and publishable set of code.
-- `tool` - An internal tool, command line program, one-off script, etc.
 
 ## `tasks`
 
@@ -397,6 +386,20 @@ tasks:
 
 > This field exists because of our [toolchain](../concepts/toolchain), and moon ensuring the correct
 > command is ran.
+
+## `type`
+
+> `ProjectType`
+
+The type of project. Supports the following values:
+
+- `application` - A backend or frontend application that communicates over HTTP, TCP, RPC, etc.
+- `library` (default) - A self-contained, shareable, and publishable set of code.
+- `tool` - An internal tool, command line program, one-off script, etc.
+
+```yaml title="project.yml"
+type: 'application'
+```
 
 ## `workspace`
 

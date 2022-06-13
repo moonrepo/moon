@@ -28,8 +28,9 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
     }
 
     if let Some(config) = project.config {
+        term.render_entry("Type", &term.format(&config.type_of))?;
+
         if let Some(meta) = config.project {
-            term.render_entry("Type", &term.format(&meta.type_of))?;
             term.render_entry("Name", &meta.name)?;
             term.render_entry("Description", &meta.description)?;
             term.render_entry("Owner", &meta.owner)?;

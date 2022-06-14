@@ -24,6 +24,14 @@
         }
       }
     },
+    "language": {
+      "default": "typescript",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectLanguage"
+        }
+      ]
+    },
     "project": {
       "anyOf": [
         {
@@ -60,6 +68,14 @@
     }
   },
   "definitions": {
+    "ProjectLanguage": {
+      "type": "string",
+      "enum": [
+        "javascript",
+        "typescript",
+        "unknown"
+      ]
+    },
     "ProjectMetadataConfig": {
       "type": "object",
       "required": [

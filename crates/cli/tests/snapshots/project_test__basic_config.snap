@@ -8,6 +8,7 @@ expression: get_assert_output(&assert)
 
 ID: basic
 Source: basic
+Language: JavaScript
 Type: Library
 
  DEPENDS ON 

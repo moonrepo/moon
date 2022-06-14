@@ -8,6 +8,7 @@ expression: get_assert_output(&assert)
 
 ID: advanced
 Source: advanced
+Language: TypeScript
 Type: Application
 Name: Advanced
 Description: Advanced example.

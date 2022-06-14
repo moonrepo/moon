@@ -1306,7 +1306,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "assert_cmd",
  "clap",

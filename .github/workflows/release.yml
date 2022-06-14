@@ -10,6 +10,8 @@ on:
   push:
     branches:
       - master
+      - develop-*
+      - release-*
   # Uncomment to test in PRs (its safe)
   # pull_request:
 

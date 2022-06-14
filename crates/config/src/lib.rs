@@ -10,7 +10,7 @@ mod workspace;
 pub use errors::format_errors;
 pub use project::global::GlobalProjectConfig;
 pub use project::task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
-pub use project::{ProjectConfig, ProjectMetadataConfig, ProjectType};
+pub use project::{ProjectConfig, ProjectLanguage, ProjectMetadataConfig, ProjectType};
 pub use types::{FileGlob, FilePath, FilePathOrGlob, ProjectID, TargetID, TaskID};
 pub use validator::ValidationErrors;
 pub use workspace::node::{

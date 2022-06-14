@@ -8,9 +8,12 @@
 
 #### 🚀 Updates
 
-- Added support for a list of globs when configuring `projects` in `.moon/workspace.yml`.
-- Added an `actionRunner.inheritColorsForPipedTasks` setting to `.moon/workspace.yml` for inheriting
+- Added support for a list of globs when configuring the `projects` setting in
+  `.moon/workspace.yml`.
+- Added a `actionRunner.inheritColorsForPipedTasks` setting to `.moon/workspace.yml` for inheriting
   terminal colors for piped tasks.
+- Added a `language` setting to `project.yml` for defining the primary programming language of a
+  project.
 - Added a global `--color` option to the CLI. Also supports a new `MOON_COLOR` environment variable.
 
 #### 🐞 Fixes

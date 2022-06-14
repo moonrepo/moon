@@ -64,6 +64,22 @@ fileGroups:
 > modify the glob lists, add and remove groups, or implement completely new groups. The choice is
 > yours!
 
+## `language`
+
+> `ProjectLanguage`
+
+The primary programming language the project is written in. Supports the following values:
+
+- `javascript` - A [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) based
+  project.
+- `typescript` (default) - A [TypeScript](https://www.typescriptlang.org/) based project.
+
+```yaml title="project.yml"
+language: 'javascript'
+```
+
+> This setting will be used in the future for analytics, metrics, and other data driven events.
+
 ## `project`
 
 > `ProjectMetadataConfig`

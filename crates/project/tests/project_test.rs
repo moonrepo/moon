@@ -1,7 +1,7 @@
 use moon_config::package::PackageJson;
 use moon_config::{
-    GlobalProjectConfig, ProjectConfig, ProjectMetadataConfig, ProjectType, TargetID, TaskConfig,
-    TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    GlobalProjectConfig, ProjectConfig, ProjectLanguage, ProjectMetadataConfig, ProjectType,
+    TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
 use moon_project::{EnvVars, FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::string_vec;
@@ -111,6 +111,7 @@ fn basic_config() {
             config: Some(ProjectConfig {
                 depends_on: string_vec!["noConfig"],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
+                language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
             }),
             log_target: String::from("moon:project:basic"),
@@ -179,6 +180,7 @@ fn overrides_global_file_groups() {
             config: Some(ProjectConfig {
                 depends_on: string_vec!["noConfig"],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
+                language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
             }),
             log_target: String::from("moon:project:basic"),

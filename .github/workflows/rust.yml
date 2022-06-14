@@ -118,15 +118,12 @@ jobs:
           args: --workspace
         env:
           RUSTFLAGS: -Cinstrument-coverage
-          LLVM_PROFILE_FILE: ${{ env.PWD }}/moon-%p-%m.profraw
-      # Windows fails to compile right now...
+          LLVM_PROFILE_FILE: ${{ github.workspace }}/moon-%p-%m.profraw
       - name: Generate code coverage
-        if: ${{ matrix.os != 'windows-latest' }}
         run:
           grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o
           ./report.txt
       - uses: actions/upload-artifact@v2
-        if: ${{ matrix.os != 'windows-latest' }}
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}

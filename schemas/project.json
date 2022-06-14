@@ -3,6 +3,9 @@
   "title": "ProjectConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
+  "required": [
+    "type"
+  ],
   "properties": {
     "dependsOn": {
       "default": [],
@@ -21,6 +24,14 @@
         }
       }
     },
+    "language": {
+      "default": "typescript",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectLanguage"
+        }
+      ]
+    },
     "project": {
       "anyOf": [
         {
@@ -38,6 +49,9 @@
         "$ref": "#/definitions/TaskConfig"
       }
     },
+    "type": {
+      "$ref": "#/definitions/ProjectType"
+    },
     "workspace": {
       "default": {
         "inheritedTasks": {
@@ -54,6 +68,14 @@
     }
   },
   "definitions": {
+    "ProjectLanguage": {
+      "type": "string",
+      "enum": [
+        "javascript",
+        "typescript",
+        "unknown"
+      ]
+    },
     "ProjectMetadataConfig": {
       "type": "object",
       "required": [
@@ -61,8 +83,7 @@
         "description",
         "maintainers",
         "name",
-        "owner",
-        "type"
+        "owner"
       ],
       "properties": {
         "channel": {
@@ -82,9 +103,6 @@
         },
         "owner": {
           "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/ProjectType"
         }
       }
     },
@@ -93,7 +111,8 @@
       "enum": [
         "application",
         "library",
-        "tool"
+        "tool",
+        "unknown"
       ]
     },
     "ProjectWorkspaceConfig": {
@@ -147,7 +166,7 @@
       "type": "object",
       "properties": {
         "args": {
-          "title": "Args",
+          "title": "ArgsField",
           "default": null,
           "anyOf": [
             {

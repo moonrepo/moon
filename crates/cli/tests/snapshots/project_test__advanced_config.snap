@@ -4,13 +4,12 @@ assertion_line: 55
 expression: get_assert_output(&assert)
 ---
 
- ADVANCED
+ ADVANCED 
 
 ID: advanced
 Source: advanced
-Type: Application
 Language: TypeScript
-Type: Library
+Type: Application
 Name: Advanced
 Description: Advanced example.
 Owner: Batman
@@ -18,7 +17,7 @@ Maintainers:
  - Bruce Wayne
 Channel: #batcave
 
- FILE GROUPS
+ FILE GROUPS 
 
 sources:
  - src/**/*

@@ -4,18 +4,18 @@ assertion_line: 44
 expression: get_assert_output(&assert)
 ---
 
- BASIC
+ BASIC 
 
 ID: basic
 Source: basic
-Type: Library
 Language: JavaScript
+Type: Library
 
- DEPENDS ON
+ DEPENDS ON 
 
  - noConfig (no-config)
 
- FILE GROUPS
+ FILE GROUPS 
 
 sources:
  - src/**/*

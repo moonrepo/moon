@@ -4,14 +4,14 @@ assertion_line: 23
 expression: get_assert_output(&assert)
 ---
 
- EMPTYCONFIG
+ EMPTYCONFIG 
 
 ID: emptyConfig
 Source: empty-config
-Type: Library
 Language: TypeScript
+Type: Library
 
- FILE GROUPS
+ FILE GROUPS 
 
 sources:
  - src/**/*

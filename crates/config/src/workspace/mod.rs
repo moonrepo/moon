@@ -6,6 +6,7 @@ mod vcs;
 
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
+use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{
     default_bool_true, validate_child_relative_path, validate_id, validate_url,
@@ -134,17 +135,20 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
-        let mut config: WorkspaceConfig =
-            match Figment::from(Serialized::defaults(WorkspaceConfig::default()))
-                .merge(Yaml::file(path))
-                .extract()
-            {
-                Ok(cfg) => cfg,
-                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-            };
+        let mut config = WorkspaceConfig::load_config(
+            Figment::from(Serialized::defaults(WorkspaceConfig::default()))
+                .merge(Yaml::file(&path)),
+        )?;
 
-        if let Err(errors) = config.validate() {
-            return Err(errors);
+        // This is janky, but figment does not support any kind of extends mechanism,
+        // and figment providers do not have access to the current config dataset,
+        // so we need to double-load this config and extract in the correct order!
+        if let Some(extends) = config.extends {
+            config = WorkspaceConfig::load_config(
+                Figment::from(Serialized::defaults(WorkspaceConfig::default()))
+                    .merge(Url::from(extends))
+                    .merge(Yaml::file(&path)),
+            )?
         }
 
         // Versions from env vars should take precedence
@@ -171,25 +175,18 @@ impl WorkspaceConfig {
         Ok(config)
     }
 
-    // pub fn load_from_url(url: &str) -> Result<WorkspaceConfig, ValidationErrors> {
-    //     let mut config: WorkspaceConfig =
-    //         match Figment::from(Serialized::defaults(WorkspaceConfig::default()))
-    //             .merge(Yaml::file(path))
-    //             .merge(
-    //                 Env::prefixed("MOON_CONFIG_")
-    //                     .split("_")
-    //                     .ignore(&["projects"]),
-    //             )
-    //             .extract()
-    //         {
-    //             Ok(cfg) => cfg,
-    //             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-    //         };
+    fn load_config(figment: Figment) -> Result<WorkspaceConfig, ValidationErrors> {
+        let config: WorkspaceConfig = match figment.extract() {
+            Ok(cfg) => cfg,
+            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+        };
 
-    //     if let Err(errors) = config.validate() {
-    //         return Err(errors);
-    //     }
-    // }
+        if let Err(errors) = config.validate() {
+            return Err(errors);
+        }
+
+        Ok(config)
+    }
 }
 
 // SERDE

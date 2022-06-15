@@ -3,7 +3,7 @@ use moon_utils::regex::{matches_id, matches_target};
 use semver::Version;
 use std::collections::HashMap;
 use std::path::Path;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{validate_url as validate_base_url, Validate, ValidationError, ValidationErrors};
 
 pub fn default_bool_true() -> bool {
     true
@@ -113,6 +113,27 @@ pub fn validate_target(key: &str, target_id: &str) -> Result<(), ValidationError
             "invalid_target",
             key,
             String::from("Must be a valid target format."),
+        ));
+    }
+
+    Ok(())
+}
+
+// Validate the value is a URL, and optionally check if HTTPS.
+pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), ValidationError> {
+    if !validate_base_url(value) {
+        return Err(create_validation_error(
+            "invalid_url",
+            key,
+            String::from("Must be a valid URL."),
+        ));
+    }
+
+    if https_only && !value.starts_with("https://") {
+        return Err(create_validation_error(
+            "invalid_https_url",
+            key,
+            String::from("Only HTTPS URLs are supported."),
         ));
     }
 

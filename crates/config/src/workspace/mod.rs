@@ -5,9 +5,11 @@ mod typescript;
 mod vcs;
 
 use crate::constants;
-use crate::errors::map_figment_error_to_validation_errors;
+use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use crate::types::{FileGlob, FilePath};
-use crate::validators::{default_bool_true, validate_child_relative_path, validate_id};
+use crate::validators::{
+    default_bool_true, validate_child_relative_path, validate_id, validate_url,
+};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
@@ -28,6 +30,20 @@ use validator::{Validate, ValidationError, ValidationErrors};
 pub use vcs::{VcsConfig, VcsManager};
 
 type ProjectsMap = HashMap<String, FilePath>;
+
+fn validate_extends(extends: &str) -> Result<(), ValidationError> {
+    validate_url("extends", extends, true)?;
+
+    if !extends.ends_with(".yml") {
+        return Err(create_validation_error(
+            "invalid_yaml",
+            "extends",
+            String::from("Must be a YAML (.yml) document."),
+        ));
+    }
+
+    Ok(())
+}
 
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
@@ -71,6 +87,9 @@ pub struct WorkspaceConfig {
     #[serde(default)]
     #[validate]
     pub action_runner: ActionRunnerConfig,
+
+    #[validate(custom = "validate_extends")]
+    pub extends: Option<String>,
 
     #[serde(default)]
     #[validate]
@@ -151,6 +170,26 @@ impl WorkspaceConfig {
 
         Ok(config)
     }
+
+    // pub fn load_from_url(url: &str) -> Result<WorkspaceConfig, ValidationErrors> {
+    //     let mut config: WorkspaceConfig =
+    //         match Figment::from(Serialized::defaults(WorkspaceConfig::default()))
+    //             .merge(Yaml::file(path))
+    //             .merge(
+    //                 Env::prefixed("MOON_CONFIG_")
+    //                     .split("_")
+    //                     .ignore(&["projects"]),
+    //             )
+    //             .extract()
+    //         {
+    //             Ok(cfg) => cfg,
+    //             Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+    //         };
+
+    //     if let Err(errors) = config.validate() {
+    //         return Err(errors);
+    //     }
+    // }
 }
 
 // SERDE
@@ -250,6 +289,7 @@ mod tests {
                 config,
                 WorkspaceConfig {
                     action_runner: ActionRunnerConfig::default(),
+                    extends: None,
                     node: NodeConfig::default(),
                     projects: HashMap::new(),
                     typescript: TypeScriptConfig::default(),
@@ -260,6 +300,90 @@ mod tests {
 
             Ok(())
         });
+    }
+
+    mod extends {
+        use super::*;
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field <id>extends</id>: Expected a string type, received unsigned int `123`."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_WORKSPACE_FILENAME, "extends: 123")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a valid URL.")]
+        fn not_a_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "extends: random value",
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Only HTTPS URLs are supported.")]
+        fn not_a_https_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "extends: http://domain.com",
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field <id>extends</id>: Must be a YAML (.yml) document."
+        )]
+        fn not_a_yaml_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "extends: https://domain.com/file.txt",
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn valid() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "extends: https://domain.com/file.yml",
+                )?;
+
+                let config: WorkspaceConfig = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config.extends,
+                    Some("https://domain.com/file.yml".to_owned())
+                );
+
+                Ok(())
+            });
+        }
     }
 
     mod node {
@@ -282,6 +406,7 @@ node:
                     config,
                     WorkspaceConfig {
                         action_runner: ActionRunnerConfig::default(),
+                        extends: None,
                         node: NodeConfig {
                             package_manager: PackageManager::Yarn,
                             ..NodeConfig::default()
@@ -779,6 +904,7 @@ vcs:
                     config,
                     WorkspaceConfig {
                         action_runner: ActionRunnerConfig::default(),
+                        extends: None,
                         node: NodeConfig::default(),
                         projects: HashMap::new(),
                         typescript: TypeScriptConfig::default(),

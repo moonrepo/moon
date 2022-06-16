@@ -364,19 +364,35 @@ mod tests {
         }
 
         #[test]
-        fn valid() {
+        fn loads_from_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
                     super::constants::CONFIG_WORKSPACE_FILENAME,
-                    "extends: https://domain.com/file.yml",
+r#"
+extends: https://raw.githubusercontent.com/moonrepo/moon/04-config-extend/tests/fixtures/config-extends/.moon/workspace.yml
+
+node:
+    version: '18.0.0'
+    npm:
+        version: '8.0.0'
+"#,
                 )?;
 
                 let config: WorkspaceConfig = super::load_jailed_config()?;
 
                 assert_eq!(
                     config.extends,
-                    Some("https://domain.com/file.yml".to_owned())
+                    Some("https://raw.githubusercontent.com/moonrepo/moon/04-config-extend/tests/fixtures/config-extends/.moon/workspace.yml".to_owned())
                 );
+
+                // Inherits from extended file
+                assert!(!config.node.add_engines_constraint);
+                assert!(!config.typescript.sync_project_references);
+                assert_eq!(config.vcs.manager, VcsManager::Svn);
+
+                // Ensure we can override the extended config
+                assert_eq!(config.node.version, "18.0.0".to_owned());
+                assert_eq!(config.node.npm.version, "8.0.0".to_owned());
 
                 Ok(())
             });

@@ -139,3 +139,18 @@ pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), Vali
 
     Ok(())
 }
+
+// Validate the value is an acceptable URL for an "extends" YAML field.
+pub fn validate_extends_url(key: &str, value: &str) -> Result<(), ValidationError> {
+    validate_url(key, value, true)?;
+
+    if !value.ends_with(".yml") {
+        return Err(create_validation_error(
+            "invalid_yaml",
+            key,
+            String::from("Must be a YAML (.yml) document."),
+        ));
+    }
+
+    Ok(())
+}

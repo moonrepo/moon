@@ -3,8 +3,9 @@
 use crate::constants;
 use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
 use crate::project::task::TaskConfig;
+use crate::providers::url::Url;
 use crate::types::FileGroups;
-use crate::validators::validate_id;
+use crate::validators::{validate_extends_url, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
@@ -15,6 +16,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
+
+fn validate_extends(extends: &str) -> Result<(), ValidationError> {
+    validate_extends_url("extends", extends)?;
+
+    Ok(())
+}
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     for key in map.keys() {
@@ -47,6 +54,9 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
 #[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalProjectConfig {
+    #[validate(custom = "validate_extends")]
+    pub extends: Option<String>,
+
     #[serde(default)]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
@@ -81,16 +91,31 @@ impl Provider for GlobalProjectConfig {
 
 impl GlobalProjectConfig {
     pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ValidationErrors> {
-        let config: GlobalProjectConfig =
-            match Figment::from(Serialized::defaults(GlobalProjectConfig::default()))
-                .merge(Yaml::file(path))
-                .extract()
-            {
-                Ok(cfg) => cfg,
-                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-            };
+        let mut config = GlobalProjectConfig::load_config(
+            Figment::from(Serialized::defaults(GlobalProjectConfig::default()))
+                .merge(Yaml::file(&path)),
+        )?;
 
-        // Validate the fields before continuing
+        // This is janky, but figment does not support any kind of extends mechanism,
+        // and figment providers do not have access to the current config dataset,
+        // so we need to double-load this config and extract in the correct order!
+        if let Some(extends) = config.extends {
+            config = GlobalProjectConfig::load_config(
+                Figment::from(Serialized::defaults(GlobalProjectConfig::default()))
+                    .merge(Url::from(extends))
+                    .merge(Yaml::file(&path)),
+            )?
+        }
+
+        Ok(config)
+    }
+
+    fn load_config(figment: Figment) -> Result<GlobalProjectConfig, ValidationErrors> {
+        let config: GlobalProjectConfig = match figment.extract() {
+            Ok(cfg) => cfg,
+            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+        };
+
         if let Err(errors) = config.validate() {
             return Err(errors);
         }
@@ -129,6 +154,7 @@ fileGroups:
             assert_eq!(
                 config,
                 GlobalProjectConfig {
+                    extends: None,
                     file_groups: HashMap::from([(
                         String::from("sources"),
                         string_vec!["src/**/*"]
@@ -140,6 +166,71 @@ fileGroups:
 
             Ok(())
         });
+    }
+
+    mod extends {
+        use super::*;
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field <id>extends</id>: Expected a string type, received unsigned int `123`."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "extends: 123")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a valid URL.")]
+        fn not_a_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    "extends: random value",
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Only HTTPS URLs are supported.")]
+        fn not_a_https_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    "extends: http://domain.com",
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field <id>extends</id>: Must be a YAML (.yml) document."
+        )]
+        fn not_a_yaml_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    "extends: https://domain.com/file.txt",
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
     }
 
     mod file_groups {

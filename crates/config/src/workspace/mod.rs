@@ -5,11 +5,11 @@ mod typescript;
 mod vcs;
 
 use crate::constants;
-use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
+use crate::errors::map_figment_error_to_validation_errors;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{
-    default_bool_true, validate_child_relative_path, validate_id, validate_url,
+    default_bool_true, validate_child_relative_path, validate_extends_url, validate_id,
 };
 use figment::value::{Dict, Map};
 use figment::{
@@ -33,15 +33,7 @@ pub use vcs::{VcsConfig, VcsManager};
 type ProjectsMap = HashMap<String, FilePath>;
 
 fn validate_extends(extends: &str) -> Result<(), ValidationError> {
-    validate_url("extends", extends, true)?;
-
-    if !extends.ends_with(".yml") {
-        return Err(create_validation_error(
-            "invalid_yaml",
-            "extends",
-            String::from("Must be a YAML (.yml) document."),
-        ));
-    }
+    validate_extends_url("extends", extends)?;
 
     Ok(())
 }
@@ -267,6 +259,7 @@ fn make_projects_schema(_gen: &mut SchemaGenerator) -> Schema {
 mod tests {
     use super::*;
     use crate::errors::tests::handled_jailed_error;
+    use std::env;
 
     fn load_jailed_config() -> Result<WorkspaceConfig, figment::Error> {
         match WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME)) {
@@ -555,7 +548,7 @@ projects:
 
         #[test]
         fn inherits_from_env_var() {
-            std::env::set_var("MOON_NODE_VERSION", "4.5.6");
+            env::set_var("MOON_NODE_VERSION", "4.5.6");
 
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -563,7 +556,8 @@ projects:
                     r#"
 node:
     version: '16.13.0'
-projects: {}"#,
+projects: {}
+"#,
                 )?;
 
                 let config = super::load_jailed_config()?;
@@ -572,10 +566,14 @@ projects: {}"#,
 
                 Ok(())
             });
+
+            env::remove_var("MOON_NODE_VERSION");
         }
     }
 
     mod npm {
+        use super::*;
+
         #[test]
         #[should_panic(
             expected = "Invalid field <id>node.npm</id>: Expected struct NpmConfig type, received string \"foo\"."
@@ -610,7 +608,8 @@ node:
     npm:
         version: 'foo bar'
 projects:
-  foo: packages/foo"#,
+  foo: packages/foo
+"#,
                 )?;
 
                 super::load_jailed_config()?;
@@ -621,7 +620,7 @@ projects:
 
         #[test]
         fn inherits_from_env_var() {
-            std::env::set_var("MOON_NPM_VERSION", "4.5.6");
+            env::set_var("MOON_NPM_VERSION", "4.5.6");
 
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -631,7 +630,8 @@ node:
     version: '16.13.0'
     npm:
         version: '1.2.3'
-projects: {}"#,
+projects: {}
+"#,
                 )?;
 
                 let config = super::load_jailed_config()?;
@@ -640,10 +640,14 @@ projects: {}"#,
 
                 Ok(())
             });
+
+            env::remove_var("MOON_NPM_VERSION");
         }
     }
 
     mod pnpm {
+        use super::*;
+
         #[test]
         #[should_panic(
             expected = "Invalid field <id>node.pnpm</id>: Expected struct PnpmConfig type, received string \"foo\"."
@@ -689,7 +693,7 @@ projects:
 
         #[test]
         fn inherits_from_env_var() {
-            std::env::set_var("MOON_PNPM_VERSION", "4.5.6");
+            env::set_var("MOON_PNPM_VERSION", "4.5.6");
 
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -700,7 +704,8 @@ node:
     packageManager: 'pnpm'
     pnpm:
         version: '1.2.3'
-projects: {}"#,
+projects: {}
+"#,
                 )?;
 
                 let config = super::load_jailed_config()?;
@@ -709,10 +714,14 @@ projects: {}"#,
 
                 Ok(())
             });
+
+            env::remove_var("MOON_PNPM_VERSION");
         }
     }
 
     mod yarn {
+        use super::*;
+
         #[test]
         #[should_panic(
             expected = "Invalid field <id>node.yarn</id>: Expected struct YarnConfig type, received string \"foo\"."
@@ -758,7 +767,7 @@ projects:
 
         #[test]
         fn inherits_from_env_var() {
-            std::env::set_var("MOON_YARN_VERSION", "4.5.6");
+            env::set_var("MOON_YARN_VERSION", "4.5.6");
 
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -769,7 +778,8 @@ node:
     packageManager: 'yarn'
     yarn:
         version: '1.2.3'
-projects: {}"#,
+projects: {}
+"#,
                 )?;
 
                 let config = super::load_jailed_config()?;
@@ -778,6 +788,8 @@ projects: {}"#,
 
                 Ok(())
             });
+
+            env::remove_var("MOON_YARN_VERSION");
         }
     }
 

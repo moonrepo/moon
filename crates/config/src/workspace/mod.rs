@@ -140,7 +140,7 @@ impl WorkspaceConfig {
                 Figment::from(Serialized::defaults(WorkspaceConfig::default()))
                     .merge(Url::from(extends))
                     .merge(Yaml::file(&path)),
-            )?
+            )?;
         }
 
         // Versions from env vars should take precedence

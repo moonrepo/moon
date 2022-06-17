@@ -99,12 +99,27 @@ impl GlobalProjectConfig {
         // This is janky, but figment does not support any kind of extends mechanism,
         // and figment providers do not have access to the current config dataset,
         // so we need to double-load this config and extract in the correct order!
-        if let Some(extends) = config.extends {
-            config = GlobalProjectConfig::load_config(
-                Figment::from(Serialized::defaults(GlobalProjectConfig::default()))
-                    .merge(Url::from(extends))
-                    .merge(Yaml::file(&path)),
-            )?
+        if let Some(extends) = &config.extends {
+            let extended_config =
+                GlobalProjectConfig::load_config(Figment::from(Url::from(extends.to_owned())))?;
+
+            // Figment does not merge hash maps but replaces entirely,
+            // so we need to manually handle this here!
+            if !extended_config.file_groups.is_empty() {
+                let mut map = HashMap::new();
+                map.extend(extended_config.file_groups);
+                map.extend(config.file_groups);
+
+                config.file_groups = map;
+            }
+
+            if !extended_config.tasks.is_empty() {
+                let mut map = HashMap::new();
+                map.extend(extended_config.tasks);
+                map.extend(config.tasks);
+
+                config.tasks = map;
+            }
         }
 
         Ok(config)
@@ -170,6 +185,7 @@ fileGroups:
 
     mod extends {
         use super::*;
+        use crate::project::task::TaskOptionsConfig;
 
         #[test]
         #[should_panic(
@@ -227,6 +243,97 @@ fileGroups:
                 )?;
 
                 super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn loads_from_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+r#"
+extends: https://raw.githubusercontent.com/moonrepo/moon/04-config-extend/tests/fixtures/config-extends/.moon/project.yml
+
+fileGroups:
+    sources:
+        - sources/**/*
+    configs:
+        - '*.js'
+"#,
+                )?;
+
+                let config: GlobalProjectConfig = super::load_jailed_config()?;
+
+                assert_eq!(
+                    config.extends,
+                    Some("https://raw.githubusercontent.com/moonrepo/moon/04-config-extend/tests/fixtures/config-extends/.moon/project.yml".to_owned())
+                );
+
+                // Ensure values are deep merged
+                assert_eq!(
+                    config.file_groups,
+                    HashMap::from([
+                        ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
+                        ("tests".to_owned(), string_vec!["tests/**/*"]),
+                        ("configs".to_owned(), string_vec!["*.js"])
+                    ])
+                );
+
+                assert_eq!(
+                    config.tasks,
+                    HashMap::from([
+                        (
+                            "onlyCommand".to_owned(),
+                            TaskConfig {
+                                command: Some(String::from("a")),
+                                ..TaskConfig::default()
+                            }
+                        ),
+                        (
+                            "stringArgs".to_owned(),
+                            TaskConfig {
+                                command: Some(String::from("b")),
+                                args: Some(string_vec!["string", "args"]),
+                                ..TaskConfig::default()
+                            }
+                        ),
+                        (
+                            "arrayArgs".to_owned(),
+                            TaskConfig {
+                                command: Some(String::from("c")),
+                                args: Some(string_vec!["array", "args"]),
+                                ..TaskConfig::default()
+                            }
+                        ),
+                        (
+                            "inputs".to_owned(),
+                            TaskConfig {
+                                command: Some(String::from("d")),
+                                inputs: Some(string_vec!["src/**/*"]),
+                                ..TaskConfig::default()
+                            }
+                        ),
+                        (
+                            "options".to_owned(),
+                            TaskConfig {
+                                command: Some(String::from("e")),
+                                options: TaskOptionsConfig {
+                                    merge_args: None,
+                                    merge_deps: None,
+                                    merge_env: None,
+                                    merge_inputs: None,
+                                    merge_outputs: None,
+                                    retry_count: None,
+                                    run_in_ci: Some(false),
+                                    run_from_workspace_root: None,
+                                },
+                                ..TaskConfig::default()
+                            }
+                        ),
+                    ])
+                );
 
                 Ok(())
             });

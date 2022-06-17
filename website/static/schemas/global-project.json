@@ -4,6 +4,12 @@
   "description": "Docs: https://moonrepo.dev/docs/config/global-project",
   "type": "object",
   "properties": {
+    "extends": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "fileGroups": {
       "default": {},
       "type": "object",

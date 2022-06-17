@@ -144,11 +144,11 @@ pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), Vali
 pub fn validate_extends_url(key: &str, value: &str) -> Result<(), ValidationError> {
     validate_url(key, value, true)?;
 
-    if !value.ends_with(".yml") {
+    if !value.ends_with(".yml") && !value.ends_with(".yaml") {
         return Err(create_validation_error(
             "invalid_yaml",
             key,
-            String::from("Must be a YAML (.yml) document."),
+            String::from("Must be a YAML document."),
         ));
     }
 

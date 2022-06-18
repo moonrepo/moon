@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where tasks referencing workspace relative files were not being marked as affected.
+
 ## 0.3.0
 
 #### 💥 Breaking

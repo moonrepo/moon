@@ -1,0 +1,45 @@
+# Sharing workspace configuration
+
+For large companies, open source maintainers, and those that love reusability, more often than not
+you'll want to use the same configuration across all repositories for consistency. This helps reduce
+the maintenance burden while ensuring a similar developer experience.
+
+To help streamline this process, moon provides an `extends` setting in both
+[`.moon/workspace.yml`](../config/workspace#extends) and
+[`.moon/project.yml`](../config/global-project#extends). This setting requires a HTTPS URL _or_
+relative file system path that points to a valid YAML document for the configuration in question.
+
+A great way to share configuration is by using GitHub's "raw file view", as demonstrated below using
+our very own [examples repository](https://github.com/moonrepo/examples).
+
+```yaml title=".moon/project.yml"
+extends: 'https://raw.githubusercontent.com/moonrepo/examples/master/.moon/project.yml'
+```
+
+## Versioning
+
+Inheriting an upstream configuration can be dangerous, as the settings may change at any point,
+resulting in broken builds. To mitigate this, you can used a "versioned" upstream configuration,
+which is ideally a fixed point in time. How this is implemented is up to you or your company, but we
+suggest the following patterns:
+
+### Using versioned filenames
+
+A rudimentary solution is to append a version to the upstream filename. When the file is modified, a
+new version should be created, while the previous version remains untouched.
+
+```diff
+-extends: '../shared/project.yml'
++extends: '../shared/project-v1.yml'
+```
+
+### Using branches, tags, or commits
+
+When using a version control platform, like GitHub above, you can reference the upstream
+configuration through a branch, tag, commit, or sha. Since these are a reference point in time, they
+are relatively safe.
+
+```diff
+-extends: 'https://raw.githubusercontent.com/moonrepo/examples/master/.moon/project.yml'
++extends: 'https://raw.githubusercontent.com/moonrepo/examples/c3f10160bcd16b48b8d4d21b208bb50f6b09bd96/.moon/project.yml'
+```

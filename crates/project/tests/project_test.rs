@@ -18,6 +18,7 @@ fn mock_file_groups() -> HashMap<String, FileGroup> {
 
 fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
+        extends: None,
         file_groups: HashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
         tasks: HashMap::new(),
         schema: String::new(),
@@ -167,8 +168,7 @@ fn overrides_global_file_groups() {
         &workspace_root,
         &GlobalProjectConfig {
             file_groups: HashMap::from([(String::from("tests"), string_vec!["tests/**/*"])]),
-            tasks: HashMap::new(),
-            schema: String::new(),
+            ..GlobalProjectConfig::default()
         },
     )
     .unwrap();
@@ -304,9 +304,8 @@ mod tasks {
             "tasks/no-tasks",
             &workspace_root,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
                 tasks: HashMap::from([(String::from("standard"), mock_task_config("cmd"))]),
-                schema: String::new(),
+                ..GlobalProjectConfig::default()
             },
         )
         .unwrap();
@@ -345,9 +344,8 @@ mod tasks {
             "tasks/basic",
             &workspace_root,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
                 tasks: HashMap::from([(String::from("standard"), mock_task_config("cmd"))]),
-                schema: String::new(),
+                ..GlobalProjectConfig::default()
             },
         )
         .unwrap();
@@ -415,7 +413,6 @@ mod tasks {
             project_source,
             &workspace_root,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
                 tasks: HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
@@ -429,7 +426,7 @@ mod tasks {
                         type_of: TaskType::Node,
                     },
                 )]),
-                schema: String::new(),
+                ..GlobalProjectConfig::default()
             },
         )
         .unwrap();
@@ -490,7 +487,6 @@ mod tasks {
             project_source,
             &workspace_root,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
                 tasks: HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
@@ -504,7 +500,7 @@ mod tasks {
                         type_of: TaskType::Node,
                     },
                 )]),
-                schema: String::new(),
+                ..GlobalProjectConfig::default()
             },
         )
         .unwrap();
@@ -568,7 +564,6 @@ mod tasks {
             project_source,
             &workspace_root,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
                 tasks: HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
@@ -582,7 +577,7 @@ mod tasks {
                         type_of: TaskType::Node,
                     },
                 )]),
-                schema: String::new(),
+                ..GlobalProjectConfig::default()
             },
         )
         .unwrap();
@@ -646,7 +641,6 @@ mod tasks {
             project_source,
             &workspace_root,
             &GlobalProjectConfig {
-                file_groups: HashMap::new(),
                 tasks: HashMap::from([(
                     String::from("standard"),
                     TaskConfig {
@@ -660,7 +654,7 @@ mod tasks {
                         type_of: TaskType::Node,
                     },
                 )]),
-                schema: String::new(),
+                ..GlobalProjectConfig::default()
             },
         )
         .unwrap();
@@ -842,7 +836,7 @@ mod tasks {
                             ..TaskConfig::default()
                         },
                     )]),
-                    schema: String::new(),
+                    ..GlobalProjectConfig::default()
                 },
             )
             .unwrap();
@@ -914,7 +908,7 @@ mod tasks {
                             ..TaskConfig::default()
                         },
                     )]),
-                    schema: String::new(),
+                    ..GlobalProjectConfig::default()
                 },
             )
             .unwrap();
@@ -969,7 +963,7 @@ mod tasks {
                             ..TaskConfig::default()
                         },
                     )]),
-                    schema: String::new(),
+                    ..GlobalProjectConfig::default()
                 },
             )
             .unwrap();
@@ -1023,7 +1017,7 @@ mod tasks {
                             ..TaskConfig::default()
                         },
                     )]),
-                    schema: String::new(),
+                    ..GlobalProjectConfig::default()
                 },
             )
             .unwrap();
@@ -1092,7 +1086,7 @@ mod workspace {
                         },
                     ),
                 ]),
-                schema: String::new(),
+                ..GlobalProjectConfig::default()
             }
         }
 

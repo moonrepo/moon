@@ -29,6 +29,26 @@ actionRunner:
   inheritColorsForPipedTasks: true # Default
 ```
 
+## `extends`
+
+> `string`
+
+Defines an external `.moon/workspace.yml` to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+
+```yaml title=".moon/workspace.yml" {1}
+extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/workspace.yml'
+```
+
+:::caution
+
+Settings will be merged recursively for blocks, with values defined in the local configuration
+taking precedence over those defined in the extended configuration. However, the `projects` setting
+_does not merge_!
+
+:::
+
 ## `projects`<RequiredLabel />
 
 > `Record<string, string> | string[]`

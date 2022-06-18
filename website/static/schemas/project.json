@@ -3,9 +3,6 @@
   "title": "ProjectConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
-  "required": [
-    "type"
-  ],
   "properties": {
     "dependsOn": {
       "default": [],
@@ -33,6 +30,7 @@
       ]
     },
     "project": {
+      "default": null,
       "anyOf": [
         {
           "$ref": "#/definitions/ProjectMetadataConfig"
@@ -50,7 +48,12 @@
       }
     },
     "type": {
-      "$ref": "#/definitions/ProjectType"
+      "default": "library",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectType"
+        }
+      ]
     },
     "workspace": {
       "default": {
@@ -136,6 +139,7 @@
       "type": "object",
       "properties": {
         "exclude": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -145,6 +149,7 @@
           }
         },
         "include": {
+          "default": null,
           "type": [
             "array",
             "null"

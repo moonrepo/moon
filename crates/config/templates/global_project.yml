@@ -1,5 +1,8 @@
 $schema: 'https://moonrepo.dev/schemas/global-project.json'
 
+# Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
+# extends: './shared/project.yml'
+
 # File groups are a mechanism for grouping similar types of files within a project
 # using file glob patterns. These groups are then used by tasks to calculate functionality like
 # cache computation, affected files since last change, command line arguments, deterministic

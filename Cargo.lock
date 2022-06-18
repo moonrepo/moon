@@ -1344,6 +1344,7 @@ dependencies = [
  "moon_lang_node",
  "moon_utils",
  "regex",
+ "reqwest",
  "schemars",
  "semver",
  "serde",

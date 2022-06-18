@@ -102,41 +102,38 @@ pub struct ProjectMetadataConfig {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
     pub exclude: Option<Vec<TaskID>>,
 
     pub include: Option<Vec<TaskID>>,
 
-    #[serde(default)]
     pub rename: HashMap<TaskID, TaskID>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
-    #[serde(default)]
     #[validate]
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
 
 /// Docs: https://moonrepo.dev/docs/config/project
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectConfig {
-    #[serde(default)]
     pub depends_on: Vec<ProjectID>,
 
-    #[serde(default)]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
-    #[serde(default)]
     pub language: ProjectLanguage,
 
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
-    #[serde(default)]
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: HashMap<String, TaskConfig>,
@@ -144,7 +141,6 @@ pub struct ProjectConfig {
     #[serde(rename = "type")]
     pub type_of: ProjectType,
 
-    #[serde(default)]
     #[validate]
     pub workspace: ProjectWorkspaceConfig,
 
@@ -159,7 +155,7 @@ impl Provider for ProjectConfig {
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        Serialized::defaults(ProjectConfig::default()).data()
+        Serialized::defaults(self).data()
     }
 
     fn profile(&self) -> Option<Profile> {
@@ -169,14 +165,13 @@ impl Provider for ProjectConfig {
 
 impl ProjectConfig {
     pub fn load(path: &Path) -> Result<ProjectConfig, ValidationErrors> {
-        let config: ProjectConfig =
-            match Figment::from(Serialized::defaults(ProjectConfig::default()))
-                .merge(Yaml::file(path))
-                .extract()
-            {
-                Ok(cfg) => cfg,
-                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-            };
+        let config: ProjectConfig = match Figment::from(ProjectConfig::default())
+            .merge(Yaml::file(path))
+            .extract()
+        {
+            Ok(cfg) => cfg,
+            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+        };
 
         if let Err(errors) = config.validate() {
             return Err(errors);

@@ -2,6 +2,7 @@ pub mod constants;
 mod errors;
 pub mod package;
 mod project;
+mod providers;
 pub mod tsconfig;
 mod types;
 mod validators;

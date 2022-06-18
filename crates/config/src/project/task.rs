@@ -99,7 +99,7 @@ impl Default for TaskOptionsConfig {
     }
 }
 
-// We use serde(default) here because figment *does not* apply defaults,
+// We use serde(default) here because figment *does not* apply defaults
 // for structs nested within collections. Primarily hash maps.
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct TaskConfig {

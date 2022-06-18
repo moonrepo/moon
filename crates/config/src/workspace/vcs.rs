@@ -16,6 +16,7 @@ impl Default for VcsManager {
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct VcsConfig {
     pub manager: VcsManager,

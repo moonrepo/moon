@@ -73,6 +73,7 @@ impl VersionManager {
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 pub struct NpmConfig {
     #[validate(custom = "validate_npm_version")]
     pub version: String,
@@ -115,6 +116,7 @@ impl Default for YarnConfig {
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
     pub add_engines_constraint: bool,

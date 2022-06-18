@@ -102,6 +102,7 @@ pub struct ProjectMetadataConfig {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
     pub exclude: Option<Vec<TaskID>>,
 
@@ -111,6 +112,7 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
     #[validate]
@@ -119,6 +121,7 @@ pub struct ProjectWorkspaceConfig {
 
 /// Docs: https://moonrepo.dev/docs/config/project
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectConfig {
     pub depends_on: Vec<ProjectID>,

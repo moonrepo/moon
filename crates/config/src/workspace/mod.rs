@@ -51,6 +51,7 @@ fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionRunnerConfig {
     pub inherit_colors_for_piped_tasks: bool,
@@ -66,6 +67,7 @@ impl Default for ActionRunnerConfig {
 
 /// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceConfig {
     #[validate]

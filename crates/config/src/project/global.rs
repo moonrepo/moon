@@ -51,9 +51,11 @@ pub struct GlobalProjectConfig {
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 
+    #[schemars(default)]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
+    #[schemars(default)]
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: HashMap<String, TaskConfig>,

@@ -6,7 +6,7 @@ expression: "fs::read_to_string(workspace_config).unwrap()"
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
 
 # Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
-# extends: 'https://.../workspace.yml'
+# extends: './shared/workspace.yml'
 
 # REQUIRED: A map of all projects found within the workspace, or a list or file system globs.
 # When using a map, each entry requires a unique project ID as the map key, and a file system

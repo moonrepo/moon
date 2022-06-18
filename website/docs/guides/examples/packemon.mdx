@@ -63,7 +63,7 @@ buildPackage:
 With this being defined globally, all package-based projects can inherit this task and rename it as
 follows.
 
-```yaml title="packages/*/project.yml"
+```yaml title="<package>/project.yml"
 # Rename the `buildPackage` task to `build` for this project
 workspace:
 	inheritedTasks:
@@ -80,7 +80,7 @@ tasks:
 However, for other project types like applications, this task will need to be _excluded_, otherwise
 it will run and fail in CI.
 
-```yaml title="apps/*/project.yml"
+```yaml title="<app>/project.yml"
 # Exclude the `buildPackage` task for this project
 workspace:
 	inheritedTasks:
@@ -90,7 +90,7 @@ workspace:
 </TabItem>
 <TabItem value="local">
 
-```yaml title="packages/*/project.yml"
+```yaml title="<package>/project.yml"
 build:
 	command: 'packemon'
 	args:

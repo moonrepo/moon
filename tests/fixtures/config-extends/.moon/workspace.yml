@@ -1,0 +1,13 @@
+# NOTE: This is used to test config extending. Changing this will definitely break something!
+
+node:
+  version: '16.1.0'
+  addEnginesConstraint: false
+  npm:
+    version: '7.0.0'
+
+typescript:
+  syncProjectReferences: false
+
+vcs:
+  manager: 'svn'

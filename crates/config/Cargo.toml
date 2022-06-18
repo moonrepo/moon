@@ -19,6 +19,7 @@ moon_utils = { path = "../utils"}
 figment = { version = "0.10.6", features = ["test", "yaml"] }
 json = "0.12.4"
 regex = "1.5.6"
+reqwest = { version = "0.11.10", features = ["blocking"] }
 schemars = "0.8.10"
 semver = "1.0.9"
 serde = { version = "1.0.137", features = ["derive"] }

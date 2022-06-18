@@ -3,11 +3,7 @@ use moon_utils::regex::{matches_id, matches_target};
 use semver::Version;
 use std::collections::HashMap;
 use std::path::Path;
-use validator::{Validate, ValidationError, ValidationErrors};
-
-pub fn default_bool_true() -> bool {
-    true
-}
+use validator::{validate_url as validate_base_url, Validate, ValidationError, ValidationErrors};
 
 // Extend validator lib
 pub trait VecValidate {
@@ -113,6 +109,54 @@ pub fn validate_target(key: &str, target_id: &str) -> Result<(), ValidationError
             "invalid_target",
             key,
             String::from("Must be a valid target format."),
+        ));
+    }
+
+    Ok(())
+}
+
+// Validate the value is a URL, and optionally check if HTTPS.
+pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), ValidationError> {
+    if !validate_base_url(value) {
+        return Err(create_validation_error(
+            "invalid_url",
+            key,
+            String::from("Must be a valid URL."),
+        ));
+    }
+
+    if https_only && !value.starts_with("https://") {
+        return Err(create_validation_error(
+            "invalid_https_url",
+            key,
+            String::from("Only HTTPS URLs are supported."),
+        ));
+    }
+
+    Ok(())
+}
+
+// Validate the value is an acceptable URL or file path for an "extends" YAML field.
+pub fn validate_extends(value: &str) -> Result<(), ValidationError> {
+    if value.starts_with("http") {
+        validate_url("extends", value, true)?;
+
+        // Is there a better way to check that a value is a file system path?
+        // We can't use existence checks because it's not absolute, and
+        // we don't have a working directory to prefix the value with.
+    } else if !value.starts_with('.') {
+        return Err(create_validation_error(
+            "unknown_format",
+            "extends",
+            String::from("Must be a valid URL or relative file path (starts with ./)."),
+        ));
+    }
+
+    if !value.ends_with(".yml") && !value.ends_with(".yaml") {
+        return Err(create_validation_error(
+            "invalid_yaml",
+            "extends",
+            String::from("Must be a YAML document."),
         ));
     }
 

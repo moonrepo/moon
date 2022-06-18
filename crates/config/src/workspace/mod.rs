@@ -6,8 +6,9 @@ mod vcs;
 
 use crate::constants;
 use crate::errors::map_figment_error_to_validation_errors;
+use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
-use crate::validators::{default_bool_true, validate_child_relative_path, validate_id};
+use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
@@ -50,9 +51,9 @@ fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionRunnerConfig {
-    #[serde(default = "default_bool_true")]
     pub inherit_colors_for_piped_tasks: bool,
 }
 
@@ -66,27 +67,26 @@ impl Default for ActionRunnerConfig {
 
 /// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceConfig {
-    #[serde(default)]
     #[validate]
     pub action_runner: ActionRunnerConfig,
 
-    #[serde(default)]
+    #[validate(custom = "validate_extends")]
+    pub extends: Option<String>,
+
     #[validate]
     pub node: NodeConfig,
 
-    #[serde(default)]
     #[serde(deserialize_with = "deserialize_projects")]
     #[schemars(schema_with = "make_projects_schema")]
     #[validate(custom = "validate_projects")]
     pub projects: ProjectsMap,
 
-    #[serde(default)]
     #[validate]
     pub typescript: TypeScriptConfig,
 
-    #[serde(default)]
     #[validate]
     pub vcs: VcsConfig,
 
@@ -105,7 +105,7 @@ impl Provider for WorkspaceConfig {
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        Serialized::defaults(WorkspaceConfig::default()).data()
+        Serialized::defaults(self).data()
     }
 
     fn profile(&self) -> Option<Profile> {
@@ -115,17 +115,25 @@ impl Provider for WorkspaceConfig {
 
 impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
-        let mut config: WorkspaceConfig =
-            match Figment::from(Serialized::defaults(WorkspaceConfig::default()))
-                .merge(Yaml::file(path))
-                .extract()
-            {
-                Ok(cfg) => cfg,
-                Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+        let mut config = WorkspaceConfig::load_config(
+            Figment::from(WorkspaceConfig::default()).merge(Yaml::file(&path)),
+        )?;
+
+        // This is janky, but figment does not support any kind of extends mechanism,
+        // and figment providers do not have access to the current config dataset,
+        // so we need to double-load this config and extract in the correct order!
+        if let Some(extends) = config.extends {
+            let mut figment = Figment::from(WorkspaceConfig::default());
+
+            if extends.starts_with("http") {
+                figment = figment.merge(Url::from(extends));
+            } else {
+                figment = figment.merge(Yaml::file(path.parent().unwrap().join(extends)));
             };
 
-        if let Err(errors) = config.validate() {
-            return Err(errors);
+            figment = figment.merge(Yaml::file(&path));
+
+            config = WorkspaceConfig::load_config(figment)?;
         }
 
         // Versions from env vars should take precedence
@@ -147,6 +155,19 @@ impl WorkspaceConfig {
             if let Some(yarn_config) = &mut config.node.yarn {
                 yarn_config.version = yarn_version;
             }
+        }
+
+        Ok(config)
+    }
+
+    fn load_config(figment: Figment) -> Result<WorkspaceConfig, ValidationErrors> {
+        let config: WorkspaceConfig = match figment.extract() {
+            Ok(cfg) => cfg,
+            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
+        };
+
+        if let Err(errors) = config.validate() {
+            return Err(errors);
         }
 
         Ok(config)
@@ -231,9 +252,10 @@ fn make_projects_schema(_gen: &mut SchemaGenerator) -> Schema {
 mod tests {
     use super::*;
     use crate::errors::tests::handled_jailed_error;
+    use std::path::Path;
 
-    fn load_jailed_config() -> Result<WorkspaceConfig, figment::Error> {
-        match WorkspaceConfig::load(PathBuf::from(constants::CONFIG_WORKSPACE_FILENAME)) {
+    fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
+        match WorkspaceConfig::load(root.join(constants::CONFIG_WORKSPACE_FILENAME)) {
             Ok(cfg) => Ok(cfg),
             Err(errors) => Err(handled_jailed_error(&errors)),
         }
@@ -244,12 +266,13 @@ mod tests {
         figment::Jail::expect_with(|jail| {
             jail.create_file(constants::CONFIG_WORKSPACE_FILENAME, "projects: {}")?;
 
-            let config = load_jailed_config()?;
+            let config = load_jailed_config(jail.directory())?;
 
             assert_eq!(
                 config,
                 WorkspaceConfig {
                     action_runner: ActionRunnerConfig::default(),
+                    extends: None,
                     node: NodeConfig::default(),
                     projects: HashMap::new(),
                     typescript: TypeScriptConfig::default(),
@@ -260,6 +283,165 @@ mod tests {
 
             Ok(())
         });
+    }
+
+    mod extends {
+        use super::*;
+        use std::fs;
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field <id>extends</id>: Expected a string type, received unsigned int `123`."
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(super::constants::CONFIG_WORKSPACE_FILENAME, "extends: 123")?;
+
+                super::load_jailed_config(jail.directory())?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid field <id>extends</id>: Must be a valid URL or relative file path (starts with ./)."
+        )]
+        fn not_a_url_or_file() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "extends: random value",
+                )?;
+
+                super::load_jailed_config(jail.directory())?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Only HTTPS URLs are supported.")]
+        fn not_a_https_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "extends: http://domain.com",
+                )?;
+
+                super::load_jailed_config(jail.directory())?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        fn not_a_yaml_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "extends: https://domain.com/file.txt",
+                )?;
+
+                super::load_jailed_config(jail.directory())?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        fn not_a_yaml_file() {
+            figment::Jail::expect_with(|jail| {
+                fs::create_dir_all(jail.directory().join("shared")).unwrap();
+
+                jail.create_file("shared/file.txt", "")?;
+
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    "extends: ./shared/file.txt",
+                )?;
+
+                super::load_jailed_config(jail.directory())?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn loads_from_file() {
+            figment::Jail::expect_with(|jail| {
+                fs::create_dir_all(jail.directory().join("shared")).unwrap();
+
+                jail.create_file(
+                    format!("shared/{}", super::constants::CONFIG_WORKSPACE_FILENAME),
+                    include_str!("../../../../tests/fixtures/config-extends/.moon/workspace.yml"),
+                )?;
+
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+                    r#"
+extends: ./shared/workspace.yml
+
+node:
+    version: '18.0.0'
+    npm:
+        version: '8.0.0'
+"#,
+                )?;
+
+                let config: WorkspaceConfig = super::load_jailed_config(jail.directory())?;
+
+                assert_eq!(config.extends, Some("./shared/workspace.yml".to_owned()));
+
+                // Inherits from extended file
+                assert!(!config.node.add_engines_constraint);
+                assert!(!config.typescript.sync_project_references);
+                assert_eq!(config.vcs.manager, VcsManager::Svn);
+
+                // Ensure we can override the extended config
+                assert_eq!(config.node.version, "18.0.0".to_owned());
+                assert_eq!(config.node.npm.version, "8.0.0".to_owned());
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn loads_from_url() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_WORKSPACE_FILENAME,
+r#"
+extends: https://raw.githubusercontent.com/moonrepo/moon/develop-0.4/tests/fixtures/config-extends/.moon/workspace.yml
+
+node:
+    version: '18.0.0'
+    npm:
+        version: '8.0.0'
+"#,
+                )?;
+
+                let config: WorkspaceConfig = super::load_jailed_config(jail.directory())?;
+
+                assert_eq!(
+                    config.extends,
+                    Some("https://raw.githubusercontent.com/moonrepo/moon/develop-0.4/tests/fixtures/config-extends/.moon/workspace.yml".to_owned())
+                );
+
+                // Inherits from extended file
+                assert!(!config.node.add_engines_constraint);
+                assert!(!config.typescript.sync_project_references);
+                assert_eq!(config.vcs.manager, VcsManager::Svn);
+
+                // Ensure we can override the extended config
+                assert_eq!(config.node.version, "18.0.0".to_owned());
+                assert_eq!(config.node.npm.version, "8.0.0".to_owned());
+
+                Ok(())
+            });
+        }
     }
 
     mod node {
@@ -276,12 +458,13 @@ node:
     packageManager: yarn"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
+                let config = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(
                     config,
                     WorkspaceConfig {
                         action_runner: ActionRunnerConfig::default(),
+                        extends: None,
                         node: NodeConfig {
                             package_manager: PackageManager::Yarn,
                             ..NodeConfig::default()
@@ -305,7 +488,7 @@ node:
             figment::Jail::expect_with(|jail| {
                 jail.create_file(super::constants::CONFIG_WORKSPACE_FILENAME, "node: 123")?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -326,7 +509,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -347,7 +530,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -368,7 +551,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -390,7 +573,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -409,7 +592,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -417,18 +600,19 @@ projects:
 
         #[test]
         fn inherits_from_env_var() {
-            std::env::set_var("MOON_NODE_VERSION", "4.5.6");
-
             figment::Jail::expect_with(|jail| {
+                jail.set_env("MOON_NODE_VERSION", "4.5.6");
+
                 jail.create_file(
                     super::constants::CONFIG_WORKSPACE_FILENAME,
                     r#"
 node:
     version: '16.13.0'
-projects: {}"#,
+projects: {}
+"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
+                let config = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(config.node.version, String::from("4.5.6"));
 
@@ -452,7 +636,7 @@ node:
     npm: foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -472,10 +656,11 @@ node:
     npm:
         version: 'foo bar'
 projects:
-  foo: packages/foo"#,
+  foo: packages/foo
+"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -483,9 +668,9 @@ projects:
 
         #[test]
         fn inherits_from_env_var() {
-            std::env::set_var("MOON_NPM_VERSION", "4.5.6");
-
             figment::Jail::expect_with(|jail| {
+                jail.set_env("MOON_NPM_VERSION", "4.5.6");
+
                 jail.create_file(
                     super::constants::CONFIG_WORKSPACE_FILENAME,
                     r#"
@@ -493,10 +678,11 @@ node:
     version: '16.13.0'
     npm:
         version: '1.2.3'
-projects: {}"#,
+projects: {}
+"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
+                let config = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(config.node.npm.version, String::from("4.5.6"));
 
@@ -506,6 +692,7 @@ projects: {}"#,
     }
 
     mod pnpm {
+
         #[test]
         #[should_panic(
             expected = "Invalid field <id>node.pnpm</id>: Expected struct PnpmConfig type, received string \"foo\"."
@@ -520,7 +707,7 @@ node:
     pnpm: foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -543,7 +730,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -551,9 +738,9 @@ projects:
 
         #[test]
         fn inherits_from_env_var() {
-            std::env::set_var("MOON_PNPM_VERSION", "4.5.6");
-
             figment::Jail::expect_with(|jail| {
+                jail.set_env("MOON_PNPM_VERSION", "4.5.6");
+
                 jail.create_file(
                     super::constants::CONFIG_WORKSPACE_FILENAME,
                     r#"
@@ -562,10 +749,11 @@ node:
     packageManager: 'pnpm'
     pnpm:
         version: '1.2.3'
-projects: {}"#,
+projects: {}
+"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
+                let config = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(config.node.pnpm.unwrap().version, String::from("4.5.6"));
 
@@ -575,6 +763,7 @@ projects: {}"#,
     }
 
     mod yarn {
+
         #[test]
         #[should_panic(
             expected = "Invalid field <id>node.yarn</id>: Expected struct YarnConfig type, received string \"foo\"."
@@ -589,7 +778,7 @@ node:
     yarn: foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -612,7 +801,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -620,9 +809,9 @@ projects:
 
         #[test]
         fn inherits_from_env_var() {
-            std::env::set_var("MOON_YARN_VERSION", "4.5.6");
-
             figment::Jail::expect_with(|jail| {
+                jail.set_env("MOON_YARN_VERSION", "4.5.6");
+
                 jail.create_file(
                     super::constants::CONFIG_WORKSPACE_FILENAME,
                     r#"
@@ -631,10 +820,11 @@ node:
     packageManager: 'yarn'
     yarn:
         version: '1.2.3'
-projects: {}"#,
+projects: {}
+"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
+                let config = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(config.node.yarn.unwrap().version, String::from("4.5.6"));
 
@@ -658,7 +848,7 @@ projects: {}"#,
                     "projects: apps/*",
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -678,7 +868,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -698,7 +888,7 @@ projects:
   foo: packages/foo"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -715,7 +905,7 @@ projects:
   foo: ./packages/foo"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
+                let config = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(
                     config.projects,
@@ -740,7 +930,7 @@ projects:
     - 'packages/*'"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
+                let config = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(
                     config.projects,
@@ -773,12 +963,13 @@ vcs:
     manager: svn"#,
                 )?;
 
-                let config = super::load_jailed_config()?;
+                let config = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(
                     config,
                     WorkspaceConfig {
                         action_runner: ActionRunnerConfig::default(),
+                        extends: None,
                         node: NodeConfig::default(),
                         projects: HashMap::new(),
                         typescript: TypeScriptConfig::default(),
@@ -807,7 +998,7 @@ projects: {}
 vcs: 123"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -827,7 +1018,7 @@ vcs:
     manager: unknown"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -847,7 +1038,7 @@ vcs:
     defaultBranch: 123"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });

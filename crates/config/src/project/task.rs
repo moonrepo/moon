@@ -99,6 +99,8 @@ impl Default for TaskOptionsConfig {
     }
 }
 
+// We use serde(default) here because figment *does not* apply defaults
+// for structs nested within collections. Primarily hash maps.
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct TaskConfig {
     #[serde(default)]
@@ -176,9 +178,9 @@ where
 #[serde(untagged)]
 enum ArgsField {
     #[allow(dead_code)]
-    Str(String),
+    String(String),
     #[allow(dead_code)]
-    Vec(Vec<String>),
+    Sequence(Vec<String>),
 }
 
 fn make_args_schema(_gen: &mut SchemaGenerator) -> Schema {

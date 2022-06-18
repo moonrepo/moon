@@ -304,17 +304,6 @@ impl DepGraph {
                 );
             }
 
-            // Validate project first
-            if !globally_affected && !project.is_affected(touched) {
-                trace!(
-                    target: TARGET,
-                    "Project {} not affected based on touched files, skipping",
-                    color::id(project_id),
-                );
-
-                return Ok(None);
-            }
-
             // Validate task exists for project
             if !globally_affected && !project.get_task(task_id)?.is_affected(touched)? {
                 trace!(

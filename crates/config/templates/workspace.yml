@@ -1,6 +1,6 @@
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
 
-# Extend and inherit an external configuration file. Must be a valid HTTPS URL.
+# Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
 # extends: 'https://.../workspace.yml'
 
 # REQUIRED: A map of all projects found within the workspace, or a list or file system globs.

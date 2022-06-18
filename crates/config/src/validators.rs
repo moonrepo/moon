@@ -5,10 +5,6 @@ use std::collections::HashMap;
 use std::path::Path;
 use validator::{validate_url as validate_base_url, Validate, ValidationError, ValidationErrors};
 
-pub fn default_bool_true() -> bool {
-    true
-}
-
 // Extend validator lib
 pub trait VecValidate {
     fn validate(&self) -> Result<(), ValidationErrors>;
@@ -140,14 +136,26 @@ pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), Vali
     Ok(())
 }
 
-// Validate the value is an acceptable URL for an "extends" YAML field.
-pub fn validate_extends_url(key: &str, value: &str) -> Result<(), ValidationError> {
-    validate_url(key, value, true)?;
+// Validate the value is an acceptable URL or file path for an "extends" YAML field.
+pub fn validate_extends(value: &str) -> Result<(), ValidationError> {
+    if value.starts_with("http") {
+        validate_url("extends", value, true)?;
+
+        // Is there a better way to check that a value is a file system path?
+        // We can't use existence checks because it's not absolute, and
+        // we don't have a working directory to prefix the value with.
+    } else if !value.starts_with('.') {
+        return Err(create_validation_error(
+            "unknown_format",
+            "extends",
+            String::from("Must be a valid URL or relative file path (starts with ./)."),
+        ));
+    }
 
     if !value.ends_with(".yml") && !value.ends_with(".yaml") {
         return Err(create_validation_error(
             "invalid_yaml",
-            key,
+            "extends",
             String::from("Must be a YAML document."),
         ));
     }

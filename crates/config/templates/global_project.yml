@@ -1,6 +1,6 @@
 $schema: 'https://moonrepo.dev/schemas/global-project.json'
 
-# Extend and inherit an external configuration file. Must be a valid HTTPS URL.
+# Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
 # extends: 'https://.../workspace.yml'
 
 # OPTIONAL: File groups are a mechanism for grouping similar types of files within a project

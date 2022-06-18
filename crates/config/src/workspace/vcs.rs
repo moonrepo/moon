@@ -2,10 +2,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-fn default_branch_default() -> String {
-    String::from("master")
-}
-
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VcsManager {
@@ -22,10 +18,8 @@ impl Default for VcsManager {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct VcsConfig {
-    #[serde(default)]
     pub manager: VcsManager,
 
-    #[serde(default = "default_branch_default")]
     pub default_branch: String,
 }
 
@@ -33,7 +27,7 @@ impl Default for VcsConfig {
     fn default() -> Self {
         VcsConfig {
             manager: VcsManager::default(),
-            default_branch: default_branch_default(),
+            default_branch: String::from("master"),
         }
     }
 }

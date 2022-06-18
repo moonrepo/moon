@@ -1,4 +1,4 @@
-use crate::validators::{default_bool_true, validate_semver_version};
+use crate::validators::validate_semver_version;
 use moon_lang_node::{NODE, NODENV, NVMRC, PNPM, YARN};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -74,7 +74,6 @@ impl VersionManager {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct NpmConfig {
-    #[serde(default = "default_npm_version")]
     #[validate(custom = "validate_npm_version")]
     pub version: String,
 }
@@ -89,7 +88,6 @@ impl Default for NpmConfig {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct PnpmConfig {
-    #[serde(default = "default_pnpm_version")]
     #[validate(custom = "validate_pnpm_version")]
     pub version: String,
 }
@@ -104,7 +102,6 @@ impl Default for PnpmConfig {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct YarnConfig {
-    #[serde(default = "default_yarn_version")]
     #[validate(custom = "validate_yarn_version")]
     pub version: String,
 }
@@ -120,28 +117,22 @@ impl Default for YarnConfig {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
-    #[serde(default = "default_bool_true")]
     pub add_engines_constraint: bool,
 
-    #[serde(default = "default_bool_true")]
     pub dedupe_on_lockfile_change: bool,
 
-    #[serde(default)]
     #[validate]
     pub npm: NpmConfig,
 
-    #[serde(default)]
     pub package_manager: PackageManager,
 
     #[validate]
     pub pnpm: Option<PnpmConfig>,
 
-    #[serde(default = "default_bool_true")]
     pub sync_project_workspace_dependencies: bool,
 
     pub sync_version_manager_config: Option<VersionManager>,
 
-    #[serde(default = "default_node_version")]
     #[validate(custom = "validate_node_version")]
     pub version: String,
 
@@ -152,12 +143,12 @@ pub struct NodeConfig {
 impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
-            add_engines_constraint: default_bool_true(),
-            dedupe_on_lockfile_change: default_bool_true(),
+            add_engines_constraint: true,
+            dedupe_on_lockfile_change: true,
             npm: NpmConfig::default(),
-            package_manager: PackageManager::Npm,
+            package_manager: PackageManager::default(),
             pnpm: None,
-            sync_project_workspace_dependencies: default_bool_true(),
+            sync_project_workspace_dependencies: true,
             sync_version_manager_config: None,
             version: default_node_version(),
             yarn: None,

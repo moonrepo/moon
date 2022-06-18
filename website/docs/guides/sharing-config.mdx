@@ -6,9 +6,8 @@ the maintenance burden while ensuring a similar developer experience.
 
 To help streamline this process, moon provides an `extends` setting in both
 [`.moon/workspace.yml`](../config/workspace#extends) and
-[`.moon/project.yml`](../config/global-project#extends). This setting requires a valid HTTPS URL
-that points to a YAML document for the configuration in question, and of course, this URL must be
-accessible from moon.
+[`.moon/project.yml`](../config/global-project#extends). This setting requires a HTTPS URL _or_
+relative file system path that points to a valid YAML document for the configuration in question.
 
 A great way to share configuration is by using GitHub's "raw file view", as demonstrated below using
 our very own [examples repository](https://github.com/moonrepo/examples).
@@ -30,8 +29,8 @@ A rudimentary solution is to append a version to the upstream filename. When the
 new version should be created, while the previous version remains untouched.
 
 ```diff
--extends: 'https://company.com/some/path/to/project.yml'
-+extends: 'https://company.com/some/path/to/project-v1.yml'
+-extends: '../shared/project.yml'
++extends: '../shared/project-v1.yml'
 ```
 
 ### Using branches, tags, or commits

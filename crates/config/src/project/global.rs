@@ -5,7 +5,7 @@ use crate::errors::{create_validation_error, map_figment_error_to_validation_err
 use crate::project::task::TaskConfig;
 use crate::providers::url::Url;
 use crate::types::FileGroups;
-use crate::validators::{validate_extends_url, validate_id};
+use crate::validators::{validate_extends, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
@@ -16,12 +16,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
-
-fn validate_extends(extends: &str) -> Result<(), ValidationError> {
-    validate_extends_url("extends", extends)?;
-
-    Ok(())
-}
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     for key in map.keys() {
@@ -57,11 +51,9 @@ pub struct GlobalProjectConfig {
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 
-    #[serde(default)]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
-    #[serde(default)]
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: HashMap<String, TaskConfig>,
@@ -81,7 +73,7 @@ impl Provider for GlobalProjectConfig {
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        Serialized::defaults(GlobalProjectConfig::default()).data()
+        Serialized::defaults(self).data()
     }
 
     fn profile(&self) -> Option<Profile> {
@@ -92,8 +84,7 @@ impl Provider for GlobalProjectConfig {
 impl GlobalProjectConfig {
     pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ValidationErrors> {
         let mut config = GlobalProjectConfig::load_config(
-            Figment::from(Serialized::defaults(GlobalProjectConfig::default()))
-                .merge(Yaml::file(&path)),
+            Figment::from(GlobalProjectConfig::default()).merge(Yaml::file(&path)),
         )?;
 
         // This is janky, but figment does not support any kind of extends mechanism,
@@ -101,7 +92,11 @@ impl GlobalProjectConfig {
         // so we need to double-load this config and extract in the correct order!
         if let Some(extends) = &config.extends {
             let extended_config =
-                GlobalProjectConfig::load_config(Figment::from(Url::from(extends.to_owned())))?;
+                GlobalProjectConfig::load_config(if extends.starts_with("http") {
+                    Figment::from(Url::from(extends.to_owned()))
+                } else {
+                    Figment::from(Yaml::file(path.parent().unwrap().join(extends)))
+                })?;
 
             // Figment does not merge hash maps but replaces entirely,
             // so we need to manually handle this here!
@@ -145,9 +140,10 @@ mod tests {
     use crate::errors::tests::handled_jailed_error;
     use figment;
     use moon_utils::string_vec;
+    use std::path::Path;
 
-    fn load_jailed_config() -> Result<GlobalProjectConfig, figment::Error> {
-        match GlobalProjectConfig::load(PathBuf::from(constants::CONFIG_PROJECT_FILENAME)) {
+    fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
+        match GlobalProjectConfig::load(root.join(constants::CONFIG_PROJECT_FILENAME)) {
             Ok(cfg) => Ok(cfg),
             Err(errors) => Err(handled_jailed_error(&errors)),
         }
@@ -164,7 +160,7 @@ fileGroups:
         - src/**/*"#,
             )?;
 
-            let config = load_jailed_config()?;
+            let config = load_jailed_config(jail.directory())?;
 
             assert_eq!(
                 config,
@@ -186,6 +182,7 @@ fileGroups:
     mod extends {
         use super::*;
         use crate::project::task::TaskOptionsConfig;
+        use std::fs;
 
         #[test]
         #[should_panic(
@@ -195,22 +192,24 @@ fileGroups:
             figment::Jail::expect_with(|jail| {
                 jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "extends: 123")?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a valid URL.")]
-        fn not_a_url() {
+        #[should_panic(
+            expected = "Invalid field <id>extends</id>: Must be a valid URL or relative file path (starts with ./)."
+        )]
+        fn not_a_url_or_file() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
                     super::constants::CONFIG_PROJECT_FILENAME,
                     "extends: random value",
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -225,16 +224,14 @@ fileGroups:
                     "extends: http://domain.com",
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
         }
 
         #[test]
-        #[should_panic(
-            expected = "Invalid field <id>extends</id>: Must be a YAML (.yml) document."
-        )]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
         fn not_a_yaml_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -242,7 +239,122 @@ fileGroups:
                     "extends: https://domain.com/file.txt",
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        fn not_a_yaml_file() {
+            figment::Jail::expect_with(|jail| {
+                fs::create_dir_all(jail.directory().join("shared")).unwrap();
+
+                jail.create_file("shared/file.txt", "")?;
+
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    "extends: ./shared/file.txt",
+                )?;
+
+                super::load_jailed_config(jail.directory())?;
+
+                Ok(())
+            });
+        }
+
+        fn create_merged_tasks() -> HashMap<String, TaskConfig> {
+            HashMap::from([
+                (
+                    "onlyCommand".to_owned(),
+                    TaskConfig {
+                        command: Some(String::from("a")),
+                        ..TaskConfig::default()
+                    },
+                ),
+                (
+                    "stringArgs".to_owned(),
+                    TaskConfig {
+                        command: Some(String::from("b")),
+                        args: Some(string_vec!["string", "args"]),
+                        ..TaskConfig::default()
+                    },
+                ),
+                (
+                    "arrayArgs".to_owned(),
+                    TaskConfig {
+                        command: Some(String::from("c")),
+                        args: Some(string_vec!["array", "args"]),
+                        ..TaskConfig::default()
+                    },
+                ),
+                (
+                    "inputs".to_owned(),
+                    TaskConfig {
+                        command: Some(String::from("d")),
+                        inputs: Some(string_vec!["src/**/*"]),
+                        ..TaskConfig::default()
+                    },
+                ),
+                (
+                    "options".to_owned(),
+                    TaskConfig {
+                        command: Some(String::from("e")),
+                        options: TaskOptionsConfig {
+                            merge_args: None,
+                            merge_deps: None,
+                            merge_env: None,
+                            merge_inputs: None,
+                            merge_outputs: None,
+                            retry_count: None,
+                            run_in_ci: Some(false),
+                            run_from_workspace_root: None,
+                        },
+                        ..TaskConfig::default()
+                    },
+                ),
+            ])
+        }
+
+        #[test]
+        fn loads_from_file() {
+            figment::Jail::expect_with(|jail| {
+                fs::create_dir_all(jail.directory().join("shared")).unwrap();
+
+                jail.create_file(
+                    format!("shared/{}", super::constants::CONFIG_PROJECT_FILENAME),
+                    include_str!("../../../../tests/fixtures/config-extends/.moon/project.yml"),
+                )?;
+
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+extends: ./shared/project.yml
+
+fileGroups:
+    sources:
+        - sources/**/*
+    configs:
+        - '*.js'
+"#,
+                )?;
+
+                let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+
+                assert_eq!(config.extends, Some("./shared/project.yml".to_owned()));
+
+                // Ensure values are deep merged
+                assert_eq!(
+                    config.file_groups,
+                    HashMap::from([
+                        ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
+                        ("tests".to_owned(), string_vec!["tests/**/*"]),
+                        ("configs".to_owned(), string_vec!["*.js"])
+                    ])
+                );
+
+                assert_eq!(config.tasks, create_merged_tasks());
 
                 Ok(())
             });
@@ -264,7 +376,7 @@ fileGroups:
 "#,
                 )?;
 
-                let config: GlobalProjectConfig = super::load_jailed_config()?;
+                let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
 
                 assert_eq!(
                     config.extends,
@@ -281,59 +393,7 @@ fileGroups:
                     ])
                 );
 
-                assert_eq!(
-                    config.tasks,
-                    HashMap::from([
-                        (
-                            "onlyCommand".to_owned(),
-                            TaskConfig {
-                                command: Some(String::from("a")),
-                                ..TaskConfig::default()
-                            }
-                        ),
-                        (
-                            "stringArgs".to_owned(),
-                            TaskConfig {
-                                command: Some(String::from("b")),
-                                args: Some(string_vec!["string", "args"]),
-                                ..TaskConfig::default()
-                            }
-                        ),
-                        (
-                            "arrayArgs".to_owned(),
-                            TaskConfig {
-                                command: Some(String::from("c")),
-                                args: Some(string_vec!["array", "args"]),
-                                ..TaskConfig::default()
-                            }
-                        ),
-                        (
-                            "inputs".to_owned(),
-                            TaskConfig {
-                                command: Some(String::from("d")),
-                                inputs: Some(string_vec!["src/**/*"]),
-                                ..TaskConfig::default()
-                            }
-                        ),
-                        (
-                            "options".to_owned(),
-                            TaskConfig {
-                                command: Some(String::from("e")),
-                                options: TaskOptionsConfig {
-                                    merge_args: None,
-                                    merge_deps: None,
-                                    merge_env: None,
-                                    merge_inputs: None,
-                                    merge_outputs: None,
-                                    retry_count: None,
-                                    run_in_ci: Some(false),
-                                    run_from_workspace_root: None,
-                                },
-                                ..TaskConfig::default()
-                            }
-                        ),
-                    ])
-                );
+                assert_eq!(config.tasks, create_merged_tasks());
 
                 Ok(())
             });
@@ -349,7 +409,7 @@ fileGroups:
             figment::Jail::expect_with(|jail| {
                 jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "fileGroups: 123")?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -368,7 +428,7 @@ fileGroups:
     sources: 123"#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -390,7 +450,7 @@ tasks: 123
 "#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -411,7 +471,7 @@ tasks:
 "#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -433,7 +493,7 @@ tasks:
 "#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });
@@ -455,7 +515,7 @@ tasks:
 "#,
                 )?;
 
-                super::load_jailed_config()?;
+                super::load_jailed_config(jail.directory())?;
 
                 Ok(())
             });

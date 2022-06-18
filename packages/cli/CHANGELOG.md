@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added an `extends` setting to `.moon/workspace.yml` and `.moon/project.yml`.
+
 ## 0.3.0
 
 #### 💥 Breaking

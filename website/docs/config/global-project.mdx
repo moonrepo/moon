@@ -6,6 +6,26 @@ The `.moon/project.yml` file configures file groups and tasks that are inherited
 in the workspace. Projects can override or merge with these settings within their respective
 [`project.yml`](./project).
 
+## `extends`
+
+> `string`
+
+Defines an external `.moon/project.yml` to extend and inherit settings from. Perfect for reusability
+and sharing configuration across repositories and projects. When defined, this setting must be an
+HTTPS URL _or_ relative file system path that points to a valid YAML document!
+
+```yaml title=".moon/workspace.yml" {1}
+extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/project.yml'
+```
+
+:::caution
+
+For map-based settings, `fileGroups` and `tasks`, entries from both the extended configuration and
+local configuration are merged into a new map, with the values of the local taking precedence. Map
+values _are not_ deep merged!
+
+:::
+
 ## `fileGroups`
 
 > `Record<string, string[]>`

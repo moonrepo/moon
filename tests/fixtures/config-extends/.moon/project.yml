@@ -1,0 +1,27 @@
+# NOTE: This is used to test config extending. Changing this will definitely break something!
+
+fileGroups:
+  sources:
+    - src/**/*
+  tests:
+    - tests/**/*
+
+tasks:
+  onlyCommand:
+    command: a
+  stringArgs:
+    command: b
+    args: string args
+  arrayArgs:
+    command: c
+    args:
+      - array
+      - args
+  inputs:
+    command: d
+    inputs:
+      - src/**/*
+  options:
+    command: e
+    options:
+      runInCI: false

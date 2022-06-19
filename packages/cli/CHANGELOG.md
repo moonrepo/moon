@@ -6,6 +6,10 @@
 
 - Added an `extends` setting to `.moon/workspace.yml` and `.moon/project.yml`.
 
+#### 🚀 Updates
+
+- Added an `extends` setting to `.moon/workspace.yml` and `.moon/project.yml`.
+
 #### 🐞 Fixes
 
 - Fixed an issue where tasks referencing workspace relative files were not being marked as affected.

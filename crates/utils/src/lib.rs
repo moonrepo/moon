@@ -8,7 +8,6 @@ pub mod time;
 
 use cached::proc_macro::cached;
 use std::env;
-use std::net::{Shutdown, SocketAddr, TcpStream};
 use std::time::Duration;
 
 #[macro_export]
@@ -29,16 +28,26 @@ pub fn is_ci() -> bool {
 
 #[cached(time = 60)]
 pub fn is_offline() -> bool {
-    // Cloudflare's DNS: https://1.1.1.1/dns/
-    let address = SocketAddr::from(([1, 1, 1, 1], 53));
-    let mut offline = true;
+    use std::net::{Shutdown, SocketAddr, TcpStream};
 
-    if let Ok(stream) = TcpStream::connect_timeout(&address, Duration::new(3, 0)) {
-        stream.shutdown(Shutdown::Both).unwrap();
-        offline = false;
+    let addresses = [
+        // Cloudflare DNS: https://1.1.1.1/dns/
+        SocketAddr::from(([1, 1, 1, 1], 53)),
+        SocketAddr::from(([1, 0, 0, 1], 53)),
+        // Google DNS: https://developers.google.com/speed/public-dns
+        SocketAddr::from(([8, 8, 8, 8], 53)),
+        SocketAddr::from(([8, 8, 4, 4], 53)),
+    ];
+
+    for address in addresses {
+        if let Ok(stream) = TcpStream::connect_timeout(&address, Duration::new(3, 0)) {
+            stream.shutdown(Shutdown::Both).unwrap();
+
+            return false;
+        }
     }
 
-    offline
+    true
 }
 
 pub fn is_test_env() -> bool {

@@ -210,7 +210,11 @@ pub struct App {
     )]
     pub log: LogLevel,
 
-    #[clap(long, env = "MOON_LOG_FILE", help = "Output file for logs")]
+    #[clap(
+        long,
+        env = "MOON_LOG_FILE",
+        help = "Path to a file to dump the moon logs"
+    )]
     pub log_file: Option<PathBuf>,
 
     #[clap(subcommand)]

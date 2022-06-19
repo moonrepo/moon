@@ -1,6 +1,6 @@
 $schema: 'https://moonrepo.dev/schemas/global-project.json'
 
-# OPTIONAL: File groups are a mechanism for grouping similar types of files within a project
+# File groups are a mechanism for grouping similar types of files within a project
 # using file glob patterns. These groups are then used by tasks to calculate functionality like
 # cache computation, affected files since last change, command line arguments, deterministic
 # builds, and more.
@@ -32,7 +32,7 @@ fileGroups:
     - '**/*.{scss,css}'
     - '**/*.mdx'
 
-# OPTIONAL: A task is an action that is ran within the context of a project, and wraps
+# A task is an action that is ran within the context of a project, and wraps
 # around an npm or system command. Tasks that are defined here and inherited by all projects
 # within the workspace, but can be overridden per project.
 #
@@ -44,26 +44,26 @@ tasks:
     # The name of the binary/command on your system.
     command: 'noop'
 
-    # OPTIONAL: List of arguments to pass on the command line when executing the task.
+    # List of arguments to pass on the command line when executing the task.
     args: []
 
-    # OPTIONAL: List of targets that will be executed *before* this task.
+    # List of targets that will be executed *before* this task.
     deps: []
 
-    # OPTIONAL: Map of environment variables to pass when executing the command.
+    # Map of environment variables to pass when executing the command.
     env: {}
 
-    # OPTIONAL: List of file paths/globs to calculate whether to execute the task based on files
+    # List of file paths/globs to calculate whether to execute the task based on files
     # that have been modified since the last time the task has been ran. By default inputs are
     # relative from the *project root*, and can reference file groups (above). To reference files
     # from the workspace root (for example, config files), prefix the path with a "/".
     inputs: []
 
-    # OPTIONAL: List of files and folders that are created as a result of executing this task,
+    # List of files and folders that are created as a result of executing this task,
     # excluding cache related items. By default outputs are relative from the *project root*.
     # To output files to the workspace root, prefix the path with a "/".
     outputs: []
 
-    # OPTIONAL: The type of command to run, and where to locate it.
-    # Accepts "node" or "system".
+    # The type of command to run, and where to locate it.
+    # Accepts "node" (default) or "system".
     type: 'node'

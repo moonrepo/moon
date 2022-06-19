@@ -153,8 +153,7 @@ mod node {
             .arg(&root)
             .assert();
 
-        assert!(predicate::str::contains("version: '1.2.3'")
-            .eval(&fs::read_to_string(workspace_config).unwrap()));
+        assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
     #[test]
@@ -172,8 +171,7 @@ mod node {
             .arg(&root)
             .assert();
 
-        assert!(predicate::str::contains("version: '1.2.3'")
-            .eval(&fs::read_to_string(workspace_config).unwrap()));
+        assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
     #[test]
@@ -314,8 +312,7 @@ mod node {
                 .arg(&root)
                 .assert();
 
-            assert!(predicate::str::contains("packageManager: 'npm'")
-                .eval(&fs::read_to_string(workspace_config).unwrap()));
+            assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
         }
 
         #[test]
@@ -337,10 +334,7 @@ mod node {
                 .arg(&root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
-
-            assert!(predicate::str::contains("packageManager: 'npm'").eval(&content));
-            assert!(predicate::str::contains("version: '4.5.6'").eval(&content));
+            assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
         }
 
         #[test]
@@ -358,8 +352,7 @@ mod node {
                 .arg(&root)
                 .assert();
 
-            assert!(predicate::str::contains("packageManager: 'pnpm'")
-                .eval(&fs::read_to_string(workspace_config).unwrap()));
+            assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
         }
 
         #[test]
@@ -381,10 +374,7 @@ mod node {
                 .arg(&root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
-
-            assert!(predicate::str::contains("packageManager: 'pnpm'").eval(&content));
-            assert!(predicate::str::contains("version: '4.5.6'").eval(&content));
+            assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
         }
 
         #[test]
@@ -402,8 +392,7 @@ mod node {
                 .arg(&root)
                 .assert();
 
-            assert!(predicate::str::contains("packageManager: 'yarn'")
-                .eval(&fs::read_to_string(workspace_config).unwrap()));
+            assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
         }
 
         #[test]
@@ -425,10 +414,7 @@ mod node {
                 .arg(&root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
-
-            assert!(predicate::str::contains("packageManager: 'yarn'").eval(&content));
-            assert!(predicate::str::contains("version: '4.5.6'").eval(&content));
+            assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
         }
     }
 }

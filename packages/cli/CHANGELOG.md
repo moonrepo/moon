@@ -6,6 +6,7 @@
 
 - Fixed an issue where tasks referencing workspace relative files were not being marked as affected.
 - Fixed some issues during `moon init` config generation.
+- Improved offline checks by also verifying against Google's DNS.
 
 ## 0.3.0
 

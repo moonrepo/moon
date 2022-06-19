@@ -153,8 +153,7 @@ mod node {
             .arg(&root)
             .assert();
 
-        assert!(predicate::str::contains("version: '1.2.3'")
-            .eval(&fs::read_to_string(workspace_config).unwrap()));
+        assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
     #[test]
@@ -172,8 +171,7 @@ mod node {
             .arg(&root)
             .assert();
 
-        assert!(predicate::str::contains("version: '1.2.3'")
-            .eval(&fs::read_to_string(workspace_config).unwrap()));
+        assert_snapshot!(fs::read_to_string(workspace_config).unwrap());
     }
 
     #[test]

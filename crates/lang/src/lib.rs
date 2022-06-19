@@ -8,6 +8,8 @@ pub type StaticString = &'static str;
 pub type StaticStringList = &'static [StaticString];
 
 pub struct Language {
+    pub binary: StaticString,
+
     pub default_version: StaticString,
 
     pub vendor_bins_dir: StaticString,
@@ -16,6 +18,8 @@ pub struct Language {
 }
 
 pub struct PackageManager {
+    pub binary: StaticString,
+
     pub config_filenames: StaticStringList,
 
     pub default_version: StaticString,
@@ -26,6 +30,8 @@ pub struct PackageManager {
 }
 
 pub struct VersionManager {
+    pub binary: StaticString,
+
     pub config_filename: Option<StaticString>,
 
     pub version_filename: StaticString,

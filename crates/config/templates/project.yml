@@ -1,12 +1,15 @@
 $schema: 'https://moonrepo.dev/schemas/project.json'
 
+# The type of project. Accepts "library" (default), "application", or "tool".
+type: 'library'
+
+# Primary programming language the project is written in.
+# Accepts "javascript" or "typescript" (default).
+language: 'typescript'
+
 # OPTIONAL: This setting defines metadata about the project itself. Although this
 # setting is optional, when defined, all fields within it must be defined as well.
 project:
-  # The type of project. Accepts "library", "application", or "tool".
-  # Defaults to "library".
-  type: 'library'
-
   # A human readable name of the project.
   name: 'Example'
 

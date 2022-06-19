@@ -6,7 +6,7 @@ use moon_config::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
     load_global_project_config_template, load_workspace_config_template,
 };
-use moon_lang::is_using_package_manager;
+use moon_lang::{is_using_package_manager, is_using_version_manager};
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
 use moon_logger::color;
 use moon_project::detect_projects_with_globs;
@@ -130,17 +130,17 @@ async fn detect_package_manager(
     // If no value, detect based on files
     if pm_type.is_empty() {
         if is_using_package_manager(dest_dir, &YARN) {
-            pm_type = String::from("yarn");
+            pm_type = YARN.binary.to_owned();
         } else if is_using_package_manager(dest_dir, &PNPM) {
-            pm_type = String::from("pnpm");
+            pm_type = PNPM.binary.to_owned();
         } else if is_using_package_manager(dest_dir, &NPM) {
-            pm_type = String::from("npm");
+            pm_type = NPM.binary.to_owned();
         }
     }
 
     // If no value again, ask for explicit input
     if pm_type.is_empty() {
-        let items = vec!["npm", "pnpm", "yarn"];
+        let items = vec![NPM.binary, PNPM.binary, YARN.binary];
         let default_index = options.package_manager.get_option_index();
 
         let index = if options.yes {
@@ -159,11 +159,11 @@ async fn detect_package_manager(
 
     // If no version, fallback to configuration default
     if pm_version.is_empty() {
-        if pm_type == "npm" {
+        if pm_type == NPM.binary {
             pm_version = default_npm_version();
-        } else if pm_type == "pnpm" {
+        } else if pm_type == PNPM.binary {
             pm_version = default_pnpm_version();
-        } else if pm_type == "yarn" {
+        } else if pm_type == YARN.binary {
             pm_version = default_yarn_version();
         }
     }
@@ -173,20 +173,26 @@ async fn detect_package_manager(
 
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
-fn detect_node_version(dest_dir: &Path) -> Result<String, AnyError> {
-    let nvmrc_path = dest_dir.join(NVMRC.version_filename);
-
-    if nvmrc_path.exists() {
-        return Ok(read_to_string(nvmrc_path)?.trim().to_owned());
+fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
+    if is_using_version_manager(dest_dir, &NVMRC) {
+        return Ok((
+            read_to_string(dest_dir.join(NVMRC.version_filename))?
+                .trim()
+                .to_owned(),
+            NVMRC.binary.to_owned(),
+        ));
     }
 
-    let node_version_path = dest_dir.join(NODENV.version_filename);
-
-    if node_version_path.exists() {
-        return Ok(read_to_string(node_version_path)?.trim().to_owned());
+    if is_using_version_manager(dest_dir, &NODENV) {
+        return Ok((
+            read_to_string(dest_dir.join(NODENV.version_filename))?
+                .trim()
+                .to_owned(),
+            NODENV.binary.to_owned(),
+        ));
     }
 
-    Ok(default_node_version())
+    Ok((default_node_version(), String::new()))
 }
 
 /// Detect potential projects (for existing repos only) by
@@ -276,7 +282,8 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     let mut context = Context::new();
     context.insert("package_manager", &package_manager.0);
     context.insert("package_manager_version", &package_manager.1);
-    context.insert("node_version", &node_version);
+    context.insert("node_version", &node_version.0);
+    context.insert("node_version_manager", &node_version.1);
     context.insert("projects", &projects);
     context.insert("project_globs", &project_globs);
 

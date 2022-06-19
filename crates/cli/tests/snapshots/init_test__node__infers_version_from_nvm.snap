@@ -1,3 +1,8 @@
+---
+source: crates/cli/tests/init_test.rs
+assertion_line: 156
+expression: "fs::read_to_string(workspace_config).unwrap()"
+---
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
 
 # REQUIRED: A map of all projects found within the workspace, or a list or file system globs.
@@ -5,12 +10,7 @@ $schema: 'https://moonrepo.dev/schemas/workspace.json'
 # path to the project folder as the map value. File paths are relative from the workspace root,
 # and cannot reference projects located outside the workspace boundary.
 projects:
-  {%- for glob in project_globs | sort %}
-  - '{{ glob }}'
-  {%- endfor %}
-  {%- for id, source in projects %}
-  {{ id }}: '{{ source }}'
-  {%- endfor %}
+  example: 'apps/example'
 
 # Configures Node.js within the toolchain. moon manages its own version of Node.js
 # instead of relying on a version found on the host machine. This ensures deterministic
@@ -18,18 +18,11 @@ projects:
 node:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
   # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
-  version: '{{ node_version }}'
+  version: '1.2.3'
 
   # The package manager to use when managing dependencies.
   # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".
-  packageManager: '{{ package_manager }}'
-
-  {%- if package_manager_version != "inherit" %}
-
-  # The version of the package manager (above) to use.
-  {{ package_manager }}:
-    version: '{{ package_manager_version }}'
-  {%- endif %}
+  packageManager: 'npm'
 
   # Add `node.version` as a constaint in the root `package.json` `engines`.
   addEnginesConstraint: true
@@ -43,13 +36,7 @@ node:
 
   # Sync `node.version` to a 3rd-party version manager's config file.
   # Accepts "nodenv" (.node-version), "nvm" (.nvmrc), or none.
-  {% if node_version_manager == "nvm" -%}
   syncVersionManagerConfig: 'nvm'
-  {%- elif node_version_manager == "nodenv" -%}
-  syncVersionManagerConfig: 'nodenv'
-  {%- else -%}
-  # syncVersionManagerConfig: 'nvm'
-  {%- endif %}
 
 # Configures how moon integrates with TypeScript.
 typescript:
@@ -81,3 +68,4 @@ actionRunner:
   # Force colors to be inherited for all tasks that are ran as a child process
   # and their output is piped to the action runner.
   inheritColorsForPipedTasks: true
+

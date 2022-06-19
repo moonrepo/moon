@@ -3,6 +3,7 @@ pub mod node;
 use moon_lang::{Language, PackageManager, VersionManager};
 
 pub const NODE: Language = Language {
+    binary: "node",
     default_version: "16.15.0",
     vendor_bins_dir: "node_modules/.bin",
     vendor_dir: "node_modules",
@@ -11,6 +12,7 @@ pub const NODE: Language = Language {
 // Package managers
 
 pub const NPM: PackageManager = PackageManager {
+    binary: "npm",
     config_filenames: &[".npmrc"],
     default_version: "8.10.0",
     lock_filenames: &["package-lock.json", "npm-shrinkwrap.json"],
@@ -18,6 +20,7 @@ pub const NPM: PackageManager = PackageManager {
 };
 
 pub const PNPM: PackageManager = PackageManager {
+    binary: "pnpm",
     config_filenames: &["pnpm-workspace.yaml", ".pnpmfile.cjs"],
     default_version: "7.1.5",
     lock_filenames: &["pnpm-lock.yaml"],
@@ -25,6 +28,7 @@ pub const PNPM: PackageManager = PackageManager {
 };
 
 pub const YARN: PackageManager = PackageManager {
+    binary: "yarn",
     config_filenames: &[".yarn", ".yarnrc", ".yarnrc.yml"],
     default_version: "3.2.1",
     lock_filenames: &["yarn.lock"],
@@ -34,11 +38,13 @@ pub const YARN: PackageManager = PackageManager {
 // Version managers
 
 pub const NVMRC: VersionManager = VersionManager {
+    binary: "nvm",
     config_filename: None,
     version_filename: ".nvmrc",
 };
 
 pub const NODENV: VersionManager = VersionManager {
+    binary: "nodenv",
     config_filename: None,
     version_filename: ".node-version",
 };

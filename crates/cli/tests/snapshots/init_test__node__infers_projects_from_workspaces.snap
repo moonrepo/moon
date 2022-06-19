@@ -25,7 +25,7 @@ node:
   # Accepts "npm" (default), "pnpm", or "yarn".
   packageManager: 'npm'
 
-  # Add `node.version` as a constaint in the root `package.json` `engines`.
+  # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true
 
   # Dedupe dependencies after the lockfile has changed.

@@ -21,7 +21,7 @@ node:
   version: '1.2.3'
 
   # The package manager to use when managing dependencies.
-  # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".
+  # Accepts "npm" (default), "pnpm", or "yarn".
   packageManager: 'npm'
 
   # Add `node.version` as a constaint in the root `package.json` `engines`.

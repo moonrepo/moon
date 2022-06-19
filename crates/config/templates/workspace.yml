@@ -21,7 +21,7 @@ node:
   version: '{{ node_version }}'
 
   # The package manager to use when managing dependencies.
-  # Accepts "npm", "pnpm", or "yarn". Defaults to "npm".
+  # Accepts "npm" (default), "pnpm", or "yarn".
   packageManager: '{{ package_manager }}'
 
   {%- if package_manager_version != "inherit" %}

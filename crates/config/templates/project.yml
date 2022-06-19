@@ -7,7 +7,7 @@ type: 'library'
 # Accepts "javascript" or "typescript" (default).
 language: 'typescript'
 
-# OPTIONAL: This setting defines metadata about the project itself. Although this
+# This setting defines metadata about the project itself. Although this
 # setting is optional, when defined, all fields within it must be defined as well.
 project:
   # A human readable name of the project.
@@ -28,7 +28,7 @@ project:
   # and can provide support. Can be a name, email, LDAP/GitHub username, etc.
   maintainers: ['user.name']
 
-# OPTIONAL: A list of other projects that this project depends on. Each value
+# A list of other projects that this project depends on. Each value
 # must be a unique project ID, and NOT a file path or project name.
 #
 # When `node.syncProjectWorkspaceDependencies` and `typescript.syncProjectReferences`
@@ -36,10 +36,10 @@ project:
 # in `package.json` and project references in `tsconfig.json`, respectively.
 dependsOn: []
 
-# OPTIONAL: File groups are a mechanism for grouping similar types of files within
+# File groups are a mechanism for grouping similar types of files within
 # a project using file glob patterns. View `.moon/project.yml` for more info.
 fileGroups: {}
 
-# OPTIONAL: A task is an action that is ran within the context of a project, and
+# A task is an action that is ran within the context of a project, and
 # wraps around an npm or system command. View `.moon/project.yml` for more info.
 tasks: {}

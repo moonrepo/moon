@@ -92,7 +92,7 @@ impl DepGraph {
     pub fn sort_batched_topological(&self) -> Result<BatchedTopoSort, WorkspaceError> {
         let mut batches: BatchedTopoSort = vec![];
 
-        // Count how many times an index is referened across nodes and edges
+        // Count how many times an index is referenced across nodes and edges
         let mut node_counts = HashMap::<NodeIndex, u32>::new();
 
         for ix in self.graph.node_indices() {

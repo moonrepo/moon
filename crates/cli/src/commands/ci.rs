@@ -99,10 +99,6 @@ fn gather_runnable_targets(
     for project_id in workspace.projects.ids() {
         let project = workspace.projects.load(&project_id)?;
 
-        if !globally_affected && !project.is_affected(touched_files) {
-            continue;
-        }
-
         for (task_id, task) in &project.tasks {
             let target = Target::new(&project_id, task_id)?;
 

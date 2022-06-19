@@ -3,7 +3,6 @@ use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
 use crate::token::{TokenResolver, TokenSharedData};
-use crate::types::TouchedFilePaths;
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
@@ -335,31 +334,6 @@ impl Project {
         }
     }
 
-    /// Return true if this project is affected, based on touched files.
-    /// Will attempt to find any file that starts with the project root.
-    pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {
-        for file in touched_files {
-            let affected = file.starts_with(&self.root);
-
-            trace!(
-                target: &self.log_target,
-                "Is affected by {} = {}",
-                color::path(file),
-                if affected {
-                    color::success("true")
-                } else {
-                    color::failure("false")
-                },
-            );
-
-            if affected {
-                return true;
-            }
-        }
-
-        false
-    }
-
     /// Load and parse the package's `package.json` if it exists.
     pub async fn load_package_json(&self) -> Result<Option<PackageJson>, ProjectError> {
         let package_path = self.root.join("package.json");
@@ -408,51 +382,5 @@ impl Project {
     /// Return the project as a JSON string.
     pub fn to_json(&self) -> String {
         serde_json::to_string_pretty(self).unwrap()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use moon_config::GlobalProjectConfig;
-    use moon_utils::test::get_fixtures_root;
-    use std::collections::HashSet;
-
-    mod is_affected {
-        use super::*;
-
-        #[test]
-        fn returns_true_if_inside_project() {
-            let root = get_fixtures_root();
-            let project = Project::new(
-                "basic",
-                "projects/basic",
-                &root,
-                &GlobalProjectConfig::default(),
-            )
-            .unwrap();
-
-            let mut set = HashSet::new();
-            set.insert(root.join("projects/basic/file.ts"));
-
-            assert!(project.is_affected(&set));
-        }
-
-        #[test]
-        fn returns_false_if_outside_project() {
-            let root = get_fixtures_root();
-            let project = Project::new(
-                "basic",
-                "projects/basic",
-                &root,
-                &GlobalProjectConfig::default(),
-            )
-            .unwrap();
-
-            let mut set = HashSet::new();
-            set.insert(root.join("projects/other/file.ts"));
-
-            assert!(!project.is_affected(&set));
-        }
     }
 }

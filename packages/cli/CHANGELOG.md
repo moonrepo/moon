@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where tasks referencing workspace relative files were not being marked as affected.
+- Fixed some issues during `moon init` config generation.
 
 ## 0.3.0
 

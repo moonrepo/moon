@@ -1,0 +1,15 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 90
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm install
+▪▪▪▪ base:runFromProject
+echo 'in project' (in ./base)
+in project
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

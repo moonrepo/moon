@@ -70,9 +70,3 @@ vcs:
   # and must include the remote prefix (before /). For svn, this should always be "trunk".
   defaultBranch: 'master'
 
-# Configures aspects of the action runner.
-actionRunner:
-  # Force colors to be inherited for all tasks that are ran as a child process
-  # and their output is piped to the action runner.
-  inheritColorsForPipedTasks: true
-

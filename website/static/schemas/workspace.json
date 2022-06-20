@@ -6,7 +6,8 @@
   "properties": {
     "actionRunner": {
       "default": {
-        "inheritColorsForPipedTasks": true
+        "inheritColorsForPipedTasks": true,
+        "logRunningCommand": false
       },
       "allOf": [
         {
@@ -89,6 +90,10 @@
       "properties": {
         "inheritColorsForPipedTasks": {
           "default": true,
+          "type": "boolean"
+        },
+        "logRunningCommand": {
+          "default": false,
           "type": "boolean"
         }
       }

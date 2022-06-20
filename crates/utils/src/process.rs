@@ -8,6 +8,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use tokio::task;
 
+pub use shell_words::{join as join_args, split as split_args};
 pub use std::process::{ExitStatus, Output, Stdio};
 
 // Based on how Node.js executes Windows commands:

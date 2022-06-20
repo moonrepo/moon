@@ -8,7 +8,7 @@ use moon_logger::{color, debug, trace, warn};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_toolchain::{get_path_env_var, Executable};
-use moon_utils::process::{output_to_string, Command, Output};
+use moon_utils::process::{join_args, output_to_string, Command, Output};
 use moon_utils::{is_ci, is_test_env, path, string_vec, time};
 use std::collections::HashMap;
 use std::path::Path;
@@ -423,18 +423,15 @@ fn print_target_command(
     let command_line = if args.is_empty() {
         task.command.clone()
     } else {
-        format!(
-            "{} {}",
-            task.command,
-            args.into_iter().cloned().collect::<Vec<String>>().join(" ")
-        )
+        format!("{} {}", task.command, join_args(args))
     };
 
     let working_dir = if task.options.run_from_workspace_root || project.root == workspace.root {
         String::from("workspace")
     } else {
         format!(
-            "./{}",
+            ".{}{}",
+            std::path::MAIN_SEPARATOR,
             project
                 .root
                 .strip_prefix(&workspace.root)

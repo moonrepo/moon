@@ -69,6 +69,45 @@ fn errors_for_cycle_in_task_deps() {
     assert_snapshot!(get_assert_output(&assert));
 }
 
+#[cfg(not(windows))]
+mod general {
+    use super::*;
+
+    #[test]
+    fn logs_command_for_project_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        append_workspace_config(
+            &fixture.path().join(".moon/workspace.yml"),
+            "actionRunner:\n  logRunningCommand: true",
+        );
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("base:runFromProject")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn logs_command_for_workspace_root() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        append_workspace_config(
+            &fixture.path().join(".moon/workspace.yml"),
+            "actionRunner:\n  logRunningCommand: true",
+        );
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("base:runFromWorkspace")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+}
+
 mod configs {
     use super::*;
 

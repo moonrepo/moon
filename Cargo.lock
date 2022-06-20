@@ -1467,6 +1467,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "shell-words",
  "tokio",
  "wax",
 ]

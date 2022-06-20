@@ -1,1 +1,11 @@
-tasks: {}
+tasks:
+  runFromProject:
+    command: echo
+    args: '"in project"'
+    type: system
+  runFromWorkspace:
+    command: echo
+    args: '"in workspace"'
+    options:
+      runFromWorkspaceRoot: true
+    type: system

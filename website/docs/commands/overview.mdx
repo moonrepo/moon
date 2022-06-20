@@ -93,3 +93,15 @@ $ moon --log trace run app:build
 # Or
 $ MOON_LOG=trace moon run app:build
 ```
+
+### Outputting logs to a file
+
+moon can dump the logs from a command to a file using the `--logFile` option, or the `MOON_LOG_FILE` 
+environment variable. The dumped logs will respect the `--log` option and filter the logs piped to
+the output file.
+
+```shell
+$ moon --logFile=output.txt run app:build
+# Or
+$ MOON_LOG_FILE=output.txt moon run app:build
+```

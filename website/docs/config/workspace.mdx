@@ -34,11 +34,11 @@ actionRunner:
 > `boolean`
 
 When enabled, will log the task's command, resolved arguments, and working directory when a target
-is ran. Defaults to `true`.
+is ran. Defaults to `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 actionRunner:
-  logRunningCommand: false
+  logRunningCommand: true
 ```
 
 ## `extends`

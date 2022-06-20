@@ -63,7 +63,7 @@ impl Default for ActionRunnerConfig {
     fn default() -> Self {
         ActionRunnerConfig {
             inherit_colors_for_piped_tasks: true,
-            log_running_command: true,
+            log_running_command: false,
         }
     }
 }

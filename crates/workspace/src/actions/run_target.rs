@@ -430,10 +430,11 @@ fn print_target_command(
         )
     };
 
-    let working_dir = if task.options.run_from_workspace_root {
-        String::from("(root)")
+    let working_dir = if task.options.run_from_workspace_root || project.root == workspace.root {
+        String::from("workspace")
     } else {
-        String::from(
+        format!(
+            "./{}",
             project
                 .root
                 .strip_prefix(&workspace.root)
@@ -442,7 +443,7 @@ fn print_target_command(
         )
     };
 
-    let suffix = format!("in {}", working_dir);
+    let suffix = format!("(in {})", working_dir);
     let message = format!("{} {}", command_line, color::muted(&suffix));
 
     println!("{}", color::muted_light(&message));

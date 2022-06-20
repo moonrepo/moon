@@ -55,12 +55,15 @@ fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
 #[serde(rename_all = "camelCase")]
 pub struct ActionRunnerConfig {
     pub inherit_colors_for_piped_tasks: bool,
+
+    pub log_running_command: bool,
 }
 
 impl Default for ActionRunnerConfig {
     fn default() -> Self {
         ActionRunnerConfig {
             inherit_colors_for_piped_tasks: true,
+            log_running_command: true,
         }
     }
 }

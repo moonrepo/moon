@@ -21,12 +21,24 @@ Configures aspects of the action runner.
 > `boolean`
 
 Force colors to be inherited from the current terminal for all tasks that are ran as a child process
-and their output is piped to the action runner.
+and their output is piped to the action runner. Defaults to `true`.
 [View more about color handling in moon](../commands/overview#colors).
 
 ```yaml title=".moon/workspace.yml" {2}
 actionRunner:
-  inheritColorsForPipedTasks: true # Default
+  inheritColorsForPipedTasks: true
+```
+
+### `logRunningCommand`
+
+> `boolean`
+
+When enabled, will log the task's command, resolved arguments, and working directory when a target
+is ran. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {2}
+actionRunner:
+  logRunningCommand: false
 ```
 
 ## `extends`

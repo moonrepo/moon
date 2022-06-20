@@ -1,7 +1,7 @@
 releases:
-  "@moonrepo/cli": minor
-  "@moonrepo/core-linux-x64-gnu": minor
-  "@moonrepo/core-linux-x64-musl": minor
-  "@moonrepo/core-macos-arm64": minor
-  "@moonrepo/core-macos-x64": minor
-  "@moonrepo/core-windows-x64-msvc": minor
+  "@moonrepo/cli": patch
+  "@moonrepo/core-linux-x64-gnu": patch
+  "@moonrepo/core-linux-x64-musl": patch
+  "@moonrepo/core-macos-arm64": patch
+  "@moonrepo/core-macos-x64": patch
+  "@moonrepo/core-windows-x64-msvc": patch

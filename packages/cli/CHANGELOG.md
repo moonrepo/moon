@@ -1,14 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added an `extends` setting to `.moon/workspace.yml` and `.moon/project.yml`.
+
+#### 🐞 Fixes
+
+- More fixes around terminal color output and handling.
+
 ## 0.3.1
-
-#### 🚀 Updates
-
-- Added an `extends` setting to `.moon/workspace.yml` and `.moon/project.yml`.
-
-#### 🚀 Updates
-
-- Added an `extends` setting to `.moon/workspace.yml` and `.moon/project.yml`.
 
 #### 🐞 Fixes
 

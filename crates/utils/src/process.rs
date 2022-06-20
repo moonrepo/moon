@@ -1,7 +1,6 @@
 use crate::path;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, trace};
-use std::env;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::{Arc, RwLock};
@@ -246,12 +245,10 @@ impl Command {
     }
 
     pub fn inherit_colors(&mut self) -> &mut Command {
-        if let Ok(level) = env::var("FORCE_COLOR") {
-            self.env("FORCE_COLOR", &level);
-            self.env("CLICOLOR_FORCE", &level);
-        } else if env::var("NO_COLOR").is_ok() {
-            self.env("NO_COLOR", "1");
-        }
+        let level = color::supports_color().to_string();
+
+        self.env("FORCE_COLOR", &level);
+        self.env("CLICOLOR_FORCE", &level);
 
         // Force a terminal width so that we have consistent sizing
         // in our cached output, and its the same across all machines

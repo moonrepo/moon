@@ -1,6 +1,7 @@
 use crate::color;
 use chrono::prelude::*;
 use chrono::Local;
+use console::strip_ansi_codes;
 use fern::log_file;
 use fern::Dispatch;
 use log::LevelFilter;
@@ -72,16 +73,9 @@ impl Logger {
                 .chain(base_logger.clone())
                 .format(|out, message, record| {
                     let formatted_timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
-
                     let prefix = format!("[{} {}]", record.level(), formatted_timestamp);
-
                     let formatted_message = format!("{} {} {}", prefix, record.target(), message);
-
-                    let message_without_colors_bytes = strip_ansi_escapes::strip(formatted_message)
-                        .expect("could not strip colors from log");
-
-                    let message_without_colors = std::str::from_utf8(&message_without_colors_bytes)
-                        .expect("could not decode de-colored log bytes into a str");
+                    let message_without_colors = strip_ansi_codes(&formatted_message);
 
                     out.finish(format_args!("{}", message_without_colors))
                 })

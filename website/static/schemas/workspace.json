@@ -7,7 +7,7 @@
     "actionRunner": {
       "default": {
         "inheritColorsForPipedTasks": true,
-        "logRunningCommand": true
+        "logRunningCommand": false
       },
       "allOf": [
         {
@@ -93,7 +93,7 @@
           "type": "boolean"
         },
         "logRunningCommand": {
-          "default": true,
+          "default": false,
           "type": "boolean"
         }
       }

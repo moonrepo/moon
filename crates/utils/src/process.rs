@@ -257,7 +257,7 @@ impl Command {
         let line = if args.is_empty() {
             self.bin.to_owned()
         } else {
-            format!("{} {}", self.bin, args.join(" "))
+            format!("{} {}", self.bin, join_args(args))
         };
 
         (path::replace_home_dir(&line), cmd.get_current_dir())

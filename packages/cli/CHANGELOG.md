@@ -5,6 +5,8 @@
 #### 🚀 Updates
 
 - Added an `extends` setting to `.moon/workspace.yml` and `.moon/project.yml`.
+- Added a `actionRunner.logRunningCommand` setting to `.moon/workspace.yml` for logging the task
+  command being ran.
 
 #### 🐞 Fixes
 

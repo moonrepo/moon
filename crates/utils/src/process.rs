@@ -244,6 +244,24 @@ impl Command {
         Ok(output)
     }
 
+    pub fn get_command_line(&self) -> (String, Option<&Path>) {
+        let cmd = &self.cmd.as_std();
+
+        let args = cmd
+            .get_args()
+            .into_iter()
+            .map(|a| a.to_str().unwrap())
+            .collect::<Vec<_>>();
+
+        let line = if args.is_empty() {
+            self.bin.to_owned()
+        } else {
+            format!("{} {}", self.bin, args.join(" "))
+        };
+
+        (path::replace_home_dir(&line), cmd.get_current_dir())
+    }
+
     pub fn inherit_colors(&mut self) -> &mut Command {
         let level = color::supports_color().to_string();
 
@@ -291,12 +309,7 @@ impl Command {
         }
 
         let cmd = &self.cmd.as_std();
-        let args = cmd
-            .get_args()
-            .into_iter()
-            .map(|a| a.to_str().unwrap())
-            .collect::<Vec<_>>();
-        let mut command_line = path::replace_home_dir(&format!("{} {}", self.bin, args.join(" ")));
+        let (mut command_line, working_dir) = self.get_command_line();
 
         if input.is_some() {
             command_line = format!("{} > {}", input.unwrap().replace('\n', " "), command_line);
@@ -323,7 +336,7 @@ impl Command {
             target: "moon:utils",
             "Running command {} (in {}){}",
             color::shell(&command_line),
-            if let Some(cwd) = cmd.get_current_dir() {
+            if let Some(cwd) = working_dir {
                 color::path(cwd)
             } else {
                 String::from("working dir")

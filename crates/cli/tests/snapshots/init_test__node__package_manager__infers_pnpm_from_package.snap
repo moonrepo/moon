@@ -28,7 +28,7 @@ node:
   pnpm:
     version: '4.5.6'
 
-  # Add `node.version` as a constaint in the root `package.json` `engines`.
+  # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true
 
   # Dedupe dependencies after the lockfile has changed.

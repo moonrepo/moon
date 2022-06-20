@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Ensure the CLI binary has not been accidently modified and pushed
+# Ensure the CLI binary has not been accidentally modified and pushed
 size=$(stat -c %s packages/cli/moon)
 # size=$(stat -f "%z" packages/cli/moon) # macos
 

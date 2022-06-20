@@ -111,7 +111,7 @@
 
 ### CLI
 
-- [x] `init` command to scafflold a new project
+- [x] `init` command to scaffold a new project
 - [x] `project` command for displaying info
 - [x] `project-graph` command for outputting DOT format
 - [x] `setup` command for installing tools

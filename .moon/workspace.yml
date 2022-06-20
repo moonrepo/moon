@@ -15,5 +15,8 @@ projects:
   # runtime: 'packages/runtime'
   # website: 'website'
 
+actionRunner:
+  logRunningCommand: true
+
 vcs:
   defaultBranch: 'master'

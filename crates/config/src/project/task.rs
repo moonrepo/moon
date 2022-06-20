@@ -1,5 +1,6 @@
 use crate::types::{FilePath, FilePathOrGlob, TargetID};
 use crate::validators::{validate_child_or_root_path, validate_target};
+use moon_utils::process::split_args;
 use schemars::gen::SchemaGenerator;
 use schemars::schema::Schema;
 use schemars::{schema_for, JsonSchema};
@@ -158,7 +159,7 @@ impl<'de> de::Visitor<'de> for DeserializeArgs {
     where
         E: de::Error,
     {
-        match shell_words::split(value) {
+        match split_args(value) {
             Ok(args) => Ok(args),
             Err(error) => Err(E::custom(error)),
         }

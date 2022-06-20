@@ -8,7 +8,7 @@ use moon_logger::{color, debug, trace, warn};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_toolchain::{get_path_env_var, Executable};
-use moon_utils::process::{output_to_string, Command, Output};
+use moon_utils::process::{join_args, output_to_string, Command, Output};
 use moon_utils::{is_ci, is_test_env, path, string_vec, time};
 use std::collections::HashMap;
 use std::path::Path;
@@ -305,12 +305,14 @@ pub async fn run_target(
             // Print label *before* output is streamed since it may stay open forever,
             // or it may use ANSI escape codes to alter the terminal.
             print_target_label(target_id, &attempt, attempt_total, Checkpoint::Pass);
+            print_target_command(&workspace, &project, task, passthrough_args);
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
             command.exec_stream_and_capture_output().await
         } else {
             print_target_label(target_id, &attempt, attempt_total, Checkpoint::Start);
+            print_target_command(&workspace, &project, task, passthrough_args);
 
             // Otherwise we run the process in the background and write the output
             // once it has completed.
@@ -402,6 +404,46 @@ fn print_target_label(target: &str, attempt: &Attempt, attempt_total: u8, checkp
     } else {
         println!("{}", label);
     }
+}
+
+fn print_target_command(
+    workspace: &Workspace,
+    project: &Project,
+    task: &Task,
+    passthrough_args: &[String],
+) {
+    if !workspace.config.action_runner.log_running_command {
+        return;
+    }
+
+    let mut args = vec![];
+    args.extend(&task.args);
+    args.extend(passthrough_args);
+
+    let command_line = if args.is_empty() {
+        task.command.clone()
+    } else {
+        format!("{} {}", task.command, join_args(args))
+    };
+
+    let working_dir = if task.options.run_from_workspace_root || project.root == workspace.root {
+        String::from("workspace")
+    } else {
+        format!(
+            ".{}{}",
+            std::path::MAIN_SEPARATOR,
+            project
+                .root
+                .strip_prefix(&workspace.root)
+                .unwrap()
+                .to_string_lossy(),
+        )
+    };
+
+    let suffix = format!("(in {})", working_dir);
+    let message = format!("{} {}", command_line, color::muted(&suffix));
+
+    println!("{}", color::muted_light(&message));
 }
 
 fn print_cache_item(item: &RunTargetState) {

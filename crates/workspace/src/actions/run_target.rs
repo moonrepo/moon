@@ -309,7 +309,9 @@ pub async fn run_target(
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
-            command.exec_stream_and_capture_output().await
+            command
+                .exec_stream_and_capture_output(if is_ci() { Some(target_id) } else { None })
+                .await
         } else {
             print_target_label(target_id, &attempt, attempt_total, Checkpoint::Start);
             print_target_command(&workspace, &project, task, passthrough_args);

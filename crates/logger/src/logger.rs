@@ -66,7 +66,7 @@ impl Logger {
                     message
                 ));
             })
-            .chain(io::stdout());
+            .chain(io::stderr());
 
         if let Some(output) = output {
             let file_logger = Dispatch::new()

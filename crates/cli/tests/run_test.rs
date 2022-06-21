@@ -103,6 +103,30 @@ mod configs {
     }
 }
 
+mod logs {
+    use super::*;
+    use moon_utils::test::create_fixtures_sandbox;
+
+    #[test]
+    fn creates_log_file() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("--logFile=output.log")
+            .arg("run")
+            .arg("node:standard")
+            .assert();
+
+        let output_path = fixture.path().join("output.log");
+
+        assert!(output_path.exists());
+
+        let log_contents = std::fs::read_to_string(output_path).expect("could not read output.log");
+
+        assert_snapshot!(log_contents);
+    }
+}
+
 mod caching {
     use super::*;
     use moon_cache::{CacheItem, RunTargetState};

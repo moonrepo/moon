@@ -1,0 +1,137 @@
+---
+source: crates/cli/tests/run_test.rs
+expression: log_contents
+---
+[TRACE 2022-06-21 14:22:14] moon:workspace Attempting to find workspace root at /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ
+[DEBUG 2022-06-21 14:22:14] moon:workspace Creating workspace at /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ (from working directory /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ)
+[TRACE 2022-06-21 14:22:14] moon:workspace Loading .moon/workspace.yml from /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ
+[TRACE 2022-06-21 14:22:14] moon:workspace Attempting to find .moon/project.yml in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ
+[TRACE 2022-06-21 14:22:14] moon:workspace Loading package.json from /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ
+[TRACE 2022-06-21 14:22:14] moon:workspace Attempting to find tsconfig.json in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ
+[DEBUG 2022-06-21 14:22:14] moon:cache Creating cache engine at /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache
+[DEBUG 2022-06-21 14:22:14] moon:toolchain Creating toolchain at ~/.moon
+[TRACE 2022-06-21 14:22:14] moon:toolchain Creating directory ~/.moon
+[TRACE 2022-06-21 14:22:14] moon:toolchain Creating directory ~/.moon/temp
+[TRACE 2022-06-21 14:22:14] moon:toolchain Creating directory ~/.moon/tools
+[DEBUG 2022-06-21 14:22:14] moon:project-graph Creating project graph with 11 projects
+[DEBUG 2022-06-21 14:22:14] moon:dep-graph Creating dependency graph
+[TRACE 2022-06-21 14:22:14] moon:project-graph Project node does not exist in the project graph, attempting to load
+[DEBUG 2022-06-21 14:22:14] moon:project:node Loading project from /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node (id = node, path = node)
+[TRACE 2022-06-21 14:22:14] moon:project:node Attempting to find project.yml in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node
+[DEBUG 2022-06-21 14:22:14] moon:project:node Creating file groups
+[DEBUG 2022-06-21 14:22:14] moon:project:node Creating tasks
+[DEBUG 2022-06-21 14:22:14] moon:project:node:unhandledPromise Creating task node:unhandledPromise with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:throwError Creating task node:throwError with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:retryCount Creating task node:retryCount with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:envVarsMoon Creating task node:envVarsMoon with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:npm Creating task node:npm with command npm
+[DEBUG 2022-06-21 14:22:14] moon:project:node:cjs Creating task node:cjs with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:topLevelAwait Creating task node:topLevelAwait with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:runFromProject Creating task node:runFromProject with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:mjs Creating task node:mjs with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:standard Creating task node:standard with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:envVars Creating task node:envVars with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:exitCodeZero Creating task node:exitCodeZero with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:exitCodeNonZero Creating task node:exitCodeNonZero with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:runFromWorkspace Creating task node:runFromWorkspace with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:processExitNonZero Creating task node:processExitNonZero with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:passthroughArgs Creating task node:passthroughArgs with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:processExitZero Creating task node:processExitZero with command node
+[DEBUG 2022-06-21 14:22:14] moon:project:node:throwError Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:exitCodeNonZero Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:runFromProject Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:retryCount Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:runFromWorkspace Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:topLevelAwait Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:mjs Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:processExitZero Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:exitCodeZero Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:processExitNonZero Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:passthroughArgs Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:standard Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:cjs Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:unhandledPromise Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:envVars Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:npm Expanding deps, inputs, outputs, and args
+[DEBUG 2022-06-21 14:22:14] moon:project:node:envVarsMoon Expanding deps, inputs, outputs, and args
+[TRACE 2022-06-21 14:22:14] moon:dep-graph Target node:standard does not exist in the dependency graph, inserting
+[TRACE 2022-06-21 14:22:14] moon:dep-graph Syncing project node configs and dependencies
+[DEBUG 2022-06-21 14:22:14] moon:action-runner Creating action runner
+[TRACE 2022-06-21 14:22:14] moon:action-runner Deleting stale runfiles
+[DEBUG 2022-06-21 14:22:14] moon:action-runner Running 4 actions across 3 batches
+[TRACE 2022-06-21 14:22:14] moon:action-runner:batch:1 Running 1 actions
+[TRACE 2022-06-21 14:22:14] moon:action-runner:batch:1:1 Running action SetupToolchain
+[DEBUG 2022-06-21 14:22:14] moon:action:setup-toolchain Setting up toolchain
+[TRACE 2022-06-21 14:22:14] moon:cache:item Cache miss for /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/workspaceState.json, does not exist
+[DEBUG 2022-06-21 14:22:14] moon:toolchain Downloading and installing tools
+[DEBUG 2022-06-21 14:22:14] moon:toolchain:node Tool has already been downloaded, continuing
+[DEBUG 2022-06-21 14:22:14] moon:toolchain:node Tool has already been installed, continuing
+[TRACE 2022-06-21 14:22:14] moon:utils Running command ~/.moon/tools/node/16.0.0/bin/npm --version (in working dir)
+[TRACE 2022-06-21 14:22:14] mio::poll registering event source with poller: token=Token(16777218), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:14] mio::poll registering event source with poller: token=Token(16777217), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:14] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:14] mio::poll deregistering event source from poller
+[DEBUG 2022-06-21 14:22:14] moon:toolchain:npm Using the version (7.10.0) that came bundled with Node.js
+[DEBUG 2022-06-21 14:22:14] moon:toolchain:npm Tool has already been installed, continuing
+[TRACE 2022-06-21 14:22:14] moon:utils Running command ~/.moon/tools/node/16.0.0/bin/npm config get prefix (in working dir)
+[TRACE 2022-06-21 14:22:14] mio::poll registering event source with poller: token=Token(33554433), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:14] mio::poll registering event source with poller: token=Token(33554434), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:14] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:14] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:14] moon:cache:item Writing cache /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/workspaceState.json
+[TRACE 2022-06-21 14:22:14] moon:action-runner:batch:1:1 Ran action SetupToolchain in 235.762125ms
+[TRACE 2022-06-21 14:22:14] moon:action-runner:batch:2 Running 2 actions
+[TRACE 2022-06-21 14:22:14] moon:action-runner:batch:2:1 Running action InstallNodeDeps
+[TRACE 2022-06-21 14:22:14] moon:action-runner:batch:2:2 Running action SyncProject(node)
+[TRACE 2022-06-21 14:22:14] moon:cache:item Cache hit for /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/workspaceState.json, reading
+[TRACE 2022-06-21 14:22:14] moon:project:node Attempting to find package.json in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node
+[TRACE 2022-06-21 14:22:14] moon:project:node Attempting to find tsconfig.json in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node
+[TRACE 2022-06-21 14:22:14] moon:action-runner:batch:2:2 Ran action SyncProject(node) in 245.625µs
+[DEBUG 2022-06-21 14:22:14] moon:action:install-node-deps Installing Node.js dependencies
+[TRACE 2022-06-21 14:22:14] moon:utils Running command ~/.moon/tools/node/16.0.0/bin/npm install --no-audit --no-fund (in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ)
+[TRACE 2022-06-21 14:22:14] mio::poll registering event source with poller: token=Token(50331650), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:14] mio::poll registering event source with poller: token=Token(50331649), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:15] moon:cache:item Writing cache /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/workspaceState.json
+[TRACE 2022-06-21 14:22:15] moon:action-runner:batch:2:1 Ran action InstallNodeDeps in 227.119541ms
+[TRACE 2022-06-21 14:22:15] moon:action-runner:batch:3 Running 1 actions
+[TRACE 2022-06-21 14:22:15] moon:action-runner:batch:3:1 Running action RunTarget(node:standard)
+[DEBUG 2022-06-21 14:22:15] moon:action:run-target Running target node:standard
+[TRACE 2022-06-21 14:22:15] moon:cache:item Cache miss for /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/runs/node/standard/lastRunState.json, does not exist
+[TRACE 2022-06-21 14:22:15] moon:project:node Attempting to find package.json in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node
+[TRACE 2022-06-21 14:22:15] moon:project:node Attempting to find tsconfig.json in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node
+[TRACE 2022-06-21 14:22:15] moon:utils Running command git ls-tree HEAD -r node (in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ)
+[TRACE 2022-06-21 14:22:15] mio::poll registering event source with poller: token=Token(67108865), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:15] mio::poll registering event source with poller: token=Token(67108866), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:15] moon:utils Running command git status --porcelain --untracked-files -z (in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ)
+[TRACE 2022-06-21 14:22:15] mio::poll registering event source with poller: token=Token(83886082), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:15] mio::poll registering event source with poller: token=Token(83886081), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+[DEBUG 2022-06-21 14:22:15] moon:action:run-target Generated hash 3270284f4824b530c3006108757e715f73a43f949c811db7c0859aded12d9036 for target node:standard
+[DEBUG 2022-06-21 14:22:15] moon:action:run-target Creating node:standard command (in working directory /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node)
+[TRACE 2022-06-21 14:22:15] moon:action:run-target Creating MOON_* environment variables
+[TRACE 2022-06-21 14:22:15] moon:cache:runfile Writing runfile /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/runs/node/runfile.json
+[TRACE 2022-06-21 14:22:15] moon:utils Running command ~/.moon/tools/node/16.0.0/bin/node --preserve-symlinks --title node:standard --unhandled-rejections throw ./standard.js (in /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node)
+  MOON_CACHE_DIR=/private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache
+  MOON_PROJECT_ID=node
+  MOON_PROJECT_ROOT=/private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/node
+  MOON_PROJECT_RUNFILE=/private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/runs/node/runfile.json
+  MOON_PROJECT_SOURCE=node
+  MOON_TARGET=node:standard
+  MOON_TOOLCHAIN_DIR=/Users/terence/.moon
+  MOON_WORKING_DIR=/private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ
+  MOON_WORKSPACE_ROOT=/private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ
+[TRACE 2022-06-21 14:22:15] mio::poll registering event source with poller: token=Token(100663297), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:15] mio::poll registering event source with poller: token=Token(100663298), interests=READABLE | WRITABLE
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+[TRACE 2022-06-21 14:22:15] moon:cache:hash Writing hash /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/hashes/3270284f4824b530c3006108757e715f73a43f949c811db7c0859aded12d9036.json
+[TRACE 2022-06-21 14:22:15] moon:cache:item Writing cache /private/var/folders/7q/mhms7bw57j3_zzppqf6djmcr0000gn/T/.tmpnPPvgQ/.moon/cache/runs/node/standard/lastRunState.json
+[TRACE 2022-06-21 14:22:15] moon:action-runner:batch:3:1 Ran action RunTarget(node:standard) in 54.26ms
+[DEBUG 2022-06-21 14:22:15] moon:action-runner Finished running 4 actions in 517.989541ms
+[TRACE 2022-06-21 14:22:15] mio::poll deregistering event source from poller
+

@@ -231,10 +231,10 @@ impl Command {
             let mut captured_lines = vec![];
 
             while let Some(line) = lines.next_line().await.unwrap() {
-                if stderr_prefix.is_empty() {
+                if stdout_prefix.is_empty() {
                     println!("{}", line);
                 } else {
-                    println!("{} {}", stderr_prefix, line);
+                    println!("{} {}", stdout_prefix, line);
                 }
 
                 captured_lines.push(line);

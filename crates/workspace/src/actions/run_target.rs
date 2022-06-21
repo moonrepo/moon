@@ -295,7 +295,8 @@ pub async fn run_target(
     let attempt_total = task.options.retry_count + 1;
     let mut attempt_index = 1;
     let mut attempts = vec![];
-    let stream_output = is_primary || is_ci() && !is_test_env();
+    let is_real_ci = is_ci() && !is_test_env();
+    let stream_output = is_primary || is_real_ci;
     let output;
 
     loop {
@@ -310,7 +311,7 @@ pub async fn run_target(
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
             command
-                .exec_stream_and_capture_output(if is_ci() { Some(target_id) } else { None })
+                .exec_stream_and_capture_output(if is_real_ci { Some(target_id) } else { None })
                 .await
         } else {
             print_target_label(target_id, &attempt, attempt_total, Checkpoint::Start);

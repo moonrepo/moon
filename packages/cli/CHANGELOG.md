@@ -12,7 +12,12 @@
 
 - More fixes around terminal color output and handling.
 
-## 0.3.1
+#### ⚙️ Internal
+
+- Temporarily disabling offline internet checks as it has issues with VPNs. Will revisit in the
+  future.
+
+### 0.3.1
 
 #### 🐞 Fixes
 

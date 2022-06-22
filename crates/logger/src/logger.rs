@@ -1,10 +1,14 @@
 use crate::color;
 use chrono::prelude::*;
 use chrono::Local;
+use console::strip_ansi_codes;
+use fern::log_file;
 use fern::Dispatch;
 use log::LevelFilter;
 use std::env;
+use std::fs;
 use std::io;
+use std::path::PathBuf;
 
 static mut FIRST_LOG: bool = true;
 static mut LAST_HOUR: u32 = 0;
@@ -12,13 +16,17 @@ static mut LAST_HOUR: u32 = 0;
 pub struct Logger {}
 
 impl Logger {
-    pub fn init(level: LevelFilter) {
+    pub fn init(level: LevelFilter, output: Option<PathBuf>) {
         if level == LevelFilter::Off {
             return;
         }
 
-        Dispatch::new()
+        let base_logger = Dispatch::new()
             .filter(|metadata| metadata.target().starts_with("moon"))
+            .into_shared();
+
+        let colored_logger = Dispatch::new()
+            .chain(base_logger.clone())
             .format(|out, message, record| {
                 let mut date_format = "%Y-%m-%d %H:%M:%S";
                 let current_timestamp = Local::now();
@@ -59,8 +67,37 @@ impl Logger {
                     message
                 ));
             })
-            .chain(Dispatch::new().level(level).chain(io::stderr()))
-            .apply()
-            .unwrap();
+            .chain(io::stderr());
+
+        if let Some(output) = output {
+            if let Some(dir) = output.parent() {
+                fs::create_dir_all(dir).expect("Could not create log directory");
+            }
+
+            let file_logger = Dispatch::new()
+                .chain(base_logger)
+                .format(|out, message, record| {
+                    let formatted_timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
+                    let prefix = format!("[{} {}]", record.level(), formatted_timestamp);
+                    let formatted_message = format!("{} {} {}", prefix, record.target(), message);
+                    let message_without_colors = strip_ansi_codes(&formatted_message);
+
+                    out.finish(format_args!("{}", message_without_colors))
+                })
+                .chain(log_file(output).expect("Could not create log file"));
+
+            Dispatch::new()
+                .level(level)
+                .chain(file_logger)
+                .chain(colored_logger)
+                .apply()
+                .expect("Could not create logger");
+        } else {
+            Dispatch::new()
+                .level(level)
+                .chain(colored_logger)
+                .apply()
+                .expect("Could not create logger");
+        }
     }
 }

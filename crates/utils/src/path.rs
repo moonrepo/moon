@@ -35,7 +35,7 @@ pub fn path_to_string(path: &Path) -> Result<String, MoonError> {
 
 pub fn replace_home_dir(value: &str) -> String {
     if let Some(home_dir) = get_home_dir() {
-        let home_dir_str = home_dir.to_str().unwrap();
+        let home_dir_str = home_dir.to_str().unwrap_or_default();
 
         // Replace both forward and backward slashes
         return value

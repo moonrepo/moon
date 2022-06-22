@@ -85,6 +85,7 @@ fn create_node_options(task: &Task) -> Vec<String> {
 /// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[cfg(not(windows))]
+#[track_caller]
 fn create_node_target_command(
     workspace: &Workspace,
     project: &Project,
@@ -131,6 +132,7 @@ fn create_node_target_command(
 /// through "cmd.exe" and not "node.exe". Because of this, the order of operations
 /// is switched, and "node.exe" is detected through the `PATH` env var.
 #[cfg(windows)]
+#[track_caller]
 fn create_node_target_command(
     workspace: &Workspace,
     project: &Project,

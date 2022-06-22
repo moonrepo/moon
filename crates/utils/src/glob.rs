@@ -17,6 +17,7 @@ pub struct GlobSet<'t> {
 }
 
 impl<'t> GlobSet<'t> {
+    #[track_caller]
     pub fn new(patterns: &'t [String]) -> Result<Self, GlobError> {
         let mut globs = vec![];
 
@@ -117,6 +118,7 @@ pub fn split_patterns(patterns: &[String]) -> Result<(Vec<Glob>, Vec<Glob>), Glo
     Ok((expressions, negations))
 }
 
+#[track_caller]
 pub fn walk(base_dir: &Path, patterns: &[String]) -> Result<Vec<PathBuf>, GlobError> {
     let (globs, negations) = split_patterns(patterns)?;
     let negation = Negation::try_from_patterns(negations).unwrap();

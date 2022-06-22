@@ -204,6 +204,7 @@ impl Vcs for Svn {
         Ok(Svn::process_touched_files(output))
     }
 
+    #[track_caller]
     async fn get_touched_files_against_previous_revision(
         &self,
         revision: &str,

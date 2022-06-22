@@ -12,6 +12,7 @@ use tokio::sync::RwLock;
 const LOG_TARGET: &str = "moon:action:install-node-deps";
 
 /// Add `packageManager` to root `package.json`.
+#[track_caller]
 fn add_package_manager(workspace: &mut Workspace) -> bool {
     let manager_version = match workspace.config.node.package_manager {
         PackageManager::Npm => format!("npm@{}", workspace.config.node.npm.version),

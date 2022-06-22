@@ -27,7 +27,7 @@ fn format_validation_error(error: &ValidationError) -> String {
     let mut message = "".to_owned();
 
     if let Some(path) = error.params.get("path") {
-        let value = format_yaml_value(to_value(&path).unwrap());
+        let value = format_yaml_value(to_value(&path).unwrap_or_default());
 
         if !value.is_empty() {
             let msg = format!("Invalid field <id>{}</id>: ", value);

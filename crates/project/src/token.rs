@@ -348,7 +348,7 @@ impl<'a> TokenResolver<'a> {
         token_type.check_context(&self.context)?;
 
         let mut results = vec![];
-        let task = task.unwrap();
+        let task = task.expect("Expected a task for output resolving");
 
         if let TokenType::In(token, index) = token_type {
             let error = ProjectError::Token(TokenError::InvalidInIndex(token, index));
@@ -397,7 +397,7 @@ impl<'a> TokenResolver<'a> {
         token_type.check_context(&self.context)?;
 
         let mut results = vec![];
-        let task = task.unwrap();
+        let task = task.expect("Expected a task for output resolving");
 
         if let TokenType::Out(token, index) = token_type {
             let error = ProjectError::Token(TokenError::InvalidOutIndex(token, index));

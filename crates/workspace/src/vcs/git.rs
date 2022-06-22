@@ -157,11 +157,11 @@ impl Vcs for Git {
             // <mode> <type> <hash>\t<file>
             let parts = line.split(' ');
             // <hash>\t<file>
-            let mut last_parts = parts.last().unwrap().split('\t');
-            let hash = last_parts.next().unwrap();
-            let file = last_parts.next().unwrap();
+            let mut last_parts = parts.last().unwrap_or_default().split('\t');
+            let hash = last_parts.next().unwrap_or_default();
+            let file = last_parts.next().unwrap_or_default();
 
-            if !self.is_file_ignored(file) {
+            if !hash.is_empty() && !file.is_empty() && !self.is_file_ignored(file) {
                 map.insert(file.to_owned(), hash.to_owned());
             }
         }
@@ -335,7 +335,7 @@ impl Vcs for Git {
                 continue;
             }
 
-            let x = last_status.chars().next().unwrap();
+            let x = last_status.chars().next().unwrap_or_default();
             let file = line.to_owned();
 
             match x {

@@ -16,6 +16,7 @@ static mut LAST_HOUR: u32 = 0;
 pub struct Logger {}
 
 impl Logger {
+    #[track_caller]
     pub fn init(level: LevelFilter, output: Option<PathBuf>) {
         if level == LevelFilter::Off {
             return;

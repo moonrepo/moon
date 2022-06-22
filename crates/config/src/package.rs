@@ -377,9 +377,10 @@ pub enum Workspaces {
 // so we need to hack around this by using the `json` crate and manually
 // making the changes. For this to work correctly, we need to read the json
 // file again and parse it with `json`, then stringify it with `json`.
+#[track_caller]
 async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
     let contents = fs::read_json_string(path).await?;
-    let mut data = json::parse(&contents).unwrap();
+    let mut data = json::parse(&contents).expect("Unable to write package.json");
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!

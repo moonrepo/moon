@@ -47,6 +47,7 @@ pub fn find_upwards(name: &str, dir: &Path) -> Option<PathBuf> {
     }
 }
 
+#[track_caller]
 pub async fn link_file(from_root: &Path, from: &Path, to_root: &Path) -> Result<(), MoonError> {
     let to = to_root.join(from.strip_prefix(from_root).unwrap());
 

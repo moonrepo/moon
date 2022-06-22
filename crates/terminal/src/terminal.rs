@@ -75,6 +75,7 @@ impl ExtendedTerm for Term {
         Ok(())
     }
 
+    #[track_caller]
     fn render_error(&self, error: Box<dyn std::error::Error>) -> ! {
         let label = self.format_label(Label::Failure, "Error");
         let label_width = measure_text_width(&label);

@@ -9,6 +9,8 @@
   command being ran.
 - Added a global `--logFile` option to the CLI. Also supports a new `MOON_LOG_FILE` environment
   variable.
+- When targets are being ran in parallel, their output is now prefixed with the target name to
+  differentiate. This is currently only enabled in CI.
 
 #### 🐞 Fixes
 

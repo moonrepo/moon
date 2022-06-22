@@ -6,12 +6,20 @@
   "properties": {
     "actionRunner": {
       "default": {
-        "inheritColorsForPipedTasks": true
+        "inheritColorsForPipedTasks": true,
+        "logRunningCommand": false
       },
       "allOf": [
         {
           "$ref": "#/definitions/ActionRunnerConfig"
         }
+      ]
+    },
+    "extends": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
       ]
     },
     "node": {
@@ -83,6 +91,10 @@
         "inheritColorsForPipedTasks": {
           "default": true,
           "type": "boolean"
+        },
+        "logRunningCommand": {
+          "default": false,
+          "type": "boolean"
         }
       }
     },
@@ -116,6 +128,7 @@
           ]
         },
         "pnpm": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/PnpmConfig"
@@ -130,6 +143,7 @@
           "type": "boolean"
         },
         "syncVersionManagerConfig": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/VersionManager"
@@ -144,6 +158,7 @@
           "type": "string"
         },
         "yarn": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/YarnConfig"
@@ -174,9 +189,11 @@
     },
     "PnpmConfig": {
       "type": "object",
+      "required": [
+        "version"
+      ],
       "properties": {
         "version": {
-          "default": "7.1.5",
           "type": "string"
         }
       }
@@ -231,9 +248,11 @@
     },
     "YarnConfig": {
       "type": "object",
+      "required": [
+        "version"
+      ],
       "properties": {
         "version": {
-          "default": "3.2.1",
           "type": "string"
         }
       }

@@ -138,6 +138,7 @@ impl ProjectGraph {
     /// has not been loaded, it will be loaded and inserted into the
     /// project graph. If the project does not exist or has been
     /// misconfigured, an error will be returned.
+    #[track_caller]
     pub fn load(&self, id: &str) -> Result<Project, ProjectError> {
         // Check if the project already exists in read-only mode,
         // so that it may be dropped immediately after!
@@ -160,6 +161,7 @@ impl ProjectGraph {
     }
 
     /// Return a list of direct project IDs that the defined project depends on.
+    #[track_caller]
     pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
         let indices = self.indices.read().expect(READ_ERROR);
         let graph = self.graph.read().expect(READ_ERROR);
@@ -173,6 +175,7 @@ impl ProjectGraph {
     }
 
     /// Return a list of project IDs that require the defined project.
+    #[track_caller]
     pub fn get_dependents_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
         let indices = self.indices.read().expect(READ_ERROR);
         let graph = self.graph.read().expect(READ_ERROR);

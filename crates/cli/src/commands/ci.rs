@@ -229,8 +229,8 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
             meta.push(String::from("cached"));
         } else if matches!(result.status, ActionStatus::Skipped) {
             meta.push(String::from("skipped"));
-        } else {
-            meta.push(time::elapsed(result.duration.unwrap()));
+        } else if let Some(duration) = result.duration {
+            meta.push(time::elapsed(duration));
         }
 
         term.write_line(&format!(

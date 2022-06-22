@@ -124,6 +124,7 @@ impl Command {
         Ok(output)
     }
 
+    #[track_caller]
     pub async fn exec_capture_output_with_input(
         &mut self,
         input: &str,
@@ -173,6 +174,7 @@ impl Command {
         Ok(status)
     }
 
+    #[track_caller]
     pub async fn exec_stream_and_capture_output(
         &mut self,
         prefix: Option<&str>,
@@ -271,7 +273,7 @@ impl Command {
         let args = cmd
             .get_args()
             .into_iter()
-            .map(|a| a.to_str().unwrap())
+            .map(|a| a.to_str().unwrap_or("<unknown>"))
             .collect::<Vec<_>>();
 
         let line = if args.is_empty() {
@@ -323,6 +325,7 @@ impl Command {
         Ok(())
     }
 
+    #[track_caller]
     fn log_command_info(&self, input: Option<&str>) {
         // Avoid all this overhead if we're not logging
         if !logging_enabled() {
@@ -340,7 +343,7 @@ impl Command {
 
         for (key, value) in cmd.get_envs() {
             if value.is_some() {
-                let key_str = key.to_str().unwrap();
+                let key_str = key.to_str().unwrap_or_default();
 
                 if key_str.starts_with("MOON_") || key_str.starts_with("NODE_") {
                     envs_list.push(format!(

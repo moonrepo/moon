@@ -97,6 +97,7 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
     Ok(())
 }
 
+#[track_caller]
 pub fn unpack_tar(
     input_file: &Path,
     output_dir: &Path,
@@ -136,6 +137,7 @@ pub fn unpack_tar(
     Ok(())
 }
 
+#[track_caller]
 pub fn unpack_zip(
     input_file: &Path,
     output_dir: &Path,

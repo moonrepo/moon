@@ -22,6 +22,7 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
 // https://github.com/nodejs/node#verifying-binaries
+#[track_caller]
 fn verify_shasum(
     download_url: &str,
     download_path: &Path,
@@ -159,6 +160,7 @@ impl NodeTool {
         self.get_npm()
     }
 
+    #[track_caller]
     pub fn is_corepack_aware(&self) -> bool {
         let cfg_version = Version::parse(&self.config.version).unwrap();
 

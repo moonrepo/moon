@@ -154,10 +154,10 @@ fn clean_path(path: &str) -> String {
     let mut path_str = path.to_owned();
 
     if let Some(home_dir) = get_home_dir() {
-        let home_dir_str = home_dir.to_str().unwrap();
+        let home_dir_str = home_dir.to_str().unwrap_or_default();
 
-        if path.starts_with(&home_dir_str) {
-            path_str = path_str.replace(home_dir.to_str().unwrap(), "~");
+        if !home_dir_str.is_empty() && path.starts_with(&home_dir_str) {
+            path_str = path_str.replace(home_dir_str, "~");
         }
     }
 

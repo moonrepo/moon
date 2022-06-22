@@ -19,6 +19,7 @@ pub fn infer_project_name_and_source(source: &str) -> (String, String) {
 
 /// For each pattern in the globs list, glob the file system
 /// for potential projects, and infer their name and source.
+#[track_caller]
 pub fn detect_projects_with_globs(
     workspace_root: &Path,
     globs: &[String],

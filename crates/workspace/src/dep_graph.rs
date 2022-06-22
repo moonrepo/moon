@@ -263,6 +263,7 @@ impl DepGraph {
         format!("{:?}", dot)
     }
 
+    #[track_caller]
     fn detect_cycle(&self) -> Result<(), WorkspaceError> {
         use petgraph::algo::kosaraju_scc;
 

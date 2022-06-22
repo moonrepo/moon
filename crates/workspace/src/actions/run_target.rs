@@ -162,7 +162,7 @@ fn create_node_target_command(
         )
         .env(
             "NODE_OPTIONS",
-            node::extend_node_options_env_var(create_node_options(task).join(" ")),
+            node::extend_node_options_env_var(&create_node_options(task).join(" ")),
         );
 
     Ok(command)

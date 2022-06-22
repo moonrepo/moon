@@ -173,7 +173,10 @@ impl Command {
         Ok(status)
     }
 
-    pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
+    pub async fn exec_stream_and_capture_output(
+        &mut self,
+        prefix: Option<&str>,
+    ) -> Result<Output, MoonError> {
         self.log_command_info(None);
 
         let mut child = self
@@ -196,12 +199,24 @@ impl Command {
         let captured_stderr_clone = Arc::clone(&captured_stderr);
         let captured_stdout_clone = Arc::clone(&captured_stdout);
 
+        let prefix: Arc<str> = prefix
+            .map(|p| color::muted(&format!("[{}]", p)))
+            .unwrap_or_default()
+            .into();
+        let stderr_prefix = Arc::clone(&prefix);
+        let stdout_prefix = Arc::clone(&prefix);
+
         task::spawn(async move {
             let mut lines = stderr.lines();
             let mut captured_lines = vec![];
 
             while let Some(line) = lines.next_line().await.unwrap() {
-                eprintln!("{}", line);
+                if stderr_prefix.is_empty() {
+                    eprintln!("{}", line);
+                } else {
+                    eprintln!("{} {}", stderr_prefix, line);
+                }
+
                 captured_lines.push(line);
             }
 
@@ -216,7 +231,12 @@ impl Command {
             let mut captured_lines = vec![];
 
             while let Some(line) = lines.next_line().await.unwrap() {
-                println!("{}", line);
+                if stdout_prefix.is_empty() {
+                    println!("{}", line);
+                } else {
+                    println!("{} {}", stdout_prefix, line);
+                }
+
                 captured_lines.push(line);
             }
 

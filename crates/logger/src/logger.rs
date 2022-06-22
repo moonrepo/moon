@@ -21,61 +21,62 @@ impl Logger {
             return;
         }
 
-        let base_logger = Dispatch::new()
+        let mut dispatcher = Dispatch::new()
             .filter(|metadata| metadata.target().starts_with("moon"))
-            .into_shared();
+            .level(level)
+            // Terminal logger
+            .chain(
+                Dispatch::new()
+                    .format(|out, message, record| {
+                        let mut date_format = "%Y-%m-%d %H:%M:%S";
+                        let current_timestamp = Local::now();
 
-        let colored_logger = Dispatch::new()
-            .chain(base_logger.clone())
-            .format(|out, message, record| {
-                let mut date_format = "%Y-%m-%d %H:%M:%S";
-                let current_timestamp = Local::now();
+                        // Shorten the timestamp when within the same hour
+                        unsafe {
+                            if !FIRST_LOG && current_timestamp.hour() == LAST_HOUR {
+                                date_format = "%H:%M:%S";
+                            }
 
-                // Shorten the timestamp when within the same hour
-                unsafe {
-                    if !FIRST_LOG && current_timestamp.hour() == LAST_HOUR {
-                        date_format = "%H:%M:%S";
-                    }
+                            if FIRST_LOG {
+                                FIRST_LOG = false;
+                            }
 
-                    if FIRST_LOG {
-                        FIRST_LOG = false;
-                    }
+                            if current_timestamp.hour() != LAST_HOUR {
+                                LAST_HOUR = current_timestamp.hour();
+                            }
+                        }
 
-                    if current_timestamp.hour() != LAST_HOUR {
-                        LAST_HOUR = current_timestamp.hour();
-                    }
-                }
+                        let formatted_timestamp = if env::var("MOON_TEST").is_ok() {
+                            String::from("YYYY-MM-DD") // Snapshots
+                        } else {
+                            current_timestamp.format(date_format).to_string()
+                        };
 
-                let formatted_timestamp = if env::var("MOON_TEST").is_ok() {
-                    String::from("YYYY-MM-DD") // Snapshots
-                } else {
-                    current_timestamp.format(date_format).to_string()
-                };
+                        let prefix = format!(
+                            "{}{} {}{}",
+                            color::muted("["),
+                            color::log_level(record.level()),
+                            color::muted(&formatted_timestamp),
+                            color::muted("]"),
+                        );
 
-                let prefix = format!(
-                    "{}{} {}{}",
-                    color::muted("["),
-                    color::log_level(record.level()),
-                    color::muted(&formatted_timestamp),
-                    color::muted("]"),
-                );
+                        out.finish(format_args!(
+                            "{} {} {}",
+                            prefix,
+                            color::log_target(record.target()),
+                            message
+                        ));
+                    })
+                    .chain(io::stderr()),
+            );
 
-                out.finish(format_args!(
-                    "{} {} {}",
-                    prefix,
-                    color::log_target(record.target()),
-                    message
-                ));
-            })
-            .chain(io::stderr());
-
+        // File logger
         if let Some(output) = output {
             if let Some(dir) = output.parent() {
                 fs::create_dir_all(dir).expect("Could not create log directory");
             }
 
             let file_logger = Dispatch::new()
-                .chain(base_logger)
                 .format(|out, message, record| {
                     let formatted_timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
                     let prefix = format!("[{} {}]", record.level(), formatted_timestamp);
@@ -86,18 +87,9 @@ impl Logger {
                 })
                 .chain(log_file(output).expect("Could not create log file"));
 
-            Dispatch::new()
-                .level(level)
-                .chain(file_logger)
-                .chain(colored_logger)
-                .apply()
-                .expect("Could not create logger");
-        } else {
-            Dispatch::new()
-                .level(level)
-                .chain(colored_logger)
-                .apply()
-                .expect("Could not create logger");
+            dispatcher = dispatcher.chain(file_logger);
         }
+
+        dispatcher.apply().expect("Could not create logger");
     }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.4.1
+
+#### 🐞 Fixes
+
+- Fixed logs unintentionally logging non-moon messages.
+
 ## 0.4.0
 
 #### 🚀 Updates

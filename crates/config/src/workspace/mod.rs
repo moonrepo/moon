@@ -417,7 +417,7 @@ node:
                 jail.create_file(
                     super::constants::CONFIG_WORKSPACE_FILENAME,
 r#"
-extends: https://raw.githubusercontent.com/moonrepo/moon/develop-0.4/tests/fixtures/config-extends/.moon/workspace.yml
+extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/workspace.yml
 
 node:
     version: '18.0.0'
@@ -430,7 +430,7 @@ node:
 
                 assert_eq!(
                     config.extends,
-                    Some("https://raw.githubusercontent.com/moonrepo/moon/develop-0.4/tests/fixtures/config-extends/.moon/workspace.yml".to_owned())
+                    Some("https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/workspace.yml".to_owned())
                 );
 
                 // Inherits from extended file

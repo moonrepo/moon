@@ -8,6 +8,7 @@ The following options are available for _all_ moon commands.
 - `--color` - Force [colored output](#colors) for moon (not tasks).
 - `--help` - Display the help menu for the current command.
 - `--log <level>` - The lowest [log level to output](#logging).
+- `--logFile <file>` - Write logs to the defined file.
 - `--version` - Display the version of the CLI.
 
 Global options _must_ be passed after the `moon` binary and before the command.
@@ -92,4 +93,16 @@ levels are supported, in priority order.
 $ moon --log trace run app:build
 # Or
 $ MOON_LOG=trace moon run app:build
+```
+
+### Outputting logs to a file
+
+moon can dump the logs from a command to a file using the `--logFile` option, or the `MOON_LOG_FILE`
+environment variable. The dumped logs will respect the `--log` option and filter the logs piped to
+the output file.
+
+```shell
+$ moon --logFile=output.log run app:build
+# Or
+$ MOON_LOG_FILE=output.log moon run app:build
 ```

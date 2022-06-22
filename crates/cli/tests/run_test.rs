@@ -142,6 +142,41 @@ mod configs {
     }
 }
 
+mod logs {
+    use super::*;
+    use moon_utils::test::create_fixtures_sandbox;
+
+    #[test]
+    fn creates_log_file() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("--logFile=output.log")
+            .arg("run")
+            .arg("node:standard")
+            .assert();
+
+        let output_path = fixture.path().join("output.log");
+
+        assert!(output_path.exists());
+    }
+
+    #[test]
+    fn creates_nested_log_file() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("--logFile=nested/output.log")
+            .arg("run")
+            .arg("node:standard")
+            .assert();
+
+        let output_path = fixture.path().join("nested/output.log");
+
+        assert!(output_path.exists());
+    }
+}
+
 mod caching {
     use super::*;
     use moon_cache::{CacheItem, RunTargetState};

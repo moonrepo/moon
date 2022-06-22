@@ -1,5 +1,7 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
+use std::path::PathBuf;
+
 use crate::commands::bin::BinTools;
 use crate::commands::init::{InheritProjectsAs, PackageManager};
 use crate::commands::run::RunStatus;
@@ -207,6 +209,13 @@ pub struct App {
         default_value_t
     )]
     pub log: LogLevel,
+
+    #[clap(
+        long,
+        env = "MOON_LOG_FILE",
+        help = "Path to a file to dump the moon logs"
+    )]
+    pub log_file: Option<PathBuf>,
 
     #[clap(subcommand)]
     pub command: Commands,

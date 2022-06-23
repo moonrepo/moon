@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+// LCOV_EXCL_START
 #[derive(Error, Debug)]
 pub enum LangError {
     #[error(
@@ -24,3 +25,4 @@ pub enum LangError {
         String, // Tool name
     ),
 }
+// LCOV_EXCL_STOP

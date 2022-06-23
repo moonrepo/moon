@@ -119,6 +119,7 @@ pub fn no_color() -> bool {
 // 1 = 8
 // 2 = 256
 // 3 = 16m
+// LCOV_EXCL_START
 pub fn supports_color() -> u8 {
     if let Ok(var) = env::var("TERM") {
         if var == "dumb" {
@@ -140,6 +141,7 @@ pub fn supports_color() -> u8 {
 
     2
 }
+// LCOV_EXCL_STOP
 
 pub const COLOR_LIST: [u8; 76] = [
     20, 21, 26, 27, 32, 33, 38, 39, 40, 41, 42, 43, 44, 45, 56, 57, 62, 63, 68, 69, 74, 75, 76, 77,

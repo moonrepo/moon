@@ -2,7 +2,7 @@ use crate::errors::{ProjectError, TargetError};
 use moon_config::{ProjectID, TargetID, TaskID};
 use moon_utils::regex::TARGET_PATTERN;
 use std::cmp::Ordering;
-use std::fmt;
+// use std::fmt;
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
 pub enum TargetProject {
@@ -12,16 +12,16 @@ pub enum TargetProject {
     Own,           // ~:task
 }
 
-impl fmt::Display for TargetProject {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TargetProject::All => write!(f, ""),
-            TargetProject::Deps => write!(f, "^"),
-            TargetProject::Id(id) => write!(f, "{}", id),
-            TargetProject::Own => write!(f, "~"),
-        }
-    }
-}
+// impl fmt::Display for TargetProject {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             TargetProject::All => write!(f, ""),
+//             TargetProject::Deps => write!(f, "^"),
+//             TargetProject::Id(id) => write!(f, "{}", id),
+//             TargetProject::Own => write!(f, "~"),
+//         }
+//     }
+// }
 
 // #[derive(Debug, PartialEq)]
 // pub enum TargetTask {

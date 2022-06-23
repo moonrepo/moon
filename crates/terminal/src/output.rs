@@ -39,7 +39,3 @@ pub fn label_checkpoint(label: &str, checkpoint: Checkpoint) -> String {
         style(label).bold()
     )
 }
-
-pub fn bold(value: &str) -> String {
-    format!("{}", style(value).bold())
-}

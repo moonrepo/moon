@@ -1,10 +1,11 @@
 use crate::is_test_env;
-use chrono::Duration;
-use chrono_humanize::HumanTime;
+// use chrono::Duration;
+// use chrono_humanize::HumanTime;
 use std::time::Duration as StdDuration;
 
 pub use chrono;
 
+// LCOV_EXCL_START
 pub fn elapsed(duration: StdDuration) -> String {
     if is_test_env() {
         return String::from("100ms"); // Snapshots
@@ -63,7 +64,8 @@ pub fn elapsed(duration: StdDuration) -> String {
 
     parts.join(" ")
 }
+// LCOV_EXCL_STOP
 
-pub fn relative(duration: Duration) -> String {
-    format!("{}", HumanTime::from(duration))
-}
+// pub fn relative(duration: Duration) -> String {
+//     format!("{}", HumanTime::from(duration))
+// }

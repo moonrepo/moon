@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 pub fn extend_node_options_env_var(next: &str) -> String {
     match env::var("NODE_OPTIONS") {
         Ok(prev) => format!("{} {}", prev, next),
-        Err(_) => String::from(next),
+        Err(_) => next.to_owned(),
     }
 }
 

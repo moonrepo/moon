@@ -4,7 +4,6 @@ use itertools::Itertools;
 use moon_logger::{color, debug};
 use moon_project::{Target, TouchedFilePaths};
 use moon_terminal::helpers::{replace_style_tokens, safe_exit};
-use moon_terminal::output;
 use moon_utils::{is_ci, path, time};
 use moon_workspace::DepGraph;
 use moon_workspace::{ActionRunner, ActionStatus, Workspace, WorkspaceError};
@@ -236,7 +235,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
         term.write_line(&format!(
             "{} {} {}",
             status,
-            output::bold(result.label.as_ref().unwrap()),
+            color::style(result.label.as_ref().unwrap()).bold(),
             color::muted(&format!("({})", meta.join(", ")))
         ))?;
 

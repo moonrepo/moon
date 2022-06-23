@@ -40,7 +40,6 @@ pub enum MoonError {
     Unknown(#[source] IoError),
 }
 
-// LCOV_EXCL_START
 pub fn map_io_to_fs_error(error: IoError, path: PathBuf) -> MoonError {
     match error.kind() {
         IoErrorKind::AlreadyExists
@@ -99,4 +98,3 @@ pub fn map_io_to_process_error(error: IoError, bin: &str) -> MoonError {
 pub fn map_json_to_error(error: JsonError, path: PathBuf) -> MoonError {
     MoonError::Json(path, error)
 }
-// LCOV_EXCL_STOP

@@ -1,6 +1,6 @@
-mod error;
+mod errors;
 
-pub use error::LangError;
+pub use errors::LangError;
 use std::path::Path;
 
 pub type StaticString = &'static str;

@@ -176,18 +176,18 @@ impl PackageJson {
     /// Add a package and version range to the `dependencies` field.
     /// If `is_missing` is true, only add if it doesn't already exist.
     /// Return true if the new value is different from the old value.
-    pub fn add_dependency(&mut self, name: String, range: String, if_missing: bool) -> bool {
+    pub fn add_dependency(&mut self, name: &str, range: &str, if_missing: bool) -> bool {
         let mut dependencies = match &self.dependencies {
             Some(deps) => deps.clone(),
             None => BTreeMap::new(),
         };
 
         // Only add if the dependency doesnt already exist
-        if if_missing && dependencies.contains_key(&name) {
+        if if_missing && dependencies.contains_key(name) {
             return false;
         }
 
-        dependencies.insert(name, range);
+        dependencies.insert(name.to_owned(), range.to_owned());
 
         self.dirty = true;
         self.dependencies = Some(dependencies);
@@ -380,7 +380,7 @@ pub enum Workspaces {
 #[track_caller]
 async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
     let contents = fs::read_json_string(path).await?;
-    let mut data = json::parse(&contents).expect("Unable to write package.json");
+    let mut data = json::parse(&contents).expect("Unable to parse package.json");
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!
@@ -445,5 +445,129 @@ mod test {
         package.save().await.unwrap();
 
         assert_eq!(fs::read_json_string(file.path()).await.unwrap(), json,);
+    }
+
+    mod add_dependency {
+        use super::*;
+
+        #[test]
+        fn adds_if_not_set() {
+            let mut pkg = PackageJson::default();
+
+            assert_eq!(pkg.dependencies, None);
+
+            assert!(pkg.add_dependency("foo", "1.2.3", false));
+
+            assert_eq!(pkg.dependencies.unwrap().get("foo").unwrap(), &"1.2.3");
+        }
+
+        #[test]
+        fn adds_if_not_set_and_missing_true() {
+            let mut pkg = PackageJson::default();
+
+            assert_eq!(pkg.dependencies, None);
+
+            assert!(pkg.add_dependency("foo", "1.2.3", true));
+
+            assert_eq!(pkg.dependencies.unwrap().get("foo").unwrap(), &"1.2.3");
+        }
+
+        #[test]
+        fn adds_if_set() {
+            let mut pkg = PackageJson {
+                dependencies: Some(BTreeMap::from([("foo".to_owned(), "1.2.3".to_owned())])),
+                ..PackageJson::default()
+            };
+
+            assert!(pkg.add_dependency("foo", "4.5.6", false));
+
+            assert_eq!(pkg.dependencies.unwrap().get("foo").unwrap(), &"4.5.6");
+        }
+
+        #[test]
+        fn doesnt_add_if_set_and_missing_true() {
+            let mut pkg = PackageJson {
+                dependencies: Some(BTreeMap::from([("foo".to_owned(), "1.2.3".to_owned())])),
+                ..PackageJson::default()
+            };
+
+            assert!(!pkg.add_dependency("foo", "4.5.6", true));
+
+            assert_eq!(pkg.dependencies.unwrap().get("foo").unwrap(), &"1.2.3");
+        }
+    }
+
+    mod add_engine {
+        use super::*;
+
+        #[test]
+        fn adds_if_not_set() {
+            let mut pkg = PackageJson::default();
+
+            assert_eq!(pkg.engines, None);
+
+            assert!(pkg.add_engine("node", "1.2.3"));
+
+            assert_eq!(pkg.engines.unwrap().get("node").unwrap(), &"1.2.3");
+        }
+
+        #[test]
+        fn adds_if_set() {
+            let mut pkg = PackageJson {
+                engines: Some(BTreeMap::from([("node".to_owned(), "1.2.3".to_owned())])),
+                ..PackageJson::default()
+            };
+
+            assert!(pkg.add_engine("node", "4.5.6"));
+
+            assert_eq!(pkg.engines.unwrap().get("node").unwrap(), &"4.5.6");
+        }
+
+        #[test]
+        fn returns_false_for_same_value() {
+            let mut pkg = PackageJson {
+                engines: Some(BTreeMap::from([("node".to_owned(), "1.2.3".to_owned())])),
+                ..PackageJson::default()
+            };
+
+            assert!(!pkg.add_engine("node", "1.2.3"));
+        }
+    }
+
+    mod set_package_manager {
+        use super::*;
+
+        #[test]
+        fn adds_if_not_set() {
+            let mut pkg = PackageJson::default();
+
+            assert_eq!(pkg.package_manager, None);
+
+            assert!(pkg.set_package_manager("npm@1.2.3"));
+
+            assert_eq!(pkg.package_manager.unwrap(), "npm@1.2.3".to_owned());
+        }
+
+        #[test]
+        fn adds_if_set() {
+            let mut pkg = PackageJson {
+                package_manager: Some(String::from("npm@1.2.3")),
+                ..PackageJson::default()
+            };
+
+            assert!(pkg.set_package_manager("npm@4.5.6"));
+
+            assert_eq!(pkg.package_manager.unwrap(), "npm@4.5.6".to_owned());
+        }
+
+        #[test]
+        fn returns_false_for_same_value() {
+            let mut pkg = PackageJson {
+                package_manager: Some(String::from("npm@1.2.3")),
+                ..PackageJson::default()
+            };
+
+            assert!(!pkg.set_package_manager("npm@1.2.3"));
+        }
     }
 }

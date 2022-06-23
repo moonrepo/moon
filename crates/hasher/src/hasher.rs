@@ -206,7 +206,7 @@ mod tests {
         #[test]
         fn returns_same_hash_for_same_value_inserted() {
             let mut package1 = PackageJson::default();
-            package1.add_dependency("react".to_owned(), "17.0.0".to_owned(), true);
+            package1.add_dependency("react", "17.0.0", true);
 
             let mut hasher1 = TargetHasher::new(String::from("0.0.0"));
             hasher1.hash_package_json(&package1);
@@ -221,10 +221,10 @@ mod tests {
         #[test]
         fn returns_same_hash_for_diff_order_insertion() {
             let mut package1 = PackageJson::default();
-            package1.add_dependency("react".to_owned(), "17.0.0".to_owned(), true);
+            package1.add_dependency("react", "17.0.0", true);
 
             let mut package2 = PackageJson::default();
-            package2.add_dependency("react-dom".to_owned(), "17.0.0".to_owned(), true);
+            package2.add_dependency("react-dom", "17.0.0", true);
 
             let mut hasher1 = TargetHasher::new(String::from("0.0.0"));
             hasher1.hash_package_json(&package2);
@@ -240,10 +240,10 @@ mod tests {
         #[test]
         fn returns_diff_hash_for_overwritten_value() {
             let mut package1 = PackageJson::default();
-            package1.add_dependency("react".to_owned(), "17.0.0".to_owned(), true);
+            package1.add_dependency("react", "17.0.0", true);
 
             let mut package2 = PackageJson::default();
-            package2.add_dependency("react".to_owned(), "18.0.0".to_owned(), true);
+            package2.add_dependency("react", "18.0.0", true);
 
             let mut hasher1 = TargetHasher::new(String::from("0.0.0"));
             hasher1.hash_package_json(&package1);

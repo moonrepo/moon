@@ -155,6 +155,8 @@ mod tests {
 
         #[test]
         fn returns_value_if_not_set() {
+            env::remove_var("NODE_OPTIONS");
+
             assert_eq!(extend_node_options_env_var("--arg"), String::from("--arg"));
         }
 

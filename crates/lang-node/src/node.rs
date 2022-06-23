@@ -119,16 +119,35 @@ pub fn get_nodejs_url(version: &str, host: &str, path: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_fs::prelude::*;
+    use assert_fs::TempDir;
 
-    // Working dir is within the crate
-    fn get_workspace_root() -> PathBuf {
-        env::current_dir()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .to_path_buf()
+    fn create_node_modules_sandbox() -> TempDir {
+        let sandbox = TempDir::new().unwrap();
+
+        sandbox
+            .child("node_modules/@scope/pkg-foo/package.json")
+            .write_str("{}")
+            .unwrap();
+
+        sandbox
+            .child("node_modules/pkg-bar/package.json")
+            .write_str("{}")
+            .unwrap();
+
+        sandbox
+            .child("node_modules/.bin/baz")
+            .write_str("{}")
+            .unwrap();
+
+        sandbox
+            .child("node_modules/.bin/baz.cmd")
+            .write_str("{}")
+            .unwrap();
+
+        sandbox.child("nested/file.js").write_str("{}").unwrap();
+
+        sandbox
     }
 
     mod extend_node_options_env_var {
@@ -194,29 +213,41 @@ mod tests {
 
         #[test]
         fn returns_path_with_package_scope() {
-            let path = find_package(&env::current_dir().unwrap(), "@moonrepo/cli");
+            let sandbox = create_node_modules_sandbox();
+            let path = find_package(sandbox.path(), "@scope/pkg-foo");
 
             assert_eq!(
                 path.unwrap(),
-                get_workspace_root()
-                    .join("node_modules")
-                    .join("@moonrepo/cli")
+                sandbox.path().join("node_modules").join("@scope/pkg-foo")
             );
         }
 
         #[test]
         fn returns_path_without_package_scope() {
-            let path = find_package(&env::current_dir().unwrap(), "packemon");
+            let sandbox = create_node_modules_sandbox();
+            let path = find_package(sandbox.path(), "pkg-bar");
 
             assert_eq!(
                 path.unwrap(),
-                get_workspace_root().join("node_modules").join("packemon")
+                sandbox.path().join("node_modules").join("pkg-bar")
+            );
+        }
+
+        #[test]
+        fn returns_path_from_nested_file() {
+            let sandbox = create_node_modules_sandbox();
+            let path = find_package(&sandbox.path().join("nested"), "@scope/pkg-foo");
+
+            assert_eq!(
+                path.unwrap(),
+                sandbox.path().join("node_modules").join("@scope/pkg-foo")
             );
         }
 
         #[test]
         fn returns_none_for_missing() {
-            let path = find_package(&env::current_dir().unwrap(), "@moonrepo/unknown-package");
+            let sandbox = create_node_modules_sandbox();
+            let path = find_package(sandbox.path(), "unknown-pkg");
 
             assert_eq!(path, None);
         }
@@ -227,23 +258,44 @@ mod tests {
 
         #[test]
         fn returns_path_if_found() {
-            let path = find_package_bin(&env::current_dir().unwrap(), "packemon");
+            let sandbox = create_node_modules_sandbox();
+            let path = find_package_bin(sandbox.path(), "baz");
 
             assert_eq!(
                 path.unwrap(),
-                get_workspace_root()
+                sandbox
+                    .path()
                     .join("node_modules/.bin")
                     .join(if consts::OS == "windows" {
-                        "packemon.cmd"
+                        "baz.cmd"
                     } else {
-                        "packemon"
+                        "baz"
+                    })
+            );
+        }
+
+        #[test]
+        fn returns_path_from_nested_file() {
+            let sandbox = create_node_modules_sandbox();
+            let path = find_package_bin(&sandbox.path().join("nested"), "baz");
+
+            assert_eq!(
+                path.unwrap(),
+                sandbox
+                    .path()
+                    .join("node_modules/.bin")
+                    .join(if consts::OS == "windows" {
+                        "baz.cmd"
+                    } else {
+                        "baz"
                     })
             );
         }
 
         #[test]
         fn returns_none_for_missing() {
-            let path = find_package_bin(&env::current_dir().unwrap(), "unknown-binary");
+            let sandbox = create_node_modules_sandbox();
+            let path = find_package_bin(sandbox.path(), "unknown-binary");
 
             assert_eq!(path, None);
         }

@@ -400,6 +400,25 @@ fileGroups:
                 Ok(())
             });
         }
+
+        //         #[test]
+        //         #[should_panic(expected = "TODO")]
+        //         fn handles_invalid_url() {
+        //             figment::Jail::expect_with(|jail| {
+        //                 jail.create_file(
+        //                     super::constants::CONFIG_PROJECT_FILENAME,
+        //                     r#"
+        // extends: https://raw.githubusercontent.com/this/is/an/invalid/file.yml
+
+        // fileGroups: {}
+        // "#,
+        //                 )?;
+
+        //                 super::load_jailed_config(jail.directory())?;
+
+        //                 Ok(())
+        //             });
+        //         }
     }
 
     mod file_groups {

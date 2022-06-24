@@ -1,4 +1,5 @@
 use insta::assert_snapshot;
+use moon_cache::CacheEngine;
 use moon_utils::path::replace_home_dir;
 use moon_utils::test::{
     create_fixtures_sandbox, create_moon_command, create_moon_command_in, get_assert_output,
@@ -36,6 +37,13 @@ fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &Path
     ));
 
     result.replace("/private<", "<")
+}
+
+async fn extract_hash_from_run(fixture: &Path, target: &str) -> String {
+    let engine = CacheEngine::create(fixture).await.unwrap();
+    let cache = engine.cache_run_target_state(target).await.unwrap();
+
+    cache.item.hash
 }
 
 #[test]
@@ -1273,5 +1281,176 @@ mod system_windows {
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
+    }
+}
+
+mod outputs {
+    use super::*;
+
+    fn debug_dir(dir: &Path) {
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+
+            if path.is_dir() {
+                debug_dir(&path);
+            } else {
+                println!("{:#?}", path);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn links_single_file() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("outputs:generateFile")
+            .assert();
+
+        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFile").await;
+
+        // hash
+        assert!(fixture
+            .path()
+            .join(".moon/cache/hashes")
+            .join(format!("{}.json", hash))
+            .exists());
+        // outputs
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(hash)
+            .join("lib/one.js")
+            .exists());
+    }
+
+    #[tokio::test]
+    async fn links_multiple_files() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("outputs:generateFiles")
+            .assert();
+
+        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFiles").await;
+
+        // hash
+        assert!(fixture
+            .path()
+            .join(".moon/cache/hashes")
+            .join(format!("{}.json", hash))
+            .exists());
+        // outputs
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(&hash)
+            .join("lib/one.js")
+            .exists());
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(&hash)
+            .join("lib/two.js")
+            .exists());
+    }
+
+    #[tokio::test]
+    async fn links_single_folder() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("outputs:generateFolder")
+            .assert();
+
+        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFolder").await;
+
+        // hash
+        assert!(fixture
+            .path()
+            .join(".moon/cache/hashes")
+            .join(format!("{}.json", hash))
+            .exists());
+        // outputs
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(&hash)
+            .join("lib/one.js")
+            .exists());
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(&hash)
+            .join("lib/two.js")
+            .exists());
+    }
+
+    #[tokio::test]
+    async fn links_multiple_folders() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("outputs:generateFolders")
+            .assert();
+
+        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFolders").await;
+
+        // hash
+        assert!(fixture
+            .path()
+            .join(".moon/cache/hashes")
+            .join(format!("{}.json", hash))
+            .exists());
+        // outputs
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(&hash)
+            .join("lib/one.js")
+            .exists());
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(&hash)
+            .join("esm/two.js")
+            .exists());
+    }
+
+    #[tokio::test]
+    async fn links_both_file_and_folder() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("outputs:generateFileAndFolder")
+            .assert();
+
+        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+
+        // hash
+        assert!(fixture
+            .path()
+            .join(".moon/cache/hashes")
+            .join(format!("{}.json", hash))
+            .exists());
+        // outputs
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(&hash)
+            .join("lib/one.js")
+            .exists());
+        assert!(fixture
+            .path()
+            .join(".moon/cache/out")
+            .join(&hash)
+            .join("esm/two.js")
+            .exists());
     }
 }

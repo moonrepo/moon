@@ -12,7 +12,6 @@ use moon_utils::process::{output_to_trimmed_string, Command};
 use std::env;
 use std::path::PathBuf;
 
-#[derive(Clone, Debug)]
 pub struct NpmTool {
     bin_path: PathBuf,
 

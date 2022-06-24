@@ -8,3 +8,4 @@ moon_lang = { path = "../lang" }
 
 [dev-dependencies]
 assert_fs = "1.0.7"
+serial_test = "0.6.0"

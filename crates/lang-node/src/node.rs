@@ -152,7 +152,9 @@ mod tests {
 
     mod extend_node_options_env_var {
         use super::*;
+        use serial_test::serial;
 
+        #[serial]
         #[test]
         fn returns_value_if_not_set() {
             env::remove_var("NODE_OPTIONS");
@@ -160,6 +162,7 @@ mod tests {
             assert_eq!(extend_node_options_env_var("--arg"), String::from("--arg"));
         }
 
+        #[serial]
         #[test]
         fn combines_value_if_set() {
             env::set_var("NODE_OPTIONS", "--base");

@@ -10,7 +10,6 @@ use std::time::SystemTime;
 
 const LOG_TARGET: &str = "moon:cache:item";
 
-#[derive(Debug)]
 pub struct CacheItem<T: DeserializeOwned + Serialize> {
     pub item: T,
 

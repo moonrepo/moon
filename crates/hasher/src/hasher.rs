@@ -39,7 +39,7 @@ pub struct TargetHasher {
     // `project.yml` `dependsOn`
     project_deps: Vec<String>,
 
-    // Tash `target`
+    // Task `target`
     target: String,
 
     // `tsconfig.json` `compilerOptions`
@@ -119,6 +119,13 @@ impl TargetHasher {
             if let Some(module) = &compiler_options.module {
                 self.tsconfig_compiler_options
                     .insert("module".to_owned(), format!("{:?}", module));
+            }
+
+            if let Some(module_resolution) = &compiler_options.module_resolution {
+                self.tsconfig_compiler_options.insert(
+                    "module_resolution".to_owned(),
+                    format!("{:?}", module_resolution),
+                );
             }
 
             if let Some(target) = &compiler_options.target {
@@ -255,6 +262,78 @@ mod tests {
             let hash2 = hasher1.to_hash();
 
             assert_ne!(hash1, hash2);
+        }
+    }
+
+    mod package_json {
+        use super::*;
+
+        #[test]
+        fn supports_all_dep_types() {
+            let mut package = PackageJson::default();
+            package.add_dependency("moment", "10.0.0", true);
+
+            let mut hasher1 = TargetHasher::new(String::from("0.0.0"));
+            hasher1.hash_package_json(&package);
+            let hash1 = hasher1.to_hash();
+
+            package.dev_dependencies =
+                Some(BTreeMap::from([("eslint".to_owned(), "8.0.0".to_owned())]));
+
+            let mut hasher2 = TargetHasher::new(String::from("0.0.0"));
+            hasher2.hash_package_json(&package);
+            let hash2 = hasher2.to_hash();
+
+            package.peer_dependencies =
+                Some(BTreeMap::from([("react".to_owned(), "18.0.0".to_owned())]));
+
+            let mut hasher3 = TargetHasher::new(String::from("0.0.0"));
+            hasher3.hash_package_json(&package);
+            let hash3 = hasher3.to_hash();
+
+            assert_ne!(hash1, hash2);
+            assert_ne!(hash1, hash3);
+            assert_ne!(hash2, hash3);
+        }
+    }
+
+    mod tsconfig_json {
+        use super::*;
+
+        #[test]
+        fn supports_all_dep_types() {
+            use moon_config::tsconfig::{CompilerOptions, Module, ModuleResolution, Target};
+
+            let mut tsconfig = TsConfigJson {
+                compiler_options: Some(CompilerOptions::default()),
+                ..TsConfigJson::default()
+            };
+
+            tsconfig.compiler_options.as_mut().unwrap().module = Some(Module::Es2022);
+
+            let mut hasher1 = TargetHasher::new(String::from("0.0.0"));
+            hasher1.hash_tsconfig_json(&tsconfig);
+            let hash1 = hasher1.to_hash();
+
+            tsconfig
+                .compiler_options
+                .as_mut()
+                .unwrap()
+                .module_resolution = Some(ModuleResolution::NodeNext);
+
+            let mut hasher2 = TargetHasher::new(String::from("0.0.0"));
+            hasher2.hash_tsconfig_json(&tsconfig);
+            let hash2 = hasher2.to_hash();
+
+            tsconfig.compiler_options.as_mut().unwrap().target = Some(Target::Es2019);
+
+            let mut hasher3 = TargetHasher::new(String::from("0.0.0"));
+            hasher3.hash_tsconfig_json(&tsconfig);
+            let hash3 = hasher3.to_hash();
+
+            assert_ne!(hash1, hash2);
+            assert_ne!(hash1, hash3);
+            assert_ne!(hash2, hash3);
         }
     }
 }

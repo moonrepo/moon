@@ -46,7 +46,6 @@ fn verify_shasum(
     )))
 }
 
-#[derive(Clone, Debug)]
 pub struct NodeTool {
     bin_path: PathBuf,
 

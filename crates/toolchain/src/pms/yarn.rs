@@ -11,7 +11,6 @@ use moon_utils::is_ci;
 use std::env;
 use std::path::PathBuf;
 
-#[derive(Clone, Debug)]
 pub struct YarnTool {
     bin_path: PathBuf,
 

@@ -670,7 +670,7 @@ impl<'de> Deserialize<'de> for Target {
 #[track_caller]
 async fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(), MoonError> {
     let contents = fs::read_json_string(path).await?;
-    let mut data = json::parse(&contents).expect("Unable to write tsconfig.json");
+    let mut data = json::parse(&contents).expect("Unable to parse tsconfig.json");
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!

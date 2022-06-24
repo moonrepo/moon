@@ -1287,18 +1287,18 @@ mod system_windows {
 mod outputs {
     use super::*;
 
-    fn debug_dir(dir: &Path) {
-        for entry in std::fs::read_dir(dir).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
+    // fn debug_dir(dir: &Path) {
+    //     for entry in std::fs::read_dir(dir).unwrap() {
+    //         let entry = entry.unwrap();
+    //         let path = entry.path();
 
-            if path.is_dir() {
-                debug_dir(&path);
-            } else {
-                println!("{:#?}", path);
-            }
-        }
-    }
+    //         if path.is_dir() {
+    //             debug_dir(&path);
+    //         } else {
+    //             println!("{:#?}", path);
+    //         }
+    //     }
+    // }
 
     #[tokio::test]
     async fn links_single_file() {

@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 994
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ yarn install
+▪▪▪▪ yarn:version
+3.0.0
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

@@ -6,6 +6,7 @@ use moon_utils::test::{
 };
 use predicates::prelude::*;
 use serial_test::serial;
+use std::fs;
 use std::fs::{read_to_string, OpenOptions};
 use std::io::prelude::*;
 use std::path::Path;
@@ -18,6 +19,14 @@ fn append_workspace_config(path: &Path, yaml: &str) {
         .unwrap();
 
     writeln!(file, "{}", yaml).unwrap();
+}
+
+fn update_version_workspace_config(dir: &Path, old_version: &str, new_version: &str) {
+    let mut config = fs::read_to_string(dir.join(".moon/workspace.yml")).unwrap();
+
+    config = config.replace(old_version, new_version);
+
+    fs::write(dir.join(".moon/workspace.yml"), config).unwrap();
 }
 
 fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &Path) -> String {
@@ -833,6 +842,22 @@ mod node_npm {
 
     #[test]
     #[serial]
+    fn installs_correct_version_using_corepack() {
+        let fixture = create_fixtures_sandbox("node-npm");
+
+        // Corepack released in v16.9
+        update_version_workspace_config(fixture.path(), "16.1.0", "16.10.0");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("npm:version")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    #[serial]
     fn can_install_a_dep() {
         let fixture = create_fixtures_sandbox("node-npm");
 
@@ -852,6 +877,22 @@ mod node_pnpm {
     #[serial]
     fn installs_correct_version() {
         let fixture = create_fixtures_sandbox("node-pnpm");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("pnpm:version")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    #[serial]
+    fn installs_correct_version_using_corepack() {
+        let fixture = create_fixtures_sandbox("node-pnpm");
+
+        // Corepack released in v16.9
+        update_version_workspace_config(fixture.path(), "16.2.0", "16.11.0");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -893,8 +934,70 @@ mod node_yarn1 {
 
     #[test]
     #[serial]
+    fn installs_correct_version_using_corepack() {
+        let fixture = create_fixtures_sandbox("node-yarn1");
+
+        // Corepack released in v16.9
+        update_version_workspace_config(fixture.path(), "16.3.0", "16.12.0");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("yarn:version")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    #[serial]
     fn can_install_a_dep() {
         let fixture = create_fixtures_sandbox("node-yarn1");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("yarn:installDep")
+            .assert();
+
+        assert.success();
+    }
+}
+
+mod node_yarn {
+    use super::*;
+
+    #[test]
+    #[serial]
+    fn installs_correct_version() {
+        let fixture = create_fixtures_sandbox("node-yarn");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("yarn:version")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    #[serial]
+    fn installs_correct_version_using_corepack() {
+        let fixture = create_fixtures_sandbox("node-yarn");
+
+        // Corepack released in v16.9
+        update_version_workspace_config(fixture.path(), "16.4.0", "16.13.0");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("yarn:version")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    #[serial]
+    fn can_install_a_dep() {
+        let fixture = create_fixtures_sandbox("node-yarn");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")

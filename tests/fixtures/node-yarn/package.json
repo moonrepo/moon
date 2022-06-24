@@ -1,0 +1,5 @@
+{
+  "name": "test-node-yarn",
+  "private": true,
+  "workspaces": ["*"]
+}

@@ -40,7 +40,7 @@ async fn get_touched_files(
     status: &RunStatus,
     upstream: bool,
 ) -> Result<TouchedFilePaths, WorkspaceError> {
-    let vcs = workspace.detect_vcs()?;
+    let vcs = &workspace.vcs;
 
     let touched_files = if upstream {
         vcs.get_touched_files_between_revisions(vcs.get_default_branch(), "HEAD")

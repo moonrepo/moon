@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added caching to our VCS layer which should greatly reduce the amount of `git` commands being
+  executed.
+
 ### 0.4.1
 
 #### 🐞 Fixes

@@ -3,14 +3,17 @@ use async_trait::async_trait;
 use moon_utils::fs;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs::metadata;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::SystemTime;
+use tokio::sync::RwLock;
 
 // TODO: This code hasn't been tested yet and may not be accurate!
 
 pub struct Svn {
+    cache: Arc<RwLock<HashMap<String, String>>>,
     default_branch: String,
     working_dir: PathBuf,
 }
@@ -18,6 +21,7 @@ pub struct Svn {
 impl Svn {
     pub fn new(default_branch: &str, working_dir: &Path) -> Self {
         Svn {
+            cache: Arc::new(RwLock::new(HashMap::new())),
             default_branch: String::from(default_branch),
             working_dir: working_dir.to_path_buf(),
         }
@@ -103,13 +107,30 @@ impl Svn {
     }
 
     async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {
-        let output = command.exec_capture_output().await?;
+        let (cache_key, _) = command.get_command_line();
 
-        if trim {
-            return Ok(output_to_trimmed_string(&output.stdout));
+        // Read first before locking with a write
+        {
+            let cache = self.cache.read().await;
+
+            if cache.contains_key(&cache_key) {
+                return Ok(cache.get(&cache_key).unwrap().clone());
+            }
         }
 
-        Ok(output_to_string(&output.stdout))
+        // Otherwise lock and calculate a new value to write
+        let mut cache = self.cache.write().await;
+        let output = command.exec_capture_output().await?;
+
+        let value = if trim {
+            output_to_trimmed_string(&output.stdout)
+        } else {
+            output_to_string(&output.stdout)
+        };
+
+        cache.insert(cache_key.to_owned(), value.clone());
+
+        Ok(value)
     }
 }
 

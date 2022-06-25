@@ -40,7 +40,7 @@ async fn gather_touched_files(
 ) -> Result<TouchedFilePaths, WorkspaceError> {
     print_header("Gathering touched files");
 
-    let vcs = workspace.detect_vcs()?;
+    let vcs = &workspace.vcs;
     let default_branch = vcs.get_default_branch();
     let current_branch = vcs.get_local_branch().await?;
 

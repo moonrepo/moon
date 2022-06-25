@@ -252,6 +252,10 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
+
+    // The `tsconfig.json` in the project root.
+    #[serde(skip)]
+    pub tsconfig_json: Arc<RwLock<OnceCell<TsConfigJson>>>,
 }
 
 impl Default for Project {
@@ -265,6 +269,7 @@ impl Default for Project {
             root: PathBuf::new(),
             source: String::new(),
             tasks: HashMap::new(),
+            tsconfig_json: Arc::new(RwLock::new(OnceCell::new())),
         }
     }
 }
@@ -329,6 +334,7 @@ impl Project {
             root,
             source: String::from(source),
             tasks,
+            tsconfig_json: Arc::new(RwLock::new(OnceCell::new())),
         })
     }
 
@@ -411,10 +417,17 @@ impl Project {
     }
 
     /// Load and parse the package's `tsconfig.json` if it exists.
-    pub async fn load_tsconfig_json(
-        &self,
-        tsconfig_name: &str,
-    ) -> Result<Option<TsConfigJson>, ProjectError> {
+    pub async fn load_tsconfig_json(&self, tsconfig_name: &str) -> Result<bool, ProjectError> {
+        // Read first before locking with a write
+        {
+            let tsconfig = self.tsconfig_json.read().await;
+
+            if tsconfig.initialized() {
+                return Ok(true);
+            }
+        }
+
+        // Otherwise try and load the package
         let tsconfig_path = self.root.join(tsconfig_name);
 
         trace!(
@@ -426,12 +439,20 @@ impl Project {
 
         if tsconfig_path.exists() {
             return match TsConfigJson::load(&tsconfig_path).await {
-                Ok(cfg) => Ok(Some(cfg)),
+                Ok(json) => {
+                    self.tsconfig_json
+                        .write()
+                        .await
+                        .set(json)
+                        .expect("Failed to load tsconfig.json");
+
+                    Ok(true)
+                }
                 Err(error) => Err(ProjectError::Moon(error)),
             };
         }
 
-        Ok(None)
+        Ok(false)
     }
 
     /// Return the project as a JSON string.

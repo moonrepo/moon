@@ -14,6 +14,7 @@ use figment::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_yaml::Value;
 use std::collections::HashMap;
 use std::path::Path;
 use task::TaskConfig;
@@ -147,6 +148,10 @@ pub struct ProjectConfig {
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]
     pub schema: String,
+
+    // Unknown fields and refs.
+    #[serde(skip, flatten)]
+    pub unknown_fields: HashMap<String, Value>,
 }
 
 impl Provider for ProjectConfig {

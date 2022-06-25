@@ -18,10 +18,8 @@ fn mock_file_groups() -> HashMap<String, FileGroup> {
 
 fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
-        extends: None,
         file_groups: HashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
-        tasks: HashMap::new(),
-        schema: String::new(),
+        ..GlobalProjectConfig::default()
     }
 }
 

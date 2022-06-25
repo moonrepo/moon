@@ -20,6 +20,7 @@ use schemars::schema::Schema;
 use schemars::{schema_for, JsonSchema};
 use serde::de::{self, MapAccess, SeqAccess};
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_yaml::Value;
 use std::collections::HashMap;
 use std::env;
 use std::fmt;
@@ -96,6 +97,10 @@ pub struct WorkspaceConfig {
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]
     pub schema: String,
+
+    // Unknown fields and refs.
+    #[serde(skip, flatten)]
+    pub unknown_fields: HashMap<String, Value>,
 }
 
 impl Provider for WorkspaceConfig {
@@ -281,6 +286,7 @@ mod tests {
                     typescript: TypeScriptConfig::default(),
                     vcs: VcsConfig::default(),
                     schema: String::new(),
+                    unknown_fields: HashMap::new(),
                 }
             );
 
@@ -491,6 +497,7 @@ node:
                         typescript: TypeScriptConfig::default(),
                         vcs: VcsConfig::default(),
                         schema: String::new(),
+                        unknown_fields: HashMap::new(),
                     }
                 );
 
@@ -996,6 +1003,7 @@ vcs:
                             ..VcsConfig::default()
                         },
                         schema: String::new(),
+                        unknown_fields: HashMap::new(),
                     }
                 );
 

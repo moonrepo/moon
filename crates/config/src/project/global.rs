@@ -13,6 +13,7 @@ use figment::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_yaml::Value;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
@@ -63,6 +64,10 @@ pub struct GlobalProjectConfig {
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]
     pub schema: String,
+
+    // Unknown fields and refs.
+    #[serde(skip, flatten)]
+    pub unknown_fields: HashMap<String, Value>,
 }
 
 impl Provider for GlobalProjectConfig {
@@ -174,6 +179,7 @@ fileGroups:
                     )]),
                     tasks: HashMap::new(),
                     schema: String::new(),
+                    unknown_fields: HashMap::new()
                 }
             );
 

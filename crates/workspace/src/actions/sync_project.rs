@@ -65,7 +65,7 @@ pub async fn sync_project(
 
             // Update `dependencies` within this project's `package.json`
             if node_config.sync_project_workspace_dependencies {
-                if let Some(package_json) = &mut project.package_json.get_mut() {
+                if let Some(package_json) = project.package_json.get_mut() {
                     let dep_package_name =
                         dep_project.get_package_name().await?.unwrap_or_default();
 

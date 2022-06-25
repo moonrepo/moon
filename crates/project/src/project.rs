@@ -375,6 +375,7 @@ impl Project {
     }
 
     /// Load and parse the package's `package.json` if it exists.
+    #[track_caller]
     pub async fn load_package_json(&self) -> Result<bool, ProjectError> {
         if self.package_json.initialized() {
             return Ok(true);
@@ -406,6 +407,7 @@ impl Project {
     }
 
     /// Load and parse the package's `tsconfig.json` if it exists.
+    #[track_caller]
     pub async fn load_tsconfig_json(&self, tsconfig_name: &str) -> Result<bool, ProjectError> {
         if self.tsconfig_json.initialized() {
             return Ok(true);

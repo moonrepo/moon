@@ -55,11 +55,11 @@ run_task = { name = ["build", "test"] }
 
 [tasks.generate-report]
 command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "lcov", "--branch", "--ignore-not-existing", "-o", "./report.txt"]
+args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "lcov", "--branch", "--ignore-not-existing", "--ignore", "**/errors.rs", "--ignore", "error/src/lib.rs", "-o", "./report.txt"]
 
 [tasks.generate-html]
 command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "html", "--branch", "--ignore-not-existing", "-o", "./coverage"]
+args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "html", "--branch", "--ignore-not-existing", "--ignore", "**/errors.rs", "--ignore", "error/src/lib.rs", "-o", "./coverage"]
 
 [tasks.clean-profraw]
 script = "rm -rf *.profraw"

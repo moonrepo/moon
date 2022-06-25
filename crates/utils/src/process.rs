@@ -196,6 +196,8 @@ impl Command {
         // https://stackoverflow.com/a/49063262
         let stderr = BufReader::new(child.stderr.take().unwrap());
         let stdout = BufReader::new(child.stdout.take().unwrap());
+        let mut handles = vec![];
+
         let captured_stderr = Arc::new(RwLock::new(vec![]));
         let captured_stdout = Arc::new(RwLock::new(vec![]));
         let captured_stderr_clone = Arc::clone(&captured_stderr);
@@ -208,11 +210,11 @@ impl Command {
         let stderr_prefix = Arc::clone(&prefix);
         let stdout_prefix = Arc::clone(&prefix);
 
-        task::spawn(async move {
+        handles.push(task::spawn(async move {
             let mut lines = stderr.lines();
             let mut captured_lines = vec![];
 
-            while let Some(line) = lines.next_line().await.unwrap() {
+            while let Some(line) = lines.next_line().await.unwrap_or_default() {
                 if stderr_prefix.is_empty() {
                     eprintln!("{}", line);
                 } else {
@@ -226,13 +228,13 @@ impl Command {
                 .write()
                 .unwrap()
                 .extend(captured_lines);
-        });
+        }));
 
-        task::spawn(async move {
+        handles.push(task::spawn(async move {
             let mut lines = stdout.lines();
             let mut captured_lines = vec![];
 
-            while let Some(line) = lines.next_line().await.unwrap() {
+            while let Some(line) = lines.next_line().await.unwrap_or_default() {
                 if stdout_prefix.is_empty() {
                     println!("{}", line);
                 } else {
@@ -246,7 +248,11 @@ impl Command {
                 .write()
                 .unwrap()
                 .extend(captured_lines);
-        });
+        }));
+
+        for handle in handles {
+            handle.await.expect("Failed to capture stdout/stderr");
+        }
 
         // Attempt to capture the child output
         let mut output = child

@@ -17,6 +17,9 @@ projects:
   system: 'system'
   systemWindows: 'system-windows'
 
+  # Outputs
+  outputs: 'outputs'
+
 typescript:
   syncProjectReferences: false
 

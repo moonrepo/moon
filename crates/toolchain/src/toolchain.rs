@@ -27,7 +27,6 @@ async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     Ok(())
 }
 
-#[derive(Debug)]
 pub struct Toolchain {
     /// The directory where toolchain artifacts are stored.
     /// This is typically ~/.moon.

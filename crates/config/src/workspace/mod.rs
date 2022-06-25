@@ -445,6 +445,21 @@ node:
                 Ok(())
             });
         }
+
+        // #[test]
+        // #[should_panic(expected = "TODO")]
+        // fn handles_invalid_url() {
+        //     figment::Jail::expect_with(|jail| {
+        //         jail.create_file(
+        //             super::constants::CONFIG_WORKSPACE_FILENAME,
+        //             "extends: https://raw.githubusercontent.com/this/is/an/invalid/file.yml",
+        //         )?;
+
+        //         super::load_jailed_config(jail.directory())?;
+
+        //         Ok(())
+        //     });
+        // }
     }
 
     mod node {

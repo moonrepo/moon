@@ -1,0 +1,29 @@
+tasks:
+  generateFile:
+    command: node
+    args: generate.js single-file
+    outputs:
+      - 'lib/one.js'
+  generateFiles:
+    command: node
+    args: generate.js multiple-files
+    outputs:
+      - 'lib/one.js'
+      - 'lib/two.js'
+  generateFolder:
+    command: node
+    args: generate.js single-folder
+    outputs:
+      - 'lib'
+  generateFolders:
+    command: node
+    args: generate.js multiple-folders
+    outputs:
+      - 'lib'
+      - 'esm'
+  generateFileAndFolder:
+    command: node
+    args: generate.js both
+    outputs:
+      - 'lib/one.js'
+      - 'esm'

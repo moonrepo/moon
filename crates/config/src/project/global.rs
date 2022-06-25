@@ -13,7 +13,6 @@ use figment::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_yaml::Value;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError, ValidationErrors};
@@ -31,15 +30,15 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
         validate_id(&format!("tasks.{}", name), name)?;
 
         // Fail for both `None` and empty strings
-        let command = task.command.clone().unwrap_or_default();
+        // let command = task.command.clone().unwrap_or_default();
 
-        if command.is_empty() {
-            return Err(create_validation_error(
-                "required_command",
-                &format!("tasks.{}.command", name),
-                String::from("An npm/system command is required."),
-            ));
-        }
+        // if command.is_empty() {
+        //     return Err(create_validation_error(
+        //         "required_command",
+        //         &format!("tasks.{}.command", name),
+        //         String::from("An npm/system command is required."),
+        //     ));
+        // }
     }
 
     Ok(())
@@ -64,10 +63,6 @@ pub struct GlobalProjectConfig {
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]
     pub schema: String,
-
-    // Unknown fields and refs.
-    #[serde(skip, flatten)]
-    pub unknown_fields: HashMap<String, Value>,
 }
 
 impl Provider for GlobalProjectConfig {
@@ -178,8 +173,7 @@ fileGroups:
                         string_vec!["src/**/*"]
                     )]),
                     tasks: HashMap::new(),
-                    schema: String::new(),
-                    unknown_fields: HashMap::new()
+                    schema: String::new()
                 }
             );
 
@@ -463,6 +457,8 @@ fileGroups:
     }
 
     mod tasks {
+        use super::*;
+
         #[test]
         #[should_panic(
             expected = "Invalid field <id>tasks</id>: Expected a map type, received unsigned int `123`."
@@ -543,6 +539,50 @@ tasks:
                 )?;
 
                 super::load_jailed_config(jail.directory())?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_references() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"
+tasks:
+    build: &webpack_shared
+        command: webpack
+        args: build
+        inputs:
+            - 'src/**/*'
+    start:
+        <<: *webpack_shared
+        args: start
+"#,
+                )?;
+
+                let config = super::load_jailed_config(jail.directory())?;
+
+                assert_eq!(
+                    *config.tasks.get("build").unwrap(),
+                    TaskConfig {
+                        command: Some(String::from("webpack")),
+                        args: Some(string_vec!["build"]),
+                        inputs: Some(string_vec!["src/**/*"]),
+                        ..TaskConfig::default()
+                    }
+                );
+
+                assert_eq!(
+                    *config.tasks.get("start").unwrap(),
+                    TaskConfig {
+                        command: Some(String::from("webpack")),
+                        args: Some(string_vec!["start"]),
+                        inputs: Some(string_vec!["src/**/*"]),
+                        ..TaskConfig::default()
+                    }
+                );
 
                 Ok(())
             });

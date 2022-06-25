@@ -264,11 +264,7 @@ impl PackageManager<NodeTool> for YarnTool {
                 args.push("--frozen-lockfile");
                 args.push("--ignore-engines");
                 args.push("--non-interactive");
-            } else if toolchain
-                .workspace_root
-                .join(self.get_lock_filename())
-                .exists()
-            {
+            } else {
                 args.push("--check-cache");
                 args.push("--immutable");
             }

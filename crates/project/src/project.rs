@@ -12,6 +12,7 @@ use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use tokio::sync::OnceCell;
 
 pub type FileGroupsMap = HashMap<String, FileGroup>;
 
@@ -222,7 +223,7 @@ fn create_tasks_from_config(
     Ok(tasks)
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
@@ -238,6 +239,10 @@ pub struct Project {
     #[serde(skip)]
     pub log_target: String,
 
+    // The `package.json` in the project root.
+    #[serde(skip)]
+    pub package_json: OnceCell<PackageJson>,
+
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
 
@@ -246,6 +251,37 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
+
+    // The `tsconfig.json` in the project root.
+    #[serde(skip)]
+    pub tsconfig_json: OnceCell<TsConfigJson>,
+}
+
+impl Default for Project {
+    fn default() -> Self {
+        Project {
+            config: None,
+            file_groups: HashMap::new(),
+            id: String::new(),
+            log_target: String::new(),
+            package_json: OnceCell::new(),
+            root: PathBuf::new(),
+            source: String::new(),
+            tasks: HashMap::new(),
+            tsconfig_json: OnceCell::new(),
+        }
+    }
+}
+
+impl PartialEq for Project {
+    fn eq(&self, other: &Self) -> bool {
+        self.config == other.config
+            && self.file_groups == other.file_groups
+            && self.id == other.id
+            && self.root == other.root
+            && self.source == other.source
+            && self.tasks == other.tasks
+    }
 }
 
 impl Logable for Project {
@@ -293,9 +329,11 @@ impl Project {
             file_groups,
             id: String::from(id),
             log_target,
+            package_json: OnceCell::new(),
             root,
             source: String::from(source),
             tasks,
+            tsconfig_json: OnceCell::new(),
         })
     }
 
@@ -314,7 +352,9 @@ impl Project {
 
     /// Return the "package.json" name, if the file exists.
     pub async fn get_package_name(&self) -> Result<Option<String>, ProjectError> {
-        if let Some(json) = self.load_package_json().await? {
+        self.load_package_json().await?;
+
+        if let Some(json) = self.package_json.get() {
             if let Some(name) = &json.name {
                 return Ok(Some(name.clone()));
             }
@@ -335,48 +375,67 @@ impl Project {
     }
 
     /// Load and parse the package's `package.json` if it exists.
-    pub async fn load_package_json(&self) -> Result<Option<PackageJson>, ProjectError> {
+    #[track_caller]
+    pub async fn load_package_json(&self) -> Result<bool, ProjectError> {
+        if self.package_json.initialized() {
+            return Ok(true);
+        }
+
         let package_path = self.root.join("package.json");
 
-        trace!(
-            target: self.get_log_target(),
-            "Attempting to find {} in {}",
-            color::file("package.json"),
-            color::path(&self.root),
-        );
-
         if package_path.exists() {
+            trace!(
+                target: self.get_log_target(),
+                "Loading {} in {}",
+                color::file("package.json"),
+                color::path(&self.root),
+            );
+
             return match PackageJson::load(&package_path).await {
-                Ok(cfg) => Ok(Some(cfg)),
+                Ok(json) => {
+                    self.package_json
+                        .set(json)
+                        .expect("Failed to load package.json");
+
+                    Ok(true)
+                }
                 Err(error) => Err(ProjectError::Moon(error)),
             };
         }
 
-        Ok(None)
+        Ok(false)
     }
 
     /// Load and parse the package's `tsconfig.json` if it exists.
-    pub async fn load_tsconfig_json(
-        &self,
-        tsconfig_name: &str,
-    ) -> Result<Option<TsConfigJson>, ProjectError> {
+    #[track_caller]
+    pub async fn load_tsconfig_json(&self, tsconfig_name: &str) -> Result<bool, ProjectError> {
+        if self.tsconfig_json.initialized() {
+            return Ok(true);
+        }
+
         let tsconfig_path = self.root.join(tsconfig_name);
 
-        trace!(
-            target: self.get_log_target(),
-            "Attempting to find {} in {}",
-            color::file(tsconfig_name),
-            color::path(&self.root),
-        );
-
         if tsconfig_path.exists() {
+            trace!(
+                target: self.get_log_target(),
+                "Loading {} in {}",
+                color::file(tsconfig_name),
+                color::path(&self.root),
+            );
+
             return match TsConfigJson::load(&tsconfig_path).await {
-                Ok(cfg) => Ok(Some(cfg)),
+                Ok(json) => {
+                    self.tsconfig_json
+                        .set(json)
+                        .expect("Failed to load tsconfig.json");
+
+                    Ok(true)
+                }
                 Err(error) => Err(ProjectError::Moon(error)),
             };
         }
 
-        Ok(None)
+        Ok(false)
     }
 
     /// Return the project as a JSON string.

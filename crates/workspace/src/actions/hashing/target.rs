@@ -50,15 +50,17 @@ pub async fn create_target_hasher(
     }
 
     // Hash project configs second so they can override
-    if let Some(package) = project.load_package_json().await? {
-        hasher.hash_package_json(&package);
+    project.load_package_json().await?;
+    project
+        .load_tsconfig_json(&workspace.config.typescript.project_config_file_name)
+        .await?;
+
+    if let Some(package) = project.package_json.get() {
+        hasher.hash_package_json(package);
     }
 
-    if let Some(tsconfig) = project
-        .load_tsconfig_json(&workspace.config.typescript.project_config_file_name)
-        .await?
-    {
-        hasher.hash_tsconfig_json(&tsconfig);
+    if let Some(tsconfig) = project.tsconfig_json.get() {
+        hasher.hash_tsconfig_json(tsconfig);
     }
 
     // For input files, hash them with the vcs layer first

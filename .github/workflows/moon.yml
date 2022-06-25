@@ -5,6 +5,9 @@ on:
       - master
   pull_request:
     paths:
+      - .github/workflows/moon.yml
+      - .moon/workspace.yml
+      - .moon/project.yml
       - packages/**
       - website/**
       - package.json

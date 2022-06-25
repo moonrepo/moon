@@ -145,6 +145,9 @@ pub struct Workspace {
     /// The root `tsconfig.json`.
     pub tsconfig_json: Option<TsConfigJson>,
 
+    /// Configured version control system.
+    pub vcs: Box<dyn Vcs + Send + Sync>,
+
     /// The current working directory.
     pub working_dir: PathBuf,
 }
@@ -178,6 +181,7 @@ impl Workspace {
         let toolchain = Toolchain::create(&root_dir, &config).await?;
         let projects =
             ProjectGraph::create(&root_dir, project_config, &config.projects, &cache).await?;
+        let vcs = VcsManager::load(&config, &root_dir)?;
 
         Ok(Workspace {
             cache,
@@ -187,12 +191,8 @@ impl Workspace {
             root: root_dir,
             toolchain,
             tsconfig_json,
+            vcs,
             working_dir,
         })
-    }
-
-    /// Detect the version control system currently being used.
-    pub fn detect_vcs(&self) -> Result<Box<dyn Vcs + Send + Sync>, WorkspaceError> {
-        VcsManager::load(&self.config, &self.working_dir)
     }
 }

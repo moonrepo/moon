@@ -46,25 +46,26 @@ pub async fn sync_project(
     // Read only
     {
         let workspace = workspace.read().await;
-        let project = workspace.projects.load(project_id)?;
+        let mut project = workspace.projects.load(project_id)?;
         let node_config = &workspace.config.node;
 
         // Copy values outside of this block
         typescript_config = workspace.config.typescript.clone();
 
         // Sync each dependency to `tsconfig.json` and `package.json`
-        let package_manager = workspace.toolchain.get_node().get_package_manager();
-        let mut project_package_json = project.load_package_json().await?;
-        let mut project_tsconfig_json = project
+        project.load_package_json().await?;
+        project
             .load_tsconfig_json(&typescript_config.project_config_file_name)
             .await?;
+
+        let package_manager = workspace.toolchain.get_node().get_package_manager();
 
         for dep_id in project.get_dependencies() {
             let dep_project = workspace.projects.load(&dep_id)?;
 
             // Update `dependencies` within this project's `package.json`
             if node_config.sync_project_workspace_dependencies {
-                if let Some(package_json) = &mut project_package_json {
+                if let Some(package_json) = project.package_json.get_mut() {
                     let dep_package_name =
                         dep_project.get_package_name().await?.unwrap_or_default();
 
@@ -93,7 +94,7 @@ pub async fn sync_project(
 
             // Update `references` within this project's `tsconfig.json`
             if typescript_config.sync_project_references {
-                if let Some(tsconfig_json) = &mut project_tsconfig_json {
+                if let Some(tsconfig_json) = project.tsconfig_json.get_mut() {
                     let tsconfig_branch_name = &typescript_config.project_config_file_name;
                     let dep_ref_path = String::from(
                         diff_paths(&dep_project.root, &project.root)

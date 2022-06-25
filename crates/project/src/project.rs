@@ -12,6 +12,8 @@ use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use tokio::sync::{OnceCell, RwLock};
 
 pub type FileGroupsMap = HashMap<String, FileGroup>;
 
@@ -222,7 +224,7 @@ fn create_tasks_from_config(
     Ok(tasks)
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
@@ -238,6 +240,9 @@ pub struct Project {
     #[serde(skip)]
     pub log_target: String,
 
+    #[serde(skip)]
+    package_json: Arc<RwLock<OnceCell<PackageJson>>>,
+
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
 
@@ -246,6 +251,21 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
+}
+
+impl Default for Project {
+    fn default() -> Self {
+        Project {
+            config: None,
+            file_groups: HashMap::new(),
+            id: String::new(),
+            log_target: String::new(),
+            package_json: Arc::new(RwLock::new(OnceCell::new())),
+            root: PathBuf::new(),
+            source: String::new(),
+            tasks: HashMap::new(),
+        }
+    }
 }
 
 impl Logable for Project {

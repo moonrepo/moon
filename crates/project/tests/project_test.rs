@@ -208,10 +208,8 @@ async fn has_package_json() {
 
     project.load_package_json().await.unwrap();
 
-    let package_json = project.package_json.read().await;
-
     assert_eq!(
-        *package_json.get().unwrap(),
+        *project.package_json.get().unwrap(),
         PackageJson {
             path: workspace_root.join("projects/package-json/package.json"),
             name: Some(String::from("npm-example")),

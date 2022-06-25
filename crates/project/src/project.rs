@@ -12,8 +12,7 @@ use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use tokio::sync::{OnceCell, RwLock};
+use tokio::sync::OnceCell;
 
 pub type FileGroupsMap = HashMap<String, FileGroup>;
 
@@ -242,7 +241,7 @@ pub struct Project {
 
     // The `package.json` in the project root.
     #[serde(skip)]
-    pub package_json: Arc<RwLock<OnceCell<PackageJson>>>,
+    pub package_json: OnceCell<PackageJson>,
 
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
@@ -255,7 +254,7 @@ pub struct Project {
 
     // The `tsconfig.json` in the project root.
     #[serde(skip)]
-    pub tsconfig_json: Arc<RwLock<OnceCell<TsConfigJson>>>,
+    pub tsconfig_json: OnceCell<TsConfigJson>,
 }
 
 impl Default for Project {
@@ -265,11 +264,11 @@ impl Default for Project {
             file_groups: HashMap::new(),
             id: String::new(),
             log_target: String::new(),
-            package_json: Arc::new(RwLock::new(OnceCell::new())),
+            package_json: OnceCell::new(),
             root: PathBuf::new(),
             source: String::new(),
             tasks: HashMap::new(),
-            tsconfig_json: Arc::new(RwLock::new(OnceCell::new())),
+            tsconfig_json: OnceCell::new(),
         }
     }
 }
@@ -330,11 +329,11 @@ impl Project {
             file_groups,
             id: String::from(id),
             log_target,
-            package_json: Arc::new(RwLock::new(OnceCell::new())),
+            package_json: OnceCell::new(),
             root,
             source: String::from(source),
             tasks,
-            tsconfig_json: Arc::new(RwLock::new(OnceCell::new())),
+            tsconfig_json: OnceCell::new(),
         })
     }
 
@@ -355,9 +354,7 @@ impl Project {
     pub async fn get_package_name(&self) -> Result<Option<String>, ProjectError> {
         self.load_package_json().await?;
 
-        let package_json = self.package_json.read().await;
-
-        if let Some(json) = package_json.get() {
+        if let Some(json) = self.package_json.get() {
             if let Some(name) = &json.name {
                 return Ok(Some(name.clone()));
             }
@@ -379,31 +376,23 @@ impl Project {
 
     /// Load and parse the package's `package.json` if it exists.
     pub async fn load_package_json(&self) -> Result<bool, ProjectError> {
-        // Read first before locking with a write
-        {
-            let package = self.package_json.read().await;
-
-            if package.initialized() {
-                return Ok(true);
-            }
+        if self.package_json.initialized() {
+            return Ok(true);
         }
 
-        // Otherwise try and load the package
         let package_path = self.root.join("package.json");
 
-        trace!(
-            target: self.get_log_target(),
-            "Attempting to find {} in {}",
-            color::file("package.json"),
-            color::path(&self.root),
-        );
-
         if package_path.exists() {
+            trace!(
+                target: self.get_log_target(),
+                "Loading {} in {}",
+                color::file("package.json"),
+                color::path(&self.root),
+            );
+
             return match PackageJson::load(&package_path).await {
                 Ok(json) => {
                     self.package_json
-                        .write()
-                        .await
                         .set(json)
                         .expect("Failed to load package.json");
 
@@ -418,31 +407,23 @@ impl Project {
 
     /// Load and parse the package's `tsconfig.json` if it exists.
     pub async fn load_tsconfig_json(&self, tsconfig_name: &str) -> Result<bool, ProjectError> {
-        // Read first before locking with a write
-        {
-            let tsconfig = self.tsconfig_json.read().await;
-
-            if tsconfig.initialized() {
-                return Ok(true);
-            }
+        if self.tsconfig_json.initialized() {
+            return Ok(true);
         }
 
-        // Otherwise try and load the package
         let tsconfig_path = self.root.join(tsconfig_name);
 
-        trace!(
-            target: self.get_log_target(),
-            "Attempting to find {} in {}",
-            color::file(tsconfig_name),
-            color::path(&self.root),
-        );
-
         if tsconfig_path.exists() {
+            trace!(
+                target: self.get_log_target(),
+                "Loading {} in {}",
+                color::file(tsconfig_name),
+                color::path(&self.root),
+            );
+
             return match TsConfigJson::load(&tsconfig_path).await {
                 Ok(json) => {
                     self.tsconfig_json
-                        .write()
-                        .await
                         .set(json)
                         .expect("Failed to load tsconfig.json");
 

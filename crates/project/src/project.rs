@@ -240,8 +240,9 @@ pub struct Project {
     #[serde(skip)]
     pub log_target: String,
 
+    // The `package.json` in the project root.
     #[serde(skip)]
-    package_json: Arc<RwLock<OnceCell<PackageJson>>>,
+    pub package_json: Arc<RwLock<OnceCell<PackageJson>>>,
 
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
@@ -265,6 +266,17 @@ impl Default for Project {
             source: String::new(),
             tasks: HashMap::new(),
         }
+    }
+}
+
+impl PartialEq for Project {
+    fn eq(&self, other: &Self) -> bool {
+        self.config == other.config
+            && self.file_groups == other.file_groups
+            && self.id == other.id
+            && self.root == other.root
+            && self.source == other.source
+            && self.tasks == other.tasks
     }
 }
 
@@ -313,6 +325,7 @@ impl Project {
             file_groups,
             id: String::from(id),
             log_target,
+            package_json: Arc::new(RwLock::new(OnceCell::new())),
             root,
             source: String::from(source),
             tasks,
@@ -334,7 +347,11 @@ impl Project {
 
     /// Return the "package.json" name, if the file exists.
     pub async fn get_package_name(&self) -> Result<Option<String>, ProjectError> {
-        if let Some(json) = self.load_package_json().await? {
+        self.load_package_json().await?;
+
+        let package_json = self.package_json.read().await;
+
+        if let Some(json) = package_json.get() {
             if let Some(name) = &json.name {
                 return Ok(Some(name.clone()));
             }
@@ -355,7 +372,17 @@ impl Project {
     }
 
     /// Load and parse the package's `package.json` if it exists.
-    pub async fn load_package_json(&self) -> Result<Option<PackageJson>, ProjectError> {
+    pub async fn load_package_json(&self) -> Result<bool, ProjectError> {
+        // Read first before locking with a write
+        {
+            let package = self.package_json.read().await;
+
+            if package.initialized() {
+                return Ok(true);
+            }
+        }
+
+        // Otherwise try and load the package
         let package_path = self.root.join("package.json");
 
         trace!(
@@ -367,12 +394,20 @@ impl Project {
 
         if package_path.exists() {
             return match PackageJson::load(&package_path).await {
-                Ok(cfg) => Ok(Some(cfg)),
+                Ok(json) => {
+                    self.package_json
+                        .write()
+                        .await
+                        .set(json)
+                        .expect("Failed to load package.json");
+
+                    Ok(true)
+                }
                 Err(error) => Err(ProjectError::Moon(error)),
             };
         }
 
-        Ok(None)
+        Ok(false)
     }
 
     /// Load and parse the package's `tsconfig.json` if it exists.

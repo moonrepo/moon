@@ -53,8 +53,10 @@ pub async fn sync_project(
         typescript_config = workspace.config.typescript.clone();
 
         // Sync each dependency to `tsconfig.json` and `package.json`
+        project.load_package_json().await?;
+
         let package_manager = workspace.toolchain.get_node().get_package_manager();
-        let mut project_package_json = project.load_package_json().await?;
+
         let mut project_tsconfig_json = project
             .load_tsconfig_json(&typescript_config.project_config_file_name)
             .await?;
@@ -64,7 +66,9 @@ pub async fn sync_project(
 
             // Update `dependencies` within this project's `package.json`
             if node_config.sync_project_workspace_dependencies {
-                if let Some(package_json) = &mut project_package_json {
+                let mut project_package_json = project.package_json.write().await;
+
+                if let Some(package_json) = project_package_json.get_mut() {
                     let dep_package_name =
                         dep_project.get_package_name().await?.unwrap_or_default();
 

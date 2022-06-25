@@ -50,8 +50,12 @@ pub async fn create_target_hasher(
     }
 
     // Hash project configs second so they can override
-    if let Some(package) = project.load_package_json().await? {
-        hasher.hash_package_json(&package);
+    project.load_package_json().await?;
+
+    let project_package_json = project.package_json.read().await;
+
+    if let Some(package) = project_package_json.get() {
+        hasher.hash_package_json(package);
     }
 
     if let Some(tsconfig) = project

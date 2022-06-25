@@ -1379,7 +1379,9 @@ dependencies = [
 name = "moon_lang_node"
 version = "0.1.0"
 dependencies = [
+ "assert_fs",
  "moon_lang",
+ "serial_test",
 ]
 
 [[package]]

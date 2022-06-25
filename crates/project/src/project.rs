@@ -339,7 +339,7 @@ impl Project {
         let package_path = self.root.join("package.json");
 
         trace!(
-            target: &self.log_target,
+            target: self.get_log_target(),
             "Attempting to find {} in {}",
             color::file("package.json"),
             color::path(&self.root),
@@ -363,7 +363,7 @@ impl Project {
         let tsconfig_path = self.root.join(tsconfig_name);
 
         trace!(
-            target: &self.log_target,
+            target: self.get_log_target(),
             "Attempting to find {} in {}",
             color::file(tsconfig_name),
             color::path(&self.root),

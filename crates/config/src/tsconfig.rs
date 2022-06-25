@@ -556,7 +556,7 @@ impl<'de> Deserialize<'de> for Module {
             "ES6" => Module::Es6,
             "ES2015" => Module::Es2015,
             "ES2020" => Module::Es2020,
-            "ES2022" => Module::Es2020,
+            "ES2022" => Module::Es2022,
             "ESNEXT" => Module::EsNext,
             "NODE12" => Module::Node12,
             "NODE16" => Module::Node16,
@@ -670,7 +670,7 @@ impl<'de> Deserialize<'de> for Target {
 #[track_caller]
 async fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(), MoonError> {
     let contents = fs::read_json_string(path).await?;
-    let mut data = json::parse(&contents).expect("Unable to write tsconfig.json");
+    let mut data = json::parse(&contents).expect("Unable to parse tsconfig.json");
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!
@@ -916,5 +916,108 @@ mod test {
         );
 
         assert_eq!(config.compiler_options.unwrap().jsx, Some(Jsx::ReactNative));
+    }
+
+    mod add_project_ref {
+        use super::*;
+
+        #[test]
+        fn adds_if_not_set() {
+            let mut tsc = TsConfigJson::default();
+
+            assert_eq!(tsc.references, None);
+
+            assert!(tsc.add_project_ref("../sibling", "tsconfig.json"));
+
+            assert_eq!(
+                tsc.references.unwrap(),
+                vec![Reference {
+                    path: "../sibling".to_owned(),
+                    prepend: None,
+                }]
+            );
+        }
+
+        #[test]
+        fn doesnt_add_if_set() {
+            let mut tsc = TsConfigJson {
+                references: Some(vec![Reference {
+                    path: "../sibling".to_owned(),
+                    prepend: None,
+                }]),
+                ..TsConfigJson::default()
+            };
+
+            assert!(!tsc.add_project_ref("../sibling", "tsconfig.json"));
+
+            assert_eq!(
+                tsc.references.unwrap(),
+                vec![Reference {
+                    path: "../sibling".to_owned(),
+                    prepend: None,
+                }]
+            );
+        }
+
+        #[test]
+        fn includes_custom_config_name() {
+            let mut tsc = TsConfigJson::default();
+
+            assert_eq!(tsc.references, None);
+
+            assert!(tsc.add_project_ref("../sibling", "tsconfig.ref.json"));
+
+            assert_eq!(
+                tsc.references.unwrap(),
+                vec![Reference {
+                    path: "../sibling/tsconfig.ref.json".to_owned(),
+                    prepend: None,
+                }]
+            );
+        }
+
+        #[test]
+        fn forces_forward_slash() {
+            let mut tsc = TsConfigJson::default();
+
+            assert_eq!(tsc.references, None);
+
+            assert!(tsc.add_project_ref("..\\sibling", "tsconfig.json"));
+
+            assert_eq!(
+                tsc.references.unwrap(),
+                vec![Reference {
+                    path: "../sibling".to_owned(),
+                    prepend: None,
+                }]
+            );
+        }
+
+        #[test]
+        fn appends_and_sorts_list() {
+            let mut tsc = TsConfigJson {
+                references: Some(vec![Reference {
+                    path: "../sister".to_owned(),
+                    prepend: None,
+                }]),
+                ..TsConfigJson::default()
+            };
+
+            assert!(tsc.add_project_ref("../brother", "tsconfig.json"));
+
+            assert_eq!(
+                tsc.references.unwrap(),
+                vec![
+                    Reference {
+                        path: "../brother".to_owned(),
+                        prepend: None,
+                    },
+                    Reference {
+                        path: "../sister".to_owned(),
+                        prepend: None,
+                    }
+                ]
+            );
+        }
     }
 }

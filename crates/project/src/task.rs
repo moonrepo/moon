@@ -287,7 +287,7 @@ impl Task {
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, ProjectError> {
         trace!(
-            target: &self.log_target,
+            target: self.get_log_target(),
             "Checking if affected using input files: {}",
             map_list(&Vec::from_iter(self.input_paths.iter()), |p| color::path(p))
         );
@@ -297,7 +297,7 @@ impl Task {
 
         if has_globs {
             trace!(
-                target: &self.log_target,
+                target: self.get_log_target(),
                 "Checking if affected using input globs: {}",
                 map_list(&self.input_globs, |f| color::file(f))
             );
@@ -311,7 +311,7 @@ impl Task {
             }
 
             trace!(
-                target: &self.log_target,
+                target: self.get_log_target(),
                 "Is affected by {} = {}",
                 color::path(file),
                 if affected {

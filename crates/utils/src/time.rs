@@ -1,6 +1,6 @@
 use crate::is_test_env;
-use chrono::Duration;
-use chrono_humanize::HumanTime;
+// use chrono::Duration;
+// use chrono_humanize::HumanTime;
 use std::time::Duration as StdDuration;
 
 pub use chrono;
@@ -64,6 +64,6 @@ pub fn elapsed(duration: StdDuration) -> String {
     parts.join(" ")
 }
 
-pub fn relative(duration: Duration) -> String {
-    format!("{}", HumanTime::from(duration))
-}
+// pub fn relative(duration: Duration) -> String {
+//     format!("{}", HumanTime::from(duration))
+// }

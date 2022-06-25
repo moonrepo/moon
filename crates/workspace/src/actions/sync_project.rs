@@ -72,8 +72,8 @@ pub async fn sync_project(
                     // and this `package.json` has not already declared the dep.
                     if !dep_package_name.is_empty()
                         && package_json.add_dependency(
-                            dep_package_name,
-                            package_manager.get_workspace_dependency_range(),
+                            &dep_package_name,
+                            &package_manager.get_workspace_dependency_range(),
                             true,
                         )
                     {

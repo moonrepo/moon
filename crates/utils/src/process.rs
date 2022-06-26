@@ -15,23 +15,25 @@ pub use std::process::{ExitStatus, Output, Stdio};
 // Based on how Node.js executes Windows commands:
 // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
 fn create_windows_cmd() -> (String, TokioCommand) {
-    if let Ok(shell) = env::var("COMSPEC").or_else(|_| env::var("comspec")) {
-        let mut cmd = TokioCommand::new(&shell);
-        cmd.arg("-c");
+    let shell = env::var("COMSPEC")
+        .or_else(|_| env::var("comspec"))
+        .unwrap_or_else(|_| "cmd.exe".into());
 
-        return (
-            String::from(PathBuf::from(shell).file_name().unwrap().to_string_lossy()),
-            cmd,
-        );
+    let mut cmd = TokioCommand::new(&shell);
+
+    if shell.contains("cmd.exe") {
+        cmd.arg("/d");
+        cmd.arg("/s");
+        cmd.arg("/q"); // Hide the script from echoing in the output
+        cmd.arg("/c");
+    } else {
+        cmd.arg("-c");
     }
 
-    let mut cmd = TokioCommand::new("cmd.exe");
-    cmd.arg("/d");
-    cmd.arg("/s");
-    cmd.arg("/q"); // Hide the script from echoing in the output
-    cmd.arg("/c");
-
-    ("cmd.exe".to_owned(), cmd)
+    (
+        String::from(PathBuf::from(shell).file_name().unwrap().to_string_lossy()),
+        cmd,
+    )
 }
 
 pub fn is_windows_script(bin: &str) -> bool {

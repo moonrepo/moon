@@ -1,6 +1,5 @@
-use figment::error::Kind;
-use figment::Error as FigmentError;
-use serde_yaml::{to_value, Value};
+use figment::{Error as FigmentError, Figment};
+use serde_json::Value;
 use std::borrow::Cow;
 use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
 
@@ -12,149 +11,70 @@ pub fn create_validation_error(code: &'static str, path: &str, message: String) 
     error
 }
 
-fn format_yaml_value(value: Value) -> String {
-    match value {
-        Value::Null => String::from("null"),
-        Value::Bool(_) => String::from("boolean"),
-        Value::Number(_) => String::from("number"),
-        Value::String(msg) => msg,
-        Value::Sequence(array) => format!("array of {:?}", array),
-        Value::Mapping(object) => format!("object of {:?}", object),
-    }
-}
+pub fn format_figment_errors(errors: Vec<FigmentError>) -> String {
+    println!("{:#?}", errors);
 
-fn format_validation_error(error: &ValidationError) -> String {
-    let mut message = "".to_owned();
-
-    if let Some(path) = error.params.get("path") {
-        let value = format_yaml_value(to_value(&path).unwrap_or_default());
-
-        if !value.is_empty() {
-            let msg = format!("Invalid field <id>{}</id>: ", value);
-            message.push_str(msg.as_str());
-        }
-    }
-
-    if let Some(msg_internal) = &error.message {
-        let msg = format!("{}", msg_internal);
-        message.push_str(msg.as_str());
-    } else {
-        let msg = format!("Unknown failure [{}].", error.code);
-        message.push_str(msg.as_str());
-    }
-
-    message
-}
-
-pub fn format_errors(errors: &ValidationErrors, indent: &str) -> String {
     let mut list = vec![];
-    let mut push = |message: String, reset: bool| {
-        if reset {
-            list.push(message);
-        } else {
-            list.push(format!("{}<accent>▪</accent> {}", indent, message));
-        }
-    };
 
-    for value in errors.errors().values() {
-        match value {
-            ValidationErrorsKind::Struct(obj) => {
-                push(format_errors(obj, &format!("{}{}", indent, indent)), true);
-            }
-            ValidationErrorsKind::List(items) => {
-                for item in items.values() {
-                    push(format_errors(item, &format!("{}{}", indent, indent)), true);
-                }
-            }
-            ValidationErrorsKind::Field(fields) => {
-                for field in fields {
-                    push(format_validation_error(field), false);
-                }
-            }
+    for error in errors {
+        for nested_error in error {
+            list.push(format!("  <accent>▪</accent> {}", nested_error));
         }
     }
 
     list.join("\n")
 }
 
-pub fn map_figment_error_to_validation_errors(figment_error: &FigmentError) -> ValidationErrors {
-    let path = figment_error.path.join(".");
+pub fn map_validation_errors_to_figment_errors(
+    figment: &Figment,
+    validation_errors: &ValidationErrors,
+) -> Vec<FigmentError> {
+    let mut errors = vec![];
+    let mut nested_errors = vec![];
 
-    let valid_error = match &figment_error.kind {
-        // Fields
-        Kind::DuplicateField(field) => create_validation_error(
-            "duplicate_field",
-            path.as_str(),
-            format!("Duplicate field <id>{}</id>.", field),
-        ),
-        Kind::MissingField(field) => create_validation_error(
-            "missing_field",
-            path.as_str(),
-            format!("Missing field <id>{}</id>.", field),
-        ),
-        Kind::UnknownField(field, _) => create_validation_error(
-            "unknown_field",
-            path.as_str(),
-            format!("Unknown field <id>{}</id>.", field),
-        ),
-        Kind::UnknownVariant(field, _) => create_validation_error(
-            "unknown_field_variant",
-            path.as_str(),
-            format!("Unknown option <id>{}</id>.", field),
-        ),
+    let mut push_error = |validation_error: &ValidationError| {
+        println!("validation_error = {:#?}", validation_error);
 
-        // Values
-        Kind::InvalidType(a, e) => create_validation_error(
-            "invalid_type",
-            path.as_str(),
-            format!("Expected {} type, received {}.", e, a),
-        ),
-        Kind::InvalidLength(a, e) => create_validation_error(
-            "invalid_length",
-            path.as_str(),
-            format!("Expected length of {}, received {}.", e, a),
-        ),
-        Kind::InvalidValue(a, e) => create_validation_error(
-            "invalid_value",
-            path.as_str(),
-            format!("Expected {} value, received {}.", e, a),
-        ),
-        Kind::ISizeOutOfRange(range) => create_validation_error(
-            "out_of_range",
-            path.as_str(),
-            format!("Integer out of range, received {}.", range),
-        ),
-        Kind::USizeOutOfRange(range) => create_validation_error(
-            "out_of_range",
-            path.as_str(),
-            format!("Unsigned integer out of range, received {}.", range),
-        ),
-
-        // Other
-        Kind::Message(message) => {
-            create_validation_error("message", path.as_str(), String::from(message))
+        if validation_error.message.is_none() {
+            return;
         }
-        Kind::Unsupported(a) => create_validation_error(
-            "unsupported",
-            path.as_str(),
-            format!("Unsupported type/value <muted>{}</muted>.", a),
-        ),
-        Kind::UnsupportedKey(key, _) => create_validation_error(
-            "unsupported_key",
-            path.as_str(),
-            format!("Unsupported key <symbol>{}</symbol>.", key),
-        ),
+
+        let mut figment_error = FigmentError::from(String::from(
+            validation_error.message.as_ref().unwrap().clone(),
+        ));
+
+        figment_error.profile = Some(figment.profile().clone());
+
+        if let Some(Value::String(path)) = validation_error.params.get("path") {
+            if let Some(metadata) = figment.find_metadata(&path) {
+                figment_error.metadata = Some(metadata.clone());
+            }
+
+            figment_error = figment_error.with_path(&path);
+        };
+
+        errors.push(figment_error);
     };
 
-    let mut errors = ValidationErrors::new();
+    for error_kind in validation_errors.errors().values() {
+        match error_kind {
+            ValidationErrorsKind::Struct(error) => {
+                nested_errors.extend(map_validation_errors_to_figment_errors(figment, error));
+            }
+            ValidationErrorsKind::List(error_map) => {
+                for error in error_map.values() {
+                    nested_errors.extend(map_validation_errors_to_figment_errors(figment, error));
+                }
+            }
+            ValidationErrorsKind::Field(error_list) => {
+                for error in error_list {
+                    push_error(error);
+                }
+            }
+        }
+    }
 
-    // We basically need a string literal here, but the path is dynamically provided...
-    // https://stackoverflow.com/a/52367953
-    errors.add(
-        Box::leak(figment_error.path.join(".").into_boxed_str()),
-        valid_error,
-    );
-
+    errors.extend(nested_errors);
     errors
 }
 
@@ -196,6 +116,6 @@ pub mod tests {
     }
 
     pub fn handled_jailed_error(errors: &ValidationErrors) -> Error {
-        Error::from(Kind::Message(extract_first_error(errors)))
+        Error::from(FigmentKind::Message(extract_first_error(errors)))
     }
 }

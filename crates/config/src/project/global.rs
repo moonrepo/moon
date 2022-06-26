@@ -1,22 +1,21 @@
 // .moon/project.yml
 
 use crate::constants;
-use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
+use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
 use crate::project::task::TaskConfig;
 use crate::providers::url::Url;
 use crate::types::FileGroups;
 use crate::validators::{validate_extends, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
-    error as FigmentError,
     providers::{Format, Serialized, Yaml},
-    Figment, Metadata, Profile, Provider,
+    Error as FigmentError, Figment, Metadata, Profile, Provider,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{Validate, ValidationError};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     for key in map.keys() {
@@ -37,7 +36,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
             return Err(create_validation_error(
                 "required_command",
                 &format!("tasks.{}.command", name),
-                String::from("An npm/system command is required."),
+                String::from("An npm/system command is required"),
             ));
         }
     }
@@ -69,7 +68,7 @@ pub struct GlobalProjectConfig {
 impl Provider for GlobalProjectConfig {
     fn metadata(&self) -> Metadata {
         Metadata::named("Global project config").source(format!(
-            "{}/{}",
+            "<file>{}/{}</file>",
             constants::CONFIG_DIRNAME,
             constants::CONFIG_PROJECT_FILENAME
         ))
@@ -80,12 +79,12 @@ impl Provider for GlobalProjectConfig {
     }
 
     fn profile(&self) -> Option<Profile> {
-        Some(Profile::Default)
+        Some(Profile::new("project"))
     }
 }
 
 impl GlobalProjectConfig {
-    pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ValidationErrors> {
+    pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, Vec<FigmentError>> {
         let mut config = GlobalProjectConfig::load_config(
             Figment::from(GlobalProjectConfig::default()).merge(Yaml::file(&path)),
         )?;
@@ -123,11 +122,11 @@ impl GlobalProjectConfig {
         Ok(config)
     }
 
-    fn load_config(figment: Figment) -> Result<GlobalProjectConfig, FigmentError> {
-        let config: GlobalProjectConfig = figment.extract()?;
+    fn load_config(figment: Figment) -> Result<GlobalProjectConfig, Vec<FigmentError>> {
+        let config: GlobalProjectConfig = figment.extract().map_err(|e| vec![e])?;
 
         if let Err(errors) = config.validate() {
-            return Err(errors);
+            return Err(map_validation_errors_to_figment_errors(&figment, &errors));
         }
 
         Ok(config)

@@ -8,7 +8,7 @@ mod types;
 mod validators;
 mod workspace;
 
-pub use errors::format_errors;
+pub use errors::format_figment_errors;
 pub use project::global::GlobalProjectConfig;
 pub use project::task::{TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType};
 pub use project::{ProjectConfig, ProjectLanguage, ProjectMetadataConfig, ProjectType};

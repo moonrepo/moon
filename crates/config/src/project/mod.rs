@@ -4,7 +4,7 @@ pub mod global;
 pub mod task;
 
 use crate::constants;
-use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
+use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
 use crate::types::{FileGroups, ProjectID, TaskID};
 use crate::validators::validate_id;
 use figment::value::{Dict, Map};
@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use task::TaskConfig;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{Validate, ValidationError};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     for key in map.keys() {
@@ -37,7 +37,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
                 return Err(create_validation_error(
                     "required_command",
                     &format!("tasks.{}.command", name),
-                    String::from("An npm/system command is required."),
+                    String::from("An npm/system command is required"),
                 ));
             }
         }
@@ -51,7 +51,7 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_channel",
             "project.channel",
-            String::from("Must start with a #."),
+            String::from("Must start with a #"),
         ));
     }
 
@@ -151,7 +151,10 @@ pub struct ProjectConfig {
 
 impl Provider for ProjectConfig {
     fn metadata(&self) -> Metadata {
-        Metadata::named("Project config").source(constants::CONFIG_PROJECT_FILENAME)
+        Metadata::named("Project config").source(format!(
+            "<file>{}</file>",
+            constants::CONFIG_PROJECT_FILENAME
+        ))
     }
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
@@ -159,18 +162,17 @@ impl Provider for ProjectConfig {
     }
 
     fn profile(&self) -> Option<Profile> {
-        Some(Profile::Default)
+        Some(Profile::new("project"))
     }
 }
 
 impl ProjectConfig {
-    pub fn load(path: &Path) -> Result<ProjectConfig, FigmentError> {
-        let config: ProjectConfig = Figment::from(ProjectConfig::default())
-            .merge(Yaml::file(path))
-            .extract()?;
+    pub fn load(path: &Path) -> Result<ProjectConfig, Vec<FigmentError>> {
+        let figment = Figment::from(ProjectConfig::default()).merge(Yaml::file(path));
+        let config: ProjectConfig = figment.extract().map_err(|e| vec![e])?;
 
         if let Err(errors) = config.validate() {
-            return Err(errors);
+            return Err(map_validation_errors_to_figment_errors(&figment, &errors));
         }
 
         Ok(config)
@@ -184,11 +186,8 @@ mod tests {
     use moon_utils::string_vec;
     use std::path::PathBuf;
 
-    fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {
-        match ProjectConfig::load(&PathBuf::from(constants::CONFIG_PROJECT_FILENAME)) {
-            Ok(cfg) => Ok(cfg),
-            Err(errors) => Err(handled_jailed_error(&errors)),
-        }
+    fn load_jailed_config() -> Result<ProjectConfig, Vec<figment::Error>> {
+        ProjectConfig::load(&PathBuf::from(constants::CONFIG_PROJECT_FILENAME))
     }
 
     #[test]

@@ -5,7 +5,7 @@ mod typescript;
 mod vcs;
 
 use crate::constants;
-use crate::errors::map_figment_error_to_validation_errors;
+use crate::errors::map_validation_errors_to_figment_errors;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
@@ -25,7 +25,7 @@ use std::env;
 use std::fmt;
 use std::path::PathBuf;
 pub use typescript::TypeScriptConfig;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{Validate, ValidationError};
 pub use vcs::{VcsConfig, VcsManager};
 
 type ProjectsMap = HashMap<String, FilePath>;
@@ -101,7 +101,7 @@ pub struct WorkspaceConfig {
 impl Provider for WorkspaceConfig {
     fn metadata(&self) -> Metadata {
         Metadata::named("Workspace config").source(format!(
-            "{}/{}",
+            "<file>{}/{}</file>",
             constants::CONFIG_DIRNAME,
             constants::CONFIG_WORKSPACE_FILENAME
         ))
@@ -112,12 +112,12 @@ impl Provider for WorkspaceConfig {
     }
 
     fn profile(&self) -> Option<Profile> {
-        Some(Profile::Default)
+        Some(Profile::new("workspace"))
     }
 }
 
 impl WorkspaceConfig {
-    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, FigmentError> {
+    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, Vec<FigmentError>> {
         let mut config = WorkspaceConfig::load_config(
             Figment::from(WorkspaceConfig::default()).merge(Yaml::file(&path)),
         )?;
@@ -163,11 +163,11 @@ impl WorkspaceConfig {
         Ok(config)
     }
 
-    fn load_config(figment: Figment) -> Result<WorkspaceConfig, FigmentError> {
-        let config: WorkspaceConfig = figment.extract()?;
+    fn load_config(figment: Figment) -> Result<WorkspaceConfig, Vec<FigmentError>> {
+        let config: WorkspaceConfig = figment.extract().map_err(|e| vec![e])?;
 
         if let Err(errors) = config.validate() {
-            return Err(errors);
+            return Err(map_validation_errors_to_figment_errors(&figment, &errors));
         }
 
         Ok(config)

@@ -8,11 +8,12 @@ use figment::{
 
 pub struct Url {
     url: String,
+    pub profile: Option<Profile>,
 }
 
 impl Url {
     pub fn from(url: String) -> Self {
-        Url { url }
+        Url { url, profile: None }
     }
 }
 

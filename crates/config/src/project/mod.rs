@@ -182,12 +182,14 @@ impl ProjectConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::errors::tests::handled_jailed_error;
     use moon_utils::string_vec;
     use std::path::PathBuf;
 
-    fn load_jailed_config() -> Result<ProjectConfig, Vec<figment::Error>> {
-        ProjectConfig::load(&PathBuf::from(constants::CONFIG_PROJECT_FILENAME))
+    fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {
+        match ProjectConfig::load(&PathBuf::from(constants::CONFIG_PROJECT_FILENAME)) {
+            Ok(cfg) => Ok(cfg),
+            Err(errors) => Err(errors.first().unwrap().clone()),
+        }
     }
 
     #[test]

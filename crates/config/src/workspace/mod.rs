@@ -251,13 +251,12 @@ fn make_projects_schema(_gen: &mut SchemaGenerator) -> Schema {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::errors::tests::handled_jailed_error;
     use std::path::Path;
 
     fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
         match WorkspaceConfig::load(root.join(constants::CONFIG_WORKSPACE_FILENAME)) {
             Ok(cfg) => Ok(cfg),
-            Err(errors) => Err(handled_jailed_error(&errors)),
+            Err(errors) => Err(errors.first().unwrap().clone()),
         }
     }
 

@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 102
+assertion_line: 158
 expression: get_assert_output(&assert)
 ---
 
@@ -8,6 +8,7 @@ expression: get_assert_output(&assert)
 
 Failed to validate test/project.yml configuration file.
 
-  ▪ Invalid field project: Missing field name.
+  ▪ missing field `name` for key "default.project" in test/project.yml YAML file
+
 
 

@@ -136,7 +136,6 @@ impl GlobalProjectConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::errors::tests::handled_jailed_error;
     use figment;
     use moon_utils::string_vec;
     use std::path::Path;
@@ -144,7 +143,7 @@ mod tests {
     fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
         match GlobalProjectConfig::load(root.join(constants::CONFIG_PROJECT_FILENAME)) {
             Ok(cfg) => Ok(cfg),
-            Err(errors) => Err(handled_jailed_error(&errors)),
+            Err(errors) => Err(errors.first().unwrap().clone()),
         }
     }
 

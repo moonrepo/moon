@@ -193,8 +193,6 @@ fn make_args_schema(_gen: &mut SchemaGenerator) -> Schema {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::errors::map_figment_error_to_validation_errors;
-    use crate::errors::tests::handled_jailed_error;
     use figment::{
         providers::{Format, Yaml},
         Figment,
@@ -205,19 +203,9 @@ mod tests {
 
     // Not a config file, but we want to test in isolation
     fn load_jailed_config() -> Result<TaskConfig, figment::Error> {
-        let config: TaskConfig = match Figment::new()
+        Figment::new()
             .merge(Yaml::file(&PathBuf::from(CONFIG_FILENAME)))
             .extract()
-        {
-            Ok(cfg) => cfg,
-            Err(error) => {
-                return Err(handled_jailed_error(
-                    &map_figment_error_to_validation_errors(&error),
-                ))
-            }
-        };
-
-        Ok(config)
     }
 
     mod command {

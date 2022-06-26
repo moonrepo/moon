@@ -1,8 +1,9 @@
 use crate::path;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, trace};
+use std::env;
 use std::ffi::OsStr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command as TokioCommand;
@@ -13,13 +14,24 @@ pub use std::process::{ExitStatus, Output, Stdio};
 
 // Based on how Node.js executes Windows commands:
 // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
-fn create_windows_cmd() -> TokioCommand {
+fn create_windows_cmd() -> (String, TokioCommand) {
+    if let Ok(shell) = env::var("COMSPEC").or_else(|_| env::var("comspec")) {
+        let mut cmd = TokioCommand::new(&shell);
+        cmd.arg("-c");
+
+        return (
+            String::from(PathBuf::from(shell).file_name().unwrap().to_string_lossy()),
+            cmd,
+        );
+    }
+
     let mut cmd = TokioCommand::new("cmd.exe");
     cmd.arg("/d");
     cmd.arg("/s");
     cmd.arg("/q"); // Hide the script from echoing in the output
     cmd.arg("/c");
-    cmd
+
+    ("cmd.exe".to_owned(), cmd)
 }
 
 pub fn is_windows_script(bin: &str) -> bool {
@@ -52,13 +64,11 @@ impl Command {
 
         // Referencing cmd.exe directly
         if bin_name == "cmd" || bin_name == "cmd.exe" {
-            bin_name = String::from("cmd.exe");
-            cmd = create_windows_cmd();
+            (bin_name, cmd) = create_windows_cmd();
 
         // Referencing a batch script that needs to be ran with cmd.exe
         } else if is_windows_script(&bin_name) {
-            bin_name = String::from("cmd.exe");
-            cmd = create_windows_cmd();
+            (bin_name, cmd) = create_windows_cmd();
             cmd.arg(bin);
 
         // Assume a command exists on the system

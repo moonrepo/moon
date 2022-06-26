@@ -8,6 +8,7 @@ use crate::types::FileGroups;
 use crate::validators::{validate_extends, validate_id};
 use figment::value::{Dict, Map};
 use figment::{
+    error as FigmentError,
     providers::{Format, Serialized, Yaml},
     Figment, Metadata, Profile, Provider,
 };
@@ -122,11 +123,8 @@ impl GlobalProjectConfig {
         Ok(config)
     }
 
-    fn load_config(figment: Figment) -> Result<GlobalProjectConfig, ValidationErrors> {
-        let config: GlobalProjectConfig = match figment.extract() {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+    fn load_config(figment: Figment) -> Result<GlobalProjectConfig, FigmentError> {
+        let config: GlobalProjectConfig = figment.extract()?;
 
         if let Err(errors) = config.validate() {
             return Err(errors);

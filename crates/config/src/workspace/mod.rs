@@ -12,7 +12,7 @@ use crate::validators::{validate_child_relative_path, validate_extends, validate
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
-    Figment, Metadata, Profile, Provider,
+    Error as FigmentError, Figment, Metadata, Profile, Provider,
 };
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
 use schemars::gen::SchemaGenerator;
@@ -117,7 +117,7 @@ impl Provider for WorkspaceConfig {
 }
 
 impl WorkspaceConfig {
-    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
+    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, FigmentError> {
         let mut config = WorkspaceConfig::load_config(
             Figment::from(WorkspaceConfig::default()).merge(Yaml::file(&path)),
         )?;
@@ -163,11 +163,8 @@ impl WorkspaceConfig {
         Ok(config)
     }
 
-    fn load_config(figment: Figment) -> Result<WorkspaceConfig, ValidationErrors> {
-        let config: WorkspaceConfig = match figment.extract() {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+    fn load_config(figment: Figment) -> Result<WorkspaceConfig, FigmentError> {
+        let config: WorkspaceConfig = figment.extract()?;
 
         if let Err(errors) = config.validate() {
             return Err(errors);

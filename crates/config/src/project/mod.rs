@@ -10,7 +10,7 @@ use crate::validators::validate_id;
 use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
-    Figment, Metadata, Profile, Provider,
+    Error as FigmentError, Figment, Metadata, Profile, Provider,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -164,14 +164,10 @@ impl Provider for ProjectConfig {
 }
 
 impl ProjectConfig {
-    pub fn load(path: &Path) -> Result<ProjectConfig, ValidationErrors> {
-        let config: ProjectConfig = match Figment::from(ProjectConfig::default())
+    pub fn load(path: &Path) -> Result<ProjectConfig, FigmentError> {
+        let config: ProjectConfig = Figment::from(ProjectConfig::default())
             .merge(Yaml::file(path))
-            .extract()
-        {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+            .extract()?;
 
         if let Err(errors) = config.validate() {
             return Err(errors);

@@ -127,6 +127,7 @@ mod general {
 
 mod configs {
     use super::*;
+    use std::path::PathBuf;
 
     #[test]
     fn bubbles_up_invalid_workspace_config() {
@@ -135,7 +136,7 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from(".")));
     }
 
     #[test]
@@ -145,7 +146,7 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from(".")));
     }
 
     #[test]
@@ -155,7 +156,7 @@ mod configs {
             .arg("test:task")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from(".")));
     }
 }
 
@@ -779,7 +780,12 @@ mod node {
                 .arg("node:standard")
                 .assert();
 
-            assert_snapshot!(get_assert_output(&assert));
+            let output = get_assert_output(&assert);
+
+            assert!(predicate::str::contains(
+                "unknown variant: found `invalid`, expected ``nodenv` or `nvm``"
+            )
+            .eval(&output));
         }
     }
 

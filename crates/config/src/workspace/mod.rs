@@ -5,14 +5,13 @@ mod typescript;
 mod vcs;
 
 use crate::constants;
-use crate::errors::map_figment_error_to_validation_errors;
+use crate::errors::map_validation_errors_to_figment_errors;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
-use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
-    Figment, Metadata, Profile, Provider,
+    Error as FigmentError, Figment,
 };
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
 use schemars::gen::SchemaGenerator;
@@ -25,7 +24,7 @@ use std::env;
 use std::fmt;
 use std::path::PathBuf;
 pub use typescript::TypeScriptConfig;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{Validate, ValidationError};
 pub use vcs::{VcsConfig, VcsManager};
 
 type ProjectsMap = HashMap<String, FilePath>;
@@ -98,45 +97,33 @@ pub struct WorkspaceConfig {
     pub schema: String,
 }
 
-impl Provider for WorkspaceConfig {
-    fn metadata(&self) -> Metadata {
-        Metadata::named("Workspace config").source(format!(
-            "{}/{}",
-            constants::CONFIG_DIRNAME,
-            constants::CONFIG_WORKSPACE_FILENAME
-        ))
-    }
-
-    fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        Serialized::defaults(self).data()
-    }
-
-    fn profile(&self) -> Option<Profile> {
-        Some(Profile::Default)
-    }
-}
-
 impl WorkspaceConfig {
-    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ValidationErrors> {
+    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, Vec<FigmentError>> {
+        let profile_name = "workspace";
         let mut config = WorkspaceConfig::load_config(
-            Figment::from(WorkspaceConfig::default()).merge(Yaml::file(&path)),
+            Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name))
+                .merge(Yaml::file(&path).profile(&profile_name))
+                .select(&profile_name),
         )?;
 
         // This is janky, but figment does not support any kind of extends mechanism,
         // and figment providers do not have access to the current config dataset,
         // so we need to double-load this config and extract in the correct order!
         if let Some(extends) = config.extends {
-            let mut figment = Figment::from(WorkspaceConfig::default());
+            let mut figment = Figment::from(
+                Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name),
+            );
 
             if extends.starts_with("http") {
-                figment = figment.merge(Url::from(extends));
+                figment = figment.merge(Url::from(extends).profile(&profile_name));
             } else {
-                figment = figment.merge(Yaml::file(path.parent().unwrap().join(extends)));
+                figment = figment
+                    .merge(Yaml::file(path.parent().unwrap().join(extends)).profile(&profile_name));
             };
 
-            figment = figment.merge(Yaml::file(&path));
+            figment = figment.merge(Yaml::file(&path).profile(&profile_name));
 
-            config = WorkspaceConfig::load_config(figment)?;
+            config = WorkspaceConfig::load_config(figment.select(&profile_name))?;
         }
 
         // Versions from env vars should take precedence
@@ -163,14 +150,11 @@ impl WorkspaceConfig {
         Ok(config)
     }
 
-    fn load_config(figment: Figment) -> Result<WorkspaceConfig, ValidationErrors> {
-        let config: WorkspaceConfig = match figment.extract() {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+    fn load_config(figment: Figment) -> Result<WorkspaceConfig, Vec<FigmentError>> {
+        let config: WorkspaceConfig = figment.extract().map_err(|e| vec![e])?;
 
         if let Err(errors) = config.validate() {
-            return Err(errors);
+            return Err(map_validation_errors_to_figment_errors(&figment, &errors));
         }
 
         Ok(config)
@@ -254,13 +238,12 @@ fn make_projects_schema(_gen: &mut SchemaGenerator) -> Schema {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::errors::tests::handled_jailed_error;
     use std::path::Path;
 
     fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
         match WorkspaceConfig::load(root.join(constants::CONFIG_WORKSPACE_FILENAME)) {
             Ok(cfg) => Ok(cfg),
-            Err(errors) => Err(handled_jailed_error(&errors)),
+            Err(errors) => Err(errors.first().unwrap().clone()),
         }
     }
 
@@ -294,7 +277,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>extends</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"workspace.extends\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -308,7 +291,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>extends</id>: Must be a valid URL or relative file path (starts with ./)."
+            expected = "Must be a valid URL or relative file path (starts with ./) for key \"workspace.extends\""
         )]
         fn not_a_url_or_file() {
             figment::Jail::expect_with(|jail| {
@@ -324,7 +307,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Only HTTPS URLs are supported.")]
+        #[should_panic(expected = "Only HTTPS URLs are supported for key \"workspace.extends\"")]
         fn not_a_https_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -339,7 +322,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        #[should_panic(expected = "Must be a YAML document for key \"workspace.extends\"")]
         fn not_a_yaml_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -354,7 +337,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        #[should_panic(expected = "Must be a YAML document for key \"workspace.extends\"")]
         fn not_a_yaml_file() {
             figment::Jail::expect_with(|jail| {
                 fs::create_dir_all(jail.directory().join("shared")).unwrap();
@@ -500,7 +483,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node</id>: Expected struct NodeConfig type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected struct NodeConfig for key \"workspace.node\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -514,7 +497,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.version</id>: Must be a valid semantic version."
+            expected = "Must be a valid semantic version for key \"workspace.node.version\""
         )]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
@@ -535,7 +518,7 @@ projects:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.version</id>: Must be a valid semantic version."
+            expected = "Must be a valid semantic version for key \"workspace.node.version\""
         )]
         fn no_patch_version() {
             figment::Jail::expect_with(|jail| {
@@ -556,7 +539,7 @@ projects:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.version</id>: Must be a valid semantic version."
+            expected = "Must be a valid semantic version for key \"workspace.node.version\""
         )]
         fn no_minor_version() {
             figment::Jail::expect_with(|jail| {
@@ -577,7 +560,7 @@ projects:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.packageManager</id>: Unknown option <id>what</id>."
+            expected = "unknown variant: found `what`, expected `one of `npm`, `pnpm`, `yarn`` for key \"workspace.node.packageManager\""
         )]
         fn invalid_package_manager() {
             figment::Jail::expect_with(|jail| {
@@ -642,7 +625,7 @@ projects: {}
     mod npm {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.npm</id>: Expected struct NpmConfig type, received string \"foo\"."
+            expected = "invalid type: found string \"foo\", expected struct NpmConfig for key \"workspace.node.npm\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -662,7 +645,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.npm.version</id>: Must be a valid semantic version."
+            expected = "Must be a valid semantic version for key \"workspace.node.npm.version\""
         )]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
@@ -713,7 +696,7 @@ projects: {}
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.pnpm</id>: Expected struct PnpmConfig type, received string \"foo\"."
+            expected = "invalid type: found string \"foo\", expected struct PnpmConfig for key \"workspace.node.pnpm\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -733,7 +716,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.pnpm.version</id>: Must be a valid semantic version."
+            expected = "Must be a valid semantic version for key \"workspace.node.pnpm.version\""
         )]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
@@ -784,7 +767,7 @@ projects: {}
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.yarn</id>: Expected struct YarnConfig type, received string \"foo\"."
+            expected = "invalid type: found string \"foo\", expected struct YarnConfig for key \"workspace.node.yarn\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -804,7 +787,7 @@ node:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>node.yarn.version</id>: Must be a valid semantic version."
+            expected = "Must be a valid semantic version for key \"workspace.node.yarn.version\""
         )]
         fn invalid_version() {
             figment::Jail::expect_with(|jail| {
@@ -857,7 +840,7 @@ projects: {}
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>projects</id>: Expected a sequence of globs or a map of projects type, received string \"apps/*\"."
+            expected = "invalid type: found string \"apps/*\", expected a sequence of globs or a map of projects for key \"workspace.projects\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -874,7 +857,7 @@ projects: {}
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>projects</id>: Absolute paths are not supported."
+            expected = "Absolute paths are not supported for key \"workspace.projects\""
         )]
         fn no_abs_paths() {
             figment::Jail::expect_with(|jail| {
@@ -894,7 +877,7 @@ projects:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>projects</id>: Parent relative paths are not supported."
+            expected = "Parent relative paths are not supported for key \"workspace.projects\""
         )]
         fn no_parent_paths() {
             figment::Jail::expect_with(|jail| {
@@ -1005,7 +988,7 @@ vcs:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>vcs</id>: Expected struct VcsConfig type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected struct VcsConfig for key \"workspace.vcs\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -1024,7 +1007,7 @@ vcs: 123"#,
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>vcs.manager</id>: Unknown option <id>unknown</id>."
+            expected = "unknown variant: found `unknown`, expected ``git` or `svn`` for key \"workspace.vcs.manager\""
         )]
         fn invalid_manager_option() {
             figment::Jail::expect_with(|jail| {
@@ -1044,7 +1027,7 @@ vcs:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>vcs.defaultBranch</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"workspace.vcs.defaultBranch\""
         )]
         fn invalid_default_branch_type() {
             figment::Jail::expect_with(|jail| {

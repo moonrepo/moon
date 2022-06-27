@@ -3,7 +3,7 @@ use crate::vcs::{Vcs, VcsManager};
 use moon_cache::CacheEngine;
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
-use moon_config::{constants, format_errors, GlobalProjectConfig, WorkspaceConfig};
+use moon_config::{constants, format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
 use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;
 use moon_toolchain::Toolchain;
@@ -50,7 +50,7 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
     match GlobalProjectConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(
-            format_errors(&errors, "  "),
+            format_figment_errors(errors),
         )),
     }
 }
@@ -78,9 +78,9 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
 
     match WorkspaceConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
-        Err(errors) => Err(WorkspaceError::InvalidWorkspaceConfigFile(format_errors(
-            &errors, "  ",
-        ))),
+        Err(errors) => Err(WorkspaceError::InvalidWorkspaceConfigFile(
+            format_figment_errors(errors),
+        )),
     }
 }
 

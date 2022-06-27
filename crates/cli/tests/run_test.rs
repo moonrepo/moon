@@ -1,6 +1,6 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_utils::path::replace_home_dir;
+use moon_utils::path::{replace_home_dir, standardize_separators};
 use moon_utils::test::{
     create_fixtures_sandbox, create_moon_command, create_moon_command_in, get_assert_output,
     replace_fixtures_dir,
@@ -127,6 +127,7 @@ mod general {
 
 mod configs {
     use super::*;
+    use std::path::PathBuf;
 
     #[test]
     fn bubbles_up_invalid_workspace_config() {
@@ -135,7 +136,10 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(standardize_separators(&get_path_safe_output(
+            &assert,
+            &PathBuf::from("./fake/path")
+        )));
     }
 
     #[test]
@@ -145,7 +149,10 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(standardize_separators(&get_path_safe_output(
+            &assert,
+            &PathBuf::from("./fake/path")
+        )));
     }
 
     #[test]
@@ -155,7 +162,10 @@ mod configs {
             .arg("test:task")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(standardize_separators(&get_path_safe_output(
+            &assert,
+            &PathBuf::from("./fake/path")
+        )));
     }
 }
 
@@ -779,7 +789,12 @@ mod node {
                 .arg("node:standard")
                 .assert();
 
-            assert_snapshot!(get_assert_output(&assert));
+            let output = get_assert_output(&assert);
+
+            assert!(predicate::str::contains(
+                "unknown variant: found `invalid`, expected ``nodenv` or `nvm``"
+            )
+            .eval(&output));
         }
     }
 

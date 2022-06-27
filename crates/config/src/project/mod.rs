@@ -3,14 +3,12 @@
 pub mod global;
 pub mod task;
 
-use crate::constants;
 use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
 use crate::types::{FileGroups, ProjectID, TaskID};
 use crate::validators::validate_id;
-use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
-    Error as FigmentError, Figment, Metadata, Profile, Provider,
+    Error as FigmentError, Figment,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -149,26 +147,14 @@ pub struct ProjectConfig {
     pub schema: String,
 }
 
-impl Provider for ProjectConfig {
-    fn metadata(&self) -> Metadata {
-        Metadata::named("Project config").source(format!(
-            "<file>{}</file>",
-            constants::CONFIG_PROJECT_FILENAME
-        ))
-    }
-
-    fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        Serialized::defaults(self).data()
-    }
-
-    fn profile(&self) -> Option<Profile> {
-        Some(Profile::new("project"))
-    }
-}
-
 impl ProjectConfig {
     pub fn load(path: &Path) -> Result<ProjectConfig, Vec<FigmentError>> {
-        let figment = Figment::from(ProjectConfig::default()).merge(Yaml::file(path));
+        let profile_name = "project";
+        let figment =
+            Figment::from(Serialized::defaults(ProjectConfig::default()).profile(&profile_name))
+                .merge(Yaml::file(path).profile(&profile_name))
+                .select(&profile_name);
+
         let config: ProjectConfig = figment.extract().map_err(|e| vec![e])?;
 
         if let Err(errors) = config.validate() {
@@ -182,6 +168,7 @@ impl ProjectConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::constants;
     use moon_utils::string_vec;
     use std::path::PathBuf;
 
@@ -235,7 +222,7 @@ fileGroups:
     mod depends_on {
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected a sequence for key \"default.dependsOn\""
+            expected = "invalid type: found unsigned int `123`, expected a sequence for key \"project.dependsOn\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -251,7 +238,7 @@ fileGroups:
     mod file_groups {
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected a map for key \"default.fileGroups\""
+            expected = "invalid type: found unsigned int `123`, expected a map for key \"project.fileGroups\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -265,7 +252,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected a sequence for key \"default.fileGroups.sources\""
+            expected = "invalid type: found unsigned int `123`, expected a sequence for key \"project.fileGroups.sources\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -323,7 +310,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected a map for key \"default.tasks\""
+            expected = "invalid type: found unsigned int `123`, expected a map for key \"project.tasks\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -337,7 +324,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"default.tasks.test\""
+            expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"project.tasks.test\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -356,7 +343,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.tasks.test.command\""
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"project.tasks.test.command\""
         )]
         fn invalid_value_field() {
             figment::Jail::expect_with(|jail| {
@@ -402,7 +389,7 @@ tasks:
     mod project {
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected struct ProjectMetadataConfig for key \"default.project\""
+            expected = "invalid type: found unsigned int `123`, expected struct ProjectMetadataConfig for key \"project.project\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -416,7 +403,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.project.name\""
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"project.project.name\""
         )]
         fn invalid_name_type() {
             figment::Jail::expect_with(|jail| {
@@ -439,7 +426,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found bool true, expected a string for key \"default.project.description\""
+            expected = "invalid type: found bool true, expected a string for key \"project.project.description\""
         )]
         fn invalid_description_type() {
             figment::Jail::expect_with(|jail| {
@@ -462,7 +449,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found map, expected a string for key \"default.project.owner\""
+            expected = "invalid type: found map, expected a string for key \"project.project.owner\""
         )]
         fn invalid_owner_type() {
             figment::Jail::expect_with(|jail| {
@@ -485,7 +472,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found string \"abc\", expected a sequence for key \"default.project.maintainers\""
+            expected = "invalid type: found string \"abc\", expected a sequence for key \"project.project.maintainers\""
         )]
         fn invalid_maintainers_type() {
             figment::Jail::expect_with(|jail| {
@@ -508,7 +495,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.project.channel\""
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"project.project.channel\""
         )]
         fn invalid_channel_type() {
             figment::Jail::expect_with(|jail| {
@@ -555,7 +542,7 @@ project:
     mod workspace {
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected struct ProjectWorkspaceConfig for key \"default.workspace\""
+            expected = "invalid type: found unsigned int `123`, expected struct ProjectWorkspaceConfig for key \"project.workspace\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -569,7 +556,7 @@ project:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found unsigned int `123`, expected struct ProjectWorkspaceInheritedTasksConfig for key \"default.workspace.inheritedTasks\""
+            expected = "invalid type: found unsigned int `123`, expected struct ProjectWorkspaceInheritedTasksConfig for key \"project.workspace.inheritedTasks\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -588,7 +575,7 @@ workspace:
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found string \"abc\", expected a sequence for key \"default.workspace.inheritedTasks.include\""
+            expected = "invalid type: found string \"abc\", expected a sequence for key \"project.workspace.inheritedTasks.include\""
         )]
         fn invalid_nested_value_type() {
             figment::Jail::expect_with(|jail| {

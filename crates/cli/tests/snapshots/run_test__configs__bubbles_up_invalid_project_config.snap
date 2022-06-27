@@ -8,7 +8,7 @@ expression: get_assert_output(&assert)
 
 Failed to validate test/project.yml configuration file.
 
-  ▪ missing field `name` for key "default.project" in test/project.yml YAML file
+  ▪ missing field `name` for key "project.project" in test/project.yml YAML file
 
 
 

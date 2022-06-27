@@ -1475,13 +1475,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_workspace"
+name = "moon_vcs"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "chrono",
- "futures",
  "ignore",
+ "moon_config",
+ "moon_error",
+ "moon_utils",
+ "regex",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "moon_workspace"
+version = "0.1.0"
+dependencies = [
  "insta",
  "moon_cache",
  "moon_config",
@@ -1493,9 +1503,9 @@ dependencies = [
  "moon_terminal",
  "moon_toolchain",
  "moon_utils",
+ "moon_vcs",
  "pathdiff",
  "petgraph",
- "regex",
  "thiserror",
  "tokio",
 ]

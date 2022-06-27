@@ -14,13 +14,9 @@ moon_project = { path = "../project" }
 moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
-async-trait = "0.1.53"
-chrono = "0.4.19"
-futures = "0.3.21"
-ignore = "0.4.18"
+moon_vcs = { path = "../vcs" }
 pathdiff = "0.2.1"
 petgraph = "0.6.0"
-regex = "1.5.6"
 thiserror = "1.0.31"
 tokio = { version = "1.18.2", features = ["full"] }
 

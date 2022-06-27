@@ -1,8 +1,8 @@
-use ignore::Error as IgnoreError;
 use moon_config::constants;
 use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_toolchain::ToolchainError;
+use moon_vcs::VcsError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -50,9 +50,6 @@ pub enum WorkspaceError {
     InvalidGlobalProjectConfigFile(String),
 
     #[error(transparent)]
-    Ignore(#[from] IgnoreError),
-
-    #[error(transparent)]
     Moon(#[from] MoonError),
 
     #[error(transparent)]
@@ -60,4 +57,7 @@ pub enum WorkspaceError {
 
     #[error(transparent)]
     Toolchain(#[from] ToolchainError),
+
+    #[error(transparent)]
+    Vcs(#[from] VcsError),
 }

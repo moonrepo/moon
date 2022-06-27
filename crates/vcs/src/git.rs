@@ -1,4 +1,4 @@
-use crate::errors::WorkspaceError;
+use crate::errors::VcsError;
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
@@ -26,10 +26,10 @@ impl Git {
             let mut builder = GitignoreBuilder::new(working_dir);
 
             if let Some(error) = builder.add(ignore_path) {
-                return Err(WorkspaceError::Ignore(error));
+                return Err(VcsError::Ignore(error));
             }
 
-            ignore = Some(builder.build().map_err(WorkspaceError::Ignore)?);
+            ignore = Some(builder.build().map_err(VcsError::Ignore)?);
         }
 
         Ok(Git {

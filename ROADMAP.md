@@ -20,10 +20,6 @@
 - [ ] Add chrome profiling support to spawned processes
 - [ ] Publish npm packages
 
-### Tests
-
-- [ ] increase code coverage and add more integration tests
-
 # 0.2.0
 
 - [x] Add header to docs homepage

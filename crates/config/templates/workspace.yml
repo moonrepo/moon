@@ -72,9 +72,9 @@ typescript:
 vcs:
   # The manager/binary to use when managing the repository.
   # Accepts "git", or "svn". Defaults to "git".
-  manager: 'git'
+  manager: '{{ vcs_manager }}'
 
   # The default branch (master/main/trunk) in the repository for comparing the
   # local branch against. For git, this is is typically "master" or "main",
   # and must include the remote prefix (before /). For svn, this should always be "trunk".
-  defaultBranch: 'master'
+  defaultBranch: '{{ vcs_default_branch }}'

@@ -6,6 +6,7 @@
 
 - Added caching to our VCS layer which should greatly reduce the amount of `git` commands being
   executed.
+- Updated `moon init` to detect `vcs.manager` and `vcs.defaultBranch` from the environment.
 
 #### ⚙️ Internal
 

@@ -1318,6 +1318,7 @@ dependencies = [
  "moon_terminal",
  "moon_toolchain",
  "moon_utils",
+ "moon_vcs",
  "moon_workspace",
  "predicates",
  "serial_test",

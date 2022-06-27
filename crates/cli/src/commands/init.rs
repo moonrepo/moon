@@ -12,6 +12,7 @@ use moon_logger::color;
 use moon_project::detect_projects_with_globs;
 use moon_terminal::create_theme;
 use moon_utils::{fs, path};
+use moon_vcs::{Git, Svn, Vcs};
 use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::fs::{read_to_string, OpenOptions};
@@ -257,6 +258,25 @@ async fn detect_projects(
     Ok((sorted_projects, project_globs))
 }
 
+/// Detect the version control system being used and the potential default branch.
+async fn detect_vcs(dest_dir: &Path) -> Result<(String, String), AnyError> {
+    if dest_dir.join(".git").exists() {
+        return Ok((
+            "git".into(),
+            Git::new("master", dest_dir)?.get_local_branch().await?,
+        ));
+    }
+
+    if dest_dir.join(".svn").exists() {
+        return Ok((
+            "svn".into(),
+            Svn::new("trunk", dest_dir).get_local_branch().await?,
+        ));
+    }
+
+    Ok(("git".into(), "master".into()))
+}
+
 pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     let working_dir = env::current_dir().unwrap();
     let dest_path = PathBuf::from(dest);
@@ -277,6 +297,7 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     let package_manager = detect_package_manager(&dest_dir, &options).await?;
     let node_version = detect_node_version(&dest_dir)?;
     let (projects, project_globs) = detect_projects(&dest_dir, &options).await?;
+    let vcs = detect_vcs(&dest_dir).await?;
 
     // Generate a template
     let mut context = Context::new();
@@ -286,6 +307,8 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     context.insert("node_version_manager", &node_version.1);
     context.insert("projects", &projects);
     context.insert("project_globs", &project_globs);
+    context.insert("vcs_manager", &vcs.0);
+    context.insert("vcs_default_branch", &vcs.1);
 
     let mut tera = Tera::default();
     tera.add_raw_template("workspace", load_workspace_config_template())?;

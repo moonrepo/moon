@@ -47,6 +47,8 @@ impl Provider for Url {
 
         // We expect the URLs to point to YAML files,
         // so piggyback off the default YAML provider
-        Yaml::string(&resp).data()
+        Yaml::string(&resp)
+            .profile(self.profile.as_ref().unwrap().clone())
+            .data()
     }
 }

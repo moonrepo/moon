@@ -49,7 +49,7 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_channel",
             "project.channel",
-            String::from("Must start with a #"),
+            String::from("Must start with a `#`"),
         ));
     }
 
@@ -517,7 +517,7 @@ project:
         }
 
         #[test]
-        #[should_panic(expected = "Must start with a # for key \"project.project.channel\"")]
+        #[should_panic(expected = "Must start with a `#` for key \"project.project.channel\"")]
         fn channel_leading_hash() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(

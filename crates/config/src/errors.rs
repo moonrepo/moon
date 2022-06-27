@@ -6,7 +6,6 @@ use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
 pub fn create_validation_error(code: &'static str, path: &str, message: String) -> ValidationError {
     let mut error = ValidationError::new(code);
     error.message = Some(Cow::from(message));
-    // Is there a better way to do this?
     error.add_param(Cow::from("path"), &path.to_owned());
     error
 }

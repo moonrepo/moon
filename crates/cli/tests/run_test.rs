@@ -1,6 +1,6 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_utils::path::replace_home_dir;
+use moon_utils::path::{replace_home_dir, standardize_separators};
 use moon_utils::test::{
     create_fixtures_sandbox, create_moon_command, create_moon_command_in, get_assert_output,
     replace_fixtures_dir,
@@ -136,7 +136,10 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from("./fake/path")));
+        assert_snapshot!(standardize_separators(&get_path_safe_output(
+            &assert,
+            &PathBuf::from("./fake/path")
+        )));
     }
 
     #[test]
@@ -146,7 +149,10 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from("./fake/path")));
+        assert_snapshot!(standardize_separators(&get_path_safe_output(
+            &assert,
+            &PathBuf::from("./fake/path")
+        )));
     }
 
     #[test]
@@ -156,7 +162,10 @@ mod configs {
             .arg("test:task")
             .assert();
 
-        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from("./fake/path")));
+        assert_snapshot!(standardize_separators(&get_path_safe_output(
+            &assert,
+            &PathBuf::from("./fake/path")
+        )));
     }
 }
 

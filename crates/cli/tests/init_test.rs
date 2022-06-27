@@ -418,3 +418,32 @@ mod node {
         }
     }
 }
+
+mod vcs {
+    use super::*;
+    use moon_utils::test::run_git_command;
+
+    #[test]
+    #[serial]
+    fn detects_git() {
+        let fixture = create_fixtures_sandbox("init-sandbox");
+        let root = fixture.path();
+        let workspace_config = root.join(".moon").join("workspace.yml");
+
+        // Checkout a new branch
+        run_git_command(root, "Failed to create new branch", |cmd| {
+            cmd.args(["checkout", "-b", "fixtures-test"]);
+        });
+
+        create_moon_command_in(root)
+            .arg("init")
+            .arg("--yes")
+            .arg(&root)
+            .assert();
+
+        let content = fs::read_to_string(workspace_config).unwrap();
+
+        assert!(predicate::str::contains("manager: 'git'").eval(&content));
+        assert!(predicate::str::contains("defaultBranch: 'fixtures-test'").eval(&content));
+    }
+}

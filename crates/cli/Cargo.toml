@@ -21,6 +21,7 @@ moon_project = { path = "../project" }
 moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
+moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 clap = { version = "3.1.18", features = ["derive", "env", "wrap_help"] }
 console = "0.15.0"

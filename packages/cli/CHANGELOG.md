@@ -7,6 +7,10 @@
 - Added caching to our VCS layer which should greatly reduce the amount of `git` commands being
   executed.
 
+#### ⚙️ Internal
+
+- Improved our configuration layer so that error messages include more metadata.
+
 ### 0.4.1
 
 #### 🐞 Fixes

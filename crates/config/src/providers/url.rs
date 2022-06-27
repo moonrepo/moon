@@ -8,11 +8,17 @@ use figment::{
 
 pub struct Url {
     url: String,
+    pub profile: Option<Profile>,
 }
 
 impl Url {
     pub fn from(url: String) -> Self {
-        Url { url }
+        Url { url, profile: None }
+    }
+
+    pub fn profile<P: Into<Profile>>(mut self, profile: P) -> Self {
+        self.profile = Some(profile.into());
+        self
     }
 }
 
@@ -41,6 +47,8 @@ impl Provider for Url {
 
         // We expect the URLs to point to YAML files,
         // so piggyback off the default YAML provider
-        Yaml::string(&resp).data()
+        Yaml::string(&resp)
+            .profile(self.profile.as_ref().unwrap().clone())
+            .data()
     }
 }

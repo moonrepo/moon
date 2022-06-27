@@ -1,21 +1,19 @@
 // .moon/project.yml
 
-use crate::constants;
-use crate::errors::{create_validation_error, map_figment_error_to_validation_errors};
+use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
 use crate::project::task::TaskConfig;
 use crate::providers::url::Url;
 use crate::types::FileGroups;
 use crate::validators::{validate_extends, validate_id};
-use figment::value::{Dict, Map};
 use figment::{
     providers::{Format, Serialized, Yaml},
-    Figment, Metadata, Profile, Provider,
+    Error as FigmentError, Figment,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::{Validate, ValidationError};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     for key in map.keys() {
@@ -36,7 +34,7 @@ fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationErr
             return Err(create_validation_error(
                 "required_command",
                 &format!("tasks.{}.command", name),
-                String::from("An npm/system command is required."),
+                String::from("An npm/system command is required"),
             ));
         }
     }
@@ -65,28 +63,15 @@ pub struct GlobalProjectConfig {
     pub schema: String,
 }
 
-impl Provider for GlobalProjectConfig {
-    fn metadata(&self) -> Metadata {
-        Metadata::named("Global project config").source(format!(
-            "{}/{}",
-            constants::CONFIG_DIRNAME,
-            constants::CONFIG_PROJECT_FILENAME
-        ))
-    }
-
-    fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        Serialized::defaults(self).data()
-    }
-
-    fn profile(&self) -> Option<Profile> {
-        Some(Profile::Default)
-    }
-}
-
 impl GlobalProjectConfig {
-    pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ValidationErrors> {
+    pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, Vec<FigmentError>> {
+        let profile_name = "globalProject";
         let mut config = GlobalProjectConfig::load_config(
-            Figment::from(GlobalProjectConfig::default()).merge(Yaml::file(&path)),
+            Figment::from(
+                Serialized::defaults(GlobalProjectConfig::default()).profile(&profile_name),
+            )
+            .merge(Yaml::file(&path).profile(&profile_name))
+            .select(&profile_name),
         )?;
 
         // This is janky, but figment does not support any kind of extends mechanism,
@@ -95,9 +80,13 @@ impl GlobalProjectConfig {
         if let Some(extends) = &config.extends {
             let extended_config =
                 GlobalProjectConfig::load_config(if extends.starts_with("http") {
-                    Figment::from(Url::from(extends.to_owned()))
+                    Figment::from(Url::from(extends.to_owned()).profile(&profile_name))
+                        .select(&profile_name)
                 } else {
-                    Figment::from(Yaml::file(path.parent().unwrap().join(extends)))
+                    Figment::from(
+                        Yaml::file(path.parent().unwrap().join(extends)).profile(&profile_name),
+                    )
+                    .select(&profile_name)
                 })?;
 
             // Figment does not merge hash maps but replaces entirely,
@@ -122,14 +111,11 @@ impl GlobalProjectConfig {
         Ok(config)
     }
 
-    fn load_config(figment: Figment) -> Result<GlobalProjectConfig, ValidationErrors> {
-        let config: GlobalProjectConfig = match figment.extract() {
-            Ok(cfg) => cfg,
-            Err(error) => return Err(map_figment_error_to_validation_errors(&error)),
-        };
+    fn load_config(figment: Figment) -> Result<GlobalProjectConfig, Vec<FigmentError>> {
+        let config: GlobalProjectConfig = figment.extract().map_err(|e| vec![e])?;
 
         if let Err(errors) = config.validate() {
-            return Err(errors);
+            return Err(map_validation_errors_to_figment_errors(&figment, &errors));
         }
 
         Ok(config)
@@ -139,7 +125,7 @@ impl GlobalProjectConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::errors::tests::handled_jailed_error;
+    use crate::constants;
     use figment;
     use moon_utils::string_vec;
     use std::path::Path;
@@ -147,7 +133,7 @@ mod tests {
     fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
         match GlobalProjectConfig::load(root.join(constants::CONFIG_PROJECT_FILENAME)) {
             Ok(cfg) => Ok(cfg),
-            Err(errors) => Err(handled_jailed_error(&errors)),
+            Err(errors) => Err(errors.first().unwrap().clone()),
         }
     }
 
@@ -188,7 +174,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>extends</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"globalProject.extends\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -202,7 +188,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>extends</id>: Must be a valid URL or relative file path (starts with ./)."
+            expected = "Must be a valid URL or relative file path (starts with ./) for key \"globalProject.extends\""
         )]
         fn not_a_url_or_file() {
             figment::Jail::expect_with(|jail| {
@@ -218,7 +204,9 @@ fileGroups:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Only HTTPS URLs are supported.")]
+        #[should_panic(
+            expected = "Only HTTPS URLs are supported for key \"globalProject.extends\""
+        )]
         fn not_a_https_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -233,7 +221,7 @@ fileGroups:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
         fn not_a_yaml_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -248,7 +236,7 @@ fileGroups:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
         fn not_a_yaml_file() {
             figment::Jail::expect_with(|jail| {
                 fs::create_dir_all(jail.directory().join("shared")).unwrap();
@@ -424,7 +412,7 @@ fileGroups:
     mod file_groups {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>fileGroups</id>: Expected a map type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.fileGroups\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -438,7 +426,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>fileGroups.sources</id>: Expected a sequence type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a sequence for key \"globalProject.fileGroups.sources\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -459,7 +447,7 @@ fileGroups:
     mod tasks {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>tasks</id>: Expected a map type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.tasks\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -479,7 +467,7 @@ tasks: 123
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>tasks.test</id>: Expected struct TaskConfig type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"globalProject.tasks.test\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -500,7 +488,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>tasks.test.command</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"globalProject.tasks.test.command\""
         )]
         fn invalid_value_field() {
             figment::Jail::expect_with(|jail| {
@@ -521,9 +509,7 @@ tasks:
         }
 
         #[test]
-        #[should_panic(
-            expected = "Invalid field <id>tasks.test.command</id>: An npm/system command is required."
-        )]
+        #[should_panic(expected = "An npm/system command is required")]
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(

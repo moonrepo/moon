@@ -6,7 +6,9 @@ use crate::token::{TokenResolver, TokenSharedData};
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
-use moon_config::{format_errors, FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID};
+use moon_config::{
+    format_figment_errors, FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID,
+};
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
@@ -38,9 +40,9 @@ fn load_project_config(
     if config_path.exists() {
         return match ProjectConfig::load(&config_path) {
             Ok(cfg) => Ok(Some(cfg)),
-            Err(error) => Err(ProjectError::InvalidConfigFile(
+            Err(errors) => Err(ProjectError::InvalidConfigFile(
                 String::from(project_source),
-                format_errors(&error, "  "),
+                format_figment_errors(errors),
             )),
         };
     }

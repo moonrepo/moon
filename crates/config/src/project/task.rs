@@ -193,8 +193,6 @@ fn make_args_schema(_gen: &mut SchemaGenerator) -> Schema {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::errors::map_figment_error_to_validation_errors;
-    use crate::errors::tests::handled_jailed_error;
     use figment::{
         providers::{Format, Yaml},
         Figment,
@@ -205,25 +203,15 @@ mod tests {
 
     // Not a config file, but we want to test in isolation
     fn load_jailed_config() -> Result<TaskConfig, figment::Error> {
-        let config: TaskConfig = match Figment::new()
+        Figment::new()
             .merge(Yaml::file(&PathBuf::from(CONFIG_FILENAME)))
             .extract()
-        {
-            Ok(cfg) => cfg,
-            Err(error) => {
-                return Err(handled_jailed_error(
-                    &map_figment_error_to_validation_errors(&error),
-                ))
-            }
-        };
-
-        Ok(config)
     }
 
     mod command {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>command</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.command\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -242,7 +230,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>args</id>: Expected a sequence of strings or a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a sequence of strings or a string for key \"default.args\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -262,7 +250,7 @@ args: 123
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>args.0</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.args.0\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -357,7 +345,7 @@ args: 'arg -o @token(0) --opt value "quoted arg"'
     mod deps {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>deps</id>: Expected a sequence type, received string \"abc\"."
+            expected = "invalid type: found string \"abc\", expected a sequence for key \"default.deps\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -377,7 +365,7 @@ deps: abc
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>deps.0</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.deps.0\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -421,7 +409,7 @@ deps:
     mod env {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>env</id>: Expected a map type, received string \"abc\"."
+            expected = "invalid type: found string \"abc\", expected a map for key \"default.env\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -441,7 +429,7 @@ env: abc
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>env.KEY</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.env.KEY\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -464,7 +452,7 @@ env:
     mod inputs {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>inputs</id>: Expected a sequence type, received string \"abc\"."
+            expected = "invalid type: found string \"abc\", expected a sequence for key \"default.inputs\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -484,7 +472,7 @@ inputs: abc
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>inputs.0</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.inputs.0\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -507,7 +495,7 @@ inputs:
     mod outputs {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>outputs</id>: Expected a sequence type, received string \"abc\"."
+            expected = "invalid type: found string \"abc\", expected a sequence for key \"default.outputs\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -527,7 +515,7 @@ outputs: abc
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>outputs.0</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.outputs.0\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -549,7 +537,9 @@ outputs:
 
     mod type_of {
         #[test]
-        #[should_panic(expected = "Invalid field <id>type</id>: Unknown option <id>unknown</id>.")]
+        #[should_panic(
+            expected = "unknown variant: found `unknown`, expected ``node` or `system`` for key \"default.type\""
+        )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -570,7 +560,7 @@ type: unknown
     mod options {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>options</id>: Expected struct TaskOptionsConfig type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected struct TaskOptionsConfig for key \"default.options\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -590,7 +580,7 @@ options: 123
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>options.mergeArgs</id>: Unknown option <id>bubble</id>."
+            expected = "unknown variant: found `bubble`, expected `one of `append`, `prepend`, `replace`` for key \"default.options.mergeArgs\""
         )]
         fn invalid_merge_strategy_type() {
             figment::Jail::expect_with(|jail| {
@@ -611,7 +601,7 @@ options:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>options.retryCount</id>: Expected u8 type, received string \"abc\"."
+            expected = "invalid type: found string \"abc\", expected u8 for key \"default.options.retryCount\""
         )]
         fn invalid_retry_count_type() {
             figment::Jail::expect_with(|jail| {

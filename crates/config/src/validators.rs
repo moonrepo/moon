@@ -10,7 +10,7 @@ pub fn validate_semver_version(key: &str, value: &str) -> Result<(), ValidationE
         return Err(create_validation_error(
             "invalid_semver",
             key,
-            String::from("Must be a valid semantic version."),
+            String::from("Must be a valid semantic version"),
         ));
     }
 
@@ -26,13 +26,13 @@ pub fn validate_child_relative_path(key: &str, value: &str) -> Result<(), Valida
         return Err(create_validation_error(
             "no_absolute",
             key,
-            String::from("Absolute paths are not supported."),
+            String::from("Absolute paths are not supported"),
         ));
     } else if path.starts_with("..") {
         return Err(create_validation_error(
             "no_parent_relative",
             key,
-            String::from("Parent relative paths are not supported."),
+            String::from("Parent relative paths are not supported"),
         ));
     }
 
@@ -48,13 +48,13 @@ pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), Validat
         return Err(create_validation_error(
             "no_absolute",
             key,
-            String::from("Absolute paths are not supported. Root paths must start with \"/\"."),
+            String::from("Absolute paths are not supported (root paths must start with \"/\")"),
         ));
     } else if path.starts_with("..") {
         return Err(create_validation_error(
             "no_parent_relative",
             key,
-            String::from("Parent relative paths are not supported."),
+            String::from("Parent relative paths are not supported"),
         ));
     }
 
@@ -67,7 +67,7 @@ pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_id",
             key,
-            String::from("Must be a valid ID. Accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), and must start with a letter."),
+            String::from("Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), and must start with a letter)"),
         ));
     }
 
@@ -80,7 +80,7 @@ pub fn validate_target(key: &str, target_id: &str) -> Result<(), ValidationError
         return Err(create_validation_error(
             "invalid_target",
             key,
-            String::from("Must be a valid target format."),
+            String::from("Must be a valid target format"),
         ));
     }
 
@@ -93,7 +93,7 @@ pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), Vali
         return Err(create_validation_error(
             "invalid_url",
             key,
-            String::from("Must be a valid URL."),
+            String::from("Must be a valid URL"),
         ));
     }
 
@@ -101,7 +101,7 @@ pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), Vali
         return Err(create_validation_error(
             "invalid_https_url",
             key,
-            String::from("Only HTTPS URLs are supported."),
+            String::from("Only HTTPS URLs are supported"),
         ));
     }
 
@@ -120,7 +120,7 @@ pub fn validate_extends(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "unknown_format",
             "extends",
-            String::from("Must be a valid URL or relative file path (starts with ./)."),
+            String::from("Must be a valid URL or relative file path (starts with ./)"),
         ));
     }
 
@@ -128,7 +128,7 @@ pub fn validate_extends(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_yaml",
             "extends",
-            String::from("Must be a YAML document."),
+            String::from("Must be a YAML document"),
         ));
     }
 

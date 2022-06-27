@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 92
+assertion_line: 148
 expression: get_assert_output(&assert)
 ---
 
@@ -8,6 +8,7 @@ expression: get_assert_output(&assert)
 
 Failed to validate .moon/project.yml configuration file.
 
-  ▪ Invalid field tasks: Expected a map type, received unsigned int `123`.
+  ▪ invalid type: found unsigned int `123`, expected a map for key "globalProject.tasks" in .moon/project.yml YAML file
+
 
 

@@ -8,7 +8,7 @@ expression: get_assert_output(&assert)
 
 Failed to validate .moon/workspace.yml configuration file.
 
-  ▪ invalid type: found bool true, expected a sequence of globs or a map of projects for key "default.projects" in .moon/workspace.yml YAML file
+  ▪ invalid type: found bool true, expected a sequence of globs or a map of projects for key "workspace.projects" in .moon/workspace.yml YAML file
 
 
 

@@ -15,6 +15,11 @@ impl Url {
     pub fn from(url: String) -> Self {
         Url { url, profile: None }
     }
+
+    pub fn profile<P: Into<Profile>>(mut self, profile: P) -> Self {
+        self.profile = Some(profile.into());
+        self
+    }
 }
 
 impl Provider for Url {

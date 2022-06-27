@@ -184,7 +184,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>extends</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.extends\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -198,7 +198,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>extends</id>: Must be a valid URL or relative file path (starts with ./)."
+            expected = "Must be a valid URL or relative file path (starts with ./) for key \"project.extends\""
         )]
         fn not_a_url_or_file() {
             figment::Jail::expect_with(|jail| {
@@ -214,7 +214,7 @@ fileGroups:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Only HTTPS URLs are supported.")]
+        #[should_panic(expected = "Only HTTPS URLs are supported for key \"project.extends\"")]
         fn not_a_https_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -229,7 +229,7 @@ fileGroups:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        #[should_panic(expected = "Must be a YAML document for key \"project.extends\"")]
         fn not_a_yaml_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
@@ -244,7 +244,7 @@ fileGroups:
         }
 
         #[test]
-        #[should_panic(expected = "Invalid field <id>extends</id>: Must be a YAML document.")]
+        #[should_panic(expected = "Must be a YAML document for key \"project.extends\"")]
         fn not_a_yaml_file() {
             figment::Jail::expect_with(|jail| {
                 fs::create_dir_all(jail.directory().join("shared")).unwrap();
@@ -420,7 +420,7 @@ fileGroups:
     mod file_groups {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>fileGroups</id>: Expected a map type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a map for key \"default.fileGroups\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -434,7 +434,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>fileGroups.sources</id>: Expected a sequence type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a sequence for key \"default.fileGroups.sources\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -455,7 +455,7 @@ fileGroups:
     mod tasks {
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>tasks</id>: Expected a map type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a map for key \"default.tasks\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -475,7 +475,7 @@ tasks: 123
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>tasks.test</id>: Expected struct TaskConfig type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"default.tasks.test\""
         )]
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
@@ -496,7 +496,7 @@ tasks:
 
         #[test]
         #[should_panic(
-            expected = "Invalid field <id>tasks.test.command</id>: Expected a string type, received unsigned int `123`."
+            expected = "invalid type: found unsigned int `123`, expected a string for key \"default.tasks.test.command\""
         )]
         fn invalid_value_field() {
             figment::Jail::expect_with(|jail| {
@@ -517,9 +517,7 @@ tasks:
         }
 
         #[test]
-        #[should_panic(
-            expected = "Invalid field <id>tasks.test.command</id>: An npm/system command is required."
-        )]
+        #[should_panic(expected = "An npm/system command is required")]
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(

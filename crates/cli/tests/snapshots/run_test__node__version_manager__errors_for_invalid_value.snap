@@ -8,7 +8,7 @@ expression: get_assert_output(&assert)
 
 Failed to validate .moon/workspace.yml configuration file.
 
-  ▪ unknown variant: found `invalid`, expected ``nodenv` or `nvm`` for key "default.node.syncVersionManagerConfig" in .moon/workspace.yml YAML file
+  ▪ unknown variant: found `invalid`, expected ``nodenv` or `nvm`` for key "workspace.node.syncVersionManagerConfig" in .moon/workspace.yml YAML file
 
 
 

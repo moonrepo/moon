@@ -1,16 +1,9 @@
-mod git;
-mod svn;
-
-use crate::errors::WorkspaceError;
+use crate::errors::VcsError;
 use async_trait::async_trait;
-use git::Git;
-use moon_config::{VcsManager as VM, WorkspaceConfig};
 use moon_utils::process::Command;
 use std::collections::{BTreeMap, HashSet};
-use std::path::Path;
-use svn::Svn;
 
-pub type VcsResult<T> = Result<T, WorkspaceError>;
+pub type VcsResult<T> = Result<T, VcsError>;
 
 #[allow(dead_code)]
 #[derive(Default)]
@@ -72,22 +65,4 @@ pub trait Vcs {
 
     /// Return true if the repo is currently VCS enabled.
     fn is_enabled(&self) -> bool;
-}
-
-pub struct VcsManager {}
-
-impl VcsManager {
-    pub fn load(
-        config: &WorkspaceConfig,
-        working_dir: &Path,
-    ) -> Result<Box<dyn Vcs + Send + Sync>, WorkspaceError> {
-        let vcs_config = &config.vcs;
-        let manager = &vcs_config.manager;
-        let default_branch = &vcs_config.default_branch;
-
-        Ok(match manager {
-            VM::Svn => Box::new(Svn::new(default_branch, working_dir)),
-            _ => Box::new(Git::new(default_branch, working_dir)?),
-        })
-    }
 }

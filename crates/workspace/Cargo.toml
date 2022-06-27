@@ -14,10 +14,10 @@ moon_project = { path = "../project" }
 moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
+moon_vcs = { path = "../vcs" }
 async-trait = "0.1.53"
 chrono = "0.4.19"
 futures = "0.3.21"
-ignore = "0.4.18"
 pathdiff = "0.2.1"
 petgraph = "0.6.0"
 regex = "1.5.6"

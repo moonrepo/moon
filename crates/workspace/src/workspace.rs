@@ -1,5 +1,4 @@
 use crate::errors::WorkspaceError;
-use crate::vcs::{Vcs, VcsManager};
 use moon_cache::CacheEngine;
 use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
@@ -8,6 +7,7 @@ use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
+use moon_vcs::{Vcs, VcsLoader};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -181,7 +181,7 @@ impl Workspace {
         let toolchain = Toolchain::create(&root_dir, &config).await?;
         let projects =
             ProjectGraph::create(&root_dir, project_config, &config.projects, &cache).await?;
-        let vcs = VcsManager::load(&config, &root_dir)?;
+        let vcs = VcsLoader::load(&config, &root_dir)?;
 
         Ok(Workspace {
             cache,

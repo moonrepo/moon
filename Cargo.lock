@@ -1492,9 +1492,6 @@ dependencies = [
 name = "moon_workspace"
 version = "0.1.0"
 dependencies = [
- "async-trait",
- "chrono",
- "futures",
  "insta",
  "moon_cache",
  "moon_config",
@@ -1509,7 +1506,6 @@ dependencies = [
  "moon_vcs",
  "pathdiff",
  "petgraph",
- "regex",
  "thiserror",
  "tokio",
 ]

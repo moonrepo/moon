@@ -136,7 +136,7 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from(".")));
+        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from("./fake/path")));
     }
 
     #[test]
@@ -146,7 +146,7 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from(".")));
+        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from("./fake/path")));
     }
 
     #[test]
@@ -156,7 +156,7 @@ mod configs {
             .arg("test:task")
             .assert();
 
-        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from(".")));
+        assert_snapshot!(get_path_safe_output(&assert, &PathBuf::from("./fake/path")));
     }
 }
 

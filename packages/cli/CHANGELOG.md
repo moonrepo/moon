@@ -9,7 +9,10 @@
 
 #### ⚙️ Internal
 
+- We now detect the current Windows terminal using the `COMSPEC` environment variable, instead of
+  defaulting to `cmd.exe`.
 - Improved our configuration layer so that error messages include more metadata.
+- Added `#[track_caller]` to more easily diagnose panics.
 
 ### 0.4.1
 

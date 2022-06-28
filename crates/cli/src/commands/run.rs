@@ -12,11 +12,18 @@ use std::collections::HashSet;
 use std::string::ToString;
 use std::time::Duration;
 
+#[derive(ArgEnum, Clone, Debug, Display)]
+pub enum RunProfile {
+    Cpu,
+    Heap,
+}
+
 pub struct RunOptions {
     pub affected: bool,
     pub dependents: bool,
     pub status: TouchedStatus,
     pub passthrough: Vec<String>,
+    pub profile: Option<RunProfile>,
     pub upstream: bool,
 }
 

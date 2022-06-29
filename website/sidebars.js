@@ -27,7 +27,10 @@ const sidebars = {
 						'guides/examples/jest',
 						'guides/examples/packemon',
 						'guides/examples/prettier',
+						'guides/examples/react',
 						'guides/examples/typescript',
+						'guides/examples/vite',
+						'guides/examples/vue',
 					],
 					link: {
 						type: 'generated-index',

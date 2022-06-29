@@ -1,0 +1,111 @@
+---
+title: Vite & Vitest example
+sidebar_label: Vite & Vitest
+---
+
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+import CreateDepTabs from '@site/src/components/CreateDepTabs';
+
+In this guide, you'll learn how to integrate [Vite](https://vitejs.dev/) and
+[Vitest](https://vitest.dev/) into moon.
+
+Begin by creating a new Vite project in the root of an existing moon project (this should not be
+created in the workspace root).
+
+<CreateDepTabs dep="vite" />
+
+If you plan on using Vitest, run the following command in the project root, otherwise skip to the
+setup section.
+
+<AddDepsTabs dep="vitest" package="<project>" dev />
+
+## Setup
+
+Since Vite is per-project, the associated moon tasks should be defined in each project's
+`project.yml` file.
+
+```yaml title="<project>/project.yml"
+tasks:
+	# Development server
+	dev:
+		command: 'vite'
+		args: 'dev'
+		inputs:
+			- 'src/**/*'
+			- 'env.d.ts'
+			- 'index.html'
+			- 'vite.config.*'
+		options:
+			runInCI: false
+
+	# Production build
+	build:
+		command: 'vite'
+		args: 'build'
+		inputs:
+			- 'src/**/*'
+			- 'env.d.ts'
+			- 'index.html'
+			- 'vite.config.*'
+		outputs:
+			- 'dist'
+
+	# Preview production build locally
+	preview:
+		command: 'vite'
+		args: 'preview'
+		inputs:
+			- 'src/**/*'
+			- 'env.d.ts'
+			- 'index.html'
+			- 'vite.config.*'
+		deps:
+			- '~:build'
+		options:
+			runInCI: false
+
+	# Unit testing (if using Vitest)
+	test:
+		command: 'vitest run'
+		args:
+			# Always run code coverage
+			- '--coverage'
+			# Dont fail if a project has no tests
+			- '--passWithNoTests'
+		inputs:
+			- 'src/**/*'
+			- 'tests/**/*'
+			- 'vite.config.*'
+			- 'vitest.config.*'
+```
+
+## Configuration
+
+### Root-level
+
+We suggest _against_ root-level configuration, as Vite should be installed per-project, and the
+`vite` command expects the configuration to live relative to the project root.
+
+### Project-level
+
+When creating a new Vite project, a [`vite.config.<js|ts>`](https://vitejs.dev/config) is created,
+and _must_ exist in the project root.
+
+```js title="<project>/vite.project.js"
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+	// ...
+	build: {
+		// These must be `outputs` in the `build` task
+		outDir: 'dist',
+	},
+	test: {
+		// Vitest settings
+	},
+});
+```
+
+> If you'd prefer to configure Vitest in a
+> [separate configuration file](https://vitest.dev/guide/#configuring-vitest), create a
+> `vitest.config.<js|ts>` file.

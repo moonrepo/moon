@@ -29,6 +29,7 @@ const sidebars = {
 						'guides/examples/prettier',
 						'guides/examples/react',
 						'guides/examples/typescript',
+						'guides/examples/vue',
 					],
 					link: {
 						type: 'generated-index',

@@ -1,0 +1,23 @@
+---
+title: Vue example
+sidebar_label: Vue
+---
+
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+
+Vue is an application or library concern, and not a build system one, since the bundling of Vue is
+abstracted away through another tool like webpack. Because of this, moon has no guidelines around
+utilizing Vue directly. You can use Vue however you wish!
+
+However, with that being said, we do suggest the following:
+
+- Prefer [Vite and the Vue CLI](https://vuejs.org/guide/scaling-up/tooling.html#ide-support) for all
+  tooling needs (encapsulated as moon tasks).
+- Add `vue` and related dependencies to each project, not the root. This will ensure accurate
+  [hashing](../../concepts/cache#hashing).
+
+<AddDepsTabs dep="vue" package="<project>" />
+
+- Configure [TypeScript](./typescript) compiler options with `"jsx": "preserve"`. Be sure other
+  options are based on
+  [`@vue/tsconfig`](https://vuejs.org/guide/typescript/overview.html#configuring-tsconfig-json).

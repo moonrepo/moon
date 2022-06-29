@@ -6,18 +6,46 @@ sidebar_label: Vue
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 
 Vue is an application or library concern, and not a build system one, since the bundling of Vue is
-abstracted away through another tool like webpack. Because of this, moon has no guidelines around
-utilizing Vue directly. You can use Vue however you wish!
+abstracted away through other tools. Because of this, moon has no guidelines around utilizing Vue
+directly. You can use Vue however you wish!
 
-However, with that being said, we do suggest the following:
+However, with that being said, Vue is typically coupled with [Vite](https://vitejs.dev/). To
+scaffold a new Vue project with Vite, run the following command in a project root.
 
-- Prefer [Vite and the Vue CLI](https://vuejs.org/guide/scaling-up/tooling.html#ide-support) for all
-  tooling needs (encapsulated as moon tasks).
-- Add `vue` and related dependencies to each project, not the root. This will ensure accurate
-  [hashing](../../concepts/cache#hashing).
+```shell
+npm init vue@latest
+```
 
-<AddDepsTabs dep="vue" package="<project>" />
+> We highly suggest reading our documentation on [using Vite (and Vitest) with moon](./vite) for a
+> more holistic view.
 
-- Configure [TypeScript](./typescript) compiler options with `"jsx": "preserve"`. Be sure other
-  options are based on
-  [`@vue/tsconfig`](https://vuejs.org/guide/typescript/overview.html#configuring-tsconfig-json).
+## Setup
+
+This section assumes Vue is being used with Vite.
+
+### TypeScript integration
+
+Vue does not use [TypeScript](./typescript)'s `tsc` binary directly, but instead uses
+[`vue-tsc`](https://vuejs.org/guide/typescript/overview.html), which is a thin wrapper around `tsc`
+to support Vue components. Because of this, we should update the `typecheck` task in the project to
+utilize this command instead.
+
+```yaml title="<project>/project.yml"
+tasks:
+	typecheck:
+		command: 'vue-tsc'
+		args: '--noEmit'
+		inputs:
+			- 'env.d.ts'
+			# Source and test files
+			- 'src/**/*'
+			- 'tests/**/*'
+			# Project configs
+			- 'tsconfig.json'
+			- 'tsconfig.*.json'
+			# Root configs (extended from only)
+			- '/tsconfig.options.json'
+```
+
+> Be sure `tsconfig.json` compiler options are based on
+> [`@vue/tsconfig`](https://vuejs.org/guide/typescript/overview.html#configuring-tsconfig-json).

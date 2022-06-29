@@ -48,7 +48,6 @@ tasks:
 			- 'index.html'
 			- 'vite.config.*'
 		outputs:
-			- 'assets'
 			- 'dist'
 
 	# Preview production build locally
@@ -99,7 +98,6 @@ export default defineConfig({
 	// ...
 	build: {
 		// These must be `outputs` in the `build` task
-		assetsDir: 'assets',
 		outDir: 'dist',
 	},
 	test: {

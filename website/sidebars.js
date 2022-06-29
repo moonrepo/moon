@@ -27,6 +27,7 @@ const sidebars = {
 						'guides/examples/jest',
 						'guides/examples/packemon',
 						'guides/examples/prettier',
+						'guides/examples/react',
 						'guides/examples/typescript',
 					],
 					link: {

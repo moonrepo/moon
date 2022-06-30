@@ -10,21 +10,16 @@ use std::string::ToString;
 use std::time::Duration;
 use strum_macros::Display;
 
-#[derive(ArgEnum, Clone, Debug, Display)]
+#[derive(ArgEnum, Clone, Debug, Display, Default)]
 pub enum RunStatus {
     Added,
+    #[default]
     All,
     Deleted,
     Modified,
     Staged,
     Unstaged,
     Untracked,
-}
-
-impl Default for RunStatus {
-    fn default() -> Self {
-        RunStatus::All
-    }
 }
 
 pub struct RunOptions {

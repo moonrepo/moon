@@ -66,8 +66,9 @@ tasks:
 
 	# Unit testing (if using Vitest)
 	test:
-		command: 'vitest run'
+		command: 'vitest'
 		args:
+			- 'run'
 			# Always run code coverage
 			- '--coverage'
 			# Dont fail if a project has no tests

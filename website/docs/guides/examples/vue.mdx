@@ -5,6 +5,10 @@ sidebar_label: Vue
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 
+> Vue + Vite has been prototyped in our
+> [examples repository](https://github.com/moonrepo/examples/tree/master/apps/vue-vite-app), check
+> it out!
+
 Vue is an application or library concern, and not a build system one, since the bundling of Vue is
 abstracted away through other tools. Because of this, moon has no guidelines around utilizing Vue
 directly. You can use Vue however you wish!
@@ -23,6 +27,21 @@ npm init vue@latest
 
 This section assumes Vue is being used with Vite.
 
+### ESLint integration
+
+When linting with [ESLint](./eslint) and the
+[`eslint-plugin-vue`](https://eslint.vuejs.org/user-guide/#installation) library, you'll need to
+include the `.vue` extension within the `lint` task. This can be done by extending the top-level
+task within the project (below), or by adding it to the top-level entirely.
+
+```yaml title="<project>/project.yml"
+tasks:
+  lint:
+    args:
+      - '--ext'
+      - '.js,.ts,.vue'
+```
+
 ### TypeScript integration
 
 Vue does not use [TypeScript](./typescript)'s `tsc` binary directly, but instead uses
@@ -31,6 +50,10 @@ to support Vue components. Because of this, we should update the `typecheck` tas
 utilize this command instead.
 
 ```yaml title="<project>/project.yml"
+workspace:
+	inheritedTasks:
+		exclude: [typecheck]
+
 tasks:
 	typecheck:
 		command: 'vue-tsc'

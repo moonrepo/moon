@@ -15,7 +15,6 @@ moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
-pathdiff = "0.2.1"
 petgraph = "0.6.0"
 thiserror = "1.0.31"
 tokio = { version = "1.18.2", features = ["full"] }

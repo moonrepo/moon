@@ -1,14 +1,14 @@
+use crate::commands::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use crate::commands::run::render_result_stats;
+use crate::enums::TouchedStatus;
 use console::Term;
 use itertools::Itertools;
 use moon_logger::{color, debug};
 use moon_project::{Target, TouchedFilePaths};
 use moon_terminal::helpers::{replace_style_tokens, safe_exit};
-use moon_utils::{is_ci, path, time};
+use moon_utils::{is_ci, time};
 use moon_workspace::DepGraph;
 use moon_workspace::{ActionRunner, ActionStatus, Workspace, WorkspaceError};
-use std::collections::HashSet;
-use std::path::PathBuf;
 
 type TargetList = Vec<Target>;
 
@@ -40,42 +40,17 @@ async fn gather_touched_files(
 ) -> Result<TouchedFilePaths, WorkspaceError> {
     print_header("Gathering touched files");
 
-    let vcs = &workspace.vcs;
-    let default_branch = vcs.get_default_branch();
-    let current_branch = vcs.get_local_branch().await?;
-
-    // On default branch, so compare against self -1 revision
-    let touched_files_map = if vcs.is_default_branch(&current_branch) {
-        vcs.get_touched_files_against_previous_revision(default_branch)
-            .await?
-
-        // On a branch, so compare branch against base/default branch
-    } else {
-        let base = options
-            .base
-            .clone()
-            .unwrap_or_else(|| default_branch.to_owned());
-        let head = options.head.clone().unwrap_or_else(|| String::from("HEAD"));
-
-        vcs.get_touched_files_between_revisions(&base, &head)
-            .await?
-    };
-
-    let mut touched_files_to_print = vec![];
-    let touched_files: HashSet<PathBuf> = touched_files_map
-        .all
-        .iter()
-        .map(|f| {
-            touched_files_to_print.push(format!("  {}", color::file(f)));
-            workspace.root.join(path::normalize_separators(f))
-        })
-        .collect();
-
-    touched_files_to_print.sort();
-
-    println!("{}", touched_files_to_print.join("\n"));
-
-    Ok(touched_files)
+    query_touched_files(
+        workspace,
+        QueryTouchedFilesOptions {
+            base: options.base.clone(),
+            head: options.head.clone(),
+            log: true,
+            status: TouchedStatus::All,
+            upstream: true,
+        },
+    )
+    .await
 }
 
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.

@@ -56,33 +56,23 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectLanguage {
     JavaScript,
+    #[default]
     TypeScript,
     Unknown,
 }
 
-impl Default for ProjectLanguage {
-    fn default() -> Self {
-        ProjectLanguage::TypeScript
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {
     Application,
+    #[default]
     Library,
     Tool,
     Unknown,
-}
-
-impl Default for ProjectType {
-    fn default() -> Self {
-        ProjectType::Library
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]

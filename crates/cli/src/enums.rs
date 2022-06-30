@@ -19,3 +19,15 @@ pub enum LogLevel {
     Debug,
     Trace,
 }
+
+#[derive(ArgEnum, Clone, Copy, Debug, Display, Default)]
+pub enum TouchedStatus {
+    Added,
+    #[default]
+    All,
+    Deleted,
+    Modified,
+    Staged,
+    Unstaged,
+    Untracked,
+}

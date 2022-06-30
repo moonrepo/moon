@@ -4,8 +4,7 @@ use std::path::PathBuf;
 
 use crate::commands::bin::BinTools;
 use crate::commands::init::{InheritProjectsAs, PackageManager};
-use crate::commands::run::RunStatus;
-use crate::enums::{CacheMode, LogLevel};
+use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
@@ -143,7 +142,7 @@ pub enum Commands {
         // Affected
         #[clap(
             long,
-            help = "Only run target if affected by changed files",
+            help = "Only run target if affected by touched files",
             help_heading = HEADING_AFFECTED
         )]
         affected: bool,
@@ -151,11 +150,11 @@ pub enum Commands {
         #[clap(
             arg_enum,
             long,
-            help = "Filter affected files based on a change status",
+            help = "Filter affected files based on a touched status",
             help_heading = HEADING_AFFECTED,
             default_value_t
         )]
-        status: RunStatus,
+        status: TouchedStatus,
 
         #[clap(
             long,

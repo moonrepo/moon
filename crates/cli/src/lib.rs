@@ -103,7 +103,7 @@ pub async fn run_cli() {
                 RunOptions {
                     affected: *affected,
                     dependents: *dependents,
-                    status: status.clone(),
+                    status: *status,
                     passthrough: passthrough.clone(),
                     upstream: *upstream,
                 },

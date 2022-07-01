@@ -3,22 +3,23 @@ use moon_logger::{color, debug, trace};
 use moon_project::TouchedFilePaths;
 use moon_utils::path;
 use moon_workspace::{Workspace, WorkspaceError};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
 const TARGET: &str = "moon:query:touched-files";
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct QueryTouchedFilesResult {
     pub files: TouchedFilePaths,
     pub options: QueryTouchedFilesOptions,
 }
 
-#[derive(Clone, Default, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryTouchedFilesOptions {
     pub base: String,
     pub head: String,
+    #[serde(skip)]
     pub log: bool,
     pub status: TouchedStatus,
     pub upstream: bool,

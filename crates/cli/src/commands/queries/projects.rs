@@ -2,17 +2,17 @@ use moon_logger::{debug, trace};
 use moon_project::Project;
 use moon_utils::regex;
 use moon_workspace::{Workspace, WorkspaceError};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 const TARGET: &str = "moon:query:projects";
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct QueryProjectsResult {
     pub projects: Vec<Project>,
     pub options: QueryProjectsOptions,
 }
 
-#[derive(Clone, Default, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
     pub id: Option<String>,
     pub source: Option<String>,

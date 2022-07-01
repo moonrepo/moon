@@ -1,6 +1,6 @@
 mod app;
-mod commands;
-mod enums;
+pub mod commands;
+pub mod enums;
 mod helpers;
 
 use crate::commands::bin::bin;

@@ -17,6 +17,22 @@ const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 #[derive(Debug, Subcommand)]
 pub enum QueryCommands {
     #[clap(
+        name = "projects",
+        about = "Query for projects within the project graph.",
+        long_about = "Query for projects within the project graph. All options support regex patterns."
+    )]
+    Projects {
+        #[clap(long, help = "Filter projects that match this ID")]
+        id: Option<String>,
+
+        #[clap(long, help = "Filter projects that match this source path")]
+        source: Option<String>,
+
+        #[clap(long, help = "Filter projects that have the following tasks")]
+        tasks: Option<String>,
+    },
+
+    #[clap(
         name = "touched-files",
         about = "Query for touched files between revisions."
     )]

@@ -168,21 +168,27 @@ impl Task {
                 for resolved_arg in token_resolver.resolve_func(arg, Some(self))? {
                     // When running within a project:
                     //  - Project paths are relative and start with "./"
-                    //  - Workspace paths are absolute
+                    //  - Workspace paths are relative up to the root
                     // When running from the workspace:
                     //  - All paths are absolute
-                    if run_in_project && resolved_arg.starts_with(token_resolver.data.project_root)
+                    if run_in_project
+                        && resolved_arg.starts_with(token_resolver.data.workspace_root)
                     {
-                        args.push(format!(
-                            ".{}{}",
-                            std::path::MAIN_SEPARATOR,
-                            resolved_arg
-                                .strip_prefix(token_resolver.data.project_root)
-                                .unwrap()
-                                .to_string_lossy()
-                        ));
+                        let rel_path =
+                            path::relative_from(&resolved_arg, token_resolver.data.project_root)
+                                .unwrap();
+
+                        if rel_path.starts_with("..") {
+                            args.push(rel_path.to_string_lossy().to_string());
+                        } else {
+                            args.push(format!(
+                                ".{}{}",
+                                std::path::MAIN_SEPARATOR,
+                                rel_path.to_string_lossy()
+                            ));
+                        }
                     } else {
-                        args.push(String::from(resolved_arg.to_string_lossy()));
+                        args.push(resolved_arg.to_string_lossy().to_string());
                     }
                 }
             } else if token_resolver.has_token_var(arg) {

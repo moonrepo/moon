@@ -5,7 +5,7 @@ use moon_config::{tsconfig::TsConfigJson, TypeScriptConfig};
 use moon_logger::{color, debug};
 use moon_project::Project;
 use moon_utils::is_ci;
-use pathdiff::diff_paths;
+use moon_utils::path::relative_from;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -97,7 +97,7 @@ pub async fn sync_project(
                 if let Some(tsconfig_json) = project.tsconfig_json.get_mut() {
                     let tsconfig_branch_name = &typescript_config.project_config_file_name;
                     let dep_ref_path = String::from(
-                        diff_paths(&dep_project.root, &project.root)
+                        relative_from(&dep_project.root, &project.root)
                             .unwrap_or_else(|| PathBuf::from("."))
                             .to_string_lossy(),
                     );

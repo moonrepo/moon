@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a new `@group` token that can be used be task `args` and `inputs`.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.62.

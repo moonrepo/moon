@@ -34,6 +34,7 @@ pub enum TokenType {
     Var(String),
 
     // File groups: token, group name
+    Group(String, String),
     Dirs(String, String),
     Files(String, String),
     Globs(String, String),
@@ -47,25 +48,14 @@ pub enum TokenType {
 impl TokenType {
     pub fn check_context(&self, context: &ResolverType) -> Result<(), ProjectError> {
         let allowed = match self {
-            TokenType::Dirs(_, _) => {
+            TokenType::Dirs(_, _)
+            | TokenType::Files(_, _)
+            | TokenType::Globs(_, _)
+            | TokenType::Group(_, _)
+            | TokenType::Root(_, _) => {
                 matches!(context, ResolverType::Args) || matches!(context, ResolverType::Inputs)
             }
-            TokenType::Files(_, _) => {
-                matches!(context, ResolverType::Args) || matches!(context, ResolverType::Inputs)
-            }
-            TokenType::Globs(_, _) => {
-                matches!(context, ResolverType::Args) || matches!(context, ResolverType::Inputs)
-            }
-            TokenType::In(_, _) => {
-                matches!(context, ResolverType::Args)
-            }
-            TokenType::Out(_, _) => {
-                matches!(context, ResolverType::Args)
-            }
-            TokenType::Root(_, _) => {
-                matches!(context, ResolverType::Args) || matches!(context, ResolverType::Inputs)
-            }
-            TokenType::Var(_) => {
+            TokenType::In(_, _) | TokenType::Out(_, _) | TokenType::Var(_) => {
                 matches!(context, ResolverType::Args)
             }
         };
@@ -85,6 +75,7 @@ impl TokenType {
             TokenType::Dirs(_, _) => "@dirs",
             TokenType::Files(_, _) => "@files",
             TokenType::Globs(_, _) => "@globs",
+            TokenType::Group(_, _) => "@group",
             TokenType::In(_, _) => "@in",
             TokenType::Out(_, _) => "@out",
             TokenType::Root(_, _) => "@root",
@@ -219,6 +210,9 @@ impl<'a> TokenResolver<'a> {
             "globs" => {
                 self.replace_file_group_tokens(TokenType::Globs(token.to_owned(), arg.to_owned()))
             }
+            "group" => {
+                self.replace_file_group_tokens(TokenType::Group(token.to_owned(), arg.to_owned()))
+            }
             "in" => self.replace_input_token(
                 TokenType::In(
                     token.to_owned(),
@@ -317,19 +311,18 @@ impl<'a> TokenResolver<'a> {
 
         match token_type {
             TokenType::Dirs(token, group) => {
-                for glob in get_file_group(&token, &group)?.dirs(workspace_root, project_root)? {
-                    results.push(glob);
-                }
+                results.extend(get_file_group(&token, &group)?.dirs(workspace_root, project_root)?);
             }
             TokenType::Files(token, group) => {
-                for file in get_file_group(&token, &group)?.files(workspace_root, project_root)? {
-                    results.push(file);
-                }
+                results
+                    .extend(get_file_group(&token, &group)?.files(workspace_root, project_root)?);
             }
             TokenType::Globs(token, group) => {
-                for dir in get_file_group(&token, &group)?.globs(workspace_root, project_root)? {
-                    results.push(dir);
-                }
+                results
+                    .extend(get_file_group(&token, &group)?.globs(workspace_root, project_root)?);
+            }
+            TokenType::Group(token, group) => {
+                results.extend(get_file_group(&token, &group)?.all(workspace_root, project_root)?);
             }
             TokenType::Root(token, group) => {
                 results.push(get_file_group(&token, &group)?.root(project_root)?);
@@ -999,6 +992,20 @@ mod tests {
 
             resolver
                 .resolve(&string_vec!["@globs(globs)"], None)
+                .unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "InvalidTokenContext(\"@group\", \"outputs\")")]
+        fn doesnt_support_group() {
+            let project_root = get_project_root();
+            let workspace_root = get_workspace_root();
+            let file_groups = create_file_groups();
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let resolver = TokenResolver::for_outputs(&metadata);
+
+            resolver
+                .resolve(&string_vec!["@group(group)"], None)
                 .unwrap();
         }
 

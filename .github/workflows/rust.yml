@@ -40,7 +40,7 @@ jobs:
         name: Check formatting
         with:
           command: fmt
-          args: --all
+          args: --all --check
   lint:
     name: Lint
     runs-on: ${{ matrix.os }}

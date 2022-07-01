@@ -3,14 +3,22 @@ use moon_logger::{color, debug, trace};
 use moon_project::TouchedFilePaths;
 use moon_utils::path;
 use moon_workspace::{Workspace, WorkspaceError};
+use serde::Serialize;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
 const TARGET: &str = "moon:query:touched-files";
 
+#[derive(Serialize)]
+pub struct QueryTouchedFilesResult {
+    pub files: TouchedFilePaths,
+    pub options: QueryTouchedFilesOptions,
+}
+
+#[derive(Clone, Default, Serialize)]
 pub struct QueryTouchedFilesOptions {
-    pub base: Option<String>,
-    pub head: Option<String>,
+    pub base: String,
+    pub head: String,
     pub log: bool,
     pub status: TouchedStatus,
     pub upstream: bool,
@@ -19,13 +27,21 @@ pub struct QueryTouchedFilesOptions {
 /// Query a list of files that have been modified between branches.
 pub async fn query_touched_files(
     workspace: &Workspace,
-    options: QueryTouchedFilesOptions,
+    options: &mut QueryTouchedFilesOptions,
 ) -> Result<TouchedFilePaths, WorkspaceError> {
     debug!(target: TARGET, "Querying for touched files");
 
     let vcs = &workspace.vcs;
     let default_branch = vcs.get_default_branch();
     let current_branch = vcs.get_local_branch().await?;
+
+    if options.base.is_empty() {
+        options.base = default_branch.to_owned();
+    }
+
+    if options.head.is_empty() {
+        options.head = "HEAD".to_string();
+    }
 
     // On default branch, so compare against self -1 revision
     let touched_files_map = if vcs.is_default_branch(&current_branch) {
@@ -40,17 +56,14 @@ pub async fn query_touched_files(
 
         // On a branch, so compare branch against upstream base/default branch
     } else if options.upstream {
-        let base = options.base.unwrap_or_else(|| default_branch.to_owned());
-        let head = options.head.unwrap_or_else(|| "HEAD".to_string());
-
         trace!(
             target: TARGET,
             "Against upstream using base \"{}\" with head \"{}\"",
-            base,
-            head,
+            options.base,
+            options.head,
         );
 
-        vcs.get_touched_files_between_revisions(&base, &head)
+        vcs.get_touched_files_between_revisions(&options.base, &options.head)
             .await?
 
         // Otherwise, check locally touched files

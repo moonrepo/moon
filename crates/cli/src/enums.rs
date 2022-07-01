@@ -1,4 +1,5 @@
 use clap::ArgEnum;
+use serde::Serialize;
 use strum_macros::Display;
 
 #[derive(ArgEnum, Clone, Debug, Default, Display)]
@@ -20,7 +21,8 @@ pub enum LogLevel {
     Trace,
 }
 
-#[derive(ArgEnum, Clone, Copy, Debug, Display, Default)]
+#[derive(ArgEnum, Clone, Copy, Debug, Display, Default, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum TouchedStatus {
     Added,
     #[default]

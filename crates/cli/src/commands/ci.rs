@@ -42,9 +42,9 @@ async fn gather_touched_files(
 
     query_touched_files(
         workspace,
-        QueryTouchedFilesOptions {
-            base: options.base.clone(),
-            head: options.head.clone(),
+        &mut QueryTouchedFilesOptions {
+            base: options.base.clone().unwrap_or_default(),
+            head: options.head.clone().unwrap_or_default(),
             log: true,
             status: TouchedStatus::All,
             upstream: true,

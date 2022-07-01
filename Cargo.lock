@@ -1321,6 +1321,8 @@ dependencies = [
  "moon_vcs",
  "moon_workspace",
  "predicates",
+ "serde",
+ "serde_json",
  "serial_test",
  "strum",
  "strum_macros",

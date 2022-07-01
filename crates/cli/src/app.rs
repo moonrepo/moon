@@ -15,6 +15,32 @@ const HEADING_AFFECTED: &str = "Affected by changes";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Debug, Subcommand)]
+pub enum QueryCommands {
+    #[clap(
+        name = "touched-files",
+        about = "Query for touched files between revisions."
+    )]
+    TouchedFiles {
+        #[clap(long, help = "Base branch, commit, or revision to compare against")]
+        base: Option<String>,
+
+        #[clap(long, help = "Current branch, commit, or revision to compare with")]
+        head: Option<String>,
+
+        #[clap(
+            arg_enum,
+            long,
+            help = "Filter files based on a touched status",
+            default_value_t
+        )]
+        status: TouchedStatus,
+
+        #[clap(long, help = "Compare against upstream using the base revision")]
+        upstream: bool,
+    },
+}
+
+#[derive(Debug, Subcommand)]
 pub enum Commands {
     // ENVIRONMENT
 
@@ -50,6 +76,8 @@ pub enum Commands {
         #[clap(long, help = "Skip prompts and use default values")]
         yes: bool,
     },
+
+    // TOOLCHAIN
 
     // moon bin <tool>
     #[clap(
@@ -169,6 +197,19 @@ pub enum Commands {
             help = "Arguments to pass through to the underlying command"
         )]
         passthrough: Vec<String>,
+    },
+
+    // OTHER
+
+    // moon query <operation>
+    #[clap(
+        name = "query",
+        about = "Query information about moon, the environment, and pipeline.",
+        long_about = "Query information about moon, the environment, and pipeline. Each operation will output JSON so that it may be consumed easily."
+    )]
+    Query {
+        #[clap(subcommand)]
+        command: QueryCommands,
     },
 }
 

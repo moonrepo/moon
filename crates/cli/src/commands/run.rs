@@ -109,12 +109,10 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     if options.affected {
         let touched_files = query_touched_files(
             &workspace,
-            QueryTouchedFilesOptions {
-                base: None,
-                head: None,
-                log: false,
+            &mut QueryTouchedFilesOptions {
                 status: options.status,
                 upstream: options.upstream,
+                ..QueryTouchedFilesOptions::default()
             },
         )
         .await?;

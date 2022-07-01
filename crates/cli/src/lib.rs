@@ -8,11 +8,12 @@ use crate::commands::ci::{ci, CiOptions};
 use crate::commands::init::{init, InitOptions};
 use crate::commands::project::project;
 use crate::commands::project_graph::project_graph;
+use crate::commands::query::{query_touched_files, QueryTouchedFilesOptions};
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::teardown::teardown;
 use crate::helpers::setup_colors;
-use app::{App, Commands};
+use app::{App, Commands, QueryCommands};
 use clap::Parser;
 use console::Term;
 use enums::LogLevel;
@@ -90,6 +91,23 @@ pub async fn run_cli() {
         }
         Commands::Project { id, json } => project(id, *json).await,
         Commands::ProjectGraph { id } => project_graph(id).await,
+        Commands::Query { command } => match command {
+            QueryCommands::TouchedFiles {
+                base,
+                head,
+                status,
+                upstream,
+            } => {
+                query_touched_files(&mut QueryTouchedFilesOptions {
+                    base: base.clone().unwrap_or_default(),
+                    head: head.clone().unwrap_or_default(),
+                    log: false,
+                    status: *status,
+                    upstream: *upstream,
+                })
+                .await
+            }
+        },
         Commands::Run {
             target,
             affected,

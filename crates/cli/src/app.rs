@@ -51,7 +51,7 @@ pub enum QueryCommands {
         )]
         status: TouchedStatus,
 
-        #[clap(long, help = "Compare against upstream using the base revision")]
+        #[clap(long, help = "Compare against upstream instead of using local state")]
         upstream: bool,
     },
 }

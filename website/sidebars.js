@@ -89,6 +89,7 @@ const sidebars = {
 				'commands/init',
 				'commands/project',
 				'commands/project-graph',
+				'commands/query',
 				'commands/run',
 				'commands/setup',
 				'commands/teardown',

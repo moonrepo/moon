@@ -9,12 +9,6 @@ use std::path::PathBuf;
 
 const TARGET: &str = "moon:query:touched-files";
 
-#[derive(Deserialize, Serialize)]
-pub struct QueryTouchedFilesResult {
-    pub files: TouchedFilePaths,
-    pub options: QueryTouchedFilesOptions,
-}
-
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryTouchedFilesOptions {
     pub base: String,
@@ -23,6 +17,12 @@ pub struct QueryTouchedFilesOptions {
     pub log: bool,
     pub status: TouchedStatus,
     pub upstream: bool,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct QueryTouchedFilesResult {
+    pub files: TouchedFilePaths,
+    pub options: QueryTouchedFilesOptions,
 }
 
 /// Query a list of files that have been modified between branches.

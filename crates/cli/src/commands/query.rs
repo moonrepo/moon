@@ -1,7 +1,5 @@
-pub use crate::commands::queries::projects::{
-    query_projects, QueryProjectsOptions, QueryProjectsResult,
-};
-pub use crate::commands::queries::touched_files::{
+pub use crate::queries::projects::{query_projects, QueryProjectsOptions, QueryProjectsResult};
+pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use moon_workspace::Workspace;

@@ -1,5 +1,5 @@
-use crate::commands::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use crate::enums::TouchedStatus;
+use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use console::Term;
 use moon_logger::color;
 use moon_project::Target;

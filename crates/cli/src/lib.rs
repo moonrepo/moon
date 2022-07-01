@@ -2,6 +2,7 @@ mod app;
 pub mod commands;
 pub mod enums;
 mod helpers;
+pub mod queries;
 
 use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};

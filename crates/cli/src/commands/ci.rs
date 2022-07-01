@@ -1,6 +1,6 @@
-use crate::commands::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use crate::commands::run::render_result_stats;
 use crate::enums::TouchedStatus;
+use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use console::Term;
 use itertools::Itertools;
 use moon_logger::{color, debug};

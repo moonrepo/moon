@@ -1,6 +1,6 @@
-use moon_cli::commands::queries::projects::QueryProjectsResult;
-use moon_cli::commands::queries::touched_files::QueryTouchedFilesResult;
 use moon_cli::enums::TouchedStatus;
+use moon_cli::queries::projects::QueryProjectsResult;
+use moon_cli::queries::touched_files::QueryTouchedFilesResult;
 use moon_utils::string_vec;
 use moon_utils::test::{
     create_fixtures_sandbox, create_moon_command_in, get_assert_output, run_git_command,

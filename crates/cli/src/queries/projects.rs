@@ -6,17 +6,17 @@ use serde::{Deserialize, Serialize};
 
 const TARGET: &str = "moon:query:projects";
 
-#[derive(Deserialize, Serialize)]
-pub struct QueryProjectsResult {
-    pub projects: Vec<Project>,
-    pub options: QueryProjectsOptions,
-}
-
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
     pub id: Option<String>,
     pub source: Option<String>,
     pub tasks: Option<String>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct QueryProjectsResult {
+    pub projects: Vec<Project>,
+    pub options: QueryProjectsOptions,
 }
 
 pub async fn query_projects(

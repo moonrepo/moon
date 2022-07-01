@@ -14,8 +14,8 @@ created in the workspace root).
 
 <CreateDepTabs dep="vite" />
 
-If you plan on using Vitest, run the following command in the project root, otherwise skip to the
-setup section.
+If you plan on using Vitest, run the following command to add the `vitest` dependency to a project,
+otherwise skip to the setup section.
 
 <AddDepsTabs dep="vitest" package="<project>" dev />
 
@@ -25,16 +25,20 @@ Since Vite is per-project, the associated moon tasks should be defined in each p
 `project.yml` file.
 
 ```yaml title="<project>/project.yml"
+fileGroups:
+	vite:
+		- 'src/**/*'
+		- 'env.d.ts'
+		- 'index.html'
+		- 'vite.config.*'
+
 tasks:
 	# Development server
 	dev:
 		command: 'vite'
 		args: 'dev'
 		inputs:
-			- 'src/**/*'
-			- 'env.d.ts'
-			- 'index.html'
-			- 'vite.config.*'
+			- '@group(vite)'
 		options:
 			runInCI: false
 
@@ -43,10 +47,7 @@ tasks:
 		command: 'vite'
 		args: 'build'
 		inputs:
-			- 'src/**/*'
-			- 'env.d.ts'
-			- 'index.html'
-			- 'vite.config.*'
+			- '@group(vite)'
 		outputs:
 			- 'dist'
 
@@ -55,10 +56,7 @@ tasks:
 		command: 'vite'
 		args: 'preview'
 		inputs:
-			- 'src/**/*'
-			- 'env.d.ts'
-			- 'index.html'
-			- 'vite.config.*'
+			- '@group(vite)'
 		deps:
 			- '~:build'
 		options:
@@ -74,9 +72,8 @@ tasks:
 			# Dont fail if a project has no tests
 			- '--passWithNoTests'
 		inputs:
-			- 'src/**/*'
+			- '@group(vite)'
 			- 'tests/**/*'
-			- 'vite.config.*'
 			- 'vitest.config.*'
 ```
 

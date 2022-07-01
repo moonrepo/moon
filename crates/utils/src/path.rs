@@ -3,6 +3,8 @@ use moon_error::MoonError;
 use path_clean::PathClean;
 use std::path::{Path, PathBuf};
 
+pub use pathdiff::diff_paths as relative_from;
+
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
 pub fn expand_root_path(file: &str, workspace_root: &Path, project_root: &Path) -> PathBuf {
     if file.starts_with('/') {

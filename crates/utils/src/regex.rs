@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use moon_error::MoonError;
 use regex::Regex;
 
 lazy_static! {
@@ -16,6 +17,10 @@ lazy_static! {
     pub static ref TOKEN_FUNC_PATTERN: Regex = Regex::new(&format!("^@([a-z]+)\\({}\\)$", *TOKEN_GROUP)).unwrap();
     pub static ref TOKEN_FUNC_ANYWHERE_PATTERN: Regex = Regex::new(&format!("@([a-z]+)\\({}\\)", *TOKEN_GROUP)).unwrap();
     pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$([a-zA-Z]+)").unwrap();
+}
+
+pub fn create_regex(value: &str) -> Result<Regex, MoonError> {
+    Regex::new(value).map_err(MoonError::Regex)
 }
 
 pub fn clean_id(id: &str) -> String {

@@ -1321,6 +1321,8 @@ dependencies = [
  "moon_vcs",
  "moon_workspace",
  "predicates",
+ "serde",
+ "serde_json",
  "serial_test",
  "strum",
  "strum_macros",
@@ -1354,6 +1356,7 @@ dependencies = [
 name = "moon_error"
 version = "0.1.0"
 dependencies = [
+ "regex",
  "serde_json",
  "thiserror",
 ]

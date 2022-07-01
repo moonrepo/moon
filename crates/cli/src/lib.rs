@@ -103,16 +103,18 @@ pub async fn run_cli() {
             }
             QueryCommands::TouchedFiles {
                 base,
+                default_branch,
                 head,
+                local,
                 status,
-                upstream,
             } => {
                 query::touched_files(&mut QueryTouchedFilesOptions {
                     base: base.clone().unwrap_or_default(),
+                    default_branch: *default_branch,
                     head: head.clone().unwrap_or_default(),
+                    local: *local,
                     log: false,
                     status: *status,
-                    upstream: *upstream,
                 })
                 .await
             }

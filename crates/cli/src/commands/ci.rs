@@ -43,11 +43,12 @@ async fn gather_touched_files(
     query_touched_files(
         workspace,
         &mut QueryTouchedFilesOptions {
+            default_branch: true,
             base: options.base.clone().unwrap_or_default(),
             head: options.head.clone().unwrap_or_default(),
+            local: false,
             log: true,
             status: TouchedStatus::All,
-            upstream: true,
         },
     )
     .await

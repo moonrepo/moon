@@ -110,8 +110,8 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
         let touched_files = query_touched_files(
             &workspace,
             &mut QueryTouchedFilesOptions {
+                local: !options.upstream,
                 status: options.status,
-                upstream: options.upstream,
                 ..QueryTouchedFilesOptions::default()
             },
         )

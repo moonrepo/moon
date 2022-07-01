@@ -34,14 +34,24 @@ pub enum QueryCommands {
 
     #[clap(
         name = "touched-files",
-        about = "Query for touched files between revisions."
+        about = "Query for touched files between revisions.",
+        rename_all = "camelCase"
     )]
     TouchedFiles {
         #[clap(long, help = "Base branch, commit, or revision to compare against")]
         base: Option<String>,
 
+        #[clap(
+            long,
+            help = "When on the default branch, compare against the previous revision"
+        )]
+        default_branch: bool,
+
         #[clap(long, help = "Current branch, commit, or revision to compare with")]
         head: Option<String>,
+
+        #[clap(long, help = "Gather files from you local state instead of upstream")]
+        local: bool,
 
         #[clap(
             arg_enum,
@@ -50,9 +60,6 @@ pub enum QueryCommands {
             default_value_t
         )]
         status: TouchedStatus,
-
-        #[clap(long, help = "Compare against upstream instead of using local state")]
-        upstream: bool,
     },
 }
 

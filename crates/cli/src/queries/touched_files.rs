@@ -10,13 +10,15 @@ use std::path::PathBuf;
 const TARGET: &str = "moon:query:touched-files";
 
 #[derive(Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QueryTouchedFilesOptions {
     pub base: String,
+    pub default_branch: bool,
     pub head: String,
+    pub local: bool,
     #[serde(skip)]
     pub log: bool,
     pub status: TouchedStatus,
-    pub upstream: bool,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -45,7 +47,7 @@ pub async fn query_touched_files(
     }
 
     // On default branch, so compare against self -1 revision
-    let touched_files_map = if vcs.is_default_branch(&current_branch) {
+    let touched_files_map = if options.default_branch && vcs.is_default_branch(&current_branch) {
         trace!(
             target: TARGET,
             "On default branch {}, comparing against previous revision",
@@ -56,7 +58,7 @@ pub async fn query_touched_files(
             .await?
 
         // On a branch, so compare branch against upstream base/default branch
-    } else if options.upstream {
+    } else if !options.local {
         trace!(
             target: TARGET,
             "Against upstream using base \"{}\" with head \"{}\"",

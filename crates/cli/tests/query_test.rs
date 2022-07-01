@@ -103,13 +103,7 @@ mod touched_files {
             .arg("query")
             .arg("touched-files")
             .args([
-                "--base",
-                "master",
-                "--head",
-                "branch",
-                "--status",
-                "deleted",
-                "--upstream",
+                "--base", "master", "--head", "branch", "--status", "deleted",
             ])
             .assert();
 
@@ -119,6 +113,6 @@ mod touched_files {
         assert_eq!(json.options.base, "master".to_string());
         assert_eq!(json.options.head, "branch".to_string());
         assert_eq!(json.options.status, TouchedStatus::Deleted);
-        assert!(json.options.upstream);
+        assert!(!json.options.local);
     }
 }

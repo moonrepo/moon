@@ -53,10 +53,12 @@ deleted, etc) using the current VCS state. These are the same queries that [`moo
 
 Touches files are determined using the following logic:
 
-- If the current branch is the [`vcs.defaultBranch`](../config/workspace#defaultbranch), then
-  compare against the previous revision of the default branch (`HEAD~1`).
-- If `--upstream` is provided, then compare the defined base (`--base`) against head (`--head`).
-- Otherwise, touched files are based on your local index (`git status`).
+- If `--defaultBranch` is provided, and the current branch is the
+  [`vcs.defaultBranch`](../config/workspace#defaultbranch), then compare against the previous
+  revision of the default branch (`HEAD~1`). This is what [continuous integration](../guides/ci)
+  uses.
+- If `--local` is provided, touched files are based on your local index only (`git status`).
+- Otherwise, then compare the defined base (`--base`) against head (`--head`).
 
 ```shell
 # Return all files
@@ -66,7 +68,7 @@ $ moon query touched-files
 $ moon query touched-files --status deleted
 
 # Return all files between 2 revisions
-$ moon query touched-files --upstream --base <branch> --head <commit>
+$ moon query touched-files --base <branch> --head <commit>
 ```
 
 This will return a list of absolute file paths with the following stsructure:
@@ -80,9 +82,10 @@ This will return a list of absolute file paths with the following stsructure:
 
 ### Options
 
+- `--defaultBranch` - When on the default branch, compare against the previous revision.
 - `--base <rev>` - Base branch, commit, or revision to compare against. Defaults to
   [`vcs.defaultBranch`](../config/workspace#defaultbranch).
 - `--head <rev>` - Current branch, commit, or revision to compare with. Defaults to `HEAD`.
+- `--local` - Gather files from you local state instead of upstream.
 - `--status <type>` - Filter files based on a touched status.
   - Types: `all` (default), `added`, `deleted`, `modified`, `staged`, `unstaged`, `untracked`
-- `--upstream` - Compare against upstream instead of using local state.

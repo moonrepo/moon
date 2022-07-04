@@ -14,7 +14,7 @@ pub use std::process::{ExitStatus, Output, Stdio};
 
 // Based on how Node.js executes Windows commands:
 // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
-fn create_windows_cmd() -> (String, TokioCommand) {
+fn create_windows_cmd(shell: Option<&str>) -> (String, TokioCommand) {
     let shell = env::var("COMSPEC")
         .or_else(|_| env::var("comspec"))
         .unwrap_or_else(|_| "cmd.exe".into());
@@ -37,7 +37,7 @@ fn create_windows_cmd() -> (String, TokioCommand) {
 }
 
 pub fn is_windows_script(bin: &str) -> bool {
-    bin.ends_with(".cmd") || bin.ends_with(".bat")
+    bin.ends_with(".cmd") || bin.ends_with(".bat") || bin.ends_with(".ps1")
 }
 
 pub fn output_to_string(data: &[u8]) -> String {
@@ -66,11 +66,11 @@ impl Command {
 
         // Referencing cmd.exe directly
         if bin_name == "cmd" || bin_name == "cmd.exe" {
-            (bin_name, cmd) = create_windows_cmd();
+            (bin_name, cmd) = create_windows_cmd(Some("cmd.exe"));
 
         // Referencing a batch script that needs to be ran with cmd.exe
         } else if is_windows_script(&bin_name) {
-            (bin_name, cmd) = create_windows_cmd();
+            (bin_name, cmd) = create_windows_cmd(None);
             cmd.arg(bin);
 
         // Assume a command exists on the system

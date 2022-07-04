@@ -17,9 +17,7 @@ pub use std::process::{ExitStatus, Output, Stdio};
 fn create_windows_cmd(shell: Option<&str>) -> (String, TokioCommand) {
     let shell = match shell {
         Some(s) => s.to_owned(),
-        None => env::var("COMSPEC")
-            .or_else(|_| env::var("comspec"))
-            .unwrap_or_else(|_| "cmd.exe".into()),
+        None => env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".into()),
     };
 
     let mut cmd = TokioCommand::new(&shell);

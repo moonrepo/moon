@@ -23,35 +23,10 @@ pub fn find_package(starting_dir: &Path, package_name: &str) -> Option<PathBuf> 
     }
 }
 
-#[cfg(windows)]
 pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> {
-    // powershell.exe
-    let ps1_path = starting_dir
-        .join(NODE.vendor_bins_dir)
-        .join(get_bin_name_suffix(bin_name, "ps1", true));
-
-    if ps1_path.exists() {
-        return Some(ps1_path);
-    }
-
-    // cmd.exe
-    let cmd_path = starting_dir
+    let bin_path = starting_dir
         .join(NODE.vendor_bins_dir)
         .join(get_bin_name_suffix(bin_name, "cmd", true));
-
-    if cmd_path.exists() {
-        return Some(cmd_path);
-    }
-
-    match starting_dir.parent() {
-        Some(dir) => find_package_bin(dir, bin_name),
-        None => None,
-    }
-}
-
-#[cfg(not(windows))]
-pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> {
-    let bin_path = starting_dir.join(NODE.vendor_bins_dir).join(bin_name);
 
     if bin_path.exists() {
         return Some(bin_path);
@@ -63,28 +38,8 @@ pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> 
     }
 }
 
-#[cfg(windows)]
 pub fn find_package_manager_bin(install_dir: &Path, bin_name: &str) -> PathBuf {
-    // powershell.exe
-    let ps1_path = install_dir.join(get_bin_name_suffix(bin_name, "ps1", true));
-
-    if ps1_path.exists() {
-        return Some(ps1_path);
-    }
-
-    // cmd.exe
-    let cmd_path = install_dir.join(get_bin_name_suffix(bin_name, "cmd", true));
-
-    if cmd_path.exists() {
-        return Some(cmd_path);
-    }
-
-    install_dir.join(bin_name)
-}
-
-#[cfg(not(windows))]
-pub fn find_package_manager_bin(install_dir: &Path, bin_name: &str) -> PathBuf {
-    install_dir.join("bin").join(bin_name)
+    install_dir.join(get_bin_name_suffix(bin_name, "cmd", false))
 }
 
 pub fn get_bin_name_suffix(name: &str, windows_ext: &str, flat: bool) -> String {

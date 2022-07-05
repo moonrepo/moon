@@ -1,18 +1,18 @@
 ---
-source: crates/workspace/src/dep_graph.rs
-assertion_line: 618
+source: crates/action-runner/tests/dep_graph_test.rs
+assertion_line: 243
 expression: graph.to_dot()
 ---
 digraph {
     0 [ label = "\"SetupToolchain\"" ]
-    1 [ label = "\"InstallNodeDeps\"" ]
-    2 [ label = "\"SyncProject(basic)\"" ]
+    1 [ label = "\"InstallDeps(Node)\"" ]
+    2 [ label = "\"SyncProject(Node, basic)\"" ]
     3 [ label = "\"RunTarget(basic:build)\"" ]
-    4 [ label = "\"SyncProject(build-a)\"" ]
-    5 [ label = "\"SyncProject(build-c)\"" ]
+    4 [ label = "\"SyncProject(Node, build-a)\"" ]
+    5 [ label = "\"SyncProject(Node, build-c)\"" ]
     6 [ label = "\"RunTarget(build-a:build)\"" ]
     7 [ label = "\"RunTarget(build-c:build)\"" ]
-    8 [ label = "\"SyncProject(build-b)\"" ]
+    8 [ label = "\"SyncProject(Node, build-b)\"" ]
     9 [ label = "\"RunTarget(build-b:build)\"" ]
     1 -> 0 [ ]
     2 -> 0 [ ]

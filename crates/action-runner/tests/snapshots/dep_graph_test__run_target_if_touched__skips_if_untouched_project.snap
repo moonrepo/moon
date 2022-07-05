@@ -1,13 +1,12 @@
 ---
-source: crates/workspace/src/dep_graph.rs
-assertion_line: 558
+source: crates/action-runner/tests/dep_graph_test.rs
+assertion_line: 352
 expression: graph.to_dot()
-
 ---
 digraph {
     0 [ label = "\"SetupToolchain\"" ]
-    1 [ label = "\"InstallNodeDeps\"" ]
-    2 [ label = "\"SyncProject(inputA)\"" ]
+    1 [ label = "\"InstallDeps(Node)\"" ]
+    2 [ label = "\"SyncProject(Node, inputA)\"" ]
     3 [ label = "\"RunTarget(inputA:a)\"" ]
     1 -> 0 [ ]
     2 -> 0 [ ]

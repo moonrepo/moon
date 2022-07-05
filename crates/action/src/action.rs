@@ -1,4 +1,3 @@
-use petgraph::graph::NodeIndex;
 use std::time::{Duration, Instant};
 
 pub struct Attempt {
@@ -43,7 +42,7 @@ pub struct Action {
 
     pub label: Option<String>,
 
-    pub node_index: NodeIndex,
+    pub node_index: usize,
 
     pub start_time: Instant,
 
@@ -51,12 +50,12 @@ pub struct Action {
 }
 
 impl Action {
-    pub fn new(node_index: NodeIndex) -> Self {
+    pub fn new(node_index: usize, label: Option<String>) -> Self {
         Action {
             attempts: None,
             duration: None,
             error: None,
-            label: None,
+            label,
             node_index,
             start_time: Instant::now(),
             status: ActionStatus::Running,

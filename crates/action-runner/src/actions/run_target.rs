@@ -1,17 +1,18 @@
-use crate::action::{Action, ActionStatus, Attempt};
-use crate::actions::hashing::create_target_hasher;
-use crate::errors::WorkspaceError;
-use crate::workspace::Workspace;
+use crate::actions::target::{
+    create_node_target_command, create_system_target_command, create_target_hasher,
+};
+use crate::context::ActionRunnerContext;
+use crate::errors::ActionRunnerError;
+use moon_action::{Action, ActionStatus, Attempt};
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
 use moon_logger::{color, debug, warn};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_checkpoint, Checkpoint};
-use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::process::{join_args, output_to_string, Command, Output};
-use moon_utils::{is_ci, is_test_env, path, string_vec, time};
+use moon_utils::{is_ci, is_test_env, path, time};
+use moon_workspace::Workspace;
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -21,7 +22,7 @@ async fn create_env_vars(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
-) -> Result<HashMap<String, String>, WorkspaceError> {
+) -> Result<HashMap<String, String>, ActionRunnerError> {
     let mut env_vars = HashMap::new();
 
     env_vars.insert(
@@ -59,140 +60,11 @@ async fn create_env_vars(
     Ok(env_vars)
 }
 
-fn create_node_options(task: &Task) -> Vec<String> {
-    string_vec![
-        // "--inspect", // Enable node inspector
-        "--preserve-symlinks",
-        "--title",
-        &task.target,
-        "--unhandled-rejections",
-        "throw",
-    ]
-}
-
-/// Runs a task command through our toolchain's installed Node.js instance.
-/// We accomplish this by executing the Node.js binary as a child process,
-/// while passing a file path to a package's node module binary (this is the file
-/// being executed). We then also pass arguments defined in the task.
-/// This would look something like the following:
-///
-/// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
-///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
-#[cfg(not(windows))]
-#[track_caller]
-fn create_node_target_command(
-    workspace: &Workspace,
-    project: &Project,
-    task: &Task,
-) -> Result<Command, WorkspaceError> {
-    let node = workspace.toolchain.get_node();
-    let mut cmd = node.get_bin_path();
-    let mut args = vec![];
-
-    match task.command.as_str() {
-        "node" => {
-            args.extend(create_node_options(task));
-        }
-        "npm" => {
-            cmd = node.get_npm().get_bin_path();
-        }
-        "pnpm" => {
-            cmd = node.get_pnpm().unwrap().get_bin_path();
-        }
-        "yarn" => {
-            cmd = node.get_yarn().unwrap().get_bin_path();
-        }
-        bin => {
-            let bin_path = node.find_package_bin(bin, &project.root)?;
-
-            args.extend(create_node_options(task));
-            args.push(path::path_to_string(&bin_path)?);
-        }
-    };
-
-    // Create the command
-    let mut command = Command::new(cmd);
-
-    command.args(&args).args(&task.args).envs(&task.env).env(
-        "PATH",
-        get_path_env_var(node.get_bin_path().parent().unwrap()),
-    );
-
-    Ok(command)
-}
-
-/// Windows works quite differently than other systems, so we cannot do the above.
-/// On Windows, the package binary is a ".cmd" file, which means it needs to run
-/// through "cmd.exe" and not "node.exe". Because of this, the order of operations
-/// is switched, and "node.exe" is detected through the `PATH` env var.
-#[cfg(windows)]
-#[track_caller]
-fn create_node_target_command(
-    workspace: &Workspace,
-    project: &Project,
-    task: &Task,
-) -> Result<Command, WorkspaceError> {
-    use moon_lang_node::node;
-
-    let node = workspace.toolchain.get_node();
-
-    let cmd = match task.command.as_str() {
-        "node" => node.get_bin_path().clone(),
-        "npm" => node.get_npm().get_bin_path().clone(),
-        "pnpm" => node.get_pnpm().unwrap().get_bin_path().clone(),
-        "yarn" => node.get_yarn().unwrap().get_bin_path().clone(),
-        bin => node.find_package_bin(bin, &project.root)?,
-    };
-
-    // Create the command
-    let mut command = Command::new(cmd);
-
-    command
-        .args(&task.args)
-        .envs(&task.env)
-        .env(
-            "PATH",
-            get_path_env_var(node.get_bin_path().parent().unwrap()),
-        )
-        .env(
-            "NODE_OPTIONS",
-            node::extend_node_options_env_var(&create_node_options(task).join(" ")),
-        );
-
-    Ok(command)
-}
-
-#[cfg(not(windows))]
-fn create_system_target_command(task: &Task, _cwd: &Path) -> Command {
-    let mut cmd = Command::new(&task.command);
-    cmd.args(&task.args).envs(&task.env);
-    cmd
-}
-
-#[cfg(windows)]
-fn create_system_target_command(task: &Task, cwd: &Path) -> Command {
-    use moon_utils::process::is_windows_script;
-
-    let mut cmd = Command::new(&task.command);
-
-    for arg in &task.args {
-        // cmd.exe requires an absolute path to batch files
-        if is_windows_script(arg) {
-            cmd.arg(cwd.join(arg));
-        } else {
-            cmd.arg(arg);
-        }
-    }
-
-    cmd.envs(&task.env);
-    cmd
-}
-
 async fn create_target_command(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
-) -> Result<Command, WorkspaceError> {
+) -> Result<Command, ActionRunnerError> {
     let working_dir = if task.options.run_from_workspace_root {
         &workspace.root
     } else {
@@ -223,12 +95,11 @@ async fn create_target_command(
 }
 
 pub async fn run_target(
-    workspace: Arc<RwLock<Workspace>>,
     action: &mut Action,
+    context: &ActionRunnerContext,
+    workspace: Arc<RwLock<Workspace>>,
     target_id: &str,
-    primary_target: &str,
-    passthrough_args: &[String],
-) -> Result<ActionStatus, WorkspaceError> {
+) -> Result<ActionStatus, ActionRunnerError> {
     debug!(
         target: LOG_TARGET,
         "Running target {}",
@@ -239,13 +110,14 @@ pub async fn run_target(
     let mut cache = workspace.cache.cache_run_target_state(target_id).await?;
 
     // Gather the project and task
-    let is_primary = primary_target == target_id;
+    let is_primary = context.primary_targets.contains(target_id);
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
 
     // Abort early if this build has already been cached/hashed
-    let hasher = create_target_hasher(&workspace, &project, task, passthrough_args).await?;
+    let hasher =
+        create_target_hasher(&workspace, &project, task, &context.passthrough_args).await?;
     let hash = hasher.to_hash();
 
     debug!(
@@ -275,7 +147,10 @@ pub async fn run_target(
 
     // Build the command to run based on the task
     let mut command = create_target_command(&workspace, &project, task).await?;
-    command.args(passthrough_args);
+
+    if !context.passthrough_args.is_empty() {
+        command.args(&context.passthrough_args);
+    }
 
     if workspace
         .config
@@ -302,7 +177,7 @@ pub async fn run_target(
             // Print label *before* output is streamed since it may stay open forever,
             // or it may use ANSI escape codes to alter the terminal.
             print_target_label(target_id, &attempt, attempt_total, Checkpoint::Pass);
-            print_target_command(&workspace, &project, task, passthrough_args);
+            print_target_command(&workspace, &project, task, &context.passthrough_args);
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
@@ -311,7 +186,7 @@ pub async fn run_target(
                 .await
         } else {
             print_target_label(target_id, &attempt, attempt_total, Checkpoint::Start);
-            print_target_command(&workspace, &project, task, passthrough_args);
+            print_target_command(&workspace, &project, task, &context.passthrough_args);
 
             // Otherwise we run the process in the background and write the output
             // once it has completed.
@@ -335,7 +210,9 @@ pub async fn run_target(
                     output = out;
                     break;
                 } else if attempt_index >= attempt_total {
-                    return Err(WorkspaceError::Moon(command.output_to_error(&out, false)));
+                    return Err(ActionRunnerError::Moon(
+                        command.output_to_error(&out, false),
+                    ));
                 } else {
                     attempt_index += 1;
 
@@ -349,7 +226,7 @@ pub async fn run_target(
             }
             // process itself failed
             Err(error) => {
-                return Err(WorkspaceError::Moon(error));
+                return Err(ActionRunnerError::Moon(error));
             }
         }
     }

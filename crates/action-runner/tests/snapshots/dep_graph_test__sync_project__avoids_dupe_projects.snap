@@ -1,0 +1,11 @@
+---
+source: crates/action-runner/tests/dep_graph_test.rs
+assertion_line: 504
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label = "\"SetupToolchain\"" ]
+    1 [ label = "\"SyncProject(Node, advanced)\"" ]
+    1 -> 0 [ ]
+}
+

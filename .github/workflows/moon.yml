@@ -13,6 +13,9 @@ on:
       - website/**
       - package.json
       - yarn.lock
+env:
+  CI_BASE: ${{ env.GITHUB_BASE_REF || 'master' }}
+  CI_HEAD: ${{ env.GITHUB_HEAD_REF || 'HEAD' }}
 jobs:
   ci:
     name: CI
@@ -60,6 +63,4 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: run
-          args: |
-            -- --color --log trace ci --base ${{ env.GITHUB_BASE_REF || 'master' }} --head ${{ env.
-            GITHUB_HEAD_REF || 'HEAD' }}
+          args: -- --color --log trace ci --base $CI_BASE --head $CI_HEAD

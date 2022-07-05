@@ -1,18 +1,20 @@
 mod app;
-mod commands;
-mod enums;
+pub mod commands;
+pub mod enums;
 mod helpers;
+pub mod queries;
 
 use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};
 use crate::commands::init::{init, InitOptions};
 use crate::commands::project::project;
 use crate::commands::project_graph::project_graph;
+use crate::commands::query::{self, QueryProjectsOptions, QueryTouchedFilesOptions};
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::teardown::teardown;
 use crate::helpers::setup_colors;
-use app::{App, Commands};
+use app::{App, Commands, QueryCommands};
 use clap::Parser;
 use console::Term;
 use enums::LogLevel;
@@ -90,6 +92,33 @@ pub async fn run_cli() {
         }
         Commands::Project { id, json } => project(id, *json).await,
         Commands::ProjectGraph { id } => project_graph(id).await,
+        Commands::Query { command } => match command {
+            QueryCommands::Projects { id, source, tasks } => {
+                query::projects(&QueryProjectsOptions {
+                    id: id.clone(),
+                    source: source.clone(),
+                    tasks: tasks.clone(),
+                })
+                .await
+            }
+            QueryCommands::TouchedFiles {
+                base,
+                default_branch,
+                head,
+                local,
+                status,
+            } => {
+                query::touched_files(&mut QueryTouchedFilesOptions {
+                    base: base.clone().unwrap_or_default(),
+                    default_branch: *default_branch,
+                    head: head.clone().unwrap_or_default(),
+                    local: *local,
+                    log: false,
+                    status: *status,
+                })
+                .await
+            }
+        },
         Commands::Run {
             target,
             affected,
@@ -103,7 +132,7 @@ pub async fn run_cli() {
                 RunOptions {
                     affected: *affected,
                     dependents: *dependents,
-                    status: status.clone(),
+                    status: *status,
                     passthrough: passthrough.clone(),
                     upstream: *upstream,
                 },

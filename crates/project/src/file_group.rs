@@ -35,7 +35,24 @@ impl FileGroup {
         self.files = files;
     }
 
-    /// Returns the file group as an expanded list of relative directory paths.
+    // Returns the file group as-is, with each file converted to an absolute path.
+    pub fn all(
+        &self,
+        workspace_root: &Path,
+        project_root: &Path,
+    ) -> Result<Vec<PathBuf>, ProjectError> {
+        let mut list = vec![];
+
+        for file in &self.files {
+            let path = expand_root_path(file, workspace_root, project_root);
+
+            list.push(path.to_owned());
+        }
+
+        Ok(list)
+    }
+
+    /// Returns the file group as an expanded list of directory paths.
     /// If a glob is detected, it will aggregate all directories found.
     pub fn dirs(
         &self,
@@ -45,7 +62,7 @@ impl FileGroup {
         self.walk(true, workspace_root, project_root)
     }
 
-    /// Returns the file group as an expanded list of relative file paths.
+    /// Returns the file group as an expanded list of file paths.
     /// If a glob is detected, it will aggregate all files found.
     pub fn files(
         &self,
@@ -161,6 +178,31 @@ mod tests {
             file_group.merge(string_vec!["*"]);
 
             assert_eq!(file_group.files, string_vec!["*"]);
+        }
+    }
+
+    mod all {
+        use super::*;
+
+        #[test]
+        fn returns_all() {
+            let workspace_root = get_fixtures_dir("base");
+            let project_root = workspace_root.join("files-and-dirs");
+            let file_group = FileGroup::new(
+                "id",
+                string_vec!["**/*", "file.js", "folder/index.ts", "/root.js", "/root/*"],
+            );
+
+            assert_eq!(
+                file_group.all(&workspace_root, &project_root).unwrap(),
+                vec![
+                    project_root.join("**/*"),
+                    project_root.join("file.js"),
+                    project_root.join("folder/index.ts"),
+                    workspace_root.join("root.js"),
+                    workspace_root.join("root/*")
+                ]
+            );
         }
     }
 

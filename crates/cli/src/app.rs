@@ -4,8 +4,7 @@ use std::path::PathBuf;
 
 use crate::commands::bin::BinTools;
 use crate::commands::init::{InheritProjectsAs, PackageManager};
-use crate::commands::run::RunStatus;
-use crate::enums::{CacheMode, LogLevel};
+use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
@@ -14,6 +13,55 @@ pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
 
 const HEADING_AFFECTED: &str = "Affected by changes";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
+
+#[derive(Debug, Subcommand)]
+pub enum QueryCommands {
+    #[clap(
+        name = "projects",
+        about = "Query for projects within the project graph.",
+        long_about = "Query for projects within the project graph. All options support regex patterns."
+    )]
+    Projects {
+        #[clap(long, help = "Filter projects that match this ID")]
+        id: Option<String>,
+
+        #[clap(long, help = "Filter projects that match this source path")]
+        source: Option<String>,
+
+        #[clap(long, help = "Filter projects that have the following tasks")]
+        tasks: Option<String>,
+    },
+
+    #[clap(
+        name = "touched-files",
+        about = "Query for touched files between revisions.",
+        rename_all = "camelCase"
+    )]
+    TouchedFiles {
+        #[clap(long, help = "Base branch, commit, or revision to compare against")]
+        base: Option<String>,
+
+        #[clap(
+            long,
+            help = "When on the default branch, compare against the previous revision"
+        )]
+        default_branch: bool,
+
+        #[clap(long, help = "Current branch, commit, or revision to compare with")]
+        head: Option<String>,
+
+        #[clap(long, help = "Gather files from you local state instead of upstream")]
+        local: bool,
+
+        #[clap(
+            arg_enum,
+            long,
+            help = "Filter files based on a touched status",
+            default_value_t
+        )]
+        status: TouchedStatus,
+    },
+}
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
@@ -51,6 +99,8 @@ pub enum Commands {
         #[clap(long, help = "Skip prompts and use default values")]
         yes: bool,
     },
+
+    // TOOLCHAIN
 
     // moon bin <tool>
     #[clap(
@@ -143,7 +193,7 @@ pub enum Commands {
         // Affected
         #[clap(
             long,
-            help = "Only run target if affected by changed files",
+            help = "Only run target if affected by touched files",
             help_heading = HEADING_AFFECTED
         )]
         affected: bool,
@@ -151,11 +201,11 @@ pub enum Commands {
         #[clap(
             arg_enum,
             long,
-            help = "Filter affected files based on a change status",
+            help = "Filter affected files based on a touched status",
             help_heading = HEADING_AFFECTED,
             default_value_t
         )]
-        status: RunStatus,
+        status: TouchedStatus,
 
         #[clap(
             long,
@@ -170,6 +220,19 @@ pub enum Commands {
             help = "Arguments to pass through to the underlying command"
         )]
         passthrough: Vec<String>,
+    },
+
+    // OTHER
+
+    // moon query <operation>
+    #[clap(
+        name = "query",
+        about = "Query information about moon, the environment, and pipeline.",
+        long_about = "Query information about moon, the environment, and pipeline. Each operation will output JSON so that it may be consumed easily."
+    )]
+    Query {
+        #[clap(subcommand)]
+        command: QueryCommands,
     },
 }
 

@@ -1,3 +1,4 @@
+use regex::Error as RegexError;
 use serde_json::Error as JsonError;
 use std::io::{Error as IoError, ErrorKind as IoErrorKind};
 use std::path::PathBuf;
@@ -35,6 +36,9 @@ pub enum MoonError {
 
     #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code.\n<muted>{2}</muted>")]
     ProcessNonZeroWithOutput(String, i32, String),
+
+    #[error(transparent)]
+    Regex(#[from] RegexError),
 
     #[error("{0}")]
     Unknown(#[source] IoError),

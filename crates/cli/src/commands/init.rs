@@ -20,8 +20,9 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
-#[derive(ArgEnum, Clone, Debug)]
+#[derive(ArgEnum, Clone, Debug, Default)]
 pub enum PackageManager {
+    #[default]
     Npm,
     Pnpm,
     Yarn,
@@ -37,14 +38,9 @@ impl PackageManager {
     }
 }
 
-impl Default for PackageManager {
-    fn default() -> Self {
-        PackageManager::Npm
-    }
-}
-
-#[derive(ArgEnum, Clone, Debug)]
+#[derive(ArgEnum, Clone, Debug, Default)]
 pub enum InheritProjectsAs {
+    #[default]
     None,
     GlobsList,
     ProjectsMap,
@@ -57,12 +53,6 @@ impl InheritProjectsAs {
             InheritProjectsAs::GlobsList => 1,
             InheritProjectsAs::ProjectsMap => 2,
         }
-    }
-}
-
-impl Default for InheritProjectsAs {
-    fn default() -> Self {
-        InheritProjectsAs::None
     }
 }
 

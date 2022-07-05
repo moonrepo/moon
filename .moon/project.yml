@@ -42,7 +42,7 @@ tasks:
     args:
       - '--cache'
       - '--cache-location'
-      - '.eslintcache'
+      - './.eslintcache'
       - '--color'
       - '--ext'
       - '.js,.ts,.tsx'

@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a new `@group` token that can be used be task `args` and `inputs`.
+- Added a `moon query` command for querying information about moon, the environment, and more.
+  - To start, `moon query touched-files` can be used to query touched files. The same files
+    `moon ci` and `moon run` use.
+  - Also `moon query projects` can be used to query about projects in the project graph.
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.62.
+
 ## 0.5.0
 
 #### 🚀 Updates

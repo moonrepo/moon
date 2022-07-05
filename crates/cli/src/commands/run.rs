@@ -1,71 +1,20 @@
-use clap::ArgEnum;
+use crate::enums::TouchedStatus;
+use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use console::Term;
 use moon_logger::color;
-use moon_project::{Target, TouchedFilePaths};
+use moon_project::Target;
 use moon_terminal::ExtendedTerm;
 use moon_utils::time;
-use moon_workspace::{Action, ActionRunner, ActionStatus, DepGraph, Workspace, WorkspaceError};
-use std::collections::HashSet;
+use moon_workspace::{Action, ActionRunner, ActionStatus, DepGraph, Workspace};
 use std::string::ToString;
 use std::time::Duration;
-use strum_macros::Display;
-
-#[derive(ArgEnum, Clone, Debug, Display)]
-pub enum RunStatus {
-    Added,
-    All,
-    Deleted,
-    Modified,
-    Staged,
-    Unstaged,
-    Untracked,
-}
-
-impl Default for RunStatus {
-    fn default() -> Self {
-        RunStatus::All
-    }
-}
 
 pub struct RunOptions {
     pub affected: bool,
     pub dependents: bool,
-    pub status: RunStatus,
+    pub status: TouchedStatus,
     pub passthrough: Vec<String>,
     pub upstream: bool,
-}
-
-async fn get_touched_files(
-    workspace: &Workspace,
-    status: &RunStatus,
-    upstream: bool,
-) -> Result<TouchedFilePaths, WorkspaceError> {
-    let vcs = &workspace.vcs;
-
-    let touched_files = if upstream {
-        vcs.get_touched_files_between_revisions(vcs.get_default_branch(), "HEAD")
-            .await?
-    } else {
-        vcs.get_touched_files().await?
-    };
-
-    let files = match status {
-        RunStatus::Added => touched_files.added,
-        RunStatus::All => touched_files.all,
-        RunStatus::Deleted => touched_files.deleted,
-        RunStatus::Modified => touched_files.modified,
-        RunStatus::Staged => touched_files.staged,
-        RunStatus::Unstaged => touched_files.unstaged,
-        RunStatus::Untracked => touched_files.untracked,
-    };
-
-    let mut touched = HashSet::new();
-
-    for file in &files {
-        touched.insert(workspace.root.join(file));
-    }
-
-    Ok(touched)
 }
 
 pub fn render_result_stats(
@@ -158,13 +107,21 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     let mut dep_graph = DepGraph::default();
 
     if options.affected {
-        let touched_files =
-            get_touched_files(&workspace, &options.status, options.upstream).await?;
+        let touched_files = query_touched_files(
+            &workspace,
+            &mut QueryTouchedFilesOptions {
+                local: !options.upstream,
+                status: options.status,
+                ..QueryTouchedFilesOptions::default()
+            },
+        )
+        .await?;
+
         let inserted_count =
             dep_graph.run_target(&target, &workspace.projects, Some(&touched_files))?;
 
         if inserted_count == 0 {
-            if matches!(options.status, RunStatus::All) {
+            if matches!(options.status, TouchedStatus::All) {
                 println!(
                     "Target {} not affected by touched files",
                     color::target(target_id)

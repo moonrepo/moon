@@ -42,15 +42,15 @@ impl Git {
 
     async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<String> {
         let candidates = [
-            base.to_owned(),
-            format!("origin/{}", base),
-            format!("upstream/{}", base),
+            (base.to_owned(), head.to_owned()),
+            (format!("origin/{}", base), format!("origin/{}", head)),
+            (format!("upstream/{}", base), format!("upstream/{}", head)),
         ];
 
-        for candidate in candidates {
+        for (base, head) in candidates {
             if let Ok(hash) = self
                 .run_command(
-                    &mut self.create_command(vec!["merge-base", &candidate, head]),
+                    &mut self.create_command(vec!["merge-base", &base, &head]),
                     true,
                 )
                 .await

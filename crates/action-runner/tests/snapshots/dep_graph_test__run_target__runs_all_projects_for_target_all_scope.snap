@@ -1,0 +1,35 @@
+---
+source: crates/action-runner/tests/dep_graph_test.rs
+assertion_line: 243
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label = "\"SetupToolchain\"" ]
+    1 [ label = "\"InstallDeps(Node)\"" ]
+    2 [ label = "\"SyncProject(Node, basic)\"" ]
+    3 [ label = "\"RunTarget(basic:build)\"" ]
+    4 [ label = "\"SyncProject(Node, build-a)\"" ]
+    5 [ label = "\"SyncProject(Node, build-c)\"" ]
+    6 [ label = "\"RunTarget(build-a:build)\"" ]
+    7 [ label = "\"RunTarget(build-c:build)\"" ]
+    8 [ label = "\"SyncProject(Node, build-b)\"" ]
+    9 [ label = "\"RunTarget(build-b:build)\"" ]
+    1 -> 0 [ ]
+    2 -> 0 [ ]
+    3 -> 1 [ ]
+    3 -> 2 [ ]
+    4 -> 0 [ ]
+    5 -> 0 [ ]
+    4 -> 5 [ ]
+    4 -> 2 [ ]
+    6 -> 1 [ ]
+    6 -> 4 [ ]
+    6 -> 3 [ ]
+    7 -> 1 [ ]
+    7 -> 5 [ ]
+    6 -> 7 [ ]
+    8 -> 0 [ ]
+    9 -> 1 [ ]
+    9 -> 8 [ ]
+}
+

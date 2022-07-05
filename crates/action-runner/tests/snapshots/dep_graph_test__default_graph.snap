@@ -1,0 +1,9 @@
+---
+source: crates/action-runner/tests/dep_graph_test.rs
+assertion_line: 78
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label = "\"SetupToolchain\"" ]
+}
+

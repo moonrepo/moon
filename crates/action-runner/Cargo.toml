@@ -9,5 +9,11 @@ moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
+moon_utils = { path = "../utils" }
 petgraph = "0.6.0"
 thiserror = "1.0.31"
+tokio = { version = "1.18.2", features = ["full"] }
+
+[dev-dependencies]
+moon_cache = { path = "../cache" }
+insta = "1.14.0"

@@ -26,7 +26,7 @@ impl PnpmTool {
         let install_dir = node.get_install_dir()?.clone();
 
         Ok(PnpmTool {
-            bin_path: install_dir.join(node::get_bin_name_suffix("pnpm", "cmd", false)),
+            bin_path: node::find_package_manager_bin(&install_dir, "pnpm"),
             config: config.to_owned(),
             install_dir,
             log_target: String::from("moon:toolchain:pnpm"),
@@ -120,10 +120,7 @@ impl Installable<NodeTool> for PnpmTool {
 impl Executable<NodeTool> for PnpmTool {
     async fn find_bin_path(&mut self, node: &NodeTool) -> Result<(), ToolchainError> {
         // If the global has moved, be sure to reference it
-        let bin_path = node
-            .get_npm()
-            .get_global_dir()?
-            .join(node::get_bin_name_suffix("pnpm", "cmd", false));
+        let bin_path = node::find_package_manager_bin(node.get_npm().get_global_dir()?, "pnpm");
 
         if bin_path.exists() {
             self.bin_path = bin_path;

@@ -14,10 +14,11 @@ pub use std::process::{ExitStatus, Output, Stdio};
 
 // Based on how Node.js executes Windows commands:
 // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
-fn create_windows_cmd() -> (String, TokioCommand) {
-    let shell = env::var("COMSPEC")
-        .or_else(|_| env::var("comspec"))
-        .unwrap_or_else(|_| "cmd.exe".into());
+fn create_windows_cmd(shell: Option<&str>) -> (String, TokioCommand) {
+    let shell = match shell {
+        Some(s) => s.to_owned(),
+        None => env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".into()),
+    };
 
     let mut cmd = TokioCommand::new(&shell);
 
@@ -36,8 +37,16 @@ fn create_windows_cmd() -> (String, TokioCommand) {
     )
 }
 
+fn detect_windows_cmd(bin: &str) -> (String, TokioCommand) {
+    if bin.ends_with(".ps1") {
+        create_windows_cmd(Some("powershell.exe"))
+    } else {
+        create_windows_cmd(None)
+    }
+}
+
 pub fn is_windows_script(bin: &str) -> bool {
-    bin.ends_with(".cmd") || bin.ends_with(".bat")
+    bin.ends_with(".cmd") || bin.ends_with(".bat") || bin.ends_with(".ps1")
 }
 
 pub fn output_to_string(data: &[u8]) -> String {
@@ -66,11 +75,15 @@ impl Command {
 
         // Referencing cmd.exe directly
         if bin_name == "cmd" || bin_name == "cmd.exe" {
-            (bin_name, cmd) = create_windows_cmd();
+            (bin_name, cmd) = create_windows_cmd(Some("cmd.exe"));
+
+            // Referencing powershell.exe directly
+        } else if bin_name == "powershell" || bin_name == "powershell.exe" {
+            (bin_name, cmd) = create_windows_cmd(Some("powershell.exe"));
 
         // Referencing a batch script that needs to be ran with cmd.exe
         } else if is_windows_script(&bin_name) {
-            (bin_name, cmd) = create_windows_cmd();
+            (bin_name, cmd) = detect_windows_cmd(&bin_name);
             cmd.arg(bin);
 
         // Assume a command exists on the system

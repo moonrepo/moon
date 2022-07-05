@@ -29,7 +29,7 @@ impl NpmTool {
         let install_dir = node.get_install_dir()?.clone();
 
         Ok(NpmTool {
-            bin_path: install_dir.join(node::get_bin_name_suffix("npm", "cmd", false)),
+            bin_path: node::find_package_manager_bin(&install_dir, "npm"),
             config: config.to_owned(),
             global_install_dir: None,
             install_dir,
@@ -180,9 +180,7 @@ impl Installable<NodeTool> for NpmTool {
 impl Executable<NodeTool> for NpmTool {
     async fn find_bin_path(&mut self, _node: &NodeTool) -> Result<(), ToolchainError> {
         // If the global has moved, be sure to reference it
-        let bin_path = self
-            .get_global_dir()?
-            .join(node::get_bin_name_suffix("npm", "cmd", false));
+        let bin_path = node::find_package_manager_bin(self.get_global_dir()?, "npm");
 
         if bin_path.exists() {
             self.bin_path = bin_path;
@@ -222,13 +220,13 @@ impl PackageManager<NodeTool> for NpmTool {
 
         exec_args.extend(args);
 
-        let bin_dir = toolchain.get_node().get_install_dir()?;
-        let npx_path = bin_dir.join(node::get_bin_name_suffix("npx", "cmd", false));
+        let install_dir = toolchain.get_node().get_install_dir()?;
+        let npx_path = node::find_package_manager_bin(install_dir, "npx");
 
         Command::new(&npx_path)
             .args(exec_args)
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(bin_dir))
+            .env("PATH", get_path_env_var(install_dir))
             .exec_stream_output()
             .await?;
 

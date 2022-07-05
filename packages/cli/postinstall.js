@@ -4,15 +4,18 @@
 const fs = require('fs');
 const path = require('path');
 
-const platform =
-	process.platform === 'win32'
-		? 'windows'
-		: process.platform === 'darwin'
-		? 'macos'
-		: process.platform;
+const isMoonLocal =
+	fs.existsSync(path.join(__dirname, '../../.moon')) &&
+	fs.existsSync(path.join(__dirname, '../../crates'));
+
+const isLinux = process.platform === 'linux';
+const isMacos = process.platform === 'darwin';
+const isWindows = process.platform === 'win32';
+
+const platform = isWindows ? 'windows' : isMacos ? 'macos' : process.platform;
 const parts = [platform, process.arch];
 
-if (process.platform === 'linux') {
+if (isLinux) {
 	const { familySync } = require('detect-libc');
 
 	if (familySync() === 'musl') {
@@ -22,11 +25,11 @@ if (process.platform === 'linux') {
 	} else {
 		parts.push('gnu');
 	}
-} else if (process.platform === 'win32') {
+} else if (isWindows) {
 	parts.push('msvc');
 }
 
-const binary = process.platform === 'win32' ? 'moon.exe' : 'moon';
+const binary = isWindows ? 'moon.exe' : 'moon';
 const triple = parts.join('-');
 
 const pkgPath = path.dirname(require.resolve(`@moonrepo/core-${triple}/package.json`));
@@ -43,6 +46,15 @@ try {
 		throw new Error();
 	}
 } catch {
-	console.error('Failed to find "moon" binary.');
-	// process.exit(1);
+	console.error(`Failed to find "${binary}" binary.`);
+
+	if (!isMoonLocal) {
+		process.exit(1);
+	}
+}
+
+if (isWindows && !isMoonLocal) {
+	try {
+		fs.unlinkSync(path.join(__dirname, 'moon'));
+	} catch (error) {}
 }

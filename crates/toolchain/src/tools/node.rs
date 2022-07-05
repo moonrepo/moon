@@ -100,9 +100,7 @@ impl NodeTool {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let corepack_path = self
-            .install_dir
-            .join(node::get_bin_name_suffix("corepack", "cmd", false));
+        let corepack_path = node::find_package_manager_bin(&self.install_dir, "corepack");
 
         Command::new(&corepack_path)
             .args(args)

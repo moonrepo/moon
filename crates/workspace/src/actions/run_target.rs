@@ -4,7 +4,7 @@ use crate::errors::WorkspaceError;
 use crate::workspace::Workspace;
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
-use moon_logger::{color, debug, trace, warn};
+use moon_logger::{color, debug, warn};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_toolchain::{get_path_env_var, Executable};
@@ -23,12 +23,6 @@ async fn create_env_vars(
     task: &Task,
 ) -> Result<HashMap<String, String>, WorkspaceError> {
     let mut env_vars = HashMap::new();
-
-    trace!(
-        target: LOG_TARGET,
-        "Creating {} environment variables",
-        color::shell("MOON_*")
-    );
 
     env_vars.insert(
         "MOON_CACHE_DIR".to_owned(),

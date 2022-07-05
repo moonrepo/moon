@@ -2,7 +2,7 @@ use crate::errors::ActionRunnerError;
 use moon_project::{Project, Task};
 use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::process::Command;
-use moon_utils::{path, string_vec};
+use moon_utils::string_vec;
 use moon_workspace::Workspace;
 
 fn create_node_options(task: &Task) -> Vec<String> {
@@ -31,6 +31,8 @@ pub fn create_node_target_command(
     project: &Project,
     task: &Task,
 ) -> Result<Command, ActionRunnerError> {
+    use moon_utils::path;
+
     let node = workspace.toolchain.get_node();
     let mut cmd = node.get_bin_path();
     let mut args = vec![];

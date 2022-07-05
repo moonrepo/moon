@@ -1286,9 +1286,6 @@ dependencies = [
 [[package]]
 name = "moon_action"
 version = "0.1.0"
-dependencies = [
- "thiserror",
-]
 
 [[package]]
 name = "moon_action_runner"
@@ -1301,6 +1298,7 @@ dependencies = [
  "moon_error",
  "moon_hasher",
  "moon_lang",
+ "moon_lang_node",
  "moon_logger",
  "moon_project",
  "moon_terminal",

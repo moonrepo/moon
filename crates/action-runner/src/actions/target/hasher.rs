@@ -67,9 +67,10 @@ pub async fn create_target_hasher(
     // For input files, hash them with the vcs layer first
     if !task.input_paths.is_empty() {
         let files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
-        let hashed_files = vcs.get_file_hashes(&files).await?;
 
-        hasher.hash_inputs(hashed_files);
+        if !files.is_empty() {
+            hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
+        }
     }
 
     // For input globs, it's much more performant to:

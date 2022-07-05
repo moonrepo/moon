@@ -60,4 +60,5 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: run
-          args: -- --color --log trace ci
+          args: |
+            -- --color --log trace ci --base ${{ github.base_ref || 'master' }} --head ${{ github.head_ref || 'HEAD' }}

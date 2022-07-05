@@ -14,6 +14,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue with a globally installed moon not being executable in PowerShell.
+- Fixed an issue with empty files being passed to `git hash-object`.
+- Fixed an issue where a `git merge-base` could not be resolved when base and head are provided.
 
 #### ⚙️ Internal
 

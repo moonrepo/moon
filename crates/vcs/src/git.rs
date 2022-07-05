@@ -322,7 +322,6 @@ impl Vcs for Git {
                     // are displayed as-is and are not quoted/escaped
                     "-z",
                     &base,
-                    revision,
                 ]),
                 false,
             )

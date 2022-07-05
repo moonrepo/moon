@@ -5,19 +5,21 @@ edition = "2021"
 
 [dependencies]
 moon_action = { path = "../action" }
+moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
+moon_hasher = { path = "../hasher" }
 moon_lang = { path = "../lang" }
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
 moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
+moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 petgraph = "0.6.0"
 thiserror = "1.0.31"
 tokio = { version = "1.18.2", features = ["full"] }
 
 [dev-dependencies]
-moon_cache = { path = "../cache" }
 insta = "1.14.0"

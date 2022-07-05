@@ -4,9 +4,9 @@ use std::path::PathBuf;
 
 use crate::commands::bin::BinTools;
 use crate::commands::init::{InheritProjectsAs, PackageManager};
-use crate::commands::run::RunProfile;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
+use moon_action_runner::ProfileType;
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
 
@@ -196,10 +196,10 @@ pub enum Commands {
         #[clap(
             arg_enum,
             long,
-            help = "Generate profile for all spawned processes",
-            help_heading = HEADING_DEBUGGING
+            help = "Generate a profile for all spawned processes",
+            help_heading = HEADING_DEBUGGING,
         )]
-        profile: Option<RunProfile>,
+        profile: Option<ProfileType>,
 
         // Affected
         #[clap(

@@ -18,6 +18,7 @@ moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
+clap = { version = "3.1.18", features = ["derive"] }
 petgraph = "0.6.0"
 thiserror = "1.0.31"
 tokio = { version = "1.18.2", features = ["full"] }

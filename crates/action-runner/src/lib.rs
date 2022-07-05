@@ -4,7 +4,7 @@ mod dep_graph;
 mod errors;
 mod runner;
 
-pub use context::ActionRunnerContext;
+pub use context::*;
 pub use dep_graph::*;
 pub use errors::*;
 pub use runner::*;

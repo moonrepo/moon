@@ -2,7 +2,7 @@ use crate::enums::TouchedStatus;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use console::Term;
 use moon_action::{Action, ActionStatus};
-use moon_action_runner::{ActionRunner, ActionRunnerContext, DepGraph};
+use moon_action_runner::{ActionRunner, ActionRunnerContext, DepGraph, ProfileType};
 use moon_logger::color;
 use moon_project::Target;
 use moon_terminal::ExtendedTerm;
@@ -12,18 +12,12 @@ use std::collections::HashSet;
 use std::string::ToString;
 use std::time::Duration;
 
-#[derive(ArgEnum, Clone, Debug, Display)]
-pub enum RunProfile {
-    Cpu,
-    Heap,
-}
-
 pub struct RunOptions {
     pub affected: bool,
     pub dependents: bool,
     pub status: TouchedStatus,
     pub passthrough: Vec<String>,
-    pub profile: Option<RunProfile>,
+    pub profile: Option<ProfileType>,
     pub upstream: bool,
 }
 
@@ -164,6 +158,7 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     let context = ActionRunnerContext {
         passthrough_args: options.passthrough,
         primary_targets: HashSet::from([target_id.to_owned()]),
+        profile: options.profile,
     };
 
     let mut runner = ActionRunner::new(workspace);

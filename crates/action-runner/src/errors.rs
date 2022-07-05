@@ -1,6 +1,19 @@
 use moon_error::MoonError;
 use moon_project::ProjectError;
+use moon_toolchain::ToolchainError;
 use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ActionRunnerError {
+    #[error(transparent)]
+    Moon(#[from] MoonError),
+
+    #[error(transparent)]
+    Project(#[from] ProjectError),
+
+    #[error(transparent)]
+    Toolchain(#[from] ToolchainError),
+}
 
 #[derive(Error, Debug)]
 pub enum DepGraphError {

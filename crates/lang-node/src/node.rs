@@ -38,6 +38,10 @@ pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> 
     }
 }
 
+pub fn find_package_manager_bin(install_dir: &Path, bin_name: &str) -> PathBuf {
+    install_dir.join(get_bin_name_suffix(bin_name, "cmd", false))
+}
+
 pub fn get_bin_name_suffix(name: &str, windows_ext: &str, flat: bool) -> String {
     if cfg!(windows) {
         format!("{}.{}", name, windows_ext)
@@ -185,6 +189,15 @@ mod tests {
             assert_eq!(
                 get_bin_name_suffix("foo", "cmd", false),
                 "foo.cmd".to_owned()
+            );
+        }
+
+        #[test]
+        #[cfg(windows)]
+        fn supports_ps1() {
+            assert_eq!(
+                get_bin_name_suffix("foo", "ps1", false),
+                "foo.ps1".to_owned()
             );
         }
 

@@ -1,17 +1,19 @@
-use crate::action::ActionStatus;
-use crate::errors::WorkspaceError;
-use crate::workspace::Workspace;
+use crate::context::ActionRunnerContext;
+use crate::errors::ActionRunnerError;
+use moon_action::{Action, ActionStatus};
 use moon_config::{tsconfig::TsConfigJson, TypeScriptConfig};
 use moon_logger::{color, debug};
 use moon_project::Project;
 use moon_utils::is_ci;
 use moon_utils::path::relative_from;
+use moon_workspace::Workspace;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action:sync-project";
+const LOG_TARGET: &str = "moon:action:sync-node-project";
 
+// Sync projects references to the root `tsconfig.json`.
 fn sync_root_tsconfig(
     tsconfig: &mut TsConfigJson,
     typescript_config: &TypeScriptConfig,
@@ -36,10 +38,12 @@ fn sync_root_tsconfig(
     false
 }
 
-pub async fn sync_project(
+pub async fn sync_node_project(
+    _action: &mut Action,
+    _context: &ActionRunnerContext,
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
-) -> Result<ActionStatus, WorkspaceError> {
+) -> Result<ActionStatus, ActionRunnerError> {
     let mut mutated_files = false;
     let mut typescript_config;
 

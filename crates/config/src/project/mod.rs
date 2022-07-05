@@ -59,6 +59,7 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectLanguage {
+    Bash,
     JavaScript,
     #[default]
     TypeScript,

@@ -1,13 +1,14 @@
-use crate::{Workspace, WorkspaceError};
+use crate::errors::ActionRunnerError;
 use moon_hasher::TargetHasher;
 use moon_project::{ExpandedFiles, Project, Task};
 use moon_utils::path::path_to_string;
+use moon_workspace::Workspace;
 use std::path::Path;
 
 fn convert_paths_to_strings(
     paths: &ExpandedFiles,
     workspace_root: &Path,
-) -> Result<Vec<String>, WorkspaceError> {
+) -> Result<Vec<String>, ActionRunnerError> {
     let mut files: Vec<String> = vec![];
 
     for path in paths {
@@ -33,7 +34,7 @@ pub async fn create_target_hasher(
     project: &Project,
     task: &Task,
     passthrough_args: &[String],
-) -> Result<TargetHasher, WorkspaceError> {
+) -> Result<TargetHasher, ActionRunnerError> {
     let vcs = &workspace.vcs;
     let globset = task.create_globset()?;
     let mut hasher = TargetHasher::new(workspace.config.node.version.clone());

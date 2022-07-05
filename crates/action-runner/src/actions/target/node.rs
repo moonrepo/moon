@@ -1,6 +1,7 @@
 use crate::context::{ActionRunnerContext, ProfileType};
 use crate::errors::ActionRunnerError;
 use moon_error::MoonError;
+use moon_logger::{color, trace};
 use moon_project::{Project, Task};
 use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::path::relative_from;
@@ -23,25 +24,39 @@ fn create_node_options(
     ];
 
     if let Some(profile) = &context.profile {
-        let prof_dir = path::path_to_string(&workspace.cache.get_target_dir(&task.target))?;
+        let prof_dir = workspace.cache.get_target_dir(&task.target);
 
         match profile {
             ProfileType::Cpu => {
+                trace!(
+                    target: "moon:action:run-target",
+                     "Writing CPU profile for {} to {}",
+                     color::target(&task.target),
+                     color::path(&prof_dir)
+                );
+
                 options.extend(string_vec![
                     "--cpu-prof",
                     "--cpu-prof-name",
                     "snapshot.cpuprofile",
                     "--cpu-prof-dir",
-                    prof_dir
+                    path::path_to_string(&prof_dir)?
                 ]);
             }
             ProfileType::Heap => {
+                trace!(
+                    target: "moon:action:run-target",
+                     "Writing heap profile for {} to {}",
+                     color::target(&task.target),
+                     color::path(&prof_dir)
+                );
+
                 options.extend(string_vec![
                     "--heap-prof",
                     "--heap-prof-name",
                     "snapshot.heapprofile",
                     "--heap-prof-dir",
-                    prof_dir
+                    path::path_to_string(&prof_dir)?
                 ]);
             }
         }

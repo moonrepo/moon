@@ -1,11 +1,14 @@
 use crate::enums::TouchedStatus;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use console::Term;
+use moon_action::{Action, ActionStatus};
+use moon_action_runner::{ActionRunner, ActionRunnerContext, DepGraph};
 use moon_logger::color;
 use moon_project::Target;
 use moon_terminal::ExtendedTerm;
 use moon_utils::time;
-use moon_workspace::{Action, ActionRunner, ActionStatus, DepGraph, Workspace};
+use moon_workspace::Workspace;
+use std::collections::HashSet;
 use std::string::ToString;
 use std::time::Duration;
 
@@ -151,14 +154,14 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     }
 
     // Process all tasks in the graph
+    let context = ActionRunnerContext {
+        passthrough_args: options.passthrough,
+        primary_targets: HashSet::from([target_id.to_owned()]),
+    };
+
     let mut runner = ActionRunner::new(workspace);
 
-    let results = runner
-        .bail_on_error()
-        .set_passthrough_args(options.passthrough)
-        .set_primary_target(target_id)
-        .run(dep_graph)
-        .await?;
+    let results = runner.bail_on_error().run(dep_graph, context).await?;
 
     // Render stats about the run
     render_result_stats(results, runner.duration.unwrap(), false)?;

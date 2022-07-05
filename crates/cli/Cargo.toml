@@ -13,6 +13,8 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
+moon_action = { path = "../action" }
+moon_action_runner = { path = "../action-runner" }
 moon_config = { path = "../config" }
 moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }

@@ -1,9 +1,11 @@
-use crate::action::{Action, ActionStatus};
-use crate::actions::{install_node_deps, run_target, setup_toolchain, sync_project};
+use crate::actions::{install_node_deps, run_target, setup_toolchain, sync_node_project};
+use crate::context::ActionRunnerContext;
 use crate::dep_graph::{DepGraph, Node};
-use crate::errors::WorkspaceError;
-use crate::workspace::Workspace;
+use crate::errors::{ActionRunnerError, DepGraphError};
+use moon_action::{Action, ActionStatus};
+use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
+use moon_workspace::Workspace;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
@@ -12,26 +14,24 @@ use tokio::task;
 const LOG_TARGET: &str = "moon:action-runner";
 
 async fn run_action(
-    workspace: Arc<RwLock<Workspace>>,
+    node: &Node,
     action: &mut Action,
-    action_node: &Node,
-    primary_target: &str,
-    passthrough_args: &[String],
-) -> Result<(), WorkspaceError> {
-    let result = match action_node {
-        Node::InstallNodeDeps => install_node_deps(workspace).await,
-        Node::RunTarget(target_id) => {
-            run_target(
-                workspace,
-                action,
-                target_id,
-                primary_target,
-                passthrough_args,
-            )
-            .await
-        }
-        Node::SetupToolchain => setup_toolchain(workspace).await,
-        Node::SyncProject(project_id) => sync_project(workspace, project_id).await,
+    context: &ActionRunnerContext,
+    workspace: Arc<RwLock<Workspace>>,
+) -> Result<(), ActionRunnerError> {
+    let result = match node {
+        Node::InstallDeps(lang) => match lang {
+            SupportedLanguage::Node => install_node_deps(action, context, workspace).await,
+            _ => Ok(ActionStatus::Passed),
+        },
+        Node::RunTarget(target_id) => run_target(action, context, workspace, target_id).await,
+        Node::SetupToolchain => setup_toolchain(action, context, workspace).await,
+        Node::SyncProject(lang, project_id) => match lang {
+            SupportedLanguage::Node => {
+                sync_node_project(action, context, workspace, project_id).await
+            }
+            _ => Ok(ActionStatus::Passed),
+        },
     };
 
     match result {
@@ -42,9 +42,7 @@ async fn run_action(
             action.fail(error.to_string());
 
             // If these fail, we should abort instead of trying to continue
-            if matches!(action_node, Node::SetupToolchain)
-                || matches!(action_node, Node::InstallNodeDeps)
-            {
+            if matches!(node, Node::SetupToolchain) || matches!(node, Node::InstallDeps(_)) {
                 action.abort();
             }
         }
@@ -58,22 +56,16 @@ pub struct ActionRunner {
 
     pub duration: Option<Duration>,
 
-    passthrough_args: Vec<String>,
-
-    primary_target: String,
-
     workspace: Arc<RwLock<Workspace>>,
 }
 
 impl ActionRunner {
     pub fn new(workspace: Workspace) -> Self {
-        debug!(target: LOG_TARGET, "Creating action runner",);
+        debug!(target: LOG_TARGET, "Creating action runner");
 
         ActionRunner {
             bail: false,
             duration: None,
-            passthrough_args: Vec::new(),
-            primary_target: String::new(),
             workspace: Arc::new(RwLock::new(workspace)),
         }
     }
@@ -83,7 +75,7 @@ impl ActionRunner {
         self
     }
 
-    pub async fn cleanup(&self) -> Result<(), WorkspaceError> {
+    pub async fn cleanup(&self) -> Result<(), ActionRunnerError> {
         let workspace = self.workspace.read().await;
 
         // Delete all previously created runfiles
@@ -94,14 +86,17 @@ impl ActionRunner {
         Ok(())
     }
 
-    pub async fn run(&mut self, graph: DepGraph) -> Result<Vec<Action>, WorkspaceError> {
+    pub async fn run(
+        &mut self,
+        graph: DepGraph,
+        context: ActionRunnerContext,
+    ) -> Result<Vec<Action>, ActionRunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
-        let passthrough_args = Arc::new(self.passthrough_args.clone());
-        let primary_target = Arc::new(self.primary_target.clone());
+        let context = Arc::new(context);
 
         // Clean the runner state *before* running actions instead of after,
         // so that failing or broken builds can dig into and debug the state!
@@ -129,16 +124,15 @@ impl ActionRunner {
 
             for (i, node_index) in batch.into_iter().enumerate() {
                 let action_count = i + 1;
-                let workspace_clone = Arc::clone(&self.workspace);
                 let graph_clone = Arc::clone(&graph);
-                let passthrough_args_clone = Arc::clone(&passthrough_args);
-                let primary_target_clone = Arc::clone(&primary_target);
+                let context_clone = Arc::clone(&context);
+                let workspace_clone = Arc::clone(&self.workspace);
 
                 action_handles.push(task::spawn(async move {
-                    let mut action = Action::new(node_index);
+                    let mut action = Action::new(node_index.index(), None);
                     let own_graph = graph_clone.read().await;
 
-                    if let Some(node) = own_graph.get_node_from_index(node_index) {
+                    if let Some(node) = own_graph.get_node_from_index(&node_index) {
                         action.label = Some(node.label());
 
                         let log_target_name =
@@ -151,14 +145,7 @@ impl ActionRunner {
                             log_action_label
                         );
 
-                        run_action(
-                            workspace_clone,
-                            &mut action,
-                            node,
-                            &primary_target_clone,
-                            &passthrough_args_clone,
-                        )
-                        .await?;
+                        run_action(node, &mut action, &context_clone, workspace_clone).await?;
 
                         if action.has_failed() {
                             trace!(
@@ -178,7 +165,9 @@ impl ActionRunner {
                     } else {
                         action.status = ActionStatus::Invalid;
 
-                        return Err(WorkspaceError::DepGraphUnknownNode(node_index.index()));
+                        return Err(ActionRunnerError::DepGraph(DepGraphError::UnknownNode(
+                            node_index.index(),
+                        )));
                     }
 
                     Ok(action)
@@ -198,7 +187,7 @@ impl ActionRunner {
                         }
 
                         if self.bail && result.error.is_some() || result.should_abort() {
-                            return Err(WorkspaceError::ActionRunnerFailure(result.error.unwrap()));
+                            return Err(ActionRunnerError::Failure(result.error.unwrap()));
                         }
 
                         results.push(result);
@@ -207,7 +196,7 @@ impl ActionRunner {
                         return Err(e);
                     }
                     Err(e) => {
-                        return Err(WorkspaceError::ActionRunnerFailure(e.to_string()));
+                        return Err(ActionRunnerError::Failure(e.to_string()));
                     }
                 }
             }
@@ -223,15 +212,5 @@ impl ActionRunner {
         );
 
         Ok(results)
-    }
-
-    pub fn set_passthrough_args(&mut self, args: Vec<String>) -> &mut Self {
-        self.passthrough_args = args;
-        self
-    }
-
-    pub fn set_primary_target(&mut self, target: &str) -> &mut Self {
-        self.primary_target = target.to_owned();
-        self
     }
 }

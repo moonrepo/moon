@@ -5,7 +5,7 @@ use crate::errors::ActionRunnerError;
 use moon_action::{Action, ActionStatus, Attempt};
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
-use moon_logger::{color, debug, trace, warn};
+use moon_logger::{color, debug, warn};
 use moon_project::{Project, Target, Task};
 use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_utils::process::{join_args, output_to_string, Command, Output};

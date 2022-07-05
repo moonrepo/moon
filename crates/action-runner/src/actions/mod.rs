@@ -1,5 +1,10 @@
-pub mod install_node_deps;
-pub mod run_target;
-pub mod setup_toolchain;
-pub mod sync_node_project;
-pub mod target;
+mod install_node_deps;
+mod run_target;
+mod setup_toolchain;
+mod sync_node_project;
+mod target;
+
+pub use install_node_deps::*;
+pub use run_target::*;
+pub use setup_toolchain::*;
+pub use sync_node_project::*;

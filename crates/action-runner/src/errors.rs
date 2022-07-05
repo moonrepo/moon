@@ -7,6 +7,12 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ActionRunnerError {
+    #[error("{0}")]
+    Failure(String),
+
+    #[error(transparent)]
+    DepGraph(#[from] DepGraphError),
+
     #[error(transparent)]
     Moon(#[from] MoonError),
 

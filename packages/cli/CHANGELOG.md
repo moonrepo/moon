@@ -11,6 +11,10 @@
   - Also `moon query projects` can be used to query about projects in the project graph.
 - Added `bash` as a support value for the project `language` setting.
 
+#### 🐞 Fixes
+
+- Fixed an issue with a globally installed moon not being executable in PowerShell.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.62.

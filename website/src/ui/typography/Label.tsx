@@ -3,7 +3,7 @@ import cx from 'clsx';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import Icon from '../iconography/Icon';
 
-export type LabelVariant = 'failure' | 'success' | 'warning';
+export type LabelVariant = 'failure' | 'info' | 'success' | 'warning';
 
 export interface LabelProps {
 	className?: string;
@@ -14,6 +14,7 @@ export interface LabelProps {
 
 const variants: Record<LabelVariant, string> = {
 	failure: 'bg-red-100 text-red-900',
+	info: 'bg-pink-100 text-pink-900',
 	success: 'bg-green-100 text-green-900',
 	warning: 'bg-orange-100 text-orange-900',
 };

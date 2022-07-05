@@ -196,7 +196,7 @@ pub enum Commands {
         #[clap(
             arg_enum,
             long,
-            help = "Generate a profile for all spawned processes",
+            help = "Record and generate a profile for ran tasks",
             help_heading = HEADING_DEBUGGING,
         )]
         profile: Option<ProfileType>,

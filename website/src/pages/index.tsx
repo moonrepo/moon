@@ -162,8 +162,13 @@ const additionalFeatures: Feature[] = [
 	{
 		title: 'Build profiles',
 		icon: faAperture,
-		description: 'Generate build profiles that can be reviewed in Chrome.',
-		status: 'coming-soon',
+		description: (
+			<>
+				Record <Link href="/docs/guides/profile">CPU and heap profiles</Link> that can be analyzed
+				in Chrome.
+			</>
+		),
+		status: 'new',
 	},
 	{
 		title: 'Editor extensions',

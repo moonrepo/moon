@@ -2,8 +2,8 @@ use crate::errors::VcsError;
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use moon_utils::fs;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
+use moon_utils::{fs, string_vec};
 use regex::Regex;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -41,22 +41,36 @@ impl Git {
     }
 
     async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<String> {
-        let candidates = [
+        let mut args = string_vec!["merge-base", head];
+
+        // To start, we need to find a working base origin
+        for candidate in [
             base.to_owned(),
             format!("origin/{}", base),
             format!("upstream/{}", base),
-        ];
-
-        for candidate in candidates {
-            if let Ok(hash) = self
+        ] {
+            if self
                 .run_command(
                     &mut self.create_command(vec!["merge-base", &candidate, head]),
                     true,
                 )
                 .await
+                .is_ok()
             {
-                return Ok(hash);
+                args.push(candidate.clone());
             }
+        }
+
+        // Then we need to run it again and extract the base hash using the found origins
+        // This is necessary to support comparisons between forks!
+        if let Ok(hash) = self
+            .run_command(
+                &mut self.create_command(args.iter().map(|a| a.as_str()).collect()),
+                true,
+            )
+            .await
+        {
+            return Ok(hash);
         }
 
         Ok(base.to_owned())
@@ -322,7 +336,6 @@ impl Vcs for Git {
                     // are displayed as-is and are not quoted/escaped
                     "-z",
                     &base,
-                    revision,
                 ]),
                 false,
             )

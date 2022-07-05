@@ -1,3 +1,4 @@
+use crate::context::ActionRunnerContext;
 use crate::errors::ActionRunnerError;
 use moon_action::{Action, ActionStatus};
 use moon_config::{tsconfig::TsConfigJson, TypeScriptConfig};
@@ -39,6 +40,7 @@ fn sync_root_tsconfig(
 
 pub async fn sync_node_project(
     _action: &mut Action,
+    _context: &ActionRunnerContext,
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
 ) -> Result<ActionStatus, ActionRunnerError> {

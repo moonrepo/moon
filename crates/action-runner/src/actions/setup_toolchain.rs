@@ -1,3 +1,4 @@
+use crate::context::ActionRunnerContext;
 use crate::errors::ActionRunnerError;
 use moon_action::{Action, ActionStatus};
 use moon_logger::debug;
@@ -11,6 +12,7 @@ const HOUR: u128 = MINUTE * 60;
 
 pub async fn setup_toolchain(
     _action: &mut Action,
+    _context: &ActionRunnerContext,
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<ActionStatus, ActionRunnerError> {
     debug!(

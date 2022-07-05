@@ -1,6 +1,7 @@
 use crate::actions::target::{
     create_node_target_command, create_system_target_command, create_target_hasher,
 };
+use crate::context::ActionRunnerContext;
 use crate::errors::ActionRunnerError;
 use moon_action::{Action, ActionStatus, Attempt};
 use moon_cache::RunTargetState;
@@ -95,10 +96,9 @@ async fn create_target_command(
 
 pub async fn run_target(
     action: &mut Action,
+    context: &ActionRunnerContext,
     workspace: Arc<RwLock<Workspace>>,
     target_id: &str,
-    primary_target: &str,
-    passthrough_args: &[String],
 ) -> Result<ActionStatus, ActionRunnerError> {
     debug!(
         target: LOG_TARGET,
@@ -110,13 +110,14 @@ pub async fn run_target(
     let mut cache = workspace.cache.cache_run_target_state(target_id).await?;
 
     // Gather the project and task
-    let is_primary = primary_target == target_id;
+    let is_primary = context.primary_targets.contains(target_id);
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
 
     // Abort early if this build has already been cached/hashed
-    let hasher = create_target_hasher(&workspace, &project, task, passthrough_args).await?;
+    let hasher =
+        create_target_hasher(&workspace, &project, task, &context.passthrough_args).await?;
     let hash = hasher.to_hash();
 
     debug!(
@@ -146,7 +147,10 @@ pub async fn run_target(
 
     // Build the command to run based on the task
     let mut command = create_target_command(&workspace, &project, task).await?;
-    command.args(passthrough_args);
+
+    if !context.passthrough_args.is_empty() {
+        command.args(&context.passthrough_args);
+    }
 
     if workspace
         .config
@@ -173,7 +177,7 @@ pub async fn run_target(
             // Print label *before* output is streamed since it may stay open forever,
             // or it may use ANSI escape codes to alter the terminal.
             print_target_label(target_id, &attempt, attempt_total, Checkpoint::Pass);
-            print_target_command(&workspace, &project, task, passthrough_args);
+            print_target_command(&workspace, &project, task, &context.passthrough_args);
 
             // If this target matches the primary target (the last task to run),
             // then we want to stream the output directly to the parent (inherit mode).
@@ -182,7 +186,7 @@ pub async fn run_target(
                 .await
         } else {
             print_target_label(target_id, &attempt, attempt_total, Checkpoint::Start);
-            print_target_command(&workspace, &project, task, passthrough_args);
+            print_target_command(&workspace, &project, task, &context.passthrough_args);
 
             // Otherwise we run the process in the background and write the output
             // once it has completed.

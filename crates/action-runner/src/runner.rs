@@ -1,4 +1,5 @@
 use crate::actions::{install_node_deps, run_target, setup_toolchain, sync_node_project};
+use crate::context::ActionRunnerContext;
 use crate::dep_graph::{DepGraph, Node};
 use crate::errors::{ActionRunnerError, DepGraphError};
 use moon_action::{Action, ActionStatus};
@@ -13,30 +14,22 @@ use tokio::task;
 const LOG_TARGET: &str = "moon:action-runner";
 
 async fn run_action(
-    workspace: Arc<RwLock<Workspace>>,
+    node: &Node,
     action: &mut Action,
-    action_node: &Node,
-    primary_target: &str,
-    passthrough_args: &[String],
+    context: &ActionRunnerContext,
+    workspace: Arc<RwLock<Workspace>>,
 ) -> Result<(), ActionRunnerError> {
-    let result = match action_node {
+    let result = match node {
         Node::InstallDeps(lang) => match lang {
-            SupportedLanguage::Node => install_node_deps(action, workspace).await,
+            SupportedLanguage::Node => install_node_deps(action, context, workspace).await,
             _ => Ok(ActionStatus::Passed),
         },
-        Node::RunTarget(target_id) => {
-            run_target(
-                action,
-                workspace,
-                target_id,
-                primary_target,
-                passthrough_args,
-            )
-            .await
-        }
-        Node::SetupToolchain => setup_toolchain(action, workspace).await,
+        Node::RunTarget(target_id) => run_target(action, context, workspace, target_id).await,
+        Node::SetupToolchain => setup_toolchain(action, context, workspace).await,
         Node::SyncProject(lang, project_id) => match lang {
-            SupportedLanguage::Node => sync_node_project(action, workspace, project_id).await,
+            SupportedLanguage::Node => {
+                sync_node_project(action, context, workspace, project_id).await
+            }
             _ => Ok(ActionStatus::Passed),
         },
     };
@@ -49,9 +42,7 @@ async fn run_action(
             action.fail(error.to_string());
 
             // If these fail, we should abort instead of trying to continue
-            if matches!(action_node, Node::SetupToolchain)
-                || matches!(action_node, Node::InstallDeps(_))
-            {
+            if matches!(node, Node::SetupToolchain) || matches!(node, Node::InstallDeps(_)) {
                 action.abort();
             }
         }
@@ -65,10 +56,6 @@ pub struct ActionRunner {
 
     pub duration: Option<Duration>,
 
-    passthrough_args: Vec<String>,
-
-    primary_target: String,
-
     workspace: Arc<RwLock<Workspace>>,
 }
 
@@ -79,8 +66,6 @@ impl ActionRunner {
         ActionRunner {
             bail: false,
             duration: None,
-            passthrough_args: Vec::new(),
-            primary_target: String::new(),
             workspace: Arc::new(RwLock::new(workspace)),
         }
     }
@@ -101,14 +86,17 @@ impl ActionRunner {
         Ok(())
     }
 
-    pub async fn run(&mut self, graph: DepGraph) -> Result<Vec<Action>, ActionRunnerError> {
+    pub async fn run(
+        &mut self,
+        graph: DepGraph,
+        context: ActionRunnerContext,
+    ) -> Result<Vec<Action>, ActionRunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
-        let passthrough_args = Arc::new(self.passthrough_args.clone());
-        let primary_target = Arc::new(self.primary_target.clone());
+        let context = Arc::new(context);
 
         // Clean the runner state *before* running actions instead of after,
         // so that failing or broken builds can dig into and debug the state!
@@ -136,10 +124,9 @@ impl ActionRunner {
 
             for (i, node_index) in batch.into_iter().enumerate() {
                 let action_count = i + 1;
-                let workspace_clone = Arc::clone(&self.workspace);
                 let graph_clone = Arc::clone(&graph);
-                let passthrough_args_clone = Arc::clone(&passthrough_args);
-                let primary_target_clone = Arc::clone(&primary_target);
+                let context_clone = Arc::clone(&context);
+                let workspace_clone = Arc::clone(&self.workspace);
 
                 action_handles.push(task::spawn(async move {
                     let mut action = Action::new(node_index.index(), None);
@@ -158,14 +145,7 @@ impl ActionRunner {
                             log_action_label
                         );
 
-                        run_action(
-                            workspace_clone,
-                            &mut action,
-                            node,
-                            &primary_target_clone,
-                            &passthrough_args_clone,
-                        )
-                        .await?;
+                        run_action(node, &mut action, &context_clone, workspace_clone).await?;
 
                         if action.has_failed() {
                             trace!(
@@ -232,15 +212,5 @@ impl ActionRunner {
         );
 
         Ok(results)
-    }
-
-    pub fn set_passthrough_args(&mut self, args: Vec<String>) -> &mut Self {
-        self.passthrough_args = args;
-        self
-    }
-
-    pub fn set_primary_target(&mut self, target: &str) -> &mut Self {
-        self.primary_target = target.to_owned();
-        self
     }
 }

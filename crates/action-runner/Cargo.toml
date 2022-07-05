@@ -1,0 +1,13 @@
+[package]
+name = "moon_action_runner"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../config" }
+moon_error = { path = "../error" }
+moon_lang = { path = "../lang" }
+moon_logger = { path = "../logger" }
+moon_project = { path = "../project" }
+petgraph = "0.6.0"
+thiserror = "1.0.31"

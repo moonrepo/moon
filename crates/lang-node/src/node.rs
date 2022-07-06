@@ -429,11 +429,10 @@ node "%~dp0\{path}" %*
                     path.unwrap(),
                     sandbox
                         .path()
-                        .join("node_modules")
+                        .join("node_modules/.bin")
+                        .join("..")
                         .join("baz")
                         .join("bin.js")
-                        .canonicalize()
-                        .unwrap()
                 );
             } else {
                 assert_eq!(
@@ -453,11 +452,10 @@ node "%~dp0\{path}" %*
                     path.unwrap(),
                     sandbox
                         .path()
-                        .join("node_modules")
+                        .join("node_modules/.bin")
+                        .join("..")
                         .join("baz")
                         .join("bin.js")
-                        .canonicalize()
-                        .unwrap()
                 );
             } else {
                 assert_eq!(

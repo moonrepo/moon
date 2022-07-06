@@ -1,9 +1,9 @@
 use crate::errors::ActionRunnerError;
 use moon_project::{Project, Task};
 use moon_toolchain::{get_path_env_var, Executable};
+use moon_utils::path::relative_from;
 use moon_utils::process::Command;
 use moon_utils::string_vec;
-use moon_utils::path::relative_from;
 use moon_workspace::Workspace;
 
 fn create_node_options(task: &Task) -> Vec<String> {
@@ -51,7 +51,8 @@ pub fn create_node_target_command(
             cmd = node.get_yarn().unwrap().get_bin_path();
         }
         bin => {
-            let bin_path = relative_from(node.find_package_bin(bin, &project.root)?, &project.root).unwrap();
+            let bin_path =
+                relative_from(node.find_package_bin(bin, &project.root)?, &project.root).unwrap();
 
             args.extend(create_node_options(task));
             args.push(path::path_to_string(&bin_path)?);

@@ -646,3 +646,43 @@ mod yarn1 {
 //         assert.success();
 //     }
 // }
+
+mod profile {
+    use super::*;
+
+    #[test]
+    fn record_a_cpu_profile() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("--profile")
+            .arg("cpu")
+            .arg("node:standard")
+            .assert();
+
+        let profile = fixture
+            .path()
+            .join(".moon/cache/runs/node/standard/snapshot.cpuprofile");
+
+        assert!(profile.exists());
+    }
+
+    #[test]
+    fn record_a_heap_profile() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("--profile")
+            .arg("heap")
+            .arg("node:standard")
+            .assert();
+
+        let profile = fixture
+            .path()
+            .join(".moon/cache/runs/node/standard/snapshot.heapprofile");
+
+        assert!(profile.exists());
+    }
+}

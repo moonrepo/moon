@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 moon_lang = { path = "../lang" }
+lazy_static = "1.4.0"
+regex = "1.5.6"
 
 [dev-dependencies]
 assert_fs = "1.0.7"

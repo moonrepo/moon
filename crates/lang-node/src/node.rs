@@ -2,7 +2,7 @@ use crate::NODE;
 use lazy_static::lazy_static;
 use moon_lang::LangError;
 use regex::Regex;
-use std::env::{self, consts};
+use std::env::consts;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -17,8 +17,9 @@ pub fn extract_bin_from_cmd_file(bin_path: &Path, contents: &str) -> PathBuf {
     let captures = BIN_PATH_PATTERN.captures(contents).unwrap_or_else(|| {
         // This should ideally never happen!
         panic!(
-            "Unable to extract binary path from {}.",
-            bin_path.to_string_lossy()
+            "Unable to extract binary path from {}:\n\n{}",
+            bin_path.to_string_lossy(),
+            contents
         )
     });
 
@@ -49,7 +50,7 @@ pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> 
         // must execute the underlying binary. Since we can't infer the package
         // name from the binary, we must extract the path from the ".cmd" file.
         // This is... flakey, but there's no alternative.
-        if bin_path.ends_with(".cmd") {
+        if cfg!(windows) {
             let contents = fs::read_to_string(&bin_path).unwrap();
 
             return Some(
@@ -159,6 +160,20 @@ mod tests {
     use assert_fs::prelude::*;
     use assert_fs::TempDir;
 
+    fn create_cmd(path: &str) -> String {
+        format!(
+            r#"
+@IF EXIST "%~dp0\node.exe" (
+"%~dp0\node.exe" "%~dp0\{path}" %*
+) ELSE (
+SETLOCAL
+SET PATHEXT=%PATHEXT:;.JS;=;%
+node "%~dp0\{path}" %*
+)"#,
+            path = path
+        )
+    }
+
     fn create_node_modules_sandbox() -> TempDir {
         let sandbox = TempDir::new().unwrap();
 
@@ -173,13 +188,18 @@ mod tests {
             .unwrap();
 
         sandbox
+            .child("node_modules/baz/bin.js")
+            .write_str("{}")
+            .unwrap();
+
+        sandbox
             .child("node_modules/.bin/baz")
             .write_str("{}")
             .unwrap();
 
         sandbox
             .child("node_modules/.bin/baz.cmd")
-            .write_str("{}")
+            .write_str(&create_cmd(r"..\baz\bin.js"))
             .unwrap();
 
         sandbox.child("nested/file.js").write_str("{}").unwrap();
@@ -190,20 +210,6 @@ mod tests {
     mod extract_bin_from_cmd_file {
         use super::*;
 
-        fn create_cmd(path: &str) -> String {
-            format!(
-                r#"
-@IF EXIST "%~dp0\node.exe" (
-    "%~dp0\node.exe" "%~dp0\{path}" %*
-) ELSE (
-    SETLOCAL
-    SET PATHEXT=%PATHEXT:;.JS;=;%
-    node "%~dp0\{path}" %*
-)"#,
-                path = path
-            )
-        }
-
         #[test]
         fn basic_path() {
             assert_eq!(
@@ -212,6 +218,14 @@ mod tests {
                     &create_cmd(r"..\typescript\bin\tsc"),
                 ),
                 PathBuf::from(r"..\typescript\bin\tsc")
+            );
+
+            assert_eq!(
+                extract_bin_from_cmd_file(
+                    &PathBuf::from("test.cmd"),
+                    &create_cmd(r"..\json5\lib\cli.js"),
+                ),
+                PathBuf::from(r"..\json5\lib\cli.js")
             );
         }
 
@@ -259,6 +273,14 @@ mod tests {
                 ),
                 PathBuf::from(r".\..\rollup\build\rollup.mjs")
             );
+
+            assert_eq!(
+                extract_bin_from_cmd_file(
+                    &PathBuf::from("test.cmd"),
+                    &create_cmd(r"..\webpack-dev-server\bin\webpack-dev-server.js"),
+                ),
+                PathBuf::from(r"..\webpack-dev-server\bin\webpack-dev-server.js")
+            );
         }
 
         #[test]
@@ -285,6 +307,22 @@ mod tests {
                     &create_cmd(r"..\@scope-long\foo-bar\bin_file.js"),
                 ),
                 PathBuf::from(r"..\@scope-long\foo-bar\bin_file.js")
+            );
+
+            assert_eq!(
+                extract_bin_from_cmd_file(
+                    &PathBuf::from("test.cmd"),
+                    &create_cmd(r"..\@docusaurus\core\bin\docusaurus.mjs"),
+                ),
+                PathBuf::from(r"..\@docusaurus\core\bin\docusaurus.mjs")
+            );
+
+            assert_eq!(
+                extract_bin_from_cmd_file(
+                    &PathBuf::from("test.cmd"),
+                    &create_cmd(r"..\@babel\parser\bin\babel-parser.js"),
+                ),
+                PathBuf::from(r"..\@babel\parser\bin\babel-parser.js")
             );
         }
     }
@@ -388,17 +426,23 @@ mod tests {
             let sandbox = create_node_modules_sandbox();
             let path = find_package_bin(sandbox.path(), "baz");
 
-            assert_eq!(
-                path.unwrap(),
-                sandbox
-                    .path()
-                    .join("node_modules/.bin")
-                    .join(if consts::OS == "windows" {
-                        "baz.cmd"
-                    } else {
-                        "baz"
-                    })
-            );
+            if cfg!(windows) {
+                assert_eq!(
+                    path.unwrap(),
+                    sandbox
+                        .path()
+                        .join("node_modules")
+                        .join("baz")
+                        .join("bin.js")
+                        .canonicalize()
+                        .unwrap()
+                );
+            } else {
+                assert_eq!(
+                    path.unwrap(),
+                    sandbox.path().join("node_modules/.bin").join("baz")
+                );
+            }
         }
 
         #[test]
@@ -406,17 +450,23 @@ mod tests {
             let sandbox = create_node_modules_sandbox();
             let path = find_package_bin(&sandbox.path().join("nested"), "baz");
 
-            assert_eq!(
-                path.unwrap(),
-                sandbox
-                    .path()
-                    .join("node_modules/.bin")
-                    .join(if consts::OS == "windows" {
-                        "baz.cmd"
-                    } else {
-                        "baz"
-                    })
-            );
+            if cfg!(windows) {
+                assert_eq!(
+                    path.unwrap(),
+                    sandbox
+                        .path()
+                        .join("node_modules")
+                        .join("baz")
+                        .join("bin.js")
+                        .canonicalize()
+                        .unwrap()
+                );
+            } else {
+                assert_eq!(
+                    path.unwrap(),
+                    sandbox.path().join("node_modules/.bin").join("baz")
+                );
+            }
         }
 
         #[test]

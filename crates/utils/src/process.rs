@@ -388,7 +388,7 @@ impl Command {
         }
 
         trace!(
-            target: "moon:utils",
+            target: "moon:utils:process",
             "Running command {} (in {}){}",
             color::shell(&command_line),
             if let Some(cwd) = working_dir {

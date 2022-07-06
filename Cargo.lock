@@ -1414,6 +1414,7 @@ name = "moon_lang_node"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
+ "cached",
  "lazy_static",
  "moon_lang",
  "regex",

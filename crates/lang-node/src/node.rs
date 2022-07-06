@@ -1,4 +1,5 @@
 use crate::NODE;
+use cached::proc_macro::cached;
 use lazy_static::lazy_static;
 use moon_lang::LangError;
 use regex::Regex;
@@ -13,8 +14,8 @@ lazy_static! {
 }
 
 #[track_caller]
-pub fn extract_bin_from_cmd_file(bin_path: &Path, contents: &str) -> PathBuf {
-    let captures = BIN_PATH_PATTERN.captures(contents).unwrap_or_else(|| {
+pub fn parse_cmd_file(bin_path: &Path, contents: String) -> PathBuf {
+    let captures = BIN_PATH_PATTERN.captures(&contents).unwrap_or_else(|| {
         // This should ideally never happen!
         panic!(
             "Unable to extract binary path from {}:\n\n{}",
@@ -24,6 +25,12 @@ pub fn extract_bin_from_cmd_file(bin_path: &Path, contents: &str) -> PathBuf {
     });
 
     PathBuf::from(captures.get(0).unwrap().as_str())
+}
+
+#[cached]
+#[track_caller]
+pub fn extract_bin_from_cmd_file(bin_path: PathBuf) -> PathBuf {
+    parse_cmd_file(&bin_path, fs::read_to_string(&bin_path).unwrap())
 }
 
 pub fn find_package(starting_dir: &Path, package_name: &str) -> Option<PathBuf> {
@@ -51,13 +58,11 @@ pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> 
         // name from the binary, we must extract the path from the ".cmd" file.
         // This is... flakey, but there's no alternative.
         if cfg!(windows) {
-            let contents = fs::read_to_string(&bin_path).unwrap();
-
             return Some(
                 bin_path
                     .parent()
                     .unwrap()
-                    .join(extract_bin_from_cmd_file(&bin_path, &contents)),
+                    .join(extract_bin_from_cmd_file(bin_path.clone())),
             );
         }
 
@@ -162,11 +167,11 @@ mod tests {
         format!(
             r#"
 @IF EXIST "%~dp0\node.exe" (
-"%~dp0\node.exe" "%~dp0\{path}" %*
+    "%~dp0\node.exe" "%~dp0\{path}" %*
 ) ELSE (
-SETLOCAL
-SET PATHEXT=%PATHEXT:;.JS;=;%
-node "%~dp0\{path}" %*
+    SETLOCAL
+    SET PATHEXT=%PATHEXT:;.JS;=;%
+    node "%~dp0\{path}" %*
 )"#,
             path = path
         )
@@ -205,23 +210,23 @@ node "%~dp0\{path}" %*
         sandbox
     }
 
-    mod extract_bin_from_cmd_file {
+    mod parse_cmd_file {
         use super::*;
 
         #[test]
         fn basic_path() {
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\typescript\bin\tsc"),
+                    create_cmd(r"..\typescript\bin\tsc"),
                 ),
                 PathBuf::from(r"..\typescript\bin\tsc")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\json5\lib\cli.js"),
+                    create_cmd(r"..\json5\lib\cli.js"),
                 ),
                 PathBuf::from(r"..\json5\lib\cli.js")
             );
@@ -230,17 +235,17 @@ node "%~dp0\{path}" %*
         #[test]
         fn relative_paths() {
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r".\eslint\bin\eslint"),
+                    create_cmd(r".\eslint\bin\eslint"),
                 ),
                 PathBuf::from(r".\eslint\bin\eslint")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\..\eslint\bin\eslint"),
+                    create_cmd(r"..\..\eslint\bin\eslint"),
                 ),
                 PathBuf::from(r"..\..\eslint\bin\eslint")
             );
@@ -249,33 +254,30 @@ node "%~dp0\{path}" %*
         #[test]
         fn with_exts() {
             assert_eq!(
-                extract_bin_from_cmd_file(
-                    &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\babel\index.js"),
-                ),
+                parse_cmd_file(&PathBuf::from("test.cmd"), create_cmd(r"..\babel\index.js"),),
                 PathBuf::from(r"..\babel\index.js")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r".\webpack\dist\cli.cjs"),
+                    create_cmd(r".\webpack\dist\cli.cjs"),
                 ),
                 PathBuf::from(r".\webpack\dist\cli.cjs")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r".\..\rollup\build\rollup.mjs"),
+                    create_cmd(r".\..\rollup\build\rollup.mjs"),
                 ),
                 PathBuf::from(r".\..\rollup\build\rollup.mjs")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\webpack-dev-server\bin\webpack-dev-server.js"),
+                    create_cmd(r"..\webpack-dev-server\bin\webpack-dev-server.js"),
                 ),
                 PathBuf::from(r"..\webpack-dev-server\bin\webpack-dev-server.js")
             );
@@ -284,41 +286,38 @@ node "%~dp0\{path}" %*
         #[test]
         fn with_scopes() {
             assert_eq!(
-                extract_bin_from_cmd_file(
-                    &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\@scope\foo\bin"),
-                ),
+                parse_cmd_file(&PathBuf::from("test.cmd"), create_cmd(r"..\@scope\foo\bin"),),
                 PathBuf::from(r"..\@scope\foo\bin")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\@scope\foo-bar\bin.js"),
+                    create_cmd(r"..\@scope\foo-bar\bin.js"),
                 ),
                 PathBuf::from(r"..\@scope\foo-bar\bin.js")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\@scope-long\foo-bar\bin_file.js"),
+                    create_cmd(r"..\@scope-long\foo-bar\bin_file.js"),
                 ),
                 PathBuf::from(r"..\@scope-long\foo-bar\bin_file.js")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\@docusaurus\core\bin\docusaurus.mjs"),
+                    create_cmd(r"..\@docusaurus\core\bin\docusaurus.mjs"),
                 ),
                 PathBuf::from(r"..\@docusaurus\core\bin\docusaurus.mjs")
             );
 
             assert_eq!(
-                extract_bin_from_cmd_file(
+                parse_cmd_file(
                     &PathBuf::from("test.cmd"),
-                    &create_cmd(r"..\@babel\parser\bin\babel-parser.js"),
+                    create_cmd(r"..\@babel\parser\bin\babel-parser.js"),
                 ),
                 PathBuf::from(r"..\@babel\parser\bin\babel-parser.js")
             );

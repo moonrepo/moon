@@ -1,6 +1,6 @@
 ---
-source: crates/cli/tests/run_test.rs
-assertion_line: 555
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 467
 expression: "read_to_string(fixture.path().join(\"depends-on/tsconfig.json\")).unwrap()"
 ---
 {

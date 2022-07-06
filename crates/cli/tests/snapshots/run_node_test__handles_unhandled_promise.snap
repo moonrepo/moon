@@ -1,6 +1,6 @@
 ---
-source: crates/cli/tests/run_test.rs
-assertion_line: 432
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 184
 expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ npm install
@@ -17,5 +17,6 @@ node:internal/process/promises:246
 ▪▪▪▪ node:unhandledPromise (100ms)
 
  ERROR  Process ~/.moon/tools/node/16.0.0/bin/node failed with a 1 exit code.
+
 
 

@@ -12,13 +12,6 @@ lazy_static! {
             .unwrap();
 }
 
-pub fn extend_node_options_env_var(next: &str) -> String {
-    match env::var("NODE_OPTIONS") {
-        Ok(prev) => format!("{} {}", prev, next),
-        Err(_) => next.to_owned(),
-    }
-}
-
 #[track_caller]
 pub fn extract_bin_from_cmd_file(bin_path: &Path, contents: &str) -> PathBuf {
     let captures = BIN_PATH_PATTERN.captures(contents).unwrap_or_else(|| {
@@ -52,6 +45,10 @@ pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> 
         .join(get_bin_name_suffix(bin_name, "cmd", true));
 
     if bin_path.exists() {
+        // On Windows, we must avoid executing the ".cmd" files and instead
+        // must execute the underlying binary. Since we can't infer the package
+        // name from the binary, we must extract the path from the ".cmd" file.
+        // This is... flakey, but there's no alternative.
         if bin_path.ends_with(".cmd") {
             let contents = fs::read_to_string(&bin_path).unwrap();
 
@@ -188,32 +185,6 @@ mod tests {
         sandbox.child("nested/file.js").write_str("{}").unwrap();
 
         sandbox
-    }
-
-    mod extend_node_options_env_var {
-        use super::*;
-        use serial_test::serial;
-
-        #[serial]
-        #[test]
-        fn returns_value_if_not_set() {
-            env::remove_var("NODE_OPTIONS");
-
-            assert_eq!(extend_node_options_env_var("--arg"), String::from("--arg"));
-        }
-
-        #[serial]
-        #[test]
-        fn combines_value_if_set() {
-            env::set_var("NODE_OPTIONS", "--base");
-
-            assert_eq!(
-                extend_node_options_env_var("--arg"),
-                String::from("--base --arg")
-            );
-
-            env::remove_var("NODE_OPTIONS");
-        }
     }
 
     mod extract_bin_from_cmd_file {

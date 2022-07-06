@@ -57,9 +57,7 @@ pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> 
                 bin_path
                     .parent()
                     .unwrap()
-                    .join(extract_bin_from_cmd_file(&bin_path, &contents))
-                    .canonicalize()
-                    .unwrap(),
+                    .join(extract_bin_from_cmd_file(&bin_path, &contents)),
             );
         }
 

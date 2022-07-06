@@ -4,6 +4,8 @@ title: Profiling tasks
 
 import Image from '@site/src/components/Docs/Image';
 
+Troubleshooting slow or unperformant tasks? Profile and diagnose them with ease!
+
 ## CPU snapshots
 
 CPU profiling helps you get a better understanding of which parts of your code require the most CPU
@@ -52,6 +54,43 @@ CPU profiles can be reviewed and analyzed with
 
 Heap profiling lets you detect memory leaks, dynamic memory problems, and locate the fragments of
 code that caused them.
+
+### Record a profile
+
+To record a heap profile, pass `--profile heap` to the [`moon run`](../commands/run) command. When
+successful, the profile will be written to `.moon/cache/runs/<project>/<task>/snapshot.heapprofile`.
+
+```shell
+$ moon run --profile heap app:lint
+```
+
+### Analyze in Chrome
+
+Heap profiles can be reviewed and analyzed with
+[Chrome developer tools](https://developer.chrome.com/docs/devtools/) using the following steps.
+
+1. Open Chrome and navigate to `chrome://inspect`.
+2. Under "Devices", navigate to "Open dedicated DevTools for Node".
+3. The following window will popup. Ensure the "Memory" tab is selected.
+
+<Image src={require('./profile/heap.png')} alt="DevTools Profiler - Heap" />
+
+4. Click "Load" and select the `snapshot.heapprofile` that was
+   [previously recorded](#record-a-profile-1). If successful, the snapshot will appear in the left
+   column.
+
+> On macOS, press `command` + `shift` + `.` to display hidden files and folders, to locate the
+> `.moon` folder.
+
+<Image src={require('./profile/heap-loaded.png')} alt="DevTools Profiler - Heap snapshot loaded" />
+
+5. Select the snapshot in the left column. From here, the snapshot can be analyzed and represented
+   with [Bottom up](#bottom-up), [Top down](#top-down), or [Flame chart](#flame-chart) views.
+
+<Image
+	src={require('./profile/heap-selected.png')}
+	alt="DevTools Profiler - Heap snapshot being analyzed through charts"
+/>
 
 ## Views
 

@@ -13,6 +13,7 @@
 - Added `typescript.createMissingConfig` and `typescript.rootOptionsConfigFileName` settings to
   `.moon/workspace.yml`.
 - Updated TypeScript project reference syncing to automatically create missing `tsconfig.json`s.
+- Updated `moon setup` and `moon teardown` to display spinners while running.
 
 #### 🐞 Fixes
 

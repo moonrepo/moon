@@ -54,7 +54,7 @@ pub async fn sync_node_project(
         // Copy values outside of this block
         typescript_config = workspace.config.typescript.clone();
 
-        // Load projects configs
+        // Load project configs
         project.load_package_json().await?;
 
         let has_tsconfig = project.load_tsconfig_json(&typescript_config).await?;
@@ -107,7 +107,7 @@ pub async fn sync_node_project(
             if typescript_config.sync_project_references {
                 if let Some(tsconfig_json) = project.tsconfig_json.get_mut() {
                     let tsconfig_branch_name = &typescript_config.project_config_file_name;
-                    let dep_ref_path = path::path_to_string(
+                    let dep_ref_path = path::to_string(
                         &path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
                     )?;
 

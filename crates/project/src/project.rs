@@ -353,9 +353,9 @@ impl Project {
                 workspace_root.join(&typescript_config.root_options_config_file_name);
 
             let json = TsConfigJson {
-                extends: Some(path::standardize_separators(&path::path_to_string(
+                extends: Some(path::to_virtual_string(
                     &path::relative_from(&tsconfig_options_path, &self.root).unwrap(),
-                )?)),
+                )?),
                 include: Some(string_vec!["**/*"]),
                 references: Some(vec![]),
                 ..TsConfigJson::default()

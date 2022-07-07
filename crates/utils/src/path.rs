@@ -28,13 +28,6 @@ pub fn normalize_separators(path: &str) -> String {
     path.replace('/', "\\")
 }
 
-pub fn path_to_string(path: &Path) -> Result<String, MoonError> {
-    match path.to_str() {
-        Some(p) => Ok(p.to_owned()),
-        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
-    }
-}
-
 pub fn replace_home_dir(value: &str) -> String {
     if let Some(home_dir) = get_home_dir() {
         let home_dir_str = home_dir.to_str().unwrap_or_default();
@@ -50,4 +43,15 @@ pub fn replace_home_dir(value: &str) -> String {
 
 pub fn standardize_separators(path: &str) -> String {
     path.replace('\\', "/")
+}
+
+pub fn to_string(path: &Path) -> Result<String, MoonError> {
+    match path.to_str() {
+        Some(p) => Ok(p.to_owned()),
+        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
+    }
+}
+
+pub fn to_virtual_string(path: &Path) -> Result<String, MoonError> {
+    Ok(standardize_separators(&to_string(path)?))
 }

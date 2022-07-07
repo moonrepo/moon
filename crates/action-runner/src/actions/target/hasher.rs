@@ -1,7 +1,7 @@
 use crate::errors::ActionRunnerError;
 use moon_hasher::TargetHasher;
 use moon_project::{ExpandedFiles, Project, Task};
-use moon_utils::path::path_to_string;
+use moon_utils::path::to_string;
 use moon_workspace::Workspace;
 use std::path::Path;
 
@@ -22,7 +22,7 @@ fn convert_paths_to_strings(
                 path
             };
 
-            files.push(path_to_string(rel_path)?);
+            files.push(to_string(rel_path)?);
         }
     }
 

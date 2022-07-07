@@ -1,7 +1,7 @@
-use clap::ArgEnum;
+use clap::ValueEnum;
 use std::collections::HashSet;
 
-#[derive(ArgEnum, Clone, Debug)]
+#[derive(ValueEnum, Clone, Debug)]
 pub enum ProfileType {
     Cpu,
     Heap,

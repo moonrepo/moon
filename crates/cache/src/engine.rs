@@ -53,12 +53,8 @@ impl CacheEngine {
         &self,
         target_id: &str,
     ) -> Result<CacheItem<RunTargetState>, MoonError> {
-        let path: PathBuf = [&target_id.replace(':', "/"), "lastRunState.json"]
-            .iter()
-            .collect();
-
         CacheItem::load(
-            self.runs_dir.join(path),
+            self.get_target_dir(target_id).join("lastRunState.json"),
             RunTargetState {
                 target: String::from(target_id),
                 ..RunTargetState::default()
@@ -91,14 +87,12 @@ impl CacheEngine {
         project_id: &str,
         data: &T,
     ) -> Result<CacheRunfile, MoonError> {
-        let path: PathBuf = [project_id, "runfile.json"].iter().collect();
-
-        CacheRunfile::load(self.runs_dir.join(path), data).await
+        CacheRunfile::load(self.get_project_dir(project_id).join("runfile.json"), data).await
     }
 
     pub async fn delete_hash(&self, hash: &str) -> Result<(), MoonError> {
         if is_writable() {
-            let path = self.hashes_dir.join(format!("{}.json", hash));
+            let path = self.get_hash_path(hash);
 
             trace!(target: "moon:cache:hash", "Deleting hash {}", color::path(&path));
 
@@ -106,7 +100,7 @@ impl CacheEngine {
             fs::remove_file(&path).await?;
 
             // And the output with the hash
-            fs::remove_dir_all(&self.outputs_dir.join(hash)).await?;
+            fs::remove_dir_all(&self.get_hash_output_dir(hash)).await?;
         }
 
         Ok(())
@@ -130,6 +124,24 @@ impl CacheEngine {
         Ok(())
     }
 
+    pub fn get_hash_path(&self, hash: &str) -> PathBuf {
+        self.hashes_dir.join(format!("{}.json", hash))
+    }
+
+    pub fn get_hash_output_dir(&self, hash: &str) -> PathBuf {
+        self.outputs_dir.join(hash)
+    }
+
+    pub fn get_project_dir(&self, project_id: &str) -> PathBuf {
+        self.runs_dir.join(project_id)
+    }
+
+    pub fn get_target_dir(&self, target_id: &str) -> PathBuf {
+        let path: PathBuf = [&target_id.replace(':', "/")].iter().collect();
+
+        self.runs_dir.join(path)
+    }
+
     pub async fn link_task_output_to_out(
         &self,
         hash: &str,
@@ -137,7 +149,7 @@ impl CacheEngine {
         source_path: &Path,
     ) -> Result<(), MoonError> {
         if is_writable() {
-            let dest_root = self.outputs_dir.join(hash);
+            let dest_root = self.get_hash_output_dir(hash);
 
             fs::create_dir_all(&dest_root).await?;
 
@@ -163,7 +175,7 @@ impl CacheEngine {
         T: ?Sized + Serialize,
     {
         if is_writable() {
-            let path = self.hashes_dir.join(format!("{}.json", hash));
+            let path = self.get_hash_path(hash);
 
             trace!(target: "moon:cache:hash", "Writing hash {}", color::path(&path));
 

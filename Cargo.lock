@@ -1291,6 +1291,7 @@ version = "0.1.0"
 name = "moon_action_runner"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "insta",
  "moon_action",
  "moon_cache",
@@ -1414,7 +1415,10 @@ name = "moon_lang_node"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
+ "cached",
+ "lazy_static",
  "moon_lang",
+ "regex",
  "serial_test",
 ]
 

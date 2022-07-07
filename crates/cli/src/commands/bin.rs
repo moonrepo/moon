@@ -1,9 +1,9 @@
-use clap::ArgEnum;
+use clap::ValueEnum;
 use moon_terminal::helpers::safe_exit;
 use moon_toolchain::{Executable, Installable};
 use moon_workspace::Workspace;
 
-#[derive(ArgEnum, Clone, Debug)]
+#[derive(ValueEnum, Clone, Debug)]
 pub enum BinTools {
     Node,
     Npm,

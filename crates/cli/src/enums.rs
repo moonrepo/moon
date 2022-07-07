@@ -1,8 +1,8 @@
-use clap::ArgEnum;
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 
-#[derive(ArgEnum, Clone, Debug, Default, Display)]
+#[derive(ValueEnum, Clone, Debug, Default, Display)]
 pub enum CacheMode {
     Off,
     Read,
@@ -10,7 +10,7 @@ pub enum CacheMode {
     Write,
 }
 
-#[derive(ArgEnum, Clone, Debug, Default, Display)]
+#[derive(ValueEnum, Clone, Debug, Default, Display)]
 pub enum LogLevel {
     Off,
     Error,
@@ -21,7 +21,7 @@ pub enum LogLevel {
     Trace,
 }
 
-#[derive(ArgEnum, Clone, Copy, Debug, Deserialize, Display, Default, PartialEq, Serialize)]
+#[derive(ValueEnum, Clone, Copy, Debug, Deserialize, Display, Default, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TouchedStatus {
     Added,

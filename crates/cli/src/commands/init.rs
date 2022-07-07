@@ -1,4 +1,4 @@
-use clap::ArgEnum;
+use clap::ValueEnum;
 use dialoguer::{Confirm, Select};
 use moon_config::constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_config::package::{PackageJson, Workspaces};
@@ -20,7 +20,7 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
-#[derive(ArgEnum, Clone, Debug, Default)]
+#[derive(ValueEnum, Clone, Debug, Default)]
 pub enum PackageManager {
     #[default]
     Npm,
@@ -38,7 +38,7 @@ impl PackageManager {
     }
 }
 
-#[derive(ArgEnum, Clone, Debug, Default)]
+#[derive(ValueEnum, Clone, Debug, Default)]
 pub enum InheritProjectsAs {
     #[default]
     None,

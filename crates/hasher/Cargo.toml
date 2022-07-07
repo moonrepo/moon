@@ -7,5 +7,5 @@ edition = "2021"
 moon_config = { path = "../config"}
 moon_project = { path = "../project"}
 moon_utils = { path = "../utils"}
-serde = { version = "1.0.137", features = ["derive"] }
+serde = { version = "1.0.138", features = ["derive"] }
 sha2 = "0.10.2"

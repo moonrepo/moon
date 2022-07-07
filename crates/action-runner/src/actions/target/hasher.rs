@@ -1,7 +1,7 @@
 use crate::errors::ActionRunnerError;
 use moon_hasher::TargetHasher;
 use moon_project::{ExpandedFiles, Project, Task};
-use moon_utils::path::path_to_string;
+use moon_utils::path::to_string;
 use moon_workspace::Workspace;
 use std::path::Path;
 
@@ -22,7 +22,7 @@ fn convert_paths_to_strings(
                 path
             };
 
-            files.push(path_to_string(rel_path)?);
+            files.push(to_string(rel_path)?);
         }
     }
 
@@ -53,7 +53,7 @@ pub async fn create_target_hasher(
     // Hash project configs second so they can override
     project.load_package_json().await?;
     project
-        .load_tsconfig_json(&workspace.config.typescript.project_config_file_name)
+        .load_tsconfig_json(&workspace.config.typescript)
         .await?;
 
     if let Some(package) = project.package_json.get() {

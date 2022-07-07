@@ -274,6 +274,18 @@ the same version, which is a very common practice when managing dependencies.
 
 Dictates how moon interacts with and utilizes TypeScript within the workspace.
 
+### `createMissingConfig`
+
+> `boolean`
+
+When [syncing project references](#syncprojectreferences) and a depended on project _does not_ have
+a `tsconfig.json`, automatically create one. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {2}
+typescript:
+  createMissingConfig: true
+```
+
 ### `projectConfigFileName`
 
 > `string`
@@ -296,6 +308,20 @@ when syncing projects as references. Defaults to `tsconfig.json`.
 ```yaml title=".moon/workspace.yml" {2}
 typescript:
   rootConfigFileName: 'tsconfig.projects.json'
+```
+
+### `rootOptionsConfigFileName`
+
+> `string`
+
+Defines the file name of the config file found in the workspace root that houses shared compiler
+options. Defaults to `tsconfig.options.json`. This setting is used in the following scenarios:
+
+- When [creating a `tsconfig.json` for a project](#), sets the `extends` field to this value.
+
+```yaml title=".moon/workspace.yml" {2}
+typescript:
+  rootOptionsConfigFileName: 'tsconfig.base.json'
 ```
 
 ### `syncProjectReferences`

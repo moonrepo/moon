@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 139
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm install
+▪▪▪▪ node:exitCodeZero
+stdout
+This should appear!
+
+Tasks: 1 completed
+ Time: 100ms
+
+stderr
+
+

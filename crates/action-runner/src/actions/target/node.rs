@@ -1,20 +1,68 @@
+use crate::context::{ActionRunnerContext, ProfileType};
 use crate::errors::ActionRunnerError;
+use moon_error::MoonError;
+use moon_logger::{color, trace};
 use moon_project::{Project, Task};
 use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::path::relative_from;
 use moon_utils::process::Command;
-use moon_utils::string_vec;
+use moon_utils::{path, string_vec};
 use moon_workspace::Workspace;
 
-fn create_node_options(task: &Task) -> Vec<String> {
-    string_vec![
+fn create_node_options(
+    context: &ActionRunnerContext,
+    workspace: &Workspace,
+    task: &Task,
+) -> Result<Vec<String>, MoonError> {
+    let mut options = string_vec![
         // "--inspect", // Enable node inspector
         "--preserve-symlinks",
         "--title",
         &task.target,
         "--unhandled-rejections",
         "throw",
-    ]
+    ];
+
+    if let Some(profile) = &context.profile {
+        let prof_dir = workspace.cache.get_target_dir(&task.target);
+
+        match profile {
+            ProfileType::Cpu => {
+                trace!(
+                    target: "moon:action:run-target",
+                     "Writing CPU profile for {} to {}",
+                     color::target(&task.target),
+                     color::path(&prof_dir)
+                );
+
+                options.extend(string_vec![
+                    "--cpu-prof",
+                    "--cpu-prof-name",
+                    "snapshot.cpuprofile",
+                    "--cpu-prof-dir",
+                    path::path_to_string(&prof_dir)?
+                ]);
+            }
+            ProfileType::Heap => {
+                trace!(
+                    target: "moon:action:run-target",
+                     "Writing heap profile for {} to {}",
+                     color::target(&task.target),
+                     color::path(&prof_dir)
+                );
+
+                options.extend(string_vec![
+                    "--heap-prof",
+                    "--heap-prof-name",
+                    "snapshot.heapprofile",
+                    "--heap-prof-dir",
+                    path::path_to_string(&prof_dir)?
+                ]);
+            }
+        }
+    }
+
+    Ok(options)
 }
 
 /// Runs a task command through our toolchain's installed Node.js instance.
@@ -27,19 +75,18 @@ fn create_node_options(task: &Task) -> Vec<String> {
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
 pub fn create_node_target_command(
+    context: &ActionRunnerContext,
     workspace: &Workspace,
     project: &Project,
     task: &Task,
 ) -> Result<Command, ActionRunnerError> {
-    use moon_utils::path;
-
     let node = workspace.toolchain.get_node();
     let mut cmd = node.get_bin_path();
     let mut args = vec![];
 
     match task.command.as_str() {
         "node" => {
-            args.extend(create_node_options(task));
+            args.extend(create_node_options(context, workspace, task)?);
         }
         "npm" => {
             cmd = node.get_npm().get_bin_path();
@@ -54,7 +101,7 @@ pub fn create_node_target_command(
             let bin_path =
                 relative_from(node.find_package_bin(bin, &project.root)?, &project.root).unwrap();
 
-            args.extend(create_node_options(task));
+            args.extend(create_node_options(context, workspace, task)?);
             args.push(path::path_to_string(&bin_path)?);
         }
     };

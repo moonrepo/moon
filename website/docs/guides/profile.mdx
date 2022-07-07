@@ -1,0 +1,127 @@
+---
+title: Profiling tasks
+---
+
+import Image from '@site/src/components/Docs/Image';
+
+Troubleshooting slow or unperformant tasks? Profile and diagnose them with ease!
+
+> Profiling is only supported by Node.js based tasks.
+
+## CPU snapshots
+
+CPU profiling helps you get a better understanding of which parts of your code require the most CPU
+time, and how your code is executed and optimized by Node.js. The profiler will measure code
+execution and activities performed by the engine itself, such as compilation, calls of system
+libraries, optimization, and garbage collection.
+
+### Record a profile
+
+To record a CPU profile, pass `--profile cpu` to the [`moon run`](../commands/run) command. When
+successful, the profile will be written to `.moon/cache/runs/<project>/<task>/snapshot.cpuprofile`.
+
+```shell
+$ moon run --profile cpu app:lint
+```
+
+### Analyze in Chrome
+
+CPU profiles can be reviewed and analyzed with
+[Chrome developer tools](https://developer.chrome.com/docs/devtools/) using the following steps.
+
+1. Open Chrome and navigate to `chrome://inspect`.
+2. Under "Devices", navigate to "Open dedicated DevTools for Node".
+3. The following window will popup. Ensure the "Profiler" tab is selected.
+
+<Image src={require('./profile/cpu.png')} alt="DevTools Profiler - CPU" />
+
+4. Click "Load" and select the `snapshot.cpuprofile` that was
+   [previously recorded](#record-a-profile). If successful, the snapshot will appear in the left
+   column.
+
+> On macOS, press `command` + `shift` + `.` to display hidden files and folders, to locate the
+> `.moon` folder.
+
+<Image src={require('./profile/cpu-loaded.png')} alt="DevTools Profiler - CPU snapshot loaded" />
+
+5. Select the snapshot in the left column. From here, the snapshot can be analyzed and represented
+   with [Bottom up](#bottom-up), [Top down](#top-down), or [Flame chart](#flame-chart) views.
+
+<Image
+	src={require('./profile/cpu-selected.png')}
+	alt="DevTools Profiler - CPU snapshot being analyzed through charts"
+/>
+
+## Heap snapshots
+
+Heap profiling lets you detect memory leaks, dynamic memory problems, and locate the fragments of
+code that caused them.
+
+### Record a profile
+
+To record a heap profile, pass `--profile heap` to the [`moon run`](../commands/run) command. When
+successful, the profile will be written to `.moon/cache/runs/<project>/<task>/snapshot.heapprofile`.
+
+```shell
+$ moon run --profile heap app:lint
+```
+
+### Analyze in Chrome
+
+Heap profiles can be reviewed and analyzed with
+[Chrome developer tools](https://developer.chrome.com/docs/devtools/) using the following steps.
+
+1. Open Chrome and navigate to `chrome://inspect`.
+2. Under "Devices", navigate to "Open dedicated DevTools for Node".
+3. The following window will popup. Ensure the "Memory" tab is selected.
+
+<Image src={require('./profile/heap.png')} alt="DevTools Profiler - Heap" />
+
+4. Click "Load" and select the `snapshot.heapprofile` that was
+   [previously recorded](#record-a-profile-1). If successful, the snapshot will appear in the left
+   column.
+
+> On macOS, press `command` + `shift` + `.` to display hidden files and folders, to locate the
+> `.moon` folder.
+
+<Image src={require('./profile/heap-loaded.png')} alt="DevTools Profiler - Heap snapshot loaded" />
+
+5. Select the snapshot in the left column. From here, the snapshot can be analyzed and represented
+   with [Bottom up](#bottom-up), [Top down](#top-down), or [Flame chart](#flame-chart) views.
+
+<Image
+	src={require('./profile/heap-selected.png')}
+	alt="DevTools Profiler - Heap snapshot being analyzed through charts"
+/>
+
+## Views
+
+Chrome DevTools provide 3 views for analyzing activities within a snapshot. Each view gives you a
+different perspective on these activities.
+
+### Bottom up
+
+The Bottom up view is helpful if you encounter a heavy function and want to find out where it was
+called from.
+
+- The "Self Time" column represents the aggregated time spent directly in that activity, across all
+  of its occurrences.
+- The "Total Time" column represents aggregated time spent in that activity or any of its children.
+- The "Function" column is the function that was executed, including source location, and any
+  children.
+
+<Image src={require('./profile/bottom-up.png')} alt="Bottom up profiler view" />
+
+### Top down
+
+The Top down view works in a similar fashion to [Bottom up](#bottom-up), but displays functions
+starting from the top-level entry points. These are also known as root activities.
+
+<Image src={require('./profile/top-down.png')} alt="Top down profiler view" />
+
+### Flame chart
+
+DevTools represents main thread activity with a flame chart. The x-axis represents the recording
+over time. The y-axis represents the call stack. The events on top cause the events below it.
+
+<Image src={require('./profile/flame-chart.png')} alt="Flame chart profiler view" />

@@ -61,6 +61,7 @@ async fn create_env_vars(
 }
 
 async fn create_target_command(
+    context: &ActionRunnerContext,
     workspace: &Workspace,
     project: &Project,
     task: &Task,
@@ -79,7 +80,7 @@ async fn create_target_command(
     );
 
     let mut command = match task.type_of {
-        TaskType::Node => create_node_target_command(workspace, project, task)?,
+        TaskType::Node => create_node_target_command(context, workspace, project, task)?,
         _ => create_system_target_command(task, working_dir),
     };
 
@@ -146,7 +147,7 @@ pub async fn run_target(
     }
 
     // Build the command to run based on the task
-    let mut command = create_target_command(&workspace, &project, task).await?;
+    let mut command = create_target_command(context, &workspace, &project, task).await?;
 
     if !context.passthrough_args.is_empty() {
         command.args(&context.passthrough_args);

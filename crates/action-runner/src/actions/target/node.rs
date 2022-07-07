@@ -40,7 +40,7 @@ fn create_node_options(
                     "--cpu-prof-name",
                     "snapshot.cpuprofile",
                     "--cpu-prof-dir",
-                    path::path_to_string(&prof_dir)?
+                    path::to_string(&prof_dir)?
                 ]);
             }
             ProfileType::Heap => {
@@ -56,7 +56,7 @@ fn create_node_options(
                     "--heap-prof-name",
                     "snapshot.heapprofile",
                     "--heap-prof-dir",
-                    path::path_to_string(&prof_dir)?
+                    path::to_string(&prof_dir)?
                 ]);
             }
         }
@@ -102,7 +102,7 @@ pub fn create_node_target_command(
                 relative_from(node.find_package_bin(bin, &project.root)?, &project.root).unwrap();
 
             args.extend(create_node_options(context, workspace, task)?);
-            args.push(path::path_to_string(&bin_path)?);
+            args.push(path::to_string(&bin_path)?);
         }
     };
 

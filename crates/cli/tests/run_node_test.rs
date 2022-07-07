@@ -443,7 +443,7 @@ mod sync_depends_on {
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
-            "typescript:\n  syncProjectReferences: true",
+            "typescript:\n  syncProjectReferences: true\n  createMissingConfig: false",
         );
 
         create_moon_command_in(fixture.path())
@@ -456,7 +456,33 @@ mod sync_depends_on {
 
         // project
         // deps-a does not have a `tsconfig.json` on purpose
+        assert!(!fixture.path().join("deps-a/tsconfig.json").exists());
         assert_snapshot!(read_to_string(fixture.path().join("depends-on/tsconfig.json")).unwrap());
+    }
+
+    #[test]
+    fn creates_missing_tsconfig_json_when_syncs_as_reference() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        append_workspace_config(
+            &fixture.path().join(".moon/workspace.yml"),
+            "typescript:\n  syncProjectReferences: true\n  createMissingConfig: true",
+        );
+
+        create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("dependsOn:standard")
+            .assert();
+
+        // root
+        assert_snapshot!(read_to_string(fixture.path().join("tsconfig.json")).unwrap());
+
+        // project
+        assert_snapshot!(read_to_string(fixture.path().join("depends-on/tsconfig.json")).unwrap());
+
+        // deps-a config that was created
+        assert!(fixture.path().join("deps-a/tsconfig.json").exists());
+        assert_snapshot!(read_to_string(fixture.path().join("deps-a/tsconfig.json")).unwrap());
     }
 }
 

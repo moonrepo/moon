@@ -27,26 +27,26 @@ async fn create_env_vars(
 
     env_vars.insert(
         "MOON_CACHE_DIR".to_owned(),
-        path::path_to_string(&workspace.cache.dir)?,
+        path::to_string(&workspace.cache.dir)?,
     );
     env_vars.insert("MOON_PROJECT_ID".to_owned(), project.id.clone());
     env_vars.insert(
         "MOON_PROJECT_ROOT".to_owned(),
-        path::path_to_string(&project.root)?,
+        path::to_string(&project.root)?,
     );
     env_vars.insert("MOON_PROJECT_SOURCE".to_owned(), project.source.clone());
     env_vars.insert("MOON_TARGET".to_owned(), task.target.clone());
     env_vars.insert(
         "MOON_TOOLCHAIN_DIR".to_owned(),
-        path::path_to_string(&workspace.toolchain.dir)?,
+        path::to_string(&workspace.toolchain.dir)?,
     );
     env_vars.insert(
         "MOON_WORKSPACE_ROOT".to_owned(),
-        path::path_to_string(&workspace.root)?,
+        path::to_string(&workspace.root)?,
     );
     env_vars.insert(
         "MOON_WORKING_DIR".to_owned(),
-        path::path_to_string(&workspace.working_dir)?,
+        path::to_string(&workspace.working_dir)?,
     );
 
     // Store runtime data on the file system so that downstream commands can utilize it
@@ -54,7 +54,7 @@ async fn create_env_vars(
 
     env_vars.insert(
         "MOON_PROJECT_RUNFILE".to_owned(),
-        path::path_to_string(&runfile.path)?,
+        path::to_string(&runfile.path)?,
     );
 
     Ok(env_vars)

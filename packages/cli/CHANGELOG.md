@@ -10,6 +10,9 @@
     `moon ci` and `moon run` use.
   - Also `moon query projects` can be used to query about projects in the project graph.
 - Added `bash` as a supported value for the project `language` setting.
+- Added `typescript.createMissingConfig` and `typescript.rootOptionsConfigFileName` settings to
+  `.moon/workspace.yml`.
+- Updated TypeScript project reference syncing to automatically create missing `tsconfig.json`s.
 
 #### 🐞 Fixes
 
@@ -21,7 +24,7 @@
 
 - Updated Rust to v1.62.
 - Refactored our action runner to support additional languages in the future.
-- Refactored Windows to execute package binaries with `node.exe` directly, instead of with 
+- Refactored Windows to execute package binaries with `node.exe` directly, instead of with
   `cmd.exe` + the `.bin/*.cmd` file.
 
 ## 0.5.0

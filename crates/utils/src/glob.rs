@@ -1,4 +1,4 @@
-use crate::path::{path_to_string, standardize_separators};
+use crate::path;
 use lazy_static::lazy_static;
 use moon_error::MoonError;
 use regex::Regex;
@@ -89,7 +89,7 @@ pub fn is_path_glob(path: &Path) -> bool {
 
 pub fn normalize(path: &Path) -> Result<String, MoonError> {
     // Always use forward slashes for globs
-    let glob = standardize_separators(&path_to_string(path)?);
+    let glob = path::to_virtual_string(path)?;
 
     // Remove UNC and drive prefix as it breaks glob matching
     if cfg!(windows) {

@@ -53,7 +53,7 @@ pub async fn create_target_hasher(
     // Hash project configs second so they can override
     project.load_package_json().await?;
     project
-        .load_tsconfig_json(&workspace.config.typescript.project_config_file_name)
+        .load_tsconfig_json(&workspace.config.typescript)
         .await?;
 
     if let Some(package) = project.package_json.get() {

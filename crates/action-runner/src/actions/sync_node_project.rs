@@ -56,14 +56,18 @@ pub async fn sync_node_project(
         // Copy values outside of this block
         typescript_config = workspace.config.typescript.clone();
 
-        // Sync each dependency to `tsconfig.json` and `package.json`
+        // Load projects configs
         project.load_package_json().await?;
-        project
-            .load_tsconfig_json(&typescript_config.project_config_file_name)
-            .await?;
 
-        let package_manager = workspace.toolchain.get_node().get_package_manager();
+        let has_tsconfig = project.load_tsconfig_json(&typescript_config).await?;
 
+        if !has_tsconfig {
+            project
+                .create_tsconfig_json(&typescript_config, &workspace.root)
+                .await?;
+        }
+
+        // Sync each dependency to `tsconfig.json` and `package.json`
         for dep_id in project.get_dependencies() {
             let dep_project = workspace.projects.load(&dep_id)?;
 
@@ -72,6 +76,7 @@ pub async fn sync_node_project(
                 if let Some(package_json) = project.package_json.get_mut() {
                     let dep_package_name =
                         dep_project.get_package_name().await?.unwrap_or_default();
+                    let package_manager = workspace.toolchain.get_node().get_package_manager();
 
                     // Only add if the dependent project has a `package.json`,
                     // and this `package.json` has not already declared the dep.

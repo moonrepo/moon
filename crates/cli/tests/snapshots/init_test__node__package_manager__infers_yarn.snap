@@ -47,11 +47,19 @@ node:
 
 # Configures how moon integrates with TypeScript.
 typescript:
-  # Name of `tsconfig.json` file in project root.
+  # When `syncProjectReferences` is enabled and a dependent project reference
+  # *does not* have a `tsconfig.json`, automatically create one.
+  createMissingConfig: true
+
+  # Name of `tsconfig.json` file in the project root.
   projectConfigFileName: 'tsconfig.json'
 
-  # Name of `tsconfig.json` file in workspace root.
+  # Name of `tsconfig.json` file in the workspace root.
   rootConfigFileName: 'tsconfig.json'
+
+  # Name of the config file in the workspace root that defines shared compiler options
+  # for all project reference based config files.
+  rootOptionsConfigFileName: 'tsconfig.options.json'
 
   # Sync a project's `dependsOn` as TypeScript project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.

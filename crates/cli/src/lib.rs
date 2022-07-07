@@ -24,7 +24,7 @@ use std::env;
 
 pub use app::BIN_NAME;
 
-// This is annoying, but clap requires applying the `ArgEnum`
+// This is annoying, but clap requires applying the `ValueEnum`
 // trait onto the enum, which we can't apply to the log package.
 fn map_log_level(level: LogLevel) -> LevelFilter {
     match level {

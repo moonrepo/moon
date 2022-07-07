@@ -56,7 +56,7 @@ pub enum QueryCommands {
         local: bool,
 
         #[clap(
-            arg_enum,
+            value_enum,
             long,
             help = "Filter files based on a touched status",
             default_value_t
@@ -83,7 +83,7 @@ pub enum Commands {
         force: bool,
 
         #[clap(
-            arg_enum,
+            value_enum,
             long,
             help = "Inherit projects from `package.json` workspaces",
             default_value_t
@@ -91,7 +91,7 @@ pub enum Commands {
         inherit_projects: InheritProjectsAs,
 
         #[clap(
-            arg_enum,
+            value_enum,
             long,
             help = "Package manager to configure and use",
             default_value_t
@@ -111,7 +111,7 @@ pub enum Commands {
         long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value."
     )]
     Bin {
-        #[clap(arg_enum, help = "The tool to query")]
+        #[clap(value_enum, help = "The tool to query")]
         tool: BinTools,
     },
 
@@ -194,7 +194,7 @@ pub enum Commands {
 
         // Debugging
         #[clap(
-            arg_enum,
+            value_enum,
             long,
             help = "Record and generate a profile for ran tasks",
             help_heading = HEADING_DEBUGGING,
@@ -210,7 +210,7 @@ pub enum Commands {
         affected: bool,
 
         #[clap(
-            arg_enum,
+            value_enum,
             long,
             help = "Filter affected files based on a touched status",
             help_heading = HEADING_AFFECTED,
@@ -264,7 +264,7 @@ pub enum Commands {
 )]
 pub struct App {
     #[clap(
-        arg_enum,
+        value_enum,
         long,
         env = "MOON_CACHE",
         help = "Mode for cache operations",
@@ -276,7 +276,7 @@ pub struct App {
     pub color: bool,
 
     #[clap(
-        arg_enum,
+        value_enum,
         long,
         env = "MOON_LOG",
         help = "Lowest log level to output",

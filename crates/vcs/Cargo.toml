@@ -7,8 +7,8 @@ edition = "2021"
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 moon_utils = { path = "../utils" }
-async-trait = "0.1.53"
+async-trait = "0.1.56"
 ignore = "0.4.18"
-regex = "1.5.6"
+regex = "1.6.0"
 thiserror = "1.0.31"
-tokio = "1.18.2"
+tokio = "1.19.2"

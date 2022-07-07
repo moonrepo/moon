@@ -10,10 +10,10 @@ moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-async-trait = "0.1.53"
-flate2 = "1.0.23"
-reqwest = "0.11.10"
-semver = "1.0.9"
+async-trait = "0.1.56"
+flate2 = "1.0.24"
+reqwest = "0.11.11"
+semver = "1.0.12"
 sha2 = "0.10.2"
 tar = "0.4.38"
 thiserror = "1.0.31"
@@ -23,4 +23,4 @@ zip = "0.6.2"
 assert_fs = "1.0.7"
 mockito = "0.31.0"
 predicates = "2.1.1"
-tokio = { version = "1.18.2", features = ["test-util"] }
+tokio = { version = "1.19.2", features = ["test-util"] }

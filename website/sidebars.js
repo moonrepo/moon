@@ -103,6 +103,11 @@ const sidebars = {
 			},
 		},
 		'terminology',
+		{
+			type: 'link',
+			label: 'Changelog',
+			href: 'https://github.com/moonrepo/moon/releases',
+		},
 	],
 };
 

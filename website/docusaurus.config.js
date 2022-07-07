@@ -4,6 +4,21 @@
 // const path = require('path');
 const prismTheme = require('./prism.config');
 
+const social = [
+	{
+		label: 'GitHub',
+		to: 'https://github.com/moonrepo/moon',
+	},
+	{
+		label: 'Discord',
+		to: 'https://discord.gg/qCh9MEynv2',
+	},
+	{
+		label: 'Twitter',
+		to: 'https://twitter.com/tothemoonrepo',
+	},
+];
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
 	title: 'moon',
@@ -85,6 +100,10 @@ const config = {
 					// 	label: 'Packages',
 					// 	position: 'left',
 					// },
+					{
+						...social[0],
+						position: 'right',
+					},
 				],
 			},
 			footer: {
@@ -102,7 +121,7 @@ const config = {
 							// 	to: '/api',
 							// },
 							{
-								label: 'Example repository',
+								label: 'Examples repository',
 								href: 'https://github.com/moonrepo/examples',
 							},
 						],
@@ -122,20 +141,7 @@ const config = {
 					},
 					{
 						title: 'Support',
-						items: [
-							{
-								label: 'GitHub',
-								to: 'https://github.com/moonrepo/moon',
-							},
-							{
-								label: 'Discord',
-								to: 'https://discord.gg/qCh9MEynv2',
-							},
-							{
-								label: 'Twitter',
-								to: 'https://twitter.com/tothemoonrepo',
-							},
-						],
+						items: social,
 					},
 				],
 				copyright: `Copyright © ${new Date().getFullYear()} moon. moonrepo LLC.`,

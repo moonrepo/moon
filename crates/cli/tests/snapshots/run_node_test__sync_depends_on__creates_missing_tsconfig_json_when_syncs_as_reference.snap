@@ -1,0 +1,25 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 477
+expression: "read_to_string(fixture.path().join(\"tsconfig.json\")).unwrap()"
+---
+{
+  "references": [
+    {
+      "path": "base"
+    },
+    {
+      "path": "depends-on"
+    },
+    {
+      "path": "deps-a"
+    },
+    {
+      "path": "deps-b"
+    },
+    {
+      "path": "deps-c"
+    }
+  ]
+}
+

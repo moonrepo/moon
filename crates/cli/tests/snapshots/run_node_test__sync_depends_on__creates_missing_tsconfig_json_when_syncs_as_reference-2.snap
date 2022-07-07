@@ -1,0 +1,22 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 480
+expression: "read_to_string(fixture.path().join(\"depends-on/tsconfig.json\")).unwrap()"
+---
+{
+  "exclude": [
+    "*.js"
+  ],
+  "references": [
+    {
+      "path": "../deps-a"
+    },
+    {
+      "path": "../deps-b"
+    },
+    {
+      "path": "../deps-c"
+    }
+  ]
+}
+

@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 483
+expression: "read_to_string(fixture.path().join(\"deps-a/tsconfig.json\")).unwrap()"
+---
+{
+  "extends": "../tsconfig.options.json",
+  "include": [
+    "**/*"
+  ],
+  "references": []
+}

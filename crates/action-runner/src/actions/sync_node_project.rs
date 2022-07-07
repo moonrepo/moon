@@ -4,10 +4,8 @@ use moon_action::{Action, ActionStatus};
 use moon_config::{tsconfig::TsConfigJson, TypeScriptConfig};
 use moon_logger::{color, debug};
 use moon_project::Project;
-use moon_utils::is_ci;
-use moon_utils::path::relative_from;
+use moon_utils::{is_ci, path};
 use moon_workspace::Workspace;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -61,13 +59,22 @@ pub async fn sync_node_project(
 
         let has_tsconfig = project.load_tsconfig_json(&typescript_config).await?;
 
-        if !has_tsconfig {
+        if !has_tsconfig
+            && typescript_config.create_missing_config
+            && typescript_config.sync_project_references
+        {
             project
                 .create_tsconfig_json(&typescript_config, &workspace.root)
                 .await?;
         }
 
         // Sync each dependency to `tsconfig.json` and `package.json`
+        let dep_version_range = workspace
+            .toolchain
+            .get_node()
+            .get_package_manager()
+            .get_workspace_dependency_range();
+
         for dep_id in project.get_dependencies() {
             let dep_project = workspace.projects.load(&dep_id)?;
 
@@ -76,16 +83,11 @@ pub async fn sync_node_project(
                 if let Some(package_json) = project.package_json.get_mut() {
                     let dep_package_name =
                         dep_project.get_package_name().await?.unwrap_or_default();
-                    let package_manager = workspace.toolchain.get_node().get_package_manager();
 
                     // Only add if the dependent project has a `package.json`,
                     // and this `package.json` has not already declared the dep.
                     if !dep_package_name.is_empty()
-                        && package_json.add_dependency(
-                            &dep_package_name,
-                            &package_manager.get_workspace_dependency_range(),
-                            true,
-                        )
+                        && package_json.add_dependency(&dep_package_name, &dep_version_range, true)
                     {
                         debug!(
                             target: LOG_TARGET,
@@ -105,11 +107,9 @@ pub async fn sync_node_project(
             if typescript_config.sync_project_references {
                 if let Some(tsconfig_json) = project.tsconfig_json.get_mut() {
                     let tsconfig_branch_name = &typescript_config.project_config_file_name;
-                    let dep_ref_path = String::from(
-                        relative_from(&dep_project.root, &project.root)
-                            .unwrap_or_else(|| PathBuf::from("."))
-                            .to_string_lossy(),
-                    );
+                    let dep_ref_path = path::path_to_string(
+                        &path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
+                    )?;
 
                     // Only add if the dependent project has a `tsconfig.json`,
                     // and this `tsconfig.json` has not already declared the dep.
@@ -128,7 +128,7 @@ pub async fn sync_node_project(
                         mutated_files = true;
                     }
                 } else {
-                    // Projects doesnt have a `tsconfig.json`
+                    // Project doesnt have a `tsconfig.json`
                     typescript_config.sync_project_references = false;
                 }
             }

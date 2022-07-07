@@ -347,10 +347,7 @@ impl Project {
         typescript_config: &TypeScriptConfig,
         workspace_root: &Path,
     ) -> Result<(), ProjectError> {
-        if !self.tsconfig_json.initialized()
-            && typescript_config.create_missing_config
-            && typescript_config.sync_project_references
-        {
+        if !self.tsconfig_json.initialized() {
             let tsconfig_path = self.root.join(&typescript_config.project_config_file_name);
             let tsconfig_options_path =
                 workspace_root.join(&typescript_config.root_options_config_file_name);

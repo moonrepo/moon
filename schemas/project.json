@@ -74,6 +74,7 @@
     "ProjectLanguage": {
       "type": "string",
       "enum": [
+        "bash",
         "javascript",
         "typescript",
         "unknown"

@@ -9,7 +9,7 @@ use moon_utils::test::{
 use predicates::prelude::*;
 use std::fs::read_to_string;
 use std::path::Path;
-use utils::{append_workspace_config, get_path_safe_output};
+use utils::get_path_safe_output;
 
 async fn extract_hash_from_run(fixture: &Path, target: &str) -> String {
     let engine = CacheEngine::create(fixture).await.unwrap();
@@ -61,6 +61,7 @@ fn errors_for_cycle_in_task_deps() {
 #[cfg(not(windows))]
 mod general {
     use super::*;
+    use utils::append_workspace_config;
 
     #[test]
     fn logs_command_for_project_root() {

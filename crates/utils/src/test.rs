@@ -25,7 +25,7 @@ where
     }
 }
 
-pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
+pub fn create_fixtures_skeleton_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
     use assert_fs::prelude::*;
 
     let temp_dir = assert_fs::fixture::TempDir::new().unwrap();
@@ -33,6 +33,12 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
     temp_dir
         .copy_from(get_fixtures_dir(dir), &["**/*"])
         .unwrap();
+
+    temp_dir
+}
+
+pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
+    let temp_dir = create_fixtures_skeleton_sandbox(dir);
 
     // Initialize a git repo so that VCS commands work
     run_git_command(

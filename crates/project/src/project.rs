@@ -347,8 +347,9 @@ impl Project {
         typescript_config: &TypeScriptConfig,
         workspace_root: &Path,
     ) -> Result<(), ProjectError> {
-        if !self.tsconfig_json.initialized() {
-            let tsconfig_path = self.root.join(&typescript_config.project_config_file_name);
+        let tsconfig_path = self.root.join(&typescript_config.project_config_file_name);
+
+        if !self.tsconfig_json.initialized() && !tsconfig_path.exists() {
             let tsconfig_options_path =
                 workspace_root.join(&typescript_config.root_options_config_file_name);
 

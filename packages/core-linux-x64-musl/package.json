@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/core-linux-x64-musl",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Linux x64 musl binary for moon.",
   "keywords": [
     "moon",

@@ -88,7 +88,7 @@ async fn main() {
                     .join(NODE.vendor_dir)
                     .join("@moonrepo")
                     .join("cli")
-                    .join("moon");
+                    .join(BIN_NAME);
 
                 // The binary exists! So let's run that one to ensure
                 // we're running the version pinned in `package.json`,

@@ -6,12 +6,14 @@ use crate::commands::bin::BinTools;
 use crate::commands::init::{InheritProjectsAs, PackageManager};
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
+use moon_action_runner::ProfileType;
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
 
 const HEADING_AFFECTED: &str = "Affected by changes";
+const HEADING_DEBUGGING: &str = "Debugging";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Debug, Subcommand)]
@@ -189,6 +191,15 @@ pub enum Commands {
             help = "Run dependents of the same task, as well as dependencies"
         )]
         dependents: bool,
+
+        // Debugging
+        #[clap(
+            arg_enum,
+            long,
+            help = "Record and generate a profile for ran tasks",
+            help_heading = HEADING_DEBUGGING,
+        )]
+        profile: Option<ProfileType>,
 
         // Affected
         #[clap(

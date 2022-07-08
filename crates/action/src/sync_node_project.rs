@@ -1,7 +1,8 @@
 use crate::action::{Action, ActionStatus};
 use crate::context::ActionContext;
 use crate::errors::ActionError;
-use moon_config::{tsconfig::TsConfigJson, TypeScriptConfig};
+use moon_config::TypeScriptConfig;
+use moon_lang_node::tsconfig::TsConfigJson;
 use moon_logger::{color, debug};
 use moon_project::Project;
 use moon_utils::{is_ci, path};

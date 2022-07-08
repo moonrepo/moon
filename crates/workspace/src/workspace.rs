@@ -119,7 +119,7 @@ async fn load_tsconfig_json(
         return Ok(None);
     }
 
-    Ok(Some(TsConfigJson::load(&tsconfig_json_path).await?))
+    Ok(TsConfigJson::read(tsconfig_json_path).await?)
 }
 
 pub struct Workspace {

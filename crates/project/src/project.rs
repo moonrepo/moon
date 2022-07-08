@@ -461,14 +461,15 @@ impl Project {
                 color::path(&self.root),
             );
 
-            return match TsConfigJson::load(&tsconfig_path).await {
-                Ok(json) => {
+            return match TsConfigJson::read(tsconfig_path).await {
+                Ok(Some(json)) => {
                     self.tsconfig_json
                         .set(json)
                         .expect("Failed to load tsconfig.json");
 
                     Ok(true)
                 }
+                Ok(None) => Ok(false),
                 Err(error) => Err(ProjectError::Moon(error)),
             };
         }

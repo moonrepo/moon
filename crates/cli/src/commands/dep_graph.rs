@@ -8,9 +8,7 @@ pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::er
     let mut graph = DepGraph::default();
 
     // Preload all projects
-    for id in projects.ids() {
-        projects.load(&id)?;
-    }
+    projects.load_all()?;
 
     // Focus a target and its dependencies/dependents
     if let Some(id) = target_id {

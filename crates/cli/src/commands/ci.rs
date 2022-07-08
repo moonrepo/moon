@@ -149,6 +149,7 @@ fn generate_dep_graph(
         dep_graph.run_target(target, &workspace.projects, None)?;
 
         // And also run its dependents to ensure consumers still work correctly
+        // TODO: This doesn't work correctly unless all projects are in the graph!!!
         dep_graph.run_target_dependents(target, &workspace.projects)?;
     }
 

@@ -6,9 +6,7 @@ pub async fn project_graph(project_id: &Option<String>) -> Result<(), Box<dyn st
     if let Some(id) = project_id {
         workspace.projects.load(id)?;
     } else {
-        for id in workspace.projects.ids() {
-            workspace.projects.load(&id)?;
-        }
+        workspace.projects.load_all()?;
     }
 
     println!("{}", workspace.projects.to_dot());

@@ -7,7 +7,7 @@ fn all_by_default() {
     let dot = get_assert_output(&assert);
 
     // Snapshot is not deterministic
-    assert_eq!(dot.split("\n").count(), 227);
+    assert_eq!(dot.split('\n').count(), 227);
 }
 
 #[test]

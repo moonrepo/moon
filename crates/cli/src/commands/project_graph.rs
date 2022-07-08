@@ -1,15 +1,12 @@
 use moon_workspace::Workspace;
 
-pub async fn project_graph(id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn project_graph(project_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
 
-    // Force load projects into the graph
-    if let Some(pid) = id {
-        workspace.projects.load(pid)?;
+    if let Some(id) = project_id {
+        workspace.projects.load(id)?;
     } else {
-        for pid in workspace.projects.ids() {
-            workspace.projects.load(&pid)?;
-        }
+        workspace.projects.load_all()?;
     }
 
     println!("{}", workspace.projects.to_dot());

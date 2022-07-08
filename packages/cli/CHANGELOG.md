@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `moon dep-graph` command for displaying the entire dependency graph in DOT format.
+
 ## 0.6.0
 
 #### 🚀 Updates

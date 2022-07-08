@@ -160,6 +160,21 @@ impl ProjectGraph {
         Ok(graph.node_weight(index).unwrap().clone())
     }
 
+    /// Force load all projects into the graph. This is necessary
+    /// when needing to access project *dependents*, and may also
+    /// be a costly operation!
+    #[track_caller]
+    pub fn load_all(&self) -> Result<(), ProjectError> {
+        let mut indices = self.indices.write().expect(WRITE_ERROR);
+        let mut graph = self.graph.write().expect(WRITE_ERROR);
+
+        for id in self.ids() {
+            self.internal_load(&id, &mut indices, &mut graph)?;
+        }
+
+        Ok(())
+    }
+
     /// Return a list of direct project IDs that the defined project depends on.
     #[track_caller]
     pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
@@ -225,14 +240,14 @@ impl ProjectGraph {
 
                 if id == ROOT_NODE_ID {
                     format!(
-                        "label=\"{}\" style=filled, shape=circle, fillcolor=black, fontcolor=white",
+                        "label=\"{}\" style=filled, shape=oval, fillcolor=black, fontcolor=white",
                         id
                     )
                 // } else if id == &highlight_id {
                 //     String::from("style=filled, shape=circle, fillcolor=palegreen, fontcolor=black")
                 } else {
                     format!(
-                        "label=\"{}\" style=filled, shape=circle, fillcolor=gray, fontcolor=black",
+                        "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
                         id
                     )
                 }

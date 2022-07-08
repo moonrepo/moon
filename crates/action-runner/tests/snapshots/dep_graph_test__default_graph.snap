@@ -4,6 +4,6 @@ assertion_line: 78
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label = "\"SetupToolchain\"" ]
+    0 [ label="SetupToolchain" style=filled, shape=oval, fillcolor=black, fontcolor=white]
 }
 

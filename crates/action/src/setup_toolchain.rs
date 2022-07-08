@@ -1,6 +1,6 @@
-use crate::context::ActionRunnerContext;
-use crate::errors::ActionRunnerError;
-use moon_action::{Action, ActionStatus};
+use crate::action::{Action, ActionStatus};
+use crate::context::ActionContext;
+use crate::errors::ActionError;
 use moon_logger::debug;
 use moon_workspace::Workspace;
 use std::sync::Arc;
@@ -12,9 +12,9 @@ const HOUR: u128 = MINUTE * 60;
 
 pub async fn setup_toolchain(
     _action: &mut Action,
-    _context: &ActionRunnerContext,
+    _context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-) -> Result<ActionStatus, ActionRunnerError> {
+) -> Result<ActionStatus, ActionError> {
     debug!(
         target: "moon:action:setup-toolchain",
         "Setting up toolchain",

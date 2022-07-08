@@ -6,7 +6,7 @@ use crate::commands::bin::BinTools;
 use crate::commands::init::{InheritProjectsAs, PackageManager};
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
-use moon_action_runner::ProfileType;
+use moon_action::ProfileType;
 use moon_project::TargetID;
 use moon_terminal::output::label_moon;
 

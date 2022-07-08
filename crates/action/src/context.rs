@@ -8,7 +8,7 @@ pub enum ProfileType {
 }
 
 #[derive(Default)]
-pub struct ActionRunnerContext {
+pub struct ActionContext {
     pub passthrough_args: Vec<String>,
 
     pub primary_targets: HashSet<String>,

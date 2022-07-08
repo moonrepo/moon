@@ -3,8 +3,8 @@ use crate::enums::TouchedStatus;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use console::Term;
 use itertools::Itertools;
-use moon_action::ActionStatus;
-use moon_action_runner::{ActionRunner, ActionRunnerContext, DepGraph, DepGraphError};
+use moon_action::{ActionContext, ActionStatus};
+use moon_action_runner::{ActionRunner, DepGraph, DepGraphError};
 use moon_logger::{color, debug};
 use moon_project::{Target, TouchedFilePaths};
 use moon_terminal::helpers::{replace_style_tokens, safe_exit};
@@ -181,10 +181,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     print_header("Running all targets");
 
     let mut runner = ActionRunner::new(workspace);
-
-    let results = runner
-        .run(dep_graph, ActionRunnerContext::default())
-        .await?;
+    let results = runner.run(dep_graph, ActionContext::default()).await?;
 
     // Print out the results and exit if an error occurs
     let mut error_count = 0;

@@ -1,8 +1,10 @@
-use crate::actions::{install_node_deps, run_target, setup_toolchain, sync_node_project};
-use crate::context::ActionRunnerContext;
-use crate::dep_graph::{DepGraph, Node};
+use crate::dep_graph::DepGraph;
 use crate::errors::{ActionRunnerError, DepGraphError};
-use moon_action::{Action, ActionStatus};
+use crate::node::Node;
+use moon_action::{
+    install_node_deps, run_target, setup_toolchain, sync_node_project, Action, ActionContext,
+    ActionStatus,
+};
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
 use moon_workspace::Workspace;
@@ -16,7 +18,7 @@ const LOG_TARGET: &str = "moon:action-runner";
 async fn run_action(
     node: &Node,
     action: &mut Action,
-    context: &ActionRunnerContext,
+    context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<(), ActionRunnerError> {
     let result = match node {
@@ -89,7 +91,7 @@ impl ActionRunner {
     pub async fn run(
         &mut self,
         graph: DepGraph,
-        context: ActionRunnerContext,
+        context: ActionContext,
     ) -> Result<Vec<Action>, ActionRunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();

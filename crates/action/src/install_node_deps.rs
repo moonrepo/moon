@@ -1,6 +1,6 @@
-use crate::context::ActionRunnerContext;
-use crate::errors::ActionRunnerError;
-use moon_action::{Action, ActionStatus};
+use crate::action::{Action, ActionStatus};
+use crate::context::ActionContext;
+use crate::errors::ActionError;
 use moon_config::PackageManager;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, warn};
@@ -64,9 +64,9 @@ fn add_engines_constraint(workspace: &mut Workspace) -> bool {
 
 pub async fn install_node_deps(
     _action: &mut Action,
-    _context: &ActionRunnerContext,
+    _context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-) -> Result<ActionStatus, ActionRunnerError> {
+) -> Result<ActionStatus, ActionError> {
     // Writes root `package.json`
     {
         let mut workspace = workspace.write().await;

@@ -1,8 +1,8 @@
 use crate::enums::TouchedStatus;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use console::Term;
-use moon_action::{Action, ActionStatus};
-use moon_action_runner::{ActionRunner, ActionRunnerContext, DepGraph, ProfileType};
+use moon_action::{Action, ActionContext, ActionStatus, ProfileType};
+use moon_action_runner::{ActionRunner, DepGraph};
 use moon_logger::color;
 use moon_project::Target;
 use moon_terminal::ExtendedTerm;
@@ -155,7 +155,7 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     }
 
     // Process all tasks in the graph
-    let context = ActionRunnerContext {
+    let context = ActionContext {
         passthrough_args: options.passthrough,
         primary_targets: HashSet::from([target_id.to_owned()]),
         profile: options.profile,

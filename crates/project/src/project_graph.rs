@@ -225,14 +225,14 @@ impl ProjectGraph {
 
                 if id == ROOT_NODE_ID {
                     format!(
-                        "label=\"{}\" style=filled, shape=circle, fillcolor=black, fontcolor=white",
+                        "label=\"{}\" style=filled, shape=oval, fillcolor=black, fontcolor=white",
                         id
                     )
                 // } else if id == &highlight_id {
                 //     String::from("style=filled, shape=circle, fillcolor=palegreen, fontcolor=black")
                 } else {
                     format!(
-                        "label=\"{}\" style=filled, shape=circle, fillcolor=gray, fontcolor=black",
+                        "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
                         id
                     )
                 }

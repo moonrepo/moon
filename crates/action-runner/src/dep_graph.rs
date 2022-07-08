@@ -7,6 +7,7 @@ use moon_project::{Project, ProjectGraph, Target, TargetError, TargetProject, To
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
+use petgraph::visit::EdgeRef;
 use petgraph::Graph;
 use std::collections::{HashMap, HashSet};
 
@@ -280,7 +281,33 @@ impl DepGraph {
 
     pub fn to_dot(&self) -> String {
         let graph = self.graph.map(|_, n| n.label(), |_, e| e);
-        let dot = Dot::with_config(&graph, &[Config::EdgeNoLabel]);
+
+        let dot = Dot::with_attr_getters(
+            &graph,
+            &[Config::EdgeNoLabel, Config::NodeNoLabel],
+            &|_, e| {
+                if e.source().index() == 0 {
+                    String::from("arrowhead=none")
+                } else {
+                    String::from("arrowhead=box, arrowtail=box")
+                }
+            },
+            &|_, n| {
+                let id = n.1;
+
+                if id == &Node::SetupToolchain.label() {
+                    format!(
+                        "label=\"{}\" style=filled, shape=oval, fillcolor=black, fontcolor=white",
+                        id
+                    )
+                } else {
+                    format!(
+                        "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
+                        id
+                    )
+                }
+            },
+        );
 
         format!("{:?}", dot)
     }

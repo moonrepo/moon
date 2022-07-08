@@ -1433,6 +1433,7 @@ dependencies = [
  "lazy_static",
  "moon_error",
  "moon_lang",
+ "moon_logger",
  "moon_utils",
  "regex",
  "serde",

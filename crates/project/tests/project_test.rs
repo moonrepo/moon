@@ -220,101 +220,101 @@ async fn has_package_json() {
     );
 }
 
-mod tsconfig {
-    use super::*;
+// mod tsconfig {
+//     use super::*;
 
-    #[tokio::test]
-    async fn creates_tsconfig() {
-        let fixture = create_fixtures_skeleton_sandbox("cases");
+//     #[tokio::test]
+//     async fn creates_tsconfig() {
+//         let fixture = create_fixtures_skeleton_sandbox("cases");
 
-        let project = Project::new(
-            "deps-a",
-            "deps-a",
-            fixture.path(),
-            &GlobalProjectConfig::default(),
-        )
-        .unwrap();
+//         let project = Project::new(
+//             "deps-a",
+//             "deps-a",
+//             fixture.path(),
+//             &GlobalProjectConfig::default(),
+//         )
+//         .unwrap();
 
-        let tsconfig_path = project.root.join("tsconfig.json");
+//         let tsconfig_path = project.root.join("tsconfig.json");
 
-        assert!(!tsconfig_path.exists());
+//         assert!(!tsconfig_path.exists());
 
-        project
-            .create_tsconfig_json(&TypeScriptConfig::default(), fixture.path())
-            .await
-            .unwrap();
+//         project
+//             .create_tsconfig_json(&TypeScriptConfig::default(), fixture.path())
+//             .await
+//             .unwrap();
 
-        assert!(tsconfig_path.exists());
+//         assert!(tsconfig_path.exists());
 
-        let tsconfig = project.tsconfig_json.get().unwrap();
+//         let tsconfig = project.tsconfig_json.get().unwrap();
 
-        assert_eq!(
-            tsconfig.extends,
-            Some("../tsconfig.options.json".to_owned())
-        );
-        assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
-    }
+//         assert_eq!(
+//             tsconfig.extends,
+//             Some("../tsconfig.options.json".to_owned())
+//         );
+//         assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
+//     }
 
-    #[tokio::test]
-    async fn creates_tsconfig_with_custom_settings() {
-        let fixture = create_fixtures_skeleton_sandbox("cases");
+//     #[tokio::test]
+//     async fn creates_tsconfig_with_custom_settings() {
+//         let fixture = create_fixtures_skeleton_sandbox("cases");
 
-        let project = Project::new(
-            "deps-a",
-            "deps-a",
-            fixture.path(),
-            &GlobalProjectConfig::default(),
-        )
-        .unwrap();
+//         let project = Project::new(
+//             "deps-a",
+//             "deps-a",
+//             fixture.path(),
+//             &GlobalProjectConfig::default(),
+//         )
+//         .unwrap();
 
-        let tsconfig_path = project.root.join("tsconfig.ref.json");
+//         let tsconfig_path = project.root.join("tsconfig.ref.json");
 
-        assert!(!tsconfig_path.exists());
+//         assert!(!tsconfig_path.exists());
 
-        project
-            .create_tsconfig_json(
-                &TypeScriptConfig {
-                    project_config_file_name: "tsconfig.ref.json".to_string(),
-                    root_options_config_file_name: "tsconfig.base.json".to_string(),
-                    ..TypeScriptConfig::default()
-                },
-                fixture.path(),
-            )
-            .await
-            .unwrap();
+//         project
+//             .create_tsconfig_json(
+//                 &TypeScriptConfig {
+//                     project_config_file_name: "tsconfig.ref.json".to_string(),
+//                     root_options_config_file_name: "tsconfig.base.json".to_string(),
+//                     ..TypeScriptConfig::default()
+//                 },
+//                 fixture.path(),
+//             )
+//             .await
+//             .unwrap();
 
-        assert!(tsconfig_path.exists());
+//         assert!(tsconfig_path.exists());
 
-        let tsconfig = project.tsconfig_json.get().unwrap();
+//         let tsconfig = project.tsconfig_json.get().unwrap();
 
-        assert_eq!(tsconfig.extends, Some("../tsconfig.base.json".to_owned()));
-        assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
-    }
+//         assert_eq!(tsconfig.extends, Some("../tsconfig.base.json".to_owned()));
+//         assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
+//     }
 
-    #[tokio::test]
-    async fn doesnt_create_if_a_config_exists() {
-        let fixture = create_fixtures_skeleton_sandbox("cases");
+//     #[tokio::test]
+//     async fn doesnt_create_if_a_config_exists() {
+//         let fixture = create_fixtures_skeleton_sandbox("cases");
 
-        let project = Project::new(
-            "deps-b",
-            "deps-b",
-            fixture.path(),
-            &GlobalProjectConfig::default(),
-        )
-        .unwrap();
+//         let project = Project::new(
+//             "deps-b",
+//             "deps-b",
+//             fixture.path(),
+//             &GlobalProjectConfig::default(),
+//         )
+//         .unwrap();
 
-        let tsconfig_path = project.root.join("tsconfig.json");
+//         let tsconfig_path = project.root.join("tsconfig.json");
 
-        assert!(tsconfig_path.exists());
+//         assert!(tsconfig_path.exists());
 
-        project
-            .create_tsconfig_json(&TypeScriptConfig::default(), fixture.path())
-            .await
-            .unwrap();
+//         project
+//             .create_tsconfig_json(&TypeScriptConfig::default(), fixture.path())
+//             .await
+//             .unwrap();
 
-        assert_eq!(project.tsconfig_json.get(), None);
-    }
-}
+//         assert_eq!(project.tsconfig_json.get(), None);
+//     }
+// }
 
 mod tasks {
     use super::*;

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_error = { path = "../error"}
 moon_lang = { path = "../lang" }
+moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils"}
 cached = "0.36.0"
 json = "0.12.4"

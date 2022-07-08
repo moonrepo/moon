@@ -6,11 +6,10 @@ use crate::token::{TokenResolver, TokenSharedData};
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     format_figment_errors, FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID,
-    TypeScriptConfig,
 };
-use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
+use moon_lang_node::package::PackageJson;
 use moon_logger::{color, debug, trace, Logable};
-use moon_utils::{fs, path, string_vec};
+use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -253,10 +252,6 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
-
-    // The `tsconfig.json` in the project root.
-    #[serde(skip)]
-    pub tsconfig_json: OnceCell<TsConfigJson>,
 }
 
 impl Default for Project {
@@ -270,7 +265,6 @@ impl Default for Project {
             root: PathBuf::new(),
             source: String::new(),
             tasks: HashMap::new(),
-            tsconfig_json: OnceCell::new(),
         }
     }
 }
@@ -335,41 +329,40 @@ impl Project {
             root,
             source: String::from(source),
             tasks,
-            tsconfig_json: OnceCell::new(),
         })
     }
 
     // Automatically create missing config files when we are syncing project references.
-    #[track_caller]
-    pub async fn create_tsconfig_json(
-        &self,
-        typescript_config: &TypeScriptConfig,
-        workspace_root: &Path,
-    ) -> Result<(), ProjectError> {
-        let tsconfig_path = self.root.join(&typescript_config.project_config_file_name);
+    // #[track_caller]
+    // pub async fn create_tsconfig_json(
+    //     &self,
+    //     typescript_config: &TypeScriptConfig,
+    //     workspace_root: &Path,
+    // ) -> Result<(), ProjectError> {
+    //     let tsconfig_path = self.root.join(&typescript_config.project_config_file_name);
 
-        if !self.tsconfig_json.initialized() && !tsconfig_path.exists() {
-            let tsconfig_options_path =
-                workspace_root.join(&typescript_config.root_options_config_file_name);
+    //     if !self.tsconfig_json.initialized() && !tsconfig_path.exists() {
+    //         let tsconfig_options_path =
+    //             workspace_root.join(&typescript_config.root_options_config_file_name);
 
-            let json = TsConfigJson {
-                extends: Some(path::to_virtual_string(
-                    &path::relative_from(&tsconfig_options_path, &self.root).unwrap(),
-                )?),
-                include: Some(string_vec!["**/*"]),
-                references: Some(vec![]),
-                ..TsConfigJson::default()
-            };
+    //         let json = TsConfigJson {
+    //             extends: Some(path::to_virtual_string(
+    //                 &path::relative_from(&tsconfig_options_path, &self.root).unwrap(),
+    //             )?),
+    //             include: Some(string_vec!["**/*"]),
+    //             references: Some(vec![]),
+    //             ..TsConfigJson::default()
+    //         };
 
-            fs::write_json(&tsconfig_path, &json, true).await?;
+    //         fs::write_json(&tsconfig_path, &json, true).await?;
 
-            self.tsconfig_json
-                .set(json)
-                .expect("Failed to create tsconfig.json");
-        }
+    //         self.tsconfig_json
+    //             .set(json)
+    //             .expect("Failed to create tsconfig.json");
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     /// Return a list of project IDs this project depends on.
     pub fn get_dependencies(&self) -> Vec<ProjectID> {
@@ -430,42 +423,6 @@ impl Project {
                     self.package_json
                         .set(json)
                         .expect("Failed to load package.json");
-
-                    Ok(true)
-                }
-                Ok(None) => Ok(false),
-                Err(error) => Err(ProjectError::Moon(error)),
-            };
-        }
-
-        Ok(false)
-    }
-
-    /// Load and parse the package's `tsconfig.json` if it exists.
-    #[track_caller]
-    pub async fn load_tsconfig_json(
-        &self,
-        typescript_config: &TypeScriptConfig,
-    ) -> Result<bool, ProjectError> {
-        if self.tsconfig_json.initialized() {
-            return Ok(true);
-        }
-
-        let tsconfig_path = self.root.join(&typescript_config.project_config_file_name);
-
-        if tsconfig_path.exists() {
-            trace!(
-                target: self.get_log_target(),
-                "Loading {} in {}",
-                color::file(&typescript_config.project_config_file_name),
-                color::path(&self.root),
-            );
-
-            return match TsConfigJson::read(tsconfig_path).await {
-                Ok(Some(json)) => {
-                    self.tsconfig_json
-                        .set(json)
-                        .expect("Failed to load tsconfig.json");
 
                     Ok(true)
                 }

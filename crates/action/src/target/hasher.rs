@@ -1,5 +1,6 @@
 use crate::errors::ActionError;
 use moon_hasher::TargetHasher;
+use moon_lang_node::tsconfig::TsConfigJson;
 use moon_project::{ExpandedFiles, Project, Task};
 use moon_utils::path::to_string;
 use moon_workspace::Workspace;
@@ -52,16 +53,19 @@ pub async fn create_target_hasher(
 
     // Hash project configs second so they can override
     project.load_package_json().await?;
-    project
-        .load_tsconfig_json(&workspace.config.typescript)
-        .await?;
 
     if let Some(package) = project.package_json.get() {
         hasher.hash_package_json(package);
     }
 
-    if let Some(tsconfig) = project.tsconfig_json.get() {
-        hasher.hash_tsconfig_json(tsconfig);
+    if let Some(tsconfig) = TsConfigJson::read(
+        project
+            .root
+            .join(&workspace.config.typescript.project_config_file_name),
+    )
+    .await?
+    {
+        hasher.hash_tsconfig_json(&tsconfig);
     }
 
     // For input files, hash them with the vcs layer first

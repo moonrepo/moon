@@ -1,15 +1,15 @@
 ---
 source: crates/action-runner/tests/dep_graph_test.rs
-assertion_line: 165
+assertion_line: 162
 expression: graph.to_dot()
 ---
 digraph {
     0 [ label = "\"SetupToolchain\"" ]
-    1 [ label = "\"InstallDeps(Node)\"" ]
-    2 [ label = "\"SyncProject(Node, basic)\"" ]
+    1 [ label = "\"InstallNodeDeps\"" ]
+    2 [ label = "\"SyncNodeProject(basic)\"" ]
     3 [ label = "\"RunTarget(basic:test)\"" ]
     4 [ label = "\"RunTarget(basic:lint)\"" ]
-    5 [ label = "\"SyncProject(Node, chain)\"" ]
+    5 [ label = "\"SyncNodeProject(chain)\"" ]
     6 [ label = "\"RunTarget(chain:a)\"" ]
     7 [ label = "\"RunTarget(chain:b)\"" ]
     8 [ label = "\"RunTarget(chain:c)\"" ]

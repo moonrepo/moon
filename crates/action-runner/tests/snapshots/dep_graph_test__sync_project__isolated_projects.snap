@@ -1,14 +1,14 @@
 ---
 source: crates/action-runner/tests/dep_graph_test.rs
-assertion_line: 404
+assertion_line: 401
 expression: graph.to_dot()
 ---
 digraph {
     0 [ label = "\"SetupToolchain\"" ]
-    1 [ label = "\"SyncProject(Node, advanced)\"" ]
-    2 [ label = "\"SyncProject(Node, basic)\"" ]
-    3 [ label = "\"SyncProject(System, noConfig)\"" ]
-    4 [ label = "\"SyncProject(Node, emptyConfig)\"" ]
+    1 [ label = "\"SyncNodeProject(advanced)\"" ]
+    2 [ label = "\"SyncNodeProject(basic)\"" ]
+    3 [ label = "\"SyncSystemProject(noConfig)\"" ]
+    4 [ label = "\"SyncNodeProject(emptyConfig)\"" ]
     1 -> 0 [ ]
     2 -> 0 [ ]
     3 -> 0 [ ]

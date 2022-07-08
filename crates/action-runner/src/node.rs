@@ -13,12 +13,10 @@ pub enum Node {
 impl Node {
     pub fn label(&self) -> String {
         match self {
-            Node::InstallDeps(lang) => format!("InstallDeps({})", lang),
+            Node::InstallDeps(lang) => format!("Install{}Deps", lang),
             Node::RunTarget(id) => format!("RunTarget({})", id),
             Node::SetupToolchain => "SetupToolchain".into(),
-            Node::SyncProject(lang, id) => {
-                format!("SyncProject({}, {})", lang, id)
-            }
+            Node::SyncProject(lang, id) => format!("Sync{}Project({})", lang, id),
         }
     }
 }

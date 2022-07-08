@@ -6,6 +6,7 @@ pub mod queries;
 
 use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};
+use crate::commands::dep_graph::dep_graph;
 use crate::commands::init::{init, InitOptions};
 use crate::commands::project::project;
 use crate::commands::project_graph::project_graph;
@@ -72,6 +73,7 @@ pub async fn run_cli() {
             })
             .await
         }
+        Commands::DepGraph { target } => dep_graph(target).await,
         Commands::Init {
             dest,
             force,

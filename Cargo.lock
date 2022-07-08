@@ -1420,6 +1420,7 @@ dependencies = [
 name = "moon_lang"
 version = "0.1.0"
 dependencies = [
+ "moon_error",
  "thiserror",
 ]
 

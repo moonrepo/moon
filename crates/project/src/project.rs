@@ -425,14 +425,15 @@ impl Project {
                 color::path(&self.root),
             );
 
-            return match PackageJson::load(&package_path).await {
-                Ok(json) => {
+            return match PackageJson::read(package_path).await {
+                Ok(Some(json)) => {
                     self.package_json
                         .set(json)
                         .expect("Failed to load package.json");
 
                     Ok(true)
                 }
+                Ok(None) => Ok(false),
                 Err(error) => Err(ProjectError::Moon(error)),
             };
         }

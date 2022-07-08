@@ -98,7 +98,7 @@ async fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceErro
         return Err(WorkspaceError::MissingPackageJson);
     }
 
-    Ok(PackageJson::load(&package_json_path).await?)
+    Ok(PackageJson::read(package_json_path).await?.unwrap())
 }
 
 // tsconfig.json

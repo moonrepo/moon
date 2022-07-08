@@ -104,7 +104,7 @@ async fn detect_package_manager(
 
     // Extract value from `packageManager` field
     if pkg_path.exists() {
-        if let Ok(pkg) = PackageJson::load(&pkg_path).await {
+        if let Ok(Some(pkg)) = PackageJson::read(pkg_path).await {
             if let Some(pm) = pkg.package_manager {
                 if pm.contains('@') {
                     let mut parts = pm.split('@');
@@ -197,7 +197,7 @@ async fn detect_projects(
     let mut project_globs = vec![];
 
     if pkg_path.exists() {
-        if let Ok(pkg) = PackageJson::load(&pkg_path).await {
+        if let Ok(Some(pkg)) = PackageJson::read(pkg_path).await {
             if let Some(workspaces) = pkg.workspaces {
                 let items = vec![
                     "Don't inherit",

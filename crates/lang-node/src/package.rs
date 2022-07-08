@@ -1,12 +1,16 @@
 // package.json
 
+use cached::proc_macro::cached;
 use json;
 use moon_error::MoonError;
+use moon_lang::config_cache;
 use moon_utils::fs;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+
+config_cache!(PackageJson);
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -157,17 +161,12 @@ pub struct PackageJson {
 }
 
 impl PackageJson {
-    pub async fn load(path: &Path) -> Result<PackageJson, MoonError> {
-        let mut cfg: PackageJson = fs::read_json(path).await?;
-        cfg.path = path.to_path_buf();
-
-        Ok(cfg)
-    }
-
     pub async fn save(&mut self) -> Result<(), MoonError> {
         if self.dirty {
             write_preserved_json(&self.path, self).await?;
             self.dirty = false;
+
+            PackageJson::write(self.clone()).await?;
         }
 
         Ok(())
@@ -441,7 +440,11 @@ mod test {
         let file = dir.child("package.json");
         file.write_str(json).unwrap();
 
-        let mut package = PackageJson::load(file.path()).await.unwrap();
+        let mut package = PackageJson::read(file.path().to_path_buf())
+            .await
+            .unwrap()
+            .unwrap();
+
         package.save().await.unwrap();
 
         assert_eq!(fs::read_json_string(file.path()).await.unwrap(), json,);

@@ -7,13 +7,11 @@ use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     format_figment_errors, FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID,
 };
-use moon_lang_node::package::PackageJson;
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use tokio::sync::OnceCell;
 
 pub type FileGroupsMap = HashMap<String, FileGroup>;
 
@@ -240,10 +238,6 @@ pub struct Project {
     #[serde(skip)]
     pub log_target: String,
 
-    // The `package.json` in the project root.
-    #[serde(skip)]
-    pub package_json: OnceCell<PackageJson>,
-
     /// Absolute path to the project's root folder.
     pub root: PathBuf,
 
@@ -261,7 +255,6 @@ impl Default for Project {
             file_groups: HashMap::new(),
             id: String::new(),
             log_target: String::new(),
-            package_json: OnceCell::new(),
             root: PathBuf::new(),
             source: String::new(),
             tasks: HashMap::new(),
@@ -325,7 +318,6 @@ impl Project {
             file_groups,
             id: String::from(id),
             log_target,
-            package_json: OnceCell::new(),
             root,
             source: String::from(source),
             tasks,
@@ -377,19 +369,6 @@ impl Project {
         depends_on
     }
 
-    /// Return the "package.json" name, if the file exists.
-    pub async fn get_package_name(&self) -> Result<Option<String>, ProjectError> {
-        self.load_package_json().await?;
-
-        if let Some(json) = self.package_json.get() {
-            if let Some(name) = &json.name {
-                return Ok(Some(name.clone()));
-            }
-        }
-
-        Ok(None)
-    }
-
     /// Return a task with the defined ID.
     pub fn get_task(&self, task_id: &str) -> Result<&Task, ProjectError> {
         match self.tasks.get(task_id) {
@@ -399,43 +378,5 @@ impl Project {
                 self.id.to_owned(),
             )),
         }
-    }
-
-    /// Load and parse the package's `package.json` if it exists.
-    #[track_caller]
-    pub async fn load_package_json(&self) -> Result<bool, ProjectError> {
-        if self.package_json.initialized() {
-            return Ok(true);
-        }
-
-        let package_path = self.root.join("package.json");
-
-        if package_path.exists() {
-            trace!(
-                target: self.get_log_target(),
-                "Loading {} in {}",
-                color::file("package.json"),
-                color::path(&self.root),
-            );
-
-            return match PackageJson::read(package_path).await {
-                Ok(Some(json)) => {
-                    self.package_json
-                        .set(json)
-                        .expect("Failed to load package.json");
-
-                    Ok(true)
-                }
-                Ok(None) => Ok(false),
-                Err(error) => Err(ProjectError::Moon(error)),
-            };
-        }
-
-        Ok(false)
-    }
-
-    /// Return the project as a JSON string.
-    pub fn to_json(&self) -> String {
-        serde_json::to_string_pretty(self).unwrap()
     }
 }

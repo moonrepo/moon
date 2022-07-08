@@ -2,7 +2,7 @@ use crate::action::{Action, ActionStatus};
 use crate::context::ActionContext;
 use crate::errors::ActionError;
 use moon_config::TypeScriptConfig;
-use moon_lang_node::tsconfig::TsConfigJson;
+use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug};
 use moon_project::Project;
 use moon_utils::{is_ci, path};
@@ -49,21 +49,20 @@ pub async fn sync_node_project(
     // Read only
     {
         let workspace = workspace.read().await;
-        let mut project = workspace.projects.load(project_id)?;
-        let node_config = &workspace.config.node;
+        let project = workspace.projects.load(project_id)?;
 
         // Copy values outside of this block
         typescript_config = workspace.config.typescript.clone();
 
         // Load project configs
+        let mut project_package_json = PackageJson::read(project.root.join("package.json")).await?;
+
         let mut project_tsconfig_json = TsConfigJson::read(
             project
                 .root
                 .join(&typescript_config.project_config_file_name),
         )
         .await?;
-
-        project.load_package_json().await?;
 
         if project_tsconfig_json.is_none()
             && typescript_config.create_missing_config
@@ -85,15 +84,19 @@ pub async fn sync_node_project(
             let dep_project = workspace.projects.load(&dep_id)?;
 
             // Update `dependencies` within this project's `package.json`
-            if node_config.sync_project_workspace_dependencies {
-                if let Some(package_json) = project.package_json.get_mut() {
-                    let dep_package_name =
-                        dep_project.get_package_name().await?.unwrap_or_default();
+            if workspace.config.node.sync_project_workspace_dependencies {
+                if let Some(package_json) = &mut project_package_json {
+                    let dep_package_json =
+                        PackageJson::read(dep_project.root.join("package.json")).await?;
 
                     // Only add if the dependent project has a `package.json`,
                     // and this `package.json` has not already declared the dep.
-                    if !dep_package_name.is_empty()
-                        && package_json.add_dependency(&dep_package_name, &dep_version_range, true)
+                    if dep_package_json.is_some()
+                        && package_json.add_dependency(
+                            &dep_package_json.unwrap().name.unwrap_or_default(),
+                            &dep_version_range,
+                            true,
+                        )
                     {
                         debug!(
                             target: LOG_TARGET,

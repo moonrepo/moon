@@ -1,12 +1,11 @@
 use moon_config::{
     GlobalProjectConfig, ProjectConfig, ProjectLanguage, ProjectMetadataConfig, ProjectType,
-    TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType, TypeScriptConfig,
+    TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_lang_node::package::PackageJson;
 use moon_project::{EnvVars, FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::string_vec;
-use moon_utils::test::{create_fixtures_skeleton_sandbox, get_fixtures_dir, get_fixtures_root};
-use std::collections::{BTreeMap, HashMap};
+use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
+use std::collections::HashMap;
 use std::path::Path;
 
 fn mock_file_groups() -> HashMap<String, FileGroup> {
@@ -191,31 +190,6 @@ fn overrides_global_file_groups() {
             )]),
             source: String::from("projects/basic"),
             ..Project::default()
-        }
-    );
-}
-
-#[tokio::test]
-async fn has_package_json() {
-    let workspace_root = get_fixtures_root();
-    let project = Project::new(
-        "package-json",
-        "projects/package-json",
-        &workspace_root,
-        &mock_global_project_config(),
-    )
-    .unwrap();
-
-    project.load_package_json().await.unwrap();
-
-    assert_eq!(
-        *project.package_json.get().unwrap(),
-        PackageJson {
-            path: workspace_root.join("projects/package-json/package.json"),
-            name: Some(String::from("npm-example")),
-            version: Some(String::from("1.2.3")),
-            scripts: Some(BTreeMap::from([("build".to_owned(), "babel".to_owned())])),
-            ..PackageJson::default()
         }
     );
 }

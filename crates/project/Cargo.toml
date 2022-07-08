@@ -7,16 +7,12 @@ edition = "2021"
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
-moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 common-path = "1.0.0"
-itertools = "0.10.3"
 petgraph = "0.6.2"
 serde = { version = "1.0.138", features = ["derive"] }
-serde_json = { version = "1.0.82", features = ["preserve_order"] }
 thiserror = "1.0.31"
-tokio = { version = "1.19.2", features = ["full"] }
 
 [dev-dependencies]
 insta = "1.15.0"

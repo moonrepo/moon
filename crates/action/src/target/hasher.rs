@@ -1,6 +1,6 @@
 use crate::errors::ActionError;
 use moon_hasher::TargetHasher;
-use moon_lang_node::tsconfig::TsConfigJson;
+use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_project::{ExpandedFiles, Project, Task};
 use moon_utils::path::to_string;
 use moon_workspace::Workspace;
@@ -52,10 +52,8 @@ pub async fn create_target_hasher(
     }
 
     // Hash project configs second so they can override
-    project.load_package_json().await?;
-
-    if let Some(package) = project.package_json.get() {
-        hasher.hash_package_json(package);
+    if let Some(package) = PackageJson::read(project.root.join("package.json")).await? {
+        hasher.hash_package_json(&package);
     }
 
     if let Some(tsconfig) = TsConfigJson::read(

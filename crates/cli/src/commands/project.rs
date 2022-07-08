@@ -10,7 +10,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
     let project = workspace.projects.load(id)?;
 
     if json {
-        println!("{}", project.to_json());
+        println!("{}", serde_json::to_string_pretty(&project).unwrap());
 
         return Ok(());
     }

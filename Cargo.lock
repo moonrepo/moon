@@ -1459,17 +1459,14 @@ version = "0.1.0"
 dependencies = [
  "common-path",
  "insta",
- "itertools",
  "moon_cache",
  "moon_config",
  "moon_error",
- "moon_lang_node",
  "moon_logger",
  "moon_utils",
  "petgraph",
  "pretty_assertions",
  "serde",
- "serde_json",
  "thiserror",
  "tokio",
 ]

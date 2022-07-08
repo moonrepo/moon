@@ -1287,26 +1287,36 @@ dependencies = [
 [[package]]
 name = "moon_action"
 version = "0.1.0"
-
-[[package]]
-name = "moon_action_runner"
-version = "0.1.0"
 dependencies = [
  "clap",
- "insta",
- "moon_action",
  "moon_cache",
  "moon_config",
  "moon_error",
  "moon_hasher",
- "moon_lang",
- "moon_lang_node",
  "moon_logger",
  "moon_project",
  "moon_terminal",
  "moon_toolchain",
  "moon_utils",
  "moon_vcs",
+ "moon_workspace",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "moon_action_runner"
+version = "0.1.0"
+dependencies = [
+ "insta",
+ "moon_action",
+ "moon_cache",
+ "moon_config",
+ "moon_error",
+ "moon_lang",
+ "moon_logger",
+ "moon_project",
+ "moon_utils",
  "moon_workspace",
  "petgraph",
  "thiserror",

@@ -1,0 +1,36 @@
+use moon_lang::SupportedLanguage;
+use moon_project::{ProjectID, TargetID};
+use std::hash::{Hash, Hasher};
+
+#[derive(Clone, Eq)]
+pub enum Node {
+    InstallDeps(SupportedLanguage),
+    RunTarget(TargetID),
+    SetupToolchain,
+    SyncProject(SupportedLanguage, ProjectID),
+}
+
+impl Node {
+    pub fn label(&self) -> String {
+        match self {
+            Node::InstallDeps(lang) => format!("InstallDeps({})", lang),
+            Node::RunTarget(id) => format!("RunTarget({})", id),
+            Node::SetupToolchain => "SetupToolchain".into(),
+            Node::SyncProject(lang, id) => {
+                format!("SyncProject({}, {})", lang, id)
+            }
+        }
+    }
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.label() == other.label()
+    }
+}
+
+impl Hash for Node {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.label().hash(state);
+    }
+}

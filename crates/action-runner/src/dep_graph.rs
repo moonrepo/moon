@@ -1,54 +1,18 @@
 use crate::errors::DepGraphError;
+use crate::node::Node;
 use moon_config::ProjectLanguage;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, map_list, trace, warn};
-use moon_project::{
-    Project, ProjectGraph, ProjectID, Target, TargetError, TargetID, TargetProject,
-    TouchedFilePaths,
-};
+use moon_project::{Project, ProjectGraph, Target, TargetError, TargetProject, TouchedFilePaths};
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
 use petgraph::Graph;
 use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
 
 pub use petgraph::graph::NodeIndex;
 
 const TARGET: &str = "moon:dep-graph";
-
-#[derive(Clone, Eq)]
-pub enum Node {
-    InstallDeps(SupportedLanguage),
-    RunTarget(TargetID),
-    SetupToolchain,
-    SyncProject(SupportedLanguage, ProjectID),
-}
-
-impl Node {
-    pub fn label(&self) -> String {
-        match self {
-            Node::InstallDeps(lang) => format!("InstallDeps({})", lang),
-            Node::RunTarget(id) => format!("RunTarget({})", id),
-            Node::SetupToolchain => "SetupToolchain".into(),
-            Node::SyncProject(lang, id) => {
-                format!("SyncProject({}, {})", lang, id)
-            }
-        }
-    }
-}
-
-impl PartialEq for Node {
-    fn eq(&self, other: &Self) -> bool {
-        self.label() == other.label()
-    }
-}
-
-impl Hash for Node {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.label().hash(state);
-    }
-}
 
 fn get_lang_from_project(project: &Project) -> SupportedLanguage {
     if let Some(cfg) = &project.config {

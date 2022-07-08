@@ -1,5 +1,6 @@
-use crate::dep_graph::{DepGraph, Node};
+use crate::dep_graph::DepGraph;
 use crate::errors::{ActionRunnerError, DepGraphError};
+use crate::node::Node;
 use moon_action::{
     install_node_deps, run_target, setup_toolchain, sync_node_project, Action, ActionContext,
     ActionStatus,

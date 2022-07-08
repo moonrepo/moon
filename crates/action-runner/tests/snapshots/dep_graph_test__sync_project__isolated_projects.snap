@@ -4,15 +4,15 @@ assertion_line: 401
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label = "\"SetupToolchain\"" ]
-    1 [ label = "\"SyncNodeProject(advanced)\"" ]
-    2 [ label = "\"SyncNodeProject(basic)\"" ]
-    3 [ label = "\"SyncSystemProject(noConfig)\"" ]
-    4 [ label = "\"SyncNodeProject(emptyConfig)\"" ]
-    1 -> 0 [ ]
-    2 -> 0 [ ]
-    3 -> 0 [ ]
-    2 -> 3 [ ]
-    4 -> 0 [ ]
+    0 [ label="SetupToolchain" style=filled, shape=oval, fillcolor=black, fontcolor=white]
+    1 [ label="SyncNodeProject(advanced)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="SyncNodeProject(basic)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="SyncSystemProject(noConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="SyncNodeProject(emptyConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 0 [ arrowhead=box, arrowtail=box]
+    3 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 3 [ arrowhead=box, arrowtail=box]
+    4 -> 0 [ arrowhead=box, arrowtail=box]
 }
 

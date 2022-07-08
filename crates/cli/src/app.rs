@@ -131,6 +131,17 @@ pub enum Commands {
 
     // PROJECTS
 
+    // moon dep-graph [target]
+    #[clap(
+        name = "dep-graph",
+        about = "Display a dependency graph of all tasks and actions in DOT format.",
+        alias = "graph"
+    )]
+    DepGraph {
+        #[clap(help = "Target to *only* graph")]
+        target: Option<String>,
+    },
+
     // moon project <id>
     #[clap(
         name = "project",

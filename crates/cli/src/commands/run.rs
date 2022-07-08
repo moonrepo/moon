@@ -151,6 +151,8 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     }
 
     if options.dependents {
+        workspace.projects.load_all()?;
+
         dep_graph.run_target_dependents(&target, &workspace.projects)?;
     }
 

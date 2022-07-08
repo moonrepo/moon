@@ -1,0 +1,39 @@
+---
+title: dep-graph
+---
+
+The `dep-graph [target]` command will generate a dependency graph of all actions, targets, and tasks
+within the workspace, and will output the graph in
+[Graphviz DOT format](https://graphviz.org/doc/info/lang.html). This output can then be used by any
+tool or program that supports DOT, for example, this
+[live preview visualizer](https://dreampuf.github.io/GraphvizOnline).
+
+In the future we aim to replace this with an interactive visualizer.
+
+```shell
+$ moon dep-graph > graph.dot
+```
+
+> A target can be passed to focus the graph, including dependencies _and_ dependents. For example,
+> `moon dep-graph app:build`.
+
+### Arguments
+
+- `[target]` - Optional target to focus.
+
+## Example output
+
+The following output is an example of the graph in DOT format.
+
+```dot
+digraph {
+    0 [ label="SetupToolchain" style=filled, shape=oval, fillcolor=black, fontcolor=white]
+    1 [ label="InstallNodeDeps" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="SyncNodeProject(node)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="RunTarget(node:standard)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 0 [ arrowhead=box, arrowtail=box]
+    3 -> 1 [ arrowhead=box, arrowtail=box]
+    3 -> 2 [ arrowhead=box, arrowtail=box]
+}
+```

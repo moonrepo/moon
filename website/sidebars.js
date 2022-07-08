@@ -87,6 +87,7 @@ const sidebars = {
 				'commands/overview',
 				'commands/bin',
 				'commands/ci',
+				'commands/dep-graph',
 				'commands/init',
 				'commands/project',
 				'commands/project-graph',

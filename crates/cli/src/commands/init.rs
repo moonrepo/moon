@@ -1,12 +1,12 @@
 use clap::ValueEnum;
 use dialoguer::{Confirm, Select};
 use moon_config::constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
-use moon_config::package::{PackageJson, Workspaces};
 use moon_config::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
     load_global_project_config_template, load_workspace_config_template,
 };
 use moon_lang::{is_using_package_manager, is_using_version_manager};
+use moon_lang_node::package::{PackageJson, PackageWorkspaces};
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
 use moon_logger::color;
 use moon_project::detect_projects_with_globs;
@@ -221,8 +221,8 @@ async fn detect_projects(
                 };
 
                 let globs = match workspaces {
-                    Workspaces::Array(list) => list,
-                    Workspaces::Object(object) => object.packages.unwrap_or_default(),
+                    PackageWorkspaces::Array(list) => list,
+                    PackageWorkspaces::Object(object) => object.packages.unwrap_or_default(),
                 };
 
                 if index == 1 {

@@ -112,7 +112,7 @@ pub struct PackageJson {
     pub version: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub workspaces: Option<Workspaces>,
+    pub workspaces: Option<PackageWorkspaces>,
 
     // Node.js specific: https://nodejs.org/api/packages.html#nodejs-packagejson-field-definitions
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -357,7 +357,7 @@ pub struct RepositoryMetadata {
 pub type Repository = StringOrObject<RepositoryMetadata>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct WorkspacesExpanded {
+pub struct PackageWorkspacesExpanded {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nohoist: Option<Vec<String>>,
 
@@ -367,9 +367,9 @@ pub struct WorkspacesExpanded {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(untagged)]
-pub enum Workspaces {
+pub enum PackageWorkspaces {
     Array(Vec<String>),
-    Object(WorkspacesExpanded),
+    Object(PackageWorkspacesExpanded),
 }
 
 // https://github.com/serde-rs/json/issues/858

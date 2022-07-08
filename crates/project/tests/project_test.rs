@@ -1,8 +1,8 @@
-use moon_config::package::PackageJson;
 use moon_config::{
     GlobalProjectConfig, ProjectConfig, ProjectLanguage, ProjectMetadataConfig, ProjectType,
     TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType, TypeScriptConfig,
 };
+use moon_lang_node::package::PackageJson;
 use moon_project::{EnvVars, FileGroup, Project, ProjectError, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{create_fixtures_skeleton_sandbox, get_fixtures_dir, get_fixtures_root};

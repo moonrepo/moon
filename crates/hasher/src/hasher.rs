@@ -1,5 +1,5 @@
-use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
+use moon_lang_node::package::PackageJson;
 use moon_project::{Project, Task};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};

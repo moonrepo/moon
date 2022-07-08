@@ -7,6 +7,7 @@ edition = "2021"
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
+moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
 moon_toolchain = { path = "../toolchain" }

@@ -4,12 +4,12 @@ use crate::target::Target;
 use crate::task::Task;
 use crate::token::{TokenResolver, TokenSharedData};
 use moon_config::constants::CONFIG_PROJECT_FILENAME;
-use moon_config::package::PackageJson;
 use moon_config::tsconfig::TsConfigJson;
 use moon_config::{
     format_figment_errors, FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID,
     TypeScriptConfig,
 };
+use moon_lang_node::package::PackageJson;
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{fs, path, string_vec};
 use serde::{Deserialize, Serialize};

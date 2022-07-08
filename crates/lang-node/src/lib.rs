@@ -1,4 +1,5 @@
 pub mod node;
+pub mod package;
 
 use moon_lang::{Language, PackageManager, VersionManager};
 

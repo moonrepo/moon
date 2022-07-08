@@ -1,6 +1,6 @@
-use crate::context::ActionRunnerContext;
-use crate::errors::ActionRunnerError;
-use moon_action::{Action, ActionStatus};
+use crate::action::{Action, ActionStatus};
+use crate::context::ActionContext;
+use crate::errors::ActionError;
 use moon_config::{tsconfig::TsConfigJson, TypeScriptConfig};
 use moon_logger::{color, debug};
 use moon_project::Project;
@@ -38,10 +38,10 @@ fn sync_root_tsconfig(
 
 pub async fn sync_node_project(
     _action: &mut Action,
-    _context: &ActionRunnerContext,
+    _context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
-) -> Result<ActionStatus, ActionRunnerError> {
+) -> Result<ActionStatus, ActionError> {
     let mut mutated_files = false;
     let mut typescript_config;
 

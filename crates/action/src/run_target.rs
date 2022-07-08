@@ -1,9 +1,9 @@
-use crate::actions::target::{
+use crate::action::{Action, ActionStatus, Attempt};
+use crate::context::ActionContext;
+use crate::errors::ActionError;
+use crate::target::{
     create_node_target_command, create_system_target_command, create_target_hasher,
 };
-use crate::context::ActionRunnerContext;
-use crate::errors::ActionRunnerError;
-use moon_action::{Action, ActionStatus, Attempt};
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
 use moon_logger::{color, debug, warn};
@@ -22,7 +22,7 @@ async fn create_env_vars(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
-) -> Result<HashMap<String, String>, ActionRunnerError> {
+) -> Result<HashMap<String, String>, ActionError> {
     let mut env_vars = HashMap::new();
 
     env_vars.insert(
@@ -61,11 +61,11 @@ async fn create_env_vars(
 }
 
 async fn create_target_command(
-    context: &ActionRunnerContext,
+    context: &ActionContext,
     workspace: &Workspace,
     project: &Project,
     task: &Task,
-) -> Result<Command, ActionRunnerError> {
+) -> Result<Command, ActionError> {
     let working_dir = if task.options.run_from_workspace_root {
         &workspace.root
     } else {
@@ -97,10 +97,10 @@ async fn create_target_command(
 
 pub async fn run_target(
     action: &mut Action,
-    context: &ActionRunnerContext,
+    context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
     target_id: &str,
-) -> Result<ActionStatus, ActionRunnerError> {
+) -> Result<ActionStatus, ActionError> {
     debug!(
         target: LOG_TARGET,
         "Running target {}",
@@ -211,9 +211,7 @@ pub async fn run_target(
                     output = out;
                     break;
                 } else if attempt_index >= attempt_total {
-                    return Err(ActionRunnerError::Moon(
-                        command.output_to_error(&out, false),
-                    ));
+                    return Err(ActionError::Moon(command.output_to_error(&out, false)));
                 } else {
                     attempt_index += 1;
 
@@ -227,7 +225,7 @@ pub async fn run_target(
             }
             // process itself failed
             Err(error) => {
-                return Err(ActionRunnerError::Moon(error));
+                return Err(ActionError::Moon(error));
             }
         }
     }

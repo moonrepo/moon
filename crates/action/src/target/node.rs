@@ -1,5 +1,5 @@
-use crate::context::{ActionRunnerContext, ProfileType};
-use crate::errors::ActionRunnerError;
+use crate::context::{ActionContext, ProfileType};
+use crate::errors::ActionError;
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_project::{Project, Task};
@@ -10,7 +10,7 @@ use moon_utils::{path, string_vec};
 use moon_workspace::Workspace;
 
 fn create_node_options(
-    context: &ActionRunnerContext,
+    context: &ActionContext,
     workspace: &Workspace,
     task: &Task,
 ) -> Result<Vec<String>, MoonError> {
@@ -29,7 +29,7 @@ fn create_node_options(
         match profile {
             ProfileType::Cpu => {
                 trace!(
-                    target: "moon:action:run-target",
+                    target: "moon:action:run-node-target",
                      "Writing CPU profile for {} to {}",
                      color::target(&task.target),
                      color::path(&prof_dir)
@@ -45,7 +45,7 @@ fn create_node_options(
             }
             ProfileType::Heap => {
                 trace!(
-                    target: "moon:action:run-target",
+                    target: "moon:action:run-node-target",
                      "Writing heap profile for {} to {}",
                      color::target(&task.target),
                      color::path(&prof_dir)
@@ -75,11 +75,11 @@ fn create_node_options(
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
 pub fn create_node_target_command(
-    context: &ActionRunnerContext,
+    context: &ActionContext,
     workspace: &Workspace,
     project: &Project,
     task: &Task,
-) -> Result<Command, ActionRunnerError> {
+) -> Result<Command, ActionError> {
     let node = workspace.toolchain.get_node();
     let mut cmd = node.get_bin_path();
     let mut args = vec![];

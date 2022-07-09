@@ -34,7 +34,8 @@ fn convert_to_regex(
                 pattern
             );
 
-            Ok(Some(regex::create_regex(pattern)?))
+            // case-insensitive by default
+            Ok(Some(regex::create_regex(&format!("(?i){}", pattern))?))
         }
         None => Ok(None),
     }
@@ -76,17 +77,23 @@ pub async fn query_projects(
             }
         }
 
-        if let Some(config) = &project.config {
-            if let Some(regex) = &language_regex {
+        if let Some(regex) = &language_regex {
+            if let Some(config) = &project.config {
                 if !regex.is_match(&format!("{:?}", config.language)) {
                     continue;
                 }
+            } else {
+                continue; // We don't know what they are
             }
+        }
 
-            if let Some(regex) = &type_regex {
+        if let Some(regex) = &type_regex {
+            if let Some(config) = &project.config {
                 if !regex.is_match(&format!("{:?}", config.type_of)) {
                     continue;
                 }
+            } else {
+                continue; // We don't know what they are
             }
         }
 

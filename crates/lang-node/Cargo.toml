@@ -4,11 +4,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_error = { path = "../error"}
 moon_lang = { path = "../lang" }
+moon_logger = { path = "../logger" }
+moon_utils = { path = "../utils"}
 cached = "0.36.0"
+json = "0.12.4"
 lazy_static = "1.4.0"
 regex = "1.6.0"
+serde = { version = "1.0.138", features = ["derive"] }
+serde_json = { version = "1.0.82", features = ["preserve_order"] }
 
 [dev-dependencies]
 assert_fs = "1.0.7"
 serial_test = "0.8.0"
+tokio = { version = "1.19.2", features = ["test-util"] }

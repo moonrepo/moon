@@ -1,8 +1,7 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
-use moon_config::package::PackageJson;
-use moon_config::tsconfig::TsConfigJson;
 use moon_config::{constants, format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
+use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;
 use moon_toolchain::Toolchain;
@@ -99,7 +98,7 @@ async fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceErro
         return Err(WorkspaceError::MissingPackageJson);
     }
 
-    Ok(PackageJson::load(&package_json_path).await?)
+    Ok(PackageJson::read(package_json_path).await?.unwrap())
 }
 
 // tsconfig.json
@@ -120,7 +119,7 @@ async fn load_tsconfig_json(
         return Ok(None);
     }
 
-    Ok(Some(TsConfigJson::load(&tsconfig_json_path).await?))
+    Ok(TsConfigJson::read(tsconfig_json_path).await?)
 }
 
 pub struct Workspace {

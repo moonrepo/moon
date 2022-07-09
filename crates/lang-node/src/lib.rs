@@ -1,4 +1,6 @@
 pub mod node;
+pub mod package;
+pub mod tsconfig;
 
 use moon_lang::{Language, PackageManager, VersionManager};
 

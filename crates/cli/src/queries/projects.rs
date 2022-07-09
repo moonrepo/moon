@@ -9,14 +9,35 @@ const TARGET: &str = "moon:query:projects";
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
     pub id: Option<String>,
+    pub language: Option<String>,
     pub source: Option<String>,
     pub tasks: Option<String>,
+    pub type_of: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct QueryProjectsResult {
     pub projects: Vec<Project>,
     pub options: QueryProjectsOptions,
+}
+
+fn convert_to_regex(
+    field: &str,
+    value: &Option<String>,
+) -> Result<Option<regex::Regex>, WorkspaceError> {
+    match value {
+        Some(pattern) => {
+            trace!(
+                target: TARGET,
+                "Filtering projects \"{}\" by matching pattern \"{}\"",
+                field,
+                pattern
+            );
+
+            Ok(Some(regex::create_regex(pattern)?))
+        }
+        None => Ok(None),
+    }
 }
 
 pub async fn query_projects(
@@ -26,45 +47,11 @@ pub async fn query_projects(
     debug!(target: TARGET, "Querying for projects");
 
     let mut projects = vec![];
-
-    let id_regex = match &options.id {
-        Some(pattern) => {
-            trace!(
-                target: TARGET,
-                "Filtering projects based on ID pattern \"{}\"",
-                pattern
-            );
-
-            Some(regex::create_regex(pattern)?)
-        }
-        None => None,
-    };
-
-    let source_regex = match &options.source {
-        Some(pattern) => {
-            trace!(
-                target: TARGET,
-                "Filtering projects based on source path pattern \"{}\"",
-                pattern
-            );
-
-            Some(regex::create_regex(pattern)?)
-        }
-        None => None,
-    };
-
-    let tasks_regex = match &options.tasks {
-        Some(pattern) => {
-            trace!(
-                target: TARGET,
-                "Filtering projects that have tasks matching pattern \"{}\"",
-                pattern
-            );
-
-            Some(regex::create_regex(pattern)?)
-        }
-        None => None,
-    };
+    let id_regex = convert_to_regex("id", &options.id)?;
+    let language_regex = convert_to_regex("language", &options.language)?;
+    let source_regex = convert_to_regex("source", &options.source)?;
+    let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
+    let type_regex = convert_to_regex("type", &options.type_of)?;
 
     for project_id in workspace.projects.ids() {
         if let Some(regex) = &id_regex {
@@ -86,6 +73,20 @@ pub async fn query_projects(
 
             if !has_task {
                 continue;
+            }
+        }
+
+        if let Some(config) = &project.config {
+            if let Some(regex) = &language_regex {
+                if !regex.is_match(&format!("{:?}", config.language)) {
+                    continue;
+                }
+            }
+
+            if let Some(regex) = &type_regex {
+                if !regex.is_match(&format!("{:?}", config.type_of)) {
+                    continue;
+                }
             }
         }
 

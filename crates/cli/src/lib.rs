@@ -95,11 +95,19 @@ pub async fn run_cli() {
         Commands::Project { id, json } => project(id, *json).await,
         Commands::ProjectGraph { id } => project_graph(id).await,
         Commands::Query { command } => match command {
-            QueryCommands::Projects { id, source, tasks } => {
+            QueryCommands::Projects {
+                id,
+                language,
+                source,
+                tasks,
+                type_of,
+            } => {
                 query::projects(&QueryProjectsOptions {
                     id: id.clone(),
+                    language: language.clone(),
                     source: source.clone(),
                     tasks: tasks.clone(),
+                    type_of: type_of.clone(),
                 })
                 .await
             }

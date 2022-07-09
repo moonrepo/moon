@@ -26,12 +26,15 @@ mod projects {
             string_vec![
                 "advanced",
                 "bar",
+                "bash",
                 "basic",
                 "baz",
                 "emptyConfig",
                 "foo",
+                "js",
                 "noConfig",
-                "tasks"
+                "tasks",
+                "ts"
             ]
         );
     }
@@ -85,6 +88,40 @@ mod projects {
 
         assert_eq!(ids, string_vec!["tasks"]);
         assert_eq!(json.options.tasks.unwrap(), "lint".to_string());
+    }
+
+    #[test]
+    fn can_filter_by_language() {
+        let fixture = create_fixtures_sandbox("projects");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("query")
+            .arg("projects")
+            .args(["--language", "java|bash"])
+            .assert();
+
+        let json: QueryProjectsResult = serde_json::from_str(&get_assert_output(&assert)).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        assert_eq!(ids, string_vec!["bash", "basic", "js"]);
+        assert_eq!(json.options.language.unwrap(), "java|bash".to_string());
+    }
+
+    #[test]
+    fn can_filter_by_type() {
+        let fixture = create_fixtures_sandbox("projects");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("query")
+            .arg("projects")
+            .args(["--type", "app"])
+            .assert();
+
+        let json: QueryProjectsResult = serde_json::from_str(&get_assert_output(&assert)).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        assert_eq!(ids, string_vec!["advanced", "ts"]);
+        assert_eq!(json.options.type_of.unwrap(), "app".to_string());
     }
 }
 

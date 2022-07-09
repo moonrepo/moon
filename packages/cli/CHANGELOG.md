@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Added a `moon dep-graph` command for displaying the entire dependency graph in DOT format.
+- Added `--language` and `--type` filter options to `moon query projects`.
 
 ## 0.6.0
 

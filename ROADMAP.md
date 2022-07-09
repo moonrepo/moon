@@ -17,7 +17,7 @@
 
 ### Node.js
 
-- [ ] Add chrome profiling support to spawned processes
+- [x] Add chrome profiling support to spawned processes
 - [ ] Publish npm packages
 
 # 0.2.0

@@ -27,11 +27,17 @@ pub enum QueryCommands {
         #[clap(long, help = "Filter projects that match this ID")]
         id: Option<String>,
 
+        #[clap(long, help = "Filter projects of this programming language")]
+        language: Option<String>,
+
         #[clap(long, help = "Filter projects that match this source path")]
         source: Option<String>,
 
         #[clap(long, help = "Filter projects that have the following tasks")]
         tasks: Option<String>,
+
+        #[clap(long = "type", help = "Filter projects of this type")]
+        type_of: Option<String>,
     },
 
     #[clap(

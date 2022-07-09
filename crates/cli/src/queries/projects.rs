@@ -78,22 +78,18 @@ pub async fn query_projects(
         }
 
         if let Some(regex) = &language_regex {
-            if let Some(config) = &project.config {
-                if !regex.is_match(&format!("{:?}", config.language)) {
-                    continue;
-                }
-            } else {
-                continue; // We don't know what they are
+            if project.config.is_none()
+                || !regex.is_match(&format!("{:?}", project.config.as_ref().unwrap().language))
+            {
+                continue;
             }
         }
 
         if let Some(regex) = &type_regex {
-            if let Some(config) = &project.config {
-                if !regex.is_match(&format!("{:?}", config.type_of)) {
-                    continue;
-                }
-            } else {
-                continue; // We don't know what they are
+            if project.config.is_none()
+                || !regex.is_match(&format!("{:?}", project.config.as_ref().unwrap().type_of))
+            {
+                continue;
             }
         }
 

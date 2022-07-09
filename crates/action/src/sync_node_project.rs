@@ -5,12 +5,48 @@ use moon_config::TypeScriptConfig;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug};
 use moon_project::Project;
-use moon_utils::{is_ci, path};
+use moon_utils::{fs, is_ci, path, string_vec};
 use moon_workspace::Workspace;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:sync-node-project";
+
+// Automatically create missing config files when we are syncing project references.
+#[track_caller]
+async fn create_missing_tsconfig(
+    project: &Project,
+    typescript_config: &TypeScriptConfig,
+    workspace_root: &Path,
+) -> Result<Option<TsConfigJson>, ActionError> {
+    let tsconfig_path = project
+        .root
+        .join(&typescript_config.project_config_file_name);
+
+    if tsconfig_path.exists() {
+        return Ok(None);
+    }
+
+    let tsconfig_options_path =
+        workspace_root.join(&typescript_config.root_options_config_file_name);
+
+    let json = TsConfigJson {
+        extends: Some(path::to_virtual_string(
+            &path::relative_from(&tsconfig_options_path, &project.root).unwrap(),
+        )?),
+        include: Some(string_vec!["**/*"]),
+        references: Some(vec![]),
+        path: tsconfig_path.clone(),
+        ..TsConfigJson::default()
+    };
+
+    fs::write_json(&tsconfig_path, &json, true).await?;
+
+    TsConfigJson::write(json.clone()).await?;
+
+    Ok(Some(json))
+}
 
 // Sync projects references to the root `tsconfig.json`.
 fn sync_root_tsconfig(
@@ -68,9 +104,8 @@ pub async fn sync_node_project(
             && typescript_config.create_missing_config
             && typescript_config.sync_project_references
         {
-            // project
-            //     .create_tsconfig_json(&typescript_config, &workspace.root)
-            //     .await?;
+            project_tsconfig_json =
+                create_missing_tsconfig(&project, &typescript_config, &workspace.root).await?;
         }
 
         // Sync each dependency to `tsconfig.json` and `package.json`
@@ -171,4 +206,102 @@ pub async fn sync_node_project(
     }
 
     Ok(ActionStatus::Skipped)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_config::GlobalProjectConfig;
+    use moon_utils::test::create_fixtures_skeleton_sandbox;
+
+    #[tokio::test]
+    async fn creates_tsconfig() {
+        let fixture = create_fixtures_skeleton_sandbox("cases");
+
+        let project = Project::new(
+            "deps-a",
+            "deps-a",
+            fixture.path(),
+            &GlobalProjectConfig::default(),
+        )
+        .unwrap();
+
+        let tsconfig_path = project.root.join("tsconfig.json");
+
+        assert!(!tsconfig_path.exists());
+
+        create_missing_tsconfig(&project, &TypeScriptConfig::default(), fixture.path())
+            .await
+            .unwrap();
+
+        assert!(tsconfig_path.exists());
+
+        let tsconfig = TsConfigJson::read(tsconfig_path).await.unwrap().unwrap();
+
+        assert_eq!(
+            tsconfig.extends,
+            Some("../tsconfig.options.json".to_owned())
+        );
+        assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
+    }
+
+    #[tokio::test]
+    async fn creates_tsconfig_with_custom_settings() {
+        let fixture = create_fixtures_skeleton_sandbox("cases");
+
+        let project = Project::new(
+            "deps-a",
+            "deps-a",
+            fixture.path(),
+            &GlobalProjectConfig::default(),
+        )
+        .unwrap();
+
+        let tsconfig_path = project.root.join("tsconfig.ref.json");
+
+        assert!(!tsconfig_path.exists());
+
+        create_missing_tsconfig(
+            &project,
+            &TypeScriptConfig {
+                project_config_file_name: "tsconfig.ref.json".to_string(),
+                root_options_config_file_name: "tsconfig.base.json".to_string(),
+                ..TypeScriptConfig::default()
+            },
+            fixture.path(),
+        )
+        .await
+        .unwrap();
+
+        assert!(tsconfig_path.exists());
+
+        let tsconfig = TsConfigJson::read(tsconfig_path).await.unwrap().unwrap();
+
+        assert_eq!(tsconfig.extends, Some("../tsconfig.base.json".to_owned()));
+        assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
+    }
+
+    #[tokio::test]
+    async fn doesnt_create_if_a_config_exists() {
+        let fixture = create_fixtures_skeleton_sandbox("cases");
+
+        let project = Project::new(
+            "deps-b",
+            "deps-b",
+            fixture.path(),
+            &GlobalProjectConfig::default(),
+        )
+        .unwrap();
+
+        let tsconfig_path = project.root.join("tsconfig.json");
+
+        assert!(tsconfig_path.exists());
+
+        let tsconfig =
+            create_missing_tsconfig(&project, &TypeScriptConfig::default(), fixture.path())
+                .await
+                .unwrap();
+
+        assert_eq!(tsconfig, None);
+    }
 }

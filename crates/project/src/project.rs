@@ -324,38 +324,6 @@ impl Project {
         })
     }
 
-    // Automatically create missing config files when we are syncing project references.
-    // #[track_caller]
-    // pub async fn create_tsconfig_json(
-    //     &self,
-    //     typescript_config: &TypeScriptConfig,
-    //     workspace_root: &Path,
-    // ) -> Result<(), ProjectError> {
-    //     let tsconfig_path = self.root.join(&typescript_config.project_config_file_name);
-
-    //     if !self.tsconfig_json.initialized() && !tsconfig_path.exists() {
-    //         let tsconfig_options_path =
-    //             workspace_root.join(&typescript_config.root_options_config_file_name);
-
-    //         let json = TsConfigJson {
-    //             extends: Some(path::to_virtual_string(
-    //                 &path::relative_from(&tsconfig_options_path, &self.root).unwrap(),
-    //             )?),
-    //             include: Some(string_vec!["**/*"]),
-    //             references: Some(vec![]),
-    //             ..TsConfigJson::default()
-    //         };
-
-    //         fs::write_json(&tsconfig_path, &json, true).await?;
-
-    //         self.tsconfig_json
-    //             .set(json)
-    //             .expect("Failed to create tsconfig.json");
-    //     }
-
-    //     Ok(())
-    // }
-
     /// Return a list of project IDs this project depends on.
     pub fn get_dependencies(&self) -> Vec<ProjectID> {
         let mut depends_on = vec![];

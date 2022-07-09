@@ -1,5 +1,4 @@
-use moon_config::package::PackageJson;
-use moon_config::tsconfig::TsConfigJson;
+use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_project::{Project, Task};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
@@ -302,7 +301,7 @@ mod tests {
 
         #[test]
         fn supports_all_dep_types() {
-            use moon_config::tsconfig::{CompilerOptions, Module, ModuleResolution, Target};
+            use moon_lang_node::tsconfig::{CompilerOptions, Module, ModuleResolution, Target};
 
             let mut tsconfig = TsConfigJson {
                 compiler_options: Some(CompilerOptions::default()),

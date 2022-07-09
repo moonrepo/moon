@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config"}
+moon_lang_node = { path = "../lang-node" }
 moon_project = { path = "../project"}
 moon_utils = { path = "../utils"}
 serde = { version = "1.0.138", features = ["derive"] }

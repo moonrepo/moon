@@ -1,3 +1,4 @@
+mod config;
 mod errors;
 
 pub use errors::LangError;

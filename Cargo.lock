@@ -1293,6 +1293,7 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_hasher",
+ "moon_lang_node",
  "moon_logger",
  "moon_project",
  "moon_terminal",
@@ -1408,6 +1409,7 @@ name = "moon_hasher"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "moon_lang_node",
  "moon_project",
  "moon_utils",
  "serde",
@@ -1427,10 +1429,17 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "cached",
+ "json",
  "lazy_static",
+ "moon_error",
  "moon_lang",
+ "moon_logger",
+ "moon_utils",
  "regex",
+ "serde",
+ "serde_json",
  "serial_test",
+ "tokio",
 ]
 
 [[package]]
@@ -1450,7 +1459,6 @@ version = "0.1.0"
 dependencies = [
  "common-path",
  "insta",
- "itertools",
  "moon_cache",
  "moon_config",
  "moon_error",
@@ -1459,7 +1467,6 @@ dependencies = [
  "petgraph",
  "pretty_assertions",
  "serde",
- "serde_json",
  "thiserror",
  "tokio",
 ]
@@ -1545,6 +1552,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_error",
+ "moon_lang_node",
  "moon_logger",
  "moon_project",
  "moon_toolchain",

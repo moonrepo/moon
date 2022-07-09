@@ -1,12 +1,16 @@
 // tsconfig.json
 
+use cached::proc_macro::cached;
 use json;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
+use moon_lang::config_cache;
 use moon_utils::{fs, path::standardize_separators};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+
+config_cache!(TsConfigJson);
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
 // integration with the rest of the crates. We also can't wait for upsteam for new updates.
@@ -60,13 +64,6 @@ pub struct TsConfigJson {
 }
 
 impl TsConfigJson {
-    pub async fn load(path: &Path) -> Result<TsConfigJson, MoonError> {
-        let mut cfg: TsConfigJson = fs::read_json(path).await?;
-        cfg.path = path.to_path_buf();
-
-        Ok(cfg)
-    }
-
     pub async fn load_with_extends(path: &Path) -> Result<TsConfigJson, MoonError> {
         let values = load_to_value(path, true)?;
 
@@ -119,6 +116,8 @@ impl TsConfigJson {
         if self.dirty {
             write_preserved_json(&self.path, self).await?;
             self.dirty = false;
+
+            TsConfigJson::write(self.clone()).await?;
         }
 
         Ok(())
@@ -853,7 +852,7 @@ mod test {
     #[tokio::test]
     async fn parse_basic_file() {
         let path = get_fixtures_dir("base/tsconfig-json/tsconfig.default.json");
-        let config = TsConfigJson::load(&path).await.unwrap();
+        let config = TsConfigJson::read(path).await.unwrap().unwrap();
 
         assert_eq!(
             config.compiler_options.clone().unwrap().target,

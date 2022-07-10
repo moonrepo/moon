@@ -2,10 +2,9 @@
 source: crates/cli/tests/run_test.rs
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ systemWindows:exitNonZero
 stdout
-stderr 
+stderr
 ▪▪▪▪ systemWindows:exitNonZero (100ms)
 
  ERROR  Process cmd.exe failed with a 1 exit code.

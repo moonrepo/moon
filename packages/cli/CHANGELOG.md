@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- The `language` and `type` settings in `project.yml` now default to "unknown" when the setting is
+  not defined, or the config does not exist.
+
 #### 🚀 Updates
 
 - Added a `moon dep-graph` command for displaying the entire dependency graph in DOT format.

@@ -8,7 +8,7 @@ digraph {
     1 [ label="SyncNodeProject(advanced)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     2 [ label="SyncNodeProject(basic)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     3 [ label="SyncSystemProject(noConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    4 [ label="SyncNodeProject(emptyConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="SyncSystemProject(emptyConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 -> 0 [ arrowhead=box, arrowtail=box]
     2 -> 0 [ arrowhead=box, arrowtail=box]
     3 -> 0 [ arrowhead=box, arrowtail=box]

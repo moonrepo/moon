@@ -8,6 +8,7 @@ use serde::de::{self, SeqAccess};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 use std::fmt;
+use strum::Display;
 use validator::{Validate, ValidationError};
 
 // These structs utilize optional fields so that we can handle merging effectively,
@@ -37,11 +38,14 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TaskType {
     #[default]
+    #[strum(serialize = "node")]
     Node,
+
+    #[strum(serialize = "system")]
     System,
 }
 

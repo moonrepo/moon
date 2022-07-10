@@ -1,9 +1,8 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 107
+assertion_line: 97
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ base:runFromWorkspace
 echo 'in workspace' (in workspace)
 in workspace

@@ -1,3 +1,6 @@
+language: typescript
+type: application
+
 tasks:
   build:
     command: 'docusaurus'

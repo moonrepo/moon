@@ -8,8 +8,8 @@ expression: get_assert_output(&assert)
 
 ID: foo
 Source: deps/foo
-Language: TypeScript
-Type: Library
+Language: JavaScript
+Type: Application
 
  DEPENDS ON 
 

@@ -147,6 +147,7 @@ fn advanced_config() {
                     channel: String::from("#batcave"),
                 }),
                 type_of: ProjectType::Application,
+                language: ProjectLanguage::TypeScript,
                 ..ProjectConfig::default()
             }),
             log_target: String::from("moon:project:advanced"),
@@ -299,7 +300,10 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig::default()),
+                config: Some(ProjectConfig {
+                    language: ProjectLanguage::JavaScript,
+                    ..ProjectConfig::default()
+                }),
                 log_target: String::from("moon:project:id"),
                 root: workspace_root
                     .join("tasks/no-tasks")
@@ -359,6 +363,7 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: Some(ProjectConfig {
+                    language: ProjectLanguage::JavaScript,
                     tasks: HashMap::from([
                         (String::from("build"), mock_task_config("webpack")),
                         (String::from("test"), mock_task_config("jest")),

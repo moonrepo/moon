@@ -204,12 +204,7 @@ fn create_tasks_from_config(
 
     // Expand deps, args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
-        let data = TokenSharedData::new(file_groups, workspace_root, project_root);
-
-        debug!(
-            target: &task.log_target,
-            "Expanding deps, inputs, outputs, and args",
-        );
+        let data = TokenSharedData::new(file_groups, workspace_root, project_root, config.as_ref());
 
         task.expand_deps(project_id, &depends_on)?;
         task.expand_inputs(TokenResolver::for_inputs(&data))?;

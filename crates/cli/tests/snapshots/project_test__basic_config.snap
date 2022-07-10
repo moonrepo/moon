@@ -9,7 +9,7 @@ expression: get_assert_output(&assert)
 ID: basic
 Source: basic
 Language: JavaScript
-Type: Library
+Type: Unknown
 
  DEPENDS ON 
 

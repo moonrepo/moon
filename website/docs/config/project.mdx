@@ -73,7 +73,8 @@ The primary programming language the project is written in. Supports the followi
 - `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project.
 - `javascript` - A [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) based
   project.
-- `typescript` (default) - A [TypeScript](https://www.typescriptlang.org/) based project.
+- `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project.
+- `unknown` (default) - When not configured.
 
 ```yaml title="project.yml"
 language: 'javascript'
@@ -411,8 +412,9 @@ tasks:
 The type of project. Supports the following values:
 
 - `application` - A backend or frontend application that communicates over HTTP, TCP, RPC, etc.
-- `library` (default) - A self-contained, shareable, and publishable set of code.
+- `library` - A self-contained, shareable, and publishable set of code.
 - `tool` - An internal tool, command line program, one-off script, etc.
+- `unknown` (default) - When not configured.
 
 ```yaml title="project.yml"
 type: 'application'

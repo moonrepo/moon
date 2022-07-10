@@ -2,7 +2,6 @@
 source: crates/cli/tests/run_test.rs
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ systemWindows:retryCount
 stdout
 ▪▪▪▪ systemWindows:retryCount (2/4)

@@ -1,9 +1,8 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 838
+assertion_line: 411
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ system:exitZero
 stdout
 
@@ -11,4 +10,5 @@ Tasks: 1 completed
  Time: 100ms
 
 stderr
+
 

@@ -301,6 +301,28 @@ A token variable is a value that starts with `$` and is substituted to a value d
 current workspace, project, and task. And unlike token functions, token variables can be placed
 _within_ content when necessary.
 
+### `$language`
+
+Programming language the project is written in, as defined in [`project.yml`](../config/project). If
+the project has not defined the [`language`](../config/project#language) setting, or does not have a
+config, this defaults to "unknown".
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args: 'debug $language'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - 'debug'
+      - 'node'
+```
+
 ### `$project`
 
 ID of the project that owns the currently running task, as defined in
@@ -320,6 +342,26 @@ tasks:
     args:
       - '--project'
       - 'web'
+```
+
+### `$projectRoot`
+
+Absolute file path to the project root.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args: '--cwd $projectRoot'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--cwd'
+      - '/path/to/repo/apps/web'
 ```
 
 ### `$projectSource`
@@ -345,24 +387,26 @@ tasks:
       - '../../.cache/apps/web'
 ```
 
-### `$projectRoot`
+### `$projectType`
 
-Absolute file path to the project root.
+The type of project, as defined in [`project.yml`](../config/project). If the project has not
+defined the [`type`](../config/project#type-1) setting, or does not have a config, this defaults to
+"unknown".
 
 ```yaml
 # Configured as
 tasks:
   build:
     command: 'example'
-    args: '--cwd $projectRoot'
+    args: 'debug $projectType'
 
 # Resolves to
 tasks:
   build:
     command: 'example'
     args:
-      - '--cwd'
-      - '/path/to/repo/apps/web'
+      - 'debug'
+      - 'application'
 ```
 
 ### `$target`
@@ -401,6 +445,26 @@ tasks:
     command: 'example'
     args:
       - '--task=build'
+```
+
+### `$taskType`
+
+The type of task that is currently running.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example'
+    args: '--type $taskType'
+
+# Resolves to
+tasks:
+  build:
+    command: 'example'
+    args:
+      - '--type'
+      - 'system'
 ```
 
 ### `$workspaceRoot`

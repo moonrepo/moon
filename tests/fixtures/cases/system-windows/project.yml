@@ -1,3 +1,5 @@
+language: bash
+
 tasks:
   bat:
     command: cmd

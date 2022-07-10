@@ -1,3 +1,6 @@
 dependsOn:
   - bar
   - baz
+
+type: application
+language: javascript

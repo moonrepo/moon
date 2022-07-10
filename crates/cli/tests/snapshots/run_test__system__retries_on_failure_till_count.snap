@@ -1,9 +1,8 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 975
+assertion_line: 504
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ system:retryCount
 stdout
 ▪▪▪▪ system:retryCount (2/4)
@@ -22,5 +21,6 @@ stderr
 ▪▪▪▪ system:retryCount (4/4, 100ms)
 
  ERROR  Process bash failed with a 1 exit code.
+
 
 

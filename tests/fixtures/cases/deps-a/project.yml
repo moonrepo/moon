@@ -1,3 +1,5 @@
+language: javascript
+
 tasks:
   standard:
     command: node

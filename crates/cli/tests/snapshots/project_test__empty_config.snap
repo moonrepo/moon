@@ -8,8 +8,8 @@ expression: get_assert_output(&assert)
 
 ID: emptyConfig
 Source: empty-config
-Language: TypeScript
-Type: Library
+Language: Unknown
+Type: Unknown
 
  FILE GROUPS 
 

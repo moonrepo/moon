@@ -95,7 +95,7 @@ pub fn replace_fixtures_dir(value: &str, dir: &Path) -> String {
 }
 
 // We need to do this so slashes are accurate and always forward
-pub fn wrap_glob(path: &Path) -> PathBuf {
+pub fn wrap_glob<T: AsRef<Path>>(path: T) -> PathBuf {
     PathBuf::from(glob::normalize(path).unwrap())
 }
 

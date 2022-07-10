@@ -33,7 +33,7 @@ async fn create_missing_tsconfig(
 
     let json = TsConfigJson {
         extends: Some(path::to_virtual_string(
-            &path::relative_from(&tsconfig_options_path, &project.root).unwrap(),
+            path::relative_from(&tsconfig_options_path, &project.root).unwrap(),
         )?),
         include: Some(string_vec!["**/*"]),
         references: Some(vec![]),
@@ -152,7 +152,7 @@ pub async fn sync_node_project(
                 if let Some(tsconfig_json) = &mut project_tsconfig_json {
                     let tsconfig_branch_name = &typescript_config.project_config_file_name;
                     let dep_ref_path = path::to_string(
-                        &path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
+                        path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
                     )?;
 
                     // Only add if the dependent project has a `tsconfig.json`,

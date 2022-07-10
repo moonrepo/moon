@@ -14,21 +14,23 @@ pub fn expand_root_path(file: &str, workspace_root: &Path, project_root: &Path) 
     }
 }
 
-pub fn normalize(path: &Path) -> PathBuf {
-    path.to_path_buf().clean()
+pub fn normalize<T: AsRef<Path>>(path: T) -> PathBuf {
+    path.as_ref().to_path_buf().clean()
 }
 
 #[cfg(not(windows))]
-pub fn normalize_separators(path: &str) -> String {
-    path.replace('\\', "/")
+pub fn normalize_separators<T: AsRef<str>>(path: T) -> String {
+    path.as_ref().replace('\\', "/")
 }
 
 #[cfg(windows)]
-pub fn normalize_separators(path: &str) -> String {
-    path.replace('/', "\\")
+pub fn normalize_separators<T: AsRef<str>>(path: T) -> String {
+    path.as_ref().replace('/', "\\")
 }
 
-pub fn replace_home_dir(value: &str) -> String {
+pub fn replace_home_dir<T: AsRef<str>>(value: T) -> String {
+    let value = value.as_ref();
+
     if let Some(home_dir) = get_home_dir() {
         let home_dir_str = home_dir.to_str().unwrap_or_default();
 
@@ -41,17 +43,17 @@ pub fn replace_home_dir(value: &str) -> String {
     value.to_owned()
 }
 
-pub fn standardize_separators(path: &str) -> String {
-    path.replace('\\', "/")
+pub fn standardize_separators<T: AsRef<str>>(path: T) -> String {
+    path.as_ref().replace('\\', "/")
 }
 
-pub fn to_string(path: &Path) -> Result<String, MoonError> {
-    match path.to_str() {
+pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+    match path.as_ref().to_str() {
         Some(p) => Ok(p.to_owned()),
-        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
+        None => Err(MoonError::PathInvalidUTF8(path.as_ref().to_path_buf())),
     }
 }
 
-pub fn to_virtual_string(path: &Path) -> Result<String, MoonError> {
-    Ok(standardize_separators(&to_string(path)?))
+pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+    Ok(standardize_separators(to_string(path)?))
 }

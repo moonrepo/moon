@@ -26,7 +26,7 @@ pub fn update_version_workspace_config(dir: &Path, old_version: &str, new_versio
 }
 
 pub fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &Path) -> String {
-    let result = replace_home_dir(&replace_fixtures_dir(
+    let result = replace_home_dir(replace_fixtures_dir(
         &get_assert_output(assert),
         fixtures_dir,
     ));

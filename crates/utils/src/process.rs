@@ -313,7 +313,7 @@ impl Command {
             format!("{} {}", self.bin, join_args(args))
         };
 
-        (path::replace_home_dir(&line), cmd.get_current_dir())
+        (path::replace_home_dir(line), cmd.get_current_dir())
     }
 
     pub fn inherit_colors(&mut self) -> &mut Command {

@@ -3,12 +3,11 @@ use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
 use moon_logger::{color, warn};
-use moon_utils::glob;
-use moon_utils::path::expand_root_path;
 use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
     TOKEN_VAR_PATTERN,
 };
+use moon_utils::{glob, path};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -172,7 +171,7 @@ impl<'a> TokenResolver<'a> {
                 // Vars not allowed here
                 TokenType::Var(String::new()).check_context(&self.context)?;
             } else {
-                results.push(expand_root_path(
+                results.push(path::expand_root_path(
                     value,
                     self.data.workspace_root,
                     self.data.project_root,
@@ -255,16 +254,12 @@ impl<'a> TokenResolver<'a> {
 
         let var_value = match var {
             "project" => project_id,
-            "projectRoot" => String::from(project_root.to_string_lossy()),
-            "projectSource" => String::from(
-                project_root
-                    .strip_prefix(workspace_root)
-                    .unwrap()
-                    .to_string_lossy(),
-            ),
+            "projectRoot" => path::to_string(project_root)?,
+            "projectSource" => path::to_string(project_root.strip_prefix(workspace_root).unwrap())?,
             "target" => task.target.clone(),
             "task" => task_id,
-            "workspaceRoot" => String::from(workspace_root.to_string_lossy()),
+            "taskType" => task.type_of.to_string(),
+            "workspaceRoot" => path::to_string(workspace_root)?,
             _ => {
                 warn!(
                     target: "moon:project:token",
@@ -365,10 +360,11 @@ impl<'a> TokenResolver<'a> {
                 let workspace_root = self.data.workspace_root;
                 let project_root = self.data.project_root;
 
-                match task
-                    .input_paths
-                    .get(&expand_root_path(input, workspace_root, project_root))
-                {
+                match task.input_paths.get(&path::expand_root_path(
+                    input,
+                    workspace_root,
+                    project_root,
+                )) {
                     Some(p) => {
                         results.push(p.clone());
                     }
@@ -404,10 +400,11 @@ impl<'a> TokenResolver<'a> {
             let workspace_root = self.data.workspace_root;
             let project_root = self.data.project_root;
 
-            match task
-                .output_paths
-                .get(&expand_root_path(output, workspace_root, project_root))
-            {
+            match task.output_paths.get(&path::expand_root_path(
+                output,
+                workspace_root,
+                project_root,
+            )) {
                 Some(p) => {
                     results.push(p.clone());
                 }
@@ -790,9 +787,25 @@ mod tests {
 
             let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
 
+            assert_eq!(resolver.resolve_var("$project", &task).unwrap(), "project");
+
+            assert_eq!(
+                resolver.resolve_var("$projectRoot", &task).unwrap(),
+                project_root.to_string_lossy()
+            );
+
             assert_eq!(
                 resolver.resolve_var("$target", &task).unwrap(),
                 "project:task"
+            );
+
+            assert_eq!(resolver.resolve_var("$task", &task).unwrap(), "task");
+
+            assert_eq!(resolver.resolve_var("$taskType", &task).unwrap(), "node");
+
+            assert_eq!(
+                resolver.resolve_var("$workspaceRoot", &task).unwrap(),
+                workspace_root.to_string_lossy()
             );
         }
     }

@@ -1368,7 +1368,6 @@ dependencies = [
  "serde_json",
  "serial_test",
  "strum",
- "strum_macros",
  "tera",
  "tokio",
 ]
@@ -1391,6 +1390,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "shell-words",
+ "strum",
  "tokio",
  "validator",
 ]
@@ -2443,6 +2443,9 @@ name = "strum"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "063e6045c0e62079840579a7e47a355ae92f60eb74daaf156fb1e84ba164e63f"
+dependencies = [
+ "strum_macros",
+]
 
 [[package]]
 name = "strum_macros"

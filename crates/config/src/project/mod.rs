@@ -14,6 +14,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
+use strum::Display;
 use task::TaskConfig;
 use validator::{Validate, ValidationError};
 
@@ -56,23 +57,37 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectLanguage {
+    #[strum(serialize = "bash")]
     Bash,
+
+    #[strum(serialize = "javascript")]
     JavaScript,
+
     #[default]
+    #[strum(serialize = "typescript")]
     TypeScript,
+
+    #[strum(serialize = "unknown")]
     Unknown,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {
+    #[strum(serialize = "application")]
     Application,
+
     #[default]
+    #[strum(serialize = "library")]
     Library,
+
+    #[strum(serialize = "tool")]
     Tool,
+
+    #[strum(serialize = "unknown")]
     Unknown,
 }
 

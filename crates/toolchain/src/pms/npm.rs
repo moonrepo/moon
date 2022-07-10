@@ -157,7 +157,7 @@ impl Installable<NodeTool> for NpmTool {
             debug!(
                 target: log_target,
                 "Enabling package manager with {}",
-                color::shell(&format!("corepack prepare {} --activate", package))
+                color::shell(format!("corepack prepare {} --activate", package))
             );
 
             node.exec_corepack(["prepare", &package, "--activate"])
@@ -166,7 +166,7 @@ impl Installable<NodeTool> for NpmTool {
             debug!(
                 target: log_target,
                 "Installing package manager with {}",
-                color::shell(&format!("npm install -g {}", package))
+                color::shell(format!("npm install -g {}", package))
             );
 
             self.install_global_dep("npm", &self.config.version).await?;

@@ -61,13 +61,13 @@ impl ExtendedTerm for Term {
     }
 
     fn render_entry(&self, key: &str, value: &str) -> TermWriteResult {
-        let label = color::muted_light(&format!("{}:", style(key).bold()));
+        let label = color::muted_light(format!("{}:", style(key).bold()));
 
         self.write_line(&format!("{} {}", label, value))
     }
 
     fn render_entry_list(&self, key: &str, values: &[String]) -> TermWriteResult {
-        let label = color::muted_light(&format!("{}:", style(key).bold()));
+        let label = color::muted_light(format!("{}:", style(key).bold()));
 
         self.write_line(&label)?;
         self.render_list(values)?;

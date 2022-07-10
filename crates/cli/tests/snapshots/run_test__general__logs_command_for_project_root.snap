@@ -1,9 +1,8 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 90
+assertion_line: 80
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ base:runFromProject
 echo 'in project' (in ./base)
 in project

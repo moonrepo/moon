@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/dep_graph_test.rs
-assertion_line: 18
+assertion_line: 20
 expression: get_assert_output(&assert)
 ---
 digraph {

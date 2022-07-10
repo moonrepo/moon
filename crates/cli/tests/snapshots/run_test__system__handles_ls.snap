@@ -1,9 +1,8 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 814
+assertion_line: 387
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ system:ls
 cwd.sh
 envVars.sh
@@ -16,5 +15,6 @@ standard.sh
 
 Tasks: 1 completed
  Time: 100ms
+
 
 

@@ -1,14 +1,14 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 894
+assertion_line: 423
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ system:exitNonZero
 stdout
 stderr
 ▪▪▪▪ system:exitNonZero (100ms)
 
  ERROR  Process bash failed with a 1 exit code.
+
 
 

@@ -1,3 +1,5 @@
+language: javascript
+
 dependsOn:
   - depsA
   - depsB

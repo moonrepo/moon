@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 119
+assertion_line: 237
 expression: "read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.item.hash))).unwrap()"
 ---
 {
@@ -21,7 +21,7 @@ expression: "read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.
     "node/passthroughArgs.js": "83cf03c37aa75b33592735611860e32c6f338693",
     "node/processExitNonZero.js": "2fe41b280bb08f250ca7bf2263ec0b17fa7010f1",
     "node/processExitZero.js": "eb885b8c763ab8b5d4e1da46494d965078c98e8b",
-    "node/project.yml": "7b3a3626af11cdc005b7042f3d28171f965e4545",
+    "node/project.yml": "bf13cfa10475309d8b7376b79391ccbc5741fde6",
     "node/standard.js": "8d4f87187c238d808f0505268febb619f2978c47",
     "node/throwError.js": "9c5b8d2297fe4a6c23e8c18f1efb6871bec6faf4",
     "node/topLevelAwait.mjs": "50945a9865eddbd52f7e648743d627749623da22",

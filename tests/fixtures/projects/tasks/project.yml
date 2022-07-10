@@ -1,3 +1,5 @@
+language: typescript
+
 tasks:
   test:
     command: jest

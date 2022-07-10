@@ -66,10 +66,10 @@ pub enum ProjectLanguage {
     #[strum(serialize = "javascript")]
     JavaScript,
 
-    #[default]
     #[strum(serialize = "typescript")]
     TypeScript,
 
+    #[default]
     #[strum(serialize = "unknown")]
     Unknown,
 }
@@ -80,13 +80,13 @@ pub enum ProjectType {
     #[strum(serialize = "application")]
     Application,
 
-    #[default]
     #[strum(serialize = "library")]
     Library,
 
     #[strum(serialize = "tool")]
     Tool,
 
+    #[default]
     #[strum(serialize = "unknown")]
     Unknown,
 }

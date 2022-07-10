@@ -1,13 +1,13 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 802
+assertion_line: 375
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
 ▪▪▪▪ system:echo
 hello
 
 Tasks: 1 completed
  Time: 100ms
+
 
 

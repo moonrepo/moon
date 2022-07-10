@@ -64,7 +64,8 @@ pub struct TsConfigJson {
 }
 
 impl TsConfigJson {
-    pub async fn load_with_extends(path: &Path) -> Result<TsConfigJson, MoonError> {
+    pub async fn load_with_extends<T: AsRef<Path>>(path: T) -> Result<TsConfigJson, MoonError> {
+        let path = path.as_ref();
         let values = load_to_value(path, true)?;
 
         let mut cfg: TsConfigJson =
@@ -77,7 +78,9 @@ impl TsConfigJson {
     /// Add a project reference to the `references` field with the defined
     /// path and tsconfig file name, and sort the list based on path.
     /// Return true if the new value is different from the old value.
-    pub fn add_project_ref(&mut self, base_path: &str, tsconfig_name: &str) -> bool {
+    pub fn add_project_ref<T: AsRef<str>>(&mut self, base_path: T, tsconfig_name: T) -> bool {
+        let base_path = base_path.as_ref();
+        let tsconfig_name = tsconfig_name.as_ref();
         let mut path = standardize_separators(base_path);
 
         // File name is optional when using standard naming
@@ -139,7 +142,8 @@ fn merge(a: &mut Value, b: Value) {
     }
 }
 
-pub fn load_to_value(path: &Path, extend: bool) -> Result<Value, MoonError> {
+pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<Value, MoonError> {
+    let path = path.as_ref();
     let json =
         std::fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 

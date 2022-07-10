@@ -2,6 +2,7 @@ use crate::errors::{ProjectError, TokenError};
 use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
+use moon_config::{ProjectConfig, ProjectLanguage, ProjectType};
 use moon_logger::{color, warn};
 use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
@@ -86,6 +87,8 @@ impl TokenType {
 pub struct TokenSharedData<'a> {
     pub file_groups: &'a HashMap<String, FileGroup>,
 
+    pub project_config: Option<&'a ProjectConfig>,
+
     pub project_root: &'a Path,
 
     pub workspace_root: &'a Path,
@@ -96,9 +99,11 @@ impl<'a> TokenSharedData<'a> {
         file_groups: &'a HashMap<String, FileGroup>,
         workspace_root: &'a Path,
         project_root: &'a Path,
+        project_config: Option<&'a ProjectConfig>,
     ) -> TokenSharedData<'a> {
         TokenSharedData {
             file_groups,
+            project_config,
             project_root,
             workspace_root,
         }
@@ -251,11 +256,20 @@ impl<'a> TokenResolver<'a> {
         let (project_id, task_id) = Target::parse(&task.target)?.ids()?;
         let workspace_root = self.data.workspace_root;
         let project_root = self.data.project_root;
+        let project_config = self.data.project_config;
 
         let var_value = match var {
+            "language" => match project_config {
+                Some(cfg) => cfg.language.to_string(),
+                None => ProjectLanguage::Unknown.to_string(),
+            },
             "project" => project_id,
             "projectRoot" => path::to_string(project_root)?,
             "projectSource" => path::to_string(project_root.strip_prefix(workspace_root).unwrap())?,
+            "projectType" => match project_config {
+                Some(cfg) => cfg.type_of.to_string(),
+                None => ProjectType::Unknown.to_string(),
+            },
             "target" => task.target.clone(),
             "task" => task_id,
             "taskType" => task.type_of.to_string(),
@@ -441,7 +455,7 @@ mod tests {
         let project_root = get_project_root();
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
         let resolver = TokenResolver::for_args(&metadata);
 
         resolver
@@ -455,7 +469,7 @@ mod tests {
         let project_root = get_project_root();
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
         let resolver = TokenResolver::for_args(&metadata);
 
         resolver
@@ -468,7 +482,7 @@ mod tests {
         let project_root = get_project_root();
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
         let resolver = TokenResolver::for_args(&metadata);
 
         assert_eq!(
@@ -488,7 +502,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -512,7 +526,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -540,7 +554,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -564,7 +578,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -591,7 +605,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             assert_eq!(
@@ -607,7 +621,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             assert_eq!(
@@ -623,7 +637,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let mut files = resolver
@@ -646,7 +660,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let mut files = resolver
@@ -669,7 +683,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             assert_eq!(
@@ -688,7 +702,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -714,7 +728,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -740,7 +754,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -766,7 +780,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_args(&metadata);
 
             assert_eq!(
@@ -782,10 +796,25 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let project_config = ProjectConfig {
+                language: ProjectLanguage::JavaScript,
+                type_of: ProjectType::Tool,
+                ..ProjectConfig::default()
+            };
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                Some(&project_config),
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
+
+            assert_eq!(
+                resolver.resolve_var("$language", &task).unwrap(),
+                "javascript"
+            );
 
             assert_eq!(resolver.resolve_var("$project", &task).unwrap(), "project");
 
@@ -793,6 +822,13 @@ mod tests {
                 resolver.resolve_var("$projectRoot", &task).unwrap(),
                 project_root.to_string_lossy()
             );
+
+            assert_eq!(
+                resolver.resolve_var("$projectSource", &task).unwrap(),
+                "files-and-dirs"
+            );
+
+            assert_eq!(resolver.resolve_var("$projectType", &task).unwrap(), "tool");
 
             assert_eq!(
                 resolver.resolve_var("$target", &task).unwrap(),
@@ -818,7 +854,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             assert_eq!(
@@ -834,7 +870,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             assert_eq!(
@@ -850,7 +886,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             let mut files = resolver
@@ -873,7 +909,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             let mut files = resolver
@@ -896,7 +932,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             assert_eq!(
@@ -916,7 +952,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             resolver.resolve(&string_vec!["@in(0)"], None).unwrap();
@@ -928,7 +964,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             resolver.resolve(&string_vec!["@out(0)"], None).unwrap();
@@ -939,7 +975,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             assert_eq!(
@@ -956,7 +992,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_inputs(&metadata);
 
             resolver.resolve(&string_vec!["$project"], None).unwrap();
@@ -972,7 +1008,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -986,7 +1022,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1000,7 +1036,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1014,7 +1050,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1028,7 +1064,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver.resolve(&string_vec!["@in(0)"], None).unwrap();
@@ -1040,7 +1076,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver.resolve(&string_vec!["@out(0)"], None).unwrap();
@@ -1052,7 +1088,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1066,7 +1102,7 @@ mod tests {
             let project_root = get_project_root();
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root);
+            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver.resolve(&string_vec!["$project"], None).unwrap();

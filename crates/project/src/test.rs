@@ -83,7 +83,7 @@ pub fn create_expanded_task(
         &config.unwrap_or_default(),
     );
     let file_groups = create_file_groups();
-    let metadata = TokenSharedData::new(&file_groups, workspace_root, project_root);
+    let metadata = TokenSharedData::new(&file_groups, workspace_root, project_root, None);
 
     task.expand_inputs(TokenResolver::for_inputs(&metadata))?;
     task.expand_outputs(TokenResolver::for_outputs(&metadata))?;

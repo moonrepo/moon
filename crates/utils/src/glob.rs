@@ -120,13 +120,13 @@ pub fn split_patterns(patterns: &[String]) -> Result<(Vec<Glob>, Vec<Glob>), Glo
 }
 
 #[track_caller]
-pub fn walk(base_dir: &Path, patterns: &[String]) -> Result<Vec<PathBuf>, GlobError> {
+pub fn walk<T: AsRef<Path>>(base_dir: T, patterns: &[String]) -> Result<Vec<PathBuf>, GlobError> {
     let (globs, negations) = split_patterns(patterns)?;
     let negation = Negation::try_from_patterns(negations).unwrap();
     let mut paths = vec![];
 
     for glob in globs {
-        for entry in glob.walk_with_behavior(base_dir, LinkBehavior::ReadFile) {
+        for entry in glob.walk_with_behavior(base_dir.as_ref(), LinkBehavior::ReadFile) {
             match entry {
                 Ok(e) => {
                     // Filter out negated results

@@ -8,7 +8,9 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use tokio::fs;
 
-pub fn clean_json(json: String) -> Result<String, MoonError> {
+pub fn clean_json<T: AsRef<str>>(json: T) -> Result<String, MoonError> {
+    let json = json.as_ref();
+
     // Remove comments
     let mut stripped = String::with_capacity(json.len());
 
@@ -24,7 +26,9 @@ pub fn clean_json(json: String) -> Result<String, MoonError> {
     Ok(String::from(stripped))
 }
 
-pub async fn create_dir_all(path: &Path) -> Result<(), MoonError> {
+pub async fn create_dir_all<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
+    let path = path.as_ref();
+
     if !path.exists() {
         fs::create_dir_all(&path)
             .await
@@ -34,8 +38,13 @@ pub async fn create_dir_all(path: &Path) -> Result<(), MoonError> {
     Ok(())
 }
 
-pub fn find_upwards(name: &str, dir: &Path) -> Option<PathBuf> {
-    let findable = dir.join(name);
+pub fn find_upwards<F, P>(name: F, dir: P) -> Option<PathBuf>
+where
+    F: AsRef<str>,
+    P: AsRef<Path>,
+{
+    let dir = dir.as_ref();
+    let findable = dir.join(name.as_ref());
 
     if findable.exists() {
         return Some(findable);
@@ -48,7 +57,10 @@ pub fn find_upwards(name: &str, dir: &Path) -> Option<PathBuf> {
 }
 
 #[track_caller]
-pub async fn link_file(from_root: &Path, from: &Path, to_root: &Path) -> Result<(), MoonError> {
+pub async fn link_file<T: AsRef<Path>>(from_root: T, from: T, to_root: T) -> Result<(), MoonError> {
+    let from_root = from_root.as_ref();
+    let from = from.as_ref();
+    let to_root = to_root.as_ref();
     let to = to_root.join(from.strip_prefix(from_root).unwrap());
 
     // Hardlink has already been created
@@ -70,7 +82,14 @@ pub async fn link_file(from_root: &Path, from: &Path, to_root: &Path) -> Result<
 }
 
 #[async_recursion]
-pub async fn link_dir(from_root: &Path, from: &Path, to_root: &Path) -> Result<(), MoonError> {
+pub async fn link_dir<T: AsRef<Path> + Send>(
+    from_root: T,
+    from: T,
+    to_root: T,
+) -> Result<(), MoonError> {
+    let from_root = from_root.as_ref();
+    let from = from.as_ref();
+    let to_root = to_root.as_ref();
     let entries = read_dir(from).await?;
     let mut dirs = vec![];
 
@@ -93,13 +112,16 @@ pub async fn link_dir(from_root: &Path, from: &Path, to_root: &Path) -> Result<(
     Ok(())
 }
 
-pub async fn metadata(path: &Path) -> Result<std::fs::Metadata, MoonError> {
+pub async fn metadata<T: AsRef<Path>>(path: T) -> Result<std::fs::Metadata, MoonError> {
+    let path = path.as_ref();
+
     fs::metadata(path)
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))
 }
 
-pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
+pub async fn read_dir<T: AsRef<Path>>(path: T) -> Result<Vec<fs::DirEntry>, MoonError> {
+    let path = path.as_ref();
     let handle_error = |e| map_io_to_fs_error(e, path.to_path_buf());
 
     let mut entries = fs::read_dir(path).await.map_err(handle_error)?;
@@ -113,7 +135,8 @@ pub async fn read_dir(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
 }
 
 #[async_recursion]
-pub async fn read_dir_all(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
+pub async fn read_dir_all<T: AsRef<Path> + Send>(path: T) -> Result<Vec<fs::DirEntry>, MoonError> {
+    let path = path.as_ref();
     let handle_error = |e| map_io_to_fs_error(e, path.to_path_buf());
 
     let mut entries = fs::read_dir(path).await.map_err(handle_error)?;
@@ -132,19 +155,22 @@ pub async fn read_dir_all(path: &Path) -> Result<Vec<fs::DirEntry>, MoonError> {
     Ok(results)
 }
 
-pub async fn read_json<T>(path: &Path) -> Result<T, MoonError>
+pub async fn read_json<P, D>(path: P) -> Result<D, MoonError>
 where
-    T: DeserializeOwned,
+    P: AsRef<Path>,
+    D: DeserializeOwned,
 {
+    let path = path.as_ref();
     let contents = read_json_string(path).await?;
 
-    let json: T =
+    let json: D =
         serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
     Ok(json)
 }
 
-pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
+pub async fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+    let path = path.as_ref();
     let json = fs::read_to_string(path)
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
@@ -152,7 +178,9 @@ pub async fn read_json_string(path: &Path) -> Result<String, MoonError> {
     clean_json(json)
 }
 
-pub async fn remove_file(path: &Path) -> Result<(), MoonError> {
+pub async fn remove_file<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
+    let path = path.as_ref();
+
     if path.exists() {
         fs::remove_file(&path)
             .await
@@ -162,7 +190,9 @@ pub async fn remove_file(path: &Path) -> Result<(), MoonError> {
     Ok(())
 }
 
-pub async fn remove_dir_all(path: &Path) -> Result<(), MoonError> {
+pub async fn remove_dir_all<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
+    let path = path.as_ref();
+
     if path.exists() {
         fs::remove_dir_all(&path)
             .await
@@ -172,7 +202,9 @@ pub async fn remove_dir_all(path: &Path) -> Result<(), MoonError> {
     Ok(())
 }
 
-pub async fn write(path: &Path, data: impl AsRef<[u8]>) -> Result<(), MoonError> {
+pub async fn write<T: AsRef<Path>>(path: T, data: impl AsRef<[u8]>) -> Result<(), MoonError> {
+    let path = path.as_ref();
+
     fs::write(path, data)
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
@@ -180,10 +212,12 @@ pub async fn write(path: &Path, data: impl AsRef<[u8]>) -> Result<(), MoonError>
     Ok(())
 }
 
-pub async fn write_json<T>(path: &Path, json: &T, pretty: bool) -> Result<(), MoonError>
+pub async fn write_json<P, D>(path: P, json: &D, pretty: bool) -> Result<(), MoonError>
 where
-    T: ?Sized + Serialize,
+    P: AsRef<Path>,
+    D: ?Sized + Serialize,
 {
+    let path = path.as_ref();
     let data = if pretty {
         serde_json::to_string_pretty(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?
     } else {

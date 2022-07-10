@@ -5,18 +5,20 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub fn run_git_command<F>(dir: &Path, msg: &str, handler: F)
+pub fn run_git_command<P, T, F>(dir: P, msg: T, handler: F)
 where
+    P: AsRef<Path>,
+    T: AsRef<str>,
     F: FnOnce(&mut Command),
 {
     let mut cmd = Command::new(if cfg!(windows) { "git.exe" } else { "git" });
-    cmd.current_dir(dir);
+    cmd.current_dir(dir.as_ref());
 
     handler(&mut cmd);
 
     let out = cmd.output().unwrap_or_else(|e| {
         println!("{:#?}", e);
-        panic!("{}: {:#?}", msg, dir);
+        panic!("{}: {:#?}", msg.as_ref(), dir.as_ref());
     });
 
     if !out.status.success() {
@@ -25,7 +27,7 @@ where
     }
 }
 
-pub fn create_fixtures_skeleton_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
+pub fn create_fixtures_skeleton_sandbox<T: AsRef<str>>(dir: T) -> assert_fs::fixture::TempDir {
     use assert_fs::prelude::*;
 
     let temp_dir = assert_fs::fixture::TempDir::new().unwrap();
@@ -37,7 +39,7 @@ pub fn create_fixtures_skeleton_sandbox(dir: &str) -> assert_fs::fixture::TempDi
     temp_dir
 }
 
-pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
+pub fn create_fixtures_sandbox<T: AsRef<str>>(dir: T) -> assert_fs::fixture::TempDir {
     let temp_dir = create_fixtures_skeleton_sandbox(dir);
 
     // Initialize a git repo so that VCS commands work
@@ -74,8 +76,8 @@ pub fn create_fixtures_sandbox(dir: &str) -> assert_fs::fixture::TempDir {
     temp_dir
 }
 
-pub fn get_fixtures_dir(dir: &str) -> PathBuf {
-    get_fixtures_root().join(dir)
+pub fn get_fixtures_dir<T: AsRef<str>>(dir: T) -> PathBuf {
+    get_fixtures_root().join(dir.as_ref())
 }
 
 pub fn get_fixtures_root() -> PathBuf {
@@ -85,11 +87,12 @@ pub fn get_fixtures_root() -> PathBuf {
     path.canonicalize().unwrap()
 }
 
-pub fn replace_fixtures_dir(value: &str, dir: &Path) -> String {
-    let dir_str = dir.to_str().unwrap();
+pub fn replace_fixtures_dir<T: AsRef<str>, P: AsRef<Path>>(value: T, dir: P) -> String {
+    let dir_str = dir.as_ref().to_str().unwrap();
 
     // Replace both forward and backward slashes
     value
+        .as_ref()
         .replace(dir_str, "<WORKSPACE>")
         .replace(&path::standardize_separators(dir_str), "<WORKSPACE>")
 }
@@ -99,14 +102,14 @@ pub fn wrap_glob<T: AsRef<Path>>(path: T) -> PathBuf {
     PathBuf::from(glob::normalize(path).unwrap())
 }
 
-pub fn create_moon_command(fixture: &str) -> assert_cmd::Command {
-    let mut cmd = create_moon_command_in(&get_fixtures_dir(fixture));
+pub fn create_moon_command<T: AsRef<str>>(fixture: T) -> assert_cmd::Command {
+    let mut cmd = create_moon_command_in(get_fixtures_dir(fixture));
     // Never cache in these tests since they're not in a sandbox
     cmd.env("MOON_CACHE", "off");
     cmd
 }
 
-pub fn create_moon_command_in(path: &Path) -> assert_cmd::Command {
+pub fn create_moon_command_in<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
     cmd.current_dir(path);
     // Let our code know were running tests

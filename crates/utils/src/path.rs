@@ -6,11 +6,19 @@ use std::path::{Path, PathBuf};
 pub use pathdiff::diff_paths as relative_from;
 
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
-pub fn expand_root_path(file: &str, workspace_root: &Path, project_root: &Path) -> PathBuf {
+pub fn expand_root_path<F, P>(file: F, workspace_root: P, project_root: P) -> PathBuf
+where
+    F: AsRef<str>,
+    P: AsRef<Path>,
+{
+    let file = file.as_ref();
+
     if file.starts_with('/') {
-        workspace_root.join(file.strip_prefix('/').unwrap())
+        workspace_root
+            .as_ref()
+            .join(file.strip_prefix('/').unwrap())
     } else {
-        project_root.join(file)
+        project_root.as_ref().join(file)
     }
 }
 

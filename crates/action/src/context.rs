@@ -1,4 +1,5 @@
 use clap::ValueEnum;
+use moon_project::TouchedFilePaths;
 use std::collections::HashSet;
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -14,4 +15,6 @@ pub struct ActionContext {
     pub primary_targets: HashSet<String>,
 
     pub profile: Option<ProfileType>,
+
+    pub touched_files: TouchedFilePaths,
 }

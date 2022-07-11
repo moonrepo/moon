@@ -87,13 +87,6 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
 async fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceError> {
     let package_json_path = root_dir.join("package.json");
 
-    trace!(
-        target: LOG_TARGET,
-        "Loading {} from {}",
-        color::file("package.json"),
-        color::path(root_dir),
-    );
-
     if !package_json_path.exists() {
         return Err(WorkspaceError::MissingPackageJson);
     }
@@ -107,13 +100,6 @@ async fn load_tsconfig_json(
     tsconfig_name: &str,
 ) -> Result<Option<TsConfigJson>, WorkspaceError> {
     let tsconfig_json_path = root_dir.join(tsconfig_name);
-
-    trace!(
-        target: LOG_TARGET,
-        "Attempting to find {} in {}",
-        color::file(tsconfig_name),
-        color::path(root_dir),
-    );
 
     if !tsconfig_json_path.exists() {
         return Ok(None);

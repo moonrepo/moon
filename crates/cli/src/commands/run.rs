@@ -66,21 +66,21 @@ pub fn render_result_stats(
 
     if pass_count > 0 {
         if cached_count > 0 {
-            counts_message.push(color::success(&format!(
+            counts_message.push(color::success(format!(
                 "{} completed ({} cached)",
                 pass_count, cached_count
             )));
         } else {
-            counts_message.push(color::success(&format!("{} completed", pass_count)));
+            counts_message.push(color::success(format!("{} completed", pass_count)));
         }
     }
 
     if fail_count > 0 {
-        counts_message.push(color::failure(&format!("{} failed", fail_count)));
+        counts_message.push(color::failure(format!("{} failed", fail_count)));
     }
 
     if invalid_count > 0 {
-        counts_message.push(color::invalid(&format!("{} invalid", invalid_count)));
+        counts_message.push(color::invalid(format!("{} invalid", invalid_count)));
     }
 
     let term = Term::buffered_stdout();

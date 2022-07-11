@@ -109,7 +109,7 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(standardize_separators(&get_path_safe_output(
+        assert_snapshot!(standardize_separators(get_path_safe_output(
             &assert,
             &PathBuf::from("./fake/path")
         )));
@@ -122,7 +122,7 @@ mod configs {
             .arg("project:task")
             .assert();
 
-        assert_snapshot!(standardize_separators(&get_path_safe_output(
+        assert_snapshot!(standardize_separators(get_path_safe_output(
             &assert,
             &PathBuf::from("./fake/path")
         )));
@@ -135,7 +135,7 @@ mod configs {
             .arg("test:task")
             .assert();
 
-        assert_snapshot!(standardize_separators(&get_path_safe_output(
+        assert_snapshot!(standardize_separators(get_path_safe_output(
             &assert,
             &PathBuf::from("./fake/path")
         )));

@@ -175,7 +175,9 @@ impl PackageJson {
     /// Add a package and version range to the `dependencies` field.
     /// If `is_missing` is true, only add if it doesn't already exist.
     /// Return true if the new value is different from the old value.
-    pub fn add_dependency(&mut self, name: &str, range: &str, if_missing: bool) -> bool {
+    pub fn add_dependency<T: AsRef<str>>(&mut self, name: T, range: T, if_missing: bool) -> bool {
+        let name = name.as_ref();
+        let range = range.as_ref();
         let mut dependencies = match &self.dependencies {
             Some(deps) => deps.clone(),
             None => BTreeMap::new(),
@@ -196,7 +198,10 @@ impl PackageJson {
 
     /// Add a version range to the `engines` field.
     /// Return true if the new value is different from the old value.
-    pub fn add_engine(&mut self, engine: &str, range: &str) -> bool {
+    pub fn add_engine<T: AsRef<str>>(&mut self, engine: T, range: T) -> bool {
+        let engine = engine.as_ref();
+        let range = range.as_ref();
+
         if let Some(engines) = &mut self.engines {
             if engines.contains_key(engine) && engines.get(engine).unwrap() == range {
                 return false;
@@ -214,7 +219,9 @@ impl PackageJson {
 
     /// Set the `packageManager` field.
     /// Return true if the new value is different from the old value.
-    pub fn set_package_manager(&mut self, value: &str) -> bool {
+    pub fn set_package_manager<T: AsRef<str>>(&mut self, value: T) -> bool {
+        let value = value.as_ref();
+
         if self.package_manager.is_some() && self.package_manager.as_ref().unwrap() == value {
             return false;
         }

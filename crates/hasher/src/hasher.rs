@@ -76,7 +76,7 @@ impl TargetHasher {
             // Standardize on `/` separators so that the hash is
             // the same between windows and nix machines.
             self.input_hashes
-                .insert(path::standardize_separators(&file), hash);
+                .insert(path::standardize_separators(file), hash);
         }
     }
 

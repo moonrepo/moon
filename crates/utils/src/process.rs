@@ -229,7 +229,7 @@ impl Command {
         let captured_stdout_clone = Arc::clone(&captured_stdout);
 
         let prefix: Arc<str> = prefix
-            .map(|p| color::muted(&format!("[{}]", p)))
+            .map(|p| color::muted(format!("[{}]", p)))
             .unwrap_or_default()
             .into();
         let stderr_prefix = Arc::clone(&prefix);
@@ -313,7 +313,7 @@ impl Command {
             format!("{} {}", self.bin, join_args(args))
         };
 
-        (path::replace_home_dir(&line), cmd.get_current_dir())
+        (path::replace_home_dir(line), cmd.get_current_dir())
     }
 
     pub fn inherit_colors(&mut self) -> &mut Command {

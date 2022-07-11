@@ -39,7 +39,9 @@ pub struct VersionManager {
     pub version_filename: StaticString,
 }
 
-pub fn is_using_package_manager(base_dir: &Path, pm: &PackageManager) -> bool {
+pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &PackageManager) -> bool {
+    let base_dir = base_dir.as_ref();
+
     for lockfile in pm.lock_filenames {
         if base_dir.join(lockfile).exists() {
             return true;
@@ -55,7 +57,9 @@ pub fn is_using_package_manager(base_dir: &Path, pm: &PackageManager) -> bool {
     false
 }
 
-pub fn is_using_version_manager(base_dir: &Path, vm: &VersionManager) -> bool {
+pub fn is_using_version_manager<T: AsRef<Path>>(base_dir: T, vm: &VersionManager) -> bool {
+    let base_dir = base_dir.as_ref();
+
     if base_dir.join(vm.version_filename).exists() {
         return true;
     }

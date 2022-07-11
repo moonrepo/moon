@@ -269,7 +269,7 @@ fn print_target_label(target: &str, attempt: &Attempt, attempt_total: u8, checkp
     }
 
     if !comments.is_empty() {
-        let metadata = color::muted(&format!("({})", comments.join(", ")));
+        let metadata = color::muted(format!("({})", comments.join(", ")));
 
         label = format!("{} {}", label, metadata);
     };
@@ -316,9 +316,9 @@ fn print_target_command(
     };
 
     let suffix = format!("(in {})", working_dir);
-    let message = format!("{} {}", command_line, color::muted(&suffix));
+    let message = format!("{} {}", command_line, color::muted(suffix));
 
-    println!("{}", color::muted_light(&message));
+    println!("{}", color::muted_light(message));
 }
 
 fn print_cache_item(item: &RunTargetState) {

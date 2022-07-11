@@ -192,7 +192,7 @@ impl Downloadable<Toolchain> for NodeTool {
         let log_target = self.get_log_target();
 
         // Download the node.tar.gz archive
-        let download_url = node::get_nodejs_url(version, host, &node::get_download_file(version)?);
+        let download_url = node::get_nodejs_url(version, host, node::get_download_file(version)?);
         let download_path = self.get_download_path()?;
 
         download_file_from_url(&download_url, download_path).await?;

@@ -40,7 +40,8 @@ pub fn create_glob(pattern: &str) -> Result<Glob, GlobError> {
 }
 
 // This is not very exhaustive and may be inaccurate.
-pub fn is_glob(value: &str) -> bool {
+pub fn is_glob<T: AsRef<str>>(value: T) -> bool {
+    let value = value.as_ref();
     let single_values = vec!['*', '?', '!'];
     let paired_values = vec![('{', '}'), ('[', ']')];
     let mut bytes = value.bytes();
@@ -83,13 +84,13 @@ pub fn is_glob(value: &str) -> bool {
     false
 }
 
-pub fn is_path_glob(path: &Path) -> bool {
-    is_glob(&path.to_string_lossy())
+pub fn is_path_glob<T: AsRef<Path>>(path: T) -> bool {
+    is_glob(path.as_ref().to_string_lossy())
 }
 
-pub fn normalize(path: &Path) -> Result<String, MoonError> {
+pub fn normalize<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     // Always use forward slashes for globs
-    let glob = path::to_virtual_string(path)?;
+    let glob = path::to_virtual_string(path.as_ref())?;
 
     // Remove UNC and drive prefix as it breaks glob matching
     if cfg!(windows) {
@@ -119,13 +120,13 @@ pub fn split_patterns(patterns: &[String]) -> Result<(Vec<Glob>, Vec<Glob>), Glo
 }
 
 #[track_caller]
-pub fn walk(base_dir: &Path, patterns: &[String]) -> Result<Vec<PathBuf>, GlobError> {
+pub fn walk<T: AsRef<Path>>(base_dir: T, patterns: &[String]) -> Result<Vec<PathBuf>, GlobError> {
     let (globs, negations) = split_patterns(patterns)?;
     let negation = Negation::try_from_patterns(negations).unwrap();
     let mut paths = vec![];
 
     for glob in globs {
-        for entry in glob.walk_with_behavior(base_dir, LinkBehavior::ReadFile) {
+        for entry in glob.walk_with_behavior(base_dir.as_ref(), LinkBehavior::ReadFile) {
             match entry {
                 Ok(e) => {
                     // Filter out negated results

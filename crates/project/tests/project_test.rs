@@ -75,7 +75,7 @@ fn empty_config() {
         project,
         Project {
             id: String::from("empty-config"),
-            config: Some(ProjectConfig::default()),
+            config: ProjectConfig::default(),
             log_target: String::from("moon:project:empty-config"),
             root: workspace_root.join("projects/empty-config"),
             file_groups: mock_file_groups(),
@@ -108,12 +108,12 @@ fn basic_config() {
         project,
         Project {
             id: String::from("basic"),
-            config: Some(ProjectConfig {
+            config: ProjectConfig {
                 depends_on: string_vec!["noConfig"],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
-            }),
+            },
             log_target: String::from("moon:project:basic"),
             root: project_root,
             file_groups,
@@ -138,7 +138,7 @@ fn advanced_config() {
         project,
         Project {
             id: String::from("advanced"),
-            config: Some(ProjectConfig {
+            config: ProjectConfig {
                 project: Some(ProjectMetadataConfig {
                     name: String::from("Advanced"),
                     description: String::from("Advanced example."),
@@ -149,7 +149,7 @@ fn advanced_config() {
                 type_of: ProjectType::Application,
                 language: ProjectLanguage::TypeScript,
                 ..ProjectConfig::default()
-            }),
+            },
             log_target: String::from("moon:project:advanced"),
             root: workspace_root.join("projects/advanced"),
             file_groups: mock_file_groups(),
@@ -177,12 +177,12 @@ fn overrides_global_file_groups() {
         project,
         Project {
             id: String::from("basic"),
-            config: Some(ProjectConfig {
+            config: ProjectConfig {
                 depends_on: string_vec!["noConfig"],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
-            }),
+            },
             log_target: String::from("moon:project:basic"),
             root: workspace_root.join("projects/basic"),
             file_groups: HashMap::from([(
@@ -300,10 +300,10 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig {
+                config: ProjectConfig {
                     language: ProjectLanguage::JavaScript,
                     ..ProjectConfig::default()
-                }),
+                },
                 log_target: String::from("moon:project:id"),
                 root: workspace_root
                     .join("tasks/no-tasks")
@@ -362,7 +362,7 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig {
+                config: ProjectConfig {
                     language: ProjectLanguage::JavaScript,
                     tasks: HashMap::from([
                         (String::from("build"), mock_task_config("webpack")),
@@ -370,7 +370,7 @@ mod tasks {
                         (String::from("lint"), mock_task_config("eslint"))
                     ]),
                     ..ProjectConfig::default()
-                }),
+                },
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 source: String::from("tasks/basic"),
@@ -416,7 +416,7 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig {
+                config: ProjectConfig {
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -431,7 +431,7 @@ mod tasks {
                         }
                     )]),
                     ..ProjectConfig::default()
-                }),
+                },
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
@@ -490,7 +490,7 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig {
+                config: ProjectConfig {
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -505,7 +505,7 @@ mod tasks {
                         }
                     )]),
                     ..ProjectConfig::default()
-                }),
+                },
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
@@ -567,7 +567,7 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig {
+                config: ProjectConfig {
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -582,7 +582,7 @@ mod tasks {
                         }
                     )]),
                     ..ProjectConfig::default()
-                }),
+                },
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
@@ -644,7 +644,7 @@ mod tasks {
             project,
             Project {
                 id: String::from("id"),
-                config: Some(ProjectConfig {
+                config: ProjectConfig {
                     tasks: HashMap::from([(
                         String::from("standard"),
                         TaskConfig {
@@ -668,7 +668,7 @@ mod tasks {
                         }
                     )]),
                     ..ProjectConfig::default()
-                }),
+                },
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),

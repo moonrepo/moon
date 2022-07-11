@@ -8,6 +8,7 @@ use moon_workspace::Workspace;
 pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
     let project = workspace.projects.load(id)?;
+    let config = &project.config;
 
     if json {
         println!("{}", serde_json::to_string_pretty(&project).unwrap());
@@ -27,42 +28,40 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
         term.render_entry("Root", color::path(&project.root))?;
     }
 
-    if let Some(config) = project.config {
-        term.render_entry("Language", term.format(&config.language))?;
-        term.render_entry("Type", term.format(&config.type_of))?;
+    term.render_entry("Language", term.format(&config.language))?;
+    term.render_entry("Type", term.format(&config.type_of))?;
 
-        if let Some(meta) = config.project {
-            term.render_entry("Name", &meta.name)?;
-            term.render_entry("Description", &meta.description)?;
-            term.render_entry("Owner", &meta.owner)?;
-            term.render_entry_list("Maintainers", &meta.maintainers)?;
-            term.render_entry("Channel", &meta.channel)?;
-        }
+    if let Some(meta) = &config.project {
+        term.render_entry("Name", &meta.name)?;
+        term.render_entry("Description", &meta.description)?;
+        term.render_entry("Owner", &meta.owner)?;
+        term.render_entry_list("Maintainers", &meta.maintainers)?;
+        term.render_entry("Channel", &meta.channel)?;
+    }
 
-        let mut deps = vec![];
+    let mut deps = vec![];
 
-        for dep_id in config.depends_on {
-            match workspace.projects.load(&dep_id) {
-                Ok(dep) => {
-                    deps.push(format!(
-                        "{} {}{}{}",
-                        color::id(&dep_id),
-                        color::muted_light("("),
-                        color::file(&dep.source),
-                        color::muted_light(")"),
-                    ));
-                }
-                Err(_) => {
-                    deps.push(color::id(&dep_id));
-                }
-            };
-        }
+    for dep_id in &config.depends_on {
+        match workspace.projects.load(dep_id) {
+            Ok(dep) => {
+                deps.push(format!(
+                    "{} {}{}{}",
+                    color::id(&dep_id),
+                    color::muted_light("("),
+                    color::file(&dep.source),
+                    color::muted_light(")"),
+                ));
+            }
+            Err(_) => {
+                deps.push(color::id(dep_id));
+            }
+        };
+    }
 
-        if !deps.is_empty() {
-            term.write_line("")?;
-            term.render_label(Label::Default, "Depends on")?;
-            term.render_list(deps)?;
-        }
+    if !deps.is_empty() {
+        term.write_line("")?;
+        term.render_label(Label::Default, "Depends on")?;
+        term.render_list(deps)?;
     }
 
     if !project.tasks.is_empty() {

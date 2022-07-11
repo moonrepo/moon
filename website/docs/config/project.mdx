@@ -72,15 +72,17 @@ The primary programming language the project is written in. Supports the followi
 
 - `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project.
 - `javascript` - A [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) based
-  project.
-- `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project.
-- `unknown` (default) - When not configured.
+  project. Inferred when `package.json` exists.
+- `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project. Inferred if
+  `tsconfig.json` exists.
+- `unknown` (default) - When not configured or inferred.
 
 ```yaml title="project.yml"
 language: 'javascript'
 ```
 
-> This setting will be used in the future for analytics, metrics, and other data driven events.
+> For convenience, when this setting is not defined, moon will attempt to detect the language based
+> on configuration files found in the project root.
 
 ## `project`
 

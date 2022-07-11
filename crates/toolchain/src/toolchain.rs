@@ -51,7 +51,7 @@ impl Toolchain {
     pub async fn create_from_dir(
         base_dir: &Path,
         root_dir: &Path,
-        config: &WorkspaceConfig,
+        workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
         let dir = base_dir.join(CONFIG_DIRNAME);
         let temp_dir = dir.join("temp");
@@ -75,19 +75,19 @@ impl Toolchain {
             node: None,
         };
 
-        toolchain.node = Some(NodeTool::new(&toolchain, &config.node)?);
+        toolchain.node = Some(NodeTool::new(&toolchain, &workspace_config.node)?);
 
         Ok(toolchain)
     }
 
     pub async fn create(
         root_dir: &Path,
-        config: &WorkspaceConfig,
+        workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
         Toolchain::create_from_dir(
             &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
-            config,
+            workspace_config,
         )
         .await
     }

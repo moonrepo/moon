@@ -1,18 +1,15 @@
 use insta::assert_snapshot;
 use moon_action_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_cache::CacheEngine;
-use moon_config::GlobalProjectConfig;
+use moon_config::{GlobalProjectConfig, WorkspaceConfig};
 use moon_project::{ProjectGraph, Target};
 use moon_utils::test::get_fixtures_dir;
 use std::collections::{HashMap, HashSet};
 
 async fn create_project_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("projects");
-
-    ProjectGraph::create(
-        &workspace_root,
-        GlobalProjectConfig::default(),
-        &HashMap::from([
+    let workspace_config = WorkspaceConfig {
+        projects: HashMap::from([
             ("advanced".to_owned(), "advanced".to_owned()),
             ("basic".to_owned(), "basic".to_owned()),
             ("emptyConfig".to_owned(), "empty-config".to_owned()),
@@ -22,6 +19,13 @@ async fn create_project_graph() -> ProjectGraph {
             ("baz".to_owned(), "deps/baz".to_owned()),
             ("tasks".to_owned(), "tasks".to_owned()),
         ]),
+        ..WorkspaceConfig::default()
+    };
+
+    ProjectGraph::create(
+        &workspace_root,
+        &workspace_config,
+        GlobalProjectConfig::default(),
         &CacheEngine::create(&workspace_root).await.unwrap(),
     )
     .await
@@ -30,15 +34,8 @@ async fn create_project_graph() -> ProjectGraph {
 
 async fn create_tasks_project_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("tasks");
-    let global_config = GlobalProjectConfig {
-        file_groups: HashMap::from([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
-        ..GlobalProjectConfig::default()
-    };
-
-    ProjectGraph::create(
-        &workspace_root,
-        global_config,
-        &HashMap::from([
+    let workspace_config = WorkspaceConfig {
+        projects: HashMap::from([
             ("basic".to_owned(), "basic".to_owned()),
             ("build-a".to_owned(), "build-a".to_owned()),
             ("build-b".to_owned(), "build-b".to_owned()),
@@ -53,6 +50,17 @@ async fn create_tasks_project_graph() -> ProjectGraph {
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("no-tasks".to_owned(), "no-tasks".to_owned()),
         ]),
+        ..WorkspaceConfig::default()
+    };
+    let global_config = GlobalProjectConfig {
+        file_groups: HashMap::from([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
+        ..GlobalProjectConfig::default()
+    };
+
+    ProjectGraph::create(
+        &workspace_root,
+        &workspace_config,
+        global_config,
         &CacheEngine::create(&workspace_root).await.unwrap(),
     )
     .await

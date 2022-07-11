@@ -3,7 +3,7 @@ use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
 use crate::token::{TokenResolver, TokenSharedData};
-use moon_config::TaskConfig;
+use moon_config::{ProjectConfig, TaskConfig};
 use moon_utils::string_vec;
 use std::collections::HashMap;
 use std::path::Path;
@@ -83,7 +83,9 @@ pub fn create_expanded_task(
         &config.unwrap_or_default(),
     );
     let file_groups = create_file_groups();
-    let metadata = TokenSharedData::new(&file_groups, workspace_root, project_root, None);
+    let project_config = ProjectConfig::new(project_root);
+    let metadata =
+        TokenSharedData::new(&file_groups, workspace_root, project_root, &project_config);
 
     task.expand_inputs(TokenResolver::for_inputs(&metadata))?;
     task.expand_outputs(TokenResolver::for_outputs(&metadata))?;

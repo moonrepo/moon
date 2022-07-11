@@ -24,7 +24,7 @@ fn load_project_config(
     log_target: &str,
     project_root: &Path,
     project_source: &str,
-) -> Result<Option<ProjectConfig>, ProjectError> {
+) -> Result<ProjectConfig, ProjectError> {
     let config_path = project_root.join(CONFIG_PROJECT_FILENAME);
 
     trace!(
@@ -35,21 +35,17 @@ fn load_project_config(
     );
 
     if config_path.exists() {
-        return match ProjectConfig::load(&config_path) {
-            Ok(cfg) => Ok(Some(cfg)),
-            Err(errors) => Err(ProjectError::InvalidConfigFile(
-                String::from(project_source),
-                format_figment_errors(errors),
-            )),
-        };
+        return ProjectConfig::load(config_path).map_err(|e| {
+            ProjectError::InvalidConfigFile(String::from(project_source), format_figment_errors(e))
+        });
     }
 
-    Ok(None)
+    Ok(ProjectConfig::new(project_root))
 }
 
 fn create_file_groups_from_config(
     log_target: &str,
-    config: &Option<ProjectConfig>,
+    config: &ProjectConfig,
     global_config: &GlobalProjectConfig,
 ) -> FileGroupsMap {
     let mut file_groups = HashMap::<String, FileGroup>::new();
@@ -65,24 +61,22 @@ fn create_file_groups_from_config(
     }
 
     // Override global configs with local
-    if let Some(local_config) = config {
-        for (group_id, files) in &local_config.file_groups {
-            if file_groups.contains_key(group_id) {
-                debug!(
-                    target: log_target,
-                    "Merging file group {} with global config",
-                    color::id(group_id)
-                );
+    for (group_id, files) in &config.file_groups {
+        if file_groups.contains_key(group_id) {
+            debug!(
+                target: log_target,
+                "Merging file group {} with global config",
+                color::id(group_id)
+            );
 
-                // Group already exists, so merge with it
-                file_groups
-                    .get_mut(group_id)
-                    .unwrap()
-                    .merge(files.to_owned());
-            } else {
-                // Insert a group
-                file_groups.insert(group_id.clone(), FileGroup::new(group_id, files.to_owned()));
-            }
+            // Group already exists, so merge with it
+            file_groups
+                .get_mut(group_id)
+                .unwrap()
+                .merge(files.to_owned());
+        } else {
+            // Insert a group
+            file_groups.insert(group_id.clone(), FileGroup::new(group_id, files.to_owned()));
         }
     }
 
@@ -91,7 +85,7 @@ fn create_file_groups_from_config(
 
 fn create_tasks_from_config(
     log_target: &str,
-    config: &Option<ProjectConfig>,
+    config: &ProjectConfig,
     global_config: &GlobalProjectConfig,
     workspace_root: &Path,
     project_root: &Path,
@@ -109,18 +103,19 @@ fn create_tasks_from_config(
     let mut exclude: HashSet<TaskID> = HashSet::new();
     let mut rename: HashMap<TaskID, TaskID> = HashMap::new();
 
-    if let Some(local_config) = config {
-        depends_on.extend(local_config.depends_on.clone());
-        rename = local_config.workspace.inherited_tasks.rename.clone();
+    depends_on.extend(config.depends_on.clone());
 
-        if let Some(include_config) = &local_config.workspace.inherited_tasks.include {
-            include_all = false;
-            include.extend(include_config.clone());
-        }
+    if let Some(rename_config) = &config.workspace.inherited_tasks.rename {
+        rename.extend(rename_config.clone());
+    }
 
-        if let Some(exclude_config) = &local_config.workspace.inherited_tasks.exclude {
-            exclude.extend(exclude_config.clone());
-        }
+    if let Some(include_config) = &config.workspace.inherited_tasks.include {
+        include_all = false;
+        include.extend(include_config.clone());
+    }
+
+    if let Some(exclude_config) = &config.workspace.inherited_tasks.exclude {
+        exclude.extend(exclude_config.clone());
     }
 
     // Add global tasks first while taking inheritance config into account
@@ -181,30 +176,28 @@ fn create_tasks_from_config(
     }
 
     // Add local tasks second
-    if let Some(local_config) = config {
-        for (task_id, task_config) in &local_config.tasks {
-            if tasks.contains_key(task_id) {
-                debug!(
-                    target: log_target,
-                    "Merging task {} with global config",
-                    color::id(task_id)
-                );
+    for (task_id, task_config) in &config.tasks {
+        if tasks.contains_key(task_id) {
+            debug!(
+                target: log_target,
+                "Merging task {} with global config",
+                color::id(task_id)
+            );
 
-                // Task already exists, so merge with it
-                tasks.get_mut(task_id).unwrap().merge(task_config);
-            } else {
-                // Insert a new task
-                tasks.insert(
-                    task_id.clone(),
-                    Task::from_config(Target::format(project_id, task_id)?, task_config),
-                );
-            }
+            // Task already exists, so merge with it
+            tasks.get_mut(task_id).unwrap().merge(task_config);
+        } else {
+            // Insert a new task
+            tasks.insert(
+                task_id.clone(),
+                Task::from_config(Target::format(project_id, task_id)?, task_config),
+            );
         }
     }
 
     // Expand deps, args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
-        let data = TokenSharedData::new(file_groups, workspace_root, project_root, config.as_ref());
+        let data = TokenSharedData::new(file_groups, workspace_root, project_root, config);
 
         task.expand_deps(project_id, &depends_on)?;
         task.expand_inputs(TokenResolver::for_inputs(&data))?;
@@ -217,11 +210,11 @@ fn create_tasks_from_config(
     Ok(tasks)
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
-    pub config: Option<ProjectConfig>,
+    pub config: ProjectConfig,
 
     /// File groups specific to the project. Inherits all file groups from the global config.
     pub file_groups: FileGroupsMap,
@@ -241,20 +234,6 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
-}
-
-impl Default for Project {
-    fn default() -> Self {
-        Project {
-            config: None,
-            file_groups: HashMap::new(),
-            id: String::new(),
-            log_target: String::new(),
-            root: PathBuf::new(),
-            source: String::new(),
-            tasks: HashMap::new(),
-        }
-    }
 }
 
 impl PartialEq for Project {
@@ -322,13 +301,8 @@ impl Project {
     /// Return a list of project IDs this project depends on.
     pub fn get_dependencies(&self) -> Vec<ProjectID> {
         let mut depends_on = vec![];
-
-        if let Some(config) = &self.config {
-            depends_on.extend_from_slice(&config.depends_on);
-        }
-
+        depends_on.extend_from_slice(&self.config.depends_on);
         depends_on.sort();
-
         depends_on
     }
 

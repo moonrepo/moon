@@ -292,42 +292,28 @@ impl Task {
     /// Return true if this task is affected, based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, ProjectError> {
-        trace!(
-            target: self.get_log_target(),
-            "Checking if affected using input files: {}",
-            map_list(&Vec::from_iter(self.input_paths.iter()), |p| color::path(p))
-        );
-
         let has_globs = !self.input_globs.is_empty();
         let globset = self.create_globset()?;
 
-        if has_globs {
-            trace!(
-                target: self.get_log_target(),
-                "Checking if affected using input globs: {}",
-                map_list(&self.input_globs, |f| color::file(f))
-            );
-        }
-
         for file in touched_files {
-            let mut affected = self.input_paths.contains(file);
+            if self.input_paths.contains(file) {
+                trace!(
+                    target: self.get_log_target(),
+                    "Affected by {} (using input files)",
+                    color::path(file),
+                );
 
-            if !affected && has_globs {
-                affected = globset.matches(file)?;
+                return Ok(true);
             }
 
-            trace!(
-                target: self.get_log_target(),
-                "Is affected by {} = {}",
-                color::path(file),
-                if affected {
-                    color::success("true")
-                } else {
-                    color::failure("false")
-                },
-            );
+            if has_globs && globset.matches(file)? {
+                trace!(
+                    target: self.get_log_target(),
+                    "Affected by {} (using input globs: {})",
+                    color::path(file),
+                    map_list(&self.input_globs, |f| color::file(f))
+                );
 
-            if affected {
                 return Ok(true);
             }
         }

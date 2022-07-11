@@ -63,14 +63,6 @@ fn gather_runnable_targets(
     print_header("Gathering runnable targets");
 
     let mut targets = vec![];
-    let globally_affected = workspace.projects.is_globally_affected(touched_files);
-
-    if globally_affected {
-        debug!(
-            target: TARGET,
-            "Moon files touched, marking all targets as affected",
-        );
-    }
 
     // Required for dependents
     workspace.projects.load_all()?;
@@ -82,7 +74,7 @@ fn gather_runnable_targets(
             let target = Target::new(&project_id, task_id)?;
 
             if task.should_run_in_ci() {
-                if globally_affected || task.is_affected(touched_files)? {
+                if task.is_affected(touched_files)? {
                     targets.push(target);
                 }
             } else {

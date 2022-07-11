@@ -165,7 +165,7 @@ impl Task {
         // strings with tokens, and file paths when tokens are resolved.
         for arg in &self.args {
             if token_resolver.has_token_func(arg) {
-                for resolved_arg in token_resolver.resolve_func(arg, Some(self))? {
+                for resolved_arg in token_resolver.resolve_func(arg, self)? {
                     // When running within a project:
                     //  - Project paths are relative and start with "./"
                     //  - Workspace paths are relative up to the root
@@ -257,7 +257,7 @@ impl Task {
             return Ok(());
         }
 
-        for input in &token_resolver.resolve(&self.inputs, None)? {
+        for input in &token_resolver.resolve(&self.inputs, self)? {
             // We cant canonicalize here as these inputs may not exist!
             if glob::is_path_glob(input) {
                 self.input_globs.push(glob::normalize(input)?);
@@ -275,7 +275,7 @@ impl Task {
             return Ok(());
         }
 
-        for output in &token_resolver.resolve(&self.outputs, None)? {
+        for output in &token_resolver.resolve(&self.outputs, self)? {
             if glob::is_path_glob(output) {
                 return Err(ProjectError::NoOutputGlob(
                     output.to_owned(),

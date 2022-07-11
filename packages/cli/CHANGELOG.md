@@ -18,6 +18,7 @@
 - Added `--language` and `--type` filter options to `moon query projects`.
 - Added `$language`, `$projectType`, and `$taskType` token variables.
 - Added `dev` as a non-CI task identifier (alongside `start` and `serve`).
+- Token variables can now be used within task `inputs`.
 
 ## 0.6.0
 

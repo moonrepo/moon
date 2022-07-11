@@ -248,7 +248,7 @@ mod caching {
         assert_eq!(state.item.target, "node:standard");
         assert_eq!(
             state.item.hash,
-            "0b8322277df4ebf0292b5dab81447f012ed7bf6a072364bd3399119b60a1a3a3"
+            "eaa3c43c707b54fbff25b11ebc7528716c8a893d559f7898b1aac3f46767c361"
         );
     }
 }

@@ -85,12 +85,11 @@ fn create_file_groups_from_config(
 
 fn create_tasks_from_config(
     log_target: &str,
-    config: &ProjectConfig,
-    global_config: &GlobalProjectConfig,
-    workspace_root: &Path,
-    project_root: &Path,
     project_id: &str,
-    file_groups: &FileGroupsMap,
+    project_config: &ProjectConfig,
+    global_config: &GlobalProjectConfig,
+    token_data: &TokenSharedData,
+    implicit_inputs: &[String],
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = HashMap::<String, Task>::new();
     let mut depends_on = vec![];
@@ -103,18 +102,18 @@ fn create_tasks_from_config(
     let mut exclude: HashSet<TaskID> = HashSet::new();
     let mut rename: HashMap<TaskID, TaskID> = HashMap::new();
 
-    depends_on.extend(config.depends_on.clone());
+    depends_on.extend(project_config.depends_on.clone());
 
-    if let Some(rename_config) = &config.workspace.inherited_tasks.rename {
+    if let Some(rename_config) = &project_config.workspace.inherited_tasks.rename {
         rename.extend(rename_config.clone());
     }
 
-    if let Some(include_config) = &config.workspace.inherited_tasks.include {
+    if let Some(include_config) = &project_config.workspace.inherited_tasks.include {
         include_all = false;
         include.extend(include_config.clone());
     }
 
-    if let Some(exclude_config) = &config.workspace.inherited_tasks.exclude {
+    if let Some(exclude_config) = &project_config.workspace.inherited_tasks.exclude {
         exclude.extend(exclude_config.clone());
     }
 
@@ -176,7 +175,7 @@ fn create_tasks_from_config(
     }
 
     // Add local tasks second
-    for (task_id, task_config) in &config.tasks {
+    for (task_id, task_config) in &project_config.tasks {
         if tasks.contains_key(task_id) {
             debug!(
                 target: log_target,
@@ -197,14 +196,16 @@ fn create_tasks_from_config(
 
     // Expand deps, args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
-        let data = TokenSharedData::new(file_groups, workspace_root, project_root, config);
+        // Inherit implicit inputs before resolving
+        task.inputs.extend(implicit_inputs.iter().cloned());
 
+        // Resolve in order!
         task.expand_deps(project_id, &depends_on)?;
-        task.expand_inputs(TokenResolver::for_inputs(&data))?;
-        task.expand_outputs(TokenResolver::for_outputs(&data))?;
+        task.expand_inputs(TokenResolver::for_inputs(token_data))?;
+        task.expand_outputs(TokenResolver::for_outputs(token_data))?;
 
         // Must be last as it references inputs/outputs
-        task.expand_args(TokenResolver::for_args(&data))?;
+        task.expand_args(TokenResolver::for_args(token_data))?;
     }
 
     Ok(tasks)
@@ -259,6 +260,7 @@ impl Project {
         source: &str,
         workspace_root: &Path,
         global_config: &GlobalProjectConfig,
+        implicit_inputs: &[String],
     ) -> Result<Project, ProjectError> {
         let root = workspace_root.join(path::normalize_separators(source));
         let log_target = format!("moon:project:{}", id);
@@ -277,14 +279,14 @@ impl Project {
 
         let config = load_project_config(&log_target, &root, source)?;
         let file_groups = create_file_groups_from_config(&log_target, &config, global_config);
+        let token_data = TokenSharedData::new(&file_groups, workspace_root, &root, &config);
         let tasks = create_tasks_from_config(
             &log_target,
+            id,
             &config,
             global_config,
-            workspace_root,
-            &root,
-            id,
-            &file_groups,
+            &token_data,
+            implicit_inputs,
         )?;
 
         Ok(Project {

@@ -73,15 +73,19 @@ pub fn create_file_groups() -> HashMap<String, FileGroup> {
     map
 }
 
+pub fn create_initial_task(config: Option<TaskConfig>) -> Task {
+    Task::from_config(
+        Target::format("project", "task").unwrap(),
+        &config.unwrap_or_default(),
+    )
+}
+
 pub fn create_expanded_task(
     workspace_root: &Path,
     project_root: &Path,
     config: Option<TaskConfig>,
 ) -> Result<Task, ProjectError> {
-    let mut task = Task::from_config(
-        Target::format("project", "task").unwrap(),
-        &config.unwrap_or_default(),
-    );
+    let mut task = create_initial_task(config);
     let file_groups = create_file_groups();
     let project_config = ProjectConfig::new(project_root);
     let metadata =

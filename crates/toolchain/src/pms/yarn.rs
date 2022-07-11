@@ -56,7 +56,7 @@ impl Lifecycle<NodeTool> for YarnTool {
         debug!(
             target: self.get_log_target(),
             "Updating package manager version with {}",
-            color::shell(&format!("yarn set version {}", self.config.version))
+            color::shell(format!("yarn set version {}", self.config.version))
         );
 
         self.create_command()
@@ -128,7 +128,7 @@ impl Installable<NodeTool> for YarnTool {
             debug!(
                 target: log_target,
                 "Enabling package manager with {}",
-                color::shell(&format!("corepack prepare {} --activate", package))
+                color::shell(format!("corepack prepare {} --activate", package))
             );
 
             node.exec_corepack(["prepare", &package, "--activate"])
@@ -139,7 +139,7 @@ impl Installable<NodeTool> for YarnTool {
             debug!(
                 target: log_target,
                 "Installing package with {}",
-                color::shell(&format!("npm install -g {}", package))
+                color::shell(format!("npm install -g {}", package))
             );
 
             npm.install_global_dep("yarn", &self.config.version).await?;

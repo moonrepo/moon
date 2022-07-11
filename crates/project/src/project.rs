@@ -281,7 +281,7 @@ impl Project {
         workspace_root: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let root = workspace_root.join(&path::normalize_separators(source));
+        let root = workspace_root.join(path::normalize_separators(source));
         let log_target = format!("moon:project:{}", id);
 
         debug!(

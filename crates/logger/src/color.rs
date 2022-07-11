@@ -24,63 +24,64 @@ pub enum Color {
     GrayLight = 248,
 }
 
-pub fn paint(color: u8, value: &str) -> String {
-    style(value).color256(color).to_string()
+pub fn paint<T: AsRef<str>>(color: u8, value: T) -> String {
+    style(value.as_ref()).color256(color).to_string()
 }
 
-pub fn muted(value: &str) -> String {
+pub fn muted<T: AsRef<str>>(value: T) -> String {
     paint(Color::Gray as u8, value)
 }
 
-pub fn muted_light(value: &str) -> String {
+pub fn muted_light<T: AsRef<str>>(value: T) -> String {
     paint(Color::GrayLight as u8, value)
 }
 
-pub fn success(value: &str) -> String {
+pub fn success<T: AsRef<str>>(value: T) -> String {
     paint(Color::Green as u8, value)
 }
 
-pub fn failure(value: &str) -> String {
+pub fn failure<T: AsRef<str>>(value: T) -> String {
     paint(Color::Red as u8, value)
 }
 
-pub fn invalid(value: &str) -> String {
+pub fn invalid<T: AsRef<str>>(value: T) -> String {
     paint(Color::Yellow as u8, value)
 }
 
-pub fn file(path: &str) -> String {
+pub fn file<T: AsRef<str>>(path: T) -> String {
     paint(Color::Teal as u8, path)
 }
 
-pub fn path(path: &Path) -> String {
+pub fn path<T: AsRef<Path>>(path: T) -> String {
     paint(
         Color::Cyan as u8,
-        &clean_path(path.to_str().unwrap_or("<unknown>")),
+        clean_path(path.as_ref().to_str().unwrap_or("<unknown>")),
     )
 }
 
-pub fn url(url: &str) -> String {
+pub fn url<T: AsRef<str>>(url: T) -> String {
     paint(Color::Blue as u8, url)
 }
 
-pub fn shell(cmd: &str) -> String {
+pub fn shell<T: AsRef<str>>(cmd: T) -> String {
     paint(Color::Pink as u8, &clean_path(cmd))
 }
 
-pub fn symbol(value: &str) -> String {
+pub fn symbol<T: AsRef<str>>(value: T) -> String {
     paint(Color::Lime as u8, value)
 }
 
-pub fn id(value: &str) -> String {
+pub fn id<T: AsRef<str>>(value: T) -> String {
     paint(Color::Purple as u8, value)
 }
 
-pub fn target(value: &str) -> String {
+pub fn target<T: AsRef<str>>(value: T) -> String {
     paint(Color::Blue as u8, value)
 }
 
 // Based on https://github.com/debug-js/debug/blob/master/src/common.js#L41
-pub fn log_target(value: &str) -> String {
+pub fn log_target<T: AsRef<str>>(value: T) -> String {
+    let value = value.as_ref();
     let mut hash: u32 = 0;
 
     for b in value.bytes() {
@@ -150,7 +151,8 @@ pub const COLOR_LIST: [u8; 76] = [
 
 pub const COLOR_LIST_UNSUPPORTED: [u8; 6] = [6, 2, 3, 4, 5, 1];
 
-fn clean_path(path: &str) -> String {
+fn clean_path<T: AsRef<str>>(path: T) -> String {
+    let path = path.as_ref();
     let mut path_str = path.to_owned();
 
     if let Some(home_dir) = get_home_dir() {

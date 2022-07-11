@@ -245,14 +245,6 @@ impl<'a> TokenResolver<'a> {
         let token = matches.get(0).unwrap().as_str(); // $var
         let var = matches.get(1).unwrap().as_str(); // var
 
-        // trace!(
-        //     target: "moon:token",
-        //     "Resolving token variable {} for {} value {}",
-        //     color::id(token),
-        //     self.context.context_label(),
-        //     color::file(value)
-        // );
-
         let (project_id, task_id) = Target::parse(&task.target)?.ids()?;
         let workspace_root = self.data.workspace_root;
         let project_root = self.data.project_root;

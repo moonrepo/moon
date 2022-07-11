@@ -23,7 +23,7 @@ pub fn label_moon() -> String {
     )
 }
 
-pub fn label_checkpoint(label: &str, checkpoint: Checkpoint) -> String {
+pub fn label_checkpoint<T: AsRef<str>>(label: T, checkpoint: Checkpoint) -> String {
     let colors = match checkpoint {
         Checkpoint::Fail => FAIL_COLORS,
         Checkpoint::Pass => PASS_COLORS,
@@ -36,6 +36,6 @@ pub fn label_checkpoint(label: &str, checkpoint: Checkpoint) -> String {
         color::paint(colors[1], STEP_CHAR),
         color::paint(colors[2], STEP_CHAR),
         color::paint(colors[3], STEP_CHAR),
-        style(label).bold()
+        style(label.as_ref()).bold()
     )
 }

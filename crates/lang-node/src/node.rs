@@ -33,7 +33,8 @@ pub fn extract_bin_from_cmd_file(bin_path: PathBuf) -> PathBuf {
     parse_cmd_file(&bin_path, fs::read_to_string(&bin_path).unwrap())
 }
 
-pub fn find_package(starting_dir: &Path, package_name: &str) -> Option<PathBuf> {
+pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {
+    let starting_dir = starting_dir.as_ref();
     let pkg_path = starting_dir.join(NODE.vendor_dir).join(package_name);
 
     if pkg_path.exists() {
@@ -47,7 +48,12 @@ pub fn find_package(starting_dir: &Path, package_name: &str) -> Option<PathBuf> 
 }
 
 #[track_caller]
-pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> {
+pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
+    starting_dir: P,
+    bin_name: T,
+) -> Option<PathBuf> {
+    let starting_dir = starting_dir.as_ref();
+    let bin_name = bin_name.as_ref();
     let bin_path = starting_dir
         .join(NODE.vendor_bins_dir)
         .join(get_bin_name_suffix(bin_name, "cmd", true));
@@ -75,11 +81,18 @@ pub fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Option<PathBuf> 
     }
 }
 
-pub fn find_package_manager_bin(install_dir: &Path, bin_name: &str) -> PathBuf {
-    install_dir.join(get_bin_name_suffix(bin_name, "cmd", false))
+pub fn find_package_manager_bin<P: AsRef<Path>, T: AsRef<str>>(
+    install_dir: P,
+    bin_name: T,
+) -> PathBuf {
+    install_dir
+        .as_ref()
+        .join(get_bin_name_suffix(bin_name, "cmd", false))
 }
 
-pub fn get_bin_name_suffix(name: &str, windows_ext: &str, flat: bool) -> String {
+pub fn get_bin_name_suffix<T: AsRef<str>>(name: T, windows_ext: &str, flat: bool) -> String {
+    let name = name.as_ref();
+
     if cfg!(windows) {
         format!("{}.{}", name, windows_ext)
     } else if flat {
@@ -97,7 +110,7 @@ pub fn get_download_file_ext() -> &'static str {
     }
 }
 
-pub fn get_download_file_name(version: &str) -> Result<String, LangError> {
+pub fn get_download_file_name<T: AsRef<str>>(version: T) -> Result<String, LangError> {
     let platform;
 
     if consts::OS == "linux" {
@@ -134,13 +147,13 @@ pub fn get_download_file_name(version: &str) -> Result<String, LangError> {
 
     Ok(format!(
         "node-v{version}-{platform}-{arch}",
-        version = version,
+        version = version.as_ref(),
         platform = platform,
         arch = arch,
     ))
 }
 
-pub fn get_download_file(version: &str) -> Result<String, LangError> {
+pub fn get_download_file<T: AsRef<str>>(version: T) -> Result<String, LangError> {
     Ok(format!(
         "{}.{}",
         get_download_file_name(version)?,
@@ -148,12 +161,17 @@ pub fn get_download_file(version: &str) -> Result<String, LangError> {
     ))
 }
 
-pub fn get_nodejs_url(version: &str, host: &str, path: &str) -> String {
+pub fn get_nodejs_url<A, B, C>(version: A, host: B, path: C) -> String
+where
+    A: AsRef<str>,
+    B: AsRef<str>,
+    C: AsRef<str>,
+{
     format!(
         "{host}/dist/v{version}/{path}",
-        host = host,
-        version = version,
-        path = path,
+        host = host.as_ref(),
+        version = version.as_ref(),
+        path = path.as_ref(),
     )
 }
 
@@ -444,7 +462,7 @@ mod tests {
         #[test]
         fn returns_path_from_nested_file() {
             let sandbox = create_node_modules_sandbox();
-            let path = find_package_bin(&sandbox.path().join("nested"), "baz");
+            let path = find_package_bin(sandbox.path().join("nested"), "baz");
 
             if cfg!(windows) {
                 assert_eq!(

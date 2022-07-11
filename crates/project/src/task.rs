@@ -192,7 +192,7 @@ impl Task {
                     }
                 }
             } else if token_resolver.has_token_var(arg) {
-                args.push(token_resolver.resolve_var(arg, self)?);
+                args.push(token_resolver.resolve_vars(arg, self)?);
             } else {
                 args.push(arg.clone());
             }

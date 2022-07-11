@@ -178,7 +178,7 @@ impl<'a> TokenResolver<'a> {
 
                 results.push(path::expand_root_path(
                     if has_var {
-                        self.resolve_var(value, task)?
+                        self.resolve_vars(value, task)?
                     } else {
                         value.to_owned()
                     },
@@ -231,6 +231,16 @@ impl<'a> TokenResolver<'a> {
                 token.to_owned(),
             ))),
         }
+    }
+
+    pub fn resolve_vars(&self, value: &str, task: &Task) -> Result<String, ProjectError> {
+        let mut value = value.to_owned();
+
+        while self.has_token_var(&value) {
+            value = self.resolve_var(&value, task)?;
+        }
+
+        Ok(value)
     }
 
     pub fn resolve_var(&self, value: &str, task: &Task) -> Result<String, ProjectError> {
@@ -912,6 +922,14 @@ mod tests {
             assert_eq!(
                 resolver.resolve_var("$workspaceRoot", &task).unwrap(),
                 workspace_root.to_string_lossy()
+            );
+
+            // Multiple vars
+            assert_eq!(
+                resolver
+                    .resolve_vars("$language-$taskType-project", &task)
+                    .unwrap(),
+                "javascript-node-project"
             );
         }
     }

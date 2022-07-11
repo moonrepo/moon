@@ -436,7 +436,7 @@ mod tasks {
         lint.inputs.extend(implicit_inputs);
 
         assert_eq!(project.get_task("build").unwrap().inputs, build.inputs);
-        assert_eq!(project.get_task("std").unwrap().inputs, std.inputs);
+        assert_eq!(project.get_task("standard").unwrap().inputs, std.inputs);
         assert_eq!(project.get_task("test").unwrap().inputs, test.inputs);
         assert_eq!(project.get_task("lint").unwrap().inputs, lint.inputs);
     }

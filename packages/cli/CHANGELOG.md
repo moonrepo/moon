@@ -19,6 +19,7 @@
 - Added `$language`, `$projectType`, and `$taskType` token variables.
 - Added `dev` as a non-CI task identifier (alongside `start` and `serve`).
 - Token variables can now be used within task `inputs`.
+- Multiple token variables can now be used within the same string.
 
 ## 0.6.0
 

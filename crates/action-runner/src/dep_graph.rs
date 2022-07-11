@@ -16,14 +16,10 @@ pub use petgraph::graph::NodeIndex;
 const TARGET: &str = "moon:dep-graph";
 
 fn get_lang_from_project(project: &Project) -> SupportedLanguage {
-    if let Some(cfg) = &project.config {
-        return match cfg.language {
-            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => SupportedLanguage::Node,
-            _ => SupportedLanguage::System,
-        };
+    match &project.config.language {
+        ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => SupportedLanguage::Node,
+        _ => SupportedLanguage::System,
     }
-
-    SupportedLanguage::System
 }
 
 pub type DepGraphType = DiGraph<Node, ()>;

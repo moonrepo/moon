@@ -112,7 +112,7 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
 
     pub include: Option<Vec<TaskID>>,
 
-    pub rename: HashMap<TaskID, TaskID>,
+    pub rename: Option<HashMap<TaskID, TaskID>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
@@ -154,8 +154,21 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
+    pub fn detect_language<T: AsRef<Path>>(root: T) -> ProjectLanguage {
+        let root = root.as_ref();
+
+        if root.join("tsconfig.json").exists() {
+            ProjectLanguage::TypeScript
+        } else if root.join("package.json").exists() {
+            ProjectLanguage::JavaScript
+        } else {
+            ProjectLanguage::Unknown
+        }
+    }
+
     #[track_caller]
-    pub fn load(path: &Path) -> Result<ProjectConfig, Vec<FigmentError>> {
+    pub fn load<T: AsRef<Path>>(path: T) -> Result<ProjectConfig, Vec<FigmentError>> {
+        let path = path.as_ref();
         let profile_name = "project";
         let figment =
             Figment::from(Serialized::defaults(ProjectConfig::default()).profile(&profile_name))
@@ -168,18 +181,18 @@ impl ProjectConfig {
             return Err(map_validation_errors_to_figment_errors(&figment, &errors));
         }
 
-        // Attempt to detect the language automatically
         if matches!(config.language, ProjectLanguage::Unknown) {
-            let root = path.parent().unwrap();
-
-            if root.join("tsconfig.json").exists() {
-                config.language = ProjectLanguage::TypeScript;
-            } else if root.join("package.json").exists() {
-                config.language = ProjectLanguage::JavaScript;
-            }
+            config.language = ProjectConfig::detect_language(path.parent().unwrap());
         }
 
         Ok(config)
+    }
+
+    pub fn new<T: AsRef<Path>>(root: T) -> Self {
+        ProjectConfig {
+            language: ProjectConfig::detect_language(root.as_ref()),
+            ..ProjectConfig::default()
+        }
     }
 }
 

@@ -8,6 +8,8 @@ expression: get_assert_output(&assert)
 
 ID: noConfig
 Source: no-config
+Language: Unknown
+Type: Unknown
 
  FILE GROUPS 
 

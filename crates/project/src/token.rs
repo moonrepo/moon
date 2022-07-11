@@ -2,7 +2,7 @@ use crate::errors::{ProjectError, TokenError};
 use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
-use moon_config::{ProjectConfig, ProjectLanguage, ProjectType};
+use moon_config::ProjectConfig;
 use moon_logger::{color, warn};
 use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
@@ -87,7 +87,7 @@ impl TokenType {
 pub struct TokenSharedData<'a> {
     pub file_groups: &'a HashMap<String, FileGroup>,
 
-    pub project_config: Option<&'a ProjectConfig>,
+    pub project_config: &'a ProjectConfig,
 
     pub project_root: &'a Path,
 
@@ -99,7 +99,7 @@ impl<'a> TokenSharedData<'a> {
         file_groups: &'a HashMap<String, FileGroup>,
         workspace_root: &'a Path,
         project_root: &'a Path,
-        project_config: Option<&'a ProjectConfig>,
+        project_config: &'a ProjectConfig,
     ) -> TokenSharedData<'a> {
         TokenSharedData {
             file_groups,
@@ -251,17 +251,11 @@ impl<'a> TokenResolver<'a> {
         let project_config = self.data.project_config;
 
         let var_value = match var {
-            "language" => match project_config {
-                Some(cfg) => cfg.language.to_string(),
-                None => ProjectLanguage::Unknown.to_string(),
-            },
+            "language" => project_config.language.to_string(),
             "project" => project_id,
             "projectRoot" => path::to_string(project_root)?,
             "projectSource" => path::to_string(project_root.strip_prefix(workspace_root).unwrap())?,
-            "projectType" => match project_config {
-                Some(cfg) => cfg.type_of.to_string(),
-                None => ProjectType::Unknown.to_string(),
-            },
+            "projectType" => project_config.type_of.to_string(),
             "target" => task.target.clone(),
             "task" => task_id,
             "taskType" => task.type_of.to_string(),
@@ -428,7 +422,7 @@ impl<'a> TokenResolver<'a> {
 mod tests {
     use super::*;
     use crate::test::{create_expanded_task, create_file_groups};
-    use moon_config::TaskConfig;
+    use moon_config::{ProjectConfig, ProjectLanguage, ProjectType, TaskConfig};
     use moon_utils::string_vec;
     use moon_utils::test::{get_fixtures_dir, wrap_glob};
     use std::path::PathBuf;
@@ -445,9 +439,15 @@ mod tests {
     #[should_panic(expected = "UnknownFileGroup(\"@dirs(unknown)\", \"unknown\")")]
     fn errors_for_unknown_file_group() {
         let project_root = get_project_root();
+        let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+        let metadata = TokenSharedData::new(
+            &file_groups,
+            &workspace_root,
+            &project_root,
+            &project_config,
+        );
         let resolver = TokenResolver::for_args(&metadata);
 
         resolver
@@ -459,9 +459,15 @@ mod tests {
     #[should_panic(expected = "NoGlobs(\"no_globs\")")]
     fn errors_if_no_globs_in_file_group() {
         let project_root = get_project_root();
+        let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+        let metadata = TokenSharedData::new(
+            &file_groups,
+            &workspace_root,
+            &project_root,
+            &project_config,
+        );
         let resolver = TokenResolver::for_args(&metadata);
 
         resolver
@@ -472,9 +478,15 @@ mod tests {
     #[test]
     fn doesnt_match_when_not_alone() {
         let project_root = get_project_root();
+        let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+        let metadata = TokenSharedData::new(
+            &file_groups,
+            &workspace_root,
+            &project_root,
+            &project_config,
+        );
         let resolver = TokenResolver::for_args(&metadata);
 
         assert_eq!(
@@ -492,9 +504,15 @@ mod tests {
         #[should_panic(expected = "Token(InvalidIndexType(\"@in(abc)\", \"abc\"))")]
         fn errors_for_invalid_index_format() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -516,9 +534,15 @@ mod tests {
         #[should_panic(expected = "Token(InvalidInIndex(\"@in(5)\", 5))")]
         fn errors_for_index_out_of_bounds() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -544,9 +568,15 @@ mod tests {
         #[should_panic(expected = "Token(InvalidIndexType(\"@out(abc)\", \"abc\"))")]
         fn errors_for_invalid_index_format() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -568,9 +598,15 @@ mod tests {
         #[should_panic(expected = "Token(InvalidOutIndex(\"@out(5)\", 5))")]
         fn errors_for_index_out_of_bounds() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -595,9 +631,15 @@ mod tests {
         #[test]
         fn supports_dirs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             assert_eq!(
@@ -611,9 +653,15 @@ mod tests {
         #[test]
         fn supports_dirs_with_globs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             assert_eq!(
@@ -627,9 +675,15 @@ mod tests {
         #[test]
         fn supports_files() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let mut files = resolver
@@ -650,9 +704,15 @@ mod tests {
         #[test]
         fn supports_files_with_globs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let mut files = resolver
@@ -673,9 +733,15 @@ mod tests {
         #[test]
         fn supports_globs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             assert_eq!(
@@ -692,9 +758,15 @@ mod tests {
         #[test]
         fn supports_in_paths() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -718,9 +790,15 @@ mod tests {
         #[test]
         fn supports_in_globs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -744,9 +822,15 @@ mod tests {
         #[test]
         fn supports_out_paths() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             let task = create_expanded_task(
@@ -770,9 +854,15 @@ mod tests {
         #[test]
         fn supports_root() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_args(&metadata);
 
             assert_eq!(
@@ -797,7 +887,7 @@ mod tests {
                 &file_groups,
                 &workspace_root,
                 &project_root,
-                Some(&project_config),
+                &project_config,
             );
             let resolver = TokenResolver::for_args(&metadata);
 
@@ -844,9 +934,15 @@ mod tests {
         #[test]
         fn supports_dirs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             assert_eq!(
@@ -860,9 +956,15 @@ mod tests {
         #[test]
         fn supports_dirs_with_globs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             assert_eq!(
@@ -876,9 +978,15 @@ mod tests {
         #[test]
         fn supports_files() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             let mut files = resolver
@@ -899,9 +1007,15 @@ mod tests {
         #[test]
         fn supports_files_with_globs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             let mut files = resolver
@@ -922,9 +1036,15 @@ mod tests {
         #[test]
         fn supports_globs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             assert_eq!(
@@ -942,9 +1062,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@in\", \"inputs\")")]
         fn doesnt_support_in() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             resolver.resolve(&string_vec!["@in(0)"], None).unwrap();
@@ -954,9 +1080,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@out\", \"inputs\")")]
         fn doesnt_support_out() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             resolver.resolve(&string_vec!["@out(0)"], None).unwrap();
@@ -965,9 +1097,15 @@ mod tests {
         #[test]
         fn supports_root() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             assert_eq!(
@@ -982,9 +1120,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"$var\", \"inputs\"))")]
         fn doesnt_support_vars() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_inputs(&metadata);
 
             resolver.resolve(&string_vec!["$project"], None).unwrap();
@@ -998,9 +1142,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@dirs\", \"outputs\")")]
         fn doesnt_support_dirs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1012,9 +1162,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@files\", \"outputs\")")]
         fn doesnt_support_files() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1026,9 +1182,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@globs\", \"outputs\")")]
         fn doesnt_support_globs() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1040,9 +1202,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@group\", \"outputs\")")]
         fn doesnt_support_group() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1054,9 +1222,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@in\", \"outputs\")")]
         fn doesnt_support_in() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver.resolve(&string_vec!["@in(0)"], None).unwrap();
@@ -1066,9 +1240,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@out\", \"outputs\")")]
         fn doesnt_support_out() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver.resolve(&string_vec!["@out(0)"], None).unwrap();
@@ -1078,9 +1258,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"@root\", \"outputs\")")]
         fn doesnt_support_root() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver
@@ -1092,9 +1278,15 @@ mod tests {
         #[should_panic(expected = "InvalidTokenContext(\"$var\", \"outputs\"))")]
         fn doesnt_support_vars() {
             let project_root = get_project_root();
+            let project_config = ProjectConfig::new(&project_root);
             let workspace_root = get_workspace_root();
             let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(&file_groups, &workspace_root, &project_root, None);
+            let metadata = TokenSharedData::new(
+                &file_groups,
+                &workspace_root,
+                &project_root,
+                &project_config,
+            );
             let resolver = TokenResolver::for_outputs(&metadata);
 
             resolver.resolve(&string_vec!["$project"], None).unwrap();

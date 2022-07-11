@@ -109,9 +109,10 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();
+    let mut touched_files = HashSet::new();
 
     if options.affected {
-        let touched_files = query_touched_files(
+        touched_files = query_touched_files(
             &workspace,
             &mut QueryTouchedFilesOptions {
                 local: !options.upstream,
@@ -161,6 +162,7 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
         passthrough_args: options.passthrough,
         primary_targets: HashSet::from([target_id.to_owned()]),
         profile: options.profile,
+        touched_files,
     };
 
     let mut runner = ActionRunner::new(workspace);

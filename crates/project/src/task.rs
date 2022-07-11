@@ -109,7 +109,7 @@ impl Task {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
         let command = cloned_config.command.unwrap_or_default();
-        let is_long_running = command == "serve" || command == "start";
+        let is_long_running = command == "dev" || command == "serve" || command == "start";
         let log_target = format!("moon:project:{}", target);
 
         let task = Task {

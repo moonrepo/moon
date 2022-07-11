@@ -3,6 +3,7 @@ use crate::context::ActionContext;
 use crate::errors::ActionError;
 use moon_config::PackageManager;
 use moon_error::map_io_to_fs_error;
+use moon_lang_node::NPM;
 use moon_logger::{color, debug, warn};
 use moon_terminal::output::{label_checkpoint, Checkpoint};
 use moon_utils::{fs, is_offline};
@@ -34,7 +35,7 @@ fn add_package_manager(workspace: &mut Workspace) -> bool {
         debug!(
             target: LOG_TARGET,
             "Adding package manager version to root {}",
-            color::file("package.json")
+            color::file(&NPM.manifest_filename)
         );
 
         return true;
@@ -53,7 +54,7 @@ fn add_engines_constraint(workspace: &mut Workspace) -> bool {
         debug!(
             target: LOG_TARGET,
             "Adding engines version constraint to root {}",
-            color::file("package.json")
+            color::file(&NPM.manifest_filename)
         );
 
         return true;
@@ -64,7 +65,7 @@ fn add_engines_constraint(workspace: &mut Workspace) -> bool {
 
 pub async fn install_node_deps(
     _action: &mut Action,
-    _context: &ActionContext,
+    context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<ActionStatus, ActionError> {
     // Writes root `package.json`
@@ -100,7 +101,8 @@ pub async fn install_node_deps(
         }
 
         // Get the last modified time of the root lockfile
-        let lockfile = workspace.root.join(manager.get_lock_filename());
+        let lockfile_name = manager.get_lock_filename();
+        let lockfile = workspace.root.join(&lockfile_name);
         let mut last_modified = 0;
 
         if lockfile.exists() {
@@ -113,9 +115,18 @@ pub async fn install_node_deps(
             );
         }
 
+        // If a package.json has been modified manually, we should account for that
+        let has_modified_manifests = context
+            .touched_files
+            .iter()
+            .any(|f| f.ends_with(&NPM.manifest_filename) || f.ends_with(&lockfile_name));
+
         // Install deps if the lockfile has been modified
         // since the last time dependencies were installed!
-        if last_modified == 0 || last_modified > cache.item.last_node_install_time {
+        if has_modified_manifests
+            || last_modified == 0
+            || last_modified > cache.item.last_node_install_time
+        {
             debug!(target: LOG_TARGET, "Installing Node.js dependencies");
 
             if is_offline() {

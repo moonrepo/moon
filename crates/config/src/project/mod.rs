@@ -154,6 +154,7 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
+    #[track_caller]
     pub fn load(path: &Path) -> Result<ProjectConfig, Vec<FigmentError>> {
         let profile_name = "project";
         let figment =
@@ -161,10 +162,21 @@ impl ProjectConfig {
                 .merge(Yaml::file(path).profile(&profile_name))
                 .select(&profile_name);
 
-        let config: ProjectConfig = figment.extract().map_err(|e| vec![e])?;
+        let mut config: ProjectConfig = figment.extract().map_err(|e| vec![e])?;
 
         if let Err(errors) = config.validate() {
             return Err(map_validation_errors_to_figment_errors(&figment, &errors));
+        }
+
+        // Attempt to detect the language automatically
+        if matches!(config.language, ProjectLanguage::Unknown) {
+            let root = path.parent().unwrap();
+
+            if root.join("tsconfig.json").exists() {
+                config.language = ProjectLanguage::TypeScript;
+            } else if root.join("package.json").exists() {
+                config.language = ProjectLanguage::JavaScript;
+            }
         }
 
         Ok(config)

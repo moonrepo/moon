@@ -19,17 +19,17 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
 
     term.write_line("")?;
     term.render_label(Label::Brand, &project.id)?;
-    term.render_entry("ID", &color::id(&project.id))?;
-    term.render_entry("Source", &color::file(&project.source))?;
+    term.render_entry("ID", color::id(&project.id))?;
+    term.render_entry("Source", color::file(&project.source))?;
 
     // Dont show in test snapshots
     if !is_test_env() {
-        term.render_entry("Root", &color::path(&project.root))?;
+        term.render_entry("Root", color::path(&project.root))?;
     }
 
     if let Some(config) = project.config {
-        term.render_entry("Language", &term.format(&config.language))?;
-        term.render_entry("Type", &term.format(&config.type_of))?;
+        term.render_entry("Language", term.format(&config.language))?;
+        term.render_entry("Type", term.format(&config.type_of))?;
 
         if let Some(meta) = config.project {
             term.render_entry("Name", &meta.name)?;
@@ -61,7 +61,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
         if !deps.is_empty() {
             term.write_line("")?;
             term.render_label(Label::Default, "Depends on")?;
-            term.render_list(&deps)?;
+            term.render_list(deps)?;
         }
     }
 
@@ -74,7 +74,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
 
             term.render_entry(
                 name,
-                &color::shell(&format!("{} {}", task.command, task.args.join(" "))),
+                color::shell(format!("{} {}", task.command, task.args.join(" "))),
             )?;
         }
     }
@@ -90,7 +90,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
                 files.push(color::file(file));
             }
 
-            term.render_entry_list(group, &files)?;
+            term.render_entry_list(group, files)?;
         }
     }
 

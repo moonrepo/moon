@@ -17,8 +17,8 @@ pub fn safe_exit(code: i32) -> ! {
     std::process::exit(code)
 }
 
-pub fn replace_style_tokens(value: &str) -> String {
-    String::from(STYLE_TOKEN.replace_all(value, |caps: &Captures| {
+pub fn replace_style_tokens<T: AsRef<str>>(value: T) -> String {
+    String::from(STYLE_TOKEN.replace_all(value.as_ref(), |caps: &Captures| {
         let token = caps.get(1).map_or("", |m| m.as_str());
         let inner = caps.get(2).map_or("", |m| m.as_str());
 

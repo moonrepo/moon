@@ -18,15 +18,19 @@ pub type TermWriteResult = io::Result<()>;
 
 pub trait ExtendedTerm {
     fn format(&self, value: &impl Debug) -> String;
-    fn format_label(&self, kind: Label, message: &str) -> String;
+    fn format_label<V: AsRef<str>>(&self, kind: Label, message: V) -> String;
 
     // RENDERERS
 
-    fn render_entry(&self, key: &str, value: &str) -> TermWriteResult;
-    fn render_entry_list(&self, key: &str, values: &[String]) -> TermWriteResult;
+    fn render_entry<K: AsRef<str>, V: AsRef<str>>(&self, key: K, value: V) -> TermWriteResult;
+    fn render_entry_list<K: AsRef<str>, V: AsRef<[String]>>(
+        &self,
+        key: K,
+        values: V,
+    ) -> TermWriteResult;
     fn render_error(&self, error: Box<dyn std::error::Error>) -> !;
-    fn render_label(&self, kind: Label, message: &str) -> TermWriteResult;
-    fn render_list(&self, values: &[String]) -> TermWriteResult;
+    fn render_label<V: AsRef<str>>(&self, kind: Label, message: V) -> TermWriteResult;
+    fn render_list<V: AsRef<[String]>>(&self, values: V) -> TermWriteResult;
 }
 
 impl ExtendedTerm for Term {
@@ -34,7 +38,7 @@ impl ExtendedTerm for Term {
         format!("{:?}", value)
     }
 
-    fn format_label(&self, kind: Label, message: &str) -> String {
+    fn format_label<V: AsRef<str>>(&self, kind: Label, message: V) -> String {
         let mut style = Style::new()
             .attr(Attribute::Bold)
             .color256(Color::Black as u8);
@@ -56,18 +60,22 @@ impl ExtendedTerm for Term {
         }
 
         style
-            .apply_to(format!(" {} ", message).to_uppercase())
+            .apply_to(format!(" {} ", message.as_ref()).to_uppercase())
             .to_string()
     }
 
-    fn render_entry(&self, key: &str, value: &str) -> TermWriteResult {
-        let label = color::muted_light(format!("{}:", style(key).bold()));
+    fn render_entry<K: AsRef<str>, V: AsRef<str>>(&self, key: K, value: V) -> TermWriteResult {
+        let label = color::muted_light(format!("{}:", style(key.as_ref()).bold()));
 
-        self.write_line(&format!("{} {}", label, value))
+        self.write_line(&format!("{} {}", label, value.as_ref()))
     }
 
-    fn render_entry_list(&self, key: &str, values: &[String]) -> TermWriteResult {
-        let label = color::muted_light(format!("{}:", style(key).bold()));
+    fn render_entry_list<K: AsRef<str>, V: AsRef<[String]>>(
+        &self,
+        key: K,
+        values: V,
+    ) -> TermWriteResult {
+        let label = color::muted_light(format!("{}:", style(key.as_ref()).bold()));
 
         self.write_line(&label)?;
         self.render_list(values)?;
@@ -97,15 +105,15 @@ impl ExtendedTerm for Term {
         safe_exit(1);
     }
 
-    fn render_label(&self, kind: Label, message: &str) -> TermWriteResult {
-        self.write_line(&self.format_label(kind, message))?;
+    fn render_label<V: AsRef<str>>(&self, kind: Label, message: V) -> TermWriteResult {
+        self.write_line(&self.format_label(kind, message.as_ref()))?;
         self.write_line("")?;
 
         Ok(())
     }
 
-    fn render_list(&self, values: &[String]) -> TermWriteResult {
-        for value in values {
+    fn render_list<V: AsRef<[String]>>(&self, values: V) -> TermWriteResult {
+        for value in values.as_ref() {
             self.write_line(&format!(" {} {}", color::muted("-"), value))?;
         }
 

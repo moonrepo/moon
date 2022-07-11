@@ -5,10 +5,13 @@
 #### 💥 Breaking
 
 - The `language` and `type` settings in `project.yml` now default to "unknown" when the setting is
-  not defined, or the config does not exist.
+  not defined, or the config does not exist. However, the language will also now be inferred
+  (below).
 
 #### 🚀 Updates
 
+- Updated project `language` to be automatically inferred when the value is unknown, based on the
+  existence of config files (`package.json` = javascript, `tsconfig.json` = typescript).
 - Added a `moon dep-graph` command for displaying the entire dependency graph in DOT format.
 - Added `--language` and `--type` filter options to `moon query projects`.
 - Added `$language`, `$projectType`, and `$taskType` token variables.

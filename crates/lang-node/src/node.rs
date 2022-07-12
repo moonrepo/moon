@@ -3,7 +3,7 @@ use cached::proc_macro::cached;
 use lazy_static::lazy_static;
 use moon_lang::LangError;
 use regex::Regex;
-use std::env::consts;
+use std::env::{self, consts};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -12,6 +12,15 @@ lazy_static! {
         "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[a-zA-Z0-9-_@]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.(c|m)?js)?"
     )
     .unwrap();
+}
+
+pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
+    let value = value.as_ref();
+
+    match env::var("NODE_PATH") {
+        Ok(old_value) => format!("{}:{}", value, old_value),
+        Err(_) => value.to_owned(),
+    }
 }
 
 #[track_caller]

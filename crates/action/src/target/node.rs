@@ -1,10 +1,11 @@
 use crate::context::{ActionContext, ProfileType};
 use crate::errors::ActionError;
+use moon_config::PackageManager;
 use moon_error::MoonError;
+use moon_lang_node::node;
 use moon_logger::{color, trace};
 use moon_project::{Project, Task};
 use moon_toolchain::{get_path_env_var, Executable};
-use moon_utils::path::relative_from;
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
 use moon_workspace::Workspace;
@@ -99,7 +100,7 @@ pub async fn create_node_target_command(
             cmd = node.get_yarn().unwrap().get_bin_path();
         }
         bin => {
-            let bin_path = relative_from(
+            let bin_path = path::relative_from(
                 node.get_package_manager()
                     .find_package_bin(toolchain, &project.root, bin)
                     .await?,
@@ -119,6 +120,16 @@ pub async fn create_node_target_command(
         "PATH",
         get_path_env_var(node.get_bin_path().parent().unwrap()),
     );
+
+    // This functionality mimics what pnpm's "node_modules/.bin" binaries do
+    if matches!(node.config.package_manager, PackageManager::Pnpm) {
+        command.env(
+            "NODE_PATH",
+            node::extend_node_path(path::to_string(
+                workspace.root.join("node_modules/.pnpm/node_modules"),
+            )?),
+        );
+    }
 
     Ok(command)
 }

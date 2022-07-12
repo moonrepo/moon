@@ -13,6 +13,7 @@ use figment::{
     providers::{Format, Serialized, Yaml},
     Error as FigmentError, Figment,
 };
+use moon_utils::string_vec;
 pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
 use schemars::gen::SchemaGenerator;
 use schemars::schema::Schema;
@@ -53,6 +54,8 @@ fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionRunnerConfig {
+    pub implicit_inputs: Vec<String>,
+
     pub inherit_colors_for_piped_tasks: bool,
 
     pub log_running_command: bool,
@@ -61,6 +64,13 @@ pub struct ActionRunnerConfig {
 impl Default for ActionRunnerConfig {
     fn default() -> Self {
         ActionRunnerConfig {
+            implicit_inputs: string_vec![
+                // When a project changes
+                "package.json",
+                // When root config changes
+                "/.moon/project.yml",
+                "/.moon/workspace.yml",
+            ],
             inherit_colors_for_piped_tasks: true,
             log_running_command: false,
         }

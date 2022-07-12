@@ -2,7 +2,7 @@ use crate::errors::DepGraphError;
 use crate::node::Node;
 use moon_config::ProjectLanguage;
 use moon_lang::SupportedLanguage;
-use moon_logger::{color, debug, map_list, trace, warn};
+use moon_logger::{color, debug, map_list, trace};
 use moon_project::{Project, ProjectGraph, Target, TargetError, TargetProject, TouchedFilePaths};
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
@@ -342,17 +342,7 @@ impl DepGraph {
 
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
-            let globally_affected = projects.is_globally_affected(touched);
-
-            if globally_affected {
-                warn!(
-                    target: TARGET,
-                    "Moon files touched, marking all targets as affected",
-                );
-            }
-
-            // Validate task exists for project
-            if !globally_affected && !project.get_task(task_id)?.is_affected(touched)? {
+            if !project.get_task(task_id)?.is_affected(touched)? {
                 trace!(
                     target: TARGET,
                     "Project {} task {} not affected based on touched files, skipping",

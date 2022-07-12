@@ -223,6 +223,7 @@ mod tests {
             "deps-a",
             fixture.path(),
             &GlobalProjectConfig::default(),
+            &[],
         )
         .unwrap();
 
@@ -254,6 +255,7 @@ mod tests {
             "deps-a",
             fixture.path(),
             &GlobalProjectConfig::default(),
+            &[],
         )
         .unwrap();
 
@@ -290,6 +292,7 @@ mod tests {
             "deps-b",
             fixture.path(),
             &GlobalProjectConfig::default(),
+            &[],
         )
         .unwrap();
 

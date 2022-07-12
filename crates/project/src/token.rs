@@ -52,10 +52,11 @@ impl TokenType {
             | TokenType::Files(_, _)
             | TokenType::Globs(_, _)
             | TokenType::Group(_, _)
-            | TokenType::Root(_, _) => {
+            | TokenType::Root(_, _)
+            | TokenType::Var(_) => {
                 matches!(context, ResolverType::Args) || matches!(context, ResolverType::Inputs)
             }
-            TokenType::In(_, _) | TokenType::Out(_, _) | TokenType::Var(_) => {
+            TokenType::In(_, _) | TokenType::Out(_, _) => {
                 matches!(context, ResolverType::Args)
             }
         };
@@ -160,11 +161,7 @@ impl<'a> TokenResolver<'a> {
 
     /// Cycle through the values, resolve any tokens, and return a list of absolute file paths.
     /// This should only be used for `inputs` and `outputs`.
-    pub fn resolve(
-        &self,
-        values: &[String],
-        task: Option<&Task>,
-    ) -> Result<Vec<PathBuf>, ProjectError> {
+    pub fn resolve(&self, values: &[String], task: &Task) -> Result<Vec<PathBuf>, ProjectError> {
         let mut results: Vec<PathBuf> = vec![];
 
         for value in values {
@@ -172,12 +169,19 @@ impl<'a> TokenResolver<'a> {
                 for resolved_value in self.resolve_func(value, task)? {
                     results.push(resolved_value);
                 }
-            } else if self.has_token_var(value) {
-                // Vars not allowed here
-                TokenType::Var(String::new()).check_context(&self.context)?;
             } else {
+                let has_var = self.has_token_var(value);
+
+                if has_var {
+                    TokenType::Var(String::new()).check_context(&self.context)?;
+                }
+
                 results.push(path::expand_root_path(
-                    value,
+                    if has_var {
+                        self.resolve_vars(value, task)?
+                    } else {
+                        value.to_owned()
+                    },
                     self.data.workspace_root,
                     self.data.project_root,
                 ));
@@ -187,22 +191,11 @@ impl<'a> TokenResolver<'a> {
         Ok(results)
     }
 
-    pub fn resolve_func(
-        &self,
-        value: &str,
-        task: Option<&Task>,
-    ) -> Result<Vec<PathBuf>, ProjectError> {
+    pub fn resolve_func(&self, value: &str, task: &Task) -> Result<Vec<PathBuf>, ProjectError> {
         let matches = TOKEN_FUNC_PATTERN.captures(value).unwrap();
         let token = matches.get(0).unwrap().as_str(); // @name(arg)
         let func = matches.get(1).unwrap().as_str(); // name
         let arg = matches.get(2).unwrap().as_str(); // arg
-
-        // trace!(
-        //     target: "moon:token",
-        //     "Resolving token function {} for {}",
-        //     color::id(token),
-        //     self.context.context_label(),
-        // );
 
         match func {
             "dirs" => {
@@ -238,6 +231,16 @@ impl<'a> TokenResolver<'a> {
                 token.to_owned(),
             ))),
         }
+    }
+
+    pub fn resolve_vars(&self, value: &str, task: &Task) -> Result<String, ProjectError> {
+        let mut value = value.to_owned();
+
+        while self.has_token_var(&value) {
+            value = self.resolve_var(&value, task)?;
+        }
+
+        Ok(value)
     }
 
     pub fn resolve_var(&self, value: &str, task: &Task) -> Result<String, ProjectError> {
@@ -331,12 +334,11 @@ impl<'a> TokenResolver<'a> {
     fn replace_input_token(
         &self,
         token_type: TokenType,
-        task: Option<&Task>,
+        task: &Task,
     ) -> Result<Vec<PathBuf>, ProjectError> {
         token_type.check_context(&self.context)?;
 
         let mut results = vec![];
-        let task = task.expect("Expected a task for output resolving");
 
         if let TokenType::In(token, index) = token_type {
             let error = ProjectError::Token(TokenError::InvalidInIndex(token, index));
@@ -381,12 +383,11 @@ impl<'a> TokenResolver<'a> {
     fn replace_output_token(
         &self,
         token_type: TokenType,
-        task: Option<&Task>,
+        task: &Task,
     ) -> Result<Vec<PathBuf>, ProjectError> {
         token_type.check_context(&self.context)?;
 
         let mut results = vec![];
-        let task = task.expect("Expected a task for output resolving");
 
         if let TokenType::Out(token, index) = token_type {
             let error = ProjectError::Token(TokenError::InvalidOutIndex(token, index));
@@ -421,7 +422,7 @@ impl<'a> TokenResolver<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test::{create_expanded_task, create_file_groups};
+    use crate::test::{create_expanded_task, create_file_groups, create_initial_task};
     use moon_config::{ProjectConfig, ProjectLanguage, ProjectType, TaskConfig};
     use moon_utils::string_vec;
     use moon_utils::test::{get_fixtures_dir, wrap_glob};
@@ -449,9 +450,10 @@ mod tests {
             &project_config,
         );
         let resolver = TokenResolver::for_args(&metadata);
+        let task = create_initial_task(None);
 
         resolver
-            .resolve(&string_vec!["@dirs(unknown)"], None)
+            .resolve(&string_vec!["@dirs(unknown)"], &task)
             .unwrap();
     }
 
@@ -469,9 +471,10 @@ mod tests {
             &project_config,
         );
         let resolver = TokenResolver::for_args(&metadata);
+        let task = create_initial_task(None);
 
         resolver
-            .resolve(&string_vec!["@globs(no_globs)"], None)
+            .resolve(&string_vec!["@globs(no_globs)"], &task)
             .unwrap();
     }
 
@@ -488,10 +491,11 @@ mod tests {
             &project_config,
         );
         let resolver = TokenResolver::for_args(&metadata);
+        let task = create_initial_task(None);
 
         assert_eq!(
             resolver
-                .resolve(&string_vec!["foo/@dirs(static)/bar"], None)
+                .resolve(&string_vec!["foo/@dirs(static)/bar"], &task)
                 .unwrap(),
             vec![project_root.join("foo/@dirs(static)/bar")]
         );
@@ -525,9 +529,7 @@ mod tests {
             )
             .unwrap();
 
-            resolver
-                .resolve(&string_vec!["@in(abc)"], Some(&task))
-                .unwrap();
+            resolver.resolve(&string_vec!["@in(abc)"], &task).unwrap();
         }
 
         #[test]
@@ -555,9 +557,7 @@ mod tests {
             )
             .unwrap();
 
-            resolver
-                .resolve(&string_vec!["@in(5)"], Some(&task))
-                .unwrap();
+            resolver.resolve(&string_vec!["@in(5)"], &task).unwrap();
         }
     }
 
@@ -589,9 +589,7 @@ mod tests {
             )
             .unwrap();
 
-            resolver
-                .resolve(&string_vec!["@out(abc)"], Some(&task))
-                .unwrap();
+            resolver.resolve(&string_vec!["@out(abc)"], &task).unwrap();
         }
 
         #[test]
@@ -619,9 +617,7 @@ mod tests {
             )
             .unwrap();
 
-            resolver
-                .resolve(&string_vec!["@out(5)"], Some(&task))
-                .unwrap();
+            resolver.resolve(&string_vec!["@out(5)"], &task).unwrap();
         }
     }
 
@@ -641,10 +637,11 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_args(&metadata);
+            let task = create_initial_task(None);
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@dirs(static)"], None)
+                    .resolve(&string_vec!["@dirs(static)"], &task)
                     .unwrap(),
                 vec![project_root.join("dir"), project_root.join("dir/subdir")]
             );
@@ -663,10 +660,11 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_args(&metadata);
+            let task = create_initial_task(None);
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@dirs(dirs_glob)"], None)
+                    .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                     .unwrap(),
                 vec![project_root.join("dir"), project_root.join("dir/subdir")]
             );
@@ -685,9 +683,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_args(&metadata);
+            let task = create_initial_task(None);
 
             let mut files = resolver
-                .resolve(&string_vec!["@files(static)"], None)
+                .resolve(&string_vec!["@files(static)"], &task)
                 .unwrap();
             files.sort();
 
@@ -714,9 +713,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_args(&metadata);
+            let task = create_initial_task(None);
 
             let mut files = resolver
-                .resolve(&string_vec!["@files(files_glob)"], None)
+                .resolve(&string_vec!["@files(files_glob)"], &task)
                 .unwrap();
             files.sort();
 
@@ -743,10 +743,11 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_args(&metadata);
+            let task = create_initial_task(None);
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@globs(globs)"], None)
+                    .resolve(&string_vec!["@globs(globs)"], &task)
                     .unwrap(),
                 vec![
                     project_root.join("**/*.{ts,tsx}"),
@@ -780,9 +781,7 @@ mod tests {
             .unwrap();
 
             assert_eq!(
-                resolver
-                    .resolve(&string_vec!["@in(1)"], Some(&task))
-                    .unwrap(),
+                resolver.resolve(&string_vec!["@in(1)"], &task).unwrap(),
                 vec![project_root.join("file.ts")],
             );
         }
@@ -812,9 +811,7 @@ mod tests {
             .unwrap();
 
             assert_eq!(
-                resolver
-                    .resolve(&string_vec!["@in(0)"], Some(&task))
-                    .unwrap(),
+                resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
                 vec![wrap_glob(&project_root.join("src/**/*"))],
             );
         }
@@ -845,7 +842,7 @@ mod tests {
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@out(0)", "@out(1)"], Some(&task))
+                    .resolve(&string_vec!["@out(0)", "@out(1)"], &task)
                     .unwrap(),
                 vec![project_root.join("dir"), project_root.join("file.ts"),],
             );
@@ -864,10 +861,11 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_args(&metadata);
+            let task = create_initial_task(None);
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@root(static)"], None)
+                    .resolve(&string_vec!["@root(static)"], &task)
                     .unwrap(),
                 vec![project_root.join("dir")],
             );
@@ -925,6 +923,14 @@ mod tests {
                 resolver.resolve_var("$workspaceRoot", &task).unwrap(),
                 workspace_root.to_string_lossy()
             );
+
+            // Multiple vars
+            assert_eq!(
+                resolver
+                    .resolve_vars("$language-$taskType-project", &task)
+                    .unwrap(),
+                "javascript-node-project"
+            );
         }
     }
 
@@ -944,10 +950,11 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_inputs(&metadata);
+            let task = create_initial_task(None);
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@dirs(static)"], None)
+                    .resolve(&string_vec!["@dirs(static)"], &task)
                     .unwrap(),
                 vec![project_root.join("dir"), project_root.join("dir/subdir")]
             );
@@ -966,10 +973,11 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_inputs(&metadata);
+            let task = create_initial_task(None);
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@dirs(dirs_glob)"], None)
+                    .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                     .unwrap(),
                 vec![project_root.join("dir"), project_root.join("dir/subdir")]
             );
@@ -988,9 +996,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_inputs(&metadata);
+            let task = create_initial_task(None);
 
             let mut files = resolver
-                .resolve(&string_vec!["@files(static)"], None)
+                .resolve(&string_vec!["@files(static)"], &task)
                 .unwrap();
             files.sort();
 
@@ -1017,9 +1026,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_inputs(&metadata);
+            let task = create_initial_task(None);
 
             let mut files = resolver
-                .resolve(&string_vec!["@files(files_glob)"], None)
+                .resolve(&string_vec!["@files(files_glob)"], &task)
                 .unwrap();
             files.sort();
 
@@ -1046,10 +1056,11 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_inputs(&metadata);
+            let task = create_initial_task(None);
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@globs(globs)"], None)
+                    .resolve(&string_vec!["@globs(globs)"], &task)
                     .unwrap(),
                 vec![
                     project_root.join("**/*.{ts,tsx}"),
@@ -1072,8 +1083,9 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_inputs(&metadata);
+            let task = create_initial_task(None);
 
-            resolver.resolve(&string_vec!["@in(0)"], None).unwrap();
+            resolver.resolve(&string_vec!["@in(0)"], &task).unwrap();
         }
 
         #[test]
@@ -1090,8 +1102,9 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_inputs(&metadata);
+            let task = create_initial_task(None);
 
-            resolver.resolve(&string_vec!["@out(0)"], None).unwrap();
+            resolver.resolve(&string_vec!["@out(0)"], &task).unwrap();
         }
 
         #[test]
@@ -1107,31 +1120,14 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_inputs(&metadata);
+            let task = create_initial_task(None);
 
             assert_eq!(
                 resolver
-                    .resolve(&string_vec!["@root(static)"], None)
+                    .resolve(&string_vec!["@root(static)"], &task)
                     .unwrap(),
                 vec![project_root.join("dir")],
             );
-        }
-
-        #[test]
-        #[should_panic(expected = "InvalidTokenContext(\"$var\", \"inputs\"))")]
-        fn doesnt_support_vars() {
-            let project_root = get_project_root();
-            let project_config = ProjectConfig::new(&project_root);
-            let workspace_root = get_workspace_root();
-            let file_groups = create_file_groups();
-            let metadata = TokenSharedData::new(
-                &file_groups,
-                &workspace_root,
-                &project_root,
-                &project_config,
-            );
-            let resolver = TokenResolver::for_inputs(&metadata);
-
-            resolver.resolve(&string_vec!["$project"], None).unwrap();
         }
     }
 
@@ -1152,9 +1148,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_outputs(&metadata);
+            let task = create_initial_task(None);
 
             resolver
-                .resolve(&string_vec!["@dirs(static)"], None)
+                .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap();
         }
 
@@ -1172,9 +1169,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_outputs(&metadata);
+            let task = create_initial_task(None);
 
             resolver
-                .resolve(&string_vec!["@files(static)"], None)
+                .resolve(&string_vec!["@files(static)"], &task)
                 .unwrap();
         }
 
@@ -1192,9 +1190,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_outputs(&metadata);
+            let task = create_initial_task(None);
 
             resolver
-                .resolve(&string_vec!["@globs(globs)"], None)
+                .resolve(&string_vec!["@globs(globs)"], &task)
                 .unwrap();
         }
 
@@ -1212,9 +1211,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_outputs(&metadata);
+            let task = create_initial_task(None);
 
             resolver
-                .resolve(&string_vec!["@group(group)"], None)
+                .resolve(&string_vec!["@group(group)"], &task)
                 .unwrap();
         }
 
@@ -1232,8 +1232,9 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_outputs(&metadata);
+            let task = create_initial_task(None);
 
-            resolver.resolve(&string_vec!["@in(0)"], None).unwrap();
+            resolver.resolve(&string_vec!["@in(0)"], &task).unwrap();
         }
 
         #[test]
@@ -1250,8 +1251,9 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_outputs(&metadata);
+            let task = create_initial_task(None);
 
-            resolver.resolve(&string_vec!["@out(0)"], None).unwrap();
+            resolver.resolve(&string_vec!["@out(0)"], &task).unwrap();
         }
 
         #[test]
@@ -1268,9 +1270,10 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_outputs(&metadata);
+            let task = create_initial_task(None);
 
             resolver
-                .resolve(&string_vec!["@root(static)"], None)
+                .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap();
         }
 
@@ -1288,8 +1291,9 @@ mod tests {
                 &project_config,
             );
             let resolver = TokenResolver::for_outputs(&metadata);
+            let task = create_initial_task(None);
 
-            resolver.resolve(&string_vec!["$project"], None).unwrap();
+            resolver.resolve(&string_vec!["$project"], &task).unwrap();
         }
     }
 }

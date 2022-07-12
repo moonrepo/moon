@@ -44,12 +44,8 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
 pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
     let extracted_path = parse_bin_file(&bin_path, fs::read_to_string(&bin_path).unwrap());
 
-    bin_path
-        .parent()
-        .unwrap()
-        .join(extracted_path)
-        .canonicalize()
-        .expect("Cannot determine canonical binary path!")
+    // canonicalize() actually causes things to break, so normalize
+    path::normalize(bin_path.parent().unwrap().join(extracted_path))
 }
 
 pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {

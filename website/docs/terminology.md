@@ -4,9 +4,12 @@ title: Terminology
 
 | Term                   | Description                                                                                                                                |
 | :--------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| Action                 | A node within the dependency graph that gets executed by the action runner.                                                                |
+| Action runner          | Executes actions from our dependency graph in topological order.                                                                           |
 | Affected               | Touched by an explicit set of inputs or sources.                                                                                           |
 | Cache                  | Files and outputs that are stored on the file system to provide incremental builds and increased performance.                              |
 | CI                     | Continuous integration. An environment where tests, builds, lints, etc, are continuously ran on every pull/merge request.                  |
+| Dependency graph       | A directed acyclic graph (DAG) of targets to run and their dependencies.                                                                   |
 | Downstream             | Dependents or consumers of the item in question.                                                                                           |
 | Hash                   | A unique SHA256 identifier that represents the result of a ran task.                                                                       |
 | Hashing                | The mechanism of generating a hash based on multiple sources: inputs, dependencies, configs, etc.                                          |

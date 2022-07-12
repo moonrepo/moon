@@ -1,0 +1,125 @@
+---
+title: FAQ
+---
+
+## General
+
+### Will moon support other languages besides JavaScript?
+
+Yes! Although we're focusing right now on JavaScript (and TypeScript, Node.js), we've designed moon
+to be language agnostic and easily pluggable in the future.
+
+If we're to guess which language would be next, it would most likely be Ruby to support React Native
+based applications.
+
+### What should be considered the "source of truth"?
+
+If you're a frontend developer, you'll assume that a `package.json` is the source of truth for a
+project, as it defines scripts, dependencies, and repo-local relations. While true, this breaks down
+with additional tooling, like TypeScript project references, as now you must maintain
+`tsconfig.json` as well as `package.json`. The risk of these falling out of sync is high.
+
+This problem is further exacerbated by more tooling, or additional programming languages. What if
+your frontend project is dependent on a backend project? This isn't easily modeled in
+`package.json`. What if the backend project needs to be built and ran before running the frontend
+project? Again, while not impossible, it's quite cumbersome to model in `package.json` scripts. So
+on and so forth.
+
+moon aims to solve this with a different approach, by standardizing all projects in the workspace on
+[`project.yml`](./config/project). With this, the `project.yml` is the source of truth for each
+project, and provides us with the following:
+
+- The configuration is language agnostic. All projects are configured in a similar manner.
+- Tasks can reference other tasks easily. For example, npm scripts referencing rake tasks, and vice
+  verse, is a non-ideal experience.
+- Dependencies defined with [`dependsOn`](./config/project#dependson) use moon project identifiers,
+  and not language specific semantics. This field also easily populates the dependency/project
+  graphs.
+- For JavaScript projects:
+  - `package.json` dependencies (via `dependsOn`) are kept in sync when
+    [`node.syncProjectWorkspaceDependencies`](./config/workspace#syncprojectworkspacedependencies)
+    is enabled.
+  - `tsconfig.json` project references (via `dependsOn`) are kept in sync when
+    [`typescript.syncProjectReferences`](./config/workspace#syncprojectreferences) is enabled.
+
+By using moon as the source of truth, we can ensure a healthy repository, by accurately keeping
+everything in sync, and modifying project/language configuration to operate effectively.
+
+## Action runner
+
+### What is `SetupToolchain`, `InstallNodeDeps`, `RunTarget`, etc?
+
+When we run a [task](./concepts/task), we generate a dependency graph of nodes, known as actions.
+These labels are the actions in the graph, and break down as follows:
+
+- `SetupToolchain` - Sets up the [toolchain](./concepts/toolchain). Required for all other actions,
+  so acts as the root node.
+- `InstallNodeDeps` - Installs Node.js dependencies (`node_modules`) in the workspace root.
+- `InstallSystemDeps` - Currently a no operation.
+- `SyncNodeProject` - When a project's [`language`](./config/project#language) is "javascript" or
+  "typescript". Will sync `package.json` dependencies and `tsconfig.json` project references.
+- `SyncSystemProject` - Currently a no operation. Is created when a project's
+  [`language`](./config/project#language) does not require syncing.
+- `RunTarget` - The common action. This runs the target task within a project.
+
+## Projects & tasks
+
+### How to pipe tasks?
+
+Piping the output of a task to another task, whether via stdin or through `inputs`, is currently not
+possible. However, you _could_ execute a custom bash script that does the piping for you, for
+example:
+
+```bash title="scripts/pipe.sh"
+#!/usr/bin/env bash
+moon project foo --json | jq ...
+```
+
+```yaml title="project.yml"
+tasks:
+	pipe:
+		command: 'bash'
+		args: './scripts/pipe.sh'
+		type: 'system'
+```
+
+## JavaScript ecosystem
+
+### Can we use `package.json` scripts?
+
+We encourage everyone to define tasks in a [`project.yml`](./config/project#tasks) file, as it
+allows for additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like
+to keep using `package.json` scripts, you'll still need to define tasks that run the script, like
+so:
+
+```yaml title="project.yml"
+tasks:
+	lint:
+		command: 'npm'
+		args: 'run lint'
+```
+
+> We are working on a handful of features that will automate and infer this entire process. Until
+> then, everything will need to be manually defined.
+
+On top of the increased overhead, relying on `package.json` scripts incurs the following risks and
+disadvantages unless explicitly configured:
+
+- A change to every project relative file will mark the task as affected, even those not necessary
+  for the task, as `inputs` default to `**/*`. Granular input control is lost.
+- A change to workspace relative files _will not_ mark the task as affected. For example, a change
+  to `/prettier.config.js` would not be detected for a `npm run format` script.
+- Build/bundle outputs will not be cached and persisted via a hash, as `outputs` defaults to an
+  empty list.
+- All tasks will run in CI by default, even those that are long-running or never complete
+  (development servers, etc).
+
+### Can moon version/publish packages?
+
+At this time, no, as we're focusing on the build and test aspect of development. With that being
+said, this is something we'd like to support first-class in the future, but until then, we suggest
+the following popular tools:
+
+- [Yarn releases](https://yarnpkg.com/features/release-workflow) (requires >= v2)
+- [Changesets](https://github.com/changesets/changesets)
+- [Lerna](https://github.com/lerna/lerna)

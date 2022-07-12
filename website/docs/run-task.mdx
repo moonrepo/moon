@@ -20,7 +20,7 @@ $ moon run app:typecheck
 
 When this command is ran, it will do the following:
 
-- Generate a directed acyclic graph, known as the action graph.
+- Generate a directed acyclic graph, known as the dependency graph.
 - Insert [`deps`](./config/project#deps) as targets into the graph.
 - Insert the primary target into the graph.
 - Run all tasks in the graph in parallel and in topological order (the dependency chain).

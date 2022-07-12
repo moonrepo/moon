@@ -1,6 +1,6 @@
+use clean_path::Clean;
 pub use dirs::home_dir as get_home_dir;
 use moon_error::MoonError;
-use clean_path::Clean;
 use std::path::{Path, PathBuf};
 
 pub use pathdiff::diff_paths as relative_from;

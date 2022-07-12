@@ -14,11 +14,13 @@ lazy_static! {
     .unwrap();
 }
 
+// https://nodejs.org/api/modules.html#loading-from-the-global-folders
 pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
     let value = value.as_ref();
+    let delimiter = if cfg!(windows) { ";" } else { ":" };
 
     match env::var("NODE_PATH") {
-        Ok(old_value) => format!("{}:{}", value, old_value),
+        Ok(old_value) => format!("{}{}{}", value, delimiter, old_value),
         Err(_) => value.to_owned(),
     }
 }

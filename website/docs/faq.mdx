@@ -19,6 +19,27 @@ These labels are are the actions in the graph, and break down as follows:
   [`language`](./config/project#language) does not require syncing.
 - `RunTarget` - The common action. This runs the target task within a project.
 
+## Projects & tasks
+
+### How to pipe tasks?
+
+Piping the output of a task to another task, whether via stdin or through `inputs`, is currently not
+possible. However, you _could_ execute a custom bash script that does the piping for you, for
+example:
+
+```bash
+#!/usr/bin/env bash
+moon project foo --json | jq ...
+```
+
+```yaml
+tasks:
+	pipe:
+		command: 'bash'
+		args: './scripts/pipe.sh'
+		type: 'system'
+```
+
 ## JavaScript ecosystem
 
 ### Can we use `package.json` scripts?
@@ -41,14 +62,14 @@ tasks:
 On top of the increased overhead, relying on `package.json` scripts incurs the following risks and
 disadvantages unless explicitly configured:
 
-- A change to every project relative file will trigger the task as affected, even those not
-  necessary for the task, as `inputs` default to `**/*`. Granular input control is lost.
-- A change to workspace relative files _will not_ trigger the task as affected. For example, a
-  change to `/prettier.config.js` would not be detected for a `npm run format` script.
+- A change to every project relative file will mark the task as affected, even those not necessary
+  for the task, as `inputs` default to `**/*`. Granular input control is lost.
+- A change to workspace relative files _will not_ mark the task as affected. For example, a change
+  to `/prettier.config.js` would not be detected for a `npm run format` script.
 - Build/bundle outputs will not be cached and persisted via a hash, as `outputs` defaults to an
   empty list.
 - All tasks will run in CI by default, even those that are long-running or never complete
-  (development servers).
+  (development servers, etc).
 
 ### Can moon version/publish packages?
 

@@ -183,7 +183,11 @@ impl PackageManager<NodeTool> for PnpmTool {
             .get_node()
             .find_package_bin(starting_dir, bin_name)?;
 
-        Ok(node::extract_canonical_bin_path_from_bin_file(bin_path))
+        Ok(if cfg!(windows) {
+            bin_path // already extracted from *.cmd
+        } else {
+            node::extract_canonical_bin_path_from_bin_file(bin_path)
+        })
     }
 
     fn get_lock_filename(&self) -> String {

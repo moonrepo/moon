@@ -2,12 +2,22 @@
 title: FAQ
 ---
 
+## General
+
+### Will moon support other languages besides JavaScript?
+
+TODO
+
+### What should be considered the "source of truth"?
+
+TODO
+
 ## Action runner
 
 ### What is `SetupToolchain`, `InstallNodeDeps`, `RunTarget`, etc?
 
 When we run a [task](./concepts/task), we generate a dependency graph of nodes, known as actions.
-These labels are are the actions in the graph, and break down as follows:
+These labels are the actions in the graph, and break down as follows:
 
 - `SetupToolchain` - Sets up the [toolchain](./concepts/toolchain). Required for all other actions,
   so acts as the root node.
@@ -27,12 +37,12 @@ Piping the output of a task to another task, whether via stdin or through `input
 possible. However, you _could_ execute a custom bash script that does the piping for you, for
 example:
 
-```bash
+```bash title="scripts/pipe.sh"
 #!/usr/bin/env bash
 moon project foo --json | jq ...
 ```
 
-```yaml
+```yaml title="project.yml"
 tasks:
 	pipe:
 		command: 'bash'
@@ -49,7 +59,7 @@ allows for additional metadata like `inputs`, `outputs`, `options`, and more. Ho
 to keep using `package.json` scripts, you'll still need to define tasks that run the script, like
 so:
 
-```yaml
+```yaml title="project.yml"
 tasks:
 	lint:
 		command: 'npm'

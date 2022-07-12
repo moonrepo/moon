@@ -165,7 +165,7 @@ impl Task {
         // strings with tokens, and file paths when tokens are resolved.
         for arg in &self.args {
             if token_resolver.has_token_func(arg) {
-                for resolved_arg in token_resolver.resolve_func(arg, Some(self))? {
+                for resolved_arg in token_resolver.resolve_func(arg, self)? {
                     // When running within a project:
                     //  - Project paths are relative and start with "./"
                     //  - Workspace paths are relative up to the root
@@ -192,7 +192,7 @@ impl Task {
                     }
                 }
             } else if token_resolver.has_token_var(arg) {
-                args.push(token_resolver.resolve_var(arg, self)?);
+                args.push(token_resolver.resolve_vars(arg, self)?);
             } else {
                 args.push(arg.clone());
             }
@@ -257,7 +257,7 @@ impl Task {
             return Ok(());
         }
 
-        for input in &token_resolver.resolve(&self.inputs, None)? {
+        for input in &token_resolver.resolve(&self.inputs, self)? {
             // We cant canonicalize here as these inputs may not exist!
             if glob::is_path_glob(input) {
                 self.input_globs.push(glob::normalize(input)?);
@@ -275,7 +275,7 @@ impl Task {
             return Ok(());
         }
 
-        for output in &token_resolver.resolve(&self.outputs, None)? {
+        for output in &token_resolver.resolve(&self.outputs, self)? {
             if glob::is_path_glob(output) {
                 return Err(ProjectError::NoOutputGlob(
                     output.to_owned(),
@@ -292,42 +292,28 @@ impl Task {
     /// Return true if this task is affected, based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, ProjectError> {
-        trace!(
-            target: self.get_log_target(),
-            "Checking if affected using input files: {}",
-            map_list(&Vec::from_iter(self.input_paths.iter()), |p| color::path(p))
-        );
-
         let has_globs = !self.input_globs.is_empty();
         let globset = self.create_globset()?;
 
-        if has_globs {
-            trace!(
-                target: self.get_log_target(),
-                "Checking if affected using input globs: {}",
-                map_list(&self.input_globs, |f| color::file(f))
-            );
-        }
-
         for file in touched_files {
-            let mut affected = self.input_paths.contains(file);
+            if self.input_paths.contains(file) {
+                trace!(
+                    target: self.get_log_target(),
+                    "Affected by {} (using input files)",
+                    color::path(file),
+                );
 
-            if !affected && has_globs {
-                affected = globset.matches(file)?;
+                return Ok(true);
             }
 
-            trace!(
-                target: self.get_log_target(),
-                "Is affected by {} = {}",
-                color::path(file),
-                if affected {
-                    color::success("true")
-                } else {
-                    color::failure("false")
-                },
-            );
+            if has_globs && globset.matches(file)? {
+                trace!(
+                    target: self.get_log_target(),
+                    "Affected by {} (using input globs: {})",
+                    color::path(file),
+                    map_list(&self.input_globs, |f| color::file(f))
+                );
 
-            if affected {
                 return Ok(true);
             }
         }

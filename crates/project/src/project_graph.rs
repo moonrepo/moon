@@ -2,12 +2,10 @@ use crate::constants::ROOT_NODE_ID;
 use crate::errors::ProjectError;
 use crate::helpers::detect_projects_with_globs;
 use crate::project::Project;
-use crate::types::{ProjectsSourceMap, TouchedFilePaths};
+use crate::types::ProjectsSourceMap;
 use moon_cache::CacheEngine;
-use moon_config::constants::{
-    CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME, FLAG_PROJECTS_USING_GLOB,
-};
-use moon_config::{GlobalProjectConfig, ProjectID};
+use moon_config::constants::FLAG_PROJECTS_USING_GLOB;
+use moon_config::{GlobalProjectConfig, ProjectID, WorkspaceConfig};
 use moon_logger::{color, debug, map_list, trace};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -82,13 +80,16 @@ pub struct ProjectGraph {
     /// Projects that have been loaded into scope represented as a DAG.
     graph: Arc<RwLock<GraphType>>,
 
+    /// Inputs to be inherited by all tasks.
+    implicit_inputs: Vec<String>,
+
     /// Mapping of project IDs to node indices, as we need a way
     /// to query the graph by ID as it only supports it by index.
     indices: Arc<RwLock<IndicesType>>,
 
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
-    projects_config: HashMap<ProjectID, String>,
+    projects_map: HashMap<ProjectID, String>,
 
     /// The workspace root, in which projects are relatively loaded from.
     workspace_root: PathBuf,
@@ -97,14 +98,14 @@ pub struct ProjectGraph {
 impl ProjectGraph {
     pub async fn create(
         workspace_root: &Path,
+        workspace_config: &WorkspaceConfig,
         global_config: GlobalProjectConfig,
-        projects_config: &ProjectsSourceMap,
         cache: &CacheEngine,
     ) -> Result<ProjectGraph, ProjectError> {
         debug!(
             target: LOG_TARGET,
             "Creating project graph with {} projects",
-            projects_config.len(),
+            workspace_config.projects.len(),
         );
 
         let mut graph = DiGraph::new();
@@ -120,16 +121,21 @@ impl ProjectGraph {
         Ok(ProjectGraph {
             global_config,
             graph: Arc::new(RwLock::new(graph)),
+            implicit_inputs: workspace_config.action_runner.implicit_inputs.clone(),
             indices: Arc::new(RwLock::new(HashMap::new())),
-            projects_config: load_projects_from_cache(workspace_root, projects_config, cache)
-                .await?,
+            projects_map: load_projects_from_cache(
+                workspace_root,
+                &workspace_config.projects,
+                cache,
+            )
+            .await?,
             workspace_root: workspace_root.to_path_buf(),
         })
     }
 
     /// Return a list of all configured project IDs in ascending order.
     pub fn ids(&self) -> Vec<ProjectID> {
-        let mut nodes: Vec<ProjectID> = self.projects_config.keys().cloned().collect();
+        let mut nodes: Vec<ProjectID> = self.projects_map.keys().cloned().collect();
         nodes.sort();
         nodes
     }
@@ -204,21 +210,6 @@ impl ProjectGraph {
         Ok(deps)
     }
 
-    /// Return true if global config files have been touched.
-    pub fn is_globally_affected(&self, touched_files: &TouchedFilePaths) -> bool {
-        let cfg_dir = self.workspace_root.join(CONFIG_DIRNAME);
-
-        if touched_files.contains(&cfg_dir.join(CONFIG_WORKSPACE_FILENAME)) {
-            return true;
-        }
-
-        if touched_files.contains(&cfg_dir.join(CONFIG_PROJECT_FILENAME)) {
-            return true;
-        }
-
-        false
-    }
-
     /// Format as a DOT string.
     pub fn to_dot(&self) -> String {
         let graph = self.graph.read().expect(READ_ERROR);
@@ -283,12 +274,18 @@ impl ProjectGraph {
         );
 
         // Create project based on ID and source
-        let source = match self.projects_config.get(id) {
+        let source = match self.projects_map.get(id) {
             Some(path) => path,
             None => return Err(ProjectError::UnconfiguredID(String::from(id))),
         };
 
-        let project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
+        let project = Project::new(
+            id,
+            source,
+            &self.workspace_root,
+            &self.global_config,
+            &self.implicit_inputs,
+        )?;
         let depends_on = project.get_dependencies();
 
         // Insert the project into the graph

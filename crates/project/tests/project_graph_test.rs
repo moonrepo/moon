@@ -1,6 +1,6 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_config::GlobalProjectConfig;
+use moon_config::{GlobalProjectConfig, WorkspaceConfig};
 use moon_project::ProjectGraph;
 use moon_utils::string_vec;
 use moon_utils::test::get_fixtures_dir;
@@ -8,16 +8,20 @@ use std::collections::HashMap;
 
 async fn get_dependencies_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependencies");
-
-    ProjectGraph::create(
-        &workspace_root,
-        GlobalProjectConfig::default(),
-        &HashMap::from([
+    let workspace_config = WorkspaceConfig {
+        projects: HashMap::from([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
             ("d".to_owned(), "d".to_owned()),
         ]),
+        ..WorkspaceConfig::default()
+    };
+
+    ProjectGraph::create(
+        &workspace_root,
+        &workspace_config,
+        GlobalProjectConfig::default(),
         &CacheEngine::create(&workspace_root).await.unwrap(),
     )
     .await
@@ -26,16 +30,20 @@ async fn get_dependencies_graph() -> ProjectGraph {
 
 async fn get_dependents_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependents");
-
-    ProjectGraph::create(
-        &workspace_root,
-        GlobalProjectConfig::default(),
-        &HashMap::from([
+    let workspace_config = WorkspaceConfig {
+        projects: HashMap::from([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
             ("d".to_owned(), "d".to_owned()),
         ]),
+        ..WorkspaceConfig::default()
+    };
+
+    ProjectGraph::create(
+        &workspace_root,
+        &workspace_config,
+        GlobalProjectConfig::default(),
         &CacheEngine::create(&workspace_root).await.unwrap(),
     )
     .await

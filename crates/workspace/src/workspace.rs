@@ -164,9 +164,8 @@ impl Workspace {
         // Setup components
         let cache = CacheEngine::create(&root_dir).await?;
         let toolchain = Toolchain::create(&root_dir, &config).await?;
-        let projects =
-            ProjectGraph::create(&root_dir, project_config, &config.projects, &cache).await?;
-        let vcs = VcsLoader::load(&config, &root_dir)?;
+        let projects = ProjectGraph::create(&root_dir, &config, project_config, &cache).await?;
+        let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {
             cache,

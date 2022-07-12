@@ -16,6 +16,30 @@ the workspace development environment.
 
 Configures aspects of the action runner.
 
+### `implicitInputs`
+
+> string[]
+
+Defines task [`inputs`](./project#inputs) that are implicit inherited by _all_ tasks within the
+workspace. This is extremely useful for the "changes to these files should always trigger a task"
+scenario.
+
+Like `inputs`, values defined here are relative from the inheriting project.
+[Project and workspace relative file patterns](../concepts/file-pattern#project-relative) are
+supported and encouraged.
+
+```yaml title=".moon/workspace.yml" {2}
+actionRunner:
+  implicitInputs:
+    - 'package.json'
+    - '/.moon/project.yml'
+    - '/.moon/workspace.yml'
+```
+
+> When not defined, this setting defaults to the list in the example above. When this setting _is
+> defined_, that list will be overwritten, so be sure to explicitly define them if you would like to
+> retain that functionality.
+
 ### `inheritColorsForPipedTasks`
 
 > `boolean`

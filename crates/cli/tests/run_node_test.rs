@@ -607,6 +607,8 @@ mod pnpm {
             .arg("pnpm:runDep")
             .assert();
 
+        println!("{}", get_assert_output(&assert));
+
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
                 .eval(&get_assert_output(&assert))

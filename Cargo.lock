@@ -395,6 +395,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "clean-path"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aaa6b4b263a5d737e9bf6b7c09b72c41a5480aec4d7219af827f6564e950b6a5"
+
+[[package]]
 name = "colored"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1516,12 +1522,12 @@ dependencies = [
  "cached",
  "chrono",
  "chrono-humanize",
+ "clean-path",
  "dirs",
  "json_comments",
  "lazy_static",
  "moon_error",
  "moon_logger",
- "path-clean",
  "pathdiff",
  "regex",
  "serde",
@@ -1798,12 +1804,6 @@ dependencies = [
  "rand_core",
  "subtle",
 ]
-
-[[package]]
-name = "path-clean"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecba01bf2678719532c5e3059e0b5f0811273d94b397088b82e3bd0a78c78fdd"
 
 [[package]]
 name = "pathdiff"

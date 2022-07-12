@@ -7,3 +7,6 @@ tasks:
   installDep:
     command: yarn
     args: add react@17.0.0
+  runDep:
+    command: prettier
+    args: --check *.yml

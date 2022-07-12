@@ -532,6 +532,24 @@ mod npm {
 
         assert.success();
     }
+
+    #[test]
+    #[serial]
+    fn can_run_a_deps_bin() {
+        let fixture = create_fixtures_sandbox("node-npm");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("npm:runDep")
+            .assert();
+
+        assert!(
+            predicate::str::contains("All matched files use Prettier code style!")
+                .eval(&get_assert_output(&assert))
+        );
+
+        assert.success();
+    }
 }
 
 mod pnpm {
@@ -578,6 +596,24 @@ mod pnpm {
 
         assert.success();
     }
+
+    #[test]
+    #[serial]
+    fn can_run_a_deps_bin() {
+        let fixture = create_fixtures_sandbox("node-pnpm");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("pnpm:runDep")
+            .assert();
+
+        assert!(
+            predicate::str::contains("All matched files use Prettier code style!")
+                .eval(&get_assert_output(&assert))
+        );
+
+        assert.success();
+    }
 }
 
 mod yarn1 {
@@ -621,6 +657,24 @@ mod yarn1 {
             .arg("run")
             .arg("yarn:installDep")
             .assert();
+
+        assert.success();
+    }
+
+    #[test]
+    #[serial]
+    fn can_run_a_deps_bin() {
+        let fixture = create_fixtures_sandbox("node-yarn1");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("yarn:runDep")
+            .assert();
+
+        assert!(
+            predicate::str::contains("All matched files use Prettier code style!")
+                .eval(&get_assert_output(&assert))
+        );
 
         assert.success();
     }
@@ -671,6 +725,24 @@ mod yarn1 {
 
 //         assert.success();
 //     }
+
+// #[test]
+// #[serial]
+// fn can_run_a_deps_bin() {
+//     let fixture = create_fixtures_sandbox("node-yarn1");
+
+//     let assert = create_moon_command_in(fixture.path())
+//         .arg("run")
+//         .arg("yarn:runDep")
+//         .assert();
+
+// assert!(
+//     predicate::str::contains("All matched files use Prettier code style!")
+//         .eval(&get_assert_output(&assert))
+// );
+
+//     assert.success();
+// }
 // }
 
 mod profile {

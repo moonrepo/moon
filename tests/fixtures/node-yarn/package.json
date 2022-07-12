@@ -1,5 +1,8 @@
 {
   "name": "test-node-yarn",
   "private": true,
-  "workspaces": ["*"]
+  "workspaces": ["*"],
+  "devDependencies": {
+    "prettier": "*"
+  }
 }

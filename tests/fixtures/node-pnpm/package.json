@@ -3,5 +3,8 @@
   "private": true,
   "workspaces": [
     "*"
-  ]
+  ],
+  "devDependencies": {
+    "prettier": "*"
+  }
 }

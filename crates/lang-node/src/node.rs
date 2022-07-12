@@ -2,6 +2,7 @@ use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;
 use moon_lang::LangError;
+use moon_utils::path;
 use regex::Regex;
 use std::env::{self, consts};
 use std::fs;

@@ -182,6 +182,17 @@ tasks:
     type: 'system'
 ```
 
+#### Special commands
+
+For interoperability reasons, the following commands have special handling.
+
+- When `type` is "node":
+  - `node`, `npm`, `pnpm`, `yarn` - Uses the binaries from the toolchain.
+- When `type` is "system":
+  - `cmd`, `cmd.exe` - Will execute the arguments with `cmd.exe` (Windows only).
+  - `powershell`, `powershell.exe` - Will execute the arguments with `powershell.exe` (Windows
+    only).
+
 ### `args`
 
 > `string | string[]`

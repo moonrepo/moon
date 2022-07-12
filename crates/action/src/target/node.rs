@@ -74,13 +74,14 @@ fn create_node_options(
 /// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
-pub fn create_node_target_command(
+pub async fn create_node_target_command(
     context: &ActionContext,
     workspace: &Workspace,
     project: &Project,
     task: &Task,
 ) -> Result<Command, ActionError> {
-    let node = workspace.toolchain.get_node();
+    let toolchain = &workspace.toolchain;
+    let node = toolchain.get_node();
     let mut cmd = node.get_bin_path();
     let mut args = vec![];
 
@@ -98,8 +99,13 @@ pub fn create_node_target_command(
             cmd = node.get_yarn().unwrap().get_bin_path();
         }
         bin => {
-            let bin_path =
-                relative_from(node.find_package_bin(bin, &project.root)?, &project.root).unwrap();
+            let bin_path = relative_from(
+                node.get_package_manager()
+                    .find_package_bin(toolchain, &project.root, bin)
+                    .await?,
+                &project.root,
+            )
+            .unwrap();
 
             args.extend(create_node_options(context, workspace, task)?);
             args.push(path::to_string(&bin_path)?);

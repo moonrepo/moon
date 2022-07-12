@@ -3,7 +3,7 @@ node:
   version: '16.2.0'
   packageManager: 'pnpm'
   pnpm:
-    version: '6.32.0'
+    version: '7.5.0'
 
 projects:
   pnpm: pnpm

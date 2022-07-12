@@ -1,9 +1,6 @@
 {
   "name": "test-node-npm",
   "private": true,
-  "workspaces": [
-    "*"
-  ],
   "devDependencies": {
     "prettier": "*"
   }

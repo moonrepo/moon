@@ -201,8 +201,10 @@ impl PackageManager<NodeTool> for PnpmTool {
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
+        let lockfile = toolchain.workspace_root.join(self.get_lock_filename());
 
-        if is_ci() {
+        // Will fail with "Headless installation requires a pnpm-lock.yaml file"
+        if is_ci() && lockfile.exists() {
             args.push("--frozen-lockfile");
         }
 

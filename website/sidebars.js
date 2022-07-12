@@ -104,6 +104,7 @@ const sidebars = {
 			},
 		},
 		'terminology',
+		'faq',
 		{
 			type: 'link',
 			label: 'Changelog',

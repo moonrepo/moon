@@ -1,0 +1,61 @@
+---
+title: FAQ
+---
+
+## Action runner
+
+### What is `SetupToolchain`, `InstallNodeDeps`, `RunTarget`, etc?
+
+When we run a [task](./concepts/task), we generate a dependency graph of nodes, known as actions.
+These labels are are the actions in the graph, and break down as follows:
+
+- `SetupToolchain` - Sets up the [toolchain](./concepts/toolchain). Required for all other actions,
+  so acts as the root node.
+- `InstallNodeDeps` - Installs Node.js dependencies (`node_modules`) in the workspace root.
+- `InstallSystemDeps` - Currently a no operation.
+- `SyncNodeProject` - When a project's [`language`](./config/project#language) is "javascript" or
+  "typescript". Will sync `package.json` dependencies and `tsconfig.json` project references.
+- `SyncSystemProject` - Currently a no operation. Is created when a project's
+  [`language`](./config/project#language) does not require syncing.
+- `RunTarget` - The common action. This runs the target task within a project.
+
+## JavaScript ecosystem
+
+### Can we use `package.json` scripts?
+
+We encourage everyone to define tasks in a [`project.yml`](./config/project#tasks) file, as it
+allows for additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like
+to keep using `package.json` scripts, you'll still need to define tasks that run the script, like
+so:
+
+```yaml
+tasks:
+	lint:
+		command: 'npm'
+		args: 'run lint'
+```
+
+> We are working on a handful of features that will automate and infer this entire process. Until
+> then, everything will need to be manually defined.
+
+On top of the increased overhead, relying on `package.json` scripts incurs the following risks and
+disadvantages unless explicitly configured:
+
+- A change to every project relative file will trigger the task as affected, even those not
+  necessary for the task, as `inputs` default to `**/*`. Granular input control is lost.
+- A change to workspace relative files _will not_ trigger the task as affected. For example, a
+  change to `/prettier.config.js` would not be detected for a `npm run format` script.
+- Build/bundle outputs will not be cached and persisted via a hash, as `outputs` defaults to an
+  empty list.
+- All tasks will run in CI by default, even those that are long-running or never complete
+  (development servers).
+
+### Can moon version/publish packages?
+
+At this time, no, as we're focusing on the build and test aspect of development. With that being
+said, this is something we'd like to support first-class in the future, but until then, we suggest
+the following popular tools:
+
+- [Yarn releases](https://yarnpkg.com/features/release-workflow) (requires >= v2)
+- [Changesets](https://github.com/changesets/changesets)
+- [Lerna](https://github.com/lerna/lerna)

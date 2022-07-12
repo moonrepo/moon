@@ -133,6 +133,28 @@ tasks:
 }
 ```
 
+## Depending on other tasks
+
+While not relating to our TypeScript example above, but is important to talk about, is the concept
+of task dependencies. For scenarios where you need run a task _before_ another task, as you're
+expecting some repository state or artifact to exist, can be achieved with the
+[`deps`](./config/project#deps) setting, which requires a list of [targets](./concepts/target):
+
+- `<project>:<task>` - Full canonical target.
+- `~:<task>` - A task within the current project.
+- `^:<task>` - A task from all depended on projects (via [`dependsOn`](./config/project#dependson)).
+
+```yaml
+dependsOn:
+	# ...
+
+tasks:
+	build:
+		# ...
+		deps:
+			- '^:build'
+```
+
 ## Using file groups
 
 Once you're familiar with configuring tasks, you may notice certain inputs being repeated

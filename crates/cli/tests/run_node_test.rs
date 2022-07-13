@@ -1,7 +1,10 @@
 mod utils;
 
 use insta::assert_snapshot;
-use moon_utils::test::{create_fixtures_sandbox, create_moon_command_in, get_assert_output};
+use moon_utils::test::{
+    create_fixtures_sandbox, create_moon_command_in, get_assert_output,
+    get_assert_stderr_output_raw,
+};
 use predicates::prelude::*;
 use serial_test::serial;
 use std::fs::read_to_string;
@@ -608,6 +611,7 @@ mod pnpm {
             .assert();
 
         println!("{}", get_assert_output(&assert));
+        println!("err = {}", get_assert_stderr_output_raw(&assert));
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")

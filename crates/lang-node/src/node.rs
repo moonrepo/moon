@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 lazy_static! {
     pub static ref BIN_PATH_PATTERN: Regex = Regex::new(
-        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[a-zA-Z0-9-_@]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.(c|m)?js)?"
+        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.(c|m)?js)?"
     )
     .unwrap();
 }
@@ -41,7 +41,18 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
     println!("content = {}", contents);
     println!("captures = {:#?}", captures);
 
-    PathBuf::from(captures.get(0).unwrap().as_str())
+    let bin_path = captures.get(0).unwrap().as_str();
+
+    // Depending on the environment, the extracted path may be wildly incorrect,
+    // and may traverse upward to the root, or basically include an absolute path.
+    // For example: \..\..\..\..\..\..\..\workdir\node_modules\package\bin.js
+    // When this happens, let's split on "node_modules" and traverse upwards
+    // from the ".bin" directory.
+    // if bin_path.contains("node_modules") {
+    //     return PathBuf::from("..").join(bin_path.split("node_modules").last().unwrap());
+    // }
+
+    PathBuf::from(bin_path)
 }
 
 #[cached]
@@ -284,6 +295,14 @@ mod tests {
                     create_cmd(r"..\json5\lib\cli.js"),
                 ),
                 PathBuf::from(r"..\json5\lib\cli.js")
+            );
+        }
+
+        #[test]
+        fn supports_periods() {
+            assert_eq!(
+                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"..\.dir\bin\bin"),),
+                PathBuf::from(r"..\.dir\bin\bin")
             );
         }
 

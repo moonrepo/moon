@@ -248,7 +248,7 @@ mod caching {
         assert_eq!(state.item.target, "node:standard");
         assert_eq!(
             state.item.hash,
-            "eaa3c43c707b54fbff25b11ebc7528716c8a893d559f7898b1aac3f46767c361"
+            "c13bc7d3651071215a0d431732546fe15a80488ae2eebbd6d3a48f4308767486"
         );
     }
 }
@@ -795,5 +795,32 @@ mod outputs {
             .join(&hash)
             .join("esm/two.js")
             .exists());
+    }
+}
+
+mod noop {
+    use super::*;
+
+    #[test]
+    fn runs_noop() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("noop:noop")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+    #[test]
+    fn runs_noop_deps() {
+        let fixture = create_fixtures_sandbox("cases");
+
+        let assert = create_moon_command_in(fixture.path())
+            .arg("run")
+            .arg("noop:noopWithDeps")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
     }
 }

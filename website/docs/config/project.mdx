@@ -186,6 +186,8 @@ tasks:
 
 For interoperability reasons, the following commands have special handling.
 
+- `noop`, `no-op`, `nop` - Marks the task as a "no operation". Will not execute a command in the
+  action runner but can define dependencies.
 - When `type` is "node":
   - `node`, `npm`, `pnpm`, `yarn` - Uses the binaries from the toolchain.
 - When `type` is "system":

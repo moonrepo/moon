@@ -321,6 +321,11 @@ impl Task {
         Ok(false)
     }
 
+    /// Return true if the task is a "no operation" and does nothing.
+    pub fn is_no_op(&self) -> bool {
+        self.command == "nop" || self.command == "noop" || self.command == "no-op"
+    }
+
     pub fn merge(&mut self, config: &TaskConfig) {
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);

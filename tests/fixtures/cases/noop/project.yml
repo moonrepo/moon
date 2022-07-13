@@ -1,0 +1,9 @@
+language: javascript
+
+tasks:
+  noop:
+    command: noop
+  noopWithDeps:
+    command: noop
+    deps:
+      - 'depsA:dependencyOrder'

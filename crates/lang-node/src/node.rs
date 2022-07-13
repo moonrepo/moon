@@ -37,6 +37,10 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
         )
     });
 
+    println!("parse_bin_file");
+    println!("content = {}", contents);
+    println!("captures = {:#?}", captures);
+
     PathBuf::from(captures.get(0).unwrap().as_str())
 }
 

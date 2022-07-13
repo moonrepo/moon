@@ -165,21 +165,19 @@ pub fn debug_sandbox_files(dir: &Path) {
         if path.is_dir() {
             debug_sandbox_files(&path);
         } else {
-            println!("  {}", path.to_string_lossy());
+            println!("- {}", path.to_string_lossy());
         }
     }
 }
 
 pub fn debug_sandbox(fixture: &assert_fs::fixture::TempDir, assert: &assert_cmd::assert::Assert) {
-    // Debug the assert object itself
-    println!("command:\n{:#?}\n\n", assert);
-
     // List all files in the sandbox
-    println!("sandbox:\n");
+    println!("sandbox:");
     debug_sandbox_files(fixture.path());
-    println!("\n\n");
+    println!("\n");
 
     // Debug outputs
-    println!("stdout:\n{}\n\n", get_assert_stdout_output(assert));
-    println!("stderr:\n{}\n\n", get_assert_stderr_output(assert));
+    println!("stdout:\n{}\n", get_assert_stdout_output(assert));
+    println!("stderr:\n{}\n", get_assert_stderr_output(assert));
+    println!("status: {:#?}", assert.get_output().status);
 }

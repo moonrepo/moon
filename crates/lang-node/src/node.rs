@@ -45,10 +45,18 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
 pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
     let extracted_path = parse_bin_file(&bin_path, fs::read_to_string(&bin_path).unwrap());
 
+    println!("extract_canonical_bin_path_from_bin_file");
+    println!("extracted_path = {:#?}", extracted_path);
+    println!("parent_path = {:#?}", bin_path.parent().unwrap());
+    println!(
+        "joined_path = {:#?}",
+        bin_path.parent().unwrap().join(&extracted_path)
+    );
+
     // canonicalize() actually causes things to break, so normalize
     let r = path::normalize(bin_path.parent().unwrap().join(extracted_path));
 
-    println!("extract_canonical_bin_path_from_bin_file = {:#?}", r);
+    println!("normalized_path = {:#?}", r);
 
     r
 }
@@ -414,6 +422,33 @@ fi
                     .to_string(),
                 ),
                 PathBuf::from(r"../typescript/bin/tsc")
+            );
+
+            assert_eq!(
+                parse_bin_file(
+                    &PathBuf::from("test"),
+                    r#"
+#!/bin/sh
+basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+
+case `uname` in
+    *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+esac
+
+if [ -z "$NODE_PATH" ]; then
+  export NODE_PATH="C:\Projects\moon\node_modules\.pnpm\node_modules"
+else
+  export NODE_PATH="$NODE_PATH:C:\Projects\moon\node_modules\.pnpm\node_modules"
+fi
+if [ -x "$basedir\node" ]; then
+  exec "$basedir\node"  "$basedir\..\typescript\bin\tsc" "$@"
+else
+  exec node  "$basedir\..\typescript\bin\tsc" "$@"
+fi
+                    "#
+                    .to_string(),
+                ),
+                PathBuf::from(r"..\typescript\bin\tsc")
             );
         }
     }

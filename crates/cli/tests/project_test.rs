@@ -1,5 +1,5 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command, get_assert_output, get_assert_stderr_output};
+use moon_utils::test::{create_moon_command, get_assert_output, get_assert_stderr_output_clean};
 
 #[test]
 fn unknown_project() {
@@ -8,7 +8,7 @@ fn unknown_project() {
         .arg("unknown")
         .assert();
 
-    assert_snapshot!(get_assert_stderr_output(&assert));
+    assert_snapshot!(get_assert_stderr_output_clean(&assert));
 
     assert.failure().code(1);
 }

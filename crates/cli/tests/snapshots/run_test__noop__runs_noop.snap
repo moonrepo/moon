@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 813
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm install
+▪▪▪▪ noop:noop (no op)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

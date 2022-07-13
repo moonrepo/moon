@@ -551,8 +551,7 @@ fi
                     path.unwrap(),
                     sandbox
                         .path()
-                        .join("node_modules/.bin")
-                        .join("..")
+                        .join("node_modules")
                         .join("baz")
                         .join("bin.js")
                 );
@@ -574,8 +573,7 @@ fi
                     path.unwrap(),
                     sandbox
                         .path()
-                        .join("node_modules/.bin")
-                        .join("..")
+                        .join("node_modules")
                         .join("baz")
                         .join("bin.js")
                 );

@@ -2,19 +2,32 @@ use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;
 use moon_lang::LangError;
+use moon_utils::path;
 use regex::Regex;
-use std::env::consts;
+use std::env::{self, consts};
 use std::fs;
 use std::path::{Path, PathBuf};
 
 lazy_static! {
-    pub static ref BIN_PATH_PATTERN: Regex =
-        Regex::new("(?:(?:\\.+\\\\))+(?:(?:[a-zA-Z0-9-_@]+)\\\\)+[a-zA-Z0-9-_]+(\\.(c|m)?js)?")
-            .unwrap();
+    pub static ref BIN_PATH_PATTERN: Regex = Regex::new(
+        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.(c|m)?js)?"
+    )
+    .unwrap();
+}
+
+// https://nodejs.org/api/modules.html#loading-from-the-global-folders
+pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
+    let value = value.as_ref();
+    let delimiter = if cfg!(windows) { ";" } else { ":" };
+
+    match env::var("NODE_PATH") {
+        Ok(old_value) => format!("{}{}{}", value, delimiter, old_value),
+        Err(_) => value.to_owned(),
+    }
 }
 
 #[track_caller]
-pub fn parse_cmd_file(bin_path: &Path, contents: String) -> PathBuf {
+pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
     let captures = BIN_PATH_PATTERN.captures(&contents).unwrap_or_else(|| {
         // This should ideally never happen!
         panic!(
@@ -29,8 +42,11 @@ pub fn parse_cmd_file(bin_path: &Path, contents: String) -> PathBuf {
 
 #[cached]
 #[track_caller]
-pub fn extract_bin_from_cmd_file(bin_path: PathBuf) -> PathBuf {
-    parse_cmd_file(&bin_path, fs::read_to_string(&bin_path).unwrap())
+pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
+    let extracted_path = parse_bin_file(&bin_path, fs::read_to_string(&bin_path).unwrap());
+
+    // canonicalize() actually causes things to break, so normalize
+    path::normalize(bin_path.parent().unwrap().join(extracted_path))
 }
 
 pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {
@@ -64,12 +80,7 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
         // name from the binary, we must extract the path from the ".cmd" file.
         // This is... flakey, but there's no alternative.
         if cfg!(windows) {
-            return Some(
-                bin_path
-                    .parent()
-                    .unwrap()
-                    .join(extract_bin_from_cmd_file(bin_path.clone())),
-            );
+            return Some(extract_canonical_bin_path_from_bin_file(bin_path));
         }
 
         return Some(bin_path);
@@ -228,13 +239,13 @@ mod tests {
         sandbox
     }
 
-    mod parse_cmd_file {
+    mod parse_bin_file {
         use super::*;
 
         #[test]
         fn basic_path() {
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r"..\typescript\bin\tsc"),
                 ),
@@ -242,7 +253,15 @@ mod tests {
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
+                    &PathBuf::from("test.cmd"),
+                    create_cmd(r"../typescript/bin/tsc"),
+                ),
+                PathBuf::from(r"../typescript/bin/tsc")
+            );
+
+            assert_eq!(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r"..\json5\lib\cli.js"),
                 ),
@@ -251,9 +270,17 @@ mod tests {
         }
 
         #[test]
+        fn supports_periods() {
+            assert_eq!(
+                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"..\.dir\bin\bin"),),
+                PathBuf::from(r"..\.dir\bin\bin")
+            );
+        }
+
+        #[test]
         fn relative_paths() {
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r".\eslint\bin\eslint"),
                 ),
@@ -261,23 +288,44 @@ mod tests {
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r"..\..\eslint\bin\eslint"),
                 ),
                 PathBuf::from(r"..\..\eslint\bin\eslint")
+            );
+
+            assert_eq!(
+                parse_bin_file(
+                    &PathBuf::from("test.cmd"),
+                    create_cmd(r"./eslint/bin/eslint"),
+                ),
+                PathBuf::from(r"./eslint/bin/eslint")
+            );
+
+            assert_eq!(
+                parse_bin_file(
+                    &PathBuf::from("test.cmd"),
+                    create_cmd(r"../../eslint/bin/eslint"),
+                ),
+                PathBuf::from(r"../../eslint/bin/eslint")
             );
         }
 
         #[test]
         fn with_exts() {
             assert_eq!(
-                parse_cmd_file(&PathBuf::from("test.cmd"), create_cmd(r"..\babel\index.js"),),
+                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"..\babel\index.js"),),
                 PathBuf::from(r"..\babel\index.js")
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"../babel/index.js"),),
+                PathBuf::from(r"../babel/index.js")
+            );
+
+            assert_eq!(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r".\webpack\dist\cli.cjs"),
                 ),
@@ -285,7 +333,7 @@ mod tests {
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r".\..\rollup\build\rollup.mjs"),
                 ),
@@ -293,7 +341,7 @@ mod tests {
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r"..\webpack-dev-server\bin\webpack-dev-server.js"),
                 ),
@@ -304,12 +352,12 @@ mod tests {
         #[test]
         fn with_scopes() {
             assert_eq!(
-                parse_cmd_file(&PathBuf::from("test.cmd"), create_cmd(r"..\@scope\foo\bin"),),
+                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"..\@scope\foo\bin"),),
                 PathBuf::from(r"..\@scope\foo\bin")
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r"..\@scope\foo-bar\bin.js"),
                 ),
@@ -317,7 +365,7 @@ mod tests {
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r"..\@scope-long\foo-bar\bin_file.js"),
                 ),
@@ -325,7 +373,7 @@ mod tests {
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r"..\@docusaurus\core\bin\docusaurus.mjs"),
                 ),
@@ -333,11 +381,68 @@ mod tests {
             );
 
             assert_eq!(
-                parse_cmd_file(
+                parse_bin_file(
                     &PathBuf::from("test.cmd"),
                     create_cmd(r"..\@babel\parser\bin\babel-parser.js"),
                 ),
                 PathBuf::from(r"..\@babel\parser\bin\babel-parser.js")
+            );
+        }
+
+        #[test]
+        fn parses_pnpm() {
+            assert_eq!(
+                parse_bin_file(
+                    &PathBuf::from("test"),
+                    r#"
+#!/bin/sh
+basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+
+case `uname` in
+    *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+esac
+
+if [ -z "$NODE_PATH" ]; then
+  export NODE_PATH="/Projects/moon/node_modules/.pnpm/node_modules"
+else
+  export NODE_PATH="$NODE_PATH:/Projects/moon/node_modules/.pnpm/node_modules"
+fi
+if [ -x "$basedir/node" ]; then
+  exec "$basedir/node"  "$basedir/../typescript/bin/tsc" "$@"
+else
+  exec node  "$basedir/../typescript/bin/tsc" "$@"
+fi
+                    "#
+                    .to_string(),
+                ),
+                PathBuf::from(r"../typescript/bin/tsc")
+            );
+
+            assert_eq!(
+                parse_bin_file(
+                    &PathBuf::from("test"),
+                    r#"
+#!/bin/sh
+basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+
+case `uname` in
+    *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+esac
+
+if [ -z "$NODE_PATH" ]; then
+  export NODE_PATH="C:\Projects\moon\node_modules\.pnpm\node_modules"
+else
+  export NODE_PATH="$NODE_PATH:C:\Projects\moon\node_modules\.pnpm\node_modules"
+fi
+if [ -x "$basedir\node" ]; then
+  exec "$basedir\node"  "$basedir\..\typescript\bin\tsc" "$@"
+else
+  exec node  "$basedir\..\typescript\bin\tsc" "$@"
+fi
+                    "#
+                    .to_string(),
+                ),
+                PathBuf::from(r"..\typescript\bin\tsc")
             );
         }
     }
@@ -446,8 +551,7 @@ mod tests {
                     path.unwrap(),
                     sandbox
                         .path()
-                        .join("node_modules/.bin")
-                        .join("..")
+                        .join("node_modules")
                         .join("baz")
                         .join("bin.js")
                 );
@@ -469,8 +573,7 @@ mod tests {
                     path.unwrap(),
                     sandbox
                         .path()
-                        .join("node_modules/.bin")
-                        .join("..")
+                        .join("node_modules")
                         .join("baz")
                         .join("bin.js")
                 );

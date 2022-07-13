@@ -21,6 +21,10 @@
 - Token variables can now be used within task `inputs`.
 - Multiple token variables can now be used within the same string.
 
+#### 🐞 Fixes
+
+- Fixed an issue where package binaries would not execute on pnpm.
+
 ## 0.6.0
 
 #### 🚀 Updates

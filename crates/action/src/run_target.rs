@@ -80,7 +80,7 @@ async fn create_target_command(
     );
 
     let mut command = match task.type_of {
-        TaskType::Node => create_node_target_command(context, workspace, project, task)?,
+        TaskType::Node => create_node_target_command(context, workspace, project, task).await?,
         _ => create_system_target_command(task, working_dir),
     };
 

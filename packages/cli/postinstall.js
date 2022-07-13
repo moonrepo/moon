@@ -56,5 +56,11 @@ try {
 if (isWindows && !isMoonLocal) {
 	try {
 		fs.unlinkSync(path.join(__dirname, 'moon'));
+
+		// This is required for pnpm!
+		const pkg = require('./package.json');
+		pkg.bin.moon = binary;
+
+		fs.writeFileSync(path.join(__dirname, 'package.json'), JSON.stringify(pkg, null, 2));
 	} catch (error) {}
 }

@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use moon_logger::{debug, Logable};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_offline};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[async_trait]
 pub trait Downloadable<T: Send + Sync>: Send + Sync + Logable {
@@ -136,7 +136,7 @@ pub trait Installable<T: Send + Sync>: Send + Sync + Logable {
 
 #[async_trait]
 pub trait Executable<T: Send + Sync>: Send + Sync {
-    /// Find the absolute file path to the binary that will be executed.
+    /// Find the absolute file path to the tool's binary that will be executed.
     /// This happens after a tool has been downloaded/installed.
     async fn find_bin_path(&mut self, parent: &T) -> Result<(), ToolchainError>;
 
@@ -230,6 +230,15 @@ pub trait PackageManager<T: Send + Sync>:
         package: &str,
         args: Vec<&str>,
     ) -> Result<(), ToolchainError>;
+
+    /// Find a canonical path to a package's binary file.
+    /// This is typically in "node_modules/.bin".
+    async fn find_package_bin(
+        &self,
+        toolchain: &Toolchain,
+        starting_dir: &Path,
+        bin_name: &str,
+    ) -> Result<PathBuf, ToolchainError>;
 
     /// Return the name of the lockfile.
     fn get_lock_filename(&self) -> String;

@@ -115,23 +115,22 @@ jobs:
         name: Run tests
         with:
           command: test
-          # args: --workspace
-          args: --workspace can_run_a_deps_bin
+          args: --workspace
         env:
           RUSTFLAGS: -Cinstrument-coverage
           LLVM_PROFILE_FILE: ${{ github.workspace }}/moon-%p-%m.profraw
       # Windows fails to compile right now...
-      # - name: Generate code coverage
-      #   if: ${{ matrix.os != 'windows-latest' }}
-      #   run: |
-      #     grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
-      # - uses: actions/upload-artifact@v2
-      #   if: ${{ matrix.os != 'windows-latest' }}
-      #   name: Upload coverage report
-      #   with:
-      #     name: coverage-${{ matrix.os }}
-      #     path: ./report.txt
-      #     if-no-files-found: error
+      - name: Generate code coverage
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
+      - uses: actions/upload-artifact@v2
+        if: ${{ matrix.os != 'windows-latest' }}
+        name: Upload coverage report
+        with:
+          name: coverage-${{ matrix.os }}
+          path: ./report.txt
+          if-no-files-found: error
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest

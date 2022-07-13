@@ -37,22 +37,7 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
         )
     });
 
-    println!("parse_bin_file");
-    println!("content = {}", contents);
-    println!("captures = {:#?}", captures);
-
-    let bin_path = captures.get(0).unwrap().as_str();
-
-    // Depending on the environment, the extracted path may be wildly incorrect,
-    // and may traverse upward to the root, or basically include an absolute path.
-    // For example: \..\..\..\..\..\..\..\workdir\node_modules\package\bin.js
-    // When this happens, let's split on "node_modules" and traverse upwards
-    // from the ".bin" directory.
-    // if bin_path.contains("node_modules") {
-    //     return PathBuf::from("..").join(bin_path.split("node_modules").last().unwrap());
-    // }
-
-    PathBuf::from(bin_path)
+    PathBuf::from(captures.get(0).unwrap().as_str())
 }
 
 #[cached]
@@ -60,20 +45,8 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
 pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
     let extracted_path = parse_bin_file(&bin_path, fs::read_to_string(&bin_path).unwrap());
 
-    println!("extract_canonical_bin_path_from_bin_file");
-    println!("extracted_path = {:#?}", extracted_path);
-    println!("parent_path = {:#?}", bin_path.parent().unwrap());
-    println!(
-        "joined_path = {:#?}",
-        bin_path.parent().unwrap().join(&extracted_path)
-    );
-
     // canonicalize() actually causes things to break, so normalize
-    let r = path::normalize(bin_path.parent().unwrap().join(extracted_path));
-
-    println!("normalized_path = {:#?}", r);
-
-    r
+    path::normalize(bin_path.parent().unwrap().join(extracted_path))
 }
 
 pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {
@@ -100,8 +73,6 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
     let bin_path = starting_dir
         .join(NODE.vendor_bins_dir)
         .join(get_bin_name_suffix(bin_name, "cmd", true));
-
-    println!("find_package_bin = {:#?}", bin_path);
 
     if bin_path.exists() {
         // On Windows, we must avoid executing the ".cmd" files and instead

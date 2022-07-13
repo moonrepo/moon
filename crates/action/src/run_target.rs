@@ -116,6 +116,23 @@ pub async fn run_target(
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
 
+    // Abort early if a no operation
+    if task.is_no_op() {
+        debug!(
+            target: LOG_TARGET,
+            "Target {} is a no operation, skipping",
+            color::id(target_id),
+        );
+
+        println!(
+            "{} {}",
+            label_checkpoint(target_id, Checkpoint::Pass),
+            color::muted("(no op)")
+        );
+
+        return Ok(ActionStatus::Passed);
+    }
+
     // Abort early if this build has already been cached/hashed
     let hasher =
         create_target_hasher(&workspace, &project, task, &context.passthrough_args).await?;

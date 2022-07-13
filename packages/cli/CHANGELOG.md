@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a special `noop` command for tasks.
+
 ## 0.7.0
 
 #### 💥 Breaking

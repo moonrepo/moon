@@ -1,0 +1,25 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 824
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm install
+▪▪▪▪ depsC:dependencyOrder
+▪▪▪▪ depsC:dependencyOrder (100ms)
+deps=c
+
+▪▪▪▪ depsB:dependencyOrder
+▪▪▪▪ depsB:dependencyOrder (100ms)
+deps=b
+
+▪▪▪▪ depsA:dependencyOrder
+▪▪▪▪ depsA:dependencyOrder (100ms)
+deps=a
+
+▪▪▪▪ noop:noopWithDeps (no op)
+
+Tasks: 4 completed
+ Time: 100ms
+
+
+

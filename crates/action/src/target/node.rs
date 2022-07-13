@@ -126,7 +126,11 @@ pub async fn create_node_target_command(
         command.env(
             "NODE_PATH",
             node::extend_node_path(path::to_string(
-                workspace.root.join("node_modules/.pnpm/node_modules"),
+                workspace
+                    .root
+                    .join("node_modules")
+                    .join(".pnpm")
+                    .join("node_modules"),
             )?),
         );
     }

@@ -46,7 +46,11 @@ pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
     let extracted_path = parse_bin_file(&bin_path, fs::read_to_string(&bin_path).unwrap());
 
     // canonicalize() actually causes things to break, so normalize
-    path::normalize(bin_path.parent().unwrap().join(extracted_path))
+    let r = path::normalize(bin_path.parent().unwrap().join(extracted_path));
+
+    println!("extract_canonical_bin_path_from_bin_file = {:#?}", r);
+
+    r
 }
 
 pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {
@@ -73,6 +77,8 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
     let bin_path = starting_dir
         .join(NODE.vendor_bins_dir)
         .join(get_bin_name_suffix(bin_name, "cmd", true));
+
+    println!("find_package_bin = {:#?}", bin_path);
 
     if bin_path.exists() {
         // On Windows, we must avoid executing the ".cmd" files and instead

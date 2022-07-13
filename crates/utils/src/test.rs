@@ -124,19 +124,16 @@ pub fn create_moon_command_in<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
 }
 
 pub fn get_assert_output(assert: &assert_cmd::assert::Assert) -> String {
-    get_assert_stdout_output(assert) + &get_assert_stderr_output(assert)
+    get_assert_stdout_output(assert) + &get_assert_stderr_output_clean(assert)
 }
 
-pub fn get_assert_stderr_output(assert: &assert_cmd::assert::Assert) -> String {
+pub fn get_assert_stderr_output_clean(assert: &assert_cmd::assert::Assert) -> String {
     let mut output = String::new();
 
     // We need to always show logs for proper code coverage,
     // but this breaks snapshots, and as such, we need to manually
     // filter out log lines and env vars!
-    for line in String::from_utf8(assert.get_output().stderr.to_owned())
-        .unwrap()
-        .split('\n')
-    {
+    for line in get_assert_stderr_output(assert).split('\n') {
         if !line.starts_with("[error")
             && !line.starts_with("[ warn")
             && !line.starts_with("[ info")
@@ -153,6 +150,34 @@ pub fn get_assert_stderr_output(assert: &assert_cmd::assert::Assert) -> String {
     output
 }
 
+pub fn get_assert_stderr_output(assert: &assert_cmd::assert::Assert) -> String {
+    String::from_utf8(assert.get_output().stderr.to_owned()).unwrap()
+}
+
 pub fn get_assert_stdout_output(assert: &assert_cmd::assert::Assert) -> String {
     String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()
+}
+
+pub fn debug_sandbox_files(dir: &Path) {
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+
+        if path.is_dir() {
+            debug_sandbox_files(&path);
+        } else {
+            println!("- {}", path.to_string_lossy());
+        }
+    }
+}
+
+pub fn debug_sandbox(fixture: &assert_fs::fixture::TempDir, assert: &assert_cmd::assert::Assert) {
+    // List all files in the sandbox
+    println!("sandbox:");
+    debug_sandbox_files(fixture.path());
+    println!("\n");
+
+    // Debug outputs
+    println!("stdout:\n{}\n", get_assert_stdout_output(assert));
+    println!("stderr:\n{}\n", get_assert_stderr_output(assert));
+    println!("status: {:#?}", assert.get_output().status);
 }

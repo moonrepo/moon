@@ -10,7 +10,7 @@ use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use moon_utils::process::{output_to_trimmed_string, Command};
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct NpmTool {
     bin_path: PathBuf,
@@ -231,6 +231,18 @@ impl PackageManager<NodeTool> for NpmTool {
             .await?;
 
         Ok(())
+    }
+
+    async fn find_package_bin(
+        &self,
+        toolchain: &Toolchain,
+        starting_dir: &Path,
+        bin_name: &str,
+    ) -> Result<PathBuf, ToolchainError> {
+        // npm binaries are symlinks to actual JavaScript files
+        toolchain
+            .get_node()
+            .find_package_bin(starting_dir, bin_name)
     }
 
     fn get_lock_filename(&self) -> String {

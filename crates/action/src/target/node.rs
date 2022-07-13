@@ -1,10 +1,11 @@
 use crate::context::{ActionContext, ProfileType};
 use crate::errors::ActionError;
+use moon_config::PackageManager;
 use moon_error::MoonError;
+use moon_lang_node::node;
 use moon_logger::{color, trace};
 use moon_project::{Project, Task};
 use moon_toolchain::{get_path_env_var, Executable};
-use moon_utils::path::relative_from;
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
 use moon_workspace::Workspace;
@@ -74,13 +75,14 @@ fn create_node_options(
 /// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
-pub fn create_node_target_command(
+pub async fn create_node_target_command(
     context: &ActionContext,
     workspace: &Workspace,
     project: &Project,
     task: &Task,
 ) -> Result<Command, ActionError> {
-    let node = workspace.toolchain.get_node();
+    let toolchain = &workspace.toolchain;
+    let node = toolchain.get_node();
     let mut cmd = node.get_bin_path();
     let mut args = vec![];
 
@@ -98,8 +100,13 @@ pub fn create_node_target_command(
             cmd = node.get_yarn().unwrap().get_bin_path();
         }
         bin => {
-            let bin_path =
-                relative_from(node.find_package_bin(bin, &project.root)?, &project.root).unwrap();
+            let bin_path = path::relative_from(
+                node.get_package_manager()
+                    .find_package_bin(toolchain, &project.root, bin)
+                    .await?,
+                &project.root,
+            )
+            .unwrap();
 
             args.extend(create_node_options(context, workspace, task)?);
             args.push(path::to_string(&bin_path)?);
@@ -113,6 +120,20 @@ pub fn create_node_target_command(
         "PATH",
         get_path_env_var(node.get_bin_path().parent().unwrap()),
     );
+
+    // This functionality mimics what pnpm's "node_modules/.bin" binaries do
+    if matches!(node.config.package_manager, PackageManager::Pnpm) {
+        command.env(
+            "NODE_PATH",
+            node::extend_node_path(path::to_string(
+                workspace
+                    .root
+                    .join("node_modules")
+                    .join(".pnpm")
+                    .join("node_modules"),
+            )?),
+        );
+    }
 
     Ok(command)
 }

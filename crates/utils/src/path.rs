@@ -1,6 +1,6 @@
+use clean_path::Clean;
 pub use dirs::home_dir as get_home_dir;
 use moon_error::MoonError;
-use path_clean::PathClean;
 use std::path::{Path, PathBuf};
 
 pub use pathdiff::diff_paths as relative_from;
@@ -23,7 +23,7 @@ where
 }
 
 pub fn normalize<T: AsRef<Path>>(path: T) -> PathBuf {
-    path.as_ref().to_path_buf().clean()
+    path.as_ref().clean()
 }
 
 #[cfg(not(windows))]

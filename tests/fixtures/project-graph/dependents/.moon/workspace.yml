@@ -1,0 +1,9 @@
+node:
+  # Use a unique version as to not collide with other tests
+  version: '16.0.0'
+
+projects:
+  a: a
+  b: b
+  c: c
+  d: d

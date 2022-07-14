@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/sync_test.rs
+assertion_line: 12
+expression: get_assert_output(&assert)
+---
+
+pass SetupToolchain (skipped)
+pass SyncSystemProject(c) (100ms)
+pass SyncSystemProject(b) (100ms)
+pass SyncSystemProject(a) (100ms)
+pass SyncSystemProject(d) (100ms)
+
+
+

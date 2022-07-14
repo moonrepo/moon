@@ -3,8 +3,9 @@ use crate::node::Node;
 use moon_config::ProjectLanguage;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, map_list, trace};
-use moon_project::{Project, Target, TargetError, TargetProject, TouchedFilePaths};
+use moon_project::Project;
 use moon_project_graph::ProjectGraph;
+use moon_task::{Target, TargetError, TargetProjectScope, TouchedFilePaths};
 use petgraph::algo::toposort;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
@@ -108,7 +109,7 @@ impl DepGraph {
 
         match &target.project {
             // :task
-            TargetProject::All => {
+            TargetProjectScope::All => {
                 for project_id in projects.ids() {
                     let project = projects.load(&project_id)?;
 
@@ -122,11 +123,11 @@ impl DepGraph {
                 }
             }
             // ^:task
-            TargetProject::Deps => {
+            TargetProjectScope::Deps => {
                 target.fail_with(TargetError::NoProjectDepsInRunContext)?;
             }
             // project:task
-            TargetProject::Id(project_id) => {
+            TargetProjectScope::Id(project_id) => {
                 if self
                     .insert_target(project_id, task_id, projects, touched_files)?
                     .is_some()
@@ -135,7 +136,7 @@ impl DepGraph {
                 }
             }
             // ~:task
-            TargetProject::Own => {
+            TargetProjectScope::Own => {
                 target.fail_with(TargetError::NoProjectSelfInRunContext)?;
             }
         };

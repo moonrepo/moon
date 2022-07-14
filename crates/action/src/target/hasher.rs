@@ -1,7 +1,8 @@
 use crate::errors::ActionError;
 use moon_hasher::TargetHasher;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
-use moon_project::{ExpandedFiles, Project, Task};
+use moon_project::Project;
+use moon_task::{ExpandedFiles, Task};
 use moon_utils::path::to_string;
 use moon_workspace::Workspace;
 use std::path::Path;

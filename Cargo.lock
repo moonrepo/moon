@@ -1302,6 +1302,7 @@ dependencies = [
  "moon_lang_node",
  "moon_logger",
  "moon_project",
+ "moon_task",
  "moon_terminal",
  "moon_toolchain",
  "moon_utils",
@@ -1325,6 +1326,7 @@ dependencies = [
  "moon_logger",
  "moon_project",
  "moon_project_graph",
+ "moon_task",
  "moon_terminal",
  "moon_utils",
  "moon_workspace",
@@ -1368,6 +1370,7 @@ dependencies = [
  "moon_lang_node",
  "moon_logger",
  "moon_project",
+ "moon_task",
  "moon_terminal",
  "moon_toolchain",
  "moon_utils",
@@ -1424,6 +1427,7 @@ dependencies = [
  "moon_config",
  "moon_lang_node",
  "moon_project",
+ "moon_task",
  "moon_utils",
  "serde",
  "sha2",
@@ -1470,11 +1474,11 @@ dependencies = [
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
- "common-path",
  "moon_config",
  "moon_constants",
  "moon_error",
  "moon_logger",
+ "moon_task",
  "moon_utils",
  "pretty_assertions",
  "serde",
@@ -1494,6 +1498,19 @@ dependencies = [
  "petgraph",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "moon_task"
+version = "0.1.0"
+dependencies = [
+ "common-path",
+ "moon_config",
+ "moon_error",
+ "moon_logger",
+ "moon_utils",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

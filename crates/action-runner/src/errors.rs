@@ -1,5 +1,6 @@
 use moon_error::MoonError;
 use moon_project::ProjectError;
+use moon_task::{TargetError, TaskError};
 use moon_workspace::WorkspaceError;
 use thiserror::Error;
 
@@ -34,4 +35,10 @@ pub enum DepGraphError {
 
     #[error(transparent)]
     Project(#[from] ProjectError),
+
+    #[error(transparent)]
+    Task(#[from] TaskError),
+
+    #[error(transparent)]
+    Target(#[from] TargetError),
 }

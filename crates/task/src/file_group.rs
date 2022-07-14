@@ -1,4 +1,4 @@
-use crate::errors::{ProjectError, TokenError};
+use crate::errors::FileGroupError;
 use common_path::common_path_all;
 use moon_logger::{color, map_list, trace};
 use moon_utils::glob;
@@ -6,7 +6,7 @@ use moon_utils::path::expand_root_path;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-const LOG_TARGET: &str = "moon:project:file-group";
+const LOG_TARGET: &str = "moon:task:file-group";
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct FileGroup {
@@ -40,7 +40,7 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<PathBuf>, ProjectError> {
+    ) -> Result<Vec<PathBuf>, FileGroupError> {
         let mut list = vec![];
 
         for file in &self.files {
@@ -58,7 +58,7 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<PathBuf>, ProjectError> {
+    ) -> Result<Vec<PathBuf>, FileGroupError> {
         self.walk(true, workspace_root, project_root)
     }
 
@@ -68,7 +68,7 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<PathBuf>, ProjectError> {
+    ) -> Result<Vec<PathBuf>, FileGroupError> {
         self.walk(false, workspace_root, project_root)
     }
 
@@ -78,7 +78,7 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<PathBuf>, ProjectError> {
+    ) -> Result<Vec<PathBuf>, FileGroupError> {
         let mut globs = vec![];
 
         for file in &self.files {
@@ -88,7 +88,7 @@ impl FileGroup {
         }
 
         if globs.is_empty() {
-            return Err(ProjectError::Token(TokenError::NoGlobs(self.id.to_owned())));
+            return Err(FileGroupError::NoGlobs(self.id.to_owned()));
         }
 
         Ok(globs)
@@ -96,7 +96,7 @@ impl FileGroup {
 
     /// Returns the file group reduced down to the lowest common directory.
     /// If the reduced directories is not =1, the project root "." will be returned.
-    pub fn root(&self, project_root: &Path) -> Result<PathBuf, ProjectError> {
+    pub fn root(&self, project_root: &Path) -> Result<PathBuf, FileGroupError> {
         let dirs = self.dirs(project_root, project_root)?; // Workspace not needed!
 
         if !dirs.is_empty() {
@@ -121,7 +121,7 @@ impl FileGroup {
         is_dir: bool,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<PathBuf>, ProjectError> {
+    ) -> Result<Vec<PathBuf>, FileGroupError> {
         let mut list = vec![];
 
         for file in &self.files {

@@ -1,5 +1,5 @@
 use moon_action_runner::DepGraph;
-use moon_project::Target;
+use moon_task::Target;
 use moon_workspace::Workspace;
 
 pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {

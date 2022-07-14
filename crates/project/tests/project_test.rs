@@ -2,7 +2,8 @@ use moon_config::{
     GlobalProjectConfig, ProjectConfig, ProjectLanguage, ProjectMetadataConfig, ProjectType,
     TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
 };
-use moon_project::{EnvVars, FileGroup, Project, ProjectError, Target, Task};
+use moon_project::{Project, ProjectError};
+use moon_task::{EnvVars, FileGroup, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use std::collections::HashMap;
@@ -203,7 +204,7 @@ fn overrides_global_file_groups() {
 
 mod tasks {
     use super::*;
-    use moon_project::test::{
+    use moon_task::test::{
         create_expanded_task as create_expanded_task_internal, create_file_groups_config,
     };
     use moon_utils::glob;
@@ -1154,7 +1155,7 @@ mod tasks {
 
 mod workspace {
     use super::*;
-    use moon_project::test::create_expanded_task;
+    use moon_task::test::create_expanded_task;
 
     mod inherited_tasks {
         use super::*;

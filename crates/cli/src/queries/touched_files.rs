@@ -1,6 +1,6 @@
 use crate::enums::TouchedStatus;
 use moon_logger::{color, debug, trace};
-use moon_project::TouchedFilePaths;
+use moon_task::TouchedFilePaths;
 use moon_utils::path;
 use moon_workspace::{Workspace, WorkspaceError};
 use serde::{Deserialize, Serialize};

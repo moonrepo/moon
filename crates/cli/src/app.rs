@@ -7,7 +7,7 @@ use crate::commands::init::{InheritProjectsAs, PackageManager};
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_action::ProfileType;
-use moon_project::TargetID;
+use moon_task::TargetID;
 use moon_terminal::label_moon;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };

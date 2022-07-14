@@ -94,6 +94,7 @@ const sidebars = {
 				'commands/query',
 				'commands/run',
 				'commands/setup',
+				'commands/sync',
 				'commands/teardown',
 			],
 			link: {

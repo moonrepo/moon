@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Added a special `noop` command for tasks.
+- Added a `moon sync` command for manually syncing all projects in the workspace to a healthy state.
 
 #### ⚙️ Internal
 

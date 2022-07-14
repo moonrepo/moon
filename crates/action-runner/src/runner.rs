@@ -72,6 +72,16 @@ impl ActionRunner {
         }
     }
 
+    pub async fn new_run(
+        workspace: Workspace,
+        graph: DepGraph,
+        context: Option<ActionContext>,
+    ) -> Result<Vec<Action>, ActionRunnerError> {
+        let mut runner = ActionRunner::new(workspace);
+
+        runner.run(graph, context).await
+    }
+
     pub fn bail_on_error(&mut self) -> &mut Self {
         self.bail = true;
         self
@@ -91,14 +101,14 @@ impl ActionRunner {
     pub async fn run(
         &mut self,
         graph: DepGraph,
-        context: ActionContext,
+        context: Option<ActionContext>,
     ) -> Result<Vec<Action>, ActionRunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
-        let context = Arc::new(context);
+        let context = Arc::new(context.unwrap_or_default());
 
         // Clean the runner state *before* running actions instead of after,
         // so that failing or broken builds can dig into and debug the state!

@@ -179,10 +179,10 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     let results = runner
         .run(
             dep_graph,
-            ActionContext {
+            Some(ActionContext {
                 touched_files,
                 ..ActionContext::default()
-            },
+            }),
         )
         .await?;
 

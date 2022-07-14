@@ -190,7 +190,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
 
     runner.render_results(&results)?;
 
-    render_result_stats(results, runner.duration.unwrap(), true)?;
+    render_result_stats(results, runner.get_duration(), true)?;
 
     if runner.has_failed() {
         safe_exit(1);

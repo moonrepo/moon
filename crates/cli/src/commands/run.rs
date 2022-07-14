@@ -170,7 +170,7 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     let results = runner.bail_on_error().run(dep_graph, Some(context)).await?;
 
     // Render stats about the run
-    render_result_stats(results, runner.duration.unwrap(), false)?;
+    render_result_stats(results, runner.get_duration(), false)?;
 
     Ok(())
 }

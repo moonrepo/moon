@@ -6,6 +6,10 @@
 
 - Added a special `noop` command for tasks.
 
+#### ⚙️ Internal
+
+- Runfiles are no longer cleaned up when running tasks.
+
 ## 0.7.0
 
 #### 💥 Breaking

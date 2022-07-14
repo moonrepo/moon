@@ -5,6 +5,7 @@ use moon_workspace::Workspace;
 
 pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
     let theme = create_theme();
+
     let pb = ProgressBar::new_spinner();
     pb.set_message("Syncing projects...");
     pb.enable_steady_tick(20);

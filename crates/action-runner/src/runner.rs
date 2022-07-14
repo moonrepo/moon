@@ -6,7 +6,7 @@ use moon_action::{
     install_node_deps, run_target, setup_toolchain, sync_node_project, Action, ActionContext,
     ActionStatus,
 };
-use moon_error::{map_io_to_net_error, MoonError};
+use moon_error::MoonError;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
 use moon_terminal::helpers::replace_style_tokens;
@@ -62,9 +62,9 @@ async fn run_action(
 pub struct ActionRunner {
     bail: bool,
 
-    pub duration: Option<Duration>,
+    duration: Option<Duration>,
 
-    pub error_count: u8,
+    error_count: u8,
 
     workspace: Arc<RwLock<Workspace>>,
 }
@@ -84,6 +84,11 @@ impl ActionRunner {
     pub fn bail_on_error(&mut self) -> &mut Self {
         self.bail = true;
         self
+    }
+
+    pub fn get_duration(&self) -> Duration {
+        self.duration
+            .expect("Cannot get duration, action runner not ran!")
     }
 
     pub fn has_failed(&self) -> bool {
@@ -246,19 +251,17 @@ impl ActionRunner {
                 status,
                 color::style(result.label.as_ref().unwrap()).bold(),
                 color::muted(format!("({})", meta.join(", ")))
-            ))
-            .map_err(|e| map_io_to_net_error(e, None))?;
+            ))?;
 
             if let Some(error) = &result.error {
                 term.write_line(&format!(
                     "     {}",
-                    color::muted_light(&replace_style_tokens(error))
-                ))
-                .map_err(|e| map_io_to_net_error(e, None))?;
+                    color::muted_light(replace_style_tokens(error))
+                ))?;
             }
         }
 
-        term.flush().map_err(|e| map_io_to_net_error(e, None))?;
+        term.flush()?;
 
         Ok(())
     }

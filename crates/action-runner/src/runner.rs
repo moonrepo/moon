@@ -9,7 +9,7 @@ use moon_action::{
 use moon_error::MoonError;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
-use moon_terminal::{helpers::replace_style_tokens, ExtendedTerm};
+use moon_terminal::{replace_style_tokens, ExtendedTerm};
 use moon_utils::time;
 use moon_workspace::Workspace;
 use std::sync::Arc;

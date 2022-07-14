@@ -5,7 +5,7 @@ use moon_config::PackageManager;
 use moon_error::map_io_to_fs_error;
 use moon_lang_node::NPM;
 use moon_logger::{color, debug, warn};
-use moon_terminal::output::{label_checkpoint, Checkpoint};
+use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{fs, is_offline};
 use moon_workspace::Workspace;
 use std::sync::Arc;

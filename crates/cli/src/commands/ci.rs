@@ -5,7 +5,7 @@ use moon_action::ActionContext;
 use moon_action_runner::{ActionRunner, DepGraph, DepGraphError};
 use moon_logger::{color, debug};
 use moon_project::{Target, TouchedFilePaths};
-use moon_terminal::helpers::safe_exit;
+use moon_terminal::safe_exit;
 use moon_utils::is_ci;
 use moon_workspace::{Workspace, WorkspaceError};
 

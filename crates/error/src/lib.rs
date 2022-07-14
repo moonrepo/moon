@@ -38,6 +38,9 @@ pub enum MoonError {
     ProcessNonZeroWithOutput(String, i32, String),
 
     #[error(transparent)]
+    Io(#[from] IoError),
+
+    #[error(transparent)]
     Regex(#[from] RegexError),
 
     #[error("{0}")]

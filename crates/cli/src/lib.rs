@@ -13,6 +13,7 @@ use crate::commands::project_graph::project_graph;
 use crate::commands::query::{self, QueryProjectsOptions, QueryTouchedFilesOptions};
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
+use crate::commands::sync::sync;
 use crate::commands::teardown::teardown;
 use crate::helpers::setup_colors;
 use app::{App, Commands, QueryCommands};
@@ -94,6 +95,7 @@ pub async fn run_cli() {
         }
         Commands::Project { id, json } => project(id, *json).await,
         Commands::ProjectGraph { id } => project_graph(id).await,
+        Commands::Sync => sync().await,
         Commands::Query { command } => match command {
             QueryCommands::Projects {
                 id,

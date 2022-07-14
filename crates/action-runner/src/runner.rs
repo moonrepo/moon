@@ -1,12 +1,16 @@
 use crate::dep_graph::DepGraph;
 use crate::errors::{ActionRunnerError, DepGraphError};
 use crate::node::Node;
+use console::Term;
 use moon_action::{
     install_node_deps, run_target, setup_toolchain, sync_node_project, Action, ActionContext,
     ActionStatus,
 };
+use moon_error::MoonError;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
+use moon_terminal::{replace_style_tokens, ExtendedTerm};
+use moon_utils::time;
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -14,6 +18,8 @@ use tokio::sync::RwLock;
 use tokio::task;
 
 const LOG_TARGET: &str = "moon:action-runner";
+
+pub type ActionResults = Vec<Action>;
 
 async fn run_action(
     node: &Node,
@@ -56,7 +62,9 @@ async fn run_action(
 pub struct ActionRunner {
     bail: bool,
 
-    pub duration: Option<Duration>,
+    duration: Option<Duration>,
+
+    error_count: u8,
 
     workspace: Arc<RwLock<Workspace>>,
 }
@@ -68,6 +76,7 @@ impl ActionRunner {
         ActionRunner {
             bail: false,
             duration: None,
+            error_count: 0,
             workspace: Arc::new(RwLock::new(workspace)),
         }
     }
@@ -77,39 +86,33 @@ impl ActionRunner {
         self
     }
 
-    pub async fn cleanup(&self) -> Result<(), ActionRunnerError> {
-        let workspace = self.workspace.read().await;
+    pub fn get_duration(&self) -> Duration {
+        self.duration
+            .expect("Cannot get duration, action runner not ran!")
+    }
 
-        // Delete all previously created runfiles
-        trace!(target: LOG_TARGET, "Deleting stale runfiles");
-
-        workspace.cache.delete_runfiles().await?;
-
-        Ok(())
+    pub fn has_failed(&self) -> bool {
+        self.error_count > 0
     }
 
     pub async fn run(
         &mut self,
         graph: DepGraph,
-        context: ActionContext,
-    ) -> Result<Vec<Action>, ActionRunnerError> {
+        context: Option<ActionContext>,
+    ) -> Result<ActionResults, ActionRunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
-        let context = Arc::new(context);
-
-        // Clean the runner state *before* running actions instead of after,
-        // so that failing or broken builds can dig into and debug the state!
-        self.cleanup().await?;
+        let context = Arc::new(context.unwrap_or_default());
 
         debug!(
             target: LOG_TARGET,
             "Running {} actions across {} batches", node_count, batches_count
         );
 
-        let mut results: Vec<Action> = vec![];
+        let mut results: ActionResults = vec![];
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
@@ -188,7 +191,11 @@ impl ActionRunner {
                             );
                         }
 
-                        if self.bail && result.error.is_some() || result.should_abort() {
+                        if result.has_failed() {
+                            self.error_count += 1;
+                        }
+
+                        if self.bail && result.has_failed() || result.should_abort() {
                             return Err(ActionRunnerError::Failure(result.error.unwrap()));
                         }
 
@@ -214,5 +221,122 @@ impl ActionRunner {
         );
 
         Ok(results)
+    }
+
+    pub fn render_results(&self, results: &ActionResults) -> Result<(), MoonError> {
+        let term = Term::buffered_stdout();
+        term.write_line("")?;
+
+        for result in results {
+            let status = match result.status {
+                ActionStatus::Passed | ActionStatus::Cached | ActionStatus::Skipped => {
+                    color::success("pass")
+                }
+                ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
+                ActionStatus::Invalid => color::invalid("warn"),
+                _ => color::muted_light("oops"),
+            };
+
+            let mut meta: Vec<String> = vec![];
+
+            if matches!(result.status, ActionStatus::Cached) {
+                meta.push(String::from("cached"));
+            } else if matches!(result.status, ActionStatus::Skipped) {
+                meta.push(String::from("skipped"));
+            } else if let Some(duration) = result.duration {
+                meta.push(time::elapsed(duration));
+            }
+
+            term.write_line(&format!(
+                "{} {} {}",
+                status,
+                color::style(result.label.as_ref().unwrap()).bold(),
+                color::muted(format!("({})", meta.join(", ")))
+            ))?;
+
+            if let Some(error) = &result.error {
+                term.write_line(&format!(
+                    "     {}",
+                    color::muted_light(replace_style_tokens(error))
+                ))?;
+            }
+        }
+
+        term.write_line("")?;
+        term.flush()?;
+
+        Ok(())
+    }
+
+    pub fn render_stats(&self, results: &ActionResults, compact: bool) -> Result<(), MoonError> {
+        let mut cached_count = 0;
+        let mut pass_count = 0;
+        let mut fail_count = 0;
+        let mut invalid_count = 0;
+
+        for result in results {
+            if let Some(label) = &result.label {
+                if compact && !label.contains("RunTarget") {
+                    continue;
+                }
+            }
+
+            match result.status {
+                ActionStatus::Cached => {
+                    cached_count += 1;
+                    pass_count += 1;
+                }
+                ActionStatus::Passed | ActionStatus::Skipped => {
+                    pass_count += 1;
+                }
+                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
+                    fail_count += 1;
+                }
+                ActionStatus::Invalid => {
+                    invalid_count += 1;
+                }
+                _ => {}
+            }
+        }
+
+        let mut counts_message = vec![];
+
+        if pass_count > 0 {
+            if cached_count > 0 {
+                counts_message.push(color::success(format!(
+                    "{} completed ({} cached)",
+                    pass_count, cached_count
+                )));
+            } else {
+                counts_message.push(color::success(format!("{} completed", pass_count)));
+            }
+        }
+
+        if fail_count > 0 {
+            counts_message.push(color::failure(format!("{} failed", fail_count)));
+        }
+
+        if invalid_count > 0 {
+            counts_message.push(color::invalid(format!("{} invalid", invalid_count)));
+        }
+
+        let term = Term::buffered_stdout();
+        term.write_line("")?;
+
+        let counts_message = counts_message.join(&color::muted(", "));
+        let elapsed_time = time::elapsed(self.get_duration());
+
+        if compact {
+            term.render_entry("Tasks", &counts_message)?;
+            term.render_entry(" Time", &elapsed_time)?;
+        } else {
+            term.render_entry("Actions", &counts_message)?;
+            term.render_entry("   Time", &elapsed_time)?;
+        }
+
+        term.write_line("")?;
+        term.flush()?;
+
+        Ok(())
     }
 }

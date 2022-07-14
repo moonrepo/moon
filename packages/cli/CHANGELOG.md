@@ -5,6 +5,11 @@
 #### 🚀 Updates
 
 - Added a special `noop` command for tasks.
+- Added a `moon sync` command for manually syncing all projects in the workspace to a healthy state.
+
+#### ⚙️ Internal
+
+- Runfiles are no longer cleaned up when running tasks.
 
 ## 0.7.0
 

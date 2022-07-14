@@ -1,6 +1,7 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
-use moon_config::{constants, format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
+use moon_config::{format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
+use moon_constants as constants;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug, trace};
 use moon_project::ProjectGraph;

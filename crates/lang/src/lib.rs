@@ -5,9 +5,9 @@ pub use errors::LangError;
 use std::fmt;
 use std::path::Path;
 
-pub type StaticString = &'static str;
+type StaticString = &'static str;
 
-pub type StaticStringList = &'static [StaticString];
+type StaticStringList = &'static [StaticString];
 
 pub struct Language {
     pub binary: StaticString,

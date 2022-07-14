@@ -1338,7 +1338,7 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "filetime",
- "moon_config",
+ "moon_constants",
  "moon_error",
  "moon_logger",
  "moon_utils",
@@ -1362,6 +1362,7 @@ dependencies = [
  "moon_action_runner",
  "moon_cache",
  "moon_config",
+ "moon_constants",
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
@@ -1387,21 +1388,24 @@ dependencies = [
  "assert_fs",
  "figment",
  "json",
+ "moon_constants",
  "moon_error",
  "moon_lang_node",
  "moon_utils",
- "regex",
  "reqwest",
  "schemars",
  "semver",
  "serde",
  "serde_json",
  "serde_yaml",
- "shell-words",
  "strum",
  "tokio",
  "validator",
 ]
+
+[[package]]
+name = "moon_constants"
+version = "0.1.0"
 
 [[package]]
 name = "moon_error"
@@ -1469,6 +1473,7 @@ dependencies = [
  "insta",
  "moon_cache",
  "moon_config",
+ "moon_constants",
  "moon_error",
  "moon_logger",
  "moon_utils",
@@ -1499,6 +1504,7 @@ dependencies = [
  "flate2",
  "mockito",
  "moon_config",
+ "moon_constants",
  "moon_error",
  "moon_lang",
  "moon_lang_node",
@@ -1559,6 +1565,7 @@ version = "0.1.0"
 dependencies = [
  "moon_cache",
  "moon_config",
+ "moon_constants",
  "moon_error",
  "moon_lang_node",
  "moon_logger",

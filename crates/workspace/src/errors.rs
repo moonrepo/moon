@@ -1,4 +1,4 @@
-use moon_config::constants;
+use moon_constants as constants;
 use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_toolchain::ToolchainError;

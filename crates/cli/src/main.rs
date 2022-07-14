@@ -1,5 +1,5 @@
 use moon_cli::{run_cli, BIN_NAME};
-use moon_config::constants;
+use moon_constants::CONFIG_DIRNAME;
 use moon_lang_node::NODE;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -37,7 +37,7 @@ async fn is_globally_installed() -> bool {
 }
 
 fn find_workspace_root(dir: &Path) -> Option<PathBuf> {
-    let findable = dir.join(constants::CONFIG_DIRNAME);
+    let findable = dir.join(CONFIG_DIRNAME);
 
     if findable.exists() {
         return Some(dir.to_path_buf());

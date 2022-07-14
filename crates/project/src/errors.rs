@@ -1,4 +1,4 @@
-use moon_config::constants;
+use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_utils::glob::GlobError;
 use std::path::PathBuf;
@@ -11,7 +11,7 @@ pub enum ProjectError {
 
     #[error(
         "Failed to validate <file>{0}/{}</file> configuration file.\n\n{1}",
-        constants::CONFIG_PROJECT_FILENAME
+        CONFIG_PROJECT_FILENAME
     )]
     InvalidConfigFile(String, String),
 

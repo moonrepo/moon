@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use moon_terminal::helpers::safe_exit;
+use moon_terminal::safe_exit;
 use moon_toolchain::{Executable, Installable};
 use moon_workspace::Workspace;
 

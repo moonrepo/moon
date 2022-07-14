@@ -1,7 +1,10 @@
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
+use moon_terminal::create_theme;
 use moon_workspace::Workspace;
 
 pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
+    let theme = create_theme();
+
     let pb = ProgressBar::new_spinner();
     pb.set_message("Downloading and installing tools...");
     pb.enable_steady_tick(20);
@@ -10,6 +13,9 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
 
     workspace.toolchain.setup(true).await?;
 
-    pb.finish_with_message("Installation complete");
+    pb.set_style(ProgressStyle::default_spinner().template("{prefix} {msg}"));
+    pb.set_prefix(theme.success_prefix.to_string());
+    pb.finish_with_message("Setup complete");
+
     Ok(())
 }

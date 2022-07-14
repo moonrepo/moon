@@ -1,0 +1,20 @@
+---
+title: sync
+---
+
+The `sync` command will force sync _all_ projects in the workspace. What is syncing exactly? To
+ensure a [healthy repository state](../faq#what-should-be-considered-the-source-of-truth), we
+trigger a process known as syncing, where a project is automatically updated to:
+
+- Ensure cross-project dependencies are linked based on [`dependsOn`](../config/project#dependsOn).
+- Ensure language specific configuration files are present and accurate (`package.json`,
+  `tsconfig.json`, etc).
+- Ensure root configuration and project configuration are in sync.
+- Any additional language specific semantics that may be required.
+
+```shell
+$ moon sync
+```
+
+> This command should rarely be ran, as [`moon run`](./run) will sync affected projects
+> automatically! However, when migrating or refactoring, manual syncing may be necessary.

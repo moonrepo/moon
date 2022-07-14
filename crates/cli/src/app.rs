@@ -8,7 +8,7 @@ use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_action::ProfileType;
 use moon_project::TargetID;
-use moon_terminal::output::label_moon;
+use moon_terminal::label_moon;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
 
@@ -140,8 +140,7 @@ pub enum Commands {
     // moon dep-graph [target]
     #[clap(
         name = "dep-graph",
-        about = "Display a dependency graph of all tasks and actions in DOT format.",
-        alias = "graph"
+        about = "Display a dependency graph of all tasks and actions in DOT format."
     )]
     DepGraph {
         #[clap(help = "Target to *only* graph")]
@@ -164,13 +163,18 @@ pub enum Commands {
     // moon project-graph [id]
     #[clap(
         name = "project-graph",
-        about = "Display a graph of projects in DOT format.",
-        alias = "graph"
+        about = "Display a graph of projects in DOT format."
     )]
     ProjectGraph {
         #[clap(help = "ID of project to *only* graph")]
         id: Option<String>,
     },
+
+    #[clap(
+        name = "sync",
+        about = "Sync all projects in the workspace to a healthy state."
+    )]
+    Sync,
 
     // JOBS
 

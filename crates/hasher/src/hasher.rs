@@ -1,5 +1,6 @@
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
-use moon_project::{Project, Task};
+use moon_project::Project;
+use moon_task::Task;
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};

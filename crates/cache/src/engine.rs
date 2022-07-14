@@ -1,7 +1,7 @@
 use crate::helpers::{is_writable, LOG_TARGET};
 use crate::items::{CacheItem, ProjectsState, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
-use moon_config::constants::CONFIG_DIRNAME;
+use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
 use moon_utils::fs;

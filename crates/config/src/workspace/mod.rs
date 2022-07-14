@@ -4,7 +4,7 @@ pub mod node;
 mod typescript;
 mod vcs;
 
-use crate::constants;
+use crate::constants::FLAG_PROJECTS_USING_GLOB;
 use crate::errors::map_validation_errors_to_figment_errors;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
@@ -34,7 +34,7 @@ type ProjectsMap = HashMap<String, FilePath>;
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
 fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
-    if projects.contains_key(constants::FLAG_PROJECTS_USING_GLOB) {
+    if projects.contains_key(FLAG_PROJECTS_USING_GLOB) {
         return Ok(());
     }
 
@@ -212,10 +212,7 @@ impl<'de> de::Visitor<'de> for DeserializeProjects {
         // We want to defer globbing so that we can cache it through
         // our engine, so we must fake this here until config resolving
         // has completed. Annoying, but a serde limitation.
-        map.insert(
-            constants::FLAG_PROJECTS_USING_GLOB.to_owned(),
-            "true".to_owned(),
-        );
+        map.insert(FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned());
 
         Ok(map)
     }
@@ -248,6 +245,7 @@ fn make_projects_schema(_gen: &mut SchemaGenerator) -> Schema {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use moon_constants as constants;
     use std::path::Path;
 
     fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
@@ -946,10 +944,7 @@ projects:
                 assert_eq!(
                     config.projects,
                     HashMap::from([
-                        (
-                            constants::FLAG_PROJECTS_USING_GLOB.to_owned(),
-                            "true".to_owned()
-                        ),
+                        (FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned()),
                         ("A".to_owned(), "apps/*".to_owned()),
                         ("B".to_owned(), "packages/*".to_owned())
                     ])

@@ -13,19 +13,18 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
+moon_constants = { path = "../constants"}
 moon_error = { path = "../error"}
 moon_lang_node = { path = "../lang-node" }
 moon_utils = { path = "../utils"}
 figment = { version = "0.10.6", features = ["test", "yaml"] }
 json = "0.12.4"
-regex = "1.6.0"
 reqwest = { version = "0.11.11", features = ["blocking"] }
 schemars = "0.8.10"
 semver = "1.0.12"
 serde = { version = "1.0.138", features = ["derive"] }
 serde_json = { version = "1.0.82", features = ["preserve_order"] }
 serde_yaml = "0.8.24"
-shell-words = "1.1.0"
 strum = { version = "0.24.1", features = ["derive"] }
 validator = { version = "0.15.0", features = ["derive"] }
 

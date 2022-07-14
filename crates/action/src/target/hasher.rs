@@ -1,7 +1,8 @@
 use crate::errors::ActionError;
 use moon_hasher::TargetHasher;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
-use moon_project::{ExpandedFiles, Project, Task};
+use moon_project::Project;
+use moon_task::{ExpandedFiles, Task};
 use moon_utils::path::to_string;
 use moon_workspace::Workspace;
 use std::path::Path;
@@ -45,10 +46,18 @@ pub async fn create_target_hasher(
     hasher.hash_args(passthrough_args);
 
     // Hash root configs first
-    hasher.hash_package_json(&workspace.package_json);
+    if let Some(root_package) = PackageJson::read(workspace.root.join("package.json")).await? {
+        hasher.hash_package_json(&root_package);
+    }
 
-    if let Some(root_tsconfig) = &workspace.tsconfig_json {
-        hasher.hash_tsconfig_json(root_tsconfig);
+    if let Some(root_tsconfig) = TsConfigJson::read(
+        workspace
+            .root
+            .join(&workspace.config.typescript.root_config_file_name),
+    )
+    .await?
+    {
+        hasher.hash_tsconfig_json(&root_tsconfig);
     }
 
     // Hash project configs second so they can override

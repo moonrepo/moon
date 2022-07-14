@@ -1302,6 +1302,7 @@ dependencies = [
  "moon_lang_node",
  "moon_logger",
  "moon_project",
+ "moon_task",
  "moon_terminal",
  "moon_toolchain",
  "moon_utils",
@@ -1324,6 +1325,8 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_project",
+ "moon_project_graph",
+ "moon_task",
  "moon_terminal",
  "moon_utils",
  "moon_workspace",
@@ -1338,7 +1341,7 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "filetime",
- "moon_config",
+ "moon_constants",
  "moon_error",
  "moon_logger",
  "moon_utils",
@@ -1362,10 +1365,12 @@ dependencies = [
  "moon_action_runner",
  "moon_cache",
  "moon_config",
+ "moon_constants",
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
  "moon_project",
+ "moon_task",
  "moon_terminal",
  "moon_toolchain",
  "moon_utils",
@@ -1387,21 +1392,24 @@ dependencies = [
  "assert_fs",
  "figment",
  "json",
+ "moon_constants",
  "moon_error",
  "moon_lang_node",
  "moon_utils",
- "regex",
  "reqwest",
  "schemars",
  "semver",
  "serde",
  "serde_json",
  "serde_yaml",
- "shell-words",
  "strum",
  "tokio",
  "validator",
 ]
+
+[[package]]
+name = "moon_constants"
+version = "0.1.0"
 
 [[package]]
 name = "moon_error"
@@ -1419,6 +1427,7 @@ dependencies = [
  "moon_config",
  "moon_lang_node",
  "moon_project",
+ "moon_task",
  "moon_utils",
  "serde",
  "sha2",
@@ -1465,18 +1474,43 @@ dependencies = [
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
- "common-path",
+ "moon_config",
+ "moon_constants",
+ "moon_error",
+ "moon_logger",
+ "moon_task",
+ "moon_utils",
+ "pretty_assertions",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "moon_project_graph"
+version = "0.1.0"
+dependencies = [
  "insta",
  "moon_cache",
+ "moon_config",
+ "moon_logger",
+ "moon_project",
+ "moon_utils",
+ "petgraph",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "moon_task"
+version = "0.1.0"
+dependencies = [
+ "common-path",
  "moon_config",
  "moon_error",
  "moon_logger",
  "moon_utils",
- "petgraph",
- "pretty_assertions",
  "serde",
  "thiserror",
- "tokio",
 ]
 
 [[package]]
@@ -1499,6 +1533,7 @@ dependencies = [
  "flate2",
  "mockito",
  "moon_config",
+ "moon_constants",
  "moon_error",
  "moon_lang",
  "moon_lang_node",
@@ -1559,10 +1594,10 @@ version = "0.1.0"
 dependencies = [
  "moon_cache",
  "moon_config",
+ "moon_constants",
  "moon_error",
- "moon_lang_node",
  "moon_logger",
- "moon_project",
+ "moon_project_graph",
  "moon_toolchain",
  "moon_utils",
  "moon_vcs",

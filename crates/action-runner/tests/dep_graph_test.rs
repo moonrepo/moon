@@ -2,7 +2,8 @@ use insta::assert_snapshot;
 use moon_action_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_cache::CacheEngine;
 use moon_config::{GlobalProjectConfig, WorkspaceConfig};
-use moon_project::{ProjectGraph, Target};
+use moon_project_graph::ProjectGraph;
+use moon_task::Target;
 use moon_utils::test::get_fixtures_dir;
 use std::collections::{HashMap, HashSet};
 
@@ -279,7 +280,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Project(Target(NoProjectDepsInRunContext))")]
+    #[should_panic(expected = "Target(NoProjectDepsInRunContext)")]
     async fn errors_for_target_deps_scope() {
         let projects = create_project_graph().await;
 
@@ -290,7 +291,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Project(Target(NoProjectSelfInRunContext))")]
+    #[should_panic(expected = "Target(NoProjectSelfInRunContext)")]
     async fn errors_for_target_self_scope() {
         let projects = create_project_graph().await;
 

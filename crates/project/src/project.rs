@@ -1,13 +1,10 @@
 use crate::errors::ProjectError;
-use crate::file_group::FileGroup;
-use crate::target::Target;
-use crate::task::Task;
-use crate::token::{TokenResolver, TokenSharedData};
-use moon_config::constants::CONFIG_PROJECT_FILENAME;
 use moon_config::{
     format_figment_errors, FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID,
 };
+use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
+use moon_task::{FileGroup, Target, Task, TokenResolver, TokenSharedData};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};

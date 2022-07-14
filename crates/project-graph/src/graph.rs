@@ -1,12 +1,8 @@
-use crate::constants::ROOT_NODE_ID;
-use crate::errors::ProjectError;
-use crate::helpers::detect_projects_with_globs;
-use crate::project::Project;
-use crate::types::ProjectsSourceMap;
 use moon_cache::CacheEngine;
 use moon_config::constants::FLAG_PROJECTS_USING_GLOB;
 use moon_config::{GlobalProjectConfig, ProjectID, WorkspaceConfig};
 use moon_logger::{color, debug, map_list, trace};
+use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -21,6 +17,7 @@ type IndicesType = HashMap<ProjectID, NodeIndex>;
 const LOG_TARGET: &str = "moon:project-graph";
 const READ_ERROR: &str = "Failed to acquire a read lock";
 const WRITE_ERROR: &str = "Failed to acquire a write lock";
+const ROOT_NODE_ID: &str = "(workspace)";
 
 async fn load_projects_from_cache(
     workspace_root: &Path,

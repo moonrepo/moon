@@ -1,17 +1,13 @@
 [package]
-name = "moon_project"
+name = "moon_task"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
-moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
-moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
+common-path = "1.0.0"
 serde = { version = "1.0.138", features = ["derive"] }
 thiserror = "1.0.31"
-
-[dev-dependencies]
-pretty_assertions = "1.2.1"

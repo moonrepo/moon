@@ -2,7 +2,6 @@ use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_config::{format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
 use moon_constants as constants;
-use moon_lang_node::package::PackageJson;
 use moon_logger::{color, debug, trace};
 use moon_project_graph::ProjectGraph;
 use moon_toolchain::Toolchain;
@@ -84,26 +83,12 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     }
 }
 
-// package.json
-async fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceError> {
-    let package_json_path = root_dir.join("package.json");
-
-    if !package_json_path.exists() {
-        return Err(WorkspaceError::MissingPackageJson);
-    }
-
-    Ok(PackageJson::read(package_json_path).await?.unwrap())
-}
-
 pub struct Workspace {
     /// Engine for reading and writing cache/outputs.
     pub cache: CacheEngine,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
-
-    /// The root `package.json`.
-    pub package_json: PackageJson,
 
     /// The project graph, where each project is lazy loaded in.
     pub projects: ProjectGraph,
@@ -141,7 +126,6 @@ impl Workspace {
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
-        let package_json = load_package_json(&root_dir).await?;
 
         // Setup components
         let cache = CacheEngine::create(&root_dir).await?;
@@ -152,7 +136,6 @@ impl Workspace {
         Ok(Workspace {
             cache,
             config,
-            package_json,
             projects,
             root: root_dir,
             toolchain,

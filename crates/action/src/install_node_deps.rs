@@ -3,7 +3,7 @@ use crate::context::ActionContext;
 use crate::errors::ActionError;
 use moon_config::PackageManager;
 use moon_error::map_io_to_fs_error;
-use moon_lang_node::NPM;
+use moon_lang_node::{package::PackageJson, NPM};
 use moon_logger::{color, debug, warn};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{fs, is_offline};
@@ -15,7 +15,7 @@ const LOG_TARGET: &str = "moon:action:install-node-deps";
 
 /// Add `packageManager` to root `package.json`.
 #[track_caller]
-fn add_package_manager(workspace: &mut Workspace) -> bool {
+fn add_package_manager(workspace: &Workspace, package_json: &mut PackageJson) -> bool {
     let manager_version = match workspace.config.node.package_manager {
         PackageManager::Npm => format!("npm@{}", workspace.config.node.npm.version),
         PackageManager::Pnpm => format!(
@@ -30,7 +30,7 @@ fn add_package_manager(workspace: &mut Workspace) -> bool {
 
     if manager_version != "npm@inherit"
         && workspace.toolchain.get_node().is_corepack_aware()
-        && workspace.package_json.set_package_manager(&manager_version)
+        && package_json.set_package_manager(&manager_version)
     {
         debug!(
             target: LOG_TARGET,
@@ -45,11 +45,9 @@ fn add_package_manager(workspace: &mut Workspace) -> bool {
 }
 
 /// Add `engines` constraint to root `package.json`.
-fn add_engines_constraint(workspace: &mut Workspace) -> bool {
+fn add_engines_constraint(workspace: &Workspace, package_json: &mut PackageJson) -> bool {
     if workspace.config.node.add_engines_constraint
-        && workspace
-            .package_json
-            .add_engine("node", &workspace.config.node.version)
+        && package_json.add_engine("node", &workspace.config.node.version)
     {
         debug!(
             target: LOG_TARGET,
@@ -70,12 +68,16 @@ pub async fn install_node_deps(
 ) -> Result<ActionStatus, ActionError> {
     // Writes root `package.json`
     {
-        let mut workspace = workspace.write().await;
-        let added_manager = add_package_manager(&mut workspace);
-        let added_engines = add_engines_constraint(&mut workspace);
+        let workspace = workspace.write().await;
+        let mut root_package_json = PackageJson::read(workspace.root.join("package.json")).await?;
 
-        if added_manager || added_engines {
-            workspace.package_json.save().await?;
+        if let Some(root_package_json_mut) = &mut root_package_json {
+            let added_manager = add_package_manager(&workspace, root_package_json_mut);
+            let added_engines = add_engines_constraint(&workspace, root_package_json_mut);
+
+            if added_manager || added_engines {
+                root_package_json_mut.save().await?;
+            }
         }
     }
 

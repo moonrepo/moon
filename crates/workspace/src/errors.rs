@@ -14,12 +14,6 @@ pub enum WorkspaceError {
     MissingConfigDir,
 
     #[error(
-        "Unable to locate a root <file>package.json</file>. Please create one alongside the <file>{}</file> configuration folder.",
-        constants::CONFIG_DIRNAME
-    )]
-    MissingPackageJson,
-
-    #[error(
         "Unable to locate <file>{}/{}</file> configuration file.",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME

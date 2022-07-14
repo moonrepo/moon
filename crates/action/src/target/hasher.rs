@@ -46,7 +46,9 @@ pub async fn create_target_hasher(
     hasher.hash_args(passthrough_args);
 
     // Hash root configs first
-    hasher.hash_package_json(&workspace.package_json);
+    if let Some(root_package) = PackageJson::read(workspace.root.join("package.json")).await? {
+        hasher.hash_package_json(&root_package);
+    }
 
     if let Some(root_tsconfig) = TsConfigJson::read(
         workspace

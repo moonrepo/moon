@@ -1,4 +1,3 @@
-use crate::commands::run::render_result_stats;
 use crate::enums::TouchedStatus;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
@@ -189,8 +188,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     print_header("Results");
 
     runner.render_results(&results)?;
-
-    render_result_stats(results, runner.get_duration(), true)?;
+    runner.render_stats(&results, false)?;
 
     if runner.has_failed() {
         safe_exit(1);

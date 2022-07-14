@@ -32,7 +32,6 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
         pb.finish_with_message(format!("Successfully synced {} projects", project_count));
     }
 
-    println!();
     runner.render_results(&results)?;
 
     Ok(())

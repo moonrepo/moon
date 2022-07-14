@@ -4,18 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 common-path = "1.0.0"
-petgraph = "0.6.2"
 serde = { version = "1.0.138", features = ["derive"] }
 thiserror = "1.0.31"
 
 [dev-dependencies]
-insta = "1.15.0"
 pretty_assertions = "1.2.1"
-tokio = { version = "1.19.2", features = ["test-util"] }

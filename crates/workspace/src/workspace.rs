@@ -4,7 +4,7 @@ use moon_config::{format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
 use moon_constants as constants;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug, trace};
-use moon_project::ProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
 use moon_vcs::{Vcs, VcsLoader};

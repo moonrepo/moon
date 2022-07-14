@@ -1324,6 +1324,7 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_project",
+ "moon_project_graph",
  "moon_terminal",
  "moon_utils",
  "moon_workspace",
@@ -1470,16 +1471,27 @@ name = "moon_project"
 version = "0.1.0"
 dependencies = [
  "common-path",
- "insta",
- "moon_cache",
  "moon_config",
  "moon_constants",
  "moon_error",
  "moon_logger",
  "moon_utils",
- "petgraph",
  "pretty_assertions",
  "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "moon_project_graph"
+version = "0.1.0"
+dependencies = [
+ "insta",
+ "moon_cache",
+ "moon_config",
+ "moon_logger",
+ "moon_project",
+ "moon_utils",
+ "petgraph",
  "thiserror",
  "tokio",
 ]
@@ -1569,7 +1581,7 @@ dependencies = [
  "moon_error",
  "moon_lang_node",
  "moon_logger",
- "moon_project",
+ "moon_project_graph",
  "moon_toolchain",
  "moon_utils",
  "moon_vcs",

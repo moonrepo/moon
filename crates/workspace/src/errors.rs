@@ -1,6 +1,6 @@
-use moon_config::constants;
+use moon_constants as constants;
 use moon_error::MoonError;
-use moon_project::ProjectError;
+use moon_project_graph::ProjectError;
 use moon_toolchain::ToolchainError;
 use moon_vcs::VcsError;
 use thiserror::Error;
@@ -12,12 +12,6 @@ pub enum WorkspaceError {
         constants::CONFIG_DIRNAME
     )]
     MissingConfigDir,
-
-    #[error(
-        "Unable to locate a root <file>package.json</file>. Please create one alongside the <file>{}</file> configuration folder.",
-        constants::CONFIG_DIRNAME
-    )]
-    MissingPackageJson,
 
     #[error(
         "Unable to locate <file>{}/{}</file> configuration file.",

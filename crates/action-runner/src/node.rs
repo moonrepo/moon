@@ -1,5 +1,6 @@
 use moon_lang::SupportedLanguage;
-use moon_project::{ProjectID, TargetID};
+use moon_project::ProjectID;
+use moon_task::TargetID;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Eq)]

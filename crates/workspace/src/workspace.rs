@@ -1,9 +1,9 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
-use moon_config::{constants, format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
-use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
+use moon_config::{format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
+use moon_constants as constants;
 use moon_logger::{color, debug, trace};
-use moon_project::ProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
 use moon_vcs::{Vcs, VcsLoader};
@@ -83,40 +83,12 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     }
 }
 
-// package.json
-async fn load_package_json(root_dir: &Path) -> Result<PackageJson, WorkspaceError> {
-    let package_json_path = root_dir.join("package.json");
-
-    if !package_json_path.exists() {
-        return Err(WorkspaceError::MissingPackageJson);
-    }
-
-    Ok(PackageJson::read(package_json_path).await?.unwrap())
-}
-
-// tsconfig.json
-async fn load_tsconfig_json(
-    root_dir: &Path,
-    tsconfig_name: &str,
-) -> Result<Option<TsConfigJson>, WorkspaceError> {
-    let tsconfig_json_path = root_dir.join(tsconfig_name);
-
-    if !tsconfig_json_path.exists() {
-        return Ok(None);
-    }
-
-    Ok(TsConfigJson::read(tsconfig_json_path).await?)
-}
-
 pub struct Workspace {
     /// Engine for reading and writing cache/outputs.
     pub cache: CacheEngine,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
-
-    /// The root `package.json`.
-    pub package_json: PackageJson,
 
     /// The project graph, where each project is lazy loaded in.
     pub projects: ProjectGraph,
@@ -126,9 +98,6 @@ pub struct Workspace {
 
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
-
-    /// The root `tsconfig.json`.
-    pub tsconfig_json: Option<TsConfigJson>,
 
     /// Configured version control system.
     pub vcs: Box<dyn Vcs + Send + Sync>,
@@ -157,9 +126,6 @@ impl Workspace {
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
-        let package_json = load_package_json(&root_dir).await?;
-        let tsconfig_json =
-            load_tsconfig_json(&root_dir, &config.typescript.root_config_file_name).await?;
 
         // Setup components
         let cache = CacheEngine::create(&root_dir).await?;
@@ -170,11 +136,9 @@ impl Workspace {
         Ok(Workspace {
             cache,
             config,
-            package_json,
             projects,
             root: root_dir,
             toolchain,
-            tsconfig_json,
             vcs,
             working_dir,
         })

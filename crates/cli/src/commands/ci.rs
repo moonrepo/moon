@@ -4,7 +4,8 @@ use itertools::Itertools;
 use moon_action::ActionContext;
 use moon_action_runner::{ActionRunner, DepGraph, DepGraphError};
 use moon_logger::{color, debug};
-use moon_project::{Target, TouchedFilePaths};
+use moon_project::ProjectError;
+use moon_task::{Target, TouchedFilePaths};
 use moon_terminal::safe_exit;
 use moon_utils::is_ci;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -57,7 +58,7 @@ async fn gather_touched_files(
 fn gather_runnable_targets(
     workspace: &Workspace,
     touched_files: &TouchedFilePaths,
-) -> Result<TargetList, WorkspaceError> {
+) -> Result<TargetList, ProjectError> {
     print_header("Gathering runnable targets");
 
     let mut targets = vec![];

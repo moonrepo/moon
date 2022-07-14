@@ -3,7 +3,7 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use moon_action::{ActionContext, ProfileType};
 use moon_action_runner::{ActionRunner, DepGraph};
 use moon_logger::color;
-use moon_project::Target;
+use moon_task::Target;
 use moon_workspace::Workspace;
 use std::collections::HashSet;
 use std::string::ToString;

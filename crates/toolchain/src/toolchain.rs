@@ -2,11 +2,10 @@ use crate::errors::ToolchainError;
 use crate::helpers::LOG_TARGET;
 use crate::tools::node::NodeTool;
 use crate::traits::Tool;
-use moon_config::constants::CONFIG_DIRNAME;
 use moon_config::WorkspaceConfig;
+use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug, trace};
-use moon_utils::fs;
-use moon_utils::path::get_home_dir;
+use moon_utils::{fs, path};
 use std::path::{Path, PathBuf};
 
 async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
@@ -85,7 +84,7 @@ impl Toolchain {
         workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
         Toolchain::create_from_dir(
-            &get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
+            &path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
             workspace_config,
         )

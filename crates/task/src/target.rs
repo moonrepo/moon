@@ -1,24 +1,24 @@
-use crate::errors::{ProjectError, TargetError};
+use crate::errors::TargetError;
 use moon_config::{ProjectID, TargetID, TaskID};
 use moon_utils::regex::TARGET_PATTERN;
 use std::cmp::Ordering;
 // use std::fmt;
 
 #[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
-pub enum TargetProject {
+pub enum TargetProjectScope {
     All,           // :task
     Deps,          // ^:task
     Id(ProjectID), // project:task
     Own,           // ~:task
 }
 
-// impl fmt::Display for TargetProject {
+// impl fmt::Display for TargetProjectScope {
 //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //         match self {
-//             TargetProject::All => write!(f, ""),
-//             TargetProject::Deps => write!(f, "^"),
-//             TargetProject::Id(id) => write!(f, "{}", id),
-//             TargetProject::Own => write!(f, "~"),
+//             TargetProjectScope::All => write!(f, ""),
+//             TargetProjectScope::Deps => write!(f, "^"),
+//             TargetProjectScope::Id(id) => write!(f, "{}", id),
+//             TargetProjectScope::Own => write!(f, "~"),
 //         }
 //     }
 // }
@@ -42,7 +42,7 @@ pub enum TargetProject {
 pub struct Target {
     pub id: String,
 
-    pub project: TargetProject,
+    pub project: TargetProjectScope,
 
     pub project_id: Option<String>,
 
@@ -50,46 +50,42 @@ pub struct Target {
 }
 
 impl Target {
-    pub fn new(project_id: &str, task_id: &str) -> Result<Target, ProjectError> {
+    pub fn new(project_id: &str, task_id: &str) -> Result<Target, TargetError> {
         Ok(Target {
             id: Target::format(project_id, task_id)?,
-            project: TargetProject::Id(project_id.to_owned()),
+            project: TargetProjectScope::Id(project_id.to_owned()),
             project_id: Some(project_id.to_owned()),
             task_id: task_id.to_owned(),
         })
     }
 
-    pub fn format(project_id: &str, task_id: &str) -> Result<TargetID, ProjectError> {
+    pub fn format(project_id: &str, task_id: &str) -> Result<TargetID, TargetError> {
         Ok(format!("{}:{}", project_id, task_id))
     }
 
-    pub fn parse(target_id: &str) -> Result<Target, ProjectError> {
+    pub fn parse(target_id: &str) -> Result<Target, TargetError> {
         if target_id == ":" {
-            return Err(ProjectError::Target(TargetError::TooWild));
+            return Err(TargetError::TooWild);
         }
 
         let matches = match TARGET_PATTERN.captures(target_id) {
             Some(result) => result,
-            None => {
-                return Err(ProjectError::Target(TargetError::InvalidFormat(
-                    target_id.to_owned(),
-                )))
-            }
+            None => return Err(TargetError::InvalidFormat(target_id.to_owned())),
         };
 
         let mut project_id = None;
 
         let project = match matches.name("project") {
             Some(value) => match value.as_str() {
-                "" => TargetProject::All,
-                "^" => TargetProject::Deps,
-                "~" => TargetProject::Own,
+                "" => TargetProjectScope::All,
+                "^" => TargetProjectScope::Deps,
+                "~" => TargetProjectScope::Own,
                 id => {
                     project_id = Some(id.to_owned());
-                    TargetProject::Id(id.to_owned())
+                    TargetProjectScope::Id(id.to_owned())
                 }
             },
-            None => TargetProject::All,
+            None => TargetProjectScope::All,
         };
 
         let task_id = matches.name("task").unwrap().as_str().to_owned();
@@ -110,22 +106,22 @@ impl Target {
         })
     }
 
-    pub fn fail_with(&self, error: TargetError) -> Result<(), ProjectError> {
-        Err(ProjectError::Target(error))
+    pub fn fail_with(&self, error: TargetError) -> Result<(), TargetError> {
+        Err(error)
     }
 
-    pub fn ids(&self) -> Result<(ProjectID, TaskID), ProjectError> {
+    pub fn ids(&self) -> Result<(ProjectID, TaskID), TargetError> {
         let project_id = match &self.project_id {
             Some(id) => id,
             None => match &self.project {
-                TargetProject::Id(id) => id,
-                _ => return Err(ProjectError::Target(TargetError::IdOnly(self.id.clone()))),
+                TargetProjectScope::Id(id) => id,
+                _ => return Err(TargetError::IdOnly(self.id.clone())),
             },
         };
 
         // let task_id = match &self.task {
         //     TargetTask::Id(id) => id,
-        //     _ => return Err(ProjectError::Target(TargetError::IdOnly(self.id.clone()))),
+        //     _ => return Err(TargetError::Target(TargetError::IdOnly(self.id.clone()))),
         // };
 
         Ok((project_id.clone(), self.task_id.clone()))
@@ -159,7 +155,7 @@ mod tests {
             Target::parse("foo:build").unwrap(),
             Target {
                 id: String::from("foo:build"),
-                project: TargetProject::Id("foo".to_owned()),
+                project: TargetProjectScope::Id("foo".to_owned()),
                 project_id: Some("foo".to_owned()),
                 task_id: "build".to_owned(),
                 // task: TargetTask::Id("build".to_owned())
@@ -173,7 +169,7 @@ mod tests {
             Target::parse("^:build").unwrap(),
             Target {
                 id: String::from("^:build"),
-                project: TargetProject::Deps,
+                project: TargetProjectScope::Deps,
                 project_id: None,
                 task_id: "build".to_owned(),
                 // task: TargetTask::Id("build".to_owned())
@@ -187,7 +183,7 @@ mod tests {
     //         Target::parse("^:").unwrap(),
     //         Target {
     //             id: String::from("^:"),
-    //             project: TargetProject::Deps,
+    //             project: TargetProjectScope::Deps,
     //             task: TargetTask::All,
     //         }
     //     );
@@ -199,7 +195,7 @@ mod tests {
             Target::parse("~:build").unwrap(),
             Target {
                 id: String::from("~:build"),
-                project: TargetProject::Own,
+                project: TargetProjectScope::Own,
                 project_id: None,
                 task_id: "build".to_owned(),
                 // task: TargetTask::Id("build".to_owned())
@@ -213,7 +209,7 @@ mod tests {
     //         Target::parse("~:").unwrap(),
     //         Target {
     //             id: String::from("~:"),
-    //             project: TargetProject::Own,
+    //             project: TargetProjectScope::Own,
     //             task: TargetTask::All,
     //         }
     //     );
@@ -225,7 +221,7 @@ mod tests {
             Target::parse(":build").unwrap(),
             Target {
                 id: String::from(":build"),
-                project: TargetProject::All,
+                project: TargetProjectScope::All,
                 project_id: None,
                 task_id: "build".to_owned(),
                 // task: TargetTask::Id("build".to_owned())
@@ -239,14 +235,14 @@ mod tests {
     //         Target::parse("foo:").unwrap(),
     //         Target {
     //             id: String::from("foo:"),
-    //             project: TargetProject::Id("foo".to_owned()),
+    //             project: TargetProjectScope::Id("foo".to_owned()),
     //             task: TargetTask::All,
     //         }
     //     );
     // }
 
     #[test]
-    #[should_panic(expected = "Target(TooWild)")]
+    #[should_panic(expected = "TooWild")]
     fn parse_too_wild() {
         Target::parse(":").unwrap();
     }

@@ -1,4 +1,4 @@
-use moon_project::Task;
+use moon_task::Task;
 use moon_utils::process::Command;
 use std::path::Path;
 

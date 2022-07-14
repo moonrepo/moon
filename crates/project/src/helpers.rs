@@ -1,9 +1,12 @@
 use crate::errors::ProjectError;
-use crate::types::ProjectsSourceMap;
+use moon_config::ProjectID;
 use moon_error::MoonError;
 use moon_logger::{color, warn};
 use moon_utils::{glob, path, regex};
+use std::collections::HashMap;
 use std::path::Path;
+
+pub type ProjectsSourceMap = HashMap<ProjectID, String>;
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.

@@ -1,8 +1,4 @@
-use crate::errors::ProjectError;
-use crate::file_group::FileGroup;
-use crate::target::Target;
-use crate::task::Task;
-use crate::token::{TokenResolver, TokenSharedData};
+use crate::{FileGroup, Target, Task, TaskError, TokenResolver, TokenSharedData};
 use moon_config::{ProjectConfig, TaskConfig};
 use moon_utils::string_vec;
 use std::collections::HashMap;
@@ -84,7 +80,7 @@ pub fn create_expanded_task(
     workspace_root: &Path,
     project_root: &Path,
     config: Option<TaskConfig>,
-) -> Result<Task, ProjectError> {
+) -> Result<Task, TaskError> {
     let mut task = create_initial_task(config);
     let file_groups = create_file_groups();
     let project_config = ProjectConfig::new(project_root);

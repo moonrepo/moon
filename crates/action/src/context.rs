@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use moon_project::TouchedFilePaths;
+use moon_task::TouchedFilePaths;
 use std::collections::HashSet;
 
 #[derive(ValueEnum, Clone, Debug)]

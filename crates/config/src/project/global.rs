@@ -125,8 +125,8 @@ impl GlobalProjectConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::constants;
     use figment;
+    use moon_constants as constants;
     use moon_utils::string_vec;
     use std::path::Path;
 

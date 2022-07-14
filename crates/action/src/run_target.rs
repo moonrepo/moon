@@ -7,7 +7,8 @@ use crate::target::{
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
 use moon_logger::{color, debug, warn};
-use moon_project::{Project, Target, Task};
+use moon_project::Project;
+use moon_task::{Target, Task};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::process::{join_args, output_to_string, Command, Output};
 use moon_utils::{is_ci, is_test_env, path, time};

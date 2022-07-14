@@ -1,14 +1,13 @@
 use crate::commands::run::render_result_stats;
 use crate::enums::TouchedStatus;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
-use console::Term;
 use itertools::Itertools;
-use moon_action::{ActionContext, ActionStatus};
+use moon_action::ActionContext;
 use moon_action_runner::{ActionRunner, DepGraph, DepGraphError};
 use moon_logger::{color, debug};
 use moon_project::{Target, TouchedFilePaths};
-use moon_terminal::helpers::{replace_style_tokens, safe_exit};
-use moon_utils::{is_ci, time};
+use moon_terminal::helpers::safe_exit;
+use moon_utils::is_ci;
 use moon_workspace::{Workspace, WorkspaceError};
 
 type TargetList = Vec<Target>;
@@ -187,52 +186,13 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Print out the results and exit if an error occurs
-    let mut error_count = 0;
-    let term = Term::buffered_stdout();
-
     print_header("Results");
 
-    for result in &results {
-        let status = match result.status {
-            ActionStatus::Passed | ActionStatus::Cached | ActionStatus::Skipped => {
-                color::success("pass")
-            }
-            ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
-            ActionStatus::Invalid => color::invalid("warn"),
-            _ => color::muted_light("oops"),
-        };
-
-        let mut meta: Vec<String> = vec![];
-
-        if matches!(result.status, ActionStatus::Cached) {
-            meta.push(String::from("cached"));
-        } else if matches!(result.status, ActionStatus::Skipped) {
-            meta.push(String::from("skipped"));
-        } else if let Some(duration) = result.duration {
-            meta.push(time::elapsed(duration));
-        }
-
-        term.write_line(&format!(
-            "{} {} {}",
-            status,
-            color::style(result.label.as_ref().unwrap()).bold(),
-            color::muted(&format!("({})", meta.join(", ")))
-        ))?;
-
-        if let Some(error) = &result.error {
-            error_count += 1;
-            term.write_line(&format!(
-                "     {}",
-                color::muted_light(&replace_style_tokens(error))
-            ))?;
-        }
-    }
-
-    term.flush()?;
+    runner.render_results(&results)?;
 
     render_result_stats(results, runner.duration.unwrap(), true)?;
 
-    if error_count > 0 {
+    if runner.has_failed() {
         safe_exit(1);
     }
 

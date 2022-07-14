@@ -1,12 +1,16 @@
 use crate::dep_graph::DepGraph;
 use crate::errors::{ActionRunnerError, DepGraphError};
 use crate::node::Node;
+use console::Term;
 use moon_action::{
     install_node_deps, run_target, setup_toolchain, sync_node_project, Action, ActionContext,
     ActionStatus,
 };
+use moon_error::{map_io_to_net_error, MoonError};
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
+use moon_terminal::helpers::replace_style_tokens;
+use moon_utils::time;
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -14,6 +18,8 @@ use tokio::sync::RwLock;
 use tokio::task;
 
 const LOG_TARGET: &str = "moon:action-runner";
+
+pub type ActionResults = Vec<Action>;
 
 async fn run_action(
     node: &Node,
@@ -58,6 +64,8 @@ pub struct ActionRunner {
 
     pub duration: Option<Duration>,
 
+    pub error_count: u8,
+
     workspace: Arc<RwLock<Workspace>>,
 }
 
@@ -68,18 +76,9 @@ impl ActionRunner {
         ActionRunner {
             bail: false,
             duration: None,
+            error_count: 0,
             workspace: Arc::new(RwLock::new(workspace)),
         }
-    }
-
-    pub async fn new_run(
-        workspace: Workspace,
-        graph: DepGraph,
-        context: Option<ActionContext>,
-    ) -> Result<Vec<Action>, ActionRunnerError> {
-        let mut runner = ActionRunner::new(workspace);
-
-        runner.run(graph, context).await
     }
 
     pub fn bail_on_error(&mut self) -> &mut Self {
@@ -87,22 +86,15 @@ impl ActionRunner {
         self
     }
 
-    pub async fn cleanup(&self) -> Result<(), ActionRunnerError> {
-        let workspace = self.workspace.read().await;
-
-        // Delete all previously created runfiles
-        trace!(target: LOG_TARGET, "Deleting stale runfiles");
-
-        workspace.cache.delete_runfiles().await?;
-
-        Ok(())
+    pub fn has_failed(&self) -> bool {
+        self.error_count > 0
     }
 
     pub async fn run(
         &mut self,
         graph: DepGraph,
         context: Option<ActionContext>,
-    ) -> Result<Vec<Action>, ActionRunnerError> {
+    ) -> Result<ActionResults, ActionRunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
@@ -110,16 +102,12 @@ impl ActionRunner {
         let graph = Arc::new(RwLock::new(graph));
         let context = Arc::new(context.unwrap_or_default());
 
-        // Clean the runner state *before* running actions instead of after,
-        // so that failing or broken builds can dig into and debug the state!
-        self.cleanup().await?;
-
         debug!(
             target: LOG_TARGET,
             "Running {} actions across {} batches", node_count, batches_count
         );
 
-        let mut results: Vec<Action> = vec![];
+        let mut results: ActionResults = vec![];
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_count = b + 1;
@@ -198,7 +186,11 @@ impl ActionRunner {
                             );
                         }
 
-                        if self.bail && result.error.is_some() || result.should_abort() {
+                        if result.has_failed() {
+                            self.error_count += 1;
+                        }
+
+                        if self.bail && result.has_failed() || result.should_abort() {
                             return Err(ActionRunnerError::Failure(result.error.unwrap()));
                         }
 
@@ -224,5 +216,50 @@ impl ActionRunner {
         );
 
         Ok(results)
+    }
+
+    pub fn render_results(&self, results: &ActionResults) -> Result<(), MoonError> {
+        let term = Term::buffered_stdout();
+
+        for result in results {
+            let status = match result.status {
+                ActionStatus::Passed | ActionStatus::Cached | ActionStatus::Skipped => {
+                    color::success("pass")
+                }
+                ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
+                ActionStatus::Invalid => color::invalid("warn"),
+                _ => color::muted_light("oops"),
+            };
+
+            let mut meta: Vec<String> = vec![];
+
+            if matches!(result.status, ActionStatus::Cached) {
+                meta.push(String::from("cached"));
+            } else if matches!(result.status, ActionStatus::Skipped) {
+                meta.push(String::from("skipped"));
+            } else if let Some(duration) = result.duration {
+                meta.push(time::elapsed(duration));
+            }
+
+            term.write_line(&format!(
+                "{} {} {}",
+                status,
+                color::style(result.label.as_ref().unwrap()).bold(),
+                color::muted(format!("({})", meta.join(", ")))
+            ))
+            .map_err(|e| map_io_to_net_error(e, None))?;
+
+            if let Some(error) = &result.error {
+                term.write_line(&format!(
+                    "     {}",
+                    color::muted_light(&replace_style_tokens(error))
+                ))
+                .map_err(|e| map_io_to_net_error(e, None))?;
+            }
+        }
+
+        term.flush().map_err(|e| map_io_to_net_error(e, None))?;
+
+        Ok(())
     }
 }

@@ -10,7 +10,7 @@ use moon_utils::{glob, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptions {
     pub merge_args: TaskMergeStrategy,
@@ -28,6 +28,21 @@ pub struct TaskOptions {
     pub run_in_ci: bool,
 
     pub run_from_workspace_root: bool,
+}
+
+impl Default for TaskOptions {
+    fn default() -> Self {
+        TaskOptions {
+            merge_args: TaskMergeStrategy::Append,
+            merge_deps: TaskMergeStrategy::Append,
+            merge_env: TaskMergeStrategy::Append,
+            merge_inputs: TaskMergeStrategy::Append,
+            merge_outputs: TaskMergeStrategy::Append,
+            retry_count: 0,
+            run_in_ci: true,
+            run_from_workspace_root: false,
+        }
+    }
 }
 
 impl TaskOptions {
@@ -105,6 +120,17 @@ impl Logable for Task {
 }
 
 impl Task {
+    pub fn new(target: TargetID) -> Self {
+        let log_target = format!("moon:project:{}", target);
+
+        Task {
+            inputs: string_vec!["**/*"],
+            log_target,
+            target,
+            ..Task::default()
+        }
+    }
+
     pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;

@@ -292,6 +292,6 @@ mod tests {
                 .await
                 .unwrap();
 
-        assert_eq!(created, false);
+        assert!(!created);
     }
 }

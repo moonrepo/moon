@@ -1494,10 +1494,21 @@ dependencies = [
  "moon_config",
  "moon_logger",
  "moon_project",
+ "moon_project_node",
  "moon_utils",
  "petgraph",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "moon_project_node"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "moon_lang_node",
+ "moon_task",
+ "moon_utils",
 ]
 
 [[package]]

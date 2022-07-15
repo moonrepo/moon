@@ -10,7 +10,7 @@ use moon_utils::{glob, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptions {
     pub merge_args: TaskMergeStrategy,
@@ -66,7 +66,7 @@ impl TaskOptions {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Task {
     pub args: Vec<String>,

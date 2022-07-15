@@ -1,0 +1,10 @@
+[package]
+name = "moon_project_node"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_lang_node = { path = "../lang-node" }
+moon_task = { path = "../task" }
+moon_utils = { path = "../utils" }
+lazy_static = "1.4.0"

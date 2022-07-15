@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(TsConfigJson);
+config_cache!(TsConfigJson, write_preserved_json);
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
 // integration with the rest of the crates. We also can't wait for upsteam for new updates.

@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(PackageJson);
+config_cache!(PackageJson, write_preserved_json);
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -178,6 +178,11 @@ impl PackageJson {
     pub fn add_dependency<T: AsRef<str>>(&mut self, name: T, range: T, if_missing: bool) -> bool {
         let name = name.as_ref();
         let range = range.as_ref();
+
+        if name.is_empty() {
+            return false;
+        }
+
         let mut dependencies = match &self.dependencies {
             Some(deps) => deps.clone(),
             None => BTreeMap::new(),

@@ -19,13 +19,13 @@ async fn create_missing_tsconfig(
     project: &Project,
     typescript_config: &TypeScriptConfig,
     workspace_root: &Path,
-) -> Result<Option<TsConfigJson>, ActionError> {
+) -> Result<bool, ActionError> {
     let tsconfig_path = project
         .root
         .join(&typescript_config.project_config_file_name);
 
     if tsconfig_path.exists() {
-        return Ok(None);
+        return Ok(false);
     }
 
     let tsconfig_options_path =
@@ -43,9 +43,7 @@ async fn create_missing_tsconfig(
 
     fs::write_json(&tsconfig_path, &json, true).await?;
 
-    TsConfigJson::write(json.clone()).await?;
-
-    Ok(Some(json))
+    Ok(true)
 }
 
 // Sync projects references to the root `tsconfig.json`.
@@ -80,58 +78,47 @@ pub async fn sync_node_project(
     project_id: &str,
 ) -> Result<ActionStatus, ActionError> {
     let mut mutated_files = false;
+    let workspace = workspace.read().await;
+    let node_config = &workspace.config.node;
+    let typescript_config = &workspace.config.typescript;
+    let project = workspace.projects.load(project_id)?;
 
-    // Read-only for thread safe actions
+    // Auto-create a `tsconfig.json` if configured and applicable
+    if typescript_config.create_missing_config
+        && typescript_config.sync_project_references
+        && !project
+            .root
+            .join(&typescript_config.project_config_file_name)
+            .exists()
     {
-        let workspace = workspace.read().await;
-        let node_config = &workspace.config.node;
-        let typescript_config = &workspace.config.typescript;
-        let project = workspace.projects.load(project_id)?;
+        create_missing_tsconfig(&project, typescript_config, &workspace.root).await?;
+    }
 
-        // Load project configs
-        let mut project_package_json = PackageJson::read(project.root.join("package.json")).await?;
+    // Sync each dependency to `tsconfig.json` and `package.json`
+    let dep_version_range = workspace
+        .toolchain
+        .get_node()
+        .get_package_manager()
+        .get_workspace_dependency_range();
 
-        let mut project_tsconfig_json = TsConfigJson::read(
-            project
-                .root
-                .join(&typescript_config.project_config_file_name),
-        )
-        .await?;
+    for dep_id in project.get_dependencies() {
+        let dep_project = workspace.projects.load(&dep_id)?;
 
-        // Auto-create a `tsconfig.json` if configured and applicable
-        if project_tsconfig_json.is_none()
-            && typescript_config.create_missing_config
-            && typescript_config.sync_project_references
-        {
-            project_tsconfig_json =
-                create_missing_tsconfig(&project, typescript_config, &workspace.root).await?;
-        }
+        // Update `dependencies` within this project's `package.json`.
+        // Only add if the dependent project has a `package.json`,
+        // and this `package.json` has not already declared the dep.
+        if node_config.sync_project_workspace_dependencies {
+            if let Some(dep_package_json) =
+                PackageJson::read(dep_project.root.join("package.json")).await?
+            {
+                PackageJson::sync(project.root.join("package.json"), |package_json| {
+                    if package_json.add_dependency(
+                        &dep_package_json.name.unwrap_or_default(),
+                        &dep_version_range,
+                        true,
+                    ) {
+                        mutated_files = true;
 
-        // Sync each dependency to `tsconfig.json` and `package.json`
-        let dep_version_range = workspace
-            .toolchain
-            .get_node()
-            .get_package_manager()
-            .get_workspace_dependency_range();
-
-        for dep_id in project.get_dependencies() {
-            let dep_project = workspace.projects.load(&dep_id)?;
-
-            // Update `dependencies` within this project's `package.json`
-            if node_config.sync_project_workspace_dependencies {
-                if let Some(project_package_json_mut) = &mut project_package_json {
-                    let dep_package_json =
-                        PackageJson::read(dep_project.root.join("package.json")).await?;
-
-                    // Only add if the dependent project has a `package.json`,
-                    // and this `package.json` has not already declared the dep.
-                    if dep_package_json.is_some()
-                        && project_package_json_mut.add_dependency(
-                            &dep_package_json.unwrap().name.unwrap_or_default(),
-                            &dep_version_range,
-                            true,
-                        )
-                    {
                         debug!(
                             target: LOG_TARGET,
                             "Syncing {} as a dependency to {}'s {}",
@@ -139,27 +126,29 @@ pub async fn sync_node_project(
                             color::id(project_id),
                             color::file("package.json")
                         );
-
-                        project_package_json_mut.save().await?;
-                        mutated_files = true;
                     }
-                }
-            }
 
-            // Update `references` within this project's `tsconfig.json`
-            if typescript_config.sync_project_references {
-                if let Some(project_tsconfig_json_mut) = &mut project_tsconfig_json {
-                    let tsconfig_branch_name = &typescript_config.project_config_file_name;
+                    Ok(())
+                })
+                .await?;
+            }
+        }
+
+        // Update `references` within this project's `tsconfig.json`.
+        // Only add if the dependent project has a `tsconfig.json`,
+        // and this `tsconfig.json` has not already declared the dep.
+        if typescript_config.sync_project_references {
+            let tsconfig_branch_name = &typescript_config.project_config_file_name;
+
+            if dep_project.root.join(tsconfig_branch_name).exists() {
+                TsConfigJson::sync(project.root.join(&tsconfig_branch_name), |tsconfig_json| {
                     let dep_ref_path = path::to_string(
                         path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
                     )?;
 
-                    // Only add if the dependent project has a `tsconfig.json`,
-                    // and this `tsconfig.json` has not already declared the dep.
-                    if dep_project.root.join(tsconfig_branch_name).exists()
-                        && project_tsconfig_json_mut
-                            .add_project_ref(&dep_ref_path, tsconfig_branch_name)
-                    {
+                    if tsconfig_json.add_project_ref(&dep_ref_path, tsconfig_branch_name) {
+                        mutated_files = true;
+
                         debug!(
                             target: LOG_TARGET,
                             "Syncing {} as a project reference to {}'s {}",
@@ -167,37 +156,30 @@ pub async fn sync_node_project(
                             color::id(project_id),
                             color::file(tsconfig_branch_name)
                         );
-
-                        project_tsconfig_json_mut.save().await?;
-                        mutated_files = true;
                     }
-                }
+
+                    Ok(())
+                })
+                .await?;
             }
         }
     }
 
-    // Acquire a write lock to avoid race conditions
-    {
-        let workspace = workspace.write().await;
-        let typescript_config = &workspace.config.typescript;
-        let project = workspace.projects.load(project_id)?;
-
-        let mut root_tsconfig_json = TsConfigJson::read(
+    // Sync to the root `tsconfig.json` (only if the project has a tsconfig)
+    if typescript_config.sync_project_references {
+        TsConfigJson::sync(
             workspace
                 .root
                 .join(&typescript_config.root_config_file_name),
-        )
-        .await?;
-
-        // Sync to the root `tsconfig.json` (only if the project has a tsconfig)
-        if typescript_config.sync_project_references {
-            if let Some(root_tsconfig_json_mut) = &mut root_tsconfig_json {
-                if sync_root_tsconfig(root_tsconfig_json_mut, typescript_config, &project) {
-                    root_tsconfig_json_mut.save().await?;
+            |tsconfig_json| {
+                if sync_root_tsconfig(tsconfig_json, typescript_config, &project) {
                     mutated_files = true;
                 }
-            }
-        }
+
+                Ok(())
+            },
+        )
+        .await?;
     }
 
     if mutated_files {
@@ -305,11 +287,11 @@ mod tests {
 
         assert!(tsconfig_path.exists());
 
-        let tsconfig =
+        let created =
             create_missing_tsconfig(&project, &TypeScriptConfig::default(), fixture.path())
                 .await
                 .unwrap();
 
-        assert_eq!(tsconfig, None);
+        assert_eq!(created, false);
     }
 }

@@ -178,6 +178,11 @@ impl PackageJson {
     pub fn add_dependency<T: AsRef<str>>(&mut self, name: T, range: T, if_missing: bool) -> bool {
         let name = name.as_ref();
         let range = range.as_ref();
+
+        if name.is_empty() {
+            return false;
+        }
+
         let mut dependencies = match &self.dependencies {
             Some(deps) => deps.clone(),
             None => BTreeMap::new(),

@@ -23,7 +23,7 @@ macro_rules! config_cache {
         }
 
         impl $struct {
-            /// Read the config file from the cache. If not cached, and the file exists
+            /// Read the config file from the cache. If not cached and the file exists,
             /// load it and store in the cache, otherwise return none.
             #[track_caller]
             pub async fn read(path: PathBuf) -> Result<Option<$struct>, MoonError> {
@@ -34,10 +34,12 @@ macro_rules! config_cache {
                 }
             }
 
+            /// If the file exists, load it from the file system, mutate it,
+            /// write it back to the file system and to the cache.
             #[track_caller]
             pub async fn sync<F>(path: PathBuf, func: F) -> Result<bool, MoonError>
             where
-                F: FnOnce(&mut $struct)
+                F: FnOnce(&mut $struct) -> Result<(), MoonError>
             {
                 use cached::Cached;
                 use moon_logger::{color, trace};
@@ -56,7 +58,7 @@ macro_rules! config_cache {
                     cfg = load_json(&path).await?;
                 }
 
-                func(&mut cfg);
+                func(&mut cfg)?;
 
                 trace!(
                     target: "moon:lang:config",

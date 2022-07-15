@@ -74,6 +74,8 @@ pub async fn install_node_deps(
     PackageJson::sync(workspace.root.join("package.json"), |package_json| {
         add_package_manager(&workspace, package_json);
         add_engines_constraint(&workspace, package_json);
+
+        Ok(())
     })
     .await?;
 

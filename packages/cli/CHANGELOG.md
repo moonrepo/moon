@@ -10,6 +10,7 @@
 #### ⚙️ Internal
 
 - Runfiles are no longer cleaned up when running tasks.
+- Reworked `package.json` and `tsconfig.json` handling to avoid race conditions.
 
 ## 0.7.0
 

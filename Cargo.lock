@@ -1507,6 +1507,7 @@ version = "0.1.0"
 dependencies = [
  "lazy_static",
  "moon_lang_node",
+ "moon_logger",
  "moon_task",
  "moon_utils",
 ]

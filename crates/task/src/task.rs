@@ -120,13 +120,14 @@ impl Logable for Task {
 }
 
 impl Task {
-    pub fn new(target: TargetID) -> Self {
+    pub fn new<T: AsRef<str>>(target: T) -> Self {
+        let target = target.as_ref();
         let log_target = format!("moon:project:{}", target);
 
         Task {
             inputs: string_vec!["**/*"],
             log_target,
-            target,
+            target: target.to_owned(),
             ..Task::default()
         }
     }

@@ -40,7 +40,7 @@ lazy_static! {
                     .unwrap();
 
     // Special package manager handling
-    pub static ref PM_RUN_COMMAND: regex::Regex = regex::create_regex(r#"(npm|pnpm|yarn) run"#)
+    pub static ref PM_RUN_COMMAND: regex::Regex = regex::create_regex(r#"(?:npm|pnpm|yarn) run ([a-zA-Z0-9:-_]+)"#)
         .unwrap();
     pub static ref PM_LIFE_CYCLES: regex::Regex = regex::create_regex(r#"^(prepare|prepublish|prepublishOnly|publish|prepack|pack|postpack|preinstall|install|postinstall|preversion|version|postversion|dependencies)$"#)
         .unwrap();
@@ -230,13 +230,14 @@ impl<'a> ScriptParser<'a> {
                 return Ok(());
             }
         };
-        let mut standalone_scripts = HashMap::new();
 
         // First pass:
         //  - Remove unsupported scripts
         //  - Extract hooks and life cycles
         //  - Convert stand-alone scripts
         //  - Retain && operators
+        let mut standalone_scripts = HashMap::new();
+
         for (name, script) in &scripts {
             if PM_LIFE_CYCLES.is_match(name) {
                 self.life_cycles.insert(name.clone(), script.clone());
@@ -315,13 +316,33 @@ impl<'a> ScriptParser<'a> {
             standalone_scripts.insert(name.clone(), script.clone());
         }
 
-        // Second pass:
-        //  - Parse stand alone and basic scripts without complexity
-        //  - These are typically the base of other scripts
-        //  - Take pre and post into account
+        // Create tasks for simple/stand-alone scripts. Since these may have pre/post hooks,
+        // they must be created *after* the loop above has finished.
         for (name, script) in &standalone_scripts {
             self.create_task(name, script)?;
         }
+
+        // Second pass:
+        //  - Convert scripts that use "npm run", etc
+        //  - Retain && operators
+        let mut run_scripts = HashMap::new();
+
+        self.scripts.retain(|name, script| {
+            if script.contains("&&") {
+                return true;
+            }
+
+            run_scripts.insert(name.clone(), script.clone());
+            false
+        });
+
+        for (name, script) in &run_scripts {
+            self.create_task_from_run(name, script)?;
+        }
+
+        println!("scripts = {:#?}", self.scripts);
+        println!("pre = {:#?}", self.pre);
+        println!("post = {:#?}", self.post);
 
         Ok(())
     }
@@ -336,12 +357,13 @@ impl<'a> ScriptParser<'a> {
         commands
     }
 
-    pub fn create_task<T: AsRef<str>>(
+    pub fn create_task<K: AsRef<str>, V: AsRef<str>>(
         &mut self,
-        name: T,
-        value: &str,
+        name: K,
+        value: V,
     ) -> Result<TaskID, TaskError> {
         let name = name.as_ref();
+        let value = value.as_ref();
         let task_id = clean_script_name(name);
         let target_id = Target::format(self.project_id, &task_id)?;
 
@@ -362,6 +384,48 @@ impl<'a> ScriptParser<'a> {
         }
 
         Ok(task_id)
+    }
+
+    #[track_caller]
+    pub fn create_task_from_run<T: AsRef<str>>(
+        &mut self,
+        name: T,
+        value: &str,
+    ) -> Result<Option<TaskID>, TaskError> {
+        let name = name.as_ref();
+
+        // Extract the script name
+        let caps = PM_RUN_COMMAND.captures(value).unwrap();
+        let run_script_name = caps.get(1).unwrap().as_str().to_owned();
+        let has_delimiter = value.contains(" -- ") || value.ends_with("--");
+
+        // Create the task by having it call the associated moon target
+        if let Some(run_task_id) = self.names_to_ids.get(&run_script_name) {
+            let script = PM_RUN_COMMAND
+                .replace(value, |_caps: &regex::Captures| {
+                    format!(
+                        "moon run {}:{}{}",
+                        self.project_id,
+                        run_task_id,
+                        if has_delimiter { "" } else { " --" }
+                    )
+                })
+                .to_string();
+
+            let task_id = self.create_task(name, script)?;
+
+            return Ok(Some(task_id));
+        }
+
+        warn!(
+            target: TARGET,
+            "Script \"{}\" is pointing to a task that doesn't exist (via script \"{}\"), skipping for project \"{}\".",
+            name,
+            run_script_name,
+            self.project_id
+        );
+
+        Ok(None)
     }
 
     pub fn apply_pre_hooks(&mut self, script_name: &str) -> Result<Vec<TargetID>, TaskError> {

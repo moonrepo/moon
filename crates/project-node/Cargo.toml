@@ -9,3 +9,6 @@ moon_logger = { path = "../logger" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 lazy_static = "1.4.0"
+
+[dev-dependencies]
+pretty_assertions = "1.2.1"

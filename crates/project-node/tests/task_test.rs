@@ -586,4 +586,344 @@ mod create_tasks_from_scripts {
             )
         }
     }
+
+    mod pm_run {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn skips_when_pointing_to_an_unknown() {
+            let pkg = PackageJson {
+                scripts: Some(BTreeMap::from([
+                    ("lint".into(), "eslint .".into()),
+                    ("lint:fix".into(), "npm run invalid -- --fix".into()),
+                ])),
+                ..PackageJson::default()
+            };
+
+            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+
+            assert_eq!(
+                tasks,
+                BTreeMap::from([(
+                    "lint".to_owned(),
+                    Task {
+                        command: "eslint".to_owned(),
+                        args: string_vec!["."],
+                        ..Task::new("project:lint")
+                    }
+                )])
+            )
+        }
+
+        #[test]
+        fn converts_without_args() {
+            let candidates = [
+                "npm run lint",
+                "npm run lint --",
+                "pnpm run lint",
+                "pnpm run lint --",
+                "yarn run lint",
+                "yarn run lint --",
+            ];
+
+            for candidate in candidates {
+                let pkg = PackageJson {
+                    scripts: Some(BTreeMap::from([
+                        ("lint".into(), "eslint .".into()),
+                        ("lint:fix".into(), candidate.to_owned()),
+                    ])),
+                    ..PackageJson::default()
+                };
+
+                let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+
+                assert_eq!(
+                    tasks,
+                    BTreeMap::from([
+                        (
+                            "lint".to_owned(),
+                            Task {
+                                command: "eslint".to_owned(),
+                                args: string_vec!["."],
+                                ..Task::new("project:lint")
+                            }
+                        ),
+                        (
+                            "lint-fix".to_owned(),
+                            Task {
+                                command: "moon".to_owned(),
+                                args: string_vec!["run", "project:lint", "--"],
+                                ..Task::new("project:lint-fix")
+                            }
+                        ),
+                    ])
+                )
+            }
+        }
+
+        #[test]
+        fn converts_with_args() {
+            let candidates = [
+                "npm run lint -- --fix",
+                "pnpm run lint -- --fix",
+                "pnpm run lint --fix",
+                "yarn run lint -- --fix",
+                "yarn run lint --fix",
+            ];
+
+            for candidate in candidates {
+                let pkg = PackageJson {
+                    scripts: Some(BTreeMap::from([
+                        ("lint:fix".into(), candidate.to_owned()),
+                        ("lint".into(), "eslint .".into()),
+                    ])),
+                    ..PackageJson::default()
+                };
+
+                let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+
+                assert_eq!(
+                    tasks,
+                    BTreeMap::from([
+                        (
+                            "lint".to_owned(),
+                            Task {
+                                command: "eslint".to_owned(),
+                                args: string_vec!["."],
+                                ..Task::new("project:lint")
+                            }
+                        ),
+                        (
+                            "lint-fix".to_owned(),
+                            Task {
+                                command: "moon".to_owned(),
+                                args: string_vec!["run", "project:lint", "--", "--fix"],
+                                ..Task::new("project:lint-fix")
+                            }
+                        ),
+                    ])
+                )
+            }
+        }
+
+        #[test]
+        fn handles_env_vars() {
+            let pkg = PackageJson {
+                scripts: Some(BTreeMap::from([
+                    ("build".into(), "webpack build".into()),
+                    (
+                        "build:dev".into(),
+                        "NODE_ENV=development npm run build -- --stats".into(),
+                    ),
+                    (
+                        "build:prod".into(),
+                        "NODE_ENV=production yarn run build".into(),
+                    ),
+                    (
+                        "build:staging".into(),
+                        "NODE_ENV=staging pnpm run build --mode production".into(),
+                    ),
+                ])),
+                ..PackageJson::default()
+            };
+
+            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+
+            assert_eq!(
+                tasks,
+                BTreeMap::from([
+                    (
+                        "build".to_owned(),
+                        Task {
+                            command: "webpack".to_owned(),
+                            args: string_vec!["build"],
+                            ..Task::new("project:build")
+                        }
+                    ),
+                    (
+                        "build-dev".to_owned(),
+                        Task {
+                            command: "moon".to_owned(),
+                            args: string_vec!["run", "project:build", "--", "--stats"],
+                            env: HashMap::from([("NODE_ENV".to_owned(), "development".to_owned())]),
+                            ..Task::new("project:build-dev")
+                        }
+                    ),
+                    (
+                        "build-prod".to_owned(),
+                        Task {
+                            command: "moon".to_owned(),
+                            args: string_vec!["run", "project:build", "--"],
+                            env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                            ..Task::new("project:build-prod")
+                        }
+                    ),
+                    (
+                        "build-staging".to_owned(),
+                        Task {
+                            command: "moon".to_owned(),
+                            args: string_vec!["run", "project:build", "--", "--mode", "production"],
+                            env: HashMap::from([("NODE_ENV".to_owned(), "staging".to_owned())]),
+                            ..Task::new("project:build-staging")
+                        }
+                    ),
+                ])
+            )
+        }
+    }
+}
+
+mod complex_examples {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    // https://github.com/milesj/packemon/blob/master/package.json
+    #[test]
+    fn packemon() {
+        let pkg = PackageJson {
+            scripts: Some(BTreeMap::from([
+                ("build".into(), "yarn run packemon build".into()),
+                ("clean".into(), "yarn run packemon clean".into()),
+                ("coverage".into(), "yarn run test --coverage".into()),
+                ("create-config".into(), "beemo create-config".into()),
+                ("docs".into(), "cd website && yarn run start".into()),
+                ("format".into(), "beemo prettier".into()),
+                ("lint".into(), "beemo eslint".into()),
+                ("packup".into(), "NODE_ENV=production yarn run packemon build --addEngines --addExports --declaration".into()),
+                ("packemon".into(), "node ./packages/packemon/cjs/bin.cjs".into()),
+                ("setup".into(), "yarn dlx --package packemon@latest --package typescript --quiet packemon build".into()),
+                ("test".into(), "beemo jest".into()),
+                ("type".into(), "beemo typescript --build".into()),
+                ("validate".into(), "yarn run packemon validate".into()),
+                // ("check".into(), "yarn run type && yarn run test && yarn run lint".into()),
+                // ("release".into(), "yarn prerelease && beemo run-script lerna-release".into()),
+                // ("version".into(), "yarn install && git add yarn.lock".into()),
+                //("prerelease".into(), "yarn run clean && yarn run setup && yarn run pack && yarn run check".into()),
+            ])),
+            ..PackageJson::default()
+        };
+
+        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+
+        assert_eq!(
+            tasks,
+            BTreeMap::from([
+                (
+                    "build".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:packemon", "--", "build"],
+                        ..Task::new("project:build")
+                    }
+                ),
+                (
+                    "clean".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:packemon", "--", "clean"],
+                        ..Task::new("project:clean")
+                    }
+                ),
+                (
+                    "coverage".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:test", "--", "--coverage"],
+                        ..Task::new("project:coverage")
+                    }
+                ),
+                (
+                    "create-config".to_owned(),
+                    Task {
+                        command: "beemo".to_owned(),
+                        args: string_vec!["create-config"],
+                        ..Task::new("project:create-config")
+                    }
+                ),
+                (
+                    "format".to_owned(),
+                    Task {
+                        command: "beemo".to_owned(),
+                        args: string_vec!["prettier"],
+                        ..Task::new("project:format")
+                    }
+                ),
+                (
+                    "lint".to_owned(),
+                    Task {
+                        command: "beemo".to_owned(),
+                        args: string_vec!["eslint"],
+                        ..Task::new("project:lint")
+                    }
+                ),
+                (
+                    "packup".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec![
+                            "run",
+                            "project:packemon",
+                            "--",
+                            "build",
+                            "--addEngines",
+                            "--addExports",
+                            "--declaration"
+                        ],
+                        env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                        ..Task::new("project:packup")
+                    }
+                ),
+                (
+                    "packemon".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["./packages/packemon/cjs/bin.cjs"],
+                        ..Task::new("project:packemon")
+                    }
+                ),
+                (
+                    "setup".to_owned(),
+                    Task {
+                        command: "yarn".to_owned(),
+                        args: string_vec![
+                            "dlx",
+                            "--package",
+                            "packemon@latest",
+                            "--package",
+                            "typescript",
+                            "--quiet",
+                            "packemon",
+                            "build"
+                        ],
+                        ..Task::new("project:setup")
+                    }
+                ),
+                (
+                    "test".to_owned(),
+                    Task {
+                        command: "beemo".to_owned(),
+                        args: string_vec!["jest"],
+                        ..Task::new("project:test")
+                    }
+                ),
+                (
+                    "type".to_owned(),
+                    Task {
+                        command: "beemo".to_owned(),
+                        args: string_vec!["typescript", "--build"],
+                        ..Task::new("project:type")
+                    }
+                ),
+                (
+                    "validate".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:packemon", "--", "validate"],
+                        ..Task::new("project:validate")
+                    }
+                ),
+            ])
+        )
+    }
 }

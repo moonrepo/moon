@@ -784,7 +784,9 @@ mod complex_examples {
         let pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("build".into(), "yarn run packemon build".into()),
+                ("check".into(), "yarn run type && yarn run test && yarn run lint".into()),
                 ("clean".into(), "yarn run packemon clean".into()),
+                ("commit".into(), "yarn install && git add yarn.lock".into()),
                 ("coverage".into(), "yarn run test --coverage".into()),
                 ("create-config".into(), "beemo create-config".into()),
                 ("docs".into(), "cd website && yarn run start".into()),
@@ -792,14 +794,12 @@ mod complex_examples {
                 ("lint".into(), "beemo eslint".into()),
                 ("packup".into(), "NODE_ENV=production yarn run packemon build --addEngines --addExports --declaration".into()),
                 ("packemon".into(), "node ./packages/packemon/cjs/bin.cjs".into()),
+                // ("prerelease".into(), "yarn run clean && yarn run setup && yarn run pack && yarn run check".into()),
+                ("release".into(), "beemo run-script lerna-release".into()),
                 ("setup".into(), "yarn dlx --package packemon@latest --package typescript --quiet packemon build".into()),
                 ("test".into(), "beemo jest".into()),
                 ("type".into(), "beemo typescript --build".into()),
                 ("validate".into(), "yarn run packemon validate".into()),
-                // ("check".into(), "yarn run type && yarn run test && yarn run lint".into()),
-                // ("release".into(), "yarn prerelease && beemo run-script lerna-release".into()),
-                // ("version".into(), "yarn install && git add yarn.lock".into()),
-                //("prerelease".into(), "yarn run clean && yarn run setup && yarn run pack && yarn run check".into()),
             ])),
             ..PackageJson::default()
         };
@@ -818,11 +818,38 @@ mod complex_examples {
                     }
                 ),
                 (
+                    "check".to_owned(),
+                    Task {
+                        command: "noop".to_owned(),
+                        deps: string_vec!["~:type", "~:test", "~:lint"],
+                        type_of: TaskType::System,
+                        ..Task::new("project:check")
+                    }
+                ),
+                (
                     "clean".to_owned(),
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:packemon", "--", "clean"],
                         ..Task::new("project:clean")
+                    }
+                ),
+                (
+                    "commit-req1".to_owned(),
+                    Task {
+                        command: "yarn".to_owned(),
+                        args: string_vec!["install"],
+                        ..Task::new("project:commit-req1")
+                    }
+                ),
+                (
+                    "commit".to_owned(),
+                    Task {
+                        command: "git".to_owned(),
+                        args: string_vec!["add", "yarn.lock"],
+                        deps: string_vec!["~:commit-req1"],
+                        type_of: TaskType::System,
+                        ..Task::new("project:commit")
                     }
                 ),
                 (
@@ -880,6 +907,14 @@ mod complex_examples {
                         command: "node".to_owned(),
                         args: string_vec!["./packages/packemon/cjs/bin.cjs"],
                         ..Task::new("project:packemon")
+                    }
+                ),
+                (
+                    "release".to_owned(),
+                    Task {
+                        command: "beemo".to_owned(),
+                        args: string_vec!["run-script", "lerna-release"],
+                        ..Task::new("project:release")
                     }
                 ),
                 (

@@ -325,19 +325,28 @@ impl<'a> ScriptParser<'a> {
         // Second pass:
         //  - Convert scripts that use "npm run", etc
         //  - Retain && operators
+        let mut multi_scripts = HashMap::new();
         let mut run_scripts = HashMap::new();
 
         self.scripts.retain(|name, script| {
             if script.contains("&&") {
-                return true;
+                multi_scripts.insert(name.clone(), script.clone());
+            } else {
+                run_scripts.insert(name.clone(), script.clone());
             }
 
-            run_scripts.insert(name.clone(), script.clone());
             false
         });
 
         for (name, script) in &run_scripts {
             self.create_task_from_run(name, script)?;
+        }
+
+        // Third pass:
+        //  - Convert scripts that contain &&
+        //  - These are quite complex and require special treatmeant
+        for (name, script) in &multi_scripts {
+            self.create_task_from_multiple(name, script)?;
         }
 
         println!("scripts = {:#?}", self.scripts);
@@ -381,6 +390,56 @@ impl<'a> ScriptParser<'a> {
         // Use this target as a `deps` for post hooks
         if self.post.contains_key(name) {
             self.apply_post_hooks(name, &task_id)?;
+        }
+
+        Ok(task_id)
+    }
+
+    #[track_caller]
+    pub fn create_task_from_multiple<T: AsRef<str>>(
+        &mut self,
+        name: T,
+        value: &str,
+    ) -> Result<TaskID, TaskError> {
+        let name = name.as_ref();
+        let mut scripts: Vec<_> = value.split("&&").collect();
+        let mut deps: Vec<String> = vec![];
+
+        // Extract all "npm run" style commands, as they will be task deps
+        scripts.retain(|script| {
+            if let Some(caps) = PM_RUN_COMMAND.captures(script) {
+                let run_script_name = caps.get(1).unwrap().as_str();
+
+                if let Some(dep_task_id) = self.names_to_ids.get(run_script_name) {
+                    deps.push(format!("~:{}", dep_task_id));
+                }
+
+                return false;
+            }
+
+            true
+        });
+
+        let task_id;
+
+        // When no scripts remain, we can use a noop task + deps
+        if scripts.is_empty() {
+            task_id = self.create_task(name, "")?;
+
+        // Otherwise the last script becomes the primary command, and the others are deps
+        } else {
+            task_id = self.create_task(name, scripts.pop().unwrap())?;
+
+            for (index, script) in scripts.iter().enumerate() {
+                deps.push(format!(
+                    "~:{}",
+                    self.create_task(format!("{}-req{}", name, index + 1), script)?
+                ));
+            }
+        }
+
+        if let Some(task) = self.tasks.get_mut(&task_id) {
+            task.deps = deps;
         }
 
         Ok(task_id)

@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use moon_lang_node::package::PackageJson;
+use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
 use moon_task::{Target, Task, TaskError, TaskID, TaskType};
 use moon_utils::{process, regex};
@@ -28,7 +28,7 @@ lazy_static! {
 
     // This isn't exhaustive but captures very popular tools
     pub static ref DEV_COMMAND: regex::Regex =
-        regex::create_regex(r#"(concurrently)|(gatsby (new|dev|develop|serve|repl))|(next (dev|start))|(parcel [^build])|(react-scripts start)|(snowpack dev)|(vite (dev|preview|serve))|(vue-cli-service serve)|(webpack (s|serve|server|w|watch|-))"#)
+        regex::create_regex(r#"(concurrently)|(gatsby (new|dev|develop|serve|repl))|(next (dev|start))|(packemon watch)|(parcel [^build])|(react-scripts start)|(snowpack dev)|(vite (dev|preview|serve))|(vue-cli-service serve)|(webpack (s|serve|server|w|watch|-))"#)
             .unwrap();
 
     pub static ref DEV_COMMAND_SOLO: regex::Regex =
@@ -40,9 +40,9 @@ lazy_static! {
                     .unwrap();
 
     // Special package manager handling
-    pub static ref PM_RUN_COMMAND: regex::Regex = regex::create_regex(r#"(?:npm|pnpm|yarn) run ([a-zA-Z0-9:-_]+)"#)
+    pub static ref PM_RUN_COMMAND: regex::Regex = regex::create_regex(r#"(?:npm|pnpm|yarn) run ([a-zA-Z0-9:-_]+)([^&]+)?"#)
         .unwrap();
-    pub static ref PM_LIFE_CYCLES: regex::Regex = regex::create_regex(r#"^(prepare|prepublish|prepublishOnly|publish|prepack|pack|postpack|preinstall|install|postinstall|preversion|version|postversion|dependencies)$"#)
+    pub static ref PM_LIFE_CYCLES: regex::Regex = regex::create_regex(r#"^(preprepare|prepare|postprepare|prepublish|prepublishOnly|publish|postpublish|prepack|pack|postpack|preinstall|install|postinstall|preversion|version|postversion|dependencies)$"#)
         .unwrap();
 
     // These patterns are currently not allowed
@@ -178,11 +178,12 @@ pub fn convert_script_to_task(
 
 pub fn create_tasks_from_scripts(
     project_id: &str,
-    package_json: &PackageJson,
+    package_json: &mut PackageJson,
 ) -> Result<TasksMap, TaskError> {
     let mut parser = ScriptParser::new(project_id);
 
-    parser.parse(package_json)?;
+    parser.parse_scripts(package_json)?;
+    parser.update_package(package_json)?;
 
     Ok(parser.tasks)
 }
@@ -227,7 +228,19 @@ impl<'a> ScriptParser<'a> {
         }
     }
 
-    pub fn parse(&mut self, package_json: &PackageJson) -> Result<(), TaskError> {
+    pub fn update_package(&mut self, package_json: &mut PackageJson) -> Result<(), TaskError> {
+        let mut scripts: ScriptsSet = BTreeMap::new();
+
+        for (name, script) in &self.life_cycles {
+            scripts.insert(name.to_owned(), self.replace_run_commands(script));
+        }
+
+        package_json.set_scripts(scripts);
+
+        Ok(())
+    }
+
+    pub fn parse_scripts(&mut self, package_json: &PackageJson) -> Result<(), TaskError> {
         let scripts = match &package_json.scripts {
             Some(s) => s.clone(),
             None => {
@@ -447,24 +460,11 @@ impl<'a> ScriptParser<'a> {
     ) -> Result<Option<TaskID>, TaskError> {
         let name = name.as_ref();
 
-        // Extract the script name
         let caps = PM_RUN_COMMAND.captures(value).unwrap();
         let run_script_name = caps.get(1).unwrap().as_str().to_owned();
-        let has_delimiter = value.contains(" -- ") || value.ends_with("--");
 
-        // Create the task by having it call the associated moon target
-        if let Some(run_task_id) = self.names_to_ids.get(&run_script_name) {
-            let script = PM_RUN_COMMAND
-                .replace(value, |_caps: &regex::Captures| {
-                    format!(
-                        "moon run {}:{}{}",
-                        self.project_id,
-                        run_task_id,
-                        if has_delimiter { "" } else { " --" }
-                    )
-                })
-                .to_string();
-
+        if self.names_to_ids.contains_key(&run_script_name) {
+            let script = self.replace_run_commands(value);
             let task_id = self.create_task(name, script)?;
 
             return Ok(Some(task_id));
@@ -476,11 +476,7 @@ impl<'a> ScriptParser<'a> {
         Ok(None)
     }
 
-    pub fn apply_pre_post_hooks(
-        &mut self,
-        script_name: &str,
-        task_id: &str,
-    ) -> Result<(), TaskError> {
+    fn apply_pre_post_hooks(&mut self, script_name: &str, task_id: &str) -> Result<(), TaskError> {
         // Convert pre hooks as `deps`
         if self.pre.contains_key(script_name) {
             let pre = self.pre.remove(script_name).unwrap();
@@ -504,5 +500,41 @@ impl<'a> ScriptParser<'a> {
         }
 
         Ok(())
+    }
+
+    fn replace_run_commands(&self, script: &str) -> String {
+        PM_RUN_COMMAND
+            .replace_all(script, |caps: &regex::Captures| {
+                let run_script_name = caps.get(1).unwrap().as_str();
+                let run_args = match caps.get(2) {
+                    Some(v) => {
+                        if v.as_str() == " --" {
+                            ""
+                        } else {
+                            v.as_str()
+                        }
+                    }
+                    None => "",
+                };
+                let has_delimiter = run_args.starts_with("-- ") || run_args.starts_with(" -- ");
+                let has_args = !run_args.is_empty() && run_args != " ";
+
+                match self.names_to_ids.get(run_script_name) {
+                    Some(task_id) => format!(
+                        "moon run {}:{}{}{}",
+                        self.project_id,
+                        task_id,
+                        if !has_delimiter && has_args {
+                            " --"
+                        } else {
+                            ""
+                        },
+                        run_args
+                    ),
+                    None => caps.get(0).unwrap().as_str().to_owned(),
+                }
+            })
+            .to_string()
+            .to_owned()
     }
 }

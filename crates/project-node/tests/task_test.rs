@@ -354,7 +354,7 @@ mod create_tasks_from_scripts {
 
     #[test]
     fn ignores_unsupported_syntax() {
-        let pkg = PackageJson {
+        let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("cd".into(), "cd website && yarn build".into()),
                 ("out".into(), "some-bin > output.log".into()),
@@ -366,14 +366,14 @@ mod create_tasks_from_scripts {
             ..PackageJson::default()
         };
 
-        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+        let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
         assert!(tasks.is_empty());
     }
 
     #[test]
     fn renames_to_ids() {
-        let pkg = PackageJson {
+        let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("base".into(), "script".into()),
                 ("foo-bar".into(), "script".into()),
@@ -388,7 +388,7 @@ mod create_tasks_from_scripts {
             ..PackageJson::default()
         };
 
-        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+        let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
         assert_eq!(
             tasks.keys().cloned().collect::<Vec<String>>(),
@@ -406,7 +406,7 @@ mod create_tasks_from_scripts {
 
     #[test]
     fn converts_stand_alone() {
-        let pkg = PackageJson {
+        let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("test".into(), "jest .".into()),
                 ("lint".into(), "eslint src/**/* .".into()),
@@ -415,7 +415,9 @@ mod create_tasks_from_scripts {
             ..PackageJson::default()
         };
 
-        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+        let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+        assert_eq!(pkg.scripts, None);
 
         assert_eq!(
             tasks,
@@ -454,7 +456,7 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn creates_pre_and_post() {
-            let pkg = PackageJson {
+            let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("test".into(), "jest .".into()),
                     ("pretest".into(), "do something".into()),
@@ -463,7 +465,9 @@ mod create_tasks_from_scripts {
                 ..PackageJson::default()
             };
 
-            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+            assert_eq!(pkg.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -500,7 +504,7 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn supports_multiple_pre_via_andand() {
-            let pkg = PackageJson {
+            let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("test".into(), "jest .".into()),
                     ("pretest".into(), "do something && do another".into()),
@@ -508,7 +512,9 @@ mod create_tasks_from_scripts {
                 ..PackageJson::default()
             };
 
-            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+            assert_eq!(pkg.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -545,7 +551,7 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn supports_multiple_post_via_andand() {
-            let pkg = PackageJson {
+            let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("test".into(), "jest .".into()),
                     ("posttest".into(), "do something && do another".into()),
@@ -553,7 +559,9 @@ mod create_tasks_from_scripts {
                 ..PackageJson::default()
             };
 
-            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+            assert_eq!(pkg.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -589,7 +597,7 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn handles_pre_within_script() {
-            let pkg = PackageJson {
+            let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("release".into(), "npm run prerelease && npm publish".into()),
                     ("prerelease".into(), "webpack build".into()),
@@ -597,7 +605,9 @@ mod create_tasks_from_scripts {
                 ..PackageJson::default()
             };
 
-            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+            assert_eq!(pkg.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -630,7 +640,7 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn skips_when_pointing_to_an_unknown() {
-            let pkg = PackageJson {
+            let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("lint".into(), "eslint .".into()),
                     ("lint:fix".into(), "npm run invalid -- --fix".into()),
@@ -638,7 +648,9 @@ mod create_tasks_from_scripts {
                 ..PackageJson::default()
             };
 
-            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+            assert_eq!(pkg.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -665,7 +677,7 @@ mod create_tasks_from_scripts {
             ];
 
             for candidate in candidates {
-                let pkg = PackageJson {
+                let mut pkg = PackageJson {
                     scripts: Some(BTreeMap::from([
                         ("lint".into(), "eslint .".into()),
                         ("lint:fix".into(), candidate.to_owned()),
@@ -673,7 +685,9 @@ mod create_tasks_from_scripts {
                     ..PackageJson::default()
                 };
 
-                let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+                let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+                assert_eq!(pkg.scripts, None);
 
                 assert_eq!(
                     tasks,
@@ -690,7 +704,7 @@ mod create_tasks_from_scripts {
                             "lint-fix".to_owned(),
                             Task {
                                 command: "moon".to_owned(),
-                                args: string_vec!["run", "project:lint", "--"],
+                                args: string_vec!["run", "project:lint"],
                                 ..Task::new("project:lint-fix")
                             }
                         ),
@@ -710,7 +724,7 @@ mod create_tasks_from_scripts {
             ];
 
             for candidate in candidates {
-                let pkg = PackageJson {
+                let mut pkg = PackageJson {
                     scripts: Some(BTreeMap::from([
                         ("lint:fix".into(), candidate.to_owned()),
                         ("lint".into(), "eslint .".into()),
@@ -718,7 +732,9 @@ mod create_tasks_from_scripts {
                     ..PackageJson::default()
                 };
 
-                let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+                let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+                assert_eq!(pkg.scripts, None);
 
                 assert_eq!(
                     tasks,
@@ -746,7 +762,7 @@ mod create_tasks_from_scripts {
 
         #[test]
         fn handles_env_vars() {
-            let pkg = PackageJson {
+            let mut pkg = PackageJson {
                 scripts: Some(BTreeMap::from([
                     ("build".into(), "webpack build".into()),
                     (
@@ -765,7 +781,9 @@ mod create_tasks_from_scripts {
                 ..PackageJson::default()
             };
 
-            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+            assert_eq!(pkg.scripts, None);
 
             assert_eq!(
                 tasks,
@@ -791,7 +809,7 @@ mod create_tasks_from_scripts {
                         "build-prod".to_owned(),
                         Task {
                             command: "moon".to_owned(),
-                            args: string_vec!["run", "project:build", "--"],
+                            args: string_vec!["run", "project:build"],
                             env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
                             ..Task::new("project:build-prod")
                         }
@@ -809,6 +827,76 @@ mod create_tasks_from_scripts {
             )
         }
     }
+
+    mod life_cycle {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn rewrites_run_commands() {
+            let mut pkg = PackageJson {
+                scripts: Some(BTreeMap::from([
+                    ("build".into(), "babel .".into()),
+                    ("lint".into(), "eslint .".into()),
+                    ("test".into(), "jest .".into()),
+                    ("preversion".into(), "npm run lint && npm run test".into()),
+                    ("version".into(), "npm run build".into()),
+                    (
+                        "postversion".into(),
+                        "npm ci && git add package-lock.json".into(),
+                    ),
+                ])),
+                ..PackageJson::default()
+            };
+
+            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+            assert_eq!(
+                pkg.scripts,
+                Some(BTreeMap::from([
+                    (
+                        "preversion".to_owned(),
+                        "moon run project:lint && moon run project:test".to_owned()
+                    ),
+                    ("version".to_owned(), "moon run project:build".to_owned()),
+                    (
+                        "postversion".to_owned(),
+                        "npm ci && git add package-lock.json".to_owned()
+                    ),
+                ]))
+            );
+
+            assert_eq!(
+                tasks,
+                BTreeMap::from([
+                    (
+                        "build".to_owned(),
+                        Task {
+                            command: "babel".to_owned(),
+                            args: string_vec!["."],
+                            ..Task::new("project:build")
+                        }
+                    ),
+                    (
+                        "lint".to_owned(),
+                        Task {
+                            command: "eslint".to_owned(),
+                            args: string_vec!["."],
+                            ..Task::new("project:lint")
+                        }
+                    ),
+                    (
+                        "test".to_owned(),
+                        Task {
+                            command: "jest".to_owned(),
+                            args: string_vec!["."],
+                            ..Task::new("project:test")
+                        }
+                    )
+                ])
+            )
+        }
+    }
 }
 
 mod complex_examples {
@@ -818,7 +906,7 @@ mod complex_examples {
     // https://github.com/babel/babel/blob/main/package.json
     #[test]
     fn babel() {
-        let pkg = PackageJson {
+        let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("postinstall".into(), "husky install".into()),
                 ("bootstrap".into(), "make bootstrap".into()),
@@ -848,7 +936,18 @@ mod complex_examples {
             ..PackageJson::default()
         };
 
-        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+        let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+        assert_eq!(
+            pkg.scripts,
+            Some(BTreeMap::from([
+                ("postinstall".to_owned(), "husky install".to_owned()),
+                (
+                    "version".to_owned(),
+                    "yarn --immutable-cache && git add yarn.lock".to_owned()
+                )
+            ]))
+        );
 
         assert_eq!(
             tasks,
@@ -946,7 +1045,7 @@ mod complex_examples {
     // https://github.com/milesj/packemon/blob/master/package.json
     #[test]
     fn packemon() {
-        let pkg = PackageJson {
+        let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("build".into(), "yarn run packemon build".into()),
                 ("check".into(), "yarn run type && yarn run test && yarn run lint".into()),
@@ -969,7 +1068,9 @@ mod complex_examples {
             ..PackageJson::default()
         };
 
-        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+        let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+        assert_eq!(pkg.scripts, None);
 
         assert_eq!(
             tasks,
@@ -986,7 +1087,7 @@ mod complex_examples {
                     "check-dep1".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:type", "--"],
+                        args: string_vec!["run", "project:type"],
                         ..Task::new("project:check-dep1")
                     }
                 ),
@@ -994,7 +1095,7 @@ mod complex_examples {
                     "check-dep2".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:test", "--"],
+                        args: string_vec!["run", "project:test"],
                         deps: string_vec!["~:check-dep1"],
                         ..Task::new("project:check-dep2")
                     }
@@ -1003,7 +1104,7 @@ mod complex_examples {
                     "check".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:lint", "--"],
+                        args: string_vec!["run", "project:lint"],
                         deps: string_vec!["~:check-dep2"],
                         ..Task::new("project:check")
                     }
@@ -1095,7 +1196,7 @@ mod complex_examples {
                     "prerelease-dep1".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:clean", "--"],
+                        args: string_vec!["run", "project:clean"],
                         ..Task::new("project:prerelease-dep1")
                     }
                 ),
@@ -1103,7 +1204,7 @@ mod complex_examples {
                     "prerelease-dep2".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:setup", "--"],
+                        args: string_vec!["run", "project:setup"],
                         deps: string_vec!["~:prerelease-dep1"],
                         ..Task::new("project:prerelease-dep2")
                     }
@@ -1112,7 +1213,7 @@ mod complex_examples {
                     "prerelease-dep3".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:packup", "--"],
+                        args: string_vec!["run", "project:packup"],
                         deps: string_vec!["~:prerelease-dep2"],
                         ..Task::new("project:prerelease-dep3")
                     }
@@ -1121,7 +1222,7 @@ mod complex_examples {
                     "prerelease".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:check", "--"],
+                        args: string_vec!["run", "project:check"],
                         deps: string_vec!["~:prerelease-dep3"],
                         ..Task::new("project:prerelease")
                     }
@@ -1183,7 +1284,7 @@ mod complex_examples {
     // https://github.com/prettier/prettier/blob/main/package.json
     #[test]
     fn prettier() {
-        let pkg = PackageJson {
+        let mut pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("prepublishOnly".into(), "echo \"Error: must publish from dist/\" && exit 1".into()),
                 ("test".into(), "jest".into()),
@@ -1212,7 +1313,15 @@ mod complex_examples {
             ..PackageJson::default()
         };
 
-        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+        let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+
+        assert_eq!(
+            pkg.scripts,
+            Some(BTreeMap::from([(
+                "prepublishOnly".to_owned(),
+                "echo \"Error: must publish from dist/\" && exit 1".to_owned()
+            )]))
+        );
 
         assert_eq!(
             tasks,
@@ -1344,7 +1453,7 @@ mod complex_examples {
                     "perf-inspect-dep1".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:build", "--"],
+                        args: string_vec!["run", "project:build"],
                         ..Task::new("project:perf-inspect-dep1")
                     }
                 ),
@@ -1352,7 +1461,7 @@ mod complex_examples {
                     "perf-dep1".to_owned(),
                     Task {
                         command: "moon".to_owned(),
-                        args: string_vec!["run", "project:build", "--"],
+                        args: string_vec!["run", "project:build"],
                         ..Task::new("project:perf-dep1")
                     }
                 ),

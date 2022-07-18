@@ -236,6 +236,24 @@ impl PackageJson {
 
         true
     }
+
+    /// Set the `scripts` field.
+    /// Return true if the new value is different from the old value.
+    pub fn set_scripts(&mut self, scripts: ScriptsSet) -> bool {
+        if self.scripts.is_none() && scripts.is_empty() {
+            return false;
+        }
+
+        self.dirty = true;
+
+        if scripts.is_empty() {
+            self.scripts = None;
+        } else {
+            self.scripts = Some(scripts);
+        }
+
+        true
+    }
 }
 
 pub type BinSet = BTreeMap<String, String>;
@@ -405,6 +423,10 @@ async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), 
 
     if let Some(package_manager) = &package.package_manager {
         data["packageManager"] = json::from(package_manager.clone());
+    }
+
+    if let Some(scripts) = &package.scripts {
+        data["scripts"] = json::from(scripts.clone());
     }
 
     let mut data = json::stringify_pretty(data, 2);

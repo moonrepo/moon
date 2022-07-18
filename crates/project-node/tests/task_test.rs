@@ -779,6 +779,134 @@ mod complex_examples {
     use super::*;
     use pretty_assertions::assert_eq;
 
+    // https://github.com/babel/babel/blob/main/package.json
+    #[test]
+    fn babel() {
+        let pkg = PackageJson {
+            scripts: Some(BTreeMap::from([
+                ("postinstall".into(), "husky install".into()),
+                ("bootstrap".into(), "make bootstrap".into()),
+                ("codesandbox:build".into(), "make build-no-bundle".into()),
+                ("build".into(), "make build".into()),
+                ("fix".into(), "make fix".into()),
+                ("lint".into(), "make lint".into()),
+                ("test".into(), "make test".into()),
+                (
+                    "version".into(),
+                    "yarn --immutable-cache && git add yarn.lock".into(),
+                ),
+                ("test:esm".into(), "node test/esm/index.js".into()),
+                (
+                    "test:runtime:generate-absolute-runtime".into(),
+                    "node test/runtime-integration/generate-absolute-runtime.cjs".into(),
+                ),
+                (
+                    "test:runtime:bundlers".into(),
+                    "node test/runtime-integration/bundlers.cjs".into(),
+                ),
+                (
+                    "test:runtime:node".into(),
+                    "node test/runtime-integration/node.cjs".into(),
+                ),
+            ])),
+            ..PackageJson::default()
+        };
+
+        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+
+        assert_eq!(
+            tasks,
+            BTreeMap::from([
+                (
+                    "bootstrap".to_owned(),
+                    Task {
+                        command: "make".to_owned(),
+                        args: string_vec!["bootstrap"],
+                        type_of: TaskType::System,
+                        ..Task::new("project:bootstrap")
+                    }
+                ),
+                (
+                    "build".to_owned(),
+                    Task {
+                        command: "make".to_owned(),
+                        args: string_vec!["build"],
+                        type_of: TaskType::System,
+                        ..Task::new("project:build")
+                    }
+                ),
+                (
+                    "codesandbox-build".to_owned(),
+                    Task {
+                        command: "make".to_owned(),
+                        args: string_vec!["build-no-bundle"],
+                        type_of: TaskType::System,
+                        ..Task::new("project:codesandbox-build")
+                    }
+                ),
+                (
+                    "fix".to_owned(),
+                    Task {
+                        command: "make".to_owned(),
+                        args: string_vec!["fix"],
+                        type_of: TaskType::System,
+                        ..Task::new("project:fix")
+                    }
+                ),
+                (
+                    "lint".to_owned(),
+                    Task {
+                        command: "make".to_owned(),
+                        args: string_vec!["lint"],
+                        type_of: TaskType::System,
+                        ..Task::new("project:lint")
+                    }
+                ),
+                (
+                    "test".to_owned(),
+                    Task {
+                        command: "make".to_owned(),
+                        args: string_vec!["test"],
+                        type_of: TaskType::System,
+                        ..Task::new("project:test")
+                    }
+                ),
+                (
+                    "test-esm".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["test/esm/index.js"],
+                        ..Task::new("project:test-esm")
+                    }
+                ),
+                (
+                    "test-runtime-bundlers".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["test/runtime-integration/bundlers.cjs"],
+                        ..Task::new("project:test-runtime-bundlers")
+                    }
+                ),
+                (
+                    "test-runtime-generate-absolute-runtime".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["test/runtime-integration/generate-absolute-runtime.cjs"],
+                        ..Task::new("project:test-runtime-generate-absolute-runtime")
+                    }
+                ),
+                (
+                    "test-runtime-node".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["test/runtime-integration/node.cjs"],
+                        ..Task::new("project:test-runtime-node")
+                    }
+                ),
+            ])
+        );
+    }
+
     // https://github.com/milesj/packemon/blob/master/package.json
     #[test]
     fn packemon() {

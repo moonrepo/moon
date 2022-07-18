@@ -586,6 +586,42 @@ mod create_tasks_from_scripts {
                 ])
             )
         }
+
+        #[test]
+        fn handles_pre_within_script() {
+            let pkg = PackageJson {
+                scripts: Some(BTreeMap::from([
+                    ("release".into(), "npm run prerelease && npm publish".into()),
+                    ("prerelease".into(), "webpack build".into()),
+                ])),
+                ..PackageJson::default()
+            };
+
+            let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+
+            assert_eq!(
+                tasks,
+                BTreeMap::from([
+                    (
+                        "prerelease".to_owned(),
+                        Task {
+                            command: "webpack".to_owned(),
+                            args: string_vec!["build"],
+                            ..Task::new("project:prerelease")
+                        }
+                    ),
+                    (
+                        "release".to_owned(),
+                        Task {
+                            command: "npm".to_owned(),
+                            args: string_vec!["publish"],
+                            deps: string_vec!["~:prerelease"],
+                            ..Task::new("project:release")
+                        }
+                    ),
+                ])
+            )
+        }
     }
 
     mod pm_run {
@@ -924,7 +960,7 @@ mod complex_examples {
                 ("packup".into(), "NODE_ENV=production yarn run packemon build --addEngines --addExports --declaration".into()),
                 ("packemon".into(), "node ./packages/packemon/cjs/bin.cjs".into()),
                 ("prerelease".into(), "yarn run clean && yarn run setup && yarn run packup && yarn run check".into()),
-                ("release".into(), "beemo run-script lerna-release".into()),
+                ("release".into(), "yarn run prerelease && beemo run-script lerna-release".into()),
                 ("setup".into(), "yarn dlx --package packemon@latest --package typescript --quiet packemon build".into()),
                 ("test".into(), "beemo jest".into()),
                 ("type".into(), "beemo typescript --build".into()),

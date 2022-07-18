@@ -208,6 +208,9 @@ struct ScriptParser<'a> {
 
     /// Tasks that have been parsed and converted from scripts.
     tasks: TasksMap,
+
+    /// Scripts that ran into issues while parsing.
+    unresolved_scripts: ScriptsMap,
 }
 
 impl<'a> ScriptParser<'a> {
@@ -220,6 +223,7 @@ impl<'a> ScriptParser<'a> {
             project_id,
             scripts: HashMap::new(),
             tasks: BTreeMap::new(),
+            unresolved_scripts: HashMap::new(),
         }
     }
 
@@ -348,7 +352,12 @@ impl<'a> ScriptParser<'a> {
         }
 
         // Last pass:
+        //  - Try to parse unresolved scripts again.
         //  - Hook up pre/post hooks
+        for (name, script) in self.unresolved_scripts.clone() {
+            self.parse_script(&name, &script)?;
+        }
+
         for (script_name, task_id) in self.names_to_ids.clone() {
             self.apply_pre_post_hooks(&script_name, &task_id)?;
         }
@@ -461,13 +470,8 @@ impl<'a> ScriptParser<'a> {
             return Ok(Some(task_id));
         }
 
-        warn!(
-            target: TARGET,
-            "Script \"{}\" is pointing to a task that doesn't exist (via script \"{}\"), skipping for project \"{}\".",
-            name,
-            run_script_name,
-            self.project_id
-        );
+        self.unresolved_scripts
+            .insert(name.to_owned(), value.to_owned());
 
         Ok(None)
     }

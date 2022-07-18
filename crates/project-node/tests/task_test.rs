@@ -1143,4 +1143,251 @@ mod complex_examples {
             ])
         )
     }
+
+    // https://github.com/prettier/prettier/blob/main/package.json
+    #[test]
+    fn prettier() {
+        let pkg = PackageJson {
+            scripts: Some(BTreeMap::from([
+                ("prepublishOnly".into(), "echo \"Error: must publish from dist/\" && exit 1".into()),
+                ("test".into(), "jest".into()),
+                ("test:dev-package".into(), "cross-env INSTALL_PACKAGE=1 jest".into()),
+                ("test:dist".into(), "cross-env NODE_ENV=production jest".into()),
+                ("test:dist-standalone".into(), "cross-env NODE_ENV=production TEST_STANDALONE=1 jest".into()),
+                ("test:integration".into(), "jest tests/integration".into()),
+                ("test:dist-lint".into(), "eslint --no-eslintrc --no-ignore --no-inline-config --config=./scripts/bundle-eslint-config.cjs \"dist/**/*.{js,mjs}\"".into()),
+                ("perf".into(), "yarn run build && cross-env NODE_ENV=production node ./dist/bin-prettier.js".into()),
+                ("perf:inspect".into(), "yarn run build && cross-env NODE_ENV=production node --inspect-brk ./dist/bin-prettier.js".into()),
+                ("perf:benchmark".into(), "yarn run perf --debug-benchmark".into()),
+                ("lint".into(), "run-p lint:*".into()),
+                ("lint:typecheck".into(), "tsc".into()),
+                ("lint:eslint".into(), "cross-env EFF_NO_LINK_RULES=true eslint . --format friendly".into()),
+                ("lint:changelog".into(), "node ./scripts/lint-changelog.mjs".into()),
+                ("lint:prettier".into(), "prettier . \"!test*\" --check".into()),
+                ("lint:spellcheck".into(), "cspell --no-progress --relative --dot --gitignore".into()),
+                ("lint:deps".into(), "node ./scripts/check-deps.mjs".into()),
+                ("lint:actionlint".into(), "node-actionlint".into()),
+                ("fix:eslint".into(), "yarn run lint:eslint --fix".into()),
+                ("fix:prettier".into(), "yarn run lint:prettier --write".into()),
+                ("build".into(), "node ./scripts/build/build.mjs".into()),
+                ("build:website".into(), "node ./scripts/build-website.mjs".into()),
+                ("vendors:bundle".into(), "node ./scripts/vendors/bundle-vendors.mjs".into()),
+            ])),
+            ..PackageJson::default()
+        };
+
+        let tasks = create_tasks_from_scripts("project", &pkg).unwrap();
+
+        assert_eq!(
+            tasks,
+            BTreeMap::from([
+                (
+                    "lint".to_owned(),
+                    Task {
+                        command: "run-p".to_owned(),
+                        args: string_vec!["lint:*"],
+                        ..Task::new("project:lint")
+                    }
+                ),
+                (
+                    "lint-actionlint".to_owned(),
+                    Task {
+                        command: "node-actionlint".to_owned(),
+                        ..Task::new("project:lint-actionlint")
+                    }
+                ),
+                (
+                    "lint-changelog".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["./scripts/lint-changelog.mjs"],
+                        ..Task::new("project:lint-changelog")
+                    }
+                ),
+                (
+                    "lint-deps".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["./scripts/check-deps.mjs"],
+                        ..Task::new("project:lint-deps")
+                    }
+                ),
+                (
+                    "lint-eslint".to_owned(),
+                    Task {
+                        command: "cross-env".to_owned(),
+                        args: string_vec!["eslint", ".", "--format", "friendly"],
+                        env: HashMap::from([("EFF_NO_LINK_RULES".to_owned(), "true".to_owned())]),
+                        ..Task::new("project:lint-eslint")
+                    }
+                ),
+                (
+                    "lint-prettier".to_owned(),
+                    Task {
+                        command: "prettier".to_owned(),
+                        args: string_vec![".", "!test*", "--check"],
+                        ..Task::new("project:lint-prettier")
+                    }
+                ),
+                (
+                    "lint-spellcheck".to_owned(),
+                    Task {
+                        command: "cspell".to_owned(),
+                        args: string_vec!["--no-progress", "--relative", "--dot", "--gitignore"],
+                        ..Task::new("project:lint-spellcheck")
+                    }
+                ),
+                (
+                    "lint-typecheck".to_owned(),
+                    Task {
+                        command: "tsc".to_owned(),
+                        ..Task::new("project:lint-typecheck")
+                    }
+                ),
+                (
+                    "fix-eslint".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:lint-eslint", "--", "--fix"],
+                        ..Task::new("project:fix-eslint")
+                    }
+                ),
+                (
+                    "fix-prettier".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:lint-prettier", "--", "--write"],
+                        ..Task::new("project:fix-prettier")
+                    }
+                ),
+                (
+                    "build".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["./scripts/build/build.mjs"],
+                        ..Task::new("project:build")
+                    }
+                ),
+                (
+                    "build-website".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["./scripts/build-website.mjs"],
+                        ..Task::new("project:build-website")
+                    }
+                ),
+                (
+                    "perf".to_owned(),
+                    Task {
+                        command: "cross-env".to_owned(),
+                        args: string_vec!["node", "./dist/bin-prettier.js"],
+                        deps: string_vec!["~:perf-dep1"],
+                        env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                        ..Task::new("project:perf")
+                    }
+                ),
+                (
+                    "perf-benchmark".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:perf", "--", "--debug-benchmark"],
+                        ..Task::new("project:perf-benchmark")
+                    }
+                ),
+                (
+                    "perf-inspect".to_owned(),
+                    Task {
+                        command: "cross-env".to_owned(),
+                        args: string_vec!["node", "--inspect-brk", "./dist/bin-prettier.js"],
+                        deps: string_vec!["~:perf-inspect-dep1"],
+                        env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                        ..Task::new("project:perf-inspect")
+                    }
+                ),
+                (
+                    "perf-inspect-dep1".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:build", "--"],
+                        ..Task::new("project:perf-inspect-dep1")
+                    }
+                ),
+                (
+                    "perf-dep1".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:build", "--"],
+                        ..Task::new("project:perf-dep1")
+                    }
+                ),
+                (
+                    "test".to_owned(),
+                    Task {
+                        command: "jest".to_owned(),
+                        ..Task::new("project:test")
+                    }
+                ),
+                (
+                    "test-dev-package".to_owned(),
+                    Task {
+                        command: "cross-env".to_owned(),
+                        args: string_vec!["jest"],
+                        env: HashMap::from([("INSTALL_PACKAGE".to_owned(), "1".to_owned())]),
+                        ..Task::new("project:test-dev-package")
+                    }
+                ),
+                (
+                    "test-dist".to_owned(),
+                    Task {
+                        command: "cross-env".to_owned(),
+                        args: string_vec!["jest"],
+                        env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                        ..Task::new("project:test-dist")
+                    }
+                ),
+                (
+                    "test-dist-lint".to_owned(),
+                    Task {
+                        command: "eslint".to_owned(),
+                        args: string_vec![
+                            "--no-eslintrc",
+                            "--no-ignore",
+                            "--no-inline-config",
+                            "--config=./scripts/bundle-eslint-config.cjs",
+                            "dist/**/*.{js,mjs}"
+                        ],
+                        ..Task::new("project:test-dist-lint")
+                    }
+                ),
+                (
+                    "test-dist-standalone".to_owned(),
+                    Task {
+                        command: "cross-env".to_owned(),
+                        args: string_vec!["jest"],
+                        env: HashMap::from([
+                            ("TEST_STANDALONE".to_owned(), "1".to_owned()),
+                            ("NODE_ENV".to_owned(), "production".to_owned())
+                        ]),
+                        ..Task::new("project:test-dist-standalone")
+                    }
+                ),
+                (
+                    "test-integration".to_owned(),
+                    Task {
+                        command: "jest".to_owned(),
+                        args: string_vec!["tests/integration"],
+                        ..Task::new("project:test-integration")
+                    }
+                ),
+                (
+                    "vendors-bundle".to_owned(),
+                    Task {
+                        command: "node".to_owned(),
+                        args: string_vec!["./scripts/vendors/bundle-vendors.mjs"],
+                        ..Task::new("project:vendors-bundle")
+                    }
+                ),
+            ])
+        );
+    }
 }

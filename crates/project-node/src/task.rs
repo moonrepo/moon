@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use moon_lang_node::package::PackageJson;
 use moon_logger::{color, debug, warn};
-use moon_task::{Target, TargetID, Task, TaskError, TaskID, TaskType};
+use moon_task::{Target, Task, TaskError, TaskID, TaskType};
 use moon_utils::{process, regex};
 use std::collections::{BTreeMap, HashMap};
 
@@ -316,8 +316,6 @@ impl<'a> ScriptParser<'a> {
             standalone_scripts.insert(name.clone(), script.clone());
         }
 
-        // Create tasks for simple/stand-alone scripts. Since these may have pre/post hooks,
-        // they must be created *after* the loop above has finished.
         for (name, script) in &standalone_scripts {
             self.create_task(name, script)?;
         }
@@ -349,21 +347,30 @@ impl<'a> ScriptParser<'a> {
             self.create_task_from_multiple(name, script)?;
         }
 
-        println!("scripts = {:#?}", self.scripts);
-        println!("pre = {:#?}", self.pre);
-        println!("post = {:#?}", self.post);
+        // Last pass:
+        //  - Hook up pre/post hooks
+        for (script_name, task_id) in self.names_to_ids.clone() {
+            self.apply_pre_post_hooks(&script_name, &task_id)?;
+        }
 
         Ok(())
     }
 
-    pub fn parse_script(&self, script: &str) -> Vec<String> {
-        let mut commands = vec![];
+    pub fn parse_script<K: AsRef<str>, V: AsRef<str>>(
+        &mut self,
+        name: K,
+        value: V,
+    ) -> Result<Option<TaskID>, TaskError> {
+        let name = name.as_ref();
+        let value = value.as_ref();
 
-        for command in script.split("&&") {
-            commands.push(command.trim().to_owned());
-        }
-
-        commands
+        Ok(if value.contains("&&") {
+            self.create_task_from_multiple(name, value)?
+        } else if PM_RUN_COMMAND.is_match(value) {
+            self.create_task_from_run(name, value)?
+        } else {
+            Some(self.create_task(name, value)?)
+        })
     }
 
     pub fn create_task<K: AsRef<str>, V: AsRef<str>>(
@@ -378,19 +385,10 @@ impl<'a> ScriptParser<'a> {
 
         self.names_to_ids.insert(name.to_owned(), task_id.clone());
 
-        let mut task = convert_script_to_task(&target_id, name, value)?;
-
-        // Convert pre hooks as `deps`
-        if self.pre.contains_key(name) {
-            task.deps = self.apply_pre_hooks(name)?;
-        }
-
-        self.tasks.insert(task_id.clone(), task);
-
-        // Use this target as a `deps` for post hooks
-        if self.post.contains_key(name) {
-            self.apply_post_hooks(name, &task_id)?;
-        }
+        self.tasks.insert(
+            task_id.clone(),
+            convert_script_to_task(&target_id, name, value)?,
+        );
 
         Ok(task_id)
     }
@@ -400,49 +398,36 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: T,
         value: &str,
-    ) -> Result<TaskID, TaskError> {
+    ) -> Result<Option<TaskID>, TaskError> {
         let name = name.as_ref();
-        let mut scripts: Vec<_> = value.split("&&").collect();
-        let mut deps: Vec<String> = vec![];
+        let scripts: Vec<_> = value.split("&&").map(|v| v.trim()).collect();
+        let mut previous_task_id = String::new();
 
-        // Extract all "npm run" style commands, as they will be task deps
-        scripts.retain(|script| {
-            if let Some(caps) = PM_RUN_COMMAND.captures(script) {
-                let run_script_name = caps.get(1).unwrap().as_str();
-
-                if let Some(dep_task_id) = self.names_to_ids.get(run_script_name) {
-                    deps.push(format!("~:{}", dep_task_id));
+        // Scripts need to be chained as deps instead of ran in parallel
+        for (index, script) in scripts.iter().enumerate() {
+            if let Some(task_id) = self.parse_script(
+                if index == scripts.len() - 1 {
+                    name.to_owned()
+                } else {
+                    format!("{}-dep{}", name, index + 1)
+                },
+                script,
+            )? {
+                if !previous_task_id.is_empty() {
+                    if let Some(task) = self.tasks.get_mut(&task_id) {
+                        task.deps.push(format!("~:{}", previous_task_id));
+                    }
                 }
 
-                return false;
-            }
-
-            true
-        });
-
-        let task_id;
-
-        // When no scripts remain, we can use a noop task + deps
-        if scripts.is_empty() {
-            task_id = self.create_task(name, "")?;
-
-        // Otherwise the last script becomes the primary command, and the others are deps
-        } else {
-            task_id = self.create_task(name, scripts.pop().unwrap())?;
-
-            for (index, script) in scripts.iter().enumerate() {
-                deps.push(format!(
-                    "~:{}",
-                    self.create_task(format!("{}-req{}", name, index + 1), script)?
-                ));
+                previous_task_id = task_id;
             }
         }
 
-        if let Some(task) = self.tasks.get_mut(&task_id) {
-            task.deps = deps;
+        if previous_task_id.is_empty() {
+            return Ok(None);
         }
 
-        Ok(task_id)
+        Ok(Some(previous_task_id))
     }
 
     #[track_caller]
@@ -487,34 +472,30 @@ impl<'a> ScriptParser<'a> {
         Ok(None)
     }
 
-    pub fn apply_pre_hooks(&mut self, script_name: &str) -> Result<Vec<TargetID>, TaskError> {
-        let mut deps = vec![];
-        let script = self.pre.remove(script_name).unwrap();
-        let commands = self.parse_script(&script);
-
-        for (index, command) in commands.iter().enumerate() {
-            let task_id = self.create_task(format!("{}-pre{}", script_name, index + 1), command)?;
-
-            deps.push(format!("~:{}", task_id));
-        }
-
-        Ok(deps)
-    }
-
-    pub fn apply_post_hooks(
+    pub fn apply_pre_post_hooks(
         &mut self,
         script_name: &str,
-        dep_task_id: &str,
+        task_id: &str,
     ) -> Result<(), TaskError> {
-        let script = self.post.remove(script_name).unwrap();
-        let commands = self.parse_script(&script);
+        // Convert pre hooks as `deps`
+        if self.pre.contains_key(script_name) {
+            let pre = self.pre.remove(script_name).unwrap();
 
-        for (index, command) in commands.iter().enumerate() {
-            let task_id =
-                self.create_task(format!("{}-post{}", script_name, index + 1), command)?;
+            if let Some(pre_task_id) = self.parse_script(format!("pre{}", script_name), pre)? {
+                if let Some(task) = self.tasks.get_mut(task_id) {
+                    task.deps.push(format!("~:{}", pre_task_id));
+                }
+            }
+        }
 
-            if let Some(task) = self.tasks.get_mut(&task_id) {
-                task.deps.push(format!("~:{}", dep_task_id));
+        // Use this task as a `deps` for post hooks
+        if self.post.contains_key(script_name) {
+            let post = self.post.remove(script_name).unwrap();
+
+            if let Some(post_task_id) = self.parse_script(format!("post{}", script_name), post)? {
+                if let Some(task) = self.tasks.get_mut(&post_task_id) {
+                    task.deps.push(format!("~:{}", task_id));
+                }
             }
         }
 

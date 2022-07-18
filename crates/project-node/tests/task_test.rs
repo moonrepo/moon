@@ -450,6 +450,7 @@ mod create_tasks_from_scripts {
 
     mod pre_post {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn creates_pre_and_post() {
@@ -468,31 +469,31 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "test".to_owned(),
-                        Task {
-                            command: "jest".to_owned(),
-                            args: string_vec!["."],
-                            deps: string_vec!["~:test-pre1"],
-                            ..Task::new("project:test")
-                        }
-                    ),
-                    (
-                        "test-pre1".to_owned(),
+                        "pretest".to_owned(),
                         Task {
                             command: "do".to_owned(),
                             args: string_vec!["something"],
-                            ..Task::new("project:test-pre1")
+                            ..Task::new("project:pretest")
                         }
                     ),
                     (
-                        "test-post1".to_owned(),
+                        "posttest".to_owned(),
                         Task {
                             command: "do".to_owned(),
                             args: string_vec!["another"],
                             deps: string_vec!["~:test"],
-                            ..Task::new("project:test-post1")
+                            ..Task::new("project:posttest")
                         }
-                    )
+                    ),
+                    (
+                        "test".to_owned(),
+                        Task {
+                            command: "jest".to_owned(),
+                            args: string_vec!["."],
+                            deps: string_vec!["~:pretest"],
+                            ..Task::new("project:test")
+                        }
+                    ),
                 ])
             )
         }
@@ -513,28 +514,29 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
+                        "pretest-dep1".to_owned(),
+                        Task {
+                            command: "do".to_owned(),
+                            args: string_vec!["something"],
+                            ..Task::new("project:pretest-dep1")
+                        }
+                    ),
+                    (
+                        "pretest".to_owned(),
+                        Task {
+                            command: "do".to_owned(),
+                            args: string_vec!["another"],
+                            deps: string_vec!["~:pretest-dep1"],
+                            ..Task::new("project:pretest")
+                        }
+                    ),
+                    (
                         "test".to_owned(),
                         Task {
                             command: "jest".to_owned(),
                             args: string_vec!["."],
-                            deps: string_vec!["~:test-pre1", "~:test-pre2"],
+                            deps: string_vec!["~:pretest"],
                             ..Task::new("project:test")
-                        }
-                    ),
-                    (
-                        "test-pre1".to_owned(),
-                        Task {
-                            command: "do".to_owned(),
-                            args: string_vec!["something"],
-                            ..Task::new("project:test-pre1")
-                        }
-                    ),
-                    (
-                        "test-pre2".to_owned(),
-                        Task {
-                            command: "do".to_owned(),
-                            args: string_vec!["another"],
-                            ..Task::new("project:test-pre2")
                         }
                     )
                 ])
@@ -557,6 +559,23 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
+                        "posttest-dep1".to_owned(),
+                        Task {
+                            command: "do".to_owned(),
+                            args: string_vec!["something"],
+                            ..Task::new("project:posttest-dep1")
+                        }
+                    ),
+                    (
+                        "posttest".to_owned(),
+                        Task {
+                            command: "do".to_owned(),
+                            args: string_vec!["another"],
+                            deps: string_vec!["~:posttest-dep1", "~:test"],
+                            ..Task::new("project:posttest")
+                        }
+                    ),
+                    (
                         "test".to_owned(),
                         Task {
                             command: "jest".to_owned(),
@@ -564,24 +583,6 @@ mod create_tasks_from_scripts {
                             ..Task::new("project:test")
                         }
                     ),
-                    (
-                        "test-post1".to_owned(),
-                        Task {
-                            command: "do".to_owned(),
-                            args: string_vec!["something"],
-                            deps: string_vec!["~:test"],
-                            ..Task::new("project:test-post1")
-                        }
-                    ),
-                    (
-                        "test-post2".to_owned(),
-                        Task {
-                            command: "do".to_owned(),
-                            args: string_vec!["another"],
-                            deps: string_vec!["~:test"],
-                            ..Task::new("project:test-post2")
-                        }
-                    )
                 ])
             )
         }
@@ -794,7 +795,7 @@ mod complex_examples {
                 ("lint".into(), "beemo eslint".into()),
                 ("packup".into(), "NODE_ENV=production yarn run packemon build --addEngines --addExports --declaration".into()),
                 ("packemon".into(), "node ./packages/packemon/cjs/bin.cjs".into()),
-                // ("prerelease".into(), "yarn run clean && yarn run setup && yarn run pack && yarn run check".into()),
+                ("prerelease".into(), "yarn run clean && yarn run setup && yarn run packup && yarn run check".into()),
                 ("release".into(), "beemo run-script lerna-release".into()),
                 ("setup".into(), "yarn dlx --package packemon@latest --package typescript --quiet packemon build".into()),
                 ("test".into(), "beemo jest".into()),
@@ -818,11 +819,28 @@ mod complex_examples {
                     }
                 ),
                 (
+                    "check-dep1".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:type", "--"],
+                        ..Task::new("project:check-dep1")
+                    }
+                ),
+                (
+                    "check-dep2".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:test", "--"],
+                        deps: string_vec!["~:check-dep1"],
+                        ..Task::new("project:check-dep2")
+                    }
+                ),
+                (
                     "check".to_owned(),
                     Task {
-                        command: "noop".to_owned(),
-                        deps: string_vec!["~:type", "~:test", "~:lint"],
-                        type_of: TaskType::System,
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:lint", "--"],
+                        deps: string_vec!["~:check-dep2"],
                         ..Task::new("project:check")
                     }
                 ),
@@ -835,11 +853,11 @@ mod complex_examples {
                     }
                 ),
                 (
-                    "commit-req1".to_owned(),
+                    "commit-dep1".to_owned(),
                     Task {
                         command: "yarn".to_owned(),
                         args: string_vec!["install"],
-                        ..Task::new("project:commit-req1")
+                        ..Task::new("project:commit-dep1")
                     }
                 ),
                 (
@@ -847,7 +865,7 @@ mod complex_examples {
                     Task {
                         command: "git".to_owned(),
                         args: string_vec!["add", "yarn.lock"],
-                        deps: string_vec!["~:commit-req1"],
+                        deps: string_vec!["~:commit-dep1"],
                         type_of: TaskType::System,
                         ..Task::new("project:commit")
                     }
@@ -910,10 +928,46 @@ mod complex_examples {
                     }
                 ),
                 (
+                    "prerelease-dep1".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:clean", "--"],
+                        ..Task::new("project:prerelease-dep1")
+                    }
+                ),
+                (
+                    "prerelease-dep2".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:setup", "--"],
+                        deps: string_vec!["~:prerelease-dep1"],
+                        ..Task::new("project:prerelease-dep2")
+                    }
+                ),
+                (
+                    "prerelease-dep3".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:packup", "--"],
+                        deps: string_vec!["~:prerelease-dep2"],
+                        ..Task::new("project:prerelease-dep3")
+                    }
+                ),
+                (
+                    "prerelease".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["run", "project:check", "--"],
+                        deps: string_vec!["~:prerelease-dep3"],
+                        ..Task::new("project:prerelease")
+                    }
+                ),
+                (
                     "release".to_owned(),
                     Task {
                         command: "beemo".to_owned(),
                         args: string_vec!["run-script", "lerna-release"],
+                        deps: string_vec!["~:prerelease"],
                         ..Task::new("project:release")
                     }
                 ),

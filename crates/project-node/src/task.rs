@@ -6,7 +6,6 @@ use moon_utils::{process, regex};
 use std::collections::{BTreeMap, HashMap};
 
 // requirements:
-//  - use "npm run", "yarn run", and "pnpm run" instead of the shorthand
 //  - "post" hooks dont work the same
 
 const TARGET: &str = "moon:node-task";
@@ -33,6 +32,10 @@ lazy_static! {
 
     pub static ref DEV_COMMAND_SOLO: regex::Regex =
             regex::create_regex(r#"^(npx |yarn dlx |pnpm dlx )?(parcel|vite|webpack)$"#)
+                .unwrap();
+
+    pub static ref DEV_ONLY_NAME: regex::Regex =
+            regex::create_regex(r#"(^(dev|start|serve)$)|(^(start|serve):)|(:(start|serve)$)"#)
                 .unwrap();
 
     pub static ref SYSTEM_COMMAND: regex::Regex =
@@ -62,12 +65,13 @@ fn is_node_script(arg: &str) -> bool {
     arg.ends_with(".js") || arg.ends_with(".cjs") || arg.ends_with(".mjs")
 }
 
-pub fn should_run_in_ci(script: &str) -> bool {
+pub fn should_run_in_ci(name: &str, script: &str) -> bool {
     if INFO_OPTIONS.is_match(script) {
         return true;
     }
 
     if script.contains("--watch")
+        || DEV_ONLY_NAME.is_match(name)
         || DEV_COMMAND.is_match(script)
         || DEV_COMMAND_SOLO.is_match(script)
     {
@@ -130,7 +134,7 @@ pub fn convert_script_to_task(
     let mut args = vec![];
 
     for (index, arg) in script_args.iter().enumerate() {
-        // Extract nvironment variables
+        // Extract environment variables
         if ARG_ENV_VAR.is_match(arg) {
             let (key, val) = clean_env_var(arg);
 
@@ -163,7 +167,7 @@ pub fn convert_script_to_task(
 
     task.args = args;
     task.type_of = detect_task_type(&task.command);
-    task.options.run_in_ci = should_run_in_ci(script);
+    task.options.run_in_ci = should_run_in_ci(script_name, script);
 
     debug!(
         target: &task.log_target,
@@ -303,7 +307,7 @@ impl<'a> ScriptParser<'a> {
             if INVALID_PIPE.is_match(script) {
                 warn!(
                     target: TARGET,
-                    "Pipes (|) are not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create a executable that does the piping: https://moonrepo.dev/docs/faq#how-to-pipe-tasks",
+                    "Pipes (|) are not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create a executable that does the piping: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,
                 );

@@ -89,6 +89,18 @@ const sidebars = {
 				'commands/ci',
 				'commands/dep-graph',
 				'commands/init',
+				{
+					type: 'category',
+					label: 'migrate',
+					items: ['commands/migrate/from-package-json'],
+					link: {
+						type: 'generated-index',
+						title: 'migrate',
+						description: 'Operations for migrating existing projects to moon.',
+						slug: '/commands/migrate',
+						keywords: ['cli', 'commands', 'migrate'],
+					},
+				},
 				'commands/project',
 				'commands/project-graph',
 				{

@@ -10,123 +10,138 @@ mod should_run_in_ci {
     use super::*;
 
     #[test]
+    fn handles_reserved_words() {
+        assert!(!should_run_in_ci("dev", ""));
+        assert!(!should_run_in_ci("serve", ""));
+        assert!(!should_run_in_ci("start", ""));
+
+        assert!(should_run_in_ci("dev:app", ""));
+        assert!(!should_run_in_ci("serve:app", ""));
+        assert!(!should_run_in_ci("start:app", ""));
+
+        assert!(should_run_in_ci("app:dev", ""));
+        assert!(!should_run_in_ci("app:serve", ""));
+        assert!(!should_run_in_ci("app:start", ""));
+    }
+
+    #[test]
     fn handles_watch_mode() {
-        assert!(!should_run_in_ci("packemon build --watch"));
-        assert!(!should_run_in_ci("rollup --watch"));
-        assert!(!should_run_in_ci("tsc --watch"));
+        assert!(!should_run_in_ci("name", "packemon build --watch"));
+        assert!(!should_run_in_ci("name", "rollup --watch"));
+        assert!(!should_run_in_ci("name", "tsc --watch"));
     }
 
     #[test]
     fn handles_gatsby() {
         // yes
-        assert!(should_run_in_ci("gatsby --version"));
-        assert!(should_run_in_ci("gatsby --help"));
-        assert!(should_run_in_ci("gatsby build"));
-        assert!(should_run_in_ci("gatsby info"));
-        assert!(should_run_in_ci("npx gatsby build"));
+        assert!(should_run_in_ci("name", "gatsby --version"));
+        assert!(should_run_in_ci("name", "gatsby --help"));
+        assert!(should_run_in_ci("name", "gatsby build"));
+        assert!(should_run_in_ci("name", "gatsby info"));
+        assert!(should_run_in_ci("name", "npx gatsby build"));
 
         // no
-        assert!(!should_run_in_ci("gatsby dev"));
-        assert!(!should_run_in_ci("gatsby develop"));
-        assert!(!should_run_in_ci("gatsby new"));
-        assert!(!should_run_in_ci("gatsby serve"));
-        assert!(!should_run_in_ci("gatsby repl"));
+        assert!(!should_run_in_ci("name", "gatsby dev"));
+        assert!(!should_run_in_ci("name", "gatsby develop"));
+        assert!(!should_run_in_ci("name", "gatsby new"));
+        assert!(!should_run_in_ci("name", "gatsby serve"));
+        assert!(!should_run_in_ci("name", "gatsby repl"));
     }
 
     #[test]
     fn handles_nextjs() {
         // yes
-        assert!(should_run_in_ci("next --version"));
-        assert!(should_run_in_ci("next --help"));
-        assert!(should_run_in_ci("next build"));
-        assert!(should_run_in_ci("next export"));
-        assert!(should_run_in_ci("npx next build"));
+        assert!(should_run_in_ci("name", "next --version"));
+        assert!(should_run_in_ci("name", "next --help"));
+        assert!(should_run_in_ci("name", "next build"));
+        assert!(should_run_in_ci("name", "next export"));
+        assert!(should_run_in_ci("name", "npx next build"));
 
         // no
-        assert!(!should_run_in_ci("next dev"));
-        assert!(!should_run_in_ci("next start"));
+        assert!(!should_run_in_ci("name", "next dev"));
+        assert!(!should_run_in_ci("name", "next start"));
     }
 
     #[test]
     fn handles_parcel() {
         // yes
-        assert!(should_run_in_ci("parcel --version"));
-        assert!(should_run_in_ci("parcel --help"));
-        assert!(should_run_in_ci("parcel build"));
-        assert!(should_run_in_ci("npx parcel build"));
+        assert!(should_run_in_ci("name", "parcel --version"));
+        assert!(should_run_in_ci("name", "parcel --help"));
+        assert!(should_run_in_ci("name", "parcel build"));
+        assert!(should_run_in_ci("name", "npx parcel build"));
 
         // no
-        assert!(!should_run_in_ci("parcel ./src/index.ts"));
-        assert!(!should_run_in_ci("parcel serve index.js"));
-        assert!(!should_run_in_ci("parcel watch"));
-        assert!(!should_run_in_ci("npx parcel"));
+        assert!(!should_run_in_ci("name", "parcel ./src/index.ts"));
+        assert!(!should_run_in_ci("name", "parcel serve index.js"));
+        assert!(!should_run_in_ci("name", "parcel watch"));
+        assert!(!should_run_in_ci("name", "npx parcel"));
     }
 
     #[test]
     fn handles_react_scripts() {
         // yes
-        assert!(should_run_in_ci("react-scripts --version"));
-        assert!(should_run_in_ci("react-scripts --help"));
-        assert!(should_run_in_ci("react-scripts build"));
-        assert!(should_run_in_ci("react-scripts eject"));
-        assert!(should_run_in_ci("npx react-scripts build"));
+        assert!(should_run_in_ci("name", "react-scripts --version"));
+        assert!(should_run_in_ci("name", "react-scripts --help"));
+        assert!(should_run_in_ci("name", "react-scripts build"));
+        assert!(should_run_in_ci("name", "react-scripts eject"));
+        assert!(should_run_in_ci("name", "npx react-scripts build"));
 
         // no
-        assert!(!should_run_in_ci("react-scripts start"));
-        assert!(!should_run_in_ci("react-scripts test --watch"));
+        assert!(!should_run_in_ci("name", "react-scripts start"));
+        assert!(!should_run_in_ci("name", "react-scripts test --watch"));
     }
 
     #[test]
     fn handles_snowpack() {
         // yes
-        assert!(should_run_in_ci("snowpack --version"));
-        assert!(should_run_in_ci("snowpack --help"));
-        assert!(should_run_in_ci("snowpack build"));
-        assert!(should_run_in_ci("npx snowpack build"));
+        assert!(should_run_in_ci("name", "snowpack --version"));
+        assert!(should_run_in_ci("name", "snowpack --help"));
+        assert!(should_run_in_ci("name", "snowpack build"));
+        assert!(should_run_in_ci("name", "npx snowpack build"));
 
         // no
-        assert!(!should_run_in_ci("snowpack dev"));
+        assert!(!should_run_in_ci("name", "snowpack dev"));
     }
 
     #[test]
     fn handles_vite() {
         // yes
-        assert!(should_run_in_ci("vite --version"));
-        assert!(should_run_in_ci("vite --help"));
-        assert!(should_run_in_ci("vite build"));
-        assert!(should_run_in_ci("vite optimize"));
-        assert!(should_run_in_ci("npx vite build"));
+        assert!(should_run_in_ci("name", "vite --version"));
+        assert!(should_run_in_ci("name", "vite --help"));
+        assert!(should_run_in_ci("name", "vite build"));
+        assert!(should_run_in_ci("name", "vite optimize"));
+        assert!(should_run_in_ci("name", "npx vite build"));
 
         // no
-        assert!(!should_run_in_ci("vite --watch"));
-        assert!(!should_run_in_ci("vite"));
-        assert!(!should_run_in_ci("vite dev"));
-        assert!(!should_run_in_ci("vite serve"));
-        assert!(!should_run_in_ci("vite preview"));
-        assert!(!should_run_in_ci("npx vite"));
-        assert!(!should_run_in_ci("npx vite dev"));
+        assert!(!should_run_in_ci("name", "vite --watch"));
+        assert!(!should_run_in_ci("name", "vite"));
+        assert!(!should_run_in_ci("name", "vite dev"));
+        assert!(!should_run_in_ci("name", "vite serve"));
+        assert!(!should_run_in_ci("name", "vite preview"));
+        assert!(!should_run_in_ci("name", "npx vite"));
+        assert!(!should_run_in_ci("name", "npx vite dev"));
     }
 
     #[test]
     fn handles_webpack() {
         // yes
-        assert!(should_run_in_ci("webpack --version"));
-        assert!(should_run_in_ci("webpack --help"));
-        assert!(should_run_in_ci("webpack build"));
-        assert!(should_run_in_ci("webpack bundle"));
-        assert!(should_run_in_ci("webpack info"));
-        assert!(should_run_in_ci("npx webpack build"));
+        assert!(should_run_in_ci("name", "webpack --version"));
+        assert!(should_run_in_ci("name", "webpack --help"));
+        assert!(should_run_in_ci("name", "webpack build"));
+        assert!(should_run_in_ci("name", "webpack bundle"));
+        assert!(should_run_in_ci("name", "webpack info"));
+        assert!(should_run_in_ci("name", "npx webpack build"));
 
         // no
-        assert!(!should_run_in_ci("webpack --entry"));
-        assert!(!should_run_in_ci("webpack --watch"));
-        assert!(!should_run_in_ci("webpack"));
-        assert!(!should_run_in_ci("webpack s"));
-        assert!(!should_run_in_ci("webpack serve"));
-        assert!(!should_run_in_ci("webpack server"));
-        assert!(!should_run_in_ci("webpack w"));
-        assert!(!should_run_in_ci("webpack watch"));
-        assert!(!should_run_in_ci("npx webpack serve"));
+        assert!(!should_run_in_ci("name", "webpack --entry"));
+        assert!(!should_run_in_ci("name", "webpack --watch"));
+        assert!(!should_run_in_ci("name", "webpack"));
+        assert!(!should_run_in_ci("name", "webpack s"));
+        assert!(!should_run_in_ci("name", "webpack serve"));
+        assert!(!should_run_in_ci("name", "webpack server"));
+        assert!(!should_run_in_ci("name", "webpack w"));
+        assert!(!should_run_in_ci("name", "webpack watch"));
+        assert!(!should_run_in_ci("name", "npx webpack serve"));
     }
 }
 

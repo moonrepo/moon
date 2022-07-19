@@ -98,22 +98,19 @@ async fn detect_package_manager(
     dest_dir: &Path,
     options: &InitOptions,
 ) -> Result<(String, String), AnyError> {
-    let pkg_path = dest_dir.join("package.json");
     let mut pm_type = String::new();
     let mut pm_version = String::new();
 
     // Extract value from `packageManager` field
-    if pkg_path.exists() {
-        if let Ok(Some(pkg)) = PackageJson::read(pkg_path).await {
-            if let Some(pm) = pkg.package_manager {
-                if pm.contains('@') {
-                    let mut parts = pm.split('@');
+    if let Ok(Some(pkg)) = PackageJson::read(dest_dir).await {
+        if let Some(pm) = pkg.package_manager {
+            if pm.contains('@') {
+                let mut parts = pm.split('@');
 
-                    pm_type = parts.next().unwrap_or_default().to_owned();
-                    pm_version = parts.next().unwrap_or_default().to_owned();
-                } else {
-                    pm_type = pm;
-                }
+                pm_type = parts.next().unwrap_or_default().to_owned();
+                pm_version = parts.next().unwrap_or_default().to_owned();
+            } else {
+                pm_type = pm;
             }
         }
     }
@@ -192,44 +189,41 @@ async fn detect_projects(
     dest_dir: &Path,
     options: &InitOptions,
 ) -> Result<(BTreeMap<String, String>, Vec<String>), AnyError> {
-    let pkg_path = dest_dir.join("package.json");
     let mut projects = HashMap::new();
     let mut project_globs = vec![];
 
-    if pkg_path.exists() {
-        if let Ok(Some(pkg)) = PackageJson::read(pkg_path).await {
-            if let Some(workspaces) = pkg.workspaces {
-                let items = vec![
-                    "Don't inherit",
-                    "As a list of globs",
-                    "As a map of project locations",
-                ];
-                let default_index = options.inherit_projects.get_option_index();
+    if let Ok(Some(pkg)) = PackageJson::read(dest_dir).await {
+        if let Some(workspaces) = pkg.workspaces {
+            let items = vec![
+                "Don't inherit",
+                "As a list of globs",
+                "As a map of project locations",
+            ];
+            let default_index = options.inherit_projects.get_option_index();
 
-                let index = if options.yes {
-                    default_index
-                } else {
-                    Select::with_theme(&create_theme())
-                        .with_prompt(format!(
-                            "Inherit projects from {} workspaces?",
-                            color::file("package.json")
-                        ))
-                        .items(&items)
-                        .default(default_index)
-                        .interact_opt()?
-                        .unwrap_or(default_index)
-                };
+            let index = if options.yes {
+                default_index
+            } else {
+                Select::with_theme(&create_theme())
+                    .with_prompt(format!(
+                        "Inherit projects from {} workspaces?",
+                        color::file("package.json")
+                    ))
+                    .items(&items)
+                    .default(default_index)
+                    .interact_opt()?
+                    .unwrap_or(default_index)
+            };
 
-                let globs = match workspaces {
-                    PackageWorkspaces::Array(list) => list,
-                    PackageWorkspaces::Object(object) => object.packages.unwrap_or_default(),
-                };
+            let globs = match workspaces {
+                PackageWorkspaces::Array(list) => list,
+                PackageWorkspaces::Object(object) => object.packages.unwrap_or_default(),
+            };
 
-                if index == 1 {
-                    project_globs.extend(globs);
-                } else if index == 2 {
-                    detect_projects_with_globs(dest_dir, &globs, &mut projects)?;
-                }
+            if index == 1 {
+                project_globs.extend(globs);
+            } else if index == 2 {
+                detect_projects_with_globs(dest_dir, &globs, &mut projects)?;
             }
         }
     }

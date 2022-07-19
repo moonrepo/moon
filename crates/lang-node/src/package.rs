@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(PackageJson, write_preserved_json);
+config_cache!(PackageJson, "package.json", write_preserved_json);
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -478,7 +478,7 @@ mod test {
         let file = dir.child("package.json");
         file.write_str(json).unwrap();
 
-        let mut package = PackageJson::read(file.path().to_path_buf())
+        let mut package = PackageJson::read(dir.path().to_path_buf())
             .await
             .unwrap()
             .unwrap();

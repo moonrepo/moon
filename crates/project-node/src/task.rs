@@ -536,6 +536,5 @@ impl<'a> ScriptParser<'a> {
                 }
             })
             .to_string()
-            .to_owned()
     }
 }

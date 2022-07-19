@@ -516,6 +516,7 @@ impl<'a> ScriptParser<'a> {
                     }
                     None => "",
                 };
+
                 let has_delimiter = run_args.starts_with("-- ") || run_args.starts_with(" -- ");
                 let has_args = !run_args.is_empty() && run_args != " ";
 

@@ -91,7 +91,19 @@ const sidebars = {
 				'commands/init',
 				'commands/project',
 				'commands/project-graph',
-				'commands/query',
+				{
+					type: 'category',
+					label: 'query',
+					items: ['commands/query/projects', 'commands/query/touched-files'],
+					link: {
+						type: 'generated-index',
+						title: 'query',
+						description:
+							'Query information about moon, its projects, their tasks, the environment, the pipeline, and many other aspects of the workspace.',
+						slug: '/commands/query',
+						keywords: ['cli', 'commands', 'query'],
+					},
+				},
 				'commands/run',
 				'commands/setup',
 				'commands/sync',

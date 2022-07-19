@@ -1,8 +1,21 @@
 use crate::errors::create_validation_error;
 use moon_utils::regex::{matches_id, matches_target};
 use semver::Version;
+use std::collections::HashMap;
 use std::path::Path;
 use validator::{validate_url as validate_base_url, ValidationError};
+
+pub fn skip_if_default<T: Default + PartialEq>(value: &T) -> bool {
+    value == &T::default()
+}
+
+pub fn skip_if_hash_empty<K, V>(map: &HashMap<K, V>) -> bool {
+    map.is_empty()
+}
+
+pub fn skip_if_vec_empty<V>(list: &Vec<V>) -> bool {
+    list.is_empty()
+}
 
 // Validate the value is a valid semver version/range.
 pub fn validate_semver_version(key: &str, value: &str) -> Result<(), ValidationError> {

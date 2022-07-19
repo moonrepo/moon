@@ -415,6 +415,8 @@ async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), 
     // otherwise it's a ton of overhead and maintenance!
     if let Some(dependencies) = &package.dependencies {
         data["dependencies"] = json::from(dependencies.clone());
+    } else {
+        data.remove("dependencies");
     }
 
     if let Some(engines) = &package.engines {
@@ -427,6 +429,8 @@ async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), 
 
     if let Some(scripts) = &package.scripts {
         data["scripts"] = json::from(scripts.clone());
+    } else {
+        data.remove("scripts");
     }
 
     let mut data = json::stringify_pretty(data, 2);

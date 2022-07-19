@@ -5,7 +5,7 @@ pub mod task;
 
 use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
 use crate::types::{FileGroups, ProjectID, TaskID};
-use crate::validators::validate_id;
+use crate::validators::{skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id};
 use figment::{
     providers::{Format, Serialized, Yaml},
     Error as FigmentError, Figment,
@@ -107,18 +107,23 @@ pub struct ProjectMetadataConfig {
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
+#[serde(default)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<Vec<TaskID>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub include: Option<Vec<TaskID>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rename: Option<HashMap<TaskID, TaskID>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
+    #[serde(skip_serializing_if = "skip_if_default")]
     #[validate]
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
@@ -126,25 +131,32 @@ pub struct ProjectWorkspaceConfig {
 /// Docs: https://moonrepo.dev/docs/config/project
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct ProjectConfig {
+    #[serde(skip_serializing_if = "skip_if_vec_empty")]
     pub depends_on: Vec<ProjectID>,
 
+    #[serde(skip_serializing_if = "skip_if_hash_empty")]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
+    #[serde(skip_serializing_if = "skip_if_default")]
     pub language: ProjectLanguage,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
+    #[serde(skip_serializing_if = "skip_if_hash_empty")]
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: HashMap<String, TaskConfig>,
 
+    #[serde(skip_serializing_if = "skip_if_default")]
     #[serde(rename = "type")]
     pub type_of: ProjectType,
 
+    #[serde(skip_serializing_if = "skip_if_default")]
     #[validate]
     pub workspace: ProjectWorkspaceConfig,
 

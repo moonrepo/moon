@@ -58,7 +58,7 @@ pub enum TaskMergeStrategy {
     Replace,
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -76,29 +76,14 @@ pub struct TaskOptionsConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_outputs: Option<TaskMergeStrategy>,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<u8>,
 
-    #[serde(rename = "runInCI", skip_serializing_if = "skip_if_default")]
+    #[serde(rename = "runInCI", skip_serializing_if = "Option::is_none")]
     pub run_in_ci: Option<bool>,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub run_from_workspace_root: Option<bool>,
-}
-
-impl Default for TaskOptionsConfig {
-    fn default() -> Self {
-        TaskOptionsConfig {
-            merge_args: None,
-            merge_deps: None,
-            merge_env: None,
-            merge_inputs: None,
-            merge_outputs: None,
-            retry_count: Some(0),
-            run_in_ci: Some(true),
-            run_from_workspace_root: Some(false),
-        }
-    }
 }
 
 // We use serde(default) here because figment *does not* apply defaults

@@ -309,6 +309,8 @@ fileGroups:
 
         #[test]
         fn loads_from_file() {
+            use pretty_assertions::assert_eq;
+
             figment::Jail::expect_with(|jail| {
                 fs::create_dir_all(jail.directory().join("shared")).unwrap();
 
@@ -352,6 +354,8 @@ fileGroups:
 
         #[test]
         fn loads_from_url() {
+            use pretty_assertions::assert_eq;
+
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
                     super::constants::CONFIG_PROJECT_FILENAME,

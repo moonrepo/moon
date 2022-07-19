@@ -1398,6 +1398,7 @@ dependencies = [
  "moon_error",
  "moon_lang_node",
  "moon_utils",
+ "pretty_assertions",
  "reqwest",
  "schemars",
  "semver",

@@ -855,8 +855,11 @@ mod test {
 
     #[tokio::test]
     async fn parse_basic_file() {
-        let path = get_fixtures_dir("base/tsconfig-json/tsconfig.default.json");
-        let config = TsConfigJson::read(path).await.unwrap().unwrap();
+        let path = get_fixtures_dir("base/tsconfig-json");
+        let config = TsConfigJson::read_with_name(path, "tsconfig.default.json")
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(
             config.compiler_options.clone().unwrap().target,

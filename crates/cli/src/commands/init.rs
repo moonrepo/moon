@@ -102,7 +102,7 @@ async fn detect_package_manager(
     let mut pm_version = String::new();
 
     // Extract value from `packageManager` field
-    if let Ok(Some(pkg)) = PackageJson::read(dest_dir).await {
+    if let Ok(Some(pkg)) = PackageJson::read(dest_dir) {
         if let Some(pm) = pkg.package_manager {
             if pm.contains('@') {
                 let mut parts = pm.split('@');
@@ -192,7 +192,7 @@ async fn detect_projects(
     let mut projects = HashMap::new();
     let mut project_globs = vec![];
 
-    if let Ok(Some(pkg)) = PackageJson::read(dest_dir).await {
+    if let Ok(Some(pkg)) = PackageJson::read(dest_dir) {
         if let Some(workspaces) = pkg.workspaces {
             let items = vec![
                 "Don't inherit",

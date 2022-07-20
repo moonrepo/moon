@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! config_cache {
-    ($struct:ident, $file:expr, $writer:ident) => {
-        async fn load_json(path: &Path) -> Result<$struct, MoonError> {
+    ($struct:ident, $file:expr, $reader:ident, $writer:ident) => {
+        fn load_json(path: &Path) -> Result<$struct, MoonError> {
             use moon_logger::{color, trace};
 
             trace!(
@@ -10,7 +10,7 @@ macro_rules! config_cache {
                 color::path(&path),
             );
 
-            let mut cfg: $struct = fs::read_json(&path).await?;
+            let mut cfg: $struct = $reader(&path)?;
             cfg.path = path.to_path_buf();
 
             Ok(cfg)
@@ -18,21 +18,21 @@ macro_rules! config_cache {
 
         // This merely exists to create the global cache!
         #[cached(sync_writes = true, result = true)]
-        async fn load_config(path: PathBuf) -> Result<$struct, MoonError> {
-            load_json(&path).await
+        fn load_config(path: PathBuf) -> Result<$struct, MoonError> {
+            load_json(&path)
         }
 
         impl $struct {
             /// Read the config file from the cache. If not cached and the file exists,
             /// load it and store in the cache, otherwise return none.
             #[track_caller]
-            pub async fn read<P: AsRef<Path>>(path: P) -> Result<Option<$struct>, MoonError> {
-                $struct::read_with_name(path, $file).await
+            pub fn read<P: AsRef<Path>>(path: P) -> Result<Option<$struct>, MoonError> {
+                $struct::read_with_name(path, $file)
             }
 
             /// Read the config file from the cache using the provided file name.
             #[track_caller]
-            pub async fn read_with_name<P, N>(path: P, name: N) -> Result<Option<$struct>, MoonError>
+            pub fn read_with_name<P, N>(path: P, name: N) -> Result<Option<$struct>, MoonError>
             where
                 P: AsRef<Path>,
                 N: AsRef<str>
@@ -45,7 +45,7 @@ macro_rules! config_cache {
                 }
 
                 if path.exists() {
-                    Ok(Some(load_config(path).await?))
+                    Ok(Some(load_config(path)?))
                 } else {
                     Ok(None)
                 }
@@ -54,16 +54,16 @@ macro_rules! config_cache {
             /// If the file exists, load it from the file system, mutate it,
             /// write it back to the file system and to the cache.
             #[track_caller]
-            pub async fn sync<P, F>(path: P, func: F) -> Result<bool, MoonError>
+            pub fn sync<P, F>(path: P, func: F) -> Result<bool, MoonError>
             where
                 P: AsRef<Path>,
                 F: FnOnce(&mut $struct) -> Result<(), MoonError>
             {
-                $struct::sync_with_name(path, $file, func).await
+                $struct::sync_with_name(path, $file, func)
             }
 
             #[track_caller]
-            pub async fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> Result<bool, MoonError>
+            pub fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> Result<bool, MoonError>
             where
                 P: AsRef<Path>,
                 N: AsRef<str>,
@@ -84,13 +84,13 @@ macro_rules! config_cache {
                     return Ok(false);
                 }
 
-                let mut cache = LOAD_CONFIG.lock().await;
+                let mut cache = LOAD_CONFIG.lock().expect("Unable to acquire lock");
                 let mut cfg: $struct;
 
                 if let Some(item) = cache.cache_get(&path) {
                     cfg = item.clone();
                 } else {
-                    cfg = load_json(&path).await?;
+                    cfg = load_json(&path)?;
                 }
 
                 func(&mut cfg)?;
@@ -102,7 +102,7 @@ macro_rules! config_cache {
                 );
 
                 // Write to the file system
-                $writer(&path, &cfg).await?;
+                $writer(&path, &cfg)?;
 
                 // And store in the cache
                 cache.cache_set(path, cfg);
@@ -112,11 +112,11 @@ macro_rules! config_cache {
 
             /// Write (or overwrite) the value directly into the cache.
             #[track_caller]
-            pub async fn write(value: $struct) -> Result<(), MoonError> {
+            pub fn write(value: $struct) -> Result<(), MoonError> {
                 use cached::Cached;
                 use moon_logger::{color, trace};
 
-                let mut cache = LOAD_CONFIG.lock().await;
+                let mut cache = LOAD_CONFIG.lock().expect("Unable to acquire lock");
 
                 trace!(
                     target: "moon:lang:config",
@@ -125,7 +125,7 @@ macro_rules! config_cache {
                 );
 
                 // Write to the file system
-                $writer(&value.path, &value).await?;
+                $writer(&value.path, &value)?;
 
                 // And store in the cache
                 cache.cache_set(value.path.clone(), value);

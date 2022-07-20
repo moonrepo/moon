@@ -8,6 +8,8 @@
 - Added a `moon migrate from-package-json` command for migrating `package.json` scripts to
   `project.yml` tasks.
 - Added a `moon sync` command for manually syncing all projects in the workspace to a healthy state.
+- Added a `node.inferTasksFromScripts` setting to `.moon/workspace.yml`, that will automatically
+  infer tasks from `package.json` scripts (with caveats).
 
 #### ⚙️ Internal
 

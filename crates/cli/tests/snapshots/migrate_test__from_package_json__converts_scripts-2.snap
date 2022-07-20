@@ -6,6 +6,12 @@ expression: "fs::read_to_string(fixture.path().join(\"package-json/common/projec
 ---
 language: javascript
 tasks:
+  lint:
+    command: eslint
+    args:
+      - "."
+    inputs:
+      - "**/*"
   lint-fix:
     command: moon
     args:
@@ -13,12 +19,6 @@ tasks:
       - "common:lint"
       - "--"
       - "--fix"
-    inputs:
-      - "**/*"
-  lint:
-    command: eslint
-    args:
-      - "."
     inputs:
       - "**/*"
 

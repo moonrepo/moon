@@ -1,12 +1,16 @@
 use crate::errors::create_validation_error;
 use moon_utils::regex::{matches_id, matches_target};
 use semver::Version;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 use validator::{validate_url as validate_base_url, ValidationError};
 
 pub fn skip_if_default<T: Default + PartialEq>(value: &T) -> bool {
     value == &T::default()
+}
+
+pub fn skip_if_btree_empty<K, V>(map: &BTreeMap<K, V>) -> bool {
+    map.is_empty()
 }
 
 pub fn skip_if_hash_empty<K, V>(map: &HashMap<K, V>) -> bool {

@@ -8,17 +8,18 @@ dependsOn:
   - common
 language: javascript
 tasks:
-  test:
-    command: jest
+  build:
+    command: babel
+    args:
+      - "./src"
+      - "--out"
+      - "./lib"
     inputs:
       - "**/*"
-  test-cov:
-    command: moon
-    args:
-      - run
-      - "deps:test"
-      - "--"
-      - "--coverage"
+    outputs:
+      - lib
+  test:
+    command: jest
     inputs:
       - "**/*"
 

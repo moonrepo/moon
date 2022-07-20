@@ -5,14 +5,16 @@ pub mod task;
 
 use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
 use crate::types::{FileGroups, ProjectID, TaskID};
-use crate::validators::{skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id};
+use crate::validators::{
+    skip_if_btree_empty, skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id,
+};
 use figment::{
     providers::{Format, Serialized, Yaml},
     Error as FigmentError, Figment,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 use strum::Display;
 use task::TaskConfig;
@@ -26,7 +28,7 @@ fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
+fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
         validate_id(&format!("tasks.{}", name), name)?;
 
@@ -147,10 +149,10 @@ pub struct ProjectConfig {
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
-    #[serde(skip_serializing_if = "skip_if_hash_empty")]
+    #[serde(skip_serializing_if = "skip_if_btree_empty")]
     #[validate(custom = "validate_tasks")]
     #[validate]
-    pub tasks: HashMap<String, TaskConfig>,
+    pub tasks: BTreeMap<String, TaskConfig>,
 
     #[serde(skip_serializing_if = "skip_if_default")]
     #[serde(rename = "type")]
@@ -335,7 +337,7 @@ tasks:
                 assert_eq!(
                     config,
                     ProjectConfig {
-                        tasks: HashMap::from([(
+                        tasks: BTreeMap::from([(
                             String::from("lint"),
                             TaskConfig {
                                 args: Some(vec![".".to_owned()]),

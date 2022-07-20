@@ -11,7 +11,7 @@ use figment::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
 use validator::{Validate, ValidationError};
 
@@ -23,7 +23,7 @@ fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn validate_tasks(map: &HashMap<String, TaskConfig>) -> Result<(), ValidationError> {
+fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
         validate_id(&format!("tasks.{}", name), name)?;
 
@@ -56,7 +56,7 @@ pub struct GlobalProjectConfig {
     #[schemars(default)]
     #[validate(custom = "validate_tasks")]
     #[validate]
-    pub tasks: HashMap<String, TaskConfig>,
+    pub tasks: BTreeMap<String, TaskConfig>,
 
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]
@@ -100,7 +100,7 @@ impl GlobalProjectConfig {
             }
 
             if !extended_config.tasks.is_empty() {
-                let mut map = HashMap::new();
+                let mut map = BTreeMap::new();
                 map.extend(extended_config.tasks);
                 map.extend(config.tasks);
 
@@ -158,7 +158,7 @@ fileGroups:
                         String::from("sources"),
                         string_vec!["src/**/*"]
                     )]),
-                    tasks: HashMap::new(),
+                    tasks: BTreeMap::new(),
                     schema: String::new(),
                 }
             );
@@ -254,8 +254,8 @@ fileGroups:
             });
         }
 
-        fn create_merged_tasks() -> HashMap<String, TaskConfig> {
-            HashMap::from([
+        fn create_merged_tasks() -> BTreeMap<String, TaskConfig> {
+            BTreeMap::from([
                 (
                     "onlyCommand".to_owned(),
                     TaskConfig {

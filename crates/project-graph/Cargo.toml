@@ -7,8 +7,8 @@ edition = "2021"
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_logger = { path = "../logger" }
+moon_plugin_node = { path = "../plugin-node" }
 moon_project = { path = "../project" }
-moon_project_node = { path = "../project-node" }
 petgraph = "0.6.2"
 thiserror = "1.0.31"
 

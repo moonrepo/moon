@@ -1,7 +1,5 @@
 use moon_lang_node::package::PackageJson;
-use moon_project_node::task::{
-    convert_script_to_task, create_tasks_from_scripts, should_run_in_ci,
-};
+use moon_plugin_node::task::{convert_script_to_task, create_tasks_from_scripts, should_run_in_ci};
 use moon_task::{Task, TaskType};
 use moon_utils::string_vec;
 use std::collections::{BTreeMap, HashMap};

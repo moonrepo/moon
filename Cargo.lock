@@ -1369,8 +1369,8 @@ dependencies = [
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
+ "moon_plugin_node",
  "moon_project",
- "moon_project_node",
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
@@ -1474,6 +1474,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_plugin_node"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "moon_lang_node",
+ "moon_logger",
+ "moon_task",
+ "moon_utils",
+ "pretty_assertions",
+]
+
+[[package]]
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
@@ -1496,24 +1508,12 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_logger",
+ "moon_plugin_node",
  "moon_project",
- "moon_project_node",
  "moon_utils",
  "petgraph",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "moon_project_node"
-version = "0.1.0"
-dependencies = [
- "lazy_static",
- "moon_lang_node",
- "moon_logger",
- "moon_task",
- "moon_utils",
- "pretty_assertions",
 ]
 
 [[package]]

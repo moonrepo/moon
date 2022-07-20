@@ -20,8 +20,8 @@ moon_constants = { path = "../constants" }
 moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
+moon_plugin_node = { path = "../plugin-node" }
 moon_project = { path = "../project" }
-moon_project_node = { path = "../project-node" }
 moon_task = { path = "../task" }
 moon_terminal = { path = "../terminal" }
 moon_toolchain = { path = "../toolchain" }

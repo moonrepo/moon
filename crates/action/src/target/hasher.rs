@@ -46,30 +46,26 @@ pub async fn create_target_hasher(
     hasher.hash_args(passthrough_args);
 
     // Hash root configs first
-    if let Some(root_package) = PackageJson::read(&workspace.root).await? {
+    if let Some(root_package) = PackageJson::read(&workspace.root)? {
         hasher.hash_package_json(&root_package);
     }
 
     if let Some(root_tsconfig) = TsConfigJson::read_with_name(
         &workspace.root,
         &workspace.config.typescript.root_config_file_name,
-    )
-    .await?
-    {
+    )? {
         hasher.hash_tsconfig_json(&root_tsconfig);
     }
 
     // Hash project configs second so they can override
-    if let Some(package) = PackageJson::read(&project.root).await? {
+    if let Some(package) = PackageJson::read(&project.root)? {
         hasher.hash_package_json(&package);
     }
 
     if let Some(tsconfig) = TsConfigJson::read_with_name(
         &project.root,
         &workspace.config.typescript.project_config_file_name,
-    )
-    .await?
-    {
+    )? {
         hasher.hash_tsconfig_json(&tsconfig);
     }
 

@@ -1,0 +1,24 @@
+---
+source: crates/cli/tests/migrate_test.rs
+assertion_line: 41
+expression: "fs::read_to_string(fixture.path().join(\"package-json/deps/project.yml\")).unwrap()"
+---
+---
+dependsOn:
+  - common
+language: javascript
+tasks:
+  test:
+    command: jest
+    inputs:
+      - "**/*"
+  test-cov:
+    command: moon
+    args:
+      - run
+      - "deps:test"
+      - "--"
+      - "--coverage"
+    inputs:
+      - "**/*"
+

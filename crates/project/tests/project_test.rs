@@ -6,7 +6,7 @@ use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 fn mock_file_groups() -> HashMap<String, FileGroup> {
@@ -318,7 +318,7 @@ mod tasks {
                     .canonicalize()
                     .unwrap(),
                 source: String::from("tasks/no-tasks"),
-                tasks: HashMap::from([(String::from("standard"), task)]),
+                tasks: BTreeMap::from([(String::from("standard"), task)]),
                 ..Project::default()
             }
         );
@@ -383,7 +383,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 source: String::from("tasks/basic"),
-                tasks: HashMap::from([
+                tasks: BTreeMap::from([
                     (String::from("build"), build),
                     (String::from("standard"), std),
                     (String::from("test"), test),
@@ -493,7 +493,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
@@ -568,7 +568,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
@@ -646,7 +646,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
@@ -733,7 +733,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),

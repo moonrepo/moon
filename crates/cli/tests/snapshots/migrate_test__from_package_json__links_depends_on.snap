@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/migrate_test.rs
+assertion_line: 37
+expression: "fs::read_to_string(fixture.path().join(\"package-json/deps/package.json\")).unwrap()"
+---
+{
+  "name": "test-package-json-deps",
+  "dependencies": {
+    "test-package-json-common": "*"
+  }
+}
+

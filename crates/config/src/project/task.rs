@@ -91,15 +91,15 @@ pub struct TaskOptionsConfig {
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(default)]
 pub struct TaskConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub command: Option<String>,
+
     #[serde(
         deserialize_with = "deserialize_args",
         skip_serializing_if = "Option::is_none"
     )]
     #[schemars(schema_with = "make_args_schema")]
     pub args: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub command: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_deps")]
@@ -112,13 +112,13 @@ pub struct TaskConfig {
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<FilePathOrGlob>>,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
-    #[validate]
-    pub options: TaskOptionsConfig,
-
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_outputs")]
     pub outputs: Option<Vec<FilePath>>,
+
+    #[serde(skip_serializing_if = "skip_if_default")]
+    #[validate]
+    pub options: TaskOptionsConfig,
 
     #[serde(skip_serializing_if = "skip_if_default")]
     #[serde(rename = "type")]

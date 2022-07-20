@@ -1,0 +1,11 @@
+{
+  "name": "test-package-json-deps",
+  "scripts": {
+    "test": "jest",
+    "test:cov": "yarn run test --coverage",
+    "pretest": "yarn run missing"
+  },
+  "dependencies": {
+    "test-package-json-common": "*"
+  }
+}

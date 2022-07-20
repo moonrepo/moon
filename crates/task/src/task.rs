@@ -81,35 +81,24 @@ impl TaskOptions {
     }
 
     pub fn to_config(&self) -> TaskOptionsConfig {
-        let default_options = TaskOptionsConfig::default();
-        let mut options = TaskOptionsConfig {
-            merge_args: None,
-            merge_deps: None,
-            merge_env: None,
-            merge_inputs: None,
-            merge_outputs: None,
-            retry_count: Some(0),
-            run_in_ci: Some(true),
-            run_from_workspace_root: Some(false),
-        };
+        let default_options = TaskOptions::default();
+        let mut config = TaskOptionsConfig::default();
 
         // Skip merge options until we need them
 
-        if self.retry_count != default_options.retry_count.unwrap_or_default() {
-            options.retry_count = Some(self.retry_count);
+        if self.retry_count != default_options.retry_count {
+            config.retry_count = Some(self.retry_count);
         }
 
-        if self.run_in_ci != default_options.run_in_ci.unwrap_or_default() {
-            options.run_in_ci = Some(self.run_in_ci);
+        if self.run_in_ci != default_options.run_in_ci {
+            config.run_in_ci = Some(self.run_in_ci);
         }
 
-        if self.run_from_workspace_root
-            != default_options.run_from_workspace_root.unwrap_or_default()
-        {
-            options.run_from_workspace_root = Some(self.run_from_workspace_root);
+        if self.run_from_workspace_root != default_options.run_from_workspace_root {
+            config.run_from_workspace_root = Some(self.run_from_workspace_root);
         }
 
-        options
+        config
     }
 }
 
@@ -225,7 +214,9 @@ impl Task {
             config.env = Some(self.env.clone());
         }
 
-        if !self.inputs.is_empty() {
+        if !self.inputs.is_empty()
+            || (self.inputs.len() == 1 && !self.inputs.contains(&"**/*".to_owned()))
+        {
             config.inputs = Some(self.inputs.clone());
         }
 

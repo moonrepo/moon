@@ -123,6 +123,8 @@ pub struct NodeConfig {
 
     pub dedupe_on_lockfile_change: bool,
 
+    pub infer_tasks_from_scripts: bool,
+
     #[validate]
     pub npm: NpmConfig,
 
@@ -147,6 +149,7 @@ impl Default for NodeConfig {
         NodeConfig {
             add_engines_constraint: true,
             dedupe_on_lockfile_change: true,
+            infer_tasks_from_scripts: false,
             npm: NpmConfig::default(),
             package_manager: PackageManager::default(),
             pnpm: None,

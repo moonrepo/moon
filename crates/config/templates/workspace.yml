@@ -40,6 +40,12 @@ node:
   # Dedupe dependencies after the lockfile has changed.
   dedupeOnLockfileChange: true
 
+  # Infer and automatically create moon tasks from `package.json` scripts, per project.
+  # BEWARE that this may reduce performance, as `package.json`s will need to be
+  # eager loaded during project graph creation. Furthermore, tasks and scripts are
+  # not a 1:1 in functionality, so please refer to the documentation.
+  inferTasksFromScripts: true
+
   # Sync a project's `dependsOn` as normal dependencies within the project's
   # `package.json`. Will use "workspace:*" ranges when available in the package manager.
   syncProjectWorkspaceDependencies: true

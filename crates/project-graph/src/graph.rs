@@ -1,7 +1,8 @@
 use moon_cache::CacheEngine;
 use moon_config::constants::FLAG_PROJECTS_USING_GLOB;
-use moon_config::{GlobalProjectConfig, ProjectID, WorkspaceConfig};
+use moon_config::{GlobalProjectConfig, ProjectID, ProjectLanguage, WorkspaceConfig};
 use moon_logger::{color, debug, map_list, trace};
+use moon_plugin_node::infer_tasks_from_scripts;
 use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -77,9 +78,6 @@ pub struct ProjectGraph {
     /// Projects that have been loaded into scope represented as a DAG.
     graph: Arc<RwLock<GraphType>>,
 
-    /// Inputs to be inherited by all tasks.
-    implicit_inputs: Vec<String>,
-
     /// Mapping of project IDs to node indices, as we need a way
     /// to query the graph by ID as it only supports it by index.
     indices: Arc<RwLock<IndicesType>>,
@@ -87,6 +85,10 @@ pub struct ProjectGraph {
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
     projects_map: HashMap<ProjectID, String>,
+
+    /// The workspace configuration. Necessary for project variants.
+    /// Is loaded from `.moon/workspace.yml`.
+    workspace_config: WorkspaceConfig,
 
     /// The workspace root, in which projects are relatively loaded from.
     workspace_root: PathBuf,
@@ -118,7 +120,6 @@ impl ProjectGraph {
         Ok(ProjectGraph {
             global_config,
             graph: Arc::new(RwLock::new(graph)),
-            implicit_inputs: workspace_config.action_runner.implicit_inputs.clone(),
             indices: Arc::new(RwLock::new(HashMap::new())),
             projects_map: load_projects_from_cache(
                 workspace_root,
@@ -126,6 +127,7 @@ impl ProjectGraph {
                 cache,
             )
             .await?,
+            workspace_config: workspace_config.clone(),
             workspace_root: workspace_root.to_path_buf(),
         })
     }
@@ -245,6 +247,29 @@ impl ProjectGraph {
         format!("{:?}", dot)
     }
 
+    fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectError> {
+        let mut project = Project::new(
+            id,
+            source,
+            &self.workspace_root,
+            &self.global_config,
+            &self.workspace_config.action_runner.implicit_inputs,
+        )?;
+
+        // Create tasks from `package.json` scripts
+        if (matches!(project.config.language, ProjectLanguage::JavaScript)
+            || matches!(project.config.language, ProjectLanguage::TypeScript))
+            && self.workspace_config.node.infer_tasks_from_scripts
+        {
+            // Scripts should not override global tasks
+            for (task_id, task) in infer_tasks_from_scripts(id, &project.root)? {
+                project.tasks.entry(task_id).or_insert(task);
+            }
+        }
+
+        Ok(project)
+    }
+
     /// Internal method for lazily loading a project and its
     /// dependencies into the graph.
     fn internal_load(
@@ -276,13 +301,7 @@ impl ProjectGraph {
             None => return Err(ProjectError::UnconfiguredID(String::from(id))),
         };
 
-        let project = Project::new(
-            id,
-            source,
-            &self.workspace_root,
-            &self.global_config,
-            &self.implicit_inputs,
-        )?;
+        let project = self.create_project(id, source)?;
         let depends_on = project.get_dependencies();
 
         // Insert the project into the graph

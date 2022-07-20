@@ -10,8 +10,8 @@ use std::collections::{BTreeMap, HashMap};
 
 const TARGET: &str = "moon:node-task";
 
-type TasksMap = BTreeMap<TaskID, Task>;
-type ScriptsMap = HashMap<String, String>;
+pub type TasksMap = BTreeMap<TaskID, Task>;
+pub type ScriptsMap = HashMap<String, String>;
 
 lazy_static! {
     pub static ref WIN_DRIVE: regex::Regex = regex::create_regex(r#"^[A-Z]:"#).unwrap();

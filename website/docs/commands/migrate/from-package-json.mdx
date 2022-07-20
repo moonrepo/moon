@@ -37,8 +37,8 @@ won't run builds that should be. Be sure to audit each task after migration!
 ## Caveats
 
 - When running a script within another script, the full invocation of `npm run ...`, `pnpm run ...`,
-  or `yarn run ...` must be used (including `test`). Shorthand variants are **not** supported, for
-  example, `yarn lint` or `pnpm format`. We cannot guarantee that moon will parse these correctly
+  or `yarn run ...` must be used. Shorthand variants are **not** supported, for example, `npm test`
+  or `yarn lint` or `pnpm format`. We cannot guarantee that moon will parse these correctly
   otherwise.
 
   ```diff title="package.json"
@@ -74,14 +74,13 @@ won't run builds that should be. Be sure to audit each task after migration!
 
 - Scripts that change directory (`cd ...`), use pipes (`|`), redirects (`>`), or the OR operator
   (`||`) are **not** supported and will be skipped. Tasks and scripts are not 1:1 in functionality,
-  as tasks represent that state of a single command execution, including its inputs and outputs.
-
-  However, you can wrap this functionality in a
+  as tasks represent that state of a single command execution. However, you can wrap this
+  functionality in a
   [custom script that executes it on the task's behalf](../../faq#how-to-pipe-or-redirect-tasks).
 
-- [Life cycle scripts](https://docs.npmjs.com/cli/v8/using-npm/scripts#life-cycle-scripts) are not
-  converted to tasks and will remain in `package.json` since they're required by npm (and other
-  package managers). However, their commands _will_ be updated to execute moon commands when
+- [Life cycle scripts](https://docs.npmjs.com/cli/v8/using-npm/scripts#life-cycle-scripts) are
+  **not** converted to tasks and will remain in `package.json` since they're required by npm (and
+  other package managers). However, their commands _will_ be updated to execute moon commands when
   applicable.
 
   ```diff title="package.json"
@@ -95,3 +94,13 @@ won't run builds that should be. Be sure to audit each task after migration!
   ```
 
   > This _does not_ apply to `run`, `start`, `stop`, and `test` life cycles.
+
+- "Post" life cycles for
+  [user defined scripts](https://docs.npmjs.com/cli/v8/using-npm/scripts#npm-run-user-defined) do
+  not work, as moon tasks have no concept of "run this after the task completes", so we suggest
+  _against using these entirely_. However, we still convert the script and include the base script
+  as a task dependency.
+
+  For example, a `posttest` script would be converted into a `posttest` task, with the `test` task
+  included in [`deps`](../../config/project#deps). For this to actually run correctly, you'll need
+  to use `moon run <project>:posttest` AND NOT `moon run <project>:test`.

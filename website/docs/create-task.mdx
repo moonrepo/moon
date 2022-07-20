@@ -11,7 +11,8 @@ The primary focus of moon is a build system, and for it to operate in any capaci
 tasks to run. In moon, a task is an npm binary or system command that is ran as a child process
 within the context of a project (is the current working directory). Tasks are defined per project
 with [`project.yml`](./config/project), or inherited by all projects with
-[`.moon/project.yml`](./config/global-project).
+[`.moon/project.yml`](./config/global-project), but can also be inferred from `package.json` scripts
+([we'll talk about this later](./migrate-to-moon)).
 
 ## Configuring a task
 

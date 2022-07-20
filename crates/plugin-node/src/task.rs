@@ -5,9 +5,6 @@ use moon_task::{Target, Task, TaskError, TaskID, TaskType};
 use moon_utils::{process, regex};
 use std::collections::{BTreeMap, HashMap};
 
-// requirements:
-//  - "post" hooks dont work the same
-
 const TARGET: &str = "moon:node-task";
 
 pub type TasksMap = BTreeMap<TaskID, Task>;

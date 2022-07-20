@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/migrate_test.rs
+assertion_line: 16
+expression: "fs::read_to_string(fixture.path().join(\"package-json/common/package.json\")).unwrap()"
+---
+{
+  "name": "test-package-json-common",
+  "scripts": {
+    "preversion": "npm ci"
+  }
+}
+

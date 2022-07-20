@@ -1,0 +1,11 @@
+{
+  "name": "test-package-json-deps",
+  "scripts": {
+    "build": "babel ./src --out ./lib",
+    "test": "jest",
+    "pretest": "yarn run missing"
+  },
+  "dependencies": {
+    "test-package-json-common": "*"
+  }
+}

@@ -17,6 +17,18 @@ const HEADING_DEBUGGING: &str = "Debugging";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Debug, Subcommand)]
+pub enum MigrateCommands {
+    #[clap(
+        name = "from-package-json",
+        about = "Migrate `package.json` scripts and dependencies to `project.yml`."
+    )]
+    FromPackageJson {
+        #[clap(help = "ID of project to migrate")]
+        id: String,
+    },
+}
+
+#[derive(Debug, Subcommand)]
 pub enum QueryCommands {
     #[clap(
         name = "projects",
@@ -255,6 +267,16 @@ pub enum Commands {
     },
 
     // OTHER
+
+    // moon migrate <operation>
+    #[clap(
+        name = "migrate",
+        about = "Operations for migrating existing projects to moon."
+    )]
+    Migrate {
+        #[clap(subcommand)]
+        command: MigrateCommands,
+    },
 
     // moon query <operation>
     #[clap(

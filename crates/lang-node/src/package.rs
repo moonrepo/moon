@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(PackageJson, write_preserved_json);
+config_cache!(PackageJson, "package.json", write_preserved_json);
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -236,6 +236,24 @@ impl PackageJson {
 
         true
     }
+
+    /// Set the `scripts` field.
+    /// Return true if the new value is different from the old value.
+    pub fn set_scripts(&mut self, scripts: ScriptsSet) -> bool {
+        if self.scripts.is_none() && scripts.is_empty() {
+            return false;
+        }
+
+        self.dirty = true;
+
+        if scripts.is_empty() {
+            self.scripts = None;
+        } else {
+            self.scripts = Some(scripts);
+        }
+
+        true
+    }
 }
 
 pub type BinSet = BTreeMap<String, String>;
@@ -397,6 +415,8 @@ async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), 
     // otherwise it's a ton of overhead and maintenance!
     if let Some(dependencies) = &package.dependencies {
         data["dependencies"] = json::from(dependencies.clone());
+    } else {
+        data.remove("dependencies");
     }
 
     if let Some(engines) = &package.engines {
@@ -405,6 +425,12 @@ async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), 
 
     if let Some(package_manager) = &package.package_manager {
         data["packageManager"] = json::from(package_manager.clone());
+    }
+
+    if let Some(scripts) = &package.scripts {
+        data["scripts"] = json::from(scripts.clone());
+    } else {
+        data.remove("scripts");
     }
 
     let mut data = json::stringify_pretty(data, 2);
@@ -452,7 +478,7 @@ mod test {
         let file = dir.child("package.json");
         file.write_str(json).unwrap();
 
-        let mut package = PackageJson::read(file.path().to_path_buf())
+        let mut package = PackageJson::read(dir.path().to_path_buf())
             .await
             .unwrap()
             .unwrap();

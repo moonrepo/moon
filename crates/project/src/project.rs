@@ -7,14 +7,14 @@ use moon_logger::{color, debug, trace, Logable};
 use moon_task::{FileGroup, Target, Task, TokenResolver, TokenSharedData};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 pub type FileGroupsMap = HashMap<String, FileGroup>;
 
 pub type ProjectsMap = HashMap<ProjectID, Project>;
 
-pub type TasksMap = HashMap<TaskID, Task>;
+pub type TasksMap = BTreeMap<TaskID, Task>;
 
 // project.yml
 fn load_project_config(
@@ -88,7 +88,7 @@ fn create_tasks_from_config(
     token_data: &TokenSharedData,
     implicit_inputs: &[String],
 ) -> Result<TasksMap, ProjectError> {
-    let mut tasks = HashMap::<String, Task>::new();
+    let mut tasks = BTreeMap::<String, Task>::new();
     let mut depends_on = vec![];
 
     debug!(target: log_target, "Creating tasks");

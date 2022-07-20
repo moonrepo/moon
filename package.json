@@ -3,14 +3,14 @@
   "private": true,
   "packageManager": "yarn@3.2.0",
   "scripts": {
+    "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration --declarationConfig tsconfig.build.json",
     "docs": "yarn moon run website:start",
+    "moon": "target/debug/moon --log trace",
+    "type": "target/debug/moon --log trace run :typecheck",
     "version:apply": "node ./scripts/version/applyAndTagVersions.mjs",
     "version:bump": "yarn version check --interactive",
     "version:bump:bin": "bash ./scripts/version/bumpBinaryVersions.sh",
-    "version:bump:force": "bash ./scripts/version/forceBumpAllVersions.sh",
-    "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration --declarationConfig tsconfig.build.json",
-    "type": "target/debug/moon --log trace run :typecheck",
-    "moon": "target/debug/moon --log trace"
+    "version:bump:force": "bash ./scripts/version/forceBumpAllVersions.sh"
   },
   "workspaces": [
     "packages/*",

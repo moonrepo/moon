@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! config_cache {
-    ($struct:ident, $writer:ident) => {
+    ($struct:ident, $file:expr, $writer:ident) => {
         async fn load_json(path: &Path) -> Result<$struct, MoonError> {
             use moon_logger::{color, trace};
 
@@ -26,7 +26,24 @@ macro_rules! config_cache {
             /// Read the config file from the cache. If not cached and the file exists,
             /// load it and store in the cache, otherwise return none.
             #[track_caller]
-            pub async fn read(path: PathBuf) -> Result<Option<$struct>, MoonError> {
+            pub async fn read<P: AsRef<Path>>(path: P) -> Result<Option<$struct>, MoonError> {
+                $struct::read_with_name(path, $file).await
+            }
+
+            /// Read the config file from the cache using the provided file name.
+            #[track_caller]
+            pub async fn read_with_name<P, N>(path: P, name: N) -> Result<Option<$struct>, MoonError>
+            where
+                P: AsRef<Path>,
+                N: AsRef<str>
+            {
+                let mut path = path.as_ref().to_path_buf();
+                let name = name.as_ref();
+
+                if !path.ends_with(name) {
+                    path = path.join(name);
+                }
+
                 if path.exists() {
                     Ok(Some(load_config(path).await?))
                 } else {
@@ -37,12 +54,30 @@ macro_rules! config_cache {
             /// If the file exists, load it from the file system, mutate it,
             /// write it back to the file system and to the cache.
             #[track_caller]
-            pub async fn sync<F>(path: PathBuf, func: F) -> Result<bool, MoonError>
+            pub async fn sync<P, F>(path: P, func: F) -> Result<bool, MoonError>
             where
+                P: AsRef<Path>,
+                F: FnOnce(&mut $struct) -> Result<(), MoonError>
+            {
+                $struct::sync_with_name(path, $file, func).await
+            }
+
+            #[track_caller]
+            pub async fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> Result<bool, MoonError>
+            where
+                P: AsRef<Path>,
+                N: AsRef<str>,
                 F: FnOnce(&mut $struct) -> Result<(), MoonError>
             {
                 use cached::Cached;
                 use moon_logger::{color, trace};
+
+                let mut path = path.as_ref().to_path_buf();
+                let name = name.as_ref();
+
+                if !path.ends_with(name) {
+                    path = path.join(name);
+                }
 
                 // Abort early and dont acquire a lock if the config doesnt exist
                 if !path.exists() {

@@ -30,4 +30,5 @@ validator = { version = "0.15.0", features = ["derive"] }
 
 [dev-dependencies]
 assert_fs = "1.0.7"
+pretty_assertions = "1.2.1"
 tokio = { version = "1.19.2", features = ["test-util"] }

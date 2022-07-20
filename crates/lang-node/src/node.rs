@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 lazy_static! {
     pub static ref BIN_PATH_PATTERN: Regex = Regex::new(
-        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.(c|m)?js)?"
+        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.((c|m)?js|exe))?"
     )
     .unwrap();
 }
@@ -443,6 +443,27 @@ fi
                     .to_string(),
                 ),
                 PathBuf::from(r"..\typescript\bin\tsc")
+            );
+        }
+
+        #[test]
+        fn parses_moon_exe() {
+            assert_eq!(
+                parse_bin_file(
+                    &PathBuf::from("test"),
+                    r#"
+#!/bin/sh
+basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+
+case `uname` in
+    *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+esac
+
+exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
+                    "#
+                    .to_string(),
+                ),
+                PathBuf::from(r"..\@moonrepo\cli\moon.exe")
             );
         }
     }

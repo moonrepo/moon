@@ -84,7 +84,7 @@ pub async fn create_node_target_command(
 ) -> Result<Command, ActionError> {
     let toolchain = &workspace.toolchain;
     let node = toolchain.get_node();
-    let mut cmd = node.get_bin_path();
+    let mut cmd = node.get_bin_path().clone();
     let mut args = vec![];
 
     match task.command.as_str() {
@@ -92,13 +92,13 @@ pub async fn create_node_target_command(
             args.extend(create_node_options(context, workspace, task)?);
         }
         "npm" => {
-            cmd = node.get_npm().get_bin_path();
+            cmd = node.get_npm().get_bin_path().clone();
         }
         "pnpm" => {
-            cmd = node.get_pnpm().unwrap().get_bin_path();
+            cmd = node.get_pnpm().unwrap().get_bin_path().clone();
         }
         "yarn" => {
-            cmd = node.get_yarn().unwrap().get_bin_path();
+            cmd = node.get_yarn().unwrap().get_bin_path().clone();
         }
         bin => {
             let bin_path = path::relative_from(
@@ -109,8 +109,12 @@ pub async fn create_node_target_command(
             )
             .unwrap();
 
-            args.extend(create_node_options(context, workspace, task)?);
-            args.push(path::to_string(&bin_path)?);
+            if bin_path.extension().unwrap_or_default() == "exe" {
+                cmd = bin_path;
+            } else {
+                args.extend(create_node_options(context, workspace, task)?);
+                args.push(path::to_string(&bin_path)?);
+            }
         }
     };
 

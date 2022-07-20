@@ -1,5 +1,5 @@
 use crate::types::{FilePath, FilePathOrGlob, TargetID};
-use crate::validators::{validate_child_or_root_path, validate_target};
+use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
 use moon_utils::process::split_args;
 use schemars::gen::SchemaGenerator;
 use schemars::schema::Schema;
@@ -58,69 +58,69 @@ pub enum TaskMergeStrategy {
     Replace,
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_args: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_deps: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_env: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_inputs: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_outputs: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<u8>,
 
-    #[serde(rename = "runInCI")]
+    #[serde(rename = "runInCI", skip_serializing_if = "Option::is_none")]
     pub run_in_ci: Option<bool>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub run_from_workspace_root: Option<bool>,
-}
-
-impl Default for TaskOptionsConfig {
-    fn default() -> Self {
-        TaskOptionsConfig {
-            merge_args: Some(TaskMergeStrategy::default()),
-            merge_deps: Some(TaskMergeStrategy::default()),
-            merge_env: Some(TaskMergeStrategy::default()),
-            merge_inputs: Some(TaskMergeStrategy::default()),
-            merge_outputs: Some(TaskMergeStrategy::default()),
-            retry_count: Some(0),
-            run_in_ci: Some(true),
-            run_from_workspace_root: Some(false),
-        }
-    }
 }
 
 // We use serde(default) here because figment *does not* apply defaults
 // for structs nested within collections. Primarily hash maps.
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[serde(default)]
 pub struct TaskConfig {
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_args")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub command: Option<String>,
+
+    #[serde(
+        deserialize_with = "deserialize_args",
+        skip_serializing_if = "Option::is_none"
+    )]
     #[schemars(schema_with = "make_args_schema")]
     pub args: Option<Vec<String>>,
 
-    pub command: Option<String>,
-
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_deps")]
     pub deps: Option<Vec<TargetID>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub env: Option<HashMap<String, String>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<FilePathOrGlob>>,
 
-    #[serde(default)]
-    #[validate]
-    pub options: TaskOptionsConfig,
-
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_outputs")]
     pub outputs: Option<Vec<FilePath>>,
 
-    #[serde(default)]
+    #[serde(skip_serializing_if = "skip_if_default")]
+    #[validate]
+    pub options: TaskOptionsConfig,
+
+    #[serde(skip_serializing_if = "skip_if_default")]
     #[serde(rename = "type")]
     pub type_of: TaskType,
 }

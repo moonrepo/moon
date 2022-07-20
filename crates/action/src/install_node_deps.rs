@@ -71,7 +71,7 @@ pub async fn install_node_deps(
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
     // Sync values to root `package.json`
-    PackageJson::sync(workspace.root.join("package.json"), |package_json| {
+    PackageJson::sync(&workspace.root, |package_json| {
         add_package_manager(&workspace, package_json);
         add_engines_constraint(&workspace, package_json);
 

@@ -1,0 +1,37 @@
+---
+title: query projects
+sidebar_label: projects
+---
+
+Use the `moon query projects` sub-command to query information about all projects in the project
+graph. The project list can be filtered by passing [options](#options).
+
+```shell
+# Find all projects
+$ moon query projects
+
+# Find all projects with an id that matches "react"
+$ moon query projects --id react
+
+# Find all projects with a `lint` or `build` task
+$ moon query projects --tasks 'lint|build'
+```
+
+This will return a list of project objects with the following structure:
+
+```ts
+{
+	projects: Project[],
+	options: QueryOptions,
+}
+```
+
+### Options
+
+All values are case-insensitive regex patterns.
+
+- `--id <regex>` - Filter projects that match this ID.
+- `--language <regex>` - Filter projects of this programming language.
+- `--source <regex>` - Filter projects that match this source path.
+- `--tasks <regex>` - Filter projects that have the following tasks.
+- `--type <regex>` - Filter project of this type.

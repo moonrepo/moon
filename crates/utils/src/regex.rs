@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use moon_error::MoonError;
 
-pub use regex::Regex;
+pub use regex::{Captures, Regex};
 
 lazy_static! {
     // Capture group for IDs/names/etc

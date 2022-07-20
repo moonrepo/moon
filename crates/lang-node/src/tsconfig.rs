@@ -10,7 +10,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(TsConfigJson, write_preserved_json);
+config_cache!(TsConfigJson, "tsconfig.json", write_preserved_json);
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
 // integration with the rest of the crates. We also can't wait for upsteam for new updates.
@@ -855,8 +855,11 @@ mod test {
 
     #[tokio::test]
     async fn parse_basic_file() {
-        let path = get_fixtures_dir("base/tsconfig-json/tsconfig.default.json");
-        let config = TsConfigJson::read(path).await.unwrap().unwrap();
+        let path = get_fixtures_dir("base/tsconfig-json");
+        let config = TsConfigJson::read_with_name(path, "tsconfig.default.json")
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(
             config.compiler_options.clone().unwrap().target,

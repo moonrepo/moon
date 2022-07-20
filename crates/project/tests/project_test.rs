@@ -6,7 +6,7 @@ use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 fn mock_file_groups() -> HashMap<String, FileGroup> {
@@ -20,7 +20,7 @@ fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
         extends: None,
         file_groups: HashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
-        tasks: HashMap::new(),
+        tasks: BTreeMap::new(),
         schema: String::new(),
     }
 }
@@ -288,7 +288,7 @@ mod tasks {
             "tasks/no-tasks",
             &workspace_root,
             &GlobalProjectConfig {
-                tasks: HashMap::from([(String::from("standard"), mock_task_config("cmd"))]),
+                tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
                 ..GlobalProjectConfig::default()
             },
             &[],
@@ -318,7 +318,7 @@ mod tasks {
                     .canonicalize()
                     .unwrap(),
                 source: String::from("tasks/no-tasks"),
-                tasks: HashMap::from([(String::from("standard"), task)]),
+                tasks: BTreeMap::from([(String::from("standard"), task)]),
                 ..Project::default()
             }
         );
@@ -332,7 +332,7 @@ mod tasks {
             "tasks/basic",
             &workspace_root,
             &GlobalProjectConfig {
-                tasks: HashMap::from([(String::from("standard"), mock_task_config("cmd"))]),
+                tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
                 ..GlobalProjectConfig::default()
             },
             &[],
@@ -373,7 +373,7 @@ mod tasks {
                 id: String::from("id"),
                 config: ProjectConfig {
                     language: ProjectLanguage::JavaScript,
-                    tasks: HashMap::from([
+                    tasks: BTreeMap::from([
                         (String::from("build"), mock_task_config("webpack")),
                         (String::from("test"), mock_task_config("jest")),
                         (String::from("lint"), mock_task_config("eslint"))
@@ -383,7 +383,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
                 source: String::from("tasks/basic"),
-                tasks: HashMap::from([
+                tasks: BTreeMap::from([
                     (String::from("build"), build),
                     (String::from("standard"), std),
                     (String::from("test"), test),
@@ -403,7 +403,7 @@ mod tasks {
             "tasks/basic",
             &workspace_root,
             &GlobalProjectConfig {
-                tasks: HashMap::from([(String::from("standard"), mock_task_config("cmd"))]),
+                tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
                 ..GlobalProjectConfig::default()
             },
             &implicit_inputs,
@@ -451,7 +451,7 @@ mod tasks {
             project_source,
             &workspace_root,
             &GlobalProjectConfig {
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     TaskConfig {
                         args: Some(string_vec!["--a"]),
@@ -475,7 +475,7 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: ProjectConfig {
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("standard"),
                         TaskConfig {
                             args: Some(string_vec!["--b"]),
@@ -493,7 +493,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
@@ -526,7 +526,7 @@ mod tasks {
             project_source,
             &workspace_root,
             &GlobalProjectConfig {
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     TaskConfig {
                         args: Some(string_vec!["--a"]),
@@ -550,7 +550,7 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: ProjectConfig {
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("standard"),
                         TaskConfig {
                             args: Some(string_vec!["--b"]),
@@ -568,7 +568,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
@@ -604,7 +604,7 @@ mod tasks {
             project_source,
             &workspace_root,
             &GlobalProjectConfig {
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     TaskConfig {
                         args: Some(string_vec!["--a"]),
@@ -628,7 +628,7 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: ProjectConfig {
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("standard"),
                         TaskConfig {
                             args: Some(string_vec!["--b"]),
@@ -646,7 +646,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
@@ -682,7 +682,7 @@ mod tasks {
             project_source,
             &workspace_root,
             &GlobalProjectConfig {
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     TaskConfig {
                         args: Some(string_vec!["--a"]),
@@ -706,7 +706,7 @@ mod tasks {
             Project {
                 id: String::from("id"),
                 config: ProjectConfig {
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("standard"),
                         TaskConfig {
                             args: Some(string_vec!["--b"]),
@@ -733,7 +733,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source).canonicalize().unwrap(),
                 source: String::from(project_source),
-                tasks: HashMap::from([(
+                tasks: BTreeMap::from([(
                     String::from("standard"),
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
@@ -866,7 +866,7 @@ mod tasks {
                 &get_fixtures_root(),
                 &GlobalProjectConfig {
                     file_groups: create_file_groups_config(),
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
                             args: Some(string_vec![
@@ -935,7 +935,7 @@ mod tasks {
                 &workspace_root,
                 &GlobalProjectConfig {
                     file_groups: create_file_groups_config(),
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
                             args: Some(string_vec![
@@ -991,7 +991,7 @@ mod tasks {
                 &workspace_root,
                 &GlobalProjectConfig {
                     file_groups: create_file_groups_config(),
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
                             args: Some(string_vec![
@@ -1052,7 +1052,7 @@ mod tasks {
                 &workspace_root,
                 &GlobalProjectConfig {
                     file_groups: create_file_groups_config(),
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
                             command: Some(String::from("test")),
@@ -1112,7 +1112,7 @@ mod tasks {
                 &workspace_root,
                 &GlobalProjectConfig {
                     file_groups: create_file_groups_config(),
-                    tasks: HashMap::from([(
+                    tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
                             command: Some(String::from("test")),
@@ -1163,7 +1163,7 @@ mod workspace {
         fn mock_global_project_config() -> GlobalProjectConfig {
             GlobalProjectConfig {
                 file_groups: HashMap::new(),
-                tasks: HashMap::from([
+                tasks: BTreeMap::from([
                     (
                         String::from("a"),
                         TaskConfig {

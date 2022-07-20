@@ -30,6 +30,21 @@ pub struct TaskOptions {
     pub run_from_workspace_root: bool,
 }
 
+impl Default for TaskOptions {
+    fn default() -> Self {
+        TaskOptions {
+            merge_args: TaskMergeStrategy::Append,
+            merge_deps: TaskMergeStrategy::Append,
+            merge_env: TaskMergeStrategy::Append,
+            merge_inputs: TaskMergeStrategy::Append,
+            merge_outputs: TaskMergeStrategy::Append,
+            retry_count: 0,
+            run_in_ci: true,
+            run_from_workspace_root: false,
+        }
+    }
+}
+
 impl TaskOptions {
     pub fn merge(&mut self, config: &TaskOptionsConfig) {
         if let Some(merge_args) = &config.merge_args {
@@ -64,9 +79,30 @@ impl TaskOptions {
             self.run_from_workspace_root = *run_from_workspace_root;
         }
     }
+
+    pub fn to_config(&self) -> TaskOptionsConfig {
+        let default_options = TaskOptions::default();
+        let mut config = TaskOptionsConfig::default();
+
+        // Skip merge options until we need them
+
+        if self.retry_count != default_options.retry_count {
+            config.retry_count = Some(self.retry_count);
+        }
+
+        if self.run_in_ci != default_options.run_in_ci {
+            config.run_in_ci = Some(self.run_in_ci);
+        }
+
+        if self.run_from_workspace_root != default_options.run_from_workspace_root {
+            config.run_from_workspace_root = Some(self.run_from_workspace_root);
+        }
+
+        config
+    }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Task {
     pub args: Vec<String>,
@@ -105,6 +141,18 @@ impl Logable for Task {
 }
 
 impl Task {
+    pub fn new<T: AsRef<str>>(target: T) -> Self {
+        let target = target.as_ref();
+        let log_target = format!("moon:project:{}", target);
+
+        Task {
+            inputs: string_vec!["**/*"],
+            log_target,
+            target: target.to_owned(),
+            ..Task::default()
+        }
+    }
+
     pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
@@ -145,6 +193,42 @@ impl Task {
         );
 
         task
+    }
+
+    pub fn to_config(&self) -> TaskConfig {
+        let mut config = TaskConfig {
+            command: Some(self.command.clone()),
+            options: self.options.to_config(),
+            ..TaskConfig::default()
+        };
+
+        if !self.args.is_empty() {
+            config.args = Some(self.args.clone());
+        }
+
+        if !self.deps.is_empty() {
+            config.deps = Some(self.deps.clone());
+        }
+
+        if !self.env.is_empty() {
+            config.env = Some(self.env.clone());
+        }
+
+        if !self.inputs.is_empty()
+            || (self.inputs.len() == 1 && !self.inputs.contains(&"**/*".to_owned()))
+        {
+            config.inputs = Some(self.inputs.clone());
+        }
+
+        if !self.outputs.is_empty() {
+            config.outputs = Some(self.outputs.clone());
+        }
+
+        if !matches!(self.type_of, TaskType::Node) {
+            config.type_of = self.type_of.clone();
+        }
+
+        config
     }
 
     /// Create a globset of all input globs to match with.

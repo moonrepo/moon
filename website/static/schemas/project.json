@@ -5,14 +5,12 @@
   "type": "object",
   "properties": {
     "dependsOn": {
-      "default": [],
       "type": "array",
       "items": {
         "type": "string"
       }
     },
     "fileGroups": {
-      "default": {},
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -22,15 +20,9 @@
       }
     },
     "language": {
-      "default": "typescript",
-      "allOf": [
-        {
-          "$ref": "#/definitions/ProjectLanguage"
-        }
-      ]
+      "$ref": "#/definitions/ProjectLanguage"
     },
     "project": {
-      "default": null,
       "anyOf": [
         {
           "$ref": "#/definitions/ProjectMetadataConfig"
@@ -41,33 +33,16 @@
       ]
     },
     "tasks": {
-      "default": {},
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TaskConfig"
       }
     },
     "type": {
-      "default": "library",
-      "allOf": [
-        {
-          "$ref": "#/definitions/ProjectType"
-        }
-      ]
+      "$ref": "#/definitions/ProjectType"
     },
     "workspace": {
-      "default": {
-        "inheritedTasks": {
-          "exclude": null,
-          "include": null,
-          "rename": {}
-        }
-      },
-      "allOf": [
-        {
-          "$ref": "#/definitions/ProjectWorkspaceConfig"
-        }
-      ]
+      "$ref": "#/definitions/ProjectWorkspaceConfig"
     }
   },
   "definitions": {
@@ -123,16 +98,7 @@
       "type": "object",
       "properties": {
         "inheritedTasks": {
-          "default": {
-            "exclude": null,
-            "include": null,
-            "rename": {}
-          },
-          "allOf": [
-            {
-              "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
-            }
-          ]
+          "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
         }
       }
     },
@@ -140,7 +106,6 @@
       "type": "object",
       "properties": {
         "exclude": {
-          "default": null,
           "type": [
             "array",
             "null"
@@ -150,7 +115,6 @@
           }
         },
         "include": {
-          "default": null,
           "type": [
             "array",
             "null"
@@ -160,8 +124,10 @@
           }
         },
         "rename": {
-          "default": {},
-          "type": "object",
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "type": "string"
           }
@@ -173,7 +139,6 @@
       "properties": {
         "args": {
           "title": "ArgsField",
-          "default": null,
           "anyOf": [
             {
               "type": "string"
@@ -220,21 +185,7 @@
           }
         },
         "options": {
-          "default": {
-            "mergeArgs": "append",
-            "mergeDeps": "append",
-            "mergeEnv": "append",
-            "mergeInputs": "append",
-            "mergeOutputs": "append",
-            "retryCount": 0,
-            "runInCI": true,
-            "runFromWorkspaceRoot": false
-          },
-          "allOf": [
-            {
-              "$ref": "#/definitions/TaskOptionsConfig"
-            }
-          ]
+          "$ref": "#/definitions/TaskOptionsConfig"
         },
         "outputs": {
           "type": [
@@ -246,12 +197,7 @@
           }
         },
         "type": {
-          "default": "node",
-          "allOf": [
-            {
-              "$ref": "#/definitions/TaskType"
-            }
-          ]
+          "$ref": "#/definitions/TaskType"
         }
       }
     },

@@ -241,6 +241,36 @@ node:
   dedupeOnLockfileChange: true
 ```
 
+### `inferTasksFromScripts`
+
+> `boolean`
+
+Will infer and automatically create [tasks](../concepts/task) from `package.json` scripts. Defaults
+to `false`.
+
+This requires the [project's language](./project#language) to be "javascript" or "typescript", a
+`package.json` to exist in the project, and will take the following into account:
+
+- Script names will be converted to kebab-case.
+- Tasks defined in `.moon/project.yml` or `project.yml` take precedence over scripts of the same
+  name.
+
+To verify inferred tasks and their options, run [`moon project <id> --json`](../commands/project)!
+
+```yaml title=".moon/workspace.yml" {2}
+node:
+  inferTasksFromScripts: true
+```
+
+:::caution
+
+The functionality that powers this feature, is the same as
+[`moon migrate from-package-json`](../commands/migrate/from-package-json), so all
+[requirements and caveats](../commands/migrate/from-package-json#caveats) also apply here! Be aware
+of these when utilizing this feature, especially in regards to `runInCI`!
+
+:::
+
 ### `syncProjectWorkspaceDependencies`
 
 > `boolean`

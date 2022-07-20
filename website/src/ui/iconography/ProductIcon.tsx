@@ -8,6 +8,7 @@ import {
 	faDiagramProject,
 	faGrid2,
 	faSliders,
+	faSpaceStationMoonConstruction,
 	faSquare,
 	faSquarePlus,
 	faSquareSliders,
@@ -21,6 +22,7 @@ import Icon from './Icon';
 const icons = {
 	discord: faDiscord,
 	github: faGithub,
+	moon: faSpaceStationMoonConstruction,
 	'new-project': faSquarePlus,
 	'new-task': faCirclePlus,
 	project: faSquare,

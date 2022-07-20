@@ -171,10 +171,10 @@ pub fn convert_script_to_task(
 
     debug!(
         target: &task.log_target,
-        "Creating task {} with command {} (from package.json script {})",
+        "Creating task {} with command {} {}",
         color::target(target_id),
         color::shell(&task.command),
-        color::symbol(script_name)
+        color::muted_light(format!("(from script {})", color::symbol(script_name)))
     );
 
     Ok(task)

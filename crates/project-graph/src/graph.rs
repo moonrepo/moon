@@ -261,9 +261,18 @@ impl ProjectGraph {
             || matches!(project.config.language, ProjectLanguage::TypeScript))
             && self.workspace_config.node.infer_tasks_from_scripts
         {
-            // Scripts should not override global tasks
-            for (task_id, task) in infer_tasks_from_scripts(id, &project.root)? {
-                project.tasks.entry(task_id).or_insert(task);
+            debug!(
+                target: LOG_TARGET,
+                "Inferring {} tasks from {}",
+                color::id(id),
+                color::file("package.json")
+            );
+
+            if let Some(tasks) = infer_tasks_from_scripts(id, &project.root)? {
+                // Scripts should not override global tasks
+                for (task_id, task) in tasks {
+                    project.tasks.entry(task_id).or_insert(task);
+                }
             }
         }
 

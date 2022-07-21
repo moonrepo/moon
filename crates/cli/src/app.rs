@@ -32,11 +32,14 @@ pub enum MigrateCommands {
 pub enum NodeCommands {
     #[clap(
         name = "run-script",
-        about = "Run a `package.json` script within a project. This should never be ran directly."
+        about = "Run a `package.json` script within a project."
     )]
     RunScript {
         #[clap(help = "Name of the script")]
         name: String,
+
+        #[clap(long, help = "ID of project to run in")]
+        project: Option<String>,
     },
 }
 

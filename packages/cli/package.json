@@ -15,8 +15,7 @@
   "author": "Miles Johnson",
   "license": "MIT",
   "bin": {
-    "moon": "moon",
-    "moon-run-script": "./bin/moon-run-script.js"
+    "moon": "moon"
   },
   "repository": {
     "type": "git",

@@ -1,7 +1,6 @@
 {
   "name": "@moonrepo/cli",
   "version": "0.7.0",
-  "type": "commonjs",
   "description": "moon command line and core system.",
   "keywords": [
     "moon",
@@ -9,15 +8,9 @@
     "cli",
     "core"
   ],
-  "types": "./dts/index.d.ts",
-  "main": "./cjs/index.cjs",
   "files": [
-    "bin/**/*",
-    "cjs/**/*.{cjs,mjs,map}",
-    "dts/**/*.d.ts",
     "moon",
-    "postinstall.js",
-    "src/**/*.{ts,tsx,json}"
+    "postinstall.js"
   ],
   "author": "Miles Johnson",
   "license": "MIT",
@@ -42,9 +35,5 @@
     "@moonrepo/core-macos-arm64": "^0.7.0",
     "@moonrepo/core-macos-x64": "^0.7.0",
     "@moonrepo/core-windows-x64-msvc": "^0.7.0"
-  },
-  "packemon": {
-    "format": "cjs",
-    "platform": "node"
   }
 }

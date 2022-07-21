@@ -15,6 +15,12 @@ const LOG_TARGET: &str = "moon:workspace";
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
 fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
+    if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
+        let root: PathBuf = root.parse().expect("Failed to parse MOON_WORKSPACE_ROOT.");
+
+        return Some(root);
+    }
+
     trace!(
         target: "moon:workspace",
         "Attempting to find workspace root at {}",

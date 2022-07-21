@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
 use moon_task::{Target, Task, TaskError, TaskID, TaskType};
-use moon_utils::{process, regex};
+use moon_utils::{process, regex, string_vec};
 use std::collections::{BTreeMap, HashMap};
 
 const TARGET: &str = "moon:node-task";
@@ -121,13 +121,19 @@ fn detect_task_type(command: &str) -> TaskType {
     TaskType::Node
 }
 
+pub enum TaskContext {
+    ConvertToTask,
+    WrapRunScript,
+}
+
 #[track_caller]
-pub fn convert_script_to_task(
+pub fn create_task(
     target_id: &str,
     script_name: &str,
     script: &str,
-    infer: bool,
+    context: TaskContext,
 ) -> Result<Task, TaskError> {
+    let is_wrapping = matches!(context, TaskContext::WrapRunScript);
     let script_args = process::split_args(script)?;
     let mut task = Task::new(target_id);
     let mut args = vec![];
@@ -149,14 +155,14 @@ pub fn convert_script_to_task(
             }
         }
 
-        if !infer {
+        if !is_wrapping {
             args.push(arg.to_owned());
         }
     }
 
-    if infer {
-        task.command = "moon-run-script".to_owned();
-        task.args = vec!["run".to_owned(), script_name.to_owned()];
+    if is_wrapping {
+        task.command = "moon".to_owned();
+        task.args = string_vec!["node", "run-script", script_name];
     } else {
         if let Some(command) = args.get(0) {
             if is_bash_script(command) {
@@ -176,7 +182,7 @@ pub fn convert_script_to_task(
     task.type_of = detect_task_type(&task.command);
     task.options.run_in_ci = should_run_in_ci(script_name, script);
 
-    if infer {
+    if is_wrapping {
         debug!(
             target: &task.log_target,
             "Creating task {} {}",
@@ -212,7 +218,7 @@ pub struct ScriptParser<'a> {
     /// The project being parsed.
     project_id: &'a str,
 
-    /// Scripts that still need to be parsed.
+    /// Scripts being parsed.
     scripts: ScriptsMap,
 
     /// Tasks that have been parsed and converted from scripts.
@@ -255,7 +261,7 @@ impl<'a> ScriptParser<'a> {
 
             self.tasks.insert(
                 task_id,
-                convert_script_to_task(&target_id, name, script, true)?,
+                create_task(&target_id, name, script, TaskContext::WrapRunScript)?,
             );
         }
 
@@ -443,7 +449,7 @@ impl<'a> ScriptParser<'a> {
 
         self.tasks.insert(
             task_id.clone(),
-            convert_script_to_task(&target_id, name, value, false)?,
+            create_task(&target_id, name, value, TaskContext::ConvertToTask)?,
         );
 
         Ok(task_id)

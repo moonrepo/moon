@@ -3,6 +3,7 @@ pub mod ci;
 pub mod dep_graph;
 pub mod init;
 pub mod migrate;
+pub mod node;
 pub mod project;
 pub mod project_graph;
 pub mod query;

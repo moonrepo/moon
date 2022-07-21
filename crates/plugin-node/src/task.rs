@@ -42,6 +42,7 @@ lazy_static! {
     // Special package manager handling
     pub static ref PM_RUN_COMMAND: regex::Regex = regex::create_regex(r#"(?:npm|pnpm|yarn) run ([a-zA-Z0-9:-_]+)([^&]+)?"#)
         .unwrap();
+
     pub static ref PM_LIFE_CYCLES: regex::Regex = regex::create_regex(r#"^(preprepare|prepare|postprepare|prepublish|prepublishOnly|publish|postpublish|prepack|pack|postpack|preinstall|install|postinstall|preversion|version|postversion|dependencies)$"#)
         .unwrap();
 
@@ -125,6 +126,7 @@ pub fn convert_script_to_task(
     target_id: &str,
     script_name: &str,
     script: &str,
+    infer: bool,
 ) -> Result<Task, TaskError> {
     let script_args = process::split_args(script)?;
     let mut task = Task::new(target_id);
@@ -147,49 +149,54 @@ pub fn convert_script_to_task(
             }
         }
 
-        args.push(arg.to_owned());
-    }
-
-    if let Some(command) = args.get(0) {
-        if is_bash_script(command) {
-            task.command = "bash".to_owned();
-        } else if is_node_script(command) {
-            task.command = "node".to_owned();
-        } else {
-            task.command = args.remove(0);
+        if !infer {
+            args.push(arg.to_owned());
         }
-    } else {
-        task.command = "noop".to_owned();
     }
 
-    task.args = args;
+    if infer {
+        task.command = "moon-run-script".to_owned();
+        task.args = vec!["run".to_owned(), script_name.to_owned()];
+    } else {
+        if let Some(command) = args.get(0) {
+            if is_bash_script(command) {
+                task.command = "bash".to_owned();
+            } else if is_node_script(command) {
+                task.command = "node".to_owned();
+            } else {
+                task.command = args.remove(0);
+            }
+        } else {
+            task.command = "noop".to_owned();
+        }
+
+        task.args = args;
+    }
+
     task.type_of = detect_task_type(&task.command);
     task.options.run_in_ci = should_run_in_ci(script_name, script);
 
-    debug!(
-        target: &task.log_target,
-        "Creating task {} with command {} {}",
-        color::target(target_id),
-        color::shell(&task.command),
-        color::muted_light(format!("(from script {})", color::symbol(script_name)))
-    );
+    if infer {
+        debug!(
+            target: &task.log_target,
+            "Creating task {} {}",
+            color::target(target_id),
+            color::muted_light(format!("(for script {})", color::symbol(script_name)))
+        );
+    } else {
+        debug!(
+            target: &task.log_target,
+            "Creating task {} with command {} {}",
+            color::target(target_id),
+            color::shell(&task.command),
+            color::muted_light(format!("(from script {})", color::symbol(script_name)))
+        );
+    }
 
     Ok(task)
 }
 
-pub fn create_tasks_from_scripts(
-    project_id: &str,
-    package_json: &mut PackageJson,
-) -> Result<TasksMap, TaskError> {
-    let mut parser = ScriptParser::new(project_id);
-
-    parser.parse_scripts(package_json)?;
-    parser.update_package(package_json)?;
-
-    Ok(parser.tasks)
-}
-
-struct ScriptParser<'a> {
+pub struct ScriptParser<'a> {
     /// Life cycle events like "prepublishOnly".
     life_cycles: ScriptsMap,
 
@@ -209,7 +216,7 @@ struct ScriptParser<'a> {
     scripts: ScriptsMap,
 
     /// Tasks that have been parsed and converted from scripts.
-    tasks: TasksMap,
+    pub tasks: TasksMap,
 
     /// Scripts that ran into issues while parsing.
     unresolved_scripts: ScriptsMap,
@@ -227,6 +234,32 @@ impl<'a> ScriptParser<'a> {
             tasks: BTreeMap::new(),
             unresolved_scripts: HashMap::new(),
         }
+    }
+
+    pub fn infer_scripts(&mut self, package_json: &PackageJson) -> Result<(), TaskError> {
+        let scripts = match &package_json.scripts {
+            Some(s) => s.clone(),
+            None => {
+                return Ok(());
+            }
+        };
+
+        for (name, script) in &scripts {
+            if PM_LIFE_CYCLES.is_match(name) || name.starts_with("pre") || name.starts_with("post")
+            {
+                continue;
+            }
+
+            let task_id = clean_script_name(name);
+            let target_id = Target::format(self.project_id, &task_id)?;
+
+            self.tasks.insert(
+                task_id,
+                convert_script_to_task(&target_id, name, script, true)?,
+            );
+        }
+
+        Ok(())
     }
 
     pub fn update_package(&mut self, package_json: &mut PackageJson) -> Result<(), TaskError> {
@@ -410,7 +443,7 @@ impl<'a> ScriptParser<'a> {
 
         self.tasks.insert(
             task_id.clone(),
-            convert_script_to_task(&target_id, name, value)?,
+            convert_script_to_task(&target_id, name, value, false)?,
         );
 
         Ok(task_id)

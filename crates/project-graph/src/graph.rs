@@ -2,7 +2,7 @@ use moon_cache::CacheEngine;
 use moon_config::constants::FLAG_PROJECTS_USING_GLOB;
 use moon_config::{GlobalProjectConfig, ProjectID, ProjectLanguage, WorkspaceConfig};
 use moon_logger::{color, debug, map_list, trace};
-use moon_plugin_node::infer_tasks_from_scripts;
+use moon_plugin_node::infer_tasks;
 use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -268,7 +268,7 @@ impl ProjectGraph {
                 color::file("package.json")
             );
 
-            if let Some(tasks) = infer_tasks_from_scripts(id, &project.root)? {
+            if let Some(tasks) = infer_tasks(id, &project.root)? {
                 // Scripts should not override global tasks
                 for (task_id, task) in tasks {
                     project.tasks.entry(task_id).or_insert(task);

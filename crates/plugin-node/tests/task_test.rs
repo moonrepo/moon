@@ -1,7 +1,7 @@
 use moon_lang_node::package::PackageJson;
-use moon_plugin_node::create_tasks_from_scripts;
 use moon_plugin_node::task::{create_task, should_run_in_ci, TaskContext};
-use moon_task::{Task, TaskType};
+use moon_plugin_node::{create_tasks_from_scripts, infer_tasks_from_scripts};
+use moon_task::{Task, TaskOptions, TaskType};
 use moon_utils::string_vec;
 use std::collections::{BTreeMap, HashMap};
 
@@ -410,6 +410,70 @@ mod create_task {
             )
             .unwrap();
         }
+    }
+}
+
+mod infer_tasks_from_scripts {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn wraps_scripts() {
+        let pkg = PackageJson {
+            scripts: Some(BTreeMap::from([
+                ("postinstall".into(), "./setup.sh".into()),
+                ("dev".into(), "webpack dev".into()),
+                ("test".into(), "jest .".into()),
+                ("posttest".into(), "run-coverage".into()),
+                ("lint".into(), "eslint src/**/* .".into()),
+                ("typecheck".into(), "tsc --build".into()),
+            ])),
+            ..PackageJson::default()
+        };
+
+        let tasks = infer_tasks_from_scripts("project", &pkg).unwrap();
+
+        assert_eq!(
+            tasks,
+            BTreeMap::from([
+                (
+                    "dev".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "dev"],
+                        options: TaskOptions {
+                            run_in_ci: false,
+                            ..TaskOptions::default()
+                        },
+                        ..Task::new("project:dev")
+                    }
+                ),
+                (
+                    "test".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "test"],
+                        ..Task::new("project:test")
+                    }
+                ),
+                (
+                    "lint".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "lint"],
+                        ..Task::new("project:lint")
+                    }
+                ),
+                (
+                    "typecheck".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "typecheck"],
+                        ..Task::new("project:typecheck")
+                    }
+                ),
+            ])
+        )
     }
 }
 

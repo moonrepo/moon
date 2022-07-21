@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+This release was largely focused on interoperability with the Node.js ecosystem, specifically
+`package.json` scripts. It's the first step in many steps, so stay tuned!
+
 #### 🚀 Updates
 
 - Added a special `noop` command for tasks.

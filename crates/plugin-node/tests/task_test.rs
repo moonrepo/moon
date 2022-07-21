@@ -1,6 +1,6 @@
 use moon_lang_node::package::PackageJson;
 use moon_plugin_node::create_tasks_from_scripts;
-use moon_plugin_node::task::{convert_script_to_task, should_run_in_ci};
+use moon_plugin_node::task::{create_task, should_run_in_ci, TaskContext};
 use moon_task::{Task, TaskType};
 use moon_utils::string_vec;
 use std::collections::{BTreeMap, HashMap};
@@ -144,7 +144,7 @@ mod should_run_in_ci {
     }
 }
 
-mod convert_script_to_task {
+mod create_task {
     use super::*;
 
     mod script_files {
@@ -152,9 +152,13 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_bash() {
-            let task =
-                convert_script_to_task("project:task", "script", "bash scripts/setup.sh", false)
-                    .unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "bash scripts/setup.sh",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -169,8 +173,13 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_bash_without_command() {
-            let task = convert_script_to_task("project:task", "script", "scripts/setup.sh", false)
-                .unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "scripts/setup.sh",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -185,9 +194,13 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_node() {
-            let task =
-                convert_script_to_task("project:task", "script", "node scripts/test.js", false)
-                    .unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "node scripts/test.js",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -205,8 +218,13 @@ mod convert_script_to_task {
             let candidates = ["scripts/test.js", "scripts/test.cjs", "scripts/test.mjs"];
 
             for candidate in candidates {
-                let task =
-                    convert_script_to_task("project:task", "script", candidate, false).unwrap();
+                let task = create_task(
+                    "project:task",
+                    "script",
+                    candidate,
+                    TaskContext::ConvertToTask,
+                )
+                .unwrap();
 
                 assert_eq!(
                     task,
@@ -226,9 +244,13 @@ mod convert_script_to_task {
 
         #[test]
         fn extracts_single_var() {
-            let task =
-                convert_script_to_task("project:task", "script", "KEY=VALUE yarn install", false)
-                    .unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "KEY=VALUE yarn install",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -243,11 +265,11 @@ mod convert_script_to_task {
 
         #[test]
         fn extracts_multiple_vars() {
-            let task = convert_script_to_task(
+            let task = create_task(
                 "project:task",
                 "script",
                 "KEY1=VAL1 KEY2=VAL2 yarn install",
-                false,
+                TaskContext::ConvertToTask,
             )
             .unwrap();
 
@@ -267,11 +289,11 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_semicolons() {
-            let task = convert_script_to_task(
+            let task = create_task(
                 "project:task",
                 "script",
                 "KEY1=VAL1; KEY2=VAL2; yarn install",
-                false,
+                TaskContext::ConvertToTask,
             )
             .unwrap();
 
@@ -291,11 +313,11 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_quoted_values() {
-            let task = convert_script_to_task(
+            let task = create_task(
                 "project:task",
                 "script",
                 "NODE_OPTIONS='-f -b' yarn",
-                false,
+                TaskContext::ConvertToTask,
             )
             .unwrap();
 
@@ -333,11 +355,11 @@ mod convert_script_to_task {
             ];
 
             for candidate in candidates {
-                let task = convert_script_to_task(
+                let task = create_task(
                     "project:task",
                     "script",
                     &format!("tool build {} {}", candidate.0, candidate.1),
-                    false,
+                    TaskContext::ConvertToTask,
                 )
                 .unwrap();
 
@@ -356,25 +378,35 @@ mod convert_script_to_task {
         #[should_panic(expected = "NoParentOutput(\"../parent/dir\", \"project:task\")")]
         #[test]
         fn fails_on_parent_relative() {
-            convert_script_to_task("project:task", "script", "build --out ../parent/dir", false)
-                .unwrap();
+            create_task(
+                "project:task",
+                "script",
+                "build --out ../parent/dir",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
         }
 
         #[should_panic(expected = "NoAbsoluteOutput(\"/abs/dir\", \"project:task\")")]
         #[test]
         fn fails_on_absolute() {
-            convert_script_to_task("project:task", "script", "build --out /abs/dir", false)
-                .unwrap();
+            create_task(
+                "project:task",
+                "script",
+                "build --out /abs/dir",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
         }
 
         #[should_panic(expected = "NoAbsoluteOutput(\"C:\\\\abs\\\\dir\", \"project:task\")")]
         #[test]
         fn fails_on_absolute_windows() {
-            convert_script_to_task(
+            create_task(
                 "project:task",
                 "script",
                 "build --out C:\\\\abs\\\\dir",
-                false,
+                TaskContext::ConvertToTask,
             )
             .unwrap();
         }

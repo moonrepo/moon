@@ -1,5 +1,5 @@
 use crate::validators::validate_semver_version;
-use moon_lang_node::{NODE, NODENV, NVMRC, PNPM, YARN};
+use moon_lang_node::{NODE, NODENV, NPM, NVMRC, PNPM, YARN};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -53,6 +53,16 @@ pub enum PackageManager {
 impl Default for PackageManager {
     fn default() -> Self {
         PackageManager::Npm
+    }
+}
+
+impl PackageManager {
+    pub fn get_bin_name(&self) -> String {
+        match self {
+            PackageManager::Npm => NPM.binary.to_owned(),
+            PackageManager::Pnpm => PNPM.binary.to_owned(),
+            PackageManager::Yarn => YARN.binary.to_owned(),
+        }
     }
 }
 

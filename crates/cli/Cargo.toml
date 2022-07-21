@@ -17,6 +17,7 @@ moon_action = { path = "../action" }
 moon_action_runner = { path = "../action-runner" }
 moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
+moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }

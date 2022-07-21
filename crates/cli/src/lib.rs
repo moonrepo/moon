@@ -8,8 +8,8 @@ use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};
 use crate::commands::dep_graph::dep_graph;
 use crate::commands::init::{init, InitOptions};
-use crate::commands::migrate::from_package_json;
-use crate::commands::node::run_script;
+use crate::commands::migrate;
+use crate::commands::node;
 use crate::commands::project::project;
 use crate::commands::project_graph::project_graph;
 use crate::commands::query::{self, QueryProjectsOptions, QueryTouchedFilesOptions};
@@ -96,10 +96,10 @@ pub async fn run_cli() {
             .await
         }
         Commands::Migrate { command } => match command {
-            MigrateCommands::FromPackageJson { id } => from_package_json(id).await,
+            MigrateCommands::FromPackageJson { id } => migrate::from_package_json(id).await,
         },
         Commands::Node { command } => match command {
-            NodeCommands::RunScript { name } => run_script(name).await,
+            NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
         },
         Commands::Project { id, json } => project(id, *json).await,
         Commands::ProjectGraph { id } => project_graph(id).await,

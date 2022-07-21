@@ -15,7 +15,3 @@ umd/
 
 # Test fixtures
 /tests
-
-# Misc
-bin/*.js
-postinstall.js

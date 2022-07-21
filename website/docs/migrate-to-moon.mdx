@@ -8,7 +8,7 @@ Now that we've talked about the workspace, projects, tasks, and more, we must ta
 important... Should you embrace moon tasks? Or keep using `package.json` scripts? Or both
 (incremental adoption)?
 
-## Using moon tasks
+## Migrate to moon tasks
 
 We suggest using moon tasks (of course), as they provide far more granular control and configurable
 options than scripts, and a `project.yml` is a better
@@ -18,7 +18,7 @@ enough to scale for large codebases.
 To ease the migration process, we offer the
 [`moon migrate from-package-json`](./commands/migrate/from-package-json) command, which will convert
 a project's `package.json` scripts into `project.yml` tasks, while also determining project
-dependencies ([`dependsOn`](./config/project#dependsOn)).
+dependencies ([`dependsOn`](./config/project#dependsOn)). This needs to be ran _per project_.
 
 ```shell
 $ moon migrate from-package-json app
@@ -26,9 +26,9 @@ $ moon migrate from-package-json app
 
 This command will do its best to parse and convert scripts, but this isn't always a simple 1:1
 conversion, especially when determining dependency chains. For this reason alone, we suggest
-_manually curating_ tasks!
+_manually curating_ tasks, but the migrate command well get you most of the way!
 
-## Using `package.json` scripts
+## Keep using `package.json` scripts
 
 As a frontend developer you're already familiar with the Node.js ecosystem, specifically around
 defining and using `package.json` scripts, and you may not want to deviate from this. Don't worry,
@@ -36,12 +36,9 @@ simply enable the [`node.inferTasksFromScripts`](./config/workspace#infertasksfr
 to automatically create moon tasks from a project's scripts! These can then be ran with
 [`moon run`](./commands/run).
 
-However, tasks and scripts are not 1:1 in functionality, as a task represents a single command and
-its execution state, including inputs, outputs, and more. Because of this,
-[there are many caveats involved when inferring tasks](./commands/migrate/from-package-json#caveats)!
-
-Furthermore, on top of the increased overhead, relying on `package.json` scripts incurs the
-following risks and disadvantages unless explicitly configured:
+This implementation is a simple abstraction that runs `npm run <script>` (or pnpm/yarn) in the
+project directory as a child process. While this works, relying on `package.json` scripts incurs the
+following risks and disadvantages:
 
 - [Inputs](./config/project#inputs) default to `**/*`:
   - A change to every project relative file will mark the task as affected, even those not necessary
@@ -53,7 +50,7 @@ following risks and disadvantages unless explicitly configured:
     `--outFile`, `--dist-dir`, etc.
   - If no output could be determined, builds will not be cached and hydrated.
 - Tasks will always [run in CI](./config/project#runinci) unless:
-  - moon will attempt to determine invalid CI tasks by looking for common command usage, for
+  - moon will attempt to determine invalid CI tasks by looking for popular command usage, for
     example: `webpack serve`, `next dev`, `--watch` usage, and more. This _is not_ an exhaustive
     check.
   - The script name contains variations of `dev`, `start`, or `serve`.

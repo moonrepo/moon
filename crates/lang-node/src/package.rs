@@ -483,9 +483,7 @@ mod test {
         let file = dir.child("package.json");
         file.write_str(json).unwrap();
 
-        let mut package = PackageJson::read(dir.path().to_path_buf())
-            .unwrap()
-            .unwrap();
+        let mut package = PackageJson::read(dir.path()).unwrap().unwrap();
 
         package.save().unwrap();
 

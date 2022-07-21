@@ -12,14 +12,16 @@ fileGroups:
 tasks:
   build:
     command: 'packemon'
-    args: 'build'
+    args: 'build --addFiles --declaration'
+    env:
+      NODE_ENV: 'production'
     inputs:
       - '@globs(sources)'
       - 'package.json'
       - 'tsconfig.json'
       - '/tsconfig.options.json'
     outputs:
-      - 'mjs'
+      - 'cjs'
 
   format:
     command: 'prettier'

@@ -2861,6 +2861,7 @@ __metadata:
       optional: true
   bin:
     moon: moon
+    moon-run-script: ./bin/moon-run-script.js
   languageName: unknown
   linkType: soft
 

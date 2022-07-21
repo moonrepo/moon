@@ -26,7 +26,7 @@
     "src/**/*.{ts,tsx,json}"
   ],
   "packemon": {
-    "format": "mjs",
+    "format": "cjs",
     "platform": "node",
     "bundle": true
   },

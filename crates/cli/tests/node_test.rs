@@ -1,3 +1,4 @@
+use moon_utils::is_ci;
 use moon_utils::test::{
     create_fixtures_skeleton_sandbox, create_moon_command_in, get_fixtures_dir,
 };
@@ -60,6 +61,11 @@ mod run_script {
 
     #[test]
     fn works_with_pnpm() {
+        // This requires the toolchain to be installed, which may not be
+        if is_ci() {
+            return;
+        }
+
         let fixture = create_fixtures_skeleton_sandbox("node-pnpm");
 
         let assert = create_moon_command_in(fixture.path())
@@ -71,6 +77,11 @@ mod run_script {
 
     #[test]
     fn works_with_yarn() {
+        // This requires the toolchain to be installed, which may not be
+        if is_ci() {
+            return;
+        }
+
         let fixture = create_fixtures_skeleton_sandbox("node-yarn");
 
         let assert = create_moon_command_in(fixture.path())

@@ -422,6 +422,7 @@ mod infer_tasks_from_scripts {
         let pkg = PackageJson {
             scripts: Some(BTreeMap::from([
                 ("postinstall".into(), "./setup.sh".into()),
+                ("build:app".into(), "webpack build --output ./dist".into()),
                 ("dev".into(), "webpack dev".into()),
                 ("test".into(), "jest .".into()),
                 ("posttest".into(), "run-coverage".into()),
@@ -436,6 +437,15 @@ mod infer_tasks_from_scripts {
         assert_eq!(
             tasks,
             BTreeMap::from([
+                (
+                    "build-app".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "build:app"],
+                        outputs: string_vec!["dist"],
+                        ..Task::new("project:build-app")
+                    }
+                ),
                 (
                     "dev".to_owned(),
                     Task {

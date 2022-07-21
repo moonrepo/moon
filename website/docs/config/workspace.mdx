@@ -251,11 +251,14 @@ to `false`.
 This requires the [project's language](./project#language) to be "javascript" or "typescript", a
 `package.json` to exist in the project, and will take the following into account:
 
-- Script names will be converted to kebab-case.
+- Script names will be converted to kebab-case, and will become the task ID.
+- Pre, post, and life cycle hooks are ignored.
 - Tasks defined in `.moon/project.yml` or `project.yml` take precedence over scripts of the same
   name.
 
-To verify inferred tasks and their options, run [`moon project <id> --json`](../commands/project)!
+To verify inferred tasks, run [`moon project <id>`](../commands/project) (pass `--json` to view raw
+config and options). Tasks that are inferred will have their command and args set to
+`moon node run-script`.
 
 ```yaml title=".moon/workspace.yml" {2}
 node:
@@ -264,10 +267,10 @@ node:
 
 :::caution
 
-The functionality that powers this feature, is the same as
-[`moon migrate from-package-json`](../commands/migrate/from-package-json), so all
-[requirements and caveats](../commands/migrate/from-package-json#caveats) also apply here! Be aware
-of these when utilizing this feature, especially in regards to `runInCI`!
+This implementation shares functionality with
+[`moon migrate from-package-json`](../commands/migrate/from-package-json), and will attempt to
+determine environment variables, outputs, CI options, and more! Be aware of these when utilizing
+this feature, especially in regards to `runInCI`, as it may be inaccurate!
 
 :::
 

@@ -1,15 +1,25 @@
-use moon_utils::is_ci;
 use moon_utils::test::{
     create_fixtures_skeleton_sandbox, create_moon_command_in, get_fixtures_dir,
 };
 use predicates::prelude::*;
+use serial_test::serial;
+use std::path::Path;
+
+fn setup_toolchain(path: &Path) {
+    let assert = create_moon_command_in(path).args(["setup"]).assert();
+
+    assert.success();
+}
 
 mod run_script {
     use super::*;
 
     #[test]
+    #[serial]
     fn errors_if_no_project() {
         let fixture = create_fixtures_skeleton_sandbox("node-npm");
+
+        setup_toolchain(fixture.path());
 
         let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "unknown"])
@@ -21,8 +31,11 @@ mod run_script {
     }
 
     #[test]
+    #[serial]
     fn errors_for_unknown_script() {
         let fixture = create_fixtures_skeleton_sandbox("node-npm");
+
+        setup_toolchain(fixture.path());
 
         let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "unknown", "--project", "npm"])
@@ -34,8 +47,11 @@ mod run_script {
     }
 
     #[test]
+    #[serial]
     fn runs_with_project_option() {
         let fixture = create_fixtures_skeleton_sandbox("node-npm");
+
+        setup_toolchain(fixture.path());
 
         let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "test", "--project", "npm"])
@@ -45,8 +61,11 @@ mod run_script {
     }
 
     #[test]
+    #[serial]
     fn runs_with_env_var() {
         let fixture = create_fixtures_skeleton_sandbox("node-npm");
+
+        setup_toolchain(fixture.path());
 
         let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "test"])
@@ -61,12 +80,9 @@ mod run_script {
 
     #[test]
     fn works_with_pnpm() {
-        // This requires the toolchain to be installed, which may not be
-        if is_ci() {
-            return;
-        }
-
         let fixture = create_fixtures_skeleton_sandbox("node-pnpm");
+
+        setup_toolchain(fixture.path());
 
         let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "lint", "--project", "pnpm"])
@@ -75,19 +91,16 @@ mod run_script {
         assert.success().stdout(predicate::str::contains("lint"));
     }
 
-    #[test]
-    fn works_with_yarn() {
-        // This requires the toolchain to be installed, which may not be
-        if is_ci() {
-            return;
-        }
+    // #[test]
+    // fn works_with_yarn() {
+    //     let fixture = create_fixtures_skeleton_sandbox("node-yarn");
 
-        let fixture = create_fixtures_skeleton_sandbox("node-yarn");
+    //     setup_toolchain(fixture.path());
 
-        let assert = create_moon_command_in(fixture.path())
-            .args(["node", "run-script", "build", "--project", "yarn"])
-            .assert();
+    //     let assert = create_moon_command_in(fixture.path())
+    //         .args(["node", "run-script", "build", "--project", "yarn"])
+    //         .assert();
 
-        assert.success().stdout(predicate::str::contains("build"));
-    }
+    //     assert.success().stdout(predicate::str::contains("build"));
+    // }
 }

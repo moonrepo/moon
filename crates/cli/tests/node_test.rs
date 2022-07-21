@@ -1,4 +1,6 @@
-use moon_utils::test::{create_moon_command, get_fixtures_dir};
+use moon_utils::test::{
+    create_fixtures_skeleton_sandbox, create_moon_command_in, get_fixtures_dir,
+};
 use predicates::prelude::*;
 
 mod run_script {
@@ -6,7 +8,9 @@ mod run_script {
 
     #[test]
     fn errors_if_no_project() {
-        let assert = create_moon_command("node-npm")
+        let fixture = create_fixtures_skeleton_sandbox("node-npm");
+
+        let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "unknown"])
             .assert();
 
@@ -17,7 +21,9 @@ mod run_script {
 
     #[test]
     fn errors_for_unknown_script() {
-        let assert = create_moon_command("node-npm")
+        let fixture = create_fixtures_skeleton_sandbox("node-npm");
+
+        let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "unknown", "--project", "npm"])
             .assert();
 
@@ -28,7 +34,9 @@ mod run_script {
 
     #[test]
     fn runs_with_project_option() {
-        let assert = create_moon_command("node-npm")
+        let fixture = create_fixtures_skeleton_sandbox("node-npm");
+
+        let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "test", "--project", "npm"])
             .assert();
 
@@ -37,7 +45,9 @@ mod run_script {
 
     #[test]
     fn runs_with_env_var() {
-        let assert = create_moon_command("node-npm")
+        let fixture = create_fixtures_skeleton_sandbox("node-npm");
+
+        let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "test"])
             .env(
                 "MOON_PROJECT_ROOT",
@@ -50,20 +60,23 @@ mod run_script {
 
     #[test]
     fn works_with_pnpm() {
-        let assert = create_moon_command("node-pnpm")
+        let fixture = create_fixtures_skeleton_sandbox("node-pnpm");
+
+        let assert = create_moon_command_in(fixture.path())
             .args(["node", "run-script", "lint", "--project", "pnpm"])
             .assert();
 
         assert.success().stdout(predicate::str::contains("lint"));
     }
 
-    // Requires a lockfile... but works
-    // #[test]
-    // fn works_with_yarn() {
-    //     let assert = create_moon_command("node-yarn1")
-    //         .args(["node", "run-script", "build", "--project", "yarn"])
-    //         .assert();
+    #[test]
+    fn works_with_yarn() {
+        let fixture = create_fixtures_skeleton_sandbox("node-yarn");
 
-    //     assert.success().stdout(predicate::str::contains("> build"));
-    // }
+        let assert = create_moon_command_in(fixture.path())
+            .args(["node", "run-script", "build", "--project", "yarn"])
+            .assert();
+
+        assert.success().stdout(predicate::str::contains("build"));
+    }
 }

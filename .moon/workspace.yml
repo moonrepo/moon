@@ -12,6 +12,7 @@ node:
 
 projects:
   - 'packages/*'
+  - '!packages/cli'
   - '!packages/core-*'
   - 'website'
 

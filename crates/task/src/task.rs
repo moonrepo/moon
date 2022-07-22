@@ -249,32 +249,32 @@ impl Task {
         // strings with tokens, and file paths when tokens are resolved.
         for arg in &self.args {
             if token_resolver.has_token_func(arg) {
-                for resolved_arg in token_resolver.resolve_func(arg, self)? {
-                    // When running within a project:
-                    //  - Project paths are relative and start with "./"
-                    //  - Workspace paths are relative up to the root
-                    // When running from the workspace:
-                    //  - All paths are absolute
-                    if run_in_project
-                        && resolved_arg.starts_with(token_resolver.data.workspace_root)
-                    {
-                        let rel_path =
-                            path::relative_from(&resolved_arg, token_resolver.data.project_root)
-                                .unwrap();
+                // for resolved_arg in token_resolver.resolve_func(arg, self)? {
+                //     // When running within a project:
+                //     //  - Project paths are relative and start with "./"
+                //     //  - Workspace paths are relative up to the root
+                //     // When running from the workspace:
+                //     //  - All paths are absolute
+                //     if run_in_project
+                //         && resolved_arg.starts_with(token_resolver.data.workspace_root)
+                //     {
+                //         let rel_path =
+                //             path::relative_from(&resolved_arg, token_resolver.data.project_root)
+                //                 .unwrap();
 
-                        if rel_path.starts_with("..") {
-                            args.push(rel_path.to_string_lossy().to_string());
-                        } else {
-                            args.push(format!(
-                                ".{}{}",
-                                std::path::MAIN_SEPARATOR,
-                                rel_path.to_string_lossy()
-                            ));
-                        }
-                    } else {
-                        args.push(resolved_arg.to_string_lossy().to_string());
-                    }
-                }
+                //         if rel_path.starts_with("..") {
+                //             args.push(rel_path.to_string_lossy().to_string());
+                //         } else {
+                //             args.push(format!(
+                //                 ".{}{}",
+                //                 std::path::MAIN_SEPARATOR,
+                //                 rel_path.to_string_lossy()
+                //             ));
+                //         }
+                //     } else {
+                //         args.push(resolved_arg.to_string_lossy().to_string());
+                //     }
+                // }
             } else if token_resolver.has_token_var(arg) {
                 args.push(token_resolver.resolve_vars(arg, self)?);
             } else {
@@ -337,13 +337,10 @@ impl Task {
             return Ok(());
         }
 
-        for input in &token_resolver.resolve(&self.inputs, self)? {
-            if glob::is_path_glob(input) {
-                self.input_globs.push(glob::normalize(input)?);
-            } else {
-                self.input_paths.insert(path::normalize(input));
-            }
-        }
+        let (paths, globs) = token_resolver.resolve(&self.inputs, self)?;
+
+        self.input_paths.extend(paths);
+        self.input_globs.extend(globs);
 
         Ok(())
     }
@@ -354,14 +351,16 @@ impl Task {
             return Ok(());
         }
 
-        for output in &token_resolver.resolve(&self.outputs, self)? {
-            if glob::is_path_glob(output) {
+        let (paths, globs) = token_resolver.resolve(&self.outputs, self)?;
+
+        self.output_paths.extend(paths);
+
+        if !globs.is_empty() {
+            if let Some(glob) = globs.get(0) {
                 return Err(TaskError::NoOutputGlob(
-                    output.to_owned(),
+                    glob.to_owned(),
                     self.target.clone(),
                 ));
-            } else {
-                self.output_paths.insert(path::normalize(output));
             }
         }
 

@@ -1,15 +1,14 @@
 use moon_error::MoonError;
 use moon_utils::glob::GlobError;
 use moon_utils::process::ArgsParseError;
-use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum TaskError {
     #[error(
-        "Task outputs do not support file globs. Found <path>{0}</path> in <target>{1}</target>."
+        "Task outputs do not support file globs. Found <file>{0}</file> in <target>{1}</target>."
     )]
-    NoOutputGlob(PathBuf, String),
+    NoOutputGlob(String, String),
 
     #[error(
         "Task outputs must be project relative and cannot be absolute. Found <file>{0}</file> in <target>{1}</target>."

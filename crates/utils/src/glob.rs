@@ -7,7 +7,7 @@ pub use wax::Glob;
 use wax::{Any, GlobError as WaxGlobError, LinkBehavior, Negation, Pattern};
 
 lazy_static! {
-    pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"(//\?/)?[A-Z]:").unwrap();
+    pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"^(//\?/)?[A-Z]:").unwrap();
 }
 
 pub type GlobError = WaxGlobError<'static>;
@@ -84,20 +84,12 @@ pub fn is_glob<T: AsRef<str>>(value: T) -> bool {
     false
 }
 
-pub fn is_path_glob<T: AsRef<Path>>(path: T) -> bool {
-    is_glob(path.as_ref().to_string_lossy())
+pub fn normalize<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+    path::to_virtual_string(path.as_ref())
 }
 
-pub fn normalize<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
-    // Always use forward slashes for globs
-    let glob = path::to_virtual_string(path.as_ref())?;
-
-    // Remove UNC and drive prefix as it breaks glob matching
-    if cfg!(windows) {
-        return Ok(WINDOWS_PREFIX.replace_all(&glob, "**").to_string());
-    }
-
-    Ok(glob)
+pub fn remove_drive_prefix<T: AsRef<str>>(glob: T) -> String {
+    WINDOWS_PREFIX.replace_all(glob.as_ref(), "**").to_string()
 }
 
 /// Wax currently doesn't support negated globs (starts with !),

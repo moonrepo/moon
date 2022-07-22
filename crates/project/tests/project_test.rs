@@ -980,7 +980,7 @@ mod tasks {
         #[test]
         fn expands_args_with_vars() {
             let workspace_root = get_fixtures_root();
-            let project_root = workspace_root.join("base/files-and-dirs");
+            let project_root = workspace_root.join("base").join("files-and-dirs");
             let project = Project::new(
                 "id",
                 "base/files-and-dirs",

@@ -8,7 +8,13 @@ pub async fn run_script(
     project: &Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
-    let mut command = Command::new(workspace.config.node.package_manager.get_bin_name());
+    let mut command = Command::new(
+        workspace
+            .toolchain
+            .get_node()
+            .get_package_manager()
+            .get_bin_path(),
+    );
 
     command.arg("run").arg(name);
 

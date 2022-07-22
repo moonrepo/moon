@@ -18,8 +18,8 @@ moon_workspace = { path = "../workspace" }
 console = "0.15.0"
 petgraph = "0.6.2"
 thiserror = "1.0.31"
-tokio = { version = "1.19.2", features = ["full"] }
+tokio = { version = "1.20.0", features = ["full"] }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
-insta = "1.15.0"
+insta = "1.16.0"

@@ -9,7 +9,7 @@ moon_logger = { path = "../logger" }
 assert_cmd = "2.0.4"
 assert_fs = "1.0.7"
 async-recursion = "1.0.0"
-cached = "0.36.0"
+cached = "0.37.0"
 chrono = "0.4.19"
 chrono-humanize = "0.2.1"
 clean-path = "0.2.1"
@@ -18,9 +18,9 @@ json_comments = "0.2.1"
 lazy_static = "1.4.0"
 pathdiff = "0.2.1"
 regex = "1.6.0"
-serde = "1.0.138"
+serde = "1.0.140"
 serde_json = { version = "1.0.82", features = ["preserve_order"] }
 shell-words = "1.1.0"
-tokio = { version = "1.19.2", features = ["full"] }
+tokio = { version = "1.20.0", features = ["full"] }
 wax = "0.5.0"
 

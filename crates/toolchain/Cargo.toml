@@ -24,4 +24,4 @@ zip = "0.6.2"
 assert_fs = "1.0.7"
 mockito = "0.31.0"
 predicates = "2.1.1"
-tokio = { version = "1.19.2", features = ["test-util"] }
+tokio = { version = "1.20.0", features = ["test-util"] }

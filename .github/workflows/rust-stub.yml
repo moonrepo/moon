@@ -33,6 +33,7 @@ jobs:
     steps:
       - run: 'echo "Not affected, skipping"'
   coverage:
+    if: ${{ startsWith(github.ref_name, 'develop-') || github.ref_name == 'master' }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:

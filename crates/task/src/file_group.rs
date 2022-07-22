@@ -204,13 +204,17 @@ mod tests {
 
             assert_eq!(
                 file_group.all(&workspace_root, &project_root).unwrap(),
-                vec![
-                    project_root.join("**/*"),
-                    project_root.join("file.js"),
-                    project_root.join("folder/index.ts"),
-                    workspace_root.join("root.js"),
-                    workspace_root.join("root/*")
-                ]
+                (
+                    vec![
+                        project_root.join("file.js"),
+                        project_root.join("folder/index.ts"),
+                        workspace_root.join("root.js")
+                    ],
+                    vec![
+                        glob::normalize(project_root.join("**/*")).unwrap(),
+                        glob::normalize(workspace_root.join("root/*")).unwrap()
+                    ]
+                )
             );
         }
     }
@@ -306,9 +310,9 @@ mod tests {
             assert_eq!(
                 file_group.globs(&workspace_root, &project_root).unwrap(),
                 vec![
-                    project_root.join("**/*"),
-                    project_root.join("*.rs"),
-                    workspace_root.join("*.js")
+                    project_root.join("**/*").to_string_lossy(),
+                    project_root.join("*.rs").to_string_lossy(),
+                    workspace_root.join("*.js").to_string_lossy()
                 ]
             );
         }

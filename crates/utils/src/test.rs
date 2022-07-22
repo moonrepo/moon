@@ -1,4 +1,3 @@
-use crate::glob;
 use crate::path;
 use crate::process::output_to_string;
 use std::env;
@@ -95,11 +94,6 @@ pub fn replace_fixtures_dir<T: AsRef<str>, P: AsRef<Path>>(value: T, dir: P) -> 
         .as_ref()
         .replace(dir_str, "<WORKSPACE>")
         .replace(&path::standardize_separators(dir_str), "<WORKSPACE>")
-}
-
-// We need to do this so slashes are accurate and always forward
-pub fn wrap_glob<T: AsRef<Path>>(path: T) -> PathBuf {
-    PathBuf::from(glob::normalize(path).unwrap())
 }
 
 pub fn create_moon_command<T: AsRef<str>>(fixture: T) -> assert_cmd::Command {

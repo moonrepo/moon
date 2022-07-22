@@ -208,7 +208,6 @@ mod tasks {
         create_expanded_task as create_expanded_task_internal, create_file_groups_config,
     };
     use moon_utils::glob;
-    use moon_utils::test::wrap_glob;
     use pretty_assertions::assert_eq;
 
     fn mock_task_config(command: &str) -> TaskConfig {
@@ -1075,8 +1074,8 @@ mod tasks {
             assert_eq!(
                 task.input_globs,
                 vec![
-                    wrap_glob(&project_root.join("**/*.{ts,tsx}")).to_string_lossy(),
-                    wrap_glob(&project_root.join("*.js")).to_string_lossy()
+                    glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(project_root.join("*.js")).unwrap()
                 ],
             );
 
@@ -1131,7 +1130,7 @@ mod tasks {
 
             assert_eq!(
                 task.input_globs,
-                vec![wrap_glob(&project_root.join("*.yml")).to_string_lossy(),]
+                vec![glob::normalize(project_root.join("*.yml")).unwrap(),]
             );
 
             let a: HashSet<PathBuf> =

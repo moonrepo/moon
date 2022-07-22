@@ -9,6 +9,7 @@ use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_utils::{glob, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -243,38 +244,40 @@ impl Task {
         }
 
         let mut args: Vec<String> = vec![];
-        let run_in_project = !self.options.run_from_workspace_root;
 
         // We cant use `TokenResolver.resolve` as args are a mix of strings,
         // strings with tokens, and file paths when tokens are resolved.
         for arg in &self.args {
             if token_resolver.has_token_func(arg) {
-                // for resolved_arg in token_resolver.resolve_func(arg, self)? {
-                //     // When running within a project:
-                //     //  - Project paths are relative and start with "./"
-                //     //  - Workspace paths are relative up to the root
-                //     // When running from the workspace:
-                //     //  - All paths are absolute
-                //     if run_in_project
-                //         && resolved_arg.starts_with(token_resolver.data.workspace_root)
-                //     {
-                //         let rel_path =
-                //             path::relative_from(&resolved_arg, token_resolver.data.project_root)
-                //                 .unwrap();
+                let (mut paths, globs) = token_resolver.resolve_func(arg, self)?;
 
-                //         if rel_path.starts_with("..") {
-                //             args.push(rel_path.to_string_lossy().to_string());
-                //         } else {
-                //             args.push(format!(
-                //                 ".{}{}",
-                //                 std::path::MAIN_SEPARATOR,
-                //                 rel_path.to_string_lossy()
-                //             ));
-                //         }
-                //     } else {
-                //         args.push(resolved_arg.to_string_lossy().to_string());
-                //     }
-                // }
+                // This is annoying and unfortunate, but we must strip the prefix...
+                for glob in globs {
+                    paths.push(PathBuf::from(glob));
+                }
+
+                // When running within a project:
+                //  - Project paths are relative and start with "./"
+                //  - Workspace paths are relative up to the root
+                // When running from the workspace:
+                //  - All paths are absolute
+                for path in paths {
+                    if !self.options.run_from_workspace_root
+                        && path.starts_with(token_resolver.data.workspace_root)
+                    {
+                        let rel_path = path::to_string(
+                            path::relative_from(&path, token_resolver.data.project_root).unwrap(),
+                        )?;
+
+                        if rel_path.starts_with("..") {
+                            args.push(rel_path);
+                        } else {
+                            args.push(format!(".{}{}", std::path::MAIN_SEPARATOR, rel_path));
+                        }
+                    } else {
+                        args.push(path::to_string(path)?);
+                    }
+                }
             } else if token_resolver.has_token_var(arg) {
                 args.push(token_resolver.resolve_vars(arg, self)?);
             } else {

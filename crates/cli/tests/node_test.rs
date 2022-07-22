@@ -43,7 +43,7 @@ mod run_script {
 
         assert
             .failure()
-            .stderr(predicate::str::contains("Missing script: \"unknown\""));
+            .stderr(predicate::str::contains("missing script"));
     }
 
     #[test]

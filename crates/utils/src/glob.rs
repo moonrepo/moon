@@ -18,11 +18,11 @@ pub struct GlobSet<'t> {
 
 impl<'t> GlobSet<'t> {
     #[track_caller]
-    pub fn new(patterns: &'t [String]) -> Result<Self, GlobError> {
+    pub fn new(patterns: Vec<String>) -> Result<Self, GlobError> {
         let mut globs = vec![];
 
-        for pattern in patterns {
-            globs.push(create_glob(pattern)?);
+        for pattern in &patterns {
+            globs.push(create_glob(pattern)?.into_owned());
         }
 
         Ok(GlobSet {

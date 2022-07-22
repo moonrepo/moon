@@ -60,7 +60,7 @@ pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
 
     // Avoid UNC paths as they cause lots of issues
     if cfg!(windows) {
-        path = dunce::simplified(&path);
+        path = dunce::simplified(path);
     }
 
     match path.to_str() {

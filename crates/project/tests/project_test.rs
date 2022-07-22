@@ -897,8 +897,8 @@ mod tasks {
                         ".\\dir\\other.tsx",
                         ".\\dir\\subdir\\another.ts",
                         "--globs",
-                        ".\\**\\*.{ts,tsx}",
-                        ".\\*.js",
+                        "./**/*.{ts,tsx}",
+                        "./*.js",
                         "--root",
                         ".\\dir",
                     ]
@@ -924,7 +924,7 @@ mod tasks {
         #[test]
         fn expands_args_from_workspace() {
             let workspace_root = get_fixtures_root();
-            let project_root = workspace_root.join("base/files-and-dirs");
+            let project_root = workspace_root.join("base").join("files-and-dirs");
             let project = Project::new(
                 "id",
                 "base/files-and-dirs",
@@ -963,14 +963,23 @@ mod tasks {
                 vec![
                     "--dirs",
                     project_root.join("dir").to_str().unwrap(),
-                    project_root.join("dir/subdir").to_str().unwrap(),
+                    project_root.join("dir").join("subdir").to_str().unwrap(),
                     "--files",
                     project_root.join("file.ts").to_str().unwrap(),
-                    project_root.join("dir/other.tsx").to_str().unwrap(),
-                    project_root.join("dir/subdir/another.ts").to_str().unwrap(),
+                    project_root.join("dir").join("other.tsx").to_str().unwrap(),
+                    project_root
+                        .join("dir")
+                        .join("subdir")
+                        .join("another.ts")
+                        .to_str()
+                        .unwrap(),
                     "--globs",
-                    project_root.join("**/*.{ts,tsx}").to_str().unwrap(),
-                    project_root.join("*.js").to_str().unwrap(),
+                    glob::remove_drive_prefix(
+                        glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap()
+                    )
+                    .as_str(),
+                    glob::remove_drive_prefix(glob::normalize(project_root.join("*.js")).unwrap())
+                        .as_str(),
                     "--root",
                     project_root.join("dir").to_str().unwrap(),
                 ],

@@ -234,7 +234,18 @@ impl Task {
 
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> Result<glob::GlobSet, TaskError> {
-        Ok(glob::GlobSet::new(&self.input_globs)?)
+        Ok(glob::GlobSet::new(
+            self.input_globs
+                .iter()
+                .map(|g| {
+                    if cfg!(windows) {
+                        glob::remove_drive_prefix(g)
+                    } else {
+                        g.to_owned()
+                    }
+                })
+                .collect::<Vec<String>>(),
+        )?)
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.

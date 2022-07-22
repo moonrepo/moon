@@ -313,10 +313,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root
-                    .join("tasks/no-tasks")
-                    .canonicalize()
-                    .unwrap(),
+                root: workspace_root.join("tasks/no-tasks"),
                 source: String::from("tasks/no-tasks"),
                 tasks: BTreeMap::from([(String::from("standard"), task)]),
                 ..Project::default()
@@ -381,7 +378,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
+                root: workspace_root.join("tasks/basic"),
                 source: String::from("tasks/basic"),
                 tasks: BTreeMap::from([
                     (String::from("build"), build),
@@ -491,7 +488,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join(project_source).canonicalize().unwrap(),
+                root: workspace_root.join(project_source),
                 source: String::from(project_source),
                 tasks: BTreeMap::from([(
                     String::from("standard"),
@@ -566,7 +563,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join(project_source).canonicalize().unwrap(),
+                root: workspace_root.join(project_source),
                 source: String::from(project_source),
                 tasks: BTreeMap::from([(
                     String::from("standard"),
@@ -644,7 +641,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join(project_source).canonicalize().unwrap(),
+                root: workspace_root.join(project_source),
                 source: String::from(project_source),
                 tasks: BTreeMap::from([(
                     String::from("standard"),
@@ -731,7 +728,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join(project_source).canonicalize().unwrap(),
+                root: workspace_root.join(project_source),
                 source: String::from(project_source),
                 tasks: BTreeMap::from([(
                     String::from("standard"),

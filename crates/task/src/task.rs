@@ -338,7 +338,6 @@ impl Task {
         }
 
         for input in &token_resolver.resolve(&self.inputs, self)? {
-            // We cant canonicalize here as these inputs may not exist!
             if glob::is_path_glob(input) {
                 self.input_globs.push(glob::normalize(input)?);
             } else {

@@ -81,10 +81,10 @@ pub fn get_fixtures_dir<T: AsRef<str>>(dir: T) -> PathBuf {
 }
 
 pub fn get_fixtures_root() -> PathBuf {
-    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("../../tests/fixtures");
+    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    root.push("../../tests/fixtures");
 
-    path.canonicalize().unwrap()
+    path::normalize(root)
 }
 
 pub fn replace_fixtures_dir<T: AsRef<str>, P: AsRef<Path>>(value: T, dir: P) -> String {

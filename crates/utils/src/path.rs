@@ -56,9 +56,16 @@ pub fn standardize_separators<T: AsRef<str>>(path: T) -> String {
 }
 
 pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
-    match path.as_ref().to_str() {
+    let mut path = path.as_ref();
+
+    // Avoid UNC paths as they cause lots of issues
+    if cfg!(windows) {
+        path = dunce::simplified(&path);
+    }
+
+    match path.to_str() {
         Some(p) => Ok(p.to_owned()),
-        None => Err(MoonError::PathInvalidUTF8(path.as_ref().to_path_buf())),
+        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
     }
 }
 

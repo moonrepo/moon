@@ -73,6 +73,8 @@ pub struct TaskOptionsConfig {
 
     pub retry_count: Option<u8>,
 
+    pub run_deps_in_serial: Option<bool>,
+
     #[serde(rename = "runInCI")]
     pub run_in_ci: Option<bool>,
 
@@ -88,6 +90,7 @@ impl Default for TaskOptionsConfig {
             merge_inputs: Some(TaskMergeStrategy::default()),
             merge_outputs: Some(TaskMergeStrategy::default()),
             retry_count: Some(0),
+            run_deps_in_serial: Some(false),
             run_in_ci: Some(true),
             run_from_workspace_root: Some(false),
         }

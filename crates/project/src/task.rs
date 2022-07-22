@@ -25,6 +25,8 @@ pub struct TaskOptions {
 
     pub retry_count: u8,
 
+    pub run_deps_in_serial: bool,
+
     pub run_in_ci: bool,
 
     pub run_from_workspace_root: bool,
@@ -54,6 +56,10 @@ impl TaskOptions {
 
         if let Some(retry_count) = &config.retry_count {
             self.retry_count = *retry_count;
+        }
+
+        if let Some(run_deps_in_serial) = &config.run_deps_in_serial {
+            self.run_deps_in_serial = *run_deps_in_serial;
         }
 
         if let Some(run_in_ci) = &config.run_in_ci {
@@ -128,6 +134,7 @@ impl Task {
                 merge_inputs: cloned_options.merge_inputs.unwrap_or_default(),
                 merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
+                run_deps_in_serial: cloned_options.run_deps_in_serial.unwrap_or_default(),
                 run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_long_running),
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },

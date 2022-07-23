@@ -79,6 +79,7 @@ mod run_script {
     }
 
     #[test]
+    #[serial]
     fn works_with_pnpm() {
         let fixture = create_fixtures_skeleton_sandbox("node-pnpm");
 
@@ -91,7 +92,10 @@ mod run_script {
         assert.success().stdout(predicate::str::contains("lint"));
     }
 
+    // TODO: Yarn requires the lockfile to exist and be accurate,
+    // otherwise it crashes. We cant do this easily right now.
     // #[test]
+    // #[serial]
     // fn works_with_yarn() {
     //     let fixture = create_fixtures_skeleton_sandbox("node-yarn");
 

@@ -108,7 +108,7 @@ pub async fn sync_node_project(
         // Only add if the dependent project has a `package.json`,
         // and this `package.json` has not already declared the dep.
         if node_config.sync_project_workspace_dependencies {
-            if let Some(dep_package_json) = PackageJson::read(&dep_project.root).await? {
+            if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
                 PackageJson::sync(&project.root, |package_json| {
                     if package_json.add_dependency(
                         &dep_package_json.name.unwrap_or_default(),
@@ -127,8 +127,7 @@ pub async fn sync_node_project(
                     }
 
                     Ok(())
-                })
-                .await?;
+                })?;
             }
         }
 
@@ -162,8 +161,7 @@ pub async fn sync_node_project(
 
                         Ok(())
                     },
-                )
-                .await?;
+                )?;
             }
         }
     }
@@ -180,8 +178,7 @@ pub async fn sync_node_project(
 
                 Ok(())
             },
-        )
-        .await?;
+        )?;
     }
 
     if mutated_files {
@@ -226,7 +223,7 @@ mod tests {
 
         assert!(tsconfig_path.exists());
 
-        let tsconfig = TsConfigJson::read(tsconfig_path).await.unwrap().unwrap();
+        let tsconfig = TsConfigJson::read(tsconfig_path).unwrap().unwrap();
 
         assert_eq!(
             tsconfig.extends,
@@ -267,7 +264,6 @@ mod tests {
         assert!(tsconfig_path.exists());
 
         let tsconfig = TsConfigJson::read_with_name(&project.root, "tsconfig.ref.json")
-            .await
             .unwrap()
             .unwrap();
 

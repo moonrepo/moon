@@ -1372,6 +1372,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_constants",
+ "moon_error",
  "moon_lang",
  "moon_lang_node",
  "moon_logger",

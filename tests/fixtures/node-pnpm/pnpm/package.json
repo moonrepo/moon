@@ -1,0 +1,6 @@
+{
+  "name": "test-node-pnpm-pnpm",
+  "scripts": {
+    "lint": "echo 'lint'"
+  }
+}

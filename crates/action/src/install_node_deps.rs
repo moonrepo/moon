@@ -76,8 +76,7 @@ pub async fn install_node_deps(
         add_engines_constraint(&workspace, package_json);
 
         Ok(())
-    })
-    .await?;
+    })?;
 
     // Create nvm/nodenv version file
     if let Some(version_manager) = &node_config.sync_version_manager_config {

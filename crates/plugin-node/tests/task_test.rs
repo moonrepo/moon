@@ -1,6 +1,7 @@
 use moon_lang_node::package::PackageJson;
-use moon_plugin_node::task::{convert_script_to_task, create_tasks_from_scripts, should_run_in_ci};
-use moon_task::{Task, TaskType};
+use moon_plugin_node::task::{create_task, should_run_in_ci, TaskContext};
+use moon_plugin_node::{create_tasks_from_scripts, infer_tasks_from_scripts};
+use moon_task::{Task, TaskOptions, TaskType};
 use moon_utils::string_vec;
 use std::collections::{BTreeMap, HashMap};
 
@@ -143,7 +144,7 @@ mod should_run_in_ci {
     }
 }
 
-mod convert_script_to_task {
+mod create_task {
     use super::*;
 
     mod script_files {
@@ -151,8 +152,13 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_bash() {
-            let task =
-                convert_script_to_task("project:task", "script", "bash scripts/setup.sh").unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "bash scripts/setup.sh",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -167,8 +173,13 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_bash_without_command() {
-            let task =
-                convert_script_to_task("project:task", "script", "scripts/setup.sh").unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "scripts/setup.sh",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -183,8 +194,13 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_node() {
-            let task =
-                convert_script_to_task("project:task", "script", "node scripts/test.js").unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "node scripts/test.js",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -202,7 +218,13 @@ mod convert_script_to_task {
             let candidates = ["scripts/test.js", "scripts/test.cjs", "scripts/test.mjs"];
 
             for candidate in candidates {
-                let task = convert_script_to_task("project:task", "script", candidate).unwrap();
+                let task = create_task(
+                    "project:task",
+                    "script",
+                    candidate,
+                    TaskContext::ConvertToTask,
+                )
+                .unwrap();
 
                 assert_eq!(
                     task,
@@ -222,8 +244,13 @@ mod convert_script_to_task {
 
         #[test]
         fn extracts_single_var() {
-            let task =
-                convert_script_to_task("project:task", "script", "KEY=VALUE yarn install").unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "KEY=VALUE yarn install",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -238,10 +265,11 @@ mod convert_script_to_task {
 
         #[test]
         fn extracts_multiple_vars() {
-            let task = convert_script_to_task(
+            let task = create_task(
                 "project:task",
                 "script",
                 "KEY1=VAL1 KEY2=VAL2 yarn install",
+                TaskContext::ConvertToTask,
             )
             .unwrap();
 
@@ -261,10 +289,11 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_semicolons() {
-            let task = convert_script_to_task(
+            let task = create_task(
                 "project:task",
                 "script",
                 "KEY1=VAL1; KEY2=VAL2; yarn install",
+                TaskContext::ConvertToTask,
             )
             .unwrap();
 
@@ -284,9 +313,13 @@ mod convert_script_to_task {
 
         #[test]
         fn handles_quoted_values() {
-            let task =
-                convert_script_to_task("project:task", "script", "NODE_OPTIONS='-f -b' yarn")
-                    .unwrap();
+            let task = create_task(
+                "project:task",
+                "script",
+                "NODE_OPTIONS='-f -b' yarn",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
 
             assert_eq!(
                 task,
@@ -322,10 +355,11 @@ mod convert_script_to_task {
             ];
 
             for candidate in candidates {
-                let task = convert_script_to_task(
+                let task = create_task(
                     "project:task",
                     "script",
                     &format!("tool build {} {}", candidate.0, candidate.1),
+                    TaskContext::ConvertToTask,
                 )
                 .unwrap();
 
@@ -344,21 +378,112 @@ mod convert_script_to_task {
         #[should_panic(expected = "NoParentOutput(\"../parent/dir\", \"project:task\")")]
         #[test]
         fn fails_on_parent_relative() {
-            convert_script_to_task("project:task", "script", "build --out ../parent/dir").unwrap();
+            create_task(
+                "project:task",
+                "script",
+                "build --out ../parent/dir",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
         }
 
         #[should_panic(expected = "NoAbsoluteOutput(\"/abs/dir\", \"project:task\")")]
         #[test]
         fn fails_on_absolute() {
-            convert_script_to_task("project:task", "script", "build --out /abs/dir").unwrap();
+            create_task(
+                "project:task",
+                "script",
+                "build --out /abs/dir",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
         }
 
         #[should_panic(expected = "NoAbsoluteOutput(\"C:\\\\abs\\\\dir\", \"project:task\")")]
         #[test]
         fn fails_on_absolute_windows() {
-            convert_script_to_task("project:task", "script", "build --out C:\\\\abs\\\\dir")
-                .unwrap();
+            create_task(
+                "project:task",
+                "script",
+                "build --out C:\\\\abs\\\\dir",
+                TaskContext::ConvertToTask,
+            )
+            .unwrap();
         }
+    }
+}
+
+mod infer_tasks_from_scripts {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn wraps_scripts() {
+        let pkg = PackageJson {
+            scripts: Some(BTreeMap::from([
+                ("postinstall".into(), "./setup.sh".into()),
+                ("build:app".into(), "webpack build --output ./dist".into()),
+                ("dev".into(), "webpack dev".into()),
+                ("test".into(), "jest .".into()),
+                ("posttest".into(), "run-coverage".into()),
+                ("lint".into(), "eslint src/**/* .".into()),
+                ("typecheck".into(), "tsc --build".into()),
+            ])),
+            ..PackageJson::default()
+        };
+
+        let tasks = infer_tasks_from_scripts("project", &pkg).unwrap();
+
+        assert_eq!(
+            tasks,
+            BTreeMap::from([
+                (
+                    "build-app".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "build:app"],
+                        outputs: string_vec!["dist"],
+                        ..Task::new("project:build-app")
+                    }
+                ),
+                (
+                    "dev".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "dev"],
+                        options: TaskOptions {
+                            run_in_ci: false,
+                            ..TaskOptions::default()
+                        },
+                        ..Task::new("project:dev")
+                    }
+                ),
+                (
+                    "test".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "test"],
+                        ..Task::new("project:test")
+                    }
+                ),
+                (
+                    "lint".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "lint"],
+                        ..Task::new("project:lint")
+                    }
+                ),
+                (
+                    "typecheck".to_owned(),
+                    Task {
+                        command: "moon".to_owned(),
+                        args: string_vec!["node", "run-script", "typecheck"],
+                        ..Task::new("project:typecheck")
+                    }
+                ),
+            ])
+        )
     }
 }
 

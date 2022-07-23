@@ -155,6 +155,20 @@ pub async fn read_dir_all<T: AsRef<Path> + Send>(path: T) -> Result<Vec<fs::DirE
     Ok(results)
 }
 
+pub fn sync_read_json<P, D>(path: P) -> Result<D, MoonError>
+where
+    P: AsRef<Path>,
+    D: DeserializeOwned,
+{
+    let path = path.as_ref();
+    let contents = sync_read_json_string(path)?;
+
+    let json: D =
+        serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+
+    Ok(json)
+}
+
 pub async fn read_json<P, D>(path: P) -> Result<D, MoonError>
 where
     P: AsRef<Path>,
@@ -167,6 +181,14 @@ where
         serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
     Ok(json)
+}
+
+pub fn sync_read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+    let path = path.as_ref();
+    let json =
+        std::fs::read_to_string(&path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    clean_json(json)
 }
 
 pub async fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {

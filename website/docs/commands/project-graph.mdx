@@ -2,7 +2,7 @@
 title: project-graph
 ---
 
-The `moon project-graph [id]` command will generate a graph of all configured projects, with edges
+The `moon project-graph [name]` command will generate a graph of all configured projects, with edges
 between dependencies, and will output the graph in
 [Graphviz DOT format](https://graphviz.org/doc/info/lang.html). This output can then be used by any
 tool or program that supports DOT, for example, this
@@ -14,12 +14,12 @@ In the future we aim to replace this with an interactive visualizer.
 $ moon project-graph > graph.dot
 ```
 
-> A project ID can be passed to focus the graph to only that project and it's dependencies. For
+> A project name can be passed to focus the graph to only that project and it's dependencies. For
 > example, `moon project-graph app`.
 
 ### Arguments
 
-- `[id]` - Optional ID of a project to focus, as defined in
+- `[name]` - Optional name of a project to focus, as defined in
   [`projects`](../config/workspace#projects).
 
 ## Example output

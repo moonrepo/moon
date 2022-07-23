@@ -103,9 +103,9 @@ manual map of projects (default), _or_ a list of globs in which to automatically
 <TabItem value="manual">
 
 When using a map, each project must be _manually_ configured and requires a unique
-[ID](../concepts/project#id) as the map key, where this ID is used heavily on the command line and
-within the project graph for uniquely identifying the project amongst all projects. The map value
-(known as the project source) is a file system path to the project folder, relative from the
+[name](../concepts/project#names) as the map key, where this name is used heavily on the command
+line and within the project graph for uniquely identifying the project amongst all projects. The map
+value (known as the project source) is a file system path to the project folder, relative from the
 workspace root, and must be contained within the workspace boundary.
 
 ```yaml title=".moon/workspace.yml"
@@ -123,10 +123,10 @@ If manually mapping projects is too tedious or cumbersome, you may provide a lis
 [globs](../concepts/file-pattern#globs) to automatically locate all project folders, relative from
 the workspace root.
 
-When using this approach, the project ID is derived from the project folder name, and is cleaned to
-our [supported characters](../concepts/project#id) . Furthermore, globbing **does risk the chance of
-collision**, and when that happens, we log a warning and skip the conflicting project from being
-configured in the project graph.
+When using this approach, the project name is derived from the project folder name, and is cleaned
+to our [supported characters](../concepts/project#names) . Furthermore, globbing **does risk the
+chance of collision**, and when that happens, we log a warning and skip the conflicting project from
+being configured in the project graph.
 
 ```yaml title=".moon/workspace.yml"
 projects:

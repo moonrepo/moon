@@ -2,16 +2,13 @@ use lazy_static::lazy_static;
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
 use moon_task::{Target, Task, TaskError, TaskID, TaskType};
-use moon_utils::{process, regex};
+use moon_utils::{process, regex, string_vec};
 use std::collections::{BTreeMap, HashMap};
-
-// requirements:
-//  - "post" hooks dont work the same
 
 const TARGET: &str = "moon:node-task";
 
-type TasksMap = BTreeMap<TaskID, Task>;
-type ScriptsMap = HashMap<String, String>;
+pub type TasksMap = BTreeMap<TaskID, Task>;
+pub type ScriptsMap = HashMap<String, String>;
 
 lazy_static! {
     pub static ref WIN_DRIVE: regex::Regex = regex::create_regex(r#"^[A-Z]:"#).unwrap();
@@ -45,6 +42,7 @@ lazy_static! {
     // Special package manager handling
     pub static ref PM_RUN_COMMAND: regex::Regex = regex::create_regex(r#"(?:npm|pnpm|yarn) run ([a-zA-Z0-9:-_]+)([^&]+)?"#)
         .unwrap();
+
     pub static ref PM_LIFE_CYCLES: regex::Regex = regex::create_regex(r#"^(preprepare|prepare|postprepare|prepublish|prepublishOnly|publish|postpublish|prepack|pack|postpack|preinstall|install|postinstall|preversion|version|postversion|dependencies)$"#)
         .unwrap();
 
@@ -123,12 +121,19 @@ fn detect_task_type(command: &str) -> TaskType {
     TaskType::Node
 }
 
+pub enum TaskContext {
+    ConvertToTask,
+    WrapRunScript,
+}
+
 #[track_caller]
-pub fn convert_script_to_task(
+pub fn create_task(
     target_id: &str,
     script_name: &str,
     script: &str,
+    context: TaskContext,
 ) -> Result<Task, TaskError> {
+    let is_wrapping = matches!(context, TaskContext::WrapRunScript);
     let script_args = process::split_args(script)?;
     let mut task = Task::new(target_id);
     let mut args = vec![];
@@ -150,49 +155,54 @@ pub fn convert_script_to_task(
             }
         }
 
-        args.push(arg.to_owned());
-    }
-
-    if let Some(command) = args.get(0) {
-        if is_bash_script(command) {
-            task.command = "bash".to_owned();
-        } else if is_node_script(command) {
-            task.command = "node".to_owned();
-        } else {
-            task.command = args.remove(0);
+        if !is_wrapping {
+            args.push(arg.to_owned());
         }
-    } else {
-        task.command = "noop".to_owned();
     }
 
-    task.args = args;
+    if is_wrapping {
+        task.command = "moon".to_owned();
+        task.args = string_vec!["node", "run-script", script_name];
+    } else {
+        if let Some(command) = args.get(0) {
+            if is_bash_script(command) {
+                task.command = "bash".to_owned();
+            } else if is_node_script(command) {
+                task.command = "node".to_owned();
+            } else {
+                task.command = args.remove(0);
+            }
+        } else {
+            task.command = "noop".to_owned();
+        }
+
+        task.args = args;
+    }
+
     task.type_of = detect_task_type(&task.command);
     task.options.run_in_ci = should_run_in_ci(script_name, script);
 
-    debug!(
-        target: &task.log_target,
-        "Creating task {} with command {} (from package.json script {})",
-        color::target(target_id),
-        color::shell(&task.command),
-        color::symbol(script_name)
-    );
+    if is_wrapping {
+        debug!(
+            target: &task.log_target,
+            "Creating task {} {}",
+            color::target(target_id),
+            color::muted_light(format!("(for script {})", color::symbol(script_name)))
+        );
+    } else {
+        debug!(
+            target: &task.log_target,
+            "Creating task {} with command {} {}",
+            color::target(target_id),
+            color::shell(&task.command),
+            color::muted_light(format!("(from script {})", color::symbol(script_name)))
+        );
+    }
 
     Ok(task)
 }
 
-pub fn create_tasks_from_scripts(
-    project_id: &str,
-    package_json: &mut PackageJson,
-) -> Result<TasksMap, TaskError> {
-    let mut parser = ScriptParser::new(project_id);
-
-    parser.parse_scripts(package_json)?;
-    parser.update_package(package_json)?;
-
-    Ok(parser.tasks)
-}
-
-struct ScriptParser<'a> {
+pub struct ScriptParser<'a> {
     /// Life cycle events like "prepublishOnly".
     life_cycles: ScriptsMap,
 
@@ -208,11 +218,11 @@ struct ScriptParser<'a> {
     /// The project being parsed.
     project_id: &'a str,
 
-    /// Scripts that still need to be parsed.
+    /// Scripts being parsed.
     scripts: ScriptsMap,
 
     /// Tasks that have been parsed and converted from scripts.
-    tasks: TasksMap,
+    pub tasks: TasksMap,
 
     /// Scripts that ran into issues while parsing.
     unresolved_scripts: ScriptsMap,
@@ -230,6 +240,32 @@ impl<'a> ScriptParser<'a> {
             tasks: BTreeMap::new(),
             unresolved_scripts: HashMap::new(),
         }
+    }
+
+    pub fn infer_scripts(&mut self, package_json: &PackageJson) -> Result<(), TaskError> {
+        let scripts = match &package_json.scripts {
+            Some(s) => s.clone(),
+            None => {
+                return Ok(());
+            }
+        };
+
+        for (name, script) in &scripts {
+            if PM_LIFE_CYCLES.is_match(name) || name.starts_with("pre") || name.starts_with("post")
+            {
+                continue;
+            }
+
+            let task_id = clean_script_name(name);
+            let target_id = Target::format(self.project_id, &task_id)?;
+
+            self.tasks.insert(
+                task_id,
+                create_task(&target_id, name, script, TaskContext::WrapRunScript)?,
+            );
+        }
+
+        Ok(())
     }
 
     pub fn update_package(&mut self, package_json: &mut PackageJson) -> Result<(), TaskError> {
@@ -413,7 +449,7 @@ impl<'a> ScriptParser<'a> {
 
         self.tasks.insert(
             task_id.clone(),
-            convert_script_to_task(&target_id, name, value)?,
+            create_task(&target_id, name, value, TaskContext::ConvertToTask)?,
         );
 
         Ok(task_id)

@@ -8,14 +8,13 @@ node:
   yarn:
     version: '3.2.0'
   addEnginesConstraint: false
+  inferTasksFromScripts: false
 
 projects:
   - 'packages/*'
   - '!packages/cli'
   - '!packages/core-*'
   - 'website'
-  # runtime: 'packages/runtime'
-  # website: 'website'
 
 actionRunner:
   logRunningCommand: true

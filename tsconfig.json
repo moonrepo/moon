@@ -3,6 +3,9 @@
   "files": [],
   "references": [
     {
+      "path": "packages/cli"
+    },
+    {
       "path": "packages/runtime"
     },
     {

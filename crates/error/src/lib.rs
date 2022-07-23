@@ -10,6 +10,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MoonError {
+    #[error("{0}")]
+    Generic(String),
+
     #[error("File system failure for <path>{0}</path>: {1}")]
     FileSystem(PathBuf, #[source] IoError),
 

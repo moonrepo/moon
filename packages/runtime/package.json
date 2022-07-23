@@ -1,7 +1,7 @@
 {
   "name": "@moonrepo/runtime",
   "version": "0.0.7",
-  "type": "module",
+  "type": "commonjs",
   "description": "Action runner and runtime utilities.",
   "keywords": [
     "moon",
@@ -12,8 +12,7 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
-  "main": "./mjs/index.mjs",
-  "module": "./mjs/index.mjs",
+  "main": "./cjs/index.cjs",
   "types": "./dts/index.d.ts",
   "repository": {
     "type": "git",
@@ -21,12 +20,12 @@
     "directory": "packages/runtime"
   },
   "files": [
+    "cjs/**/*.{cjs,mjs,map}",
     "dts/**/*.d.ts",
-    "mjs/**/*.{mjs,map}",
     "src/**/*.{ts,tsx,json}"
   ],
   "packemon": {
-    "format": "mjs",
+    "format": "cjs",
     "platform": "node",
     "bundle": true
   },
@@ -45,7 +44,8 @@
     ".": {
       "types": "./dts/index.d.ts",
       "node": {
-        "import": "./mjs/index.mjs"
+        "import": "./cjs/index-wrapper.mjs",
+        "require": "./cjs/index.cjs"
       }
     }
   }

@@ -8,7 +8,14 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Getting started',
-			items: ['install', 'setup-workspace', 'create-project', 'create-task', 'run-task'],
+			items: [
+				'install',
+				'setup-workspace',
+				'create-project',
+				'create-task',
+				'run-task',
+				'migrate-to-moon',
+			],
 		},
 		{
 			type: 'category',

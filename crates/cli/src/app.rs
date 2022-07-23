@@ -29,6 +29,21 @@ pub enum MigrateCommands {
 }
 
 #[derive(Debug, Subcommand)]
+pub enum NodeCommands {
+    #[clap(
+        name = "run-script",
+        about = "Run a `package.json` script within a project."
+    )]
+    RunScript {
+        #[clap(help = "Name of the script")]
+        name: String,
+
+        #[clap(long, help = "ID of project to run in")]
+        project: Option<String>,
+    },
+}
+
+#[derive(Debug, Subcommand)]
 pub enum QueryCommands {
     #[clap(
         name = "projects",
@@ -131,6 +146,13 @@ pub enum Commands {
     Bin {
         #[clap(value_enum, help = "The tool to query")]
         tool: BinTools,
+    },
+
+    // moon node <command>
+    #[clap(name = "node", about = "Special Node.js commands.")]
+    Node {
+        #[clap(subcommand)]
+        command: NodeCommands,
     },
 
     // moon setup

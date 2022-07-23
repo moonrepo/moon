@@ -88,30 +88,11 @@ tasks:
 
 We encourage everyone to define tasks in a [`project.yml`](./config/project#tasks) file, as it
 allows for additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like
-to keep using `package.json` scripts, you'll still need to define tasks that run the script, like
-so:
+to keep using `package.json` scripts, enable the
+[`node.inferTasksFromScripts`](./config/workspace#infertasksfromscripts) setting.
 
-```yaml title="project.yml"
-tasks:
-	lint:
-		command: 'npm'
-		args: 'run lint'
-```
-
-> We are working on a handful of features that will automate and infer this entire process. Until
-> then, everything will need to be manually defined.
-
-On top of the increased overhead, relying on `package.json` scripts incurs the following risks and
-disadvantages unless explicitly configured:
-
-- A change to every project relative file will mark the task as affected, even those not necessary
-  for the task, as `inputs` default to `**/*`. Granular input control is lost.
-- A change to workspace relative files _will not_ mark the task as affected. For example, a change
-  to `/prettier.config.js` would not be detected for a `npm run format` script.
-- Build/bundle outputs will not be cached and persisted via a hash, as `outputs` defaults to an
-  empty list.
-- All tasks will run in CI by default, even those that are long-running or never complete
-  (development servers, etc).
+View the [official documentation](./migrate-to-moon) for more information on this approach,
+including risks, disadvantages, and caveats.
 
 ### Can moon version/publish packages?
 

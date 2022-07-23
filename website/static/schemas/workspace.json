@@ -6,6 +6,11 @@
   "properties": {
     "actionRunner": {
       "default": {
+        "implicitInputs": [
+          "package.json",
+          "/.moon/project.yml",
+          "/.moon/workspace.yml"
+        ],
         "inheritColorsForPipedTasks": true,
         "logRunningCommand": false
       },
@@ -26,6 +31,7 @@
       "default": {
         "addEnginesConstraint": true,
         "dedupeOnLockfileChange": true,
+        "inferTasksFromScripts": false,
         "npm": {
           "version": "inherit"
         },
@@ -62,8 +68,10 @@
     },
     "typescript": {
       "default": {
+        "createMissingConfig": true,
         "projectConfigFileName": "tsconfig.json",
         "rootConfigFileName": "tsconfig.json",
+        "rootOptionsConfigFileName": "tsconfig.options.json",
         "syncProjectReferences": true
       },
       "allOf": [
@@ -88,6 +96,17 @@
     "ActionRunnerConfig": {
       "type": "object",
       "properties": {
+        "implicitInputs": {
+          "default": [
+            "package.json",
+            "/.moon/project.yml",
+            "/.moon/workspace.yml"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "inheritColorsForPipedTasks": {
           "default": true,
           "type": "boolean"
@@ -107,6 +126,10 @@
         },
         "dedupeOnLockfileChange": {
           "default": true,
+          "type": "boolean"
+        },
+        "inferTasksFromScripts": {
+          "default": false,
           "type": "boolean"
         },
         "npm": {
@@ -201,12 +224,20 @@
     "TypeScriptConfig": {
       "type": "object",
       "properties": {
+        "createMissingConfig": {
+          "default": true,
+          "type": "boolean"
+        },
         "projectConfigFileName": {
           "default": "tsconfig.json",
           "type": "string"
         },
         "rootConfigFileName": {
           "default": "tsconfig.json",
+          "type": "string"
+        },
+        "rootOptionsConfigFileName": {
+          "default": "tsconfig.options.json",
           "type": "string"
         },
         "syncProjectReferences": {

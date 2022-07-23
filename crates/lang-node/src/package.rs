@@ -4,13 +4,18 @@ use cached::proc_macro::cached;
 use json;
 use moon_error::MoonError;
 use moon_lang::config_cache;
-use moon_utils::fs;
+use moon_utils::fs::{self, sync_read_json};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(PackageJson, "package.json", write_preserved_json);
+config_cache!(
+    PackageJson,
+    "package.json",
+    sync_read_json,
+    write_preserved_json
+);
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -161,12 +166,12 @@ pub struct PackageJson {
 }
 
 impl PackageJson {
-    pub async fn save(&mut self) -> Result<(), MoonError> {
+    pub fn save(&mut self) -> Result<(), MoonError> {
         if self.dirty {
-            write_preserved_json(&self.path, self).await?;
+            write_preserved_json(&self.path, self)?;
             self.dirty = false;
 
-            PackageJson::write(self.clone()).await?;
+            PackageJson::write(self.clone())?;
         }
 
         Ok(())
@@ -407,8 +412,8 @@ pub enum PackageWorkspaces {
 // making the changes. For this to work correctly, we need to read the json
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
-async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
-    let contents = fs::read_json_string(path).await?;
+fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
+    let contents = fs::sync_read_json_string(path)?;
     let mut data = json::parse(&contents).expect("Unable to parse package.json");
 
     // We only need to set fields that we modify within Moon,
@@ -436,7 +441,7 @@ async fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), 
     let mut data = json::stringify_pretty(data, 2);
     data += "\n"; // Always add trailing newline
 
-    fs::write(path, data).await?;
+    std::fs::write(path, data)?;
 
     Ok(())
 }
@@ -478,12 +483,9 @@ mod test {
         let file = dir.child("package.json");
         file.write_str(json).unwrap();
 
-        let mut package = PackageJson::read(dir.path().to_path_buf())
-            .await
-            .unwrap()
-            .unwrap();
+        let mut package = PackageJson::read(dir.path()).unwrap().unwrap();
 
-        package.save().await.unwrap();
+        package.save().unwrap();
 
         assert_eq!(fs::read_json_string(file.path()).await.unwrap(), json,);
     }

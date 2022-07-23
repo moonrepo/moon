@@ -1,0 +1,6 @@
+{
+  "name": "test-node-npm-npm",
+  "scripts": {
+    "test": "echo 'test'"
+  }
+}

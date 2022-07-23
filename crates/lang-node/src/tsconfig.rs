@@ -4,13 +4,21 @@ use cached::proc_macro::cached;
 use json;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use moon_lang::config_cache;
-use moon_utils::{fs, path::standardize_separators};
+use moon_utils::{
+    fs::{self, sync_read_json},
+    path::standardize_separators,
+};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(TsConfigJson, "tsconfig.json", write_preserved_json);
+config_cache!(
+    TsConfigJson,
+    "tsconfig.json",
+    sync_read_json,
+    write_preserved_json
+);
 
 // This implementation is forked from the wonderful crate "tsconfig", as we need full control for
 // integration with the rest of the crates. We also can't wait for upsteam for new updates.
@@ -115,12 +123,12 @@ impl TsConfigJson {
         true
     }
 
-    pub async fn save(&mut self) -> Result<(), MoonError> {
+    pub fn save(&mut self) -> Result<(), MoonError> {
         if self.dirty {
-            write_preserved_json(&self.path, self).await?;
+            write_preserved_json(&self.path, self)?;
             self.dirty = false;
 
-            TsConfigJson::write(self.clone()).await?;
+            TsConfigJson::write(self.clone())?;
         }
 
         Ok(())
@@ -671,8 +679,8 @@ impl<'de> Deserialize<'de> for Target {
 // making the changes. For this to work correctly, we need to read the json
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
-async fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(), MoonError> {
-    let contents = fs::read_json_string(path).await?;
+fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(), MoonError> {
+    let contents = fs::sync_read_json_string(path)?;
     let mut data = json::parse(&contents).expect("Unable to parse tsconfig.json");
 
     // We only need to set fields that we modify within Moon,
@@ -697,7 +705,7 @@ async fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(),
     let mut data = json::stringify_pretty(data, 2);
     data += "\n"; // Always add trailing newline
 
-    fs::write(path, data).await?;
+    std::fs::write(path, data)?;
 
     Ok(())
 }
@@ -857,7 +865,6 @@ mod test {
     async fn parse_basic_file() {
         let path = get_fixtures_dir("base/tsconfig-json");
         let config = TsConfigJson::read_with_name(path, "tsconfig.default.json")
-            .await
             .unwrap()
             .unwrap();
 

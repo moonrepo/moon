@@ -15,7 +15,7 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
     for id in workspace.projects.ids() {
         let project = workspace.projects.load(&id)?;
 
-        if let Some(package_json) = PackageJson::read(&project.root).await? {
+        if let Some(package_json) = PackageJson::read(&project.root)? {
             if let Some(package_name) = package_json.name {
                 package_map.insert(package_name, id);
             }
@@ -53,8 +53,7 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
         }
 
         Ok(())
-    })
-    .await?;
+    })?;
 
     fs::write(
         project.root.join(CONFIG_PROJECT_FILENAME),

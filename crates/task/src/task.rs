@@ -9,6 +9,7 @@ use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_utils::{glob, path, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -233,7 +234,18 @@ impl Task {
 
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> Result<glob::GlobSet, TaskError> {
-        Ok(glob::GlobSet::new(&self.input_globs)?)
+        Ok(glob::GlobSet::new(
+            self.input_globs
+                .iter()
+                .map(|g| {
+                    if cfg!(windows) {
+                        glob::remove_drive_prefix(g)
+                    } else {
+                        g.to_owned()
+                    }
+                })
+                .collect::<Vec<String>>(),
+        )?)
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.
@@ -243,37 +255,50 @@ impl Task {
         }
 
         let mut args: Vec<String> = vec![];
-        let run_in_project = !self.options.run_from_workspace_root;
+
+        // When running within a project:
+        //  - Project paths are relative and start with "./"
+        //  - Workspace paths are relative up to the root
+        // When running from the workspace:
+        //  - All paths are absolute
+        let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, TaskError> {
+            let arg = if !self.options.run_from_workspace_root
+                && path.starts_with(token_resolver.data.workspace_root)
+            {
+                let rel_path = path::to_string(
+                    path::relative_from(&path, token_resolver.data.project_root).unwrap(),
+                )?;
+
+                if rel_path.starts_with("..") {
+                    rel_path
+                } else {
+                    format!(".{}{}", std::path::MAIN_SEPARATOR, rel_path)
+                }
+            } else {
+                path::to_string(path)?
+            };
+
+            // Annoying, but we need to force forward slashes,
+            // and remove drive/UNC prefixes...
+            if cfg!(windows) && is_glob {
+                return Ok(glob::remove_drive_prefix(path::standardize_separators(arg)));
+            }
+
+            Ok(arg)
+        };
 
         // We cant use `TokenResolver.resolve` as args are a mix of strings,
         // strings with tokens, and file paths when tokens are resolved.
         for arg in &self.args {
             if token_resolver.has_token_func(arg) {
-                for resolved_arg in token_resolver.resolve_func(arg, self)? {
-                    // When running within a project:
-                    //  - Project paths are relative and start with "./"
-                    //  - Workspace paths are relative up to the root
-                    // When running from the workspace:
-                    //  - All paths are absolute
-                    if run_in_project
-                        && resolved_arg.starts_with(token_resolver.data.workspace_root)
-                    {
-                        let rel_path =
-                            path::relative_from(&resolved_arg, token_resolver.data.project_root)
-                                .unwrap();
+                let (paths, globs) = token_resolver.resolve_func(arg, self)?;
 
-                        if rel_path.starts_with("..") {
-                            args.push(rel_path.to_string_lossy().to_string());
-                        } else {
-                            args.push(format!(
-                                ".{}{}",
-                                std::path::MAIN_SEPARATOR,
-                                rel_path.to_string_lossy()
-                            ));
-                        }
-                    } else {
-                        args.push(resolved_arg.to_string_lossy().to_string());
-                    }
+                for path in paths {
+                    args.push(handle_path(path, false)?);
+                }
+
+                for glob in globs {
+                    args.push(handle_path(PathBuf::from(glob), true)?);
                 }
             } else if token_resolver.has_token_var(arg) {
                 args.push(token_resolver.resolve_vars(arg, self)?);
@@ -337,14 +362,10 @@ impl Task {
             return Ok(());
         }
 
-        for input in &token_resolver.resolve(&self.inputs, self)? {
-            // We cant canonicalize here as these inputs may not exist!
-            if glob::is_path_glob(input) {
-                self.input_globs.push(glob::normalize(input)?);
-            } else {
-                self.input_paths.insert(path::normalize(input));
-            }
-        }
+        let (paths, globs) = token_resolver.resolve(&self.inputs, self)?;
+
+        self.input_paths.extend(paths);
+        self.input_globs.extend(globs);
 
         Ok(())
     }
@@ -355,14 +376,16 @@ impl Task {
             return Ok(());
         }
 
-        for output in &token_resolver.resolve(&self.outputs, self)? {
-            if glob::is_path_glob(output) {
+        let (paths, globs) = token_resolver.resolve(&self.outputs, self)?;
+
+        self.output_paths.extend(paths);
+
+        if !globs.is_empty() {
+            if let Some(glob) = globs.get(0) {
                 return Err(TaskError::NoOutputGlob(
-                    output.to_owned(),
+                    glob.to_owned(),
                     self.target.clone(),
                 ));
-            } else {
-                self.output_paths.insert(path::normalize(output));
             }
         }
 

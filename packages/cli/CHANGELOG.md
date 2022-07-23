@@ -9,6 +9,10 @@
   `project.yml` tasks.
 - Added a `moon sync` command for manually syncing all projects in the workspace to a healthy state.
 
+#### 🐞 Fixes
+
+- Fixed an issue where files being hashed with git were not being cached accordingly.
+
 #### ⚙️ Internal
 
 - Runfiles are no longer cleaned up when running tasks.

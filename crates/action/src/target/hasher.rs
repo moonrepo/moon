@@ -75,7 +75,10 @@ pub async fn create_target_hasher(
 
     // For input files, hash them with the vcs layer first
     if !task.input_paths.is_empty() {
-        let files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
+        let mut files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
+
+        // Sort for deterministic caching within the vcs layer
+        files.sort();
 
         if !files.is_empty() {
             hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
@@ -101,7 +104,7 @@ pub async fn create_target_hasher(
 
     if !local_files.all.is_empty() {
         // Only hash files that are within the task's inputs
-        let files = local_files
+        let mut files = local_files
             .all
             .into_iter()
             .filter(|f| {
@@ -110,6 +113,9 @@ pub async fn create_target_hasher(
                     && globset.matches(&workspace.root.join(f)).unwrap_or(false)
             })
             .collect::<Vec<String>>();
+
+        // Sort for deterministic caching within the vcs layer
+        files.sort();
 
         if !files.is_empty() {
             hasher.hash_inputs(vcs.get_file_hashes(&files).await?);

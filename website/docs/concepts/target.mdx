@@ -3,7 +3,7 @@ title: Targets
 ---
 
 A target is an identifier that pairs a [project](./project) to one of its [tasks](./task), in the
-format of `project_id:task_id`.
+format of `project_name:task_name`.
 
 Targets are used by terminal commands...
 
@@ -23,7 +23,7 @@ tasks:
 
 ## Project scopes
 
-While a target typically pairs project and task IDs, we also support advanced targets through a
+While a target typically pairs project and task names, we also support advanced targets through a
 concept known as project scopes. Scopes allow us to easily define targets with external or many
 sources, but _are not available in all contexts_.
 
@@ -77,9 +77,9 @@ tasks:
 > Only available when configuring a task.
 
 When referring to another task within the current project, you can utilize the `~` scope, which will
-be expanded to the current project's identifier. This is useful for situations where the identifier
-is unknown, for example, when configuring [`.moon/project.yml`](../config/global-project). Or if you
-just want a shortcut!
+be expanded to the current project's name. This is useful for situations where the name is unknown,
+for example, when configuring [`.moon/project.yml`](../config/global-project). Or if you just want a
+shortcut!
 
 ```yaml title=".moon/project.yml"
 # Configured as

@@ -18,7 +18,7 @@ task graphs. The most common use case for this is building those projects _befor
 one, and for syncing [`package.json`](../concepts/project#packagejson) dependencies and
 [`tsconfig.json`](../concepts/project#tsconfigjson) project references when applicable.
 
-When defined, this setting requires an array of project IDs, which are the keys found in the
+When defined, this setting requires an array of project names, which are the keys found in the
 [`projects`](./workspace#projects) map.
 
 ```yaml title="project.yml"
@@ -128,7 +128,7 @@ Can be a name, email, LDAP name, GitHub username, etc, the choice is yours.
 
 > `string`
 
-A human readable name of the project. This is _different_ from the unique project ID configured in
+A human readable name of the project. This is _different_ from the unique project name configured in
 [`projects`](./workspace#projects).
 
 ### `owner`
@@ -143,8 +143,8 @@ suggest _not_ listing people/developers as the owner, use [maintainers](#maintai
 > `Record<string, TaskConfig>`
 
 Tasks are actions that are ran within the context of a [project](../concepts/project), and commonly
-wrap an npm binary or system command. This setting requires a map, where the key is a unique
-identifier for the task, and the value is an object of task parameters.
+wrap an npm binary or system command. This setting requires a map, where the key is a unique name
+for the task, and the value is an object of task parameters.
 
 ```yaml title="project.yml"
 tasks:
@@ -446,7 +446,7 @@ Provides a layer of control when inheriting tasks from [`.moon/project.yml`](./g
 #### `exclude`
 
 The optional `exclude` setting permits a project to exclude specific tasks from being inherited. It
-accepts a list of strings, where each string is the ID of a global task to exclude.
+accepts a list of strings, where each string is the name of a global task to exclude.
 
 ```yaml title="project.yml" {4}
 workspace:
@@ -460,7 +460,7 @@ workspace:
 #### `include`
 
 The optional `include` setting permits a project to _only_ include specific inherited tasks (works
-like an allow/white list). It accepts a list of strings, where each string is the ID of a global
+like an allow/white list). It accepts a list of strings, where each string is the name of a global
 task to include.
 
 When this field is not defined, the project will inherit all tasks from the global project config.
@@ -482,8 +482,8 @@ workspace:
 #### `rename`
 
 The optional `rename` setting permits a project to rename the inherited task within the current
-project. It accepts a map of strings, where the key is the original ID (found in the global project
-config), and the value is the new ID to use.
+project. It accepts a map of strings, where the key is the original name (found in the global
+project config), and the value is the new name to use.
 
 For example, say we have 2 tasks in the global project config called `buildPackage` and
 `buildApplication`, but we only need 1, and since we're an application, we should omit and rename.

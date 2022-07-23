@@ -1,8 +1,7 @@
 use crate::errors::FileGroupError;
 use common_path::common_path_all;
 use moon_logger::{color, map_list, trace};
-use moon_utils::glob;
-use moon_utils::path::expand_root_path;
+use moon_utils::{glob, path};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -36,20 +35,26 @@ impl FileGroup {
     }
 
     // Returns the file group as-is, with each file converted to an absolute path.
+    // Paths and groups will be separated as they have different semantics.
     pub fn all(
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<PathBuf>, FileGroupError> {
-        let mut list = vec![];
+    ) -> Result<(Vec<PathBuf>, Vec<String>), FileGroupError> {
+        let mut paths = vec![];
+        let mut globs = vec![];
 
         for file in &self.files {
-            let path = expand_root_path(file, workspace_root, project_root);
+            let result = path::expand_root_path(file, workspace_root, project_root);
 
-            list.push(path.to_owned());
+            if glob::is_glob(&file) {
+                globs.push(glob::normalize(result)?);
+            } else {
+                paths.push(result);
+            }
         }
 
-        Ok(list)
+        Ok((paths, globs))
     }
 
     /// Returns the file group as an expanded list of directory paths.
@@ -78,12 +83,16 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<PathBuf>, FileGroupError> {
+    ) -> Result<Vec<String>, FileGroupError> {
         let mut globs = vec![];
 
         for file in &self.files {
             if glob::is_glob(file) {
-                globs.push(expand_root_path(file, workspace_root, project_root));
+                globs.push(glob::normalize(path::expand_root_path(
+                    file,
+                    workspace_root,
+                    project_root,
+                ))?);
             }
         }
 
@@ -144,7 +153,7 @@ impl FileGroup {
                     }
                 }
             } else {
-                let path = expand_root_path(file, workspace_root, project_root);
+                let path = path::expand_root_path(file, workspace_root, project_root);
 
                 let allowed = if is_dir {
                     path.is_dir()
@@ -153,7 +162,7 @@ impl FileGroup {
                 };
 
                 if allowed {
-                    list.push(path.to_owned());
+                    list.push(path::normalize(path));
                 }
             }
         }
@@ -195,13 +204,17 @@ mod tests {
 
             assert_eq!(
                 file_group.all(&workspace_root, &project_root).unwrap(),
-                vec![
-                    project_root.join("**/*"),
-                    project_root.join("file.js"),
-                    project_root.join("folder/index.ts"),
-                    workspace_root.join("root.js"),
-                    workspace_root.join("root/*")
-                ]
+                (
+                    vec![
+                        project_root.join("file.js"),
+                        project_root.join("folder/index.ts"),
+                        workspace_root.join("root.js")
+                    ],
+                    vec![
+                        glob::normalize(project_root.join("**/*")).unwrap(),
+                        glob::normalize(workspace_root.join("root/*")).unwrap()
+                    ]
+                )
             );
         }
     }
@@ -297,9 +310,9 @@ mod tests {
             assert_eq!(
                 file_group.globs(&workspace_root, &project_root).unwrap(),
                 vec![
-                    project_root.join("**/*"),
-                    project_root.join("*.rs"),
-                    workspace_root.join("*.js")
+                    glob::normalize(project_root.join("**/*")).unwrap(),
+                    glob::normalize(project_root.join("*.rs")).unwrap(),
+                    glob::normalize(workspace_root.join("*.js")).unwrap()
                 ]
             );
         }

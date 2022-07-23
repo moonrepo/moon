@@ -1,8 +1,8 @@
 use moon_config::{ProjectConfig, ProjectLanguage, ProjectType, TaskConfig};
 use moon_task::test::{create_expanded_task, create_file_groups, create_initial_task};
 use moon_task::{TokenResolver, TokenSharedData};
-use moon_utils::string_vec;
-use moon_utils::test::{get_fixtures_dir, wrap_glob};
+use moon_utils::test::get_fixtures_dir;
+use moon_utils::{glob, string_vec};
 use std::path::PathBuf;
 
 fn get_workspace_root() -> PathBuf {
@@ -74,7 +74,7 @@ fn doesnt_match_when_not_alone() {
         resolver
             .resolve(&string_vec!["foo/@dirs(static)/bar"], &task)
             .unwrap(),
-        vec![project_root.join("foo/@dirs(static)/bar")]
+        (vec![project_root.join("foo/@dirs(static)/bar")], vec![])
     );
 }
 
@@ -218,7 +218,10 @@ mod args {
             resolver
                 .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap(),
-            vec![project_root.join("dir"), project_root.join("dir/subdir")]
+            (
+                vec![project_root.join("dir"), project_root.join("dir/subdir")],
+                vec![]
+            )
         );
     }
 
@@ -241,7 +244,10 @@ mod args {
             resolver
                 .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                 .unwrap(),
-            vec![project_root.join("dir"), project_root.join("dir/subdir")]
+            (
+                vec![project_root.join("dir"), project_root.join("dir/subdir")],
+                vec![]
+            )
         );
     }
 
@@ -263,15 +269,18 @@ mod args {
         let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
             .unwrap();
-        files.sort();
+        files.0.sort();
 
         assert_eq!(
             files,
-            vec![
-                project_root.join("dir/other.tsx"),
-                project_root.join("dir/subdir/another.ts"),
-                project_root.join("file.ts"),
-            ]
+            (
+                vec![
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("file.ts"),
+                ],
+                vec![]
+            )
         );
     }
 
@@ -293,15 +302,18 @@ mod args {
         let mut files = resolver
             .resolve(&string_vec!["@files(files_glob)"], &task)
             .unwrap();
-        files.sort();
+        files.0.sort();
 
         assert_eq!(
             files,
-            vec![
-                project_root.join("dir/other.tsx"),
-                project_root.join("dir/subdir/another.ts"),
-                project_root.join("file.ts"),
-            ]
+            (
+                vec![
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("file.ts"),
+                ],
+                vec![]
+            )
         );
     }
 
@@ -324,10 +336,13 @@ mod args {
             resolver
                 .resolve(&string_vec!["@globs(globs)"], &task)
                 .unwrap(),
-            vec![
-                project_root.join("**/*.{ts,tsx}"),
-                project_root.join("*.js")
-            ],
+            (
+                vec![],
+                vec![
+                    glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(project_root.join("*.js")).unwrap()
+                ]
+            )
         );
     }
 
@@ -357,7 +372,7 @@ mod args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(1)"], &task).unwrap(),
-            vec![project_root.join("file.ts")],
+            (vec![project_root.join("file.ts")], vec![])
         );
     }
 
@@ -387,7 +402,10 @@ mod args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
-            vec![wrap_glob(&project_root.join("src/**/*"))],
+            (
+                vec![],
+                vec![glob::normalize(&project_root.join("src/**/*")).unwrap()]
+            )
         );
     }
 
@@ -419,7 +437,10 @@ mod args {
             resolver
                 .resolve(&string_vec!["@out(0)", "@out(1)"], &task)
                 .unwrap(),
-            vec![project_root.join("dir"), project_root.join("file.ts"),],
+            (
+                vec![project_root.join("dir"), project_root.join("file.ts")],
+                vec![]
+            )
         );
     }
 
@@ -442,7 +463,7 @@ mod args {
             resolver
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
-            vec![project_root.join("dir")],
+            (vec![project_root.join("dir")], vec![])
         );
     }
 
@@ -531,7 +552,10 @@ mod inputs {
             resolver
                 .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap(),
-            vec![project_root.join("dir"), project_root.join("dir/subdir")]
+            (
+                vec![project_root.join("dir"), project_root.join("dir/subdir")],
+                vec![]
+            )
         );
     }
 
@@ -554,7 +578,10 @@ mod inputs {
             resolver
                 .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                 .unwrap(),
-            vec![project_root.join("dir"), project_root.join("dir/subdir")]
+            (
+                vec![project_root.join("dir"), project_root.join("dir/subdir")],
+                vec![]
+            )
         );
     }
 
@@ -576,15 +603,18 @@ mod inputs {
         let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
             .unwrap();
-        files.sort();
+        files.0.sort();
 
         assert_eq!(
             files,
-            vec![
-                project_root.join("dir/other.tsx"),
-                project_root.join("dir/subdir/another.ts"),
-                project_root.join("file.ts"),
-            ]
+            (
+                vec![
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("file.ts"),
+                ],
+                vec![]
+            )
         );
     }
 
@@ -606,15 +636,18 @@ mod inputs {
         let mut files = resolver
             .resolve(&string_vec!["@files(files_glob)"], &task)
             .unwrap();
-        files.sort();
+        files.0.sort();
 
         assert_eq!(
             files,
-            vec![
-                project_root.join("dir/other.tsx"),
-                project_root.join("dir/subdir/another.ts"),
-                project_root.join("file.ts"),
-            ]
+            (
+                vec![
+                    project_root.join("dir/other.tsx"),
+                    project_root.join("dir/subdir/another.ts"),
+                    project_root.join("file.ts"),
+                ],
+                vec![]
+            )
         );
     }
 
@@ -637,10 +670,13 @@ mod inputs {
             resolver
                 .resolve(&string_vec!["@globs(globs)"], &task)
                 .unwrap(),
-            vec![
-                project_root.join("**/*.{ts,tsx}"),
-                project_root.join("*.js")
-            ],
+            (
+                vec![],
+                vec![
+                    glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(project_root.join("*.js")).unwrap()
+                ]
+            ),
         );
     }
 
@@ -701,7 +737,7 @@ mod inputs {
             resolver
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
-            vec![project_root.join("dir")],
+            (vec![project_root.join("dir")], vec![]),
         );
     }
 }

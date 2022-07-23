@@ -12,6 +12,8 @@ use moon_utils::{glob, path};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+type PathsGlobsNormalized = (Vec<PathBuf>, Vec<String>);
+
 #[derive(Debug, PartialEq)]
 pub enum ResolverType {
     Args,
@@ -161,14 +163,20 @@ impl<'a> TokenResolver<'a> {
 
     /// Cycle through the values, resolve any tokens, and return a list of absolute file paths.
     /// This should only be used for `inputs` and `outputs`.
-    pub fn resolve(&self, values: &[String], task: &Task) -> Result<Vec<PathBuf>, TokenError> {
-        let mut results: Vec<PathBuf> = vec![];
+    pub fn resolve(
+        &self,
+        values: &[String],
+        task: &Task,
+    ) -> Result<PathsGlobsNormalized, TokenError> {
+        let mut paths: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
 
         for value in values {
             if self.has_token_func(value) {
-                for resolved_value in self.resolve_func(value, task)? {
-                    results.push(resolved_value);
-                }
+                let (resolved_paths, resolved_globs) = self.resolve_func(value, task)?;
+
+                paths.extend(resolved_paths);
+                globs.extend(resolved_globs);
             } else {
                 let has_var = self.has_token_var(value);
 
@@ -176,7 +184,7 @@ impl<'a> TokenResolver<'a> {
                     TokenType::Var(String::new()).check_context(&self.context)?;
                 }
 
-                results.push(path::expand_root_path(
+                let resolved = path::expand_root_path(
                     if has_var {
                         self.resolve_vars(value, task)?
                     } else {
@@ -184,14 +192,24 @@ impl<'a> TokenResolver<'a> {
                     },
                     self.data.workspace_root,
                     self.data.project_root,
-                ));
+                );
+
+                if glob::is_glob(&value) {
+                    globs.push(glob::normalize(resolved)?);
+                } else {
+                    paths.push(resolved);
+                }
             }
         }
 
-        Ok(results)
+        Ok((paths, globs))
     }
 
-    pub fn resolve_func(&self, value: &str, task: &Task) -> Result<Vec<PathBuf>, TokenError> {
+    pub fn resolve_func(
+        &self,
+        value: &str,
+        task: &Task,
+    ) -> Result<PathsGlobsNormalized, TokenError> {
         let matches = TOKEN_FUNC_PATTERN.captures(value).unwrap();
         let token = matches.get(0).unwrap().as_str(); // @name(arg)
         let func = matches.get(1).unwrap().as_str(); // name
@@ -282,10 +300,14 @@ impl<'a> TokenResolver<'a> {
         }
     }
 
-    fn replace_file_group_tokens(&self, token_type: TokenType) -> Result<Vec<PathBuf>, TokenError> {
+    fn replace_file_group_tokens(
+        &self,
+        token_type: TokenType,
+    ) -> Result<PathsGlobsNormalized, TokenError> {
         token_type.check_context(&self.context)?;
 
-        let mut results = vec![];
+        let mut paths: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
         let file_groups = self.data.file_groups;
 
         let get_file_group = |token: &str, id: &str| match file_groups.get(id) {
@@ -301,36 +323,39 @@ impl<'a> TokenResolver<'a> {
 
         match token_type {
             TokenType::Dirs(token, group) => {
-                results.extend(get_file_group(&token, &group)?.dirs(workspace_root, project_root)?);
+                paths.extend(get_file_group(&token, &group)?.dirs(workspace_root, project_root)?);
             }
             TokenType::Files(token, group) => {
-                results
-                    .extend(get_file_group(&token, &group)?.files(workspace_root, project_root)?);
+                paths.extend(get_file_group(&token, &group)?.files(workspace_root, project_root)?);
             }
             TokenType::Globs(token, group) => {
-                results
-                    .extend(get_file_group(&token, &group)?.globs(workspace_root, project_root)?);
+                globs.extend(get_file_group(&token, &group)?.globs(workspace_root, project_root)?);
             }
             TokenType::Group(token, group) => {
-                results.extend(get_file_group(&token, &group)?.all(workspace_root, project_root)?);
+                let (all_paths, all_globs) =
+                    get_file_group(&token, &group)?.all(workspace_root, project_root)?;
+
+                paths.extend(all_paths);
+                globs.extend(all_globs);
             }
             TokenType::Root(token, group) => {
-                results.push(get_file_group(&token, &group)?.root(project_root)?);
+                paths.push(get_file_group(&token, &group)?.root(project_root)?);
             }
             _ => {}
         }
 
-        Ok(results)
+        Ok((paths, globs))
     }
 
     fn replace_input_token(
         &self,
         token_type: TokenType,
         task: &Task,
-    ) -> Result<Vec<PathBuf>, TokenError> {
+    ) -> Result<PathsGlobsNormalized, TokenError> {
         token_type.check_context(&self.context)?;
 
-        let mut results = vec![];
+        let mut paths = vec![];
+        let mut globs = vec![];
 
         if let TokenType::In(token, index) = token_type {
             let error = TokenError::InvalidInIndex(token, index);
@@ -344,23 +369,20 @@ impl<'a> TokenResolver<'a> {
             if glob::is_glob(input) {
                 match task.input_globs.iter().find(|g| g.ends_with(input)) {
                     Some(g) => {
-                        results.push(PathBuf::from(g));
+                        globs.push(g.clone());
                     }
                     None => {
                         return Err(error);
                     }
                 };
             } else {
-                let workspace_root = self.data.workspace_root;
-                let project_root = self.data.project_root;
-
                 match task.input_paths.get(&path::expand_root_path(
                     input,
-                    workspace_root,
-                    project_root,
+                    self.data.workspace_root,
+                    self.data.project_root,
                 )) {
                     Some(p) => {
-                        results.push(p.clone());
+                        paths.push(p.clone());
                     }
                     None => {
                         return Err(error);
@@ -369,17 +391,18 @@ impl<'a> TokenResolver<'a> {
             }
         }
 
-        Ok(results)
+        Ok((paths, globs))
     }
 
     fn replace_output_token(
         &self,
         token_type: TokenType,
         task: &Task,
-    ) -> Result<Vec<PathBuf>, TokenError> {
+    ) -> Result<PathsGlobsNormalized, TokenError> {
         token_type.check_context(&self.context)?;
 
-        let mut results = vec![];
+        let mut paths: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
 
         if let TokenType::Out(token, index) = token_type {
             let error = TokenError::InvalidOutIndex(token, index);
@@ -390,23 +413,24 @@ impl<'a> TokenResolver<'a> {
                 }
             };
 
-            let workspace_root = self.data.workspace_root;
-            let project_root = self.data.project_root;
-
-            match task.output_paths.get(&path::expand_root_path(
-                output,
-                workspace_root,
-                project_root,
-            )) {
-                Some(p) => {
-                    results.push(p.clone());
-                }
-                None => {
-                    return Err(error);
-                }
-            };
+            if glob::is_glob(output) {
+                globs.push(output.to_owned());
+            } else {
+                match task.output_paths.get(&path::expand_root_path(
+                    output,
+                    self.data.workspace_root,
+                    self.data.project_root,
+                )) {
+                    Some(p) => {
+                        paths.push(p.clone());
+                    }
+                    None => {
+                        return Err(error);
+                    }
+                };
+            }
         }
 
-        Ok(results)
+        Ok((paths, globs))
     }
 }

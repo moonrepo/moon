@@ -49,6 +49,12 @@ impl DepGraph {
         }
     }
 
+    pub fn for_setup() -> Self {
+        let mut dep_graph = DepGraph::default();
+        dep_graph.install_deps(SupportedLanguage::Node);
+        dep_graph
+    }
+
     pub fn get_index_from_node(&self, node: &Node) -> Option<&NodeIndex> {
         self.indices.get(node)
     }

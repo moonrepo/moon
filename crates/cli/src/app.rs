@@ -174,7 +174,8 @@ pub enum Commands {
     // moon dep-graph [target]
     #[clap(
         name = "dep-graph",
-        about = "Display a dependency graph of all tasks and actions in DOT format."
+        about = "Display a dependency graph of all tasks and actions in DOT format.",
+        alias = "dg"
     )]
     DepGraph {
         #[clap(help = "Target to *only* graph")]
@@ -184,7 +185,8 @@ pub enum Commands {
     // moon project <id>
     #[clap(
         name = "project",
-        about = "Display information about a single project."
+        about = "Display information about a single project.",
+        alias = "p"
     )]
     Project {
         #[clap(help = "ID of project to display")]
@@ -197,7 +199,8 @@ pub enum Commands {
     // moon project-graph [id]
     #[clap(
         name = "project-graph",
-        about = "Display a graph of projects in DOT format."
+        about = "Display a graph of projects in DOT format.",
+        alias = "pg"
     )]
     ProjectGraph {
         #[clap(help = "ID of project to *only* graph")]
@@ -235,7 +238,8 @@ pub enum Commands {
     // moon run [...targets]
     #[clap(
         name = "run",
-        about = "Run a project task and all its dependent tasks."
+        about = "Run a project task and all its dependent tasks.",
+        alias = "r"
     )]
     Run {
         #[clap(help = "Target (project:task) to run")]

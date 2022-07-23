@@ -13,6 +13,11 @@ This release was largely focused on interoperability with the Node.js ecosystem,
 - Added a `moon sync` command for manually syncing all projects in the workspace to a healthy state.
 - Added a `node.inferTasksFromScripts` setting to `.moon/workspace.yml`, that will automatically
   infer tasks from `package.json` scripts (with caveats).
+- Added aliases for popular commands:
+  - `moon r` -> `moon run`
+  - `moon p` -> `moon project`
+  - `moon pg` -> `moon project-graph`
+  - `moon dg` -> `moon dep-graph`
 
 #### 🐞 Fixes
 

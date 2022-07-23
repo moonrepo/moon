@@ -208,7 +208,6 @@ mod tasks {
         create_expanded_task as create_expanded_task_internal, create_file_groups_config,
     };
     use moon_utils::glob;
-    use moon_utils::test::wrap_glob;
     use pretty_assertions::assert_eq;
 
     fn mock_task_config(command: &str) -> TaskConfig {
@@ -313,10 +312,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root
-                    .join("tasks/no-tasks")
-                    .canonicalize()
-                    .unwrap(),
+                root: workspace_root.join("tasks/no-tasks"),
                 source: String::from("tasks/no-tasks"),
                 tasks: BTreeMap::from([(String::from("standard"), task)]),
                 ..Project::default()
@@ -381,7 +377,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join("tasks/basic").canonicalize().unwrap(),
+                root: workspace_root.join("tasks/basic"),
                 source: String::from("tasks/basic"),
                 tasks: BTreeMap::from([
                     (String::from("build"), build),
@@ -491,7 +487,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join(project_source).canonicalize().unwrap(),
+                root: workspace_root.join(project_source),
                 source: String::from(project_source),
                 tasks: BTreeMap::from([(
                     String::from("standard"),
@@ -566,7 +562,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join(project_source).canonicalize().unwrap(),
+                root: workspace_root.join(project_source),
                 source: String::from(project_source),
                 tasks: BTreeMap::from([(
                     String::from("standard"),
@@ -644,7 +640,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join(project_source).canonicalize().unwrap(),
+                root: workspace_root.join(project_source),
                 source: String::from(project_source),
                 tasks: BTreeMap::from([(
                     String::from("standard"),
@@ -731,7 +727,7 @@ mod tasks {
                     ..ProjectConfig::default()
                 },
                 log_target: String::from("moon:project:id"),
-                root: workspace_root.join(project_source).canonicalize().unwrap(),
+                root: workspace_root.join(project_source),
                 source: String::from(project_source),
                 tasks: BTreeMap::from([(
                     String::from("standard"),
@@ -901,8 +897,8 @@ mod tasks {
                         ".\\dir\\other.tsx",
                         ".\\dir\\subdir\\another.ts",
                         "--globs",
-                        ".\\**\\*.{ts,tsx}",
-                        ".\\*.js",
+                        "./**/*.{ts,tsx}",
+                        "./*.js",
                         "--root",
                         ".\\dir",
                     ]
@@ -928,7 +924,7 @@ mod tasks {
         #[test]
         fn expands_args_from_workspace() {
             let workspace_root = get_fixtures_root();
-            let project_root = workspace_root.join("base/files-and-dirs");
+            let project_root = workspace_root.join("base").join("files-and-dirs");
             let project = Project::new(
                 "id",
                 "base/files-and-dirs",
@@ -967,14 +963,23 @@ mod tasks {
                 vec![
                     "--dirs",
                     project_root.join("dir").to_str().unwrap(),
-                    project_root.join("dir/subdir").to_str().unwrap(),
+                    project_root.join("dir").join("subdir").to_str().unwrap(),
                     "--files",
                     project_root.join("file.ts").to_str().unwrap(),
-                    project_root.join("dir/other.tsx").to_str().unwrap(),
-                    project_root.join("dir/subdir/another.ts").to_str().unwrap(),
+                    project_root.join("dir").join("other.tsx").to_str().unwrap(),
+                    project_root
+                        .join("dir")
+                        .join("subdir")
+                        .join("another.ts")
+                        .to_str()
+                        .unwrap(),
                     "--globs",
-                    project_root.join("**/*.{ts,tsx}").to_str().unwrap(),
-                    project_root.join("*.js").to_str().unwrap(),
+                    glob::remove_drive_prefix(
+                        glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap()
+                    )
+                    .as_str(),
+                    glob::remove_drive_prefix(glob::normalize(project_root.join("*.js")).unwrap())
+                        .as_str(),
                     "--root",
                     project_root.join("dir").to_str().unwrap(),
                 ],
@@ -984,7 +989,7 @@ mod tasks {
         #[test]
         fn expands_args_with_vars() {
             let workspace_root = get_fixtures_root();
-            let project_root = workspace_root.join("base/files-and-dirs");
+            let project_root = workspace_root.join("base").join("files-and-dirs");
             let project = Project::new(
                 "id",
                 "base/files-and-dirs",
@@ -1078,8 +1083,8 @@ mod tasks {
             assert_eq!(
                 task.input_globs,
                 vec![
-                    wrap_glob(&project_root.join("**/*.{ts,tsx}")).to_string_lossy(),
-                    wrap_glob(&project_root.join("*.js")).to_string_lossy()
+                    glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(project_root.join("*.js")).unwrap()
                 ],
             );
 
@@ -1134,7 +1139,7 @@ mod tasks {
 
             assert_eq!(
                 task.input_globs,
-                vec![wrap_glob(&project_root.join("*.yml")).to_string_lossy(),]
+                vec![glob::normalize(project_root.join("*.yml")).unwrap(),]
             );
 
             let a: HashSet<PathBuf> =

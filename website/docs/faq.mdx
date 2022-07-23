@@ -32,9 +32,8 @@ project, and provides us with the following:
 - The configuration is language agnostic. All projects are configured in a similar manner.
 - Tasks can reference other tasks easily. For example, npm scripts referencing rake tasks, and vice
   verse, is a non-ideal experience.
-- Dependencies defined with [`dependsOn`](./config/project#dependson) use moon project identifiers,
-  and not language specific semantics. This field also easily populates the dependency/project
-  graphs.
+- Dependencies defined with [`dependsOn`](./config/project#dependson) use moon project names, and
+  not language specific semantics. This field also easily populates the dependency/project graphs.
 - For JavaScript projects:
   - `package.json` dependencies (via `dependsOn`) are kept in sync when
     [`node.syncProjectWorkspaceDependencies`](./config/workspace#syncprojectworkspacedependencies)

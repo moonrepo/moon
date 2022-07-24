@@ -1,11 +1,9 @@
 use insta::assert_snapshot;
-use moon_utils::test::{
-    create_fixtures_skeleton_sandbox, create_moon_command_in, get_assert_output,
-};
+use moon_utils::test::{create_moon_command_in, create_sandbox, get_assert_output};
 
 #[test]
 fn syncs_all_projects() {
-    let fixture = create_fixtures_skeleton_sandbox("project-graph/dependencies");
+    let fixture = create_sandbox("project-graph/dependencies");
 
     let assert = create_moon_command_in(fixture.path()).arg("sync").assert();
 

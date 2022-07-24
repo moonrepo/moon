@@ -26,20 +26,20 @@ where
     }
 }
 
-pub fn create_fixtures_skeleton_sandbox<T: AsRef<str>>(dir: T) -> assert_fs::fixture::TempDir {
+pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> assert_fs::fixture::TempDir {
     use assert_fs::prelude::*;
 
     let temp_dir = assert_fs::fixture::TempDir::new().unwrap();
 
     temp_dir
-        .copy_from(get_fixtures_dir(dir), &["**/*"])
+        .copy_from(get_fixtures_dir(fixture), &["**/*"])
         .unwrap();
 
     temp_dir
 }
 
 pub fn create_fixtures_sandbox<T: AsRef<str>>(dir: T) -> assert_fs::fixture::TempDir {
-    let temp_dir = create_fixtures_skeleton_sandbox(dir);
+    let temp_dir = create_sandbox(dir);
 
     // Initialize a git repo so that VCS commands work
     run_git_command(
@@ -75,15 +75,15 @@ pub fn create_fixtures_sandbox<T: AsRef<str>>(dir: T) -> assert_fs::fixture::Tem
     temp_dir
 }
 
-pub fn get_fixtures_dir<T: AsRef<str>>(dir: T) -> PathBuf {
-    get_fixtures_root().join(dir.as_ref())
-}
-
 pub fn get_fixtures_root() -> PathBuf {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     root.push("../../tests/fixtures");
 
     path::normalize(root)
+}
+
+pub fn get_fixtures_dir<T: AsRef<str>>(dir: T) -> PathBuf {
+    get_fixtures_root().join(dir.as_ref())
 }
 
 pub fn replace_fixtures_dir<T: AsRef<str>, P: AsRef<Path>>(value: T, dir: P) -> String {
@@ -152,7 +152,7 @@ pub fn get_assert_stdout_output(assert: &assert_cmd::assert::Assert) -> String {
     String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()
 }
 
-pub fn debug_sandbox_files(dir: &Path) {
+fn debug_sandbox_files(dir: &Path) {
     for entry in std::fs::read_dir(dir).unwrap() {
         let path = entry.unwrap().path();
 

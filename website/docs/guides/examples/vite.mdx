@@ -10,7 +10,7 @@ In this guide, you'll learn how to integrate [Vite](https://vitejs.dev/) and
 [Vitest](https://vitest.dev/) into moon.
 
 Begin by creating a new Vite project in the root of an existing moon project (this should not be
-created in the workspace root).
+created in the workspace root, unless a polyrepo).
 
 <CreateDepTabs dep="vite" />
 
@@ -89,7 +89,7 @@ We suggest _against_ root-level configuration, as Vite should be installed per-p
 When creating a new Vite project, a [`vite.config.<js|ts>`](https://vitejs.dev/config) is created,
 and _must_ exist in the project root.
 
-```js title="<project>/vite.project.js"
+```js title="<project>/vite.config.js"
 import { defineConfig } from 'vite';
 
 export default defineConfig({

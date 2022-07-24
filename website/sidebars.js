@@ -33,6 +33,7 @@ const sidebars = {
 					items: [
 						'guides/examples/eslint',
 						'guides/examples/jest',
+						'guides/examples/next',
 						'guides/examples/packemon',
 						'guides/examples/prettier',
 						'guides/examples/react',

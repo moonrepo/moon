@@ -10,6 +10,7 @@ moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
+moon_plugin_node = { path = "../plugin-node" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_terminal = { path = "../terminal" }

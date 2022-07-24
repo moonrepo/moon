@@ -1,6 +1,6 @@
 use crate::errors::ActionError;
-use moon_hasher::TargetHasher;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
+use moon_plugin_node::NodeTargetHasher;
 use moon_project::Project;
 use moon_task::{ExpandedFiles, Task};
 use moon_utils::path::to_string;
@@ -36,12 +36,12 @@ pub async fn create_target_hasher(
     project: &Project,
     task: &Task,
     passthrough_args: &[String],
-) -> Result<TargetHasher, ActionError> {
+) -> Result<NodeTargetHasher, ActionError> {
     let vcs = &workspace.vcs;
     let globset = task.create_globset()?;
-    let mut hasher = TargetHasher::new(workspace.config.node.version.clone());
+    let mut hasher = NodeTargetHasher::new(workspace.config.node.version.clone());
 
-    hasher.hash_project(project);
+    hasher.hash_project_deps(project.get_dependencies());
     hasher.hash_task(task);
     hasher.hash_args(passthrough_args);
 

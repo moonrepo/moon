@@ -1307,6 +1307,7 @@ dependencies = [
  "moon_hasher",
  "moon_lang_node",
  "moon_logger",
+ "moon_plugin_node",
  "moon_project",
  "moon_task",
  "moon_terminal",

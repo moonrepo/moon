@@ -6,6 +6,7 @@ use crate::target::{
 };
 use moon_cache::RunTargetState;
 use moon_config::TaskType;
+use moon_hasher::Hasher;
 use moon_logger::{color, debug, warn};
 use moon_project::Project;
 use moon_task::{Target, Task};

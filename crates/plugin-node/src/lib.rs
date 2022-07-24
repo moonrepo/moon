@@ -1,5 +1,7 @@
+mod hasher;
 pub mod task;
 
+pub use hasher::NodeTargetHasher;
 use moon_lang_node::package::PackageJson;
 use moon_task::TaskError;
 use std::path::Path;

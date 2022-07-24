@@ -1,10 +1,10 @@
-use moon_utils::test::create_moon_command;
+use moon_utils::test::create_moon_command_in_fixture;
 use predicates::prelude::*;
 
 // This requires installing the toolchain which is quite heavy in tests!
 // #[test]
 // fn valid_tool() {
-//     let assert = create_moon_command("cases").arg("bin").arg("node").assert();
+//     let assert = create_moon_command_in_fixture("cases").arg("bin").arg("node").assert();
 
 //     assert
 //         .success()
@@ -15,7 +15,7 @@ use predicates::prelude::*;
 
 #[test]
 fn invalid_tool() {
-    let assert = create_moon_command("cases")
+    let assert = create_moon_command_in_fixture("cases")
         .arg("bin")
         .arg("unknown")
         .assert();
@@ -31,7 +31,7 @@ fn invalid_tool() {
 
 #[test]
 fn not_configured() {
-    let assert = create_moon_command("cases")
+    let assert = create_moon_command_in_fixture("cases")
         .arg("bin")
         .arg("yarn")
         .env("MOON_NODE_VERSION", "17.0.0")
@@ -42,7 +42,7 @@ fn not_configured() {
 
 #[test]
 fn not_installed() {
-    let assert = create_moon_command("cases")
+    let assert = create_moon_command_in_fixture("cases")
         .arg("bin")
         .arg("node")
         .env("MOON_NODE_VERSION", "17.0.0")

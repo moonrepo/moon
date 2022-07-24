@@ -4,10 +4,9 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub fn run_git_command<P, T, F>(dir: P, msg: T, handler: F)
+pub fn run_git_command<P, F>(dir: P, handler: F)
 where
     P: AsRef<Path>,
-    T: AsRef<str>,
     F: FnOnce(&mut Command),
 {
     let mut cmd = Command::new(if cfg!(windows) { "git.exe" } else { "git" });
@@ -16,67 +15,50 @@ where
     handler(&mut cmd);
 
     let out = cmd.output().unwrap_or_else(|e| {
-        println!("{:#?}", e);
-        panic!("{}: {:#?}", msg.as_ref(), dir.as_ref());
+        panic!("{:#?}", e);
     });
 
     if !out.status.success() {
-        eprintln!("{}", output_to_string(&out.stdout));
+        println!("{}", output_to_string(&out.stdout));
         eprintln!("{}", output_to_string(&out.stderr));
     }
 }
 
-pub fn create_fixtures_skeleton_sandbox<T: AsRef<str>>(dir: T) -> assert_fs::fixture::TempDir {
+pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> assert_fs::fixture::TempDir {
     use assert_fs::prelude::*;
 
     let temp_dir = assert_fs::fixture::TempDir::new().unwrap();
 
     temp_dir
-        .copy_from(get_fixtures_dir(dir), &["**/*"])
+        .copy_from(get_fixtures_dir(fixture), &["**/*"])
         .unwrap();
 
     temp_dir
 }
 
-pub fn create_fixtures_sandbox<T: AsRef<str>>(dir: T) -> assert_fs::fixture::TempDir {
-    let temp_dir = create_fixtures_skeleton_sandbox(dir);
+pub fn create_sandbox_with_git<T: AsRef<str>>(fixture: T) -> assert_fs::fixture::TempDir {
+    let temp_dir = create_sandbox(fixture);
 
     // Initialize a git repo so that VCS commands work
-    run_git_command(
-        temp_dir.path(),
-        "Failed to initialize git for fixtures sandbox",
-        |cmd| {
-            cmd.args(["init", "--initial-branch", "master"]);
-        },
-    );
+    run_git_command(temp_dir.path(), |cmd| {
+        cmd.args(["init", "--initial-branch", "master"]);
+    });
 
     // We must also add the files to the index
-    run_git_command(
-        temp_dir.path(),
-        "Failed to add files to git index for fixtures sandbox",
-        |cmd| {
-            cmd.args(["add", "--all", "."]);
-        },
-    );
+    run_git_command(temp_dir.path(), |cmd| {
+        cmd.args(["add", "--all", "."]);
+    });
 
     // And commit them... this seems like a lot of overhead?
-    run_git_command(
-        temp_dir.path(),
-        "Failed to commit files for fixtures sandbox",
-        |cmd| {
-            cmd.args(["commit", "-m", "'Fixtures'"])
-                .env("GIT_AUTHOR_NAME", "moon tests")
-                .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
-                .env("GIT_COMMITTER_NAME", "moon tests")
-                .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev");
-        },
-    );
+    run_git_command(temp_dir.path(), |cmd| {
+        cmd.args(["commit", "-m", "Fixtures"])
+            .env("GIT_AUTHOR_NAME", "moon tests")
+            .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
+            .env("GIT_COMMITTER_NAME", "moon tests")
+            .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev");
+    });
 
     temp_dir
-}
-
-pub fn get_fixtures_dir<T: AsRef<str>>(dir: T) -> PathBuf {
-    get_fixtures_root().join(dir.as_ref())
 }
 
 pub fn get_fixtures_root() -> PathBuf {
@@ -84,6 +66,10 @@ pub fn get_fixtures_root() -> PathBuf {
     root.push("../../tests/fixtures");
 
     path::normalize(root)
+}
+
+pub fn get_fixtures_dir<T: AsRef<str>>(dir: T) -> PathBuf {
+    get_fixtures_root().join(dir.as_ref())
 }
 
 pub fn replace_fixtures_dir<T: AsRef<str>, P: AsRef<Path>>(value: T, dir: P) -> String {
@@ -96,14 +82,7 @@ pub fn replace_fixtures_dir<T: AsRef<str>, P: AsRef<Path>>(value: T, dir: P) -> 
         .replace(&path::standardize_separators(dir_str), "<WORKSPACE>")
 }
 
-pub fn create_moon_command<T: AsRef<str>>(fixture: T) -> assert_cmd::Command {
-    let mut cmd = create_moon_command_in(get_fixtures_dir(fixture));
-    // Never cache in these tests since they're not in a sandbox
-    cmd.env("MOON_CACHE", "off");
-    cmd
-}
-
-pub fn create_moon_command_in<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
+pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
     cmd.current_dir(path);
     // Let our code know were running tests
@@ -114,6 +93,13 @@ pub fn create_moon_command_in<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Enable logging for code coverage
     cmd.env("MOON_LOG", "trace");
+    cmd
+}
+
+pub fn create_moon_command_in_fixture<T: AsRef<str>>(fixture: T) -> assert_cmd::Command {
+    let mut cmd = create_moon_command(get_fixtures_dir(fixture));
+    // Never cache in these tests since they're not in a sandbox
+    cmd.env("MOON_CACHE", "off");
     cmd
 }
 
@@ -152,7 +138,7 @@ pub fn get_assert_stdout_output(assert: &assert_cmd::assert::Assert) -> String {
     String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()
 }
 
-pub fn debug_sandbox_files(dir: &Path) {
+fn debug_sandbox_files(dir: &Path) {
     for entry in std::fs::read_dir(dir).unwrap() {
         let path = entry.unwrap().path();
 

@@ -106,24 +106,6 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
-        let entries = fs::read_dir(&self.runs_dir).await?;
-
-        for entry in entries {
-            let path = entry.path();
-
-            if path.is_dir() {
-                let runfile = path.join("runfile.json");
-
-                trace!(target: "moon:cache:runfile", "Deleting runfile {}", color::path(&runfile));
-
-                fs::remove_file(&runfile).await?;
-            }
-        }
-
-        Ok(())
-    }
-
     pub fn get_hash_path(&self, hash: &str) -> PathBuf {
         self.hashes_dir.join(format!("{}.json", hash))
     }
@@ -208,36 +190,6 @@ mod tests {
             assert!(dir.path().join(".moon/cache/hashes").exists());
             assert!(dir.path().join(".moon/cache/runs").exists());
             assert!(dir.path().join(".moon/cache/out").exists());
-
-            dir.close().unwrap();
-        }
-    }
-
-    mod delete_runfiles {
-        use super::*;
-
-        #[tokio::test]
-        #[serial]
-        async fn deletes_dir() {
-            let dir = assert_fs::TempDir::new().unwrap();
-            let cache = CacheEngine::create(dir.path()).await.unwrap();
-
-            let runfile1 = cache
-                .create_runfile("123", &"content".to_owned())
-                .await
-                .unwrap();
-            let runfile2 = cache
-                .create_runfile("456", &"content".to_owned())
-                .await
-                .unwrap();
-
-            assert!(runfile1.path.exists());
-            assert!(runfile2.path.exists());
-
-            cache.delete_runfiles().await.unwrap();
-
-            assert!(!runfile1.path.exists());
-            assert!(!runfile2.path.exists());
 
             dir.close().unwrap();
         }

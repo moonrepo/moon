@@ -1,6 +1,6 @@
 use moon_utils::is_ci;
 use moon_utils::path::get_home_dir;
-use moon_utils::test::{create_fixtures_sandbox, create_moon_command_in};
+use moon_utils::test::{create_moon_command_in, create_sandbox};
 
 #[test]
 fn sets_up_and_tears_down() {
@@ -17,7 +17,7 @@ fn sets_up_and_tears_down() {
 
     assert!(!node_dir.exists());
 
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox("cases");
 
     let setup = create_moon_command_in(fixture.path())
         .arg("setup")

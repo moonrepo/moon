@@ -4,10 +4,9 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub fn run_git_command<P, T, F>(dir: P, msg: T, handler: F)
+pub fn run_git_command<P, F>(dir: P, handler: F)
 where
     P: AsRef<Path>,
-    T: AsRef<str>,
     F: FnOnce(&mut Command),
 {
     let mut cmd = Command::new(if cfg!(windows) { "git.exe" } else { "git" });
@@ -16,12 +15,11 @@ where
     handler(&mut cmd);
 
     let out = cmd.output().unwrap_or_else(|e| {
-        println!("{:#?}", e);
-        panic!("{}: {:#?}", msg.as_ref(), dir.as_ref());
+        panic!("{:#?}", e);
     });
 
     if !out.status.success() {
-        eprintln!("{}", output_to_string(&out.stdout));
+        println!("{}", output_to_string(&out.stdout));
         eprintln!("{}", output_to_string(&out.stderr));
     }
 }
@@ -38,39 +36,27 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> assert_fs::fixture::TempDir 
     temp_dir
 }
 
-pub fn create_fixtures_sandbox<T: AsRef<str>>(dir: T) -> assert_fs::fixture::TempDir {
-    let temp_dir = create_sandbox(dir);
+pub fn create_sandbox_with_git<T: AsRef<str>>(fixture: T) -> assert_fs::fixture::TempDir {
+    let temp_dir = create_sandbox(fixture);
 
     // Initialize a git repo so that VCS commands work
-    run_git_command(
-        temp_dir.path(),
-        "Failed to initialize git for fixtures sandbox",
-        |cmd| {
-            cmd.args(["init", "--initial-branch", "master"]);
-        },
-    );
+    run_git_command(temp_dir.path(), |cmd| {
+        cmd.args(["init", "--initial-branch", "master"]);
+    });
 
     // We must also add the files to the index
-    run_git_command(
-        temp_dir.path(),
-        "Failed to add files to git index for fixtures sandbox",
-        |cmd| {
-            cmd.args(["add", "--all", "."]);
-        },
-    );
+    run_git_command(temp_dir.path(), |cmd| {
+        cmd.args(["add", "--all", "."]);
+    });
 
     // And commit them... this seems like a lot of overhead?
-    run_git_command(
-        temp_dir.path(),
-        "Failed to commit files for fixtures sandbox",
-        |cmd| {
-            cmd.args(["commit", "-m", "'Fixtures'"])
-                .env("GIT_AUTHOR_NAME", "moon tests")
-                .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
-                .env("GIT_COMMITTER_NAME", "moon tests")
-                .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev");
-        },
-    );
+    run_git_command(temp_dir.path(), |cmd| {
+        cmd.args(["commit", "-m", "Fixtures"])
+            .env("GIT_AUTHOR_NAME", "moon tests")
+            .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
+            .env("GIT_COMMITTER_NAME", "moon tests")
+            .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev");
+    });
 
     temp_dir
 }

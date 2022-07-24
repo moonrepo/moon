@@ -4,7 +4,7 @@ use insta::assert_snapshot;
 use moon_cache::CacheEngine;
 use moon_utils::path::standardize_separators;
 use moon_utils::test::{
-    create_fixtures_sandbox, create_moon_command, create_moon_command_in, get_assert_output,
+    create_moon_command, create_moon_command_in, create_sandbox_with_git, get_assert_output,
 };
 use predicates::prelude::*;
 use std::fs::read_to_string;
@@ -65,7 +65,7 @@ mod general {
 
     #[test]
     fn logs_command_for_project_root() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
@@ -82,7 +82,7 @@ mod general {
 
     #[test]
     fn logs_command_for_workspace_root() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
@@ -144,11 +144,11 @@ mod configs {
 
 mod logs {
     use super::*;
-    use moon_utils::test::create_fixtures_sandbox;
+    use moon_utils::test::create_sandbox_with_git;
 
     #[test]
     fn creates_log_file() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("--logFile=output.log")
@@ -163,7 +163,7 @@ mod logs {
 
     #[test]
     fn creates_nested_log_file() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("--logFile=nested/output.log")
@@ -183,7 +183,7 @@ mod caching {
 
     #[test]
     fn uses_cache_on_subsequent_runs() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -202,7 +202,7 @@ mod caching {
 
     #[test]
     fn creates_runfile() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("run")
@@ -217,7 +217,7 @@ mod caching {
 
     #[tokio::test]
     async fn creates_run_state_cache() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("run")
@@ -258,7 +258,7 @@ mod dependencies {
 
     #[test]
     fn runs_the_graph_in_order() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -270,7 +270,7 @@ mod dependencies {
 
     #[test]
     fn runs_the_graph_in_order_not_from_head() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -306,7 +306,7 @@ mod target_scopes {
 
     #[test]
     fn supports_all_scope() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -322,7 +322,7 @@ mod target_scopes {
 
     #[test]
     fn supports_deps_scope_in_task() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -343,7 +343,7 @@ mod target_scopes {
 
     #[test]
     fn supports_self_scope_in_task() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -365,7 +365,7 @@ mod system {
 
     #[test]
     fn handles_echo() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -377,7 +377,7 @@ mod system {
 
     #[test]
     fn handles_ls() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -389,7 +389,7 @@ mod system {
 
     #[test]
     fn runs_bash_script() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -401,7 +401,7 @@ mod system {
 
     #[test]
     fn handles_process_exit_zero() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -413,7 +413,7 @@ mod system {
 
     #[test]
     fn handles_process_exit_nonzero() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -425,7 +425,7 @@ mod system {
 
     #[test]
     fn passes_args_through() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -446,7 +446,7 @@ mod system {
 
     #[test]
     fn sets_env_vars() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -458,7 +458,7 @@ mod system {
 
     #[test]
     fn inherits_moon_env_vars() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -470,7 +470,7 @@ mod system {
 
     #[test]
     fn runs_from_project_root() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -482,7 +482,7 @@ mod system {
 
     #[test]
     fn runs_from_workspace_root() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -494,7 +494,7 @@ mod system {
 
     #[test]
     fn retries_on_failure_till_count() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -511,7 +511,7 @@ mod system_windows {
 
     #[test]
     fn runs_bat_script() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -523,7 +523,7 @@ mod system_windows {
 
     #[test]
     fn handles_process_exit_zero() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -535,7 +535,7 @@ mod system_windows {
 
     #[test]
     fn handles_process_exit_nonzero() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -547,7 +547,7 @@ mod system_windows {
 
     #[test]
     fn passes_args_through() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -568,7 +568,7 @@ mod system_windows {
 
     #[test]
     fn sets_env_vars() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -580,7 +580,7 @@ mod system_windows {
 
     #[test]
     fn inherits_moon_env_vars() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -592,7 +592,7 @@ mod system_windows {
 
     #[test]
     fn runs_from_project_root() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -604,7 +604,7 @@ mod system_windows {
 
     #[test]
     fn runs_from_workspace_root() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -616,7 +616,7 @@ mod system_windows {
 
     #[test]
     fn retries_on_failure_till_count() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -645,7 +645,7 @@ mod outputs {
 
     #[tokio::test]
     async fn links_single_file() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("run")
@@ -671,7 +671,7 @@ mod outputs {
 
     #[tokio::test]
     async fn links_multiple_files() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("run")
@@ -703,7 +703,7 @@ mod outputs {
 
     #[tokio::test]
     async fn links_single_folder() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("run")
@@ -735,7 +735,7 @@ mod outputs {
 
     #[tokio::test]
     async fn links_multiple_folders() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("run")
@@ -767,7 +767,7 @@ mod outputs {
 
     #[tokio::test]
     async fn links_both_file_and_folder() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         create_moon_command_in(fixture.path())
             .arg("run")
@@ -803,7 +803,7 @@ mod noop {
 
     #[test]
     fn runs_noop() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")
@@ -814,7 +814,7 @@ mod noop {
     }
     #[test]
     fn runs_noop_deps() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         let assert = create_moon_command_in(fixture.path())
             .arg("run")

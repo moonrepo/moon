@@ -424,14 +424,14 @@ impl Vcs for Git {
 mod test {
     use super::*;
     use moon_utils::string_vec;
-    use moon_utils::test::create_fixtures_sandbox;
+    use moon_utils::test::create_sandbox_with_git;
 
     mod get_file_hashes {
         use super::*;
 
         #[tokio::test]
         async fn filters_ignored_files() {
-            let fixture = create_fixtures_sandbox("ignore");
+            let fixture = create_sandbox_with_git("ignore");
             let git = Git::new("master", fixture.path()).unwrap();
 
             assert_eq!(
@@ -457,7 +457,7 @@ mod test {
 
         #[tokio::test]
         async fn filters_ignored_files() {
-            let fixture = create_fixtures_sandbox("ignore");
+            let fixture = create_sandbox_with_git("ignore");
             let git = Git::new("master", fixture.path()).unwrap();
 
             assert_eq!(

@@ -1,7 +1,7 @@
 mod utils;
 
 use insta::assert_snapshot;
-use moon_utils::test::{create_fixtures_sandbox, create_moon_command_in, get_assert_output};
+use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_assert_output};
 use predicates::prelude::*;
 use serial_test::serial;
 use std::fs::read_to_string;
@@ -9,9 +9,9 @@ use utils::{append_workspace_config, get_path_safe_output, update_version_worksp
 
 #[test]
 fn runs_package_managers() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:npm")
         .assert();
@@ -21,9 +21,9 @@ fn runs_package_managers() {
 
 #[test]
 fn runs_standard_script() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:standard")
         .assert();
@@ -33,9 +33,9 @@ fn runs_standard_script() {
 
 #[test]
 fn runs_cjs_files() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:cjs")
         .assert();
@@ -45,9 +45,9 @@ fn runs_cjs_files() {
 
 #[test]
 fn runs_mjs_files() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:mjs")
         .assert();
@@ -57,9 +57,9 @@ fn runs_mjs_files() {
 
 #[test]
 fn supports_top_level_await() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:topLevelAwait")
         .assert();
@@ -69,9 +69,9 @@ fn supports_top_level_await() {
 
 #[test]
 fn handles_process_exit_zero() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:processExitZero")
         .assert();
@@ -81,9 +81,9 @@ fn handles_process_exit_zero() {
 
 #[test]
 fn handles_process_exit_nonzero() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:processExitNonZero")
         .assert();
@@ -97,9 +97,9 @@ fn handles_process_exit_nonzero() {
 
 #[test]
 fn handles_process_exit_code_zero() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:exitCodeZero")
         .assert();
@@ -109,9 +109,9 @@ fn handles_process_exit_code_zero() {
 
 #[test]
 fn handles_process_exit_code_nonzero() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:exitCodeNonZero")
         .assert();
@@ -125,9 +125,9 @@ fn handles_process_exit_code_nonzero() {
 
 #[test]
 fn handles_throw_error() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:throwError")
         .assert();
@@ -139,9 +139,9 @@ fn handles_throw_error() {
 
 #[test]
 fn handles_unhandled_promise() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:unhandledPromise")
         .assert();
@@ -155,9 +155,9 @@ fn handles_unhandled_promise() {
 
 #[test]
 fn passes_args_through() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:passthroughArgs")
         .arg("--")
@@ -176,9 +176,9 @@ fn passes_args_through() {
 
 #[test]
 fn sets_env_vars() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:envVars")
         .assert();
@@ -188,9 +188,9 @@ fn sets_env_vars() {
 
 #[test]
 fn inherits_moon_env_vars() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:envVarsMoon")
         .assert();
@@ -200,9 +200,9 @@ fn inherits_moon_env_vars() {
 
 #[test]
 fn runs_from_project_root() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:runFromProject")
         .assert();
@@ -212,9 +212,9 @@ fn runs_from_project_root() {
 
 #[test]
 fn runs_from_workspace_root() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:runFromWorkspace")
         .assert();
@@ -224,9 +224,9 @@ fn runs_from_workspace_root() {
 
 #[test]
 fn retries_on_failure_till_count() {
-    let fixture = create_fixtures_sandbox("cases");
+    let fixture = create_sandbox_with_git("cases");
 
-    let assert = create_moon_command_in(fixture.path())
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("node:retryCount")
         .assert();
@@ -240,11 +240,11 @@ mod install_deps {
 
     #[test]
     fn installs_on_first_run() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         assert!(!fixture.path().join("node_modules").exists());
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
@@ -258,9 +258,9 @@ mod install_deps {
 
     #[test]
     fn doesnt_reinstall_on_second_run() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
@@ -269,7 +269,7 @@ mod install_deps {
 
         assert!(predicate::str::contains("added 7 packages").eval(&output1));
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
@@ -281,9 +281,9 @@ mod install_deps {
 
     #[test]
     fn creates_workspace_state_cache() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
@@ -300,14 +300,14 @@ mod engines {
 
     #[test]
     fn adds_engines_constraint() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
             r#"  addEnginesConstraint: true"#,
         );
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
@@ -317,14 +317,14 @@ mod engines {
 
     #[test]
     fn doesnt_add_engines_constraint() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
             r#"  addEnginesConstraint: false"#,
         );
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
@@ -338,9 +338,9 @@ mod version_manager {
 
     #[test]
     fn adds_no_file_by_default() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
@@ -351,14 +351,14 @@ mod version_manager {
 
     #[test]
     fn adds_nvmrc_file() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
             r#"  syncVersionManagerConfig: nvm"#,
         );
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
@@ -373,14 +373,14 @@ mod version_manager {
 
     #[test]
     fn adds_nodenv_file() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
             r#"  syncVersionManagerConfig: nodenv"#,
         );
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
@@ -395,14 +395,14 @@ mod version_manager {
 
     #[test]
     fn errors_for_invalid_value() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
             r#"  syncVersionManagerConfig: invalid"#,
         );
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
@@ -421,14 +421,14 @@ mod sync_depends_on {
 
     #[test]
     fn syncs_as_dependency_to_package_json() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
             "  syncProjectWorkspaceDependencies: true",
         );
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("dependsOn:standard")
             .assert();
@@ -439,14 +439,14 @@ mod sync_depends_on {
 
     #[test]
     fn syncs_as_reference_to_tsconfig_json() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
             "typescript:\n  syncProjectReferences: true\n  createMissingConfig: false",
         );
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("dependsOn:standard")
             .assert();
@@ -462,14 +462,14 @@ mod sync_depends_on {
 
     #[test]
     fn creates_missing_tsconfig_json_when_syncs_as_reference() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
             "typescript:\n  syncProjectReferences: true\n  createMissingConfig: true",
         );
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("dependsOn:standard")
             .assert();
@@ -492,9 +492,9 @@ mod npm {
     #[test]
     #[serial]
     fn installs_correct_version() {
-        let fixture = create_fixtures_sandbox("node-npm");
+        let fixture = create_sandbox_with_git("node-npm");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("npm:version")
             .assert();
@@ -507,12 +507,12 @@ mod npm {
     #[test]
     #[serial]
     fn installs_correct_version_using_corepack() {
-        let fixture = create_fixtures_sandbox("node-npm");
+        let fixture = create_sandbox_with_git("node-npm");
 
         // Corepack released in v16.9
         update_version_workspace_config(fixture.path(), "16.1.0", "16.10.0");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("npm:version")
             .assert();
@@ -523,9 +523,9 @@ mod npm {
     #[test]
     #[serial]
     fn can_install_a_dep() {
-        let fixture = create_fixtures_sandbox("node-npm");
+        let fixture = create_sandbox_with_git("node-npm");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("npm:installDep")
             .assert();
@@ -536,9 +536,9 @@ mod npm {
     #[test]
     #[serial]
     fn can_run_a_deps_bin() {
-        let fixture = create_fixtures_sandbox("node-npm");
+        let fixture = create_sandbox_with_git("node-npm");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("npm:runDep")
             .assert();
@@ -558,9 +558,9 @@ mod pnpm {
     #[test]
     #[serial]
     fn installs_correct_version() {
-        let fixture = create_fixtures_sandbox("node-pnpm");
+        let fixture = create_sandbox_with_git("node-pnpm");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("pnpm:version")
             .assert();
@@ -571,12 +571,12 @@ mod pnpm {
     #[test]
     #[serial]
     fn installs_correct_version_using_corepack() {
-        let fixture = create_fixtures_sandbox("node-pnpm");
+        let fixture = create_sandbox_with_git("node-pnpm");
 
         // Corepack released in v16.9
         update_version_workspace_config(fixture.path(), "16.2.0", "16.11.0");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("pnpm:version")
             .assert();
@@ -587,9 +587,9 @@ mod pnpm {
     #[test]
     #[serial]
     fn can_install_a_dep() {
-        let fixture = create_fixtures_sandbox("node-pnpm");
+        let fixture = create_sandbox_with_git("node-pnpm");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("pnpm:installDep")
             .assert();
@@ -600,9 +600,9 @@ mod pnpm {
     #[test]
     #[serial]
     fn can_run_a_deps_bin() {
-        let fixture = create_fixtures_sandbox("node-pnpm");
+        let fixture = create_sandbox_with_git("node-pnpm");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("pnpm:runDep")
             .assert();
@@ -622,9 +622,9 @@ mod yarn1 {
     #[test]
     #[serial]
     fn installs_correct_version() {
-        let fixture = create_fixtures_sandbox("node-yarn1");
+        let fixture = create_sandbox_with_git("node-yarn1");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:version")
             .assert();
@@ -635,12 +635,12 @@ mod yarn1 {
     #[test]
     #[serial]
     fn installs_correct_version_using_corepack() {
-        let fixture = create_fixtures_sandbox("node-yarn1");
+        let fixture = create_sandbox_with_git("node-yarn1");
 
         // Corepack released in v16.9
         update_version_workspace_config(fixture.path(), "16.3.0", "16.12.0");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:version")
             .assert();
@@ -651,9 +651,9 @@ mod yarn1 {
     #[test]
     #[serial]
     fn can_install_a_dep() {
-        let fixture = create_fixtures_sandbox("node-yarn1");
+        let fixture = create_sandbox_with_git("node-yarn1");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:installDep")
             .assert();
@@ -664,9 +664,9 @@ mod yarn1 {
     #[test]
     #[serial]
     fn can_run_a_deps_bin() {
-        let fixture = create_fixtures_sandbox("node-yarn1");
+        let fixture = create_sandbox_with_git("node-yarn1");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:runDep")
             .assert();
@@ -687,9 +687,9 @@ mod yarn1 {
 //     #[test]
 //     #[serial]
 //     fn installs_correct_version() {
-//         let fixture = create_fixtures_sandbox("node-yarn");
+//         let fixture = create_sandbox_with_git("node-yarn");
 
-//         let assert = create_moon_command_in(fixture.path())
+//         let assert = create_moon_command(fixture.path())
 //             .arg("run")
 //             .arg("yarn:version")
 //             .assert();
@@ -700,12 +700,12 @@ mod yarn1 {
 //     #[test]
 //     #[serial]
 //     fn installs_correct_version_using_corepack() {
-//         let fixture = create_fixtures_sandbox("node-yarn");
+//         let fixture = create_sandbox_with_git("node-yarn");
 
 //         // Corepack released in v16.9
 //         update_version_workspace_config(fixture.path(), "16.4.0", "16.13.0");
 
-//         let assert = create_moon_command_in(fixture.path())
+//         let assert = create_moon_command(fixture.path())
 //             .arg("run")
 //             .arg("yarn:version")
 //             .assert();
@@ -716,9 +716,9 @@ mod yarn1 {
 //     #[test]
 //     #[serial]
 //     fn can_install_a_dep() {
-//         let fixture = create_fixtures_sandbox("node-yarn");
+//         let fixture = create_sandbox_with_git("node-yarn");
 
-//         let assert = create_moon_command_in(fixture.path())
+//         let assert = create_moon_command(fixture.path())
 //             .arg("run")
 //             .arg("yarn:installDep")
 //             .assert();
@@ -729,9 +729,9 @@ mod yarn1 {
 // #[test]
 // #[serial]
 // fn can_run_a_deps_bin() {
-//     let fixture = create_fixtures_sandbox("node-yarn1");
+//     let fixture = create_sandbox_with_git("node-yarn1");
 
-//     let assert = create_moon_command_in(fixture.path())
+//     let assert = create_moon_command(fixture.path())
 //         .arg("run")
 //         .arg("yarn:runDep")
 //         .assert();
@@ -750,9 +750,9 @@ mod profile {
 
     #[test]
     fn record_a_cpu_profile() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("--profile")
             .arg("cpu")
@@ -773,9 +773,9 @@ mod profile {
 
     #[test]
     fn record_a_heap_profile() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
-        create_moon_command_in(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("--profile")
             .arg("heap")

@@ -92,12 +92,6 @@ const tasksRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'Dependencies on other factors',
-		support: {
-			turborepo: [SUPPORTED, 'env vars'],
-		},
-	},
-	{
 		feature: 'File groups',
 		support: {
 			moon: SUPPORTED,
@@ -132,7 +126,8 @@ const tasksRows: Comparison[] = [
 		feature: 'Output logging style',
 		support: {
 			moon: PARTIALLY_SUPPORTED,
-			turborepo: 'via `outputMode`',
+			nx: [SUPPORTED, 'via `--output-style`'],
+			turborepo: [SUPPORTED, 'via `outputMode`'],
 		},
 	},
 	{

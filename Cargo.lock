@@ -1435,6 +1435,9 @@ dependencies = [
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [
+ "moon_task",
+ "moon_utils",
+ "serde",
  "sha2",
 ]
 
@@ -1480,7 +1483,6 @@ name = "moon_plugin_node"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
- "moon_config",
  "moon_hasher",
  "moon_lang_node",
  "moon_logger",

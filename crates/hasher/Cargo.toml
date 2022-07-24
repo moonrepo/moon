@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_task = { path = "../task"}
+moon_utils = { path = "../utils"}
+serde = { version = "1.0.140", features = ["derive"] }
 sha2 = "0.10.2"

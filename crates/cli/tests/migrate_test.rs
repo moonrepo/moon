@@ -1,5 +1,5 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command_in, create_sandbox};
+use moon_utils::test::{create_moon_command, create_sandbox};
 use std::fs;
 
 mod from_package_json {
@@ -9,7 +9,7 @@ mod from_package_json {
     fn converts_scripts() {
         let fixture = create_sandbox("migrate");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .args(["migrate", "from-package-json", "common"])
             .assert();
 
@@ -30,7 +30,7 @@ mod from_package_json {
     fn links_depends_on() {
         let fixture = create_sandbox("migrate");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .args(["migrate", "from-package-json", "deps"])
             .assert();
 

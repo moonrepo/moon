@@ -1,10 +1,10 @@
-use moon_utils::test::{create_moon_command_in, create_sandbox, get_fixtures_dir};
+use moon_utils::test::{create_moon_command, create_sandbox, get_fixtures_dir};
 use predicates::prelude::*;
 use serial_test::serial;
 use std::path::Path;
 
 fn setup_toolchain(path: &Path) {
-    let assert = create_moon_command_in(path).args(["setup"]).assert();
+    let assert = create_moon_command(path).args(["setup"]).assert();
 
     assert.success();
 }
@@ -19,7 +19,7 @@ mod run_script {
 
         setup_toolchain(fixture.path());
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "unknown"])
             .assert();
 
@@ -35,7 +35,7 @@ mod run_script {
 
         setup_toolchain(fixture.path());
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "unknown", "--project", "npm"])
             .assert();
 
@@ -51,7 +51,7 @@ mod run_script {
 
         setup_toolchain(fixture.path());
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "test", "--project", "npm"])
             .assert();
 
@@ -65,7 +65,7 @@ mod run_script {
 
         setup_toolchain(fixture.path());
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "test"])
             .env(
                 "MOON_PROJECT_ROOT",
@@ -88,7 +88,7 @@ mod run_script {
 
         setup_toolchain(fixture.path());
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "lint", "--project", "pnpm"])
             .assert();
 
@@ -104,7 +104,7 @@ mod run_script {
 
     //     setup_toolchain(fixture.path());
 
-    //     let assert = create_moon_command_in(fixture.path())
+    //     let assert = create_moon_command(fixture.path())
     //         .args(["node", "run-script", "build", "--project", "yarn"])
     //         .assert();
 

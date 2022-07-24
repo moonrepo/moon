@@ -1,5 +1,5 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command_in, create_sandbox};
+use moon_utils::test::{create_moon_command, create_sandbox};
 use predicates::prelude::*;
 use serial_test::serial;
 use std::fs;
@@ -17,7 +17,7 @@ fn creates_files_in_dest() {
     assert!(!project_config.exists());
     assert!(!gitignore.exists());
 
-    let assert = create_moon_command_in(root)
+    let assert = create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -39,7 +39,7 @@ fn creates_workspace_config_from_template() {
     let root = fixture.path();
     let workspace_config = root.join(".moon").join("workspace.yml");
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -58,7 +58,7 @@ fn creates_project_config_from_template() {
     let root = fixture.path();
     let project_config = root.join(".moon").join("project.yml");
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -77,7 +77,7 @@ fn creates_gitignore_file() {
     let root = fixture.path();
     let gitignore = root.join(".gitignore");
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -98,7 +98,7 @@ fn appends_existing_gitignore_file() {
 
     fs::write(&gitignore, "*.js\n*.log").unwrap();
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -116,14 +116,14 @@ fn does_overwrite_existing_config_if_force_passed() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
         .assert();
 
     // Run again
-    let assert = create_moon_command_in(root)
+    let assert = create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -147,7 +147,7 @@ mod node {
 
         fs::write(&root.join(".nvmrc"), "1.2.3").unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg(&root)
@@ -165,7 +165,7 @@ mod node {
 
         fs::write(&root.join(".node-version"), "1.2.3").unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg(&root)
@@ -193,7 +193,7 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg("--inheritProjects")
@@ -223,7 +223,7 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg("--inheritProjects")
@@ -253,7 +253,7 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg("--inheritProjects")
@@ -283,7 +283,7 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg("--inheritProjects")
@@ -306,7 +306,7 @@ mod node {
 
             fs::write(&root.join("package-lock.json"), "").unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -328,7 +328,7 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -346,7 +346,7 @@ mod node {
 
             fs::write(&root.join("pnpm-lock.yaml"), "").unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -368,7 +368,7 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -386,7 +386,7 @@ mod node {
 
             fs::write(&root.join("yarn.lock"), "").unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -408,7 +408,7 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -435,7 +435,7 @@ mod vcs {
             cmd.args(["checkout", "-b", "fixtures-test"]);
         });
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg(&root)

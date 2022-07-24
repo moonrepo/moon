@@ -34,7 +34,6 @@
       "properties": {
         "args": {
           "title": "ArgsField",
-          "default": null,
           "anyOf": [
             {
               "type": "string"
@@ -81,21 +80,7 @@
           }
         },
         "options": {
-          "default": {
-            "mergeArgs": "append",
-            "mergeDeps": "append",
-            "mergeEnv": "append",
-            "mergeInputs": "append",
-            "mergeOutputs": "append",
-            "retryCount": 0,
-            "runInCI": true,
-            "runFromWorkspaceRoot": false
-          },
-          "allOf": [
-            {
-              "$ref": "#/definitions/TaskOptionsConfig"
-            }
-          ]
+          "$ref": "#/definitions/TaskOptionsConfig"
         },
         "outputs": {
           "type": [
@@ -107,12 +92,7 @@
           }
         },
         "type": {
-          "default": "node",
-          "allOf": [
-            {
-              "$ref": "#/definitions/TaskType"
-            }
-          ]
+          "$ref": "#/definitions/TaskType"
         }
       }
     },

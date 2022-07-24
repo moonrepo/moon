@@ -1,9 +1,11 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command, get_assert_output, get_assert_stderr_output_clean};
+use moon_utils::test::{
+    create_moon_command_in_fixture, get_assert_output, get_assert_stderr_output_clean,
+};
 
 #[test]
 fn unknown_project() {
-    let assert = create_moon_command("projects")
+    let assert = create_moon_command_in_fixture("projects")
         .arg("project")
         .arg("unknown")
         .assert();
@@ -15,7 +17,7 @@ fn unknown_project() {
 
 #[test]
 fn empty_config() {
-    let assert = create_moon_command("projects")
+    let assert = create_moon_command_in_fixture("projects")
         .arg("project")
         .arg("emptyConfig")
         .assert();
@@ -25,7 +27,7 @@ fn empty_config() {
 
 #[test]
 fn no_config() {
-    let assert = create_moon_command("projects")
+    let assert = create_moon_command_in_fixture("projects")
         .arg("project")
         .arg("noConfig")
         .assert();
@@ -36,7 +38,7 @@ fn no_config() {
 #[test]
 fn basic_config() {
     // with dependsOn and fileGroups
-    let assert = create_moon_command("projects")
+    let assert = create_moon_command_in_fixture("projects")
         .arg("project")
         .arg("basic")
         .assert();
@@ -47,7 +49,7 @@ fn basic_config() {
 #[test]
 fn advanced_config() {
     // with project metadata
-    let assert = create_moon_command("projects")
+    let assert = create_moon_command_in_fixture("projects")
         .arg("project")
         .arg("advanced")
         .assert();
@@ -58,7 +60,7 @@ fn advanced_config() {
 #[test]
 fn depends_on_paths() {
     // shows dependsOn paths when they exist
-    let assert = create_moon_command("projects")
+    let assert = create_moon_command_in_fixture("projects")
         .arg("project")
         .arg("foo")
         .assert();
@@ -68,7 +70,7 @@ fn depends_on_paths() {
 
 #[test]
 fn with_tasks() {
-    let assert = create_moon_command("projects")
+    let assert = create_moon_command_in_fixture("projects")
         .arg("project")
         .arg("tasks")
         .assert();

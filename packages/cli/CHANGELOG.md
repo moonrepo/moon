@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
 This release was largely focused on interoperability with the Node.js ecosystem, specifically
 `package.json` scripts. It's the first step in many steps, so stay tuned!

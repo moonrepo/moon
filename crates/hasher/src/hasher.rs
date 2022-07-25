@@ -20,7 +20,7 @@ pub struct TargetHasher {
     env_vars: BTreeMap<String, String>,
 
     // Input files and globs mapped to a unique hash
-    input_hashes: BTreeMap<String, String>,
+    inputs: BTreeMap<String, String>,
 
     // `project.yml` `dependsOn`
     project_deps: Vec<String>,
@@ -59,8 +59,7 @@ impl TargetHasher {
         for (file, hash) in inputs {
             // Standardize on `/` separators so that the hash is
             // the same between windows and nix machines.
-            self.input_hashes
-                .insert(path::standardize_separators(file), hash);
+            self.inputs.insert(path::standardize_separators(file), hash);
         }
     }
 
@@ -92,7 +91,7 @@ impl Hasher for TargetHasher {
         hash_vec(&self.args, sha);
         hash_vec(&self.deps, sha);
         hash_btree(&self.env_vars, sha);
-        hash_btree(&self.input_hashes, sha);
+        hash_btree(&self.inputs, sha);
         hash_vec(&self.project_deps, sha);
     }
 }

@@ -1315,6 +1315,7 @@ dependencies = [
  "moon_utils",
  "moon_vcs",
  "moon_workspace",
+ "serde",
  "thiserror",
  "tokio",
 ]
@@ -1435,6 +1436,7 @@ dependencies = [
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [
+ "moon_error",
  "moon_task",
  "moon_utils",
  "serde",

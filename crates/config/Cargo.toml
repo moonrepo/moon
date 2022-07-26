@@ -13,10 +13,10 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
-moon_constants = { path = "../constants"}
-moon_error = { path = "../error"}
+moon_constants = { path = "../constants" }
+moon_error = { path = "../error" }
 moon_lang_node = { path = "../lang-node" }
-moon_utils = { path = "../utils"}
+moon_utils = { path = "../utils" }
 figment = { version = "0.10.6", features = ["test", "yaml"] }
 json = "0.12.4"
 reqwest = { version = "0.11.11", features = ["blocking"] }

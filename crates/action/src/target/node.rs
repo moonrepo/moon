@@ -2,8 +2,9 @@ use crate::context::{ActionContext, ProfileType};
 use crate::errors::ActionError;
 use moon_config::PackageManager;
 use moon_error::MoonError;
-use moon_lang_node::node;
+use moon_lang_node::{node, package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, trace};
+use moon_plugin_node::NodeTargetHasher;
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{get_path_env_var, Executable};
@@ -76,7 +77,7 @@ fn create_node_options(
 /// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
-pub async fn create_node_target_command(
+pub async fn create_target_command(
     context: &ActionContext,
     workspace: &Workspace,
     project: &Project,
@@ -141,4 +142,37 @@ pub async fn create_node_target_command(
     }
 
     Ok(command)
+}
+
+pub fn create_target_hasher(
+    workspace: &Workspace,
+    project: &Project,
+) -> Result<NodeTargetHasher, ActionError> {
+    let mut hasher = NodeTargetHasher::new(workspace.config.node.version.clone());
+
+    // Hash root configs first
+    if let Some(root_package) = PackageJson::read(&workspace.root)? {
+        hasher.hash_package_json(&root_package);
+    }
+
+    if let Some(root_tsconfig) = TsConfigJson::read_with_name(
+        &workspace.root,
+        &workspace.config.typescript.root_config_file_name,
+    )? {
+        hasher.hash_tsconfig_json(&root_tsconfig);
+    }
+
+    // Hash project configs second so they can override
+    if let Some(package) = PackageJson::read(&project.root)? {
+        hasher.hash_package_json(&package);
+    }
+
+    if let Some(tsconfig) = TsConfigJson::read_with_name(
+        &project.root,
+        &workspace.config.typescript.project_config_file_name,
+    )? {
+        hasher.hash_tsconfig_json(&tsconfig);
+    }
+
+    Ok(hasher)
 }

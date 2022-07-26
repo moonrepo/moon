@@ -1307,6 +1307,7 @@ dependencies = [
  "moon_hasher",
  "moon_lang_node",
  "moon_logger",
+ "moon_plugin_node",
  "moon_project",
  "moon_task",
  "moon_terminal",
@@ -1314,6 +1315,7 @@ dependencies = [
  "moon_utils",
  "moon_vcs",
  "moon_workspace",
+ "serde",
  "thiserror",
  "tokio",
 ]
@@ -1434,9 +1436,7 @@ dependencies = [
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [
- "moon_config",
- "moon_lang_node",
- "moon_project",
+ "moon_error",
  "moon_task",
  "moon_utils",
  "serde",
@@ -1485,11 +1485,13 @@ name = "moon_plugin_node"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "moon_hasher",
  "moon_lang_node",
  "moon_logger",
  "moon_task",
  "moon_utils",
  "pretty_assertions",
+ "serde",
 ]
 
 [[package]]

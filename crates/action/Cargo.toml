@@ -10,6 +10,7 @@ moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
+moon_plugin_node = { path = "../plugin-node" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_terminal = { path = "../terminal" }
@@ -18,5 +19,6 @@ moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 clap = { version = "3.2.14", features = ["derive"] }
+serde = "1.0.140"
 thiserror = "1.0.31"
 tokio = { version = "1.20.0", features = ["full"] }

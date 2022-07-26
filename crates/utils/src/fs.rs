@@ -26,6 +26,51 @@ pub fn clean_json<T: AsRef<str>>(json: T) -> Result<String, MoonError> {
     Ok(String::from(stripped))
 }
 
+pub async fn copy_file<S: AsRef<Path>, D: AsRef<Path>>(from: S, to: D) -> Result<(), MoonError> {
+    let from = from.as_ref();
+    let to = to.as_ref();
+    let to_dir = to.parent().unwrap();
+
+    create_dir_all(to_dir).await?;
+
+    fs::copy(from, to)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, from.to_path_buf()))?;
+
+    Ok(())
+}
+
+#[async_recursion]
+pub async fn copy_dir_all<T: AsRef<Path> + Send>(
+    from_root: T,
+    from: T,
+    to_root: T,
+) -> Result<(), MoonError> {
+    let from_root = from_root.as_ref();
+    let from = from.as_ref();
+    let to_root = to_root.as_ref();
+    let entries = read_dir(from).await?;
+    let mut dirs = vec![];
+
+    // Copy files before dirs incase an error occurs
+    for entry in entries {
+        let path = entry.path();
+
+        if path.is_file() {
+            copy_file(&path, to_root.join(path.strip_prefix(from_root).unwrap())).await?;
+        } else {
+            dirs.push(path);
+        }
+    }
+
+    // Copy dirs in sequence for the same reason
+    for dir in dirs {
+        copy_dir_all(from_root, &dir, to_root).await?;
+    }
+
+    Ok(())
+}
+
 pub async fn create_dir_all<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
     let path = path.as_ref();
 
@@ -54,62 +99,6 @@ where
         Some(parent_dir) => find_upwards(name, parent_dir),
         None => None,
     }
-}
-
-#[track_caller]
-pub async fn link_file<T: AsRef<Path>>(from_root: T, from: T, to_root: T) -> Result<(), MoonError> {
-    let from_root = from_root.as_ref();
-    let from = from.as_ref();
-    let to_root = to_root.as_ref();
-    let to = to_root.join(from.strip_prefix(from_root).unwrap());
-
-    // Hardlink has already been created
-    if to.exists() {
-        return Ok(());
-    }
-
-    let to_dir = to.parent().unwrap();
-
-    if to_dir != to_root {
-        create_dir_all(to_dir).await?;
-    }
-
-    fs::hard_link(from, &to)
-        .await
-        .map_err(|_| MoonError::HardLink(from.to_path_buf(), to.clone()))?;
-
-    Ok(())
-}
-
-#[async_recursion]
-pub async fn link_dir<T: AsRef<Path> + Send>(
-    from_root: T,
-    from: T,
-    to_root: T,
-) -> Result<(), MoonError> {
-    let from_root = from_root.as_ref();
-    let from = from.as_ref();
-    let to_root = to_root.as_ref();
-    let entries = read_dir(from).await?;
-    let mut dirs = vec![];
-
-    // Link files before dirs incase an error occurs
-    for entry in entries {
-        let path = entry.path();
-
-        if path.is_file() {
-            link_file(from_root, &path, to_root).await?;
-        } else {
-            dirs.push(path);
-        }
-    }
-
-    // Link dirs in sequence for the same reason
-    for dir in dirs {
-        link_dir(from_root, &dir, to_root).await?;
-    }
-
-    Ok(())
 }
 
 pub async fn metadata<T: AsRef<Path>>(path: T) -> Result<std::fs::Metadata, MoonError> {

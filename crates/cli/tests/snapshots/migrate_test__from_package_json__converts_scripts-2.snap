@@ -12,6 +12,7 @@ tasks:
       - "."
     inputs:
       - "**/*"
+    type: node
   lint-fix:
     command: moon
     args:
@@ -21,4 +22,5 @@ tasks:
       - "--fix"
     inputs:
       - "**/*"
+    type: node
 

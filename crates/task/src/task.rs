@@ -225,7 +225,7 @@ impl Task {
             config.outputs = Some(self.outputs.clone());
         }
 
-        if !matches!(self.platform, PlatformType::Node) {
+        if !matches!(self.platform, PlatformType::Unknown) {
             config.type_of = self.platform.clone();
         }
 

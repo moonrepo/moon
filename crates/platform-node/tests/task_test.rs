@@ -258,6 +258,7 @@ mod create_task {
                     command: "yarn".to_owned(),
                     args: string_vec!["install"],
                     env: HashMap::from([("KEY".to_owned(), "VALUE".to_owned())]),
+                    platform: PlatformType::Node,
                     ..Task::new("project:task")
                 }
             )
@@ -282,6 +283,7 @@ mod create_task {
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ]),
+                    platform: PlatformType::Node,
                     ..Task::new("project:task")
                 }
             )
@@ -306,6 +308,7 @@ mod create_task {
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ]),
+                    platform: PlatformType::Node,
                     ..Task::new("project:task")
                 }
             )
@@ -326,6 +329,7 @@ mod create_task {
                 Task {
                     command: "yarn".to_owned(),
                     env: HashMap::from([("NODE_OPTIONS".to_owned(), "-f -b".to_owned())]),
+                    platform: PlatformType::Node,
                     ..Task::new("project:task")
                 }
             )
@@ -369,6 +373,7 @@ mod create_task {
                         command: "tool".to_owned(),
                         args: string_vec!["build", candidate.0, candidate.1],
                         outputs: string_vec![candidate.2],
+                        platform: PlatformType::Node,
                         ..Task::new("project:task")
                     }
                 )
@@ -443,6 +448,7 @@ mod infer_tasks_from_scripts {
                         command: "moon".to_owned(),
                         args: string_vec!["node", "run-script", "build:app"],
                         outputs: string_vec!["dist"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:build-app")
                     }
                 ),
@@ -455,6 +461,7 @@ mod infer_tasks_from_scripts {
                             run_in_ci: false,
                             ..TaskOptions::default()
                         },
+                        platform: PlatformType::Node,
                         ..Task::new("project:dev")
                     }
                 ),
@@ -463,6 +470,7 @@ mod infer_tasks_from_scripts {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["node", "run-script", "test"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test")
                     }
                 ),
@@ -471,6 +479,7 @@ mod infer_tasks_from_scripts {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["node", "run-script", "lint"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint")
                     }
                 ),
@@ -479,6 +488,7 @@ mod infer_tasks_from_scripts {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["node", "run-script", "typecheck"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:typecheck")
                     }
                 ),
@@ -565,6 +575,7 @@ mod create_tasks_from_scripts {
                     Task {
                         command: "jest".to_owned(),
                         args: string_vec!["."],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test")
                     }
                 ),
@@ -573,6 +584,7 @@ mod create_tasks_from_scripts {
                     Task {
                         command: "eslint".to_owned(),
                         args: string_vec!["src/**/*", "."],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint")
                     }
                 ),
@@ -581,6 +593,7 @@ mod create_tasks_from_scripts {
                     Task {
                         command: "tsc".to_owned(),
                         args: string_vec!["--build"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:typecheck")
                     }
                 ),
@@ -615,6 +628,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "do".to_owned(),
                             args: string_vec!["something"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:pretest")
                         }
                     ),
@@ -624,6 +638,7 @@ mod create_tasks_from_scripts {
                             command: "do".to_owned(),
                             args: string_vec!["another"],
                             deps: string_vec!["~:test"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:posttest")
                         }
                     ),
@@ -633,6 +648,7 @@ mod create_tasks_from_scripts {
                             command: "jest".to_owned(),
                             args: string_vec!["."],
                             deps: string_vec!["~:pretest"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:test")
                         }
                     ),
@@ -662,6 +678,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "do".to_owned(),
                             args: string_vec!["something"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:pretest-dep1")
                         }
                     ),
@@ -671,6 +688,7 @@ mod create_tasks_from_scripts {
                             command: "do".to_owned(),
                             args: string_vec!["another"],
                             deps: string_vec!["~:pretest-dep1"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:pretest")
                         }
                     ),
@@ -680,6 +698,7 @@ mod create_tasks_from_scripts {
                             command: "jest".to_owned(),
                             args: string_vec!["."],
                             deps: string_vec!["~:pretest"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:test")
                         }
                     )
@@ -709,6 +728,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "do".to_owned(),
                             args: string_vec!["something"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:posttest-dep1")
                         }
                     ),
@@ -718,6 +738,7 @@ mod create_tasks_from_scripts {
                             command: "do".to_owned(),
                             args: string_vec!["another"],
                             deps: string_vec!["~:posttest-dep1", "~:test"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:posttest")
                         }
                     ),
@@ -726,6 +747,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "jest".to_owned(),
                             args: string_vec!["."],
+                            platform: PlatformType::Node,
                             ..Task::new("project:test")
                         }
                     ),
@@ -755,6 +777,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "webpack".to_owned(),
                             args: string_vec!["build"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:prerelease")
                         }
                     ),
@@ -764,6 +787,7 @@ mod create_tasks_from_scripts {
                             command: "npm".to_owned(),
                             args: string_vec!["publish"],
                             deps: string_vec!["~:prerelease"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:release")
                         }
                     ),
@@ -797,6 +821,7 @@ mod create_tasks_from_scripts {
                     Task {
                         command: "eslint".to_owned(),
                         args: string_vec!["."],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint")
                     }
                 )])
@@ -835,6 +860,7 @@ mod create_tasks_from_scripts {
                             Task {
                                 command: "eslint".to_owned(),
                                 args: string_vec!["."],
+                                platform: PlatformType::Node,
                                 ..Task::new("project:lint")
                             }
                         ),
@@ -843,6 +869,7 @@ mod create_tasks_from_scripts {
                             Task {
                                 command: "moon".to_owned(),
                                 args: string_vec!["run", "project:lint"],
+                                platform: PlatformType::Node,
                                 ..Task::new("project:lint-fix")
                             }
                         ),
@@ -882,6 +909,7 @@ mod create_tasks_from_scripts {
                             Task {
                                 command: "eslint".to_owned(),
                                 args: string_vec!["."],
+                                platform: PlatformType::Node,
                                 ..Task::new("project:lint")
                             }
                         ),
@@ -890,6 +918,7 @@ mod create_tasks_from_scripts {
                             Task {
                                 command: "moon".to_owned(),
                                 args: string_vec!["run", "project:lint", "--", "--fix"],
+                                platform: PlatformType::Node,
                                 ..Task::new("project:lint-fix")
                             }
                         ),
@@ -931,6 +960,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "webpack".to_owned(),
                             args: string_vec!["build"],
+                            platform: PlatformType::Node,
                             ..Task::new("project:build")
                         }
                     ),
@@ -940,6 +970,7 @@ mod create_tasks_from_scripts {
                             command: "moon".to_owned(),
                             args: string_vec!["run", "project:build", "--", "--stats"],
                             env: HashMap::from([("NODE_ENV".to_owned(), "development".to_owned())]),
+                            platform: PlatformType::Node,
                             ..Task::new("project:build-dev")
                         }
                     ),
@@ -949,6 +980,7 @@ mod create_tasks_from_scripts {
                             command: "moon".to_owned(),
                             args: string_vec!["run", "project:build"],
                             env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                            platform: PlatformType::Node,
                             ..Task::new("project:build-prod")
                         }
                     ),
@@ -958,6 +990,7 @@ mod create_tasks_from_scripts {
                             command: "moon".to_owned(),
                             args: string_vec!["run", "project:build", "--", "--mode", "production"],
                             env: HashMap::from([("NODE_ENV".to_owned(), "staging".to_owned())]),
+                            platform: PlatformType::Node,
                             ..Task::new("project:build-staging")
                         }
                     ),
@@ -1012,6 +1045,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "babel".to_owned(),
                             args: string_vec!["."],
+                            platform: PlatformType::Node,
                             ..Task::new("project:build")
                         }
                     ),
@@ -1020,6 +1054,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "eslint".to_owned(),
                             args: string_vec!["."],
+                            platform: PlatformType::Node,
                             ..Task::new("project:lint")
                         }
                     ),
@@ -1028,6 +1063,7 @@ mod create_tasks_from_scripts {
                         Task {
                             command: "jest".to_owned(),
                             args: string_vec!["."],
+                            platform: PlatformType::Node,
                             ..Task::new("project:test")
                         }
                     )
@@ -1149,6 +1185,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["test/esm/index.js"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-esm")
                     }
                 ),
@@ -1157,6 +1194,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["test/runtime-integration/bundlers.cjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-runtime-bundlers")
                     }
                 ),
@@ -1165,6 +1203,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["test/runtime-integration/generate-absolute-runtime.cjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-runtime-generate-absolute-runtime")
                     }
                 ),
@@ -1173,6 +1212,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["test/runtime-integration/node.cjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-runtime-node")
                     }
                 ),
@@ -1218,6 +1258,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:packemon", "--", "build"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:build")
                     }
                 ),
@@ -1226,6 +1267,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:type"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:check-dep1")
                     }
                 ),
@@ -1235,6 +1277,7 @@ mod complex_examples {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:test"],
                         deps: string_vec!["~:check-dep1"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:check-dep2")
                     }
                 ),
@@ -1244,6 +1287,7 @@ mod complex_examples {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:lint"],
                         deps: string_vec!["~:check-dep2"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:check")
                     }
                 ),
@@ -1252,6 +1296,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:packemon", "--", "clean"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:clean")
                     }
                 ),
@@ -1260,6 +1305,7 @@ mod complex_examples {
                     Task {
                         command: "yarn".to_owned(),
                         args: string_vec!["install"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:commit-dep1")
                     }
                 ),
@@ -1278,6 +1324,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:test", "--", "--coverage"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:coverage")
                     }
                 ),
@@ -1286,6 +1333,7 @@ mod complex_examples {
                     Task {
                         command: "beemo".to_owned(),
                         args: string_vec!["create-config"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:create-config")
                     }
                 ),
@@ -1294,6 +1342,7 @@ mod complex_examples {
                     Task {
                         command: "beemo".to_owned(),
                         args: string_vec!["prettier"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:format")
                     }
                 ),
@@ -1302,6 +1351,7 @@ mod complex_examples {
                     Task {
                         command: "beemo".to_owned(),
                         args: string_vec!["eslint"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint")
                     }
                 ),
@@ -1319,6 +1369,7 @@ mod complex_examples {
                             "--declaration"
                         ],
                         env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                        platform: PlatformType::Node,
                         ..Task::new("project:packup")
                     }
                 ),
@@ -1327,6 +1378,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["./packages/packemon/cjs/bin.cjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:packemon")
                     }
                 ),
@@ -1335,6 +1387,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:clean"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:prerelease-dep1")
                     }
                 ),
@@ -1344,6 +1397,7 @@ mod complex_examples {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:setup"],
                         deps: string_vec!["~:prerelease-dep1"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:prerelease-dep2")
                     }
                 ),
@@ -1353,6 +1407,7 @@ mod complex_examples {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:packup"],
                         deps: string_vec!["~:prerelease-dep2"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:prerelease-dep3")
                     }
                 ),
@@ -1362,6 +1417,7 @@ mod complex_examples {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:check"],
                         deps: string_vec!["~:prerelease-dep3"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:prerelease")
                     }
                 ),
@@ -1371,6 +1427,7 @@ mod complex_examples {
                         command: "beemo".to_owned(),
                         args: string_vec!["run-script", "lerna-release"],
                         deps: string_vec!["~:prerelease"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:release")
                     }
                 ),
@@ -1388,6 +1445,7 @@ mod complex_examples {
                             "packemon",
                             "build"
                         ],
+                        platform: PlatformType::Node,
                         ..Task::new("project:setup")
                     }
                 ),
@@ -1396,6 +1454,7 @@ mod complex_examples {
                     Task {
                         command: "beemo".to_owned(),
                         args: string_vec!["jest"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test")
                     }
                 ),
@@ -1404,6 +1463,7 @@ mod complex_examples {
                     Task {
                         command: "beemo".to_owned(),
                         args: string_vec!["typescript", "--build"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:type")
                     }
                 ),
@@ -1412,6 +1472,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:packemon", "--", "validate"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:validate")
                     }
                 ),
@@ -1469,6 +1530,7 @@ mod complex_examples {
                     Task {
                         command: "run-p".to_owned(),
                         args: string_vec!["lint:*"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint")
                     }
                 ),
@@ -1476,6 +1538,7 @@ mod complex_examples {
                     "lint-actionlint".to_owned(),
                     Task {
                         command: "node-actionlint".to_owned(),
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint-actionlint")
                     }
                 ),
@@ -1484,6 +1547,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["./scripts/lint-changelog.mjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint-changelog")
                     }
                 ),
@@ -1492,6 +1556,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["./scripts/check-deps.mjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint-deps")
                     }
                 ),
@@ -1501,6 +1566,7 @@ mod complex_examples {
                         command: "cross-env".to_owned(),
                         args: string_vec!["eslint", ".", "--format", "friendly"],
                         env: HashMap::from([("EFF_NO_LINK_RULES".to_owned(), "true".to_owned())]),
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint-eslint")
                     }
                 ),
@@ -1509,6 +1575,7 @@ mod complex_examples {
                     Task {
                         command: "prettier".to_owned(),
                         args: string_vec![".", "!test*", "--check"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint-prettier")
                     }
                 ),
@@ -1517,6 +1584,7 @@ mod complex_examples {
                     Task {
                         command: "cspell".to_owned(),
                         args: string_vec!["--no-progress", "--relative", "--dot", "--gitignore"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint-spellcheck")
                     }
                 ),
@@ -1524,6 +1592,7 @@ mod complex_examples {
                     "lint-typecheck".to_owned(),
                     Task {
                         command: "tsc".to_owned(),
+                        platform: PlatformType::Node,
                         ..Task::new("project:lint-typecheck")
                     }
                 ),
@@ -1532,6 +1601,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:lint-eslint", "--", "--fix"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:fix-eslint")
                     }
                 ),
@@ -1540,6 +1610,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:lint-prettier", "--", "--write"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:fix-prettier")
                     }
                 ),
@@ -1548,6 +1619,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["./scripts/build/build.mjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:build")
                     }
                 ),
@@ -1556,6 +1628,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["./scripts/build-website.mjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:build-website")
                     }
                 ),
@@ -1566,6 +1639,7 @@ mod complex_examples {
                         args: string_vec!["node", "./dist/bin-prettier.js"],
                         deps: string_vec!["~:perf-dep1"],
                         env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                        platform: PlatformType::Node,
                         ..Task::new("project:perf")
                     }
                 ),
@@ -1574,6 +1648,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:perf", "--", "--debug-benchmark"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:perf-benchmark")
                     }
                 ),
@@ -1584,6 +1659,7 @@ mod complex_examples {
                         args: string_vec!["node", "--inspect-brk", "./dist/bin-prettier.js"],
                         deps: string_vec!["~:perf-inspect-dep1"],
                         env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                        platform: PlatformType::Node,
                         ..Task::new("project:perf-inspect")
                     }
                 ),
@@ -1592,6 +1668,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:build"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:perf-inspect-dep1")
                     }
                 ),
@@ -1600,6 +1677,7 @@ mod complex_examples {
                     Task {
                         command: "moon".to_owned(),
                         args: string_vec!["run", "project:build"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:perf-dep1")
                     }
                 ),
@@ -1607,6 +1685,7 @@ mod complex_examples {
                     "test".to_owned(),
                     Task {
                         command: "jest".to_owned(),
+                        platform: PlatformType::Node,
                         ..Task::new("project:test")
                     }
                 ),
@@ -1616,6 +1695,7 @@ mod complex_examples {
                         command: "cross-env".to_owned(),
                         args: string_vec!["jest"],
                         env: HashMap::from([("INSTALL_PACKAGE".to_owned(), "1".to_owned())]),
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-dev-package")
                     }
                 ),
@@ -1625,6 +1705,7 @@ mod complex_examples {
                         command: "cross-env".to_owned(),
                         args: string_vec!["jest"],
                         env: HashMap::from([("NODE_ENV".to_owned(), "production".to_owned())]),
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-dist")
                     }
                 ),
@@ -1639,6 +1720,7 @@ mod complex_examples {
                             "--config=./scripts/bundle-eslint-config.cjs",
                             "dist/**/*.{js,mjs}"
                         ],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-dist-lint")
                     }
                 ),
@@ -1651,6 +1733,7 @@ mod complex_examples {
                             ("TEST_STANDALONE".to_owned(), "1".to_owned()),
                             ("NODE_ENV".to_owned(), "production".to_owned())
                         ]),
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-dist-standalone")
                     }
                 ),
@@ -1659,6 +1742,7 @@ mod complex_examples {
                     Task {
                         command: "jest".to_owned(),
                         args: string_vec!["tests/integration"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:test-integration")
                     }
                 ),
@@ -1667,6 +1751,7 @@ mod complex_examples {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec!["./scripts/vendors/bundle-vendors.mjs"],
+                        platform: PlatformType::Node,
                         ..Task::new("project:vendors-bundle")
                     }
                 ),

@@ -298,6 +298,7 @@ mod tasks {
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         );
+        task.platform = PlatformType::Node;
 
         // Expanded
         task.input_globs
@@ -339,21 +340,25 @@ mod tasks {
             Target::format("id", "build").unwrap(),
             &mock_task_config("webpack"),
         );
+        build.platform = PlatformType::Node;
 
         let mut std = Task::from_config(
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         );
+        std.platform = PlatformType::Node;
 
         let mut test = Task::from_config(
             Target::format("id", "test").unwrap(),
             &mock_task_config("jest"),
         );
+        test.platform = PlatformType::Node;
 
         let mut lint = Task::from_config(
             Target::format("id", "lint").unwrap(),
             &mock_task_config("eslint"),
         );
+        lint.platform = PlatformType::Node;
 
         // Expanded
         let wild_glob = workspace_root.join("tasks/basic/**/*");
@@ -697,6 +702,33 @@ mod tasks {
         )
         .unwrap();
 
+        let mut task = create_expanded_task(
+            Target::format("id", "standard").unwrap(),
+            TaskConfig {
+                args: Some(string_vec!["--a", "--b"]),
+                command: Some(String::from("standard")),
+                deps: Some(string_vec!["b:standard", "a:standard"]),
+                env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
+                inputs: Some(string_vec!["b.*"]),
+                outputs: Some(string_vec!["a.ts", "b.ts"]),
+                options: TaskOptionsConfig {
+                    merge_args: Some(TaskMergeStrategy::Append),
+                    merge_deps: Some(TaskMergeStrategy::Prepend),
+                    merge_env: Some(TaskMergeStrategy::Replace),
+                    merge_inputs: Some(TaskMergeStrategy::Replace),
+                    merge_outputs: Some(TaskMergeStrategy::Append),
+                    retry_count: Some(1),
+                    run_in_ci: Some(true),
+                    run_from_workspace_root: None,
+                },
+                type_of: PlatformType::Unknown,
+            },
+            &workspace_root,
+            project_source,
+        )
+        .unwrap();
+        task.platform = PlatformType::Unknown;
+
         assert_eq!(
             project,
             Project {
@@ -721,7 +753,7 @@ mod tasks {
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
                             },
-                            type_of: PlatformType::Node,
+                            type_of: PlatformType::Unknown,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -729,34 +761,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source),
                 source: String::from(project_source),
-                tasks: BTreeMap::from([(
-                    String::from("standard"),
-                    create_expanded_task(
-                        Target::format("id", "standard").unwrap(),
-                        TaskConfig {
-                            args: Some(string_vec!["--a", "--b"]),
-                            command: Some(String::from("standard")),
-                            deps: Some(string_vec!["b:standard", "a:standard"]),
-                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
-                            inputs: Some(string_vec!["b.*"]),
-                            outputs: Some(string_vec!["a.ts", "b.ts"]),
-                            options: TaskOptionsConfig {
-                                merge_args: Some(TaskMergeStrategy::Append),
-                                merge_deps: Some(TaskMergeStrategy::Prepend),
-                                merge_env: Some(TaskMergeStrategy::Replace),
-                                merge_inputs: Some(TaskMergeStrategy::Replace),
-                                merge_outputs: Some(TaskMergeStrategy::Append),
-                                retry_count: Some(1),
-                                run_in_ci: Some(true),
-                                run_from_workspace_root: None,
-                            },
-                            type_of: PlatformType::Node,
-                        },
-                        &workspace_root,
-                        project_source
-                    )
-                    .unwrap()
-                )]),
+                tasks: BTreeMap::from([(String::from("standard"), task)]),
                 ..Project::default()
             }
         );

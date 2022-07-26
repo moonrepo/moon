@@ -70,7 +70,9 @@ fileGroups:
 
 The primary programming language the project is written in. Supports the following values:
 
-- `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project.
+- `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project (Nix only).
+- `batch` - A [Batch](https://en.wikibooks.org/wiki/Windows_Batch_Scripting) based project (Windows
+  only).
 - `javascript` - A [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) based
   project. Inferred when `package.json` exists.
 - `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project. Inferred when
@@ -408,7 +410,11 @@ tasks:
 ### `type`
 
 The `type` field defines the type of command to run, where to locate its executable, and which tool
-to execute it with. Accepts "node" or "system" and defaults to "node".
+to execute it with. By default will set to a value based on the project's [`language`](#language).
+
+- `node` - Command is a binary within node modules and will be executed with Node.js.
+- `system` - Command is expected to exist within the system's environment.
+- `unknown` - When not inferred.
 
 ```yaml title="project.yml" {4}
 tasks:

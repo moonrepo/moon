@@ -1,5 +1,5 @@
 use crate::project::{ProjectConfig, ProjectLanguage};
-use crate::types::{FilePath, FilePathOrGlob, InputValue, TargetID};
+use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
 use moon_utils::process::split_args;
 use moon_utils::regex::ENV_VAR;

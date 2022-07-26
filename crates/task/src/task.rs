@@ -1,9 +1,9 @@
 use crate::errors::{TargetError, TaskError};
 use crate::target::{Target, TargetProjectScope};
 use crate::token::TokenResolver;
-use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
+use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
-    FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig, TaskMergeStrategy,
+    FileGlob, FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig, TaskMergeStrategy,
     TaskOptionsConfig,
 };
 use moon_logger::{color, debug, map_list, trace, Logable};
@@ -120,9 +120,9 @@ pub struct Task {
 
     pub inputs: Vec<FilePathOrGlob>,
 
-    pub input_globs: Vec<FilePathOrGlob>,
+    pub input_globs: Vec<FileGlob>,
 
-    pub input_paths: ExpandedFiles,
+    pub input_paths: HashSet<PathBuf>,
 
     #[serde(skip)]
     pub log_target: String,
@@ -131,7 +131,7 @@ pub struct Task {
 
     pub outputs: Vec<FilePath>,
 
-    pub output_paths: ExpandedFiles,
+    pub output_paths: HashSet<PathBuf>,
 
     pub platform: PlatformType,
 

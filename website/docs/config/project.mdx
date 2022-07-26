@@ -298,7 +298,8 @@ The `outputs` field is a list of files and folders that are _created_ as a resul
 task, excluding internal cache files that are created from the underlying command (for example,
 `.eslintcache`).
 
-Outputs require [project relative file patterns](../concepts/file-pattern#project-relative).
+Outputs are necessary for [incremental caching and rehydration](../concepts/cache). If you'd prefer
+to avoid that functionality, omit this field.
 
 ```yaml title="project.yml" {4-6}
 tasks:
@@ -308,6 +309,8 @@ tasks:
       # Relative from project root
       - 'build/'
 ```
+
+> Outputs require [project relative file patterns](../concepts/file-pattern#project-relative).
 
 ### `options`
 
@@ -325,6 +328,26 @@ tasks:
     options:
       mergeArgs: 'replace'
       runFromWorkspaceRoot: true
+```
+
+#### `cache`
+
+> `boolean`
+
+Whether to cache the task's execution result using our [smart hashing](../concepts/cache#hashing)
+system. If disabled, _will not_ create a cache hash, and _will not_ persist a task's
+[outputs](#outputs). Defaults to `true`.
+
+We suggest disabling caching when defining cleanup tasks, one-off scripts, or file system heavy
+operations.
+
+```yaml title="project.yml" {6}
+tasks:
+  clean:
+    command: 'rm'
+    args: '-rf'
+    options:
+      cache: false
 ```
 
 #### `mergeArgs`

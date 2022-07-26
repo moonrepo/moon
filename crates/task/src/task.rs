@@ -15,6 +15,8 @@ use std::path::PathBuf;
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptions {
+    pub cache: bool,
+
     pub merge_args: TaskMergeStrategy,
 
     pub merge_deps: TaskMergeStrategy,
@@ -35,6 +37,7 @@ pub struct TaskOptions {
 impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
+            cache: true,
             merge_args: TaskMergeStrategy::Append,
             merge_deps: TaskMergeStrategy::Append,
             merge_env: TaskMergeStrategy::Append,
@@ -171,6 +174,7 @@ impl Task {
             input_paths: HashSet::new(),
             log_target,
             options: TaskOptions {
+                cache: cloned_options.cache.unwrap_or(!is_long_running),
                 merge_args: cloned_options.merge_args.unwrap_or_default(),
                 merge_deps: cloned_options.merge_deps.unwrap_or_default(),
                 merge_env: cloned_options.merge_env.unwrap_or_default(),

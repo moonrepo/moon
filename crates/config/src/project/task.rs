@@ -66,6 +66,9 @@ pub enum TaskMergeStrategy {
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_args: Option<TaskMergeStrategy>,
 
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -14,7 +14,7 @@ use figment::{
     Error as FigmentError, Figment,
 };
 use moon_utils::string_vec;
-pub use node::{NodeConfig, NpmConfig, PackageManager, PnpmConfig, YarnConfig};
+pub use node::{NodeConfig, NodePackageManager, NpmConfig, PnpmConfig, YarnConfig};
 use schemars::gen::SchemaGenerator;
 use schemars::schema::Schema;
 use schemars::{schema_for, JsonSchema};
@@ -475,7 +475,7 @@ node:
                         action_runner: ActionRunnerConfig::default(),
                         extends: None,
                         node: NodeConfig {
-                            package_manager: PackageManager::Yarn,
+                            package_manager: NodePackageManager::Yarn,
                             ..NodeConfig::default()
                         },
                         projects: HashMap::new(),

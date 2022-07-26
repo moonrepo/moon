@@ -65,6 +65,9 @@ pub enum ProjectLanguage {
     #[strum(serialize = "bash")]
     Bash,
 
+    #[strum(serialize = "batch")]
+    Batch,
+
     #[strum(serialize = "javascript")]
     JavaScript,
 

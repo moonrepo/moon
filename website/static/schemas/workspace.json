@@ -146,7 +146,7 @@
           "default": "npm",
           "allOf": [
             {
-              "$ref": "#/definitions/PackageManager"
+              "$ref": "#/definitions/NodePackageManager"
             }
           ]
         },
@@ -169,7 +169,7 @@
           "default": null,
           "anyOf": [
             {
-              "$ref": "#/definitions/VersionManager"
+              "$ref": "#/definitions/NodeVersionManager"
             },
             {
               "type": "null"
@@ -193,6 +193,21 @@
         }
       }
     },
+    "NodePackageManager": {
+      "type": "string",
+      "enum": [
+        "npm",
+        "pnpm",
+        "yarn"
+      ]
+    },
+    "NodeVersionManager": {
+      "type": "string",
+      "enum": [
+        "nodenv",
+        "nvm"
+      ]
+    },
     "NpmConfig": {
       "type": "object",
       "properties": {
@@ -201,14 +216,6 @@
           "type": "string"
         }
       }
-    },
-    "PackageManager": {
-      "type": "string",
-      "enum": [
-        "npm",
-        "pnpm",
-        "yarn"
-      ]
     },
     "PnpmConfig": {
       "type": "object",
@@ -268,13 +275,6 @@
       "enum": [
         "git",
         "svn"
-      ]
-    },
-    "VersionManager": {
-      "type": "string",
-      "enum": [
-        "nodenv",
-        "nvm"
       ]
     },
     "YarnConfig": {

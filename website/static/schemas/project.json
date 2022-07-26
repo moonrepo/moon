@@ -46,10 +46,19 @@
     }
   },
   "definitions": {
+    "PlatformType": {
+      "type": "string",
+      "enum": [
+        "node",
+        "system",
+        "unknown"
+      ]
+    },
     "ProjectLanguage": {
       "type": "string",
       "enum": [
         "bash",
+        "batch",
         "javascript",
         "typescript",
         "unknown"
@@ -197,7 +206,7 @@
           }
         },
         "type": {
-          "$ref": "#/definitions/TaskType"
+          "$ref": "#/definitions/PlatformType"
         }
       }
     },
@@ -283,13 +292,6 @@
           ]
         }
       }
-    },
-    "TaskType": {
-      "type": "string",
-      "enum": [
-        "node",
-        "system"
-      ]
     }
   }
 }

@@ -8,6 +8,13 @@ We've refactored our smart hashing layer to take into account different platform
 an effort to be more accurate, which now results in different hashes for the same build. Any
 previous builds are no longer valid and can be removed.
 
+#### 🚀 Updates
+
+- Updated task `type` to be automatically inferred when the value is unknown, based on the owning
+  project's `language` (`javascript` = node, `bash` = system, etc).
+- Added `batch` as a supported value for the project `language` setting (Windows counter-part to
+  `bash`).
+
 #### ⚙️ Internal
 
 - Outputs are now copied to `.moon/cache/out` instead of being hardlinked.

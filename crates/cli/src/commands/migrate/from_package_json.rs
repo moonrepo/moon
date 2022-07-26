@@ -1,6 +1,6 @@
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_lang_node::package::{DepsSet, PackageJson};
-use moon_plugin_node::create_tasks_from_scripts;
+use moon_platform_node::create_tasks_from_scripts;
 use moon_utils::fs;
 use moon_workspace::Workspace;
 use serde_yaml::to_string;

@@ -8,7 +8,7 @@ use crate::pms::yarn::YarnTool;
 use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
-use moon_config::{NodeConfig, PackageManager as NodePackageManager};
+use moon_config::{NodeConfig, NodePackageManager};
 use moon_error::map_io_to_fs_error;
 use moon_lang::LangError;
 use moon_lang_node::node;

@@ -8,7 +8,7 @@ use crate::pms::yarn::YarnTool;
 use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageManager, Tool};
 use crate::Toolchain;
 use async_trait::async_trait;
-use moon_config::NodeConfig;
+use moon_config::{NodeConfig, PackageManager as NodePackageManager};
 use moon_error::map_io_to_fs_error;
 use moon_lang::LangError;
 use moon_lang_node::node;
@@ -84,13 +84,15 @@ impl NodeTool {
 
         node.npm = Some(NpmTool::new(&node, &config.npm)?);
 
-        if let Some(pnpm_config) = &config.pnpm {
-            node.pnpm = Some(PnpmTool::new(&node, pnpm_config)?);
-        }
-
-        if let Some(yarn_config) = &config.yarn {
-            node.yarn = Some(YarnTool::new(&node, yarn_config)?);
-        }
+        match config.package_manager {
+            NodePackageManager::Pnpm => {
+                node.pnpm = Some(PnpmTool::new(&node, &config.pnpm)?);
+            }
+            NodePackageManager::Yarn => {
+                node.yarn = Some(YarnTool::new(&node, &config.yarn)?);
+            }
+            _ => {}
+        };
 
         Ok(node)
     }

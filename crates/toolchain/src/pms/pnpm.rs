@@ -22,12 +22,12 @@ pub struct PnpmTool {
 }
 
 impl PnpmTool {
-    pub fn new(node: &NodeTool, config: &PnpmConfig) -> Result<PnpmTool, ToolchainError> {
+    pub fn new(node: &NodeTool, config: &Option<PnpmConfig>) -> Result<PnpmTool, ToolchainError> {
         let install_dir = node.get_install_dir()?.clone();
 
         Ok(PnpmTool {
             bin_path: node::find_package_manager_bin(&install_dir, "pnpm"),
-            config: config.to_owned(),
+            config: config.to_owned().unwrap_or_default(),
             install_dir,
             log_target: String::from("moon:toolchain:pnpm"),
         })

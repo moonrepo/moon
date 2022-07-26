@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a crash when `node.packageManager` was set to "pnpm" or "yarn" but `node.pnpm` or
+  `node.yarn` fields were not set.
+
 ## 0.8.0
 
 This release was largely focused on interoperability with the Node.js ecosystem, specifically

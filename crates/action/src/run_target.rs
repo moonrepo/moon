@@ -44,24 +44,26 @@ pub async fn run_target(
     }
 
     // Abort early if this build has already been cached/hashed
-    let common_hasher = runner.create_common_hasher(context).await?;
+    if task.options.cache {
+        let common_hasher = runner.create_common_hasher(context).await?;
 
-    let platform_hasher = match task.platform {
-        PlatformType::Node => node::create_target_hasher(&workspace, &project)?,
-        _ => node::create_target_hasher(&workspace, &project)?,
-    };
+        let platform_hasher = match task.platform {
+            PlatformType::Node => node::create_target_hasher(&workspace, &project)?,
+            _ => node::create_target_hasher(&workspace, &project)?,
+        };
 
-    if runner.is_cached(common_hasher, platform_hasher).await? {
-        debug!(
-            target: LOG_TARGET,
-            "Hash exists for {}, using cache",
-            color::id(target_id),
-        );
+        if runner.is_cached(common_hasher, platform_hasher).await? {
+            debug!(
+                target: LOG_TARGET,
+                "Hash exists for {}, using cache",
+                color::id(target_id),
+            );
 
-        runner.print_checkpoint(Checkpoint::Pass, "(cached)");
-        runner.print_cache_item();
+            runner.print_checkpoint(Checkpoint::Pass, "(cached)");
+            runner.print_cache_item();
 
-        return Ok(ActionStatus::Cached);
+            return Ok(ActionStatus::Cached);
+        }
     }
 
     // Create the command to run based on the task
@@ -94,7 +96,9 @@ pub async fn run_target(
     action.attempts = Some(runner.run_command(context, &mut command).await?);
 
     // If successful, cache the task outputs
-    runner.cache_outputs().await?;
+    if task.options.cache {
+        runner.cache_outputs().await?;
+    }
 
     Ok(ActionStatus::Passed)
 }

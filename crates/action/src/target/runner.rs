@@ -51,11 +51,15 @@ impl<'a> TargetRunner<'a> {
     /// so that subsequent builds are faster, and any local outputs
     /// can be rehydrated easily.
     pub async fn cache_outputs(&self) -> Result<(), ActionError> {
-        for output_path in &self.task.output_paths {
-            self.workspace
-                .cache
-                .copy_output_to_out(&self.cache.item.hash, &self.project.root, output_path)
-                .await?;
+        let hash = &self.cache.item.hash;
+
+        if !hash.is_empty() {
+            for output_path in &self.task.output_paths {
+                self.workspace
+                    .cache
+                    .copy_output_to_out(hash, &self.project.root, output_path)
+                    .await?;
+            }
         }
 
         Ok(())

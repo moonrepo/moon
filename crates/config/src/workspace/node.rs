@@ -51,12 +51,6 @@ pub enum NodePackageManager {
     Yarn,
 }
 
-// impl Default for NodePackageManager {
-//     fn default() -> Self {
-//         NodePackageManager::Npm
-//     }
-// }
-
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum NodeVersionManager {

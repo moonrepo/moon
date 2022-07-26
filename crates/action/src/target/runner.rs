@@ -47,6 +47,90 @@ impl<'a> TargetRunner<'a> {
         })
     }
 
+    /// Cache outputs to the `.moon/cache/out` folder and to the cloud,
+    /// so that subsequent builds are faster, and any local outputs
+    /// can be rehydrated easily.
+    pub async fn cache_outputs(&self) -> Result<(), ActionError> {
+        for output_path in &self.task.output_paths {
+            self.workspace
+                .cache
+                .copy_output_to_out(&self.cache.item.hash, &self.project.root, output_path)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    /// Create a hasher that is shared amongst all platforms.
+    /// Primarily includes task information.
+    pub async fn create_common_hasher(
+        &self,
+        context: &ActionContext,
+    ) -> Result<TargetHasher, ActionError> {
+        let vcs = &self.workspace.vcs;
+        let task = &self.task;
+        let project = &self.project;
+        let workspace = &self.workspace;
+        let globset = task.create_globset()?;
+        let mut hasher = TargetHasher::new();
+
+        hasher.hash_project_deps(self.project.get_dependencies());
+        hasher.hash_task(task);
+        hasher.hash_args(&context.passthrough_args);
+
+        // For input files, hash them with the vcs layer first
+        if !task.input_paths.is_empty() {
+            let mut files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
+
+            // Sort for deterministic caching within the vcs layer
+            files.sort();
+
+            if !files.is_empty() {
+                hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
+            }
+        }
+
+        // For input globs, it's much more performant to:
+        //  `git ls-tree` -> match against glob patterns
+        // Then it is to:
+        //  glob + walk the file system -> `git hash-object`
+        if !task.input_globs.is_empty() {
+            let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
+
+            // Input globs are absolute paths, so we must do the same
+            hashed_file_tree
+                .retain(|k, _| globset.matches(&workspace.root.join(k)).unwrap_or(false));
+
+            hasher.hash_inputs(hashed_file_tree);
+        }
+
+        // Include local file changes so that development builds work.
+        // Also run this LAST as it should take highest precedence!
+        let local_files = vcs.get_touched_files().await?;
+
+        if !local_files.all.is_empty() {
+            // Only hash files that are within the task's inputs
+            let mut files = local_files
+                .all
+                .into_iter()
+                .filter(|f| {
+                    // Deleted files will crash `git hash-object`
+                    !local_files.deleted.contains(f)
+                        && globset.matches(&workspace.root.join(f)).unwrap_or(false)
+                })
+                .collect::<Vec<String>>();
+
+            // Sort for deterministic caching within the vcs layer
+            files.sort();
+
+            if !files.is_empty() {
+                hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
+            }
+        }
+
+        Ok(hasher)
+    }
+
     pub async fn create_env_vars(&self) -> Result<HashMap<String, String>, ActionError> {
         let mut env_vars = HashMap::new();
 
@@ -96,11 +180,10 @@ impl<'a> TargetRunner<'a> {
     /// if this target hash has already been cached.
     pub async fn is_cached(
         &mut self,
-        context: &ActionContext,
+        common_hasher: impl Hasher + Serialize,
         platform_hasher: impl Hasher + Serialize,
     ) -> Result<bool, ActionError> {
-        let base_hasher = self.create_base_hasher(context).await?;
-        let hash = to_hash(&base_hasher, &platform_hasher);
+        let hash = to_hash(&common_hasher, &platform_hasher);
 
         debug!(
             target: LOG_TARGET,
@@ -113,12 +196,12 @@ impl<'a> TargetRunner<'a> {
             return Ok(true);
         }
 
-        self.cache.item.hash = hash;
+        self.workspace
+            .cache
+            .save_hash(&hash, &(common_hasher, platform_hasher))
+            .await?;
 
-        // self.workspace
-        //     .cache
-        //     .save_hash(&hash, [base_hasher, platform_hasher])
-        //     .await?;
+        self.cache.item.hash = hash;
 
         Ok(false)
     }
@@ -316,76 +399,6 @@ impl<'a> TargetRunner<'a> {
         } else {
             println!("{}", label);
         }
-    }
-
-    /// Create a hasher that is shared amongst all platforms.
-    /// Primarily includes task information.
-    async fn create_base_hasher(
-        &self,
-        context: &ActionContext,
-    ) -> Result<TargetHasher, ActionError> {
-        let vcs = &self.workspace.vcs;
-        let task = &self.task;
-        let project = &self.project;
-        let workspace = &self.workspace;
-        let globset = task.create_globset()?;
-        let mut hasher = TargetHasher::new();
-
-        hasher.hash_project_deps(self.project.get_dependencies());
-        hasher.hash_task(task);
-        hasher.hash_args(&context.passthrough_args);
-
-        // For input files, hash them with the vcs layer first
-        if !task.input_paths.is_empty() {
-            let mut files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
-
-            // Sort for deterministic caching within the vcs layer
-            files.sort();
-
-            if !files.is_empty() {
-                hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
-            }
-        }
-
-        // For input globs, it's much more performant to:
-        //  `git ls-tree` -> match against glob patterns
-        // Then it is to:
-        //  glob + walk the file system -> `git hash-object`
-        if !task.input_globs.is_empty() {
-            let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
-
-            // Input globs are absolute paths, so we must do the same
-            hashed_file_tree
-                .retain(|k, _| globset.matches(&workspace.root.join(k)).unwrap_or(false));
-
-            hasher.hash_inputs(hashed_file_tree);
-        }
-
-        // Include local file changes so that development builds work.
-        // Also run this LAST as it should take highest precedence!
-        let local_files = vcs.get_touched_files().await?;
-
-        if !local_files.all.is_empty() {
-            // Only hash files that are within the task's inputs
-            let mut files = local_files
-                .all
-                .into_iter()
-                .filter(|f| {
-                    // Deleted files will crash `git hash-object`
-                    !local_files.deleted.contains(f)
-                        && globset.matches(&workspace.root.join(f)).unwrap_or(false)
-                })
-                .collect::<Vec<String>>();
-
-            // Sort for deterministic caching within the vcs layer
-            files.sort();
-
-            if !files.is_empty() {
-                hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
-            }
-        }
-
-        Ok(hasher)
     }
 
     // Print label *after* output has been captured, so parallel tasks

@@ -44,12 +44,14 @@ pub async fn run_target(
     }
 
     // Abort early if this build has already been cached/hashed
-    let hasher = match task.type_of {
+    let common_hasher = runner.create_common_hasher(context).await?;
+
+    let platform_hasher = match task.type_of {
         TaskType::Node => node::create_target_hasher(&workspace, &project)?,
         _ => node::create_target_hasher(&workspace, &project)?,
     };
 
-    if runner.is_cached(context, hasher).await? {
+    if runner.is_cached(common_hasher, platform_hasher).await? {
         debug!(
             target: LOG_TARGET,
             "Hash exists for {}, using cache",
@@ -89,15 +91,8 @@ pub async fn run_target(
     // Execute the command and return the number of attempts
     action.attempts = Some(runner.run_command(context, &mut command).await?);
 
-    // Hard link outputs to the `.moon/cache/out` folder and to the cloud,
-    // so that subsequent builds are faster, and any local outputs
-    // can be rehydrated easily.
-    // for output_path in &task.output_paths {
-    //     workspace
-    //         .cache
-    //         .link_task_output_to_out(&hash, &project.root, output_path)
-    //         .await?;
-    // }
+    // If successful, cache the task outputs
+    runner.cache_outputs().await?;
 
     Ok(ActionStatus::Passed)
 }

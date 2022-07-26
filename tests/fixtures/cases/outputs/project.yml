@@ -29,3 +29,11 @@ tasks:
     outputs:
       - 'lib/one.js'
       - 'esm'
+  noCache:
+    command: node
+    args: generate.js both
+    outputs:
+      - 'lib/one.js'
+      - 'esm'
+    options:
+      cache: false

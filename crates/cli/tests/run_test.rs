@@ -644,6 +644,22 @@ mod outputs {
     // }
 
     #[tokio::test]
+    async fn doesnt_link_if_cache_disabled() {
+        let fixture = create_sandbox_with_git("cases");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputs:noCache")
+            .assert();
+
+        let hash = extract_hash_from_run(fixture.path(), "outputs:noCache").await;
+
+        assert_eq!(hash, "");
+
+        // we cant assert the filesystem since the hash is empty!
+    }
+
+    #[tokio::test]
     async fn links_single_file() {
         let fixture = create_sandbox_with_git("cases");
 
@@ -660,6 +676,7 @@ mod outputs {
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
+
         // outputs
         assert!(fixture
             .path()
@@ -686,6 +703,7 @@ mod outputs {
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
+
         // outputs
         assert!(fixture
             .path()
@@ -718,6 +736,7 @@ mod outputs {
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
+
         // outputs
         assert!(fixture
             .path()
@@ -750,6 +769,7 @@ mod outputs {
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
+
         // outputs
         assert!(fixture
             .path()

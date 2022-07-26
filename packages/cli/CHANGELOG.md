@@ -14,6 +14,7 @@ previous builds are no longer valid and can be removed.
   project's `language` (`javascript` = node, `bash` = system, etc).
 - Added `batch` as a supported value for the project `language` setting (Windows counter-part to
   `bash`).
+- Added a `cache` option to tasks, which will disable smart hashing and output caching.
 
 #### ⚙️ Internal
 

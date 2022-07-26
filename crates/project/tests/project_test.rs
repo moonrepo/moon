@@ -219,6 +219,7 @@ mod tasks {
 
     fn mock_merged_task_options_config(strategy: TaskMergeStrategy) -> TaskOptionsConfig {
         TaskOptionsConfig {
+            cache: None,
             merge_args: Some(strategy.clone()),
             merge_deps: Some(strategy.clone()),
             merge_env: Some(strategy.clone()),
@@ -232,6 +233,7 @@ mod tasks {
 
     fn mock_local_task_options_config(strategy: TaskMergeStrategy) -> TaskOptionsConfig {
         TaskOptionsConfig {
+            cache: None,
             merge_args: Some(strategy.clone()),
             merge_deps: Some(strategy.clone()),
             merge_env: Some(strategy.clone()),
@@ -245,6 +247,7 @@ mod tasks {
 
     fn stub_global_task_options_config() -> TaskOptionsConfig {
         TaskOptionsConfig {
+            cache: Some(true),
             merge_args: None,
             merge_deps: None,
             merge_env: None,
@@ -712,6 +715,7 @@ mod tasks {
                 inputs: Some(string_vec!["b.*"]),
                 outputs: Some(string_vec!["a.ts", "b.ts"]),
                 options: TaskOptionsConfig {
+                    cache: Some(true),
                     merge_args: Some(TaskMergeStrategy::Append),
                     merge_deps: Some(TaskMergeStrategy::Prepend),
                     merge_env: Some(TaskMergeStrategy::Replace),
@@ -744,6 +748,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: TaskOptionsConfig {
+                                cache: None,
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
                                 merge_env: Some(TaskMergeStrategy::Replace),

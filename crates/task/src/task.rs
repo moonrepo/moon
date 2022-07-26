@@ -3,7 +3,8 @@ use crate::target::{Target, TargetProjectScope};
 use crate::token::TokenResolver;
 use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
 use moon_config::{
-    FilePath, FilePathOrGlob, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig, TaskMergeStrategy,
+    TaskOptionsConfig,
 };
 use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_utils::{glob, path, string_vec};
@@ -129,10 +130,9 @@ pub struct Task {
 
     pub output_paths: ExpandedFiles,
 
-    pub target: TargetID,
+    pub platform: PlatformType,
 
-    #[serde(rename = "type")]
-    pub type_of: TaskType,
+    pub target: TargetID,
 }
 
 impl Logable for Task {
@@ -182,8 +182,8 @@ impl Task {
             },
             outputs: cloned_config.outputs.unwrap_or_default(),
             output_paths: HashSet::new(),
+            platform: cloned_config.type_of,
             target: target.clone(),
-            type_of: cloned_config.type_of,
         };
 
         debug!(
@@ -225,8 +225,8 @@ impl Task {
             config.outputs = Some(self.outputs.clone());
         }
 
-        if !matches!(self.type_of, TaskType::Node) {
-            config.type_of = self.type_of.clone();
+        if !matches!(self.platform, PlatformType::Unknown) {
+            config.type_of = self.platform.clone();
         }
 
         config
@@ -432,7 +432,7 @@ impl Task {
     pub fn merge(&mut self, config: &TaskConfig) {
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
-        self.type_of = config.type_of.clone();
+        self.platform = config.type_of.clone();
 
         // Then merge the actual task fields
         if let Some(command) = &config.command {

@@ -1,3 +1,4 @@
+use crate::project::{ProjectConfig, ProjectLanguage};
 use crate::types::{FilePath, FilePathOrGlob, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
 use moon_utils::process::split_args;
@@ -40,13 +41,16 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum TaskType {
-    #[default]
+pub enum PlatformType {
     #[strum(serialize = "node")]
     Node,
 
     #[strum(serialize = "system")]
     System,
+
+    #[default]
+    #[strum(serialize = "unknown")]
+    Unknown,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
@@ -122,7 +126,17 @@ pub struct TaskConfig {
 
     #[serde(skip_serializing_if = "skip_if_default")]
     #[serde(rename = "type")]
-    pub type_of: TaskType,
+    pub type_of: PlatformType,
+}
+
+impl TaskConfig {
+    pub fn detect_platform(project: &ProjectConfig) -> PlatformType {
+        match &project.language {
+            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
+            ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
+            _ => PlatformType::Unknown,
+        }
+    }
 }
 
 // SERDE
@@ -532,7 +546,7 @@ outputs:
     mod type_of {
         #[test]
         #[should_panic(
-            expected = "unknown variant: found `unknown`, expected ``node` or `system`` for key \"default.type\""
+            expected = "unknown variant: found `whatisthis`, expected `one of `node`, `system`, `unknown`` for key \"default.type\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -540,7 +554,7 @@ outputs:
                     super::CONFIG_FILENAME,
                     r#"
 command: foo
-type: unknown
+type: whatisthis
 "#,
                 )?;
 

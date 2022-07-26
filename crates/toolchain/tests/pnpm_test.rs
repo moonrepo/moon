@@ -1,4 +1,4 @@
-use moon_config::{PackageManager, PnpmConfig, WorkspaceConfig};
+use moon_config::{NodePackageManager, PnpmConfig, WorkspaceConfig};
 use moon_lang_node::node;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
@@ -11,7 +11,7 @@ async fn create_pnpm_tool() -> (Toolchain, assert_fs::TempDir) {
     let mut config = WorkspaceConfig::default();
 
     config.node.version = String::from("1.0.0");
-    config.node.package_manager = PackageManager::Pnpm;
+    config.node.package_manager = NodePackageManager::Pnpm;
     config.node.pnpm = Some(PnpmConfig {
         version: String::from("6.0.0"),
     });

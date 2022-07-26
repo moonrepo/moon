@@ -2,7 +2,7 @@ use crate::action::{Action, ActionStatus};
 use crate::context::ActionContext;
 use crate::errors::ActionError;
 use crate::target::{node, system, TargetRunner};
-use moon_config::TaskType;
+use moon_config::PlatformType;
 use moon_logger::{color, debug};
 use moon_task::Target;
 use moon_terminal::Checkpoint;
@@ -46,8 +46,8 @@ pub async fn run_target(
     // Abort early if this build has already been cached/hashed
     let common_hasher = runner.create_common_hasher(context).await?;
 
-    let platform_hasher = match task.type_of {
-        TaskType::Node => node::create_target_hasher(&workspace, &project)?,
+    let platform_hasher = match task.platform {
+        PlatformType::Node => node::create_target_hasher(&workspace, &project)?,
         _ => node::create_target_hasher(&workspace, &project)?,
     };
 
@@ -71,8 +71,10 @@ pub async fn run_target(
         &project.root
     };
 
-    let mut command = match task.type_of {
-        TaskType::Node => node::create_target_command(context, &workspace, &project, task).await?,
+    let mut command = match task.platform {
+        PlatformType::Node => {
+            node::create_target_command(context, &workspace, &project, task).await?
+        }
         _ => system::create_target_command(task, working_dir),
     };
 

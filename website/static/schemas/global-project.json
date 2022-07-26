@@ -29,6 +29,14 @@
     }
   },
   "definitions": {
+    "PlatformType": {
+      "type": "string",
+      "enum": [
+        "node",
+        "system",
+        "unknown"
+      ]
+    },
     "TaskConfig": {
       "type": "object",
       "properties": {
@@ -92,7 +100,7 @@
           }
         },
         "type": {
-          "$ref": "#/definitions/TaskType"
+          "$ref": "#/definitions/PlatformType"
         }
       }
     },
@@ -178,13 +186,6 @@
           ]
         }
       }
-    },
-    "TaskType": {
-      "type": "string",
-      "enum": [
-        "node",
-        "system"
-      ]
     }
   }
 }

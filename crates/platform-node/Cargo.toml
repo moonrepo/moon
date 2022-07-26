@@ -1,5 +1,5 @@
 [package]
-name = "moon_plugin_node"
+name = "moon_platform_node"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,6 +1,7 @@
 use crate::errors::ProjectError;
 use moon_config::{
-    format_figment_errors, FilePath, GlobalProjectConfig, ProjectConfig, ProjectID, TaskID,
+    format_figment_errors, FilePath, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectID,
+    TaskConfig, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
@@ -193,6 +194,10 @@ fn create_tasks_from_config(
 
     // Expand deps, args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
+        if matches!(task.platform, PlatformType::Unknown) {
+            task.platform = TaskConfig::detect_platform(project_config);
+        }
+
         // Inherit implicit inputs before resolving
         task.inputs.extend(implicit_inputs.iter().cloned());
 

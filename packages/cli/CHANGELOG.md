@@ -4,7 +4,7 @@
 
 #### 💥 Breaking
 
-We've refactored our smart hashing layer to take into account different platforms (task's type) in
+We've refactored our smart hashing layer to take into account different platforms (a task's type) in
 an effort to be more accurate, which now results in different hashes for the same build. Any
 previous builds are no longer valid and can be removed.
 

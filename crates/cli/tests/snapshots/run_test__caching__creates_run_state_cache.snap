@@ -3,37 +3,42 @@ source: crates/cli/tests/run_test.rs
 assertion_line: 237
 expression: "read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.item.hash))).unwrap()"
 ---
-{
-  "command": "node",
-  "args": [
-    "./standard.js"
-  ],
-  "deps": [],
-  "envVars": {},
-  "inputHashes": {
-    ".moon/workspace.yml": "b3e0a424922dbe1770e26bb2d62878ab27001328",
-    "node/cjsFile.cjs": "91382f667258361b9397214d0aec54d8d576ae19",
-    "node/cwd.js": "47d4aa44cd6363251821ab9c59f4c68df455445c",
-    "node/envVars.js": "44b0fda6bce364122223fbfc67b65ecbc52aec91",
-    "node/envVarsMoon.js": "69357e53fddeb9270d92a076e7edab3ebf004957",
-    "node/exitCodeNonZero.js": "1cea9d1c8c3776318c20d54a86c1b492df443397",
-    "node/exitCodeZero.js": "887c40bee2815c60cf4efde58a52716e4c393a24",
-    "node/mjsFile.mjs": "a5b6817de5cfa541e430072598de3f42d83bd6cf",
-    "node/passthroughArgs.js": "83cf03c37aa75b33592735611860e32c6f338693",
-    "node/processExitNonZero.js": "2fe41b280bb08f250ca7bf2263ec0b17fa7010f1",
-    "node/processExitZero.js": "eb885b8c763ab8b5d4e1da46494d965078c98e8b",
-    "node/project.yml": "bf13cfa10475309d8b7376b79391ccbc5741fde6",
-    "node/standard.js": "8d4f87187c238d808f0505268febb619f2978c47",
-    "node/throwError.js": "9c5b8d2297fe4a6c23e8c18f1efb6871bec6faf4",
-    "node/topLevelAwait.mjs": "50945a9865eddbd52f7e648743d627749623da22",
-    "node/unhandledPromise.js": "909d23eeb442f4daff733fe3b601a1a1613c1282"
+[
+  {
+    "command": "node",
+    "args": [
+      "./standard.js"
+    ],
+    "deps": [],
+    "envVars": {},
+    "inputs": {
+      ".moon/workspace.yml": "b3e0a424922dbe1770e26bb2d62878ab27001328",
+      "node/cjsFile.cjs": "91382f667258361b9397214d0aec54d8d576ae19",
+      "node/cwd.js": "47d4aa44cd6363251821ab9c59f4c68df455445c",
+      "node/envVars.js": "44b0fda6bce364122223fbfc67b65ecbc52aec91",
+      "node/envVarsMoon.js": "69357e53fddeb9270d92a076e7edab3ebf004957",
+      "node/exitCodeNonZero.js": "1cea9d1c8c3776318c20d54a86c1b492df443397",
+      "node/exitCodeZero.js": "887c40bee2815c60cf4efde58a52716e4c393a24",
+      "node/mjsFile.mjs": "a5b6817de5cfa541e430072598de3f42d83bd6cf",
+      "node/passthroughArgs.js": "83cf03c37aa75b33592735611860e32c6f338693",
+      "node/processExitNonZero.js": "2fe41b280bb08f250ca7bf2263ec0b17fa7010f1",
+      "node/processExitZero.js": "eb885b8c763ab8b5d4e1da46494d965078c98e8b",
+      "node/project.yml": "bf13cfa10475309d8b7376b79391ccbc5741fde6",
+      "node/standard.js": "8d4f87187c238d808f0505268febb619f2978c47",
+      "node/throwError.js": "9c5b8d2297fe4a6c23e8c18f1efb6871bec6faf4",
+      "node/topLevelAwait.mjs": "50945a9865eddbd52f7e648743d627749623da22",
+      "node/unhandledPromise.js": "909d23eeb442f4daff733fe3b601a1a1613c1282"
+    },
+    "projectDeps": [],
+    "target": "node:standard",
+    "version": "1"
   },
-  "nodeVersion": "16.0.0",
-  "packageDependencies": {},
-  "packageDevDependencies": {},
-  "packagePeerDependencies": {},
-  "projectDeps": [],
-  "target": "node:standard",
-  "tsconfigCompilerOptions": {},
-  "version": "1"
-}
+  {
+    "nodeVersion": "16.0.0",
+    "packageDependencies": {},
+    "packageDevDependencies": {},
+    "packagePeerDependencies": {},
+    "tsconfigCompilerOptions": {},
+    "version": "1"
+  }
+]

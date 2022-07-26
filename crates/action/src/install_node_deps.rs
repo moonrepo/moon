@@ -1,7 +1,7 @@
 use crate::action::{Action, ActionStatus};
 use crate::context::ActionContext;
 use crate::errors::ActionError;
-use moon_config::PackageManager;
+use moon_config::NodePackageManager;
 use moon_error::map_io_to_fs_error;
 use moon_lang_node::{package::PackageJson, NPM};
 use moon_logger::{color, debug, warn};
@@ -17,8 +17,8 @@ const LOG_TARGET: &str = "moon:action:install-node-deps";
 #[track_caller]
 fn add_package_manager(workspace: &Workspace, package_json: &mut PackageJson) -> bool {
     let manager_version = match workspace.config.node.package_manager {
-        PackageManager::Npm => format!("npm@{}", workspace.config.node.npm.version),
-        PackageManager::Pnpm => format!(
+        NodePackageManager::Npm => format!("npm@{}", workspace.config.node.npm.version),
+        NodePackageManager::Pnpm => format!(
             "pnpm@{}",
             match &workspace.config.node.pnpm {
                 Some(pnpm) => pnpm.version.clone(),
@@ -27,7 +27,7 @@ fn add_package_manager(workspace: &Workspace, package_json: &mut PackageJson) ->
                 }
             }
         ),
-        PackageManager::Yarn => format!(
+        NodePackageManager::Yarn => format!(
             "yarn@{}",
             match &workspace.config.node.yarn {
                 Some(yarn) => yarn.version.clone(),
@@ -142,9 +142,9 @@ pub async fn install_node_deps(
         }
 
         let install_command = match workspace.config.node.package_manager {
-            PackageManager::Npm => "npm install",
-            PackageManager::Pnpm => "pnpm install",
-            PackageManager::Yarn => "yarn install",
+            NodePackageManager::Npm => "npm install",
+            NodePackageManager::Pnpm => "pnpm install",
+            NodePackageManager::Yarn => "yarn install",
         };
 
         println!("{}", label_checkpoint(install_command, Checkpoint::Pass));

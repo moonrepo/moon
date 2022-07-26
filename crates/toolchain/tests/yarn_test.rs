@@ -1,4 +1,4 @@
-use moon_config::{PackageManager, WorkspaceConfig, YarnConfig};
+use moon_config::{NodePackageManager, WorkspaceConfig, YarnConfig};
 use moon_lang_node::node;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
@@ -11,7 +11,7 @@ async fn create_yarn_tool() -> (Toolchain, assert_fs::TempDir) {
     let mut config = WorkspaceConfig::default();
 
     config.node.version = String::from("1.0.0");
-    config.node.package_manager = PackageManager::Yarn;
+    config.node.package_manager = NodePackageManager::Yarn;
     config.node.yarn = Some(YarnConfig {
         version: String::from("6.0.0"),
     });

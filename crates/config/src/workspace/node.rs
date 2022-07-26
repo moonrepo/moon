@@ -42,32 +42,33 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.yarn.version", value)
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum PackageManager {
+pub enum NodePackageManager {
+    #[default]
     Npm,
     Pnpm,
     Yarn,
 }
 
-impl Default for PackageManager {
-    fn default() -> Self {
-        PackageManager::Npm
-    }
-}
+// impl Default for NodePackageManager {
+//     fn default() -> Self {
+//         NodePackageManager::Npm
+//     }
+// }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum VersionManager {
+pub enum NodeVersionManager {
     Nodenv,
     Nvm,
 }
 
-impl VersionManager {
+impl NodeVersionManager {
     pub fn get_config_filename(&self) -> String {
         match self {
-            VersionManager::Nodenv => String::from(NODENV.version_filename),
-            VersionManager::Nvm => String::from(NVMRC.version_filename),
+            NodeVersionManager::Nodenv => String::from(NODENV.version_filename),
+            NodeVersionManager::Nvm => String::from(NVMRC.version_filename),
         }
     }
 }
@@ -128,14 +129,14 @@ pub struct NodeConfig {
     #[validate]
     pub npm: NpmConfig,
 
-    pub package_manager: PackageManager,
+    pub package_manager: NodePackageManager,
 
     #[validate]
     pub pnpm: Option<PnpmConfig>,
 
     pub sync_project_workspace_dependencies: bool,
 
-    pub sync_version_manager_config: Option<VersionManager>,
+    pub sync_version_manager_config: Option<NodeVersionManager>,
 
     #[validate(custom = "validate_node_version")]
     pub version: String,
@@ -151,7 +152,7 @@ impl Default for NodeConfig {
             dedupe_on_lockfile_change: true,
             infer_tasks_from_scripts: false,
             npm: NpmConfig::default(),
-            package_manager: PackageManager::default(),
+            package_manager: NodePackageManager::default(),
             pnpm: None,
             sync_project_workspace_dependencies: true,
             sync_version_manager_config: None,

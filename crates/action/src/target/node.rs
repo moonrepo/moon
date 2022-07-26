@@ -1,6 +1,6 @@
 use crate::context::{ActionContext, ProfileType};
 use crate::errors::ActionError;
-use moon_config::PackageManager;
+use moon_config::NodePackageManager;
 use moon_error::MoonError;
 use moon_lang_node::{node, package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, trace};
@@ -128,7 +128,7 @@ pub async fn create_target_command(
     );
 
     // This functionality mimics what pnpm's "node_modules/.bin" binaries do
-    if matches!(node.config.package_manager, PackageManager::Pnpm) {
+    if matches!(node.config.package_manager, NodePackageManager::Pnpm) {
         command.env(
             "NODE_PATH",
             node::extend_node_path(path::to_string(

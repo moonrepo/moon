@@ -55,9 +55,9 @@ Our task above works, but isn't very efficient as it _always_ runs, regardless o
 since the last time it has ran. This becomes problematic in continuous integration environments, not
 just locally.
 
-To mitigate this problem, moon provides a system known as inputs, which are file paths and globs
-that are used by the task when it's ran. moon will use and compare these inputs to calculate whether
-to run, or to return the previous run state from the cache.
+To mitigate this problem, moon provides a system known as inputs, which are file paths, globs, and
+environment variables that are used by the task when it's ran. moon will use and compare these
+inputs to calculate whether to run, or to return the previous run state from the cache.
 
 If you're a bit confused, let's demonstrate this by expanding the task with the
 [`inputs`](./config/project#inputs) setting. Since this is TypeScript, we expect a `tsconfig.json`

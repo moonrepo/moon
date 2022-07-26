@@ -1,7 +1,8 @@
 use crate::project::{ProjectConfig, ProjectLanguage};
-use crate::types::{FilePath, FilePathOrGlob, TargetID};
+use crate::types::{FilePath, FilePathOrGlob, InputValue, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
 use moon_utils::process::split_args;
+use moon_utils::regex::ENV_VAR;
 use schemars::gen::SchemaGenerator;
 use schemars::schema::Schema;
 use schemars::{schema_for, JsonSchema};
@@ -25,7 +26,9 @@ fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
 
 fn validate_inputs(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        validate_child_or_root_path(&format!("inputs[{}]", index), item)?;
+        if !ENV_VAR.is_match(item) {
+            validate_child_or_root_path(&format!("inputs[{}]", index), item)?;
+        }
     }
 
     Ok(())
@@ -117,7 +120,7 @@ pub struct TaskConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_inputs")]
-    pub inputs: Option<Vec<FilePathOrGlob>>,
+    pub inputs: Option<Vec<InputValue>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_outputs")]
@@ -493,6 +496,26 @@ inputs: abc
 command: foo
 inputs:
     - 123
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_env_vars() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+inputs:
+  - $FOO
+  - file.js
+  - /file.js
 "#,
                 )?;
 

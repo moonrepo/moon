@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_hasher = { path = "../hasher" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 lazy_static = "1.4.0"
+serde = { version = "1.0.140", features = ["derive"] }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"

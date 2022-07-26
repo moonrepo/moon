@@ -106,24 +106,6 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub async fn delete_runfiles(&self) -> Result<(), MoonError> {
-        let entries = fs::read_dir(&self.runs_dir).await?;
-
-        for entry in entries {
-            let path = entry.path();
-
-            if path.is_dir() {
-                let runfile = path.join("runfile.json");
-
-                trace!(target: "moon:cache:runfile", "Deleting runfile {}", color::path(&runfile));
-
-                fs::remove_file(&runfile).await?;
-            }
-        }
-
-        Ok(())
-    }
-
     pub fn get_hash_path(&self, hash: &str) -> PathBuf {
         self.hashes_dir.join(format!("{}.json", hash))
     }
@@ -142,11 +124,11 @@ impl CacheEngine {
         self.runs_dir.join(path)
     }
 
-    pub async fn link_task_output_to_out(
+    pub async fn copy_output_to_out(
         &self,
         hash: &str,
         source_root: &Path,
-        source_path: &Path,
+        output_path: &Path,
     ) -> Result<(), MoonError> {
         if is_writable() {
             let dest_root = self.get_hash_output_dir(hash);
@@ -155,15 +137,19 @@ impl CacheEngine {
 
             trace!(
                 target: LOG_TARGET,
-                "Hardlinking output {} to {}",
-                color::path(source_path),
+                "Copying output {} to {}",
+                color::path(output_path),
                 color::path(&dest_root)
             );
 
-            if source_path.is_file() {
-                fs::link_file(source_root, source_path, &dest_root).await?;
+            if output_path.is_file() {
+                fs::copy_file(
+                    output_path,
+                    dest_root.join(output_path.strip_prefix(source_root).unwrap()),
+                )
+                .await?;
             } else {
-                fs::link_dir(source_root, source_path, &dest_root).await?;
+                fs::copy_dir_all(source_root, output_path, &dest_root).await?;
             }
         }
 
@@ -208,36 +194,6 @@ mod tests {
             assert!(dir.path().join(".moon/cache/hashes").exists());
             assert!(dir.path().join(".moon/cache/runs").exists());
             assert!(dir.path().join(".moon/cache/out").exists());
-
-            dir.close().unwrap();
-        }
-    }
-
-    mod delete_runfiles {
-        use super::*;
-
-        #[tokio::test]
-        #[serial]
-        async fn deletes_dir() {
-            let dir = assert_fs::TempDir::new().unwrap();
-            let cache = CacheEngine::create(dir.path()).await.unwrap();
-
-            let runfile1 = cache
-                .create_runfile("123", &"content".to_owned())
-                .await
-                .unwrap();
-            let runfile2 = cache
-                .create_runfile("456", &"content".to_owned())
-                .await
-                .unwrap();
-
-            assert!(runfile1.path.exists());
-            assert!(runfile2.path.exists());
-
-            cache.delete_runfiles().await.unwrap();
-
-            assert!(!runfile1.path.exists());
-            assert!(!runfile2.path.exists());
 
             dir.close().unwrap();
         }

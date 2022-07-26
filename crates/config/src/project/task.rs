@@ -40,7 +40,7 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum TaskType {
+pub enum PlatformType {
     #[default]
     #[strum(serialize = "node")]
     Node,
@@ -122,7 +122,7 @@ pub struct TaskConfig {
 
     #[serde(skip_serializing_if = "skip_if_default")]
     #[serde(rename = "type")]
-    pub type_of: TaskType,
+    pub type_of: PlatformType,
 }
 
 // SERDE

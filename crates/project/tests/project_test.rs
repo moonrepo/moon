@@ -1,6 +1,6 @@
 use moon_config::{
-    GlobalProjectConfig, ProjectConfig, ProjectLanguage, ProjectMetadataConfig, ProjectType,
-    TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    GlobalProjectConfig, PlatformType, ProjectConfig, ProjectLanguage, ProjectMetadataConfig,
+    ProjectType, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig,
 };
 use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
@@ -457,7 +457,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: TaskType::Node,
+                        type_of: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -481,7 +481,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -501,7 +501,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -532,7 +532,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: TaskType::Node,
+                        type_of: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -556,7 +556,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Append),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -579,7 +579,7 @@ mod tasks {
                             inputs: Some(string_vec!["a.*", "b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Append),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -610,7 +610,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: TaskType::Node,
+                        type_of: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -634,7 +634,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -657,7 +657,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*", "a.*"]),
                             outputs: Some(string_vec!["b.ts", "a.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -688,7 +688,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: TaskType::Node,
+                        type_of: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -721,7 +721,7 @@ mod tasks {
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
                             },
-                            type_of: TaskType::Node,
+                            type_of: PlatformType::Node,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -750,7 +750,7 @@ mod tasks {
                                 run_in_ci: Some(true),
                                 run_from_workspace_root: None,
                             },
-                            type_of: TaskType::Node,
+                            type_of: PlatformType::Node,
                         },
                         &workspace_root,
                         project_source
@@ -1122,7 +1122,7 @@ mod tasks {
                         TaskConfig {
                             command: Some(String::from("test")),
                             inputs: Some(string_vec!["local.ts",]),
-                            type_of: TaskType::Node,
+                            type_of: PlatformType::Node,
                             ..TaskConfig::default()
                         },
                     )]),

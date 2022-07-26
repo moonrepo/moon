@@ -1,7 +1,7 @@
 use moon_lang_node::package::PackageJson;
 use moon_platform_node::task::{create_task, should_run_in_ci, TaskContext};
 use moon_platform_node::{create_tasks_from_scripts, infer_tasks_from_scripts};
-use moon_task::{Task, TaskOptions, TaskType};
+use moon_task::{PlatformType, Task, TaskOptions};
 use moon_utils::string_vec;
 use std::collections::{BTreeMap, HashMap};
 
@@ -165,7 +165,7 @@ mod create_task {
                 Task {
                     command: "bash".to_owned(),
                     args: string_vec!["scripts/setup.sh"],
-                    type_of: TaskType::System,
+                    platform: PlatformType::System,
                     ..Task::new("project:task")
                 }
             )
@@ -186,7 +186,7 @@ mod create_task {
                 Task {
                     command: "bash".to_owned(),
                     args: string_vec!["scripts/setup.sh"],
-                    type_of: TaskType::System,
+                    platform: PlatformType::System,
                     ..Task::new("project:task")
                 }
             )
@@ -207,7 +207,7 @@ mod create_task {
                 Task {
                     command: "node".to_owned(),
                     args: string_vec!["scripts/test.js"],
-                    type_of: TaskType::Node,
+                    platform: PlatformType::Node,
                     ..Task::new("project:task")
                 }
             )
@@ -231,7 +231,7 @@ mod create_task {
                     Task {
                         command: "node".to_owned(),
                         args: string_vec![candidate],
-                        type_of: TaskType::Node,
+                        platform: PlatformType::Node,
                         ..Task::new("project:task")
                     }
                 )
@@ -1095,7 +1095,7 @@ mod complex_examples {
                     Task {
                         command: "make".to_owned(),
                         args: string_vec!["bootstrap"],
-                        type_of: TaskType::System,
+                        platform: PlatformType::System,
                         ..Task::new("project:bootstrap")
                     }
                 ),
@@ -1104,7 +1104,7 @@ mod complex_examples {
                     Task {
                         command: "make".to_owned(),
                         args: string_vec!["build"],
-                        type_of: TaskType::System,
+                        platform: PlatformType::System,
                         ..Task::new("project:build")
                     }
                 ),
@@ -1113,7 +1113,7 @@ mod complex_examples {
                     Task {
                         command: "make".to_owned(),
                         args: string_vec!["build-no-bundle"],
-                        type_of: TaskType::System,
+                        platform: PlatformType::System,
                         ..Task::new("project:codesandbox-build")
                     }
                 ),
@@ -1122,7 +1122,7 @@ mod complex_examples {
                     Task {
                         command: "make".to_owned(),
                         args: string_vec!["fix"],
-                        type_of: TaskType::System,
+                        platform: PlatformType::System,
                         ..Task::new("project:fix")
                     }
                 ),
@@ -1131,7 +1131,7 @@ mod complex_examples {
                     Task {
                         command: "make".to_owned(),
                         args: string_vec!["lint"],
-                        type_of: TaskType::System,
+                        platform: PlatformType::System,
                         ..Task::new("project:lint")
                     }
                 ),
@@ -1140,7 +1140,7 @@ mod complex_examples {
                     Task {
                         command: "make".to_owned(),
                         args: string_vec!["test"],
-                        type_of: TaskType::System,
+                        platform: PlatformType::System,
                         ..Task::new("project:test")
                     }
                 ),
@@ -1269,7 +1269,7 @@ mod complex_examples {
                         command: "git".to_owned(),
                         args: string_vec!["add", "yarn.lock"],
                         deps: string_vec!["~:commit-dep1"],
-                        type_of: TaskType::System,
+                        platform: PlatformType::System,
                         ..Task::new("project:commit")
                     }
                 ),

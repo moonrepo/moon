@@ -88,13 +88,14 @@ impl Hasher for NodeTargetHasher {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use moon_hasher::to_hash_only;
 
     #[test]
     fn returns_default_hash() {
         let hasher = NodeTargetHasher::new(String::from("0.0.0"));
 
         assert_eq!(
-            hasher.to_hash(),
+            to_hash_only(&hasher),
             String::from("ae2cf745a63ca5f47a7218ae5b4a8267295305591457a33a79c46754c1dcce0b")
         );
     }
@@ -103,7 +104,7 @@ mod tests {
     fn returns_same_hash_if_called_again() {
         let hasher = NodeTargetHasher::new(String::from("0.0.0"));
 
-        assert_eq!(hasher.to_hash(), hasher.to_hash());
+        assert_eq!(to_hash_only(&hasher), to_hash_only(&hasher));
     }
 
     #[test]
@@ -111,7 +112,7 @@ mod tests {
         let hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
         let hasher2 = NodeTargetHasher::new(String::from("1.0.0"));
 
-        assert_ne!(hasher1.to_hash(), hasher2.to_hash());
+        assert_ne!(to_hash_only(&hasher1), to_hash_only(&hasher2));
     }
 
     mod btreemap {
@@ -129,7 +130,7 @@ mod tests {
             hasher2.hash_package_json(&package1);
             hasher2.hash_package_json(&package1);
 
-            assert_eq!(hasher1.to_hash(), hasher2.to_hash());
+            assert_eq!(to_hash_only(&hasher1), to_hash_only(&hasher2));
         }
 
         #[test]
@@ -148,7 +149,7 @@ mod tests {
             hasher2.hash_package_json(&package1);
             hasher2.hash_package_json(&package2);
 
-            assert_eq!(hasher1.to_hash(), hasher2.to_hash());
+            assert_eq!(to_hash_only(&hasher1), to_hash_only(&hasher2));
         }
 
         #[test]
@@ -162,11 +163,11 @@ mod tests {
             let mut hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
             hasher1.hash_package_json(&package1);
 
-            let hash1 = hasher1.to_hash();
+            let hash1 = to_hash_only(&hasher1);
 
             hasher1.hash_package_json(&package2);
 
-            let hash2 = hasher1.to_hash();
+            let hash2 = to_hash_only(&hasher1);
 
             assert_ne!(hash1, hash2);
         }
@@ -182,21 +183,21 @@ mod tests {
 
             let mut hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
             hasher1.hash_package_json(&package);
-            let hash1 = hasher1.to_hash();
+            let hash1 = to_hash_only(&hasher1);
 
             package.dev_dependencies =
                 Some(BTreeMap::from([("eslint".to_owned(), "8.0.0".to_owned())]));
 
             let mut hasher2 = NodeTargetHasher::new(String::from("0.0.0"));
             hasher2.hash_package_json(&package);
-            let hash2 = hasher2.to_hash();
+            let hash2 = to_hash_only(&hasher2);
 
             package.peer_dependencies =
                 Some(BTreeMap::from([("react".to_owned(), "18.0.0".to_owned())]));
 
             let mut hasher3 = NodeTargetHasher::new(String::from("0.0.0"));
             hasher3.hash_package_json(&package);
-            let hash3 = hasher3.to_hash();
+            let hash3 = to_hash_only(&hasher3);
 
             assert_ne!(hash1, hash2);
             assert_ne!(hash1, hash3);
@@ -220,7 +221,7 @@ mod tests {
 
             let mut hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
             hasher1.hash_tsconfig_json(&tsconfig);
-            let hash1 = hasher1.to_hash();
+            let hash1 = to_hash_only(&hasher1);
 
             tsconfig
                 .compiler_options
@@ -230,13 +231,13 @@ mod tests {
 
             let mut hasher2 = NodeTargetHasher::new(String::from("0.0.0"));
             hasher2.hash_tsconfig_json(&tsconfig);
-            let hash2 = hasher2.to_hash();
+            let hash2 = to_hash_only(&hasher2);
 
             tsconfig.compiler_options.as_mut().unwrap().target = Some(Target::Es2019);
 
             let mut hasher3 = NodeTargetHasher::new(String::from("0.0.0"));
             hasher3.hash_tsconfig_json(&tsconfig);
-            let hash3 = hasher3.to_hash();
+            let hash3 = to_hash_only(&hasher3);
 
             assert_ne!(hash1, hash2);
             assert_ne!(hash1, hash3);

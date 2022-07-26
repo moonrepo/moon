@@ -17,6 +17,14 @@ pub fn to_hash(a: &impl Hasher, b: &impl Hasher) -> String {
     format!("{:x}", sha.finalize())
 }
 
+pub fn to_hash_only(hasher: &impl Hasher) -> String {
+    let mut sha = Sha256::new();
+
+    hasher.hash(&mut sha);
+
+    format!("{:x}", sha.finalize())
+}
+
 pub fn hash_btree(tree: &BTreeMap<String, String>, sha: &mut Sha256) {
     for (k, v) in tree {
         sha.update(k.as_bytes());

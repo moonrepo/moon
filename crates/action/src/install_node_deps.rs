@@ -20,11 +20,21 @@ fn add_package_manager(workspace: &Workspace, package_json: &mut PackageJson) ->
         PackageManager::Npm => format!("npm@{}", workspace.config.node.npm.version),
         PackageManager::Pnpm => format!(
             "pnpm@{}",
-            workspace.config.node.pnpm.as_ref().unwrap().version
+            match &workspace.config.node.pnpm {
+                Some(pnpm) => pnpm.version.clone(),
+                None => {
+                    return false;
+                }
+            }
         ),
         PackageManager::Yarn => format!(
             "yarn@{}",
-            workspace.config.node.yarn.as_ref().unwrap().version
+            match &workspace.config.node.yarn {
+                Some(yarn) => yarn.version.clone(),
+                None => {
+                    return false;
+                }
+            }
         ),
     };
 

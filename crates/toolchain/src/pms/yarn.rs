@@ -22,12 +22,12 @@ pub struct YarnTool {
 }
 
 impl YarnTool {
-    pub fn new(node: &NodeTool, config: &YarnConfig) -> Result<YarnTool, ToolchainError> {
+    pub fn new(node: &NodeTool, config: &Option<YarnConfig>) -> Result<YarnTool, ToolchainError> {
         let install_dir = node.get_install_dir()?.clone();
 
         Ok(YarnTool {
             bin_path: node::find_package_manager_bin(&install_dir, "yarn"),
-            config: config.to_owned(),
+            config: config.to_owned().unwrap_or_default(),
             install_dir,
             log_target: String::from("moon:toolchain:yarn"),
         })

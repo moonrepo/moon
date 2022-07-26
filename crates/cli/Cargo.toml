@@ -21,7 +21,7 @@ moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
-moon_plugin_node = { path = "../plugin-node" }
+moon_platform_node = { path = "../platform-node" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_terminal = { path = "../terminal" }

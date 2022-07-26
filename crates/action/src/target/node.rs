@@ -4,7 +4,7 @@ use moon_config::PackageManager;
 use moon_error::MoonError;
 use moon_lang_node::{node, package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, trace};
-use moon_plugin_node::NodeTargetHasher;
+use moon_platform_node::NodeTargetHasher;
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{get_path_env_var, Executable};

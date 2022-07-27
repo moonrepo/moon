@@ -3,6 +3,7 @@ use moon_task::Task;
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::env;
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -72,12 +73,20 @@ impl TargetHasher {
     pub fn hash_task(&mut self, task: &Task) {
         self.command = task.command.clone();
         self.args = task.args.clone();
+        self.env_vars.extend(task.env.clone());
         self.deps = task.deps.clone();
         self.target = task.target.clone();
 
         // Sort vectors to be deterministic
         self.args.sort();
         self.deps.sort();
+
+        // Inherits vars from inputs
+        for var_name in &task.input_vars {
+            self.env_vars
+                .entry(var_name.to_owned())
+                .or_insert_with(|| env::var(var_name).unwrap_or_default());
+        }
     }
 }
 

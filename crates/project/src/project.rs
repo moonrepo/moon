@@ -90,7 +90,6 @@ fn create_tasks_from_config(
     implicit_inputs: &[String],
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = BTreeMap::<String, Task>::new();
-    let mut depends_on = vec![];
 
     debug!(target: log_target, "Creating tasks");
 
@@ -99,8 +98,6 @@ fn create_tasks_from_config(
     let mut include: HashSet<TaskID> = HashSet::new();
     let mut exclude: HashSet<TaskID> = HashSet::new();
     let mut rename: HashMap<TaskID, TaskID> = HashMap::new();
-
-    depends_on.extend(project_config.depends_on.clone());
 
     if let Some(rename_config) = &project_config.workspace.inherited_tasks.rename {
         rename.extend(rename_config.clone());
@@ -202,7 +199,7 @@ fn create_tasks_from_config(
         task.inputs.extend(implicit_inputs.iter().cloned());
 
         // Resolve in order!
-        task.expand_deps(project_id, &depends_on)?;
+        task.expand_deps(project_id, &project_config.depends_on)?;
         task.expand_inputs(TokenResolver::for_inputs(token_data))?;
         task.expand_outputs(TokenResolver::for_outputs(token_data))?;
 
@@ -304,8 +301,13 @@ impl Project {
 
     /// Return a list of project IDs this project depends on.
     pub fn get_dependencies(&self) -> Vec<ProjectID> {
-        let mut depends_on = vec![];
-        depends_on.extend_from_slice(&self.config.depends_on);
+        let mut depends_on = self
+            .config
+            .depends_on
+            .iter()
+            .map(|d| d.id.clone())
+            .collect::<Vec<String>>();
+
         depends_on.sort();
         depends_on
     }

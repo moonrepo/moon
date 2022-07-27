@@ -1,20 +1,24 @@
 // <project path>/project.yml
 
+pub mod dep;
 pub mod global;
 pub mod task;
 
 use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
-use crate::types::{FileGroups, ProjectID, TaskID};
+use crate::types::{FileGroups, TaskID};
 use crate::validators::{
     skip_if_btree_empty, skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id,
 };
+use dep::DependencyConfig;
 use figment::{
     providers::{Format, Serialized, Yaml},
     Error as FigmentError, Figment,
 };
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::de::{self, SeqAccess};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::{BTreeMap, HashMap};
+use std::fmt;
 use std::path::Path;
 use strum::Display;
 use task::TaskConfig;
@@ -138,8 +142,11 @@ pub struct ProjectWorkspaceConfig {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectConfig {
-    #[serde(skip_serializing_if = "skip_if_vec_empty")]
-    pub depends_on: Vec<ProjectID>,
+    #[serde(
+        deserialize_with = "deserialize_depends_on",
+        skip_serializing_if = "skip_if_vec_empty"
+    )]
+    pub depends_on: Vec<DependencyConfig>,
 
     #[serde(skip_serializing_if = "skip_if_hash_empty")]
     #[validate(custom = "validate_file_groups")]
@@ -211,6 +218,38 @@ impl ProjectConfig {
             ..ProjectConfig::default()
         }
     }
+}
+
+// SERDE
+
+struct DeserializeDependsOn;
+
+impl<'de> de::Visitor<'de> for DeserializeDependsOn {
+    type Value = Vec<DependencyConfig>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a sequence of project IDs or dependencies")
+    }
+
+    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    where
+        V: SeqAccess<'de>,
+    {
+        let mut vec = Vec::new();
+
+        while let Some(elem) = visitor.next_element()? {
+            vec.push(elem);
+        }
+
+        Ok(vec)
+    }
+}
+
+fn deserialize_depends_on<'de, D>(deserializer: D) -> Result<Vec<DependencyConfig>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    deserializer.deserialize_any(DeserializeDependsOn)
 }
 
 #[cfg(test)]

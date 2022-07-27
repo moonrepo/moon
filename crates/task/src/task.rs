@@ -3,8 +3,8 @@ use crate::target::{Target, TargetProjectScope};
 use crate::token::TokenResolver;
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
-    FileGlob, FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig, TaskMergeStrategy,
-    TaskOptionsConfig,
+    DependencyConfig, FileGlob, FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig,
+    TaskMergeStrategy, TaskOptionsConfig,
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{glob, path, regex::ENV_VAR, string_vec};
@@ -321,7 +321,11 @@ impl Task {
     }
 
     /// Expand the deps list and resolve parent/self scopes.
-    pub fn expand_deps(&mut self, owner_id: &str, depends_on: &[String]) -> Result<(), TaskError> {
+    pub fn expand_deps(
+        &mut self,
+        owner_id: &str,
+        depends_on: &[DependencyConfig],
+    ) -> Result<(), TaskError> {
         if self.deps.is_empty() {
             return Ok(());
         }
@@ -341,8 +345,8 @@ impl Task {
             match &target.project {
                 // ^:task
                 TargetProjectScope::Deps => {
-                    for project_id in depends_on {
-                        push_dep(Target::format(project_id, &target.task_id)?);
+                    for dep_cfg in depends_on {
+                        push_dep(Target::format(&dep_cfg.id, &target.task_id)?);
                     }
                 }
                 // ~:task

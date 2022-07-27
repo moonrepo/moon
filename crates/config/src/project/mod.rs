@@ -235,7 +235,7 @@ impl<'de> de::Visitor<'de> for DeserializeDependsOn {
     where
         V: SeqAccess<'de>,
     {
-        let mut vec = Vec::new();
+        let mut vec = Vec::with_capacity(visitor.size_hint().unwrap_or(0));
 
         while let Some(elem) = visitor.next_element()? {
             vec.push(elem);
@@ -307,6 +307,8 @@ fileGroups:
     }
 
     mod depends_on {
+        use super::*;
+
         #[test]
         #[should_panic(
             expected = "invalid type: found unsigned int `123`, expected a sequence for key \"project.dependsOn\""
@@ -316,6 +318,22 @@ fileGroups:
                 jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "dependsOn: 123")?;
 
                 super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_list_of_strings() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    "dependsOn: ['a', 'b', 'c']",
+                )?;
+
+                let cfg: ProjectConfig = super::load_jailed_config()?;
+
+                assert_eq!(cfg.depends_on, vec![]);
 
                 Ok(())
             });

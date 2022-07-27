@@ -270,12 +270,14 @@ tasks:
 
 > `string[]`
 
-The `inputs` field is a list of file paths/globs that are used to calculate whether to execute this
-task based on files that have been touched since the last time the task has been ran. If _not_
+The `inputs` field is a list of sources that calculate whether to execute this task based on the
+environment and files that have been touched since the last time the task has been ran. If _not_
 defined, then all files within a project are considered an input (`**/*`).
 
-Inputs support
-[project and workspace relative file patterns](../concepts/file-pattern#project-relative).
+Inputs support the following source types:
+
+- Environment variables (must start with a `$`).
+- [Project and workspace relative file patterns](../concepts/file-pattern#project-relative)
 
 ```yaml title="project.yml" {4-10}
 tasks:
@@ -288,7 +290,17 @@ tasks:
       # Config files at the workspace root
       - '/.eslintignore'
       - '/.eslintrc.js'
+      # Environment variables
+      - '$ESLINT_CACHE'
 ```
+
+:::caution
+
+When using an environment variable, we assume _it's not defined_ by default, and will trigger an
+affected state when it _is_ defined. If the environment variable always exists, then the task will
+always run and bypass the cache.
+
+:::
 
 ### `outputs`
 

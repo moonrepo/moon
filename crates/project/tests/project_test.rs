@@ -209,6 +209,7 @@ mod tasks {
     };
     use moon_utils::glob;
     use pretty_assertions::assert_eq;
+    use std::collections::HashSet;
 
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {
@@ -305,7 +306,7 @@ mod tasks {
 
         // Expanded
         task.input_globs
-            .push(glob::normalize(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
+            .insert(glob::normalize(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
 
         assert_eq!(
             project,
@@ -366,10 +367,14 @@ mod tasks {
         // Expanded
         let wild_glob = workspace_root.join("tasks/basic/**/*");
 
-        build.input_globs.push(glob::normalize(&wild_glob).unwrap());
-        std.input_globs.push(glob::normalize(&wild_glob).unwrap());
-        test.input_globs.push(glob::normalize(&wild_glob).unwrap());
-        lint.input_globs.push(glob::normalize(&wild_glob).unwrap());
+        build
+            .input_globs
+            .insert(glob::normalize(&wild_glob).unwrap());
+        std.input_globs.insert(glob::normalize(&wild_glob).unwrap());
+        test.input_globs
+            .insert(glob::normalize(&wild_glob).unwrap());
+        lint.input_globs
+            .insert(glob::normalize(&wild_glob).unwrap());
 
         assert_eq!(
             project,
@@ -401,7 +406,7 @@ mod tasks {
     #[test]
     fn inherits_implicit_inputs() {
         let workspace_root = get_fixtures_root();
-        let implicit_inputs = string_vec!["package.json", "/.moon/workspace.yml"];
+        let implicit_inputs = string_vec!["$VAR", "package.json", "/.moon/workspace.yml"];
         let project = Project::new(
             "id",
             "tasks/basic",
@@ -444,6 +449,12 @@ mod tasks {
         assert_eq!(project.get_task("standard").unwrap().inputs, std.inputs);
         assert_eq!(project.get_task("test").unwrap().inputs, test.inputs);
         assert_eq!(project.get_task("lint").unwrap().inputs, lint.inputs);
+
+        // Applies to all tasks
+        assert_eq!(
+            project.get_task("build").unwrap().input_vars,
+            HashSet::from(["VAR".to_owned()])
+        );
     }
 
     #[test]
@@ -1092,10 +1103,10 @@ mod tasks {
 
             assert_eq!(
                 task.input_globs,
-                vec![
+                HashSet::from([
                     glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap(),
                     glob::normalize(project_root.join("*.js")).unwrap()
-                ],
+                ]),
             );
 
             let a: HashSet<PathBuf> =
@@ -1149,7 +1160,7 @@ mod tasks {
 
             assert_eq!(
                 task.input_globs,
-                vec![glob::normalize(project_root.join("*.yml")).unwrap(),]
+                HashSet::from([glob::normalize(project_root.join("*.yml")).unwrap()])
             );
 
             let a: HashSet<PathBuf> =

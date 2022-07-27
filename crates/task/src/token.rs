@@ -2,7 +2,7 @@ use crate::errors::TokenError;
 use crate::file_group::FileGroup;
 use crate::target::Target;
 use crate::task::Task;
-use moon_config::ProjectConfig;
+use moon_config::{FileGlob, ProjectConfig};
 use moon_logger::{color, warn};
 use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
@@ -12,7 +12,7 @@ use moon_utils::{glob, path};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-type PathsGlobsNormalized = (Vec<PathBuf>, Vec<String>);
+type PathsGlobsNormalized = (Vec<PathBuf>, Vec<FileGlob>);
 
 #[derive(Debug, PartialEq)]
 pub enum ResolverType {

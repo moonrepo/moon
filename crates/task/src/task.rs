@@ -1,15 +1,16 @@
 use crate::errors::{TargetError, TaskError};
 use crate::target::{Target, TargetProjectScope};
 use crate::token::TokenResolver;
-use crate::types::{EnvVars, ExpandedFiles, TouchedFilePaths};
+use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
-    FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig, TaskMergeStrategy,
+    FileGlob, FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig, TaskMergeStrategy,
     TaskOptionsConfig,
 };
-use moon_logger::{color, debug, map_list, trace, Logable};
-use moon_utils::{glob, path, string_vec};
+use moon_logger::{color, debug, trace, Logable};
+use moon_utils::{glob, path, regex::ENV_VAR, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use std::env;
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -120,9 +121,11 @@ pub struct Task {
 
     pub inputs: Vec<FilePathOrGlob>,
 
-    pub input_globs: Vec<FilePathOrGlob>,
+    pub input_globs: HashSet<FileGlob>,
 
-    pub input_paths: ExpandedFiles,
+    pub input_paths: HashSet<PathBuf>,
+
+    pub input_vars: HashSet<String>,
 
     #[serde(skip)]
     pub log_target: String,
@@ -131,7 +134,7 @@ pub struct Task {
 
     pub outputs: Vec<FilePath>,
 
-    pub output_paths: ExpandedFiles,
+    pub output_paths: HashSet<PathBuf>,
 
     pub platform: PlatformType,
 
@@ -170,7 +173,8 @@ impl Task {
             deps: cloned_config.deps.unwrap_or_default(),
             env: cloned_config.env.unwrap_or_default(),
             inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
-            input_globs: vec![],
+            input_vars: HashSet::new(),
+            input_globs: HashSet::new(),
             input_paths: HashSet::new(),
             log_target,
             options: TaskOptions {
@@ -366,7 +370,21 @@ impl Task {
             return Ok(());
         }
 
-        let (paths, globs) = token_resolver.resolve(&self.inputs, self)?;
+        let inputs_without_vars = self
+            .inputs
+            .clone()
+            .into_iter()
+            .filter(|i| {
+                if ENV_VAR.is_match(i) {
+                    self.input_vars.insert(i[1..].to_owned());
+                    false
+                } else {
+                    true
+                }
+            })
+            .collect::<Vec<String>>();
+
+        let (paths, globs) = token_resolver.resolve(&inputs_without_vars, self)?;
 
         self.input_paths.extend(paths);
         self.input_globs.extend(globs);
@@ -399,6 +417,20 @@ impl Task {
     /// Return true if this task is affected, based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, TaskError> {
+        for var_name in &self.input_vars {
+            if let Ok(var) = env::var(var_name) {
+                if !var.is_empty() {
+                    trace!(
+                        target: self.get_log_target(),
+                        "Affected by {} (via environment variable)",
+                        color::symbol(var_name),
+                    );
+
+                    return Ok(true);
+                }
+            }
+        }
+
         let has_globs = !self.input_globs.is_empty();
         let globset = self.create_globset()?;
 
@@ -406,7 +438,7 @@ impl Task {
             if self.input_paths.contains(file) {
                 trace!(
                     target: self.get_log_target(),
-                    "Affected by {} (using input files)",
+                    "Affected by {} (via input files)",
                     color::path(file),
                 );
 
@@ -416,9 +448,8 @@ impl Task {
             if has_globs && globset.matches(file)? {
                 trace!(
                     target: self.get_log_target(),
-                    "Affected by {} (using input globs: {})",
+                    "Affected by {} (via input globs)",
                     color::path(file),
-                    map_list(&self.input_globs, |f| color::file(f))
                 );
 
                 return Ok(true);

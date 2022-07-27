@@ -15,6 +15,8 @@ previous builds are no longer valid and can be removed.
 - Added `batch` as a supported value for the project `language` setting (Windows counter-part to
   `bash`).
 - Added a `cache` option to tasks, which will disable smart hashing and output caching.
+- Added environment variable support to task `inputs` and `actionRunner.implicitInputs`, in the
+  format of `$ENV_VAR`.
 
 #### ⚙️ Internal
 

@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 lazy_static! {
     pub static ref BIN_PATH_PATTERN: Regex = Regex::new(
-        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.((c|m)?js|exe))?"
+        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@+]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.((c|m)?js|exe))?"
     )
     .unwrap();
 }
@@ -450,6 +450,36 @@ fi
                     .to_string(),
                 ),
                 PathBuf::from(r"..\typescript\bin\tsc")
+            );
+        }
+
+        #[test]
+        fn parses_pnpm_isolated_linker() {
+            assert_eq!(
+                parse_bin_file(
+                    &PathBuf::from("test"),
+                    r#"
+#!/bin/sh
+basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+
+case `uname` in
+    *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+esac
+
+if [ -z "$NODE_PATH" ]; then
+    export NODE_PATH="/Users/milesj/Projects/moon/node_modules/.pnpm/node_modules"
+else
+    export NODE_PATH="$NODE_PATH:/Users/milesj/Projects/moon/node_modules/.pnpm/node_modules"
+fi
+if [ -x "$basedir/node" ]; then
+    exec "$basedir/node"  "$basedir/../../../node_modules/.pnpm/@docusaurus+core@2.0.0-beta.20_sfoxds7t5ydpegc3knd667wn6m/node_modules/@docusaurus/core/bin/docusaurus.mjs" "$@"
+else
+    exec node  "$basedir/../../../node_modules/.pnpm/@docusaurus+core@2.0.0-beta.20_sfoxds7t5ydpegc3knd667wn6m/node_modules/@docusaurus/core/bin/docusaurus.mjs" "$@"
+fi
+                    "#
+                    .to_string(),
+                ),
+                PathBuf::from(r"../../../node_modules/.pnpm/@docusaurus+core@2.0.0-beta.20_sfoxds7t5ydpegc3knd667wn6m/node_modules/@docusaurus/core/bin/docusaurus.mjs")
             );
         }
 

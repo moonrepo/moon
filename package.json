@@ -31,5 +31,6 @@
     "prettier-config-beemo": "^1.0.1",
     "tsconfig-beemo": "^1.0.1",
     "typescript": "^4.6.4"
-  }
+  },
+  "packageManager": "pnpm@7.6.0"
 }

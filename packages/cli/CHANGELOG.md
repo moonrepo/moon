@@ -18,6 +18,10 @@ previous builds are no longer valid and can be removed.
 - Added environment variable support to task `inputs` and `actionRunner.implicitInputs`, in the
   format of `$ENV_VAR`.
 
+#### 🐞 Fixes
+
+- Fixed an issue where pnpm didn't work with `node-linker=hoisted`.
+
 #### ⚙️ Internal
 
 - Outputs are now copied to `.moon/cache/out` instead of being hardlinked.

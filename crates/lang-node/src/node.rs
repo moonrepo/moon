@@ -43,7 +43,14 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
 #[cached]
 #[track_caller]
 pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
-    let extracted_path = parse_bin_file(&bin_path, fs::read_to_string(&bin_path).unwrap());
+    let contents = fs::read_to_string(&bin_path).unwrap();
+
+    // Is most likely a symlinked JavaScript file!
+    if contents.starts_with("#!/usr/bin/env node") {
+        return bin_path;
+    }
+
+    let extracted_path = parse_bin_file(&bin_path, contents);
 
     // canonicalize() actually causes things to break, so normalize
     path::normalize(bin_path.parent().unwrap().join(extracted_path))

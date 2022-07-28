@@ -44,7 +44,7 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum NodeVersionProtocol {
+pub enum NodeVersionFormat {
     File,         // file:..
     Link,         // link:..
     Star,         // *
@@ -57,18 +57,18 @@ pub enum NodeVersionProtocol {
     WorkspaceTilde, // workspace:~
 }
 
-impl NodeVersionProtocol {
+impl NodeVersionFormat {
     pub fn get_prefix(&self) -> String {
         match self {
-            NodeVersionProtocol::File => String::from("file:"),
-            NodeVersionProtocol::Link => String::from("link:"),
-            NodeVersionProtocol::Star => String::from("*"),
-            NodeVersionProtocol::Version => String::from(""),
-            NodeVersionProtocol::VersionCaret => String::from("^"),
-            NodeVersionProtocol::VersionTilde => String::from("~"),
-            NodeVersionProtocol::Workspace => String::from("workspace:*"),
-            NodeVersionProtocol::WorkspaceCaret => String::from("workspace:^"),
-            NodeVersionProtocol::WorkspaceTilde => String::from("workspace:~"),
+            NodeVersionFormat::File => String::from("file:"),
+            NodeVersionFormat::Link => String::from("link:"),
+            NodeVersionFormat::Star => String::from("*"),
+            NodeVersionFormat::Version => String::from(""),
+            NodeVersionFormat::VersionCaret => String::from("^"),
+            NodeVersionFormat::VersionTilde => String::from("~"),
+            NodeVersionFormat::Workspace => String::from("workspace:*"),
+            NodeVersionFormat::WorkspaceCaret => String::from("workspace:^"),
+            NodeVersionFormat::WorkspaceTilde => String::from("workspace:~"),
         }
     }
 }
@@ -149,7 +149,7 @@ pub struct NodeConfig {
 
     pub dedupe_on_lockfile_change: bool,
 
-    pub dependency_version_protocol: NodeVersionProtocol,
+    pub dependency_version_format: NodeVersionFormat,
 
     pub infer_tasks_from_scripts: bool,
 
@@ -177,7 +177,7 @@ impl Default for NodeConfig {
         NodeConfig {
             add_engines_constraint: true,
             dedupe_on_lockfile_change: true,
-            dependency_version_protocol: NodeVersionProtocol::WorkspaceCaret,
+            dependency_version_format: NodeVersionFormat::WorkspaceCaret,
             infer_tasks_from_scripts: false,
             npm: NpmConfig::default(),
             package_manager: NodePackageManager::default(),

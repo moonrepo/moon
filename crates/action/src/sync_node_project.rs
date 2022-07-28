@@ -1,7 +1,7 @@
 use crate::action::{Action, ActionStatus};
 use crate::context::ActionContext;
 use crate::errors::ActionError;
-use moon_config::{NodeVersionProtocol, TypeScriptConfig};
+use moon_config::{NodeVersionFormat, TypeScriptConfig};
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug};
 use moon_project::Project;
@@ -75,17 +75,17 @@ fn sync_project_dependency(
     base_project: &Project,
     dep_project: &Project,
     dep_relative_path: &str,
-    protocol: &NodeVersionProtocol,
+    format: &NodeVersionFormat,
 ) -> Result<bool, ActionError> {
     if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
-        let version_prefix = protocol.get_prefix();
-        let dep_version = match protocol {
-            NodeVersionProtocol::File | NodeVersionProtocol::Link => {
+        let version_prefix = format.get_prefix();
+        let dep_version = match format {
+            NodeVersionFormat::File | NodeVersionFormat::Link => {
                 format!("{}{}", version_prefix, dep_relative_path)
             }
-            NodeVersionProtocol::Version
-            | NodeVersionProtocol::VersionCaret
-            | NodeVersionProtocol::VersionTilde => format!(
+            NodeVersionFormat::Version
+            | NodeVersionFormat::VersionCaret
+            | NodeVersionFormat::VersionTilde => format!(
                 "{}{}",
                 version_prefix,
                 dep_package_json.version.unwrap_or_default()
@@ -155,7 +155,7 @@ pub async fn sync_node_project(
                 &project,
                 &dep_project,
                 &dep_relative_path,
-                &node_config.dependency_version_protocol,
+                &node_config.dependency_version_format,
             )?
         {
             mutated_files = true;

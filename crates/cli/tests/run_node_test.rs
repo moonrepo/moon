@@ -705,7 +705,6 @@ mod yarn1 {
 
 mod yarn {
     use super::*;
-    use std::fs;
 
     #[test]
     #[serial]

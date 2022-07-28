@@ -95,19 +95,17 @@ mod run_script {
         assert.success().stdout(predicate::str::contains("lint"));
     }
 
-    // TODO: Yarn requires the lockfile to exist and be accurate,
-    // otherwise it crashes. We cant do this easily right now.
-    // #[test]
-    // #[serial]
-    // fn works_with_yarn() {
-    //     let fixture = create_sandbox("node-yarn");
+    #[test]
+    #[serial]
+    fn works_with_yarn() {
+        let fixture = create_sandbox("node-yarn");
 
-    //     setup_toolchain(fixture.path());
+        setup_toolchain(fixture.path());
 
-    //     let assert = create_moon_command(fixture.path())
-    //         .args(["node", "run-script", "build", "--project", "yarn"])
-    //         .assert();
+        let assert = create_moon_command(fixture.path())
+            .args(["node", "run-script", "build", "--project", "yarn"])
+            .assert();
 
-    //     assert.success().stdout(predicate::str::contains("build"));
-    // }
+        assert.success().stdout(predicate::str::contains("build"));
+    }
 }

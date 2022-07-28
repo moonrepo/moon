@@ -21,6 +21,7 @@ previous builds are no longer valid and can be removed.
 #### 🐞 Fixes
 
 - Fixed an issue where pnpm didn't work with `node-linker=isolated` for nested node modules.
+- Fixed an issue where failing processes would display an empty error message.
 
 #### ⚙️ Internal
 

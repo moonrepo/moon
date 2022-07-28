@@ -554,6 +554,7 @@ mod npm {
 
 mod pnpm {
     use super::*;
+    use std::fs;
 
     #[test]
     #[serial]
@@ -599,8 +600,30 @@ mod pnpm {
 
     #[test]
     #[serial]
-    fn can_run_a_deps_bin() {
+    fn can_run_a_deps_bin_isolated() {
         let fixture = create_sandbox_with_git("node-pnpm");
+
+        fs::write(fixture.path().join(".npmrc"), "node-linker=isolated").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("pnpm:runDep")
+            .assert();
+
+        assert!(
+            predicate::str::contains("All matched files use Prettier code style!")
+                .eval(&get_assert_output(&assert))
+        );
+
+        assert.success();
+    }
+
+    #[test]
+    #[serial]
+    fn can_run_a_deps_bin_hoisted() {
+        let fixture = create_sandbox_with_git("node-pnpm");
+
+        fs::write(fixture.path().join(".npmrc"), "node-linker=hoisted").unwrap();
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -681,69 +704,77 @@ mod yarn1 {
 }
 
 // TODO: This fails in CI for some reason, but not locally...
-// mod yarn {
-//     use super::*;
+mod yarn {
+    use super::*;
 
-//     #[test]
-//     #[serial]
-//     fn installs_correct_version() {
-//         let fixture = create_sandbox_with_git("node-yarn");
+    #[test]
+    #[serial]
+    fn installs_correct_version() {
+        let fixture = create_sandbox_with_git("node-yarn");
 
-//         let assert = create_moon_command(fixture.path())
-//             .arg("run")
-//             .arg("yarn:version")
-//             .assert();
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("yarn:version")
+            .assert();
 
-//         assert_snapshot!(get_assert_output(&assert));
-//     }
+        moon_utils::test::debug_sandbox(&fixture, &assert);
 
-//     #[test]
-//     #[serial]
-//     fn installs_correct_version_using_corepack() {
-//         let fixture = create_sandbox_with_git("node-yarn");
+        assert_snapshot!(get_assert_output(&assert));
+    }
 
-//         // Corepack released in v16.9
-//         update_version_workspace_config(fixture.path(), "16.4.0", "16.13.0");
+    #[test]
+    #[serial]
+    fn installs_correct_version_using_corepack() {
+        let fixture = create_sandbox_with_git("node-yarn");
 
-//         let assert = create_moon_command(fixture.path())
-//             .arg("run")
-//             .arg("yarn:version")
-//             .assert();
+        // Corepack released in v16.9
+        update_version_workspace_config(fixture.path(), "16.4.0", "16.13.0");
 
-//         assert_snapshot!(get_assert_output(&assert));
-//     }
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("yarn:version")
+            .assert();
 
-//     #[test]
-//     #[serial]
-//     fn can_install_a_dep() {
-//         let fixture = create_sandbox_with_git("node-yarn");
+        moon_utils::test::debug_sandbox(&fixture, &assert);
 
-//         let assert = create_moon_command(fixture.path())
-//             .arg("run")
-//             .arg("yarn:installDep")
-//             .assert();
+        assert_snapshot!(get_assert_output(&assert));
+    }
 
-//         assert.success();
-//     }
+    #[test]
+    #[serial]
+    fn can_install_a_dep() {
+        let fixture = create_sandbox_with_git("node-yarn");
 
-// #[test]
-// #[serial]
-// fn can_run_a_deps_bin() {
-//     let fixture = create_sandbox_with_git("node-yarn1");
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("yarn:installDep")
+            .assert();
 
-//     let assert = create_moon_command(fixture.path())
-//         .arg("run")
-//         .arg("yarn:runDep")
-//         .assert();
+        moon_utils::test::debug_sandbox(&fixture, &assert);
 
-// assert!(
-//     predicate::str::contains("All matched files use Prettier code style!")
-//         .eval(&get_assert_output(&assert))
-// );
+        assert.success();
+    }
 
-//     assert.success();
-// }
-// }
+    #[test]
+    #[serial]
+    fn can_run_a_deps_bin() {
+        let fixture = create_sandbox_with_git("node-yarn");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("yarn:runDep")
+            .assert();
+
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
+        assert!(
+            predicate::str::contains("All matched files use Prettier code style!")
+                .eval(&get_assert_output(&assert))
+        );
+
+        assert.success();
+    }
+}
 
 mod profile {
     use super::*;

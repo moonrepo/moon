@@ -3,5 +3,6 @@
   "private": true,
   "devDependencies": {
     "prettier": "*"
-  }
+  },
+  "workspaces": ["yarn"]
 }

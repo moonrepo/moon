@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_lang_node::{node, YARN};
 use moon_logger::{color, debug, Logable};
-use moon_utils::is_ci;
+use moon_utils::{is_ci, is_test_env};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -267,7 +267,7 @@ impl PackageManager<NodeTool> for YarnTool {
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
-        if is_ci() {
+        if is_ci() && !is_test_env() {
             if self.is_v1() {
                 args.push("--check-files");
                 args.push("--frozen-lockfile");

@@ -47,6 +47,7 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
 pub enum NodeVersionProtocol {
     File,         // file:..
     Link,         // link:..
+    Star,         // *
     Version,      // 0.0.0
     VersionCaret, // ^0.0.0
     VersionTilde, // ~0.0.0
@@ -61,6 +62,7 @@ impl NodeVersionProtocol {
         match self {
             NodeVersionProtocol::File => String::from("file:"),
             NodeVersionProtocol::Link => String::from("link:"),
+            NodeVersionProtocol::Star => String::from("*"),
             NodeVersionProtocol::Version => String::from(""),
             NodeVersionProtocol::VersionCaret => String::from("^"),
             NodeVersionProtocol::VersionTilde => String::from("~"),
@@ -147,6 +149,8 @@ pub struct NodeConfig {
 
     pub dedupe_on_lockfile_change: bool,
 
+    pub dependency_version_protocol: NodeVersionProtocol,
+
     pub infer_tasks_from_scripts: bool,
 
     #[validate]
@@ -173,6 +177,7 @@ impl Default for NodeConfig {
         NodeConfig {
             add_engines_constraint: true,
             dedupe_on_lockfile_change: true,
+            dependency_version_protocol: NodeVersionProtocol::WorkspaceCaret,
             infer_tasks_from_scripts: false,
             npm: NpmConfig::default(),
             package_manager: NodePackageManager::default(),

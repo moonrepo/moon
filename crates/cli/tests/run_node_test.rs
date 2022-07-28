@@ -705,11 +705,14 @@ mod yarn1 {
 
 mod yarn {
     use super::*;
+    use std::fs;
 
     #[test]
     #[serial]
     fn installs_correct_version() {
         let fixture = create_sandbox_with_git("node-yarn");
+
+        fs::write(fixture.path().join("yarn.lock"), "").unwrap();
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -726,6 +729,8 @@ mod yarn {
     #[serial]
     fn installs_correct_version_using_corepack() {
         let fixture = create_sandbox_with_git("node-yarn");
+
+        fs::write(fixture.path().join("yarn.lock"), "").unwrap();
 
         // Corepack released in v16.9
         update_version_workspace_config(fixture.path(), "16.4.0", "16.13.0");
@@ -746,6 +751,8 @@ mod yarn {
     fn can_install_a_dep() {
         let fixture = create_sandbox_with_git("node-yarn");
 
+        fs::write(fixture.path().join("yarn.lock"), "").unwrap();
+
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:installDep")
@@ -761,6 +768,8 @@ mod yarn {
     #[serial]
     fn can_run_a_deps_bin() {
         let fixture = create_sandbox_with_git("node-yarn");
+
+        fs::write(fixture.path().join("yarn.lock"), "").unwrap();
 
         let assert = create_moon_command(fixture.path())
             .arg("run")

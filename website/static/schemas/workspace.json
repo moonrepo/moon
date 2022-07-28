@@ -31,6 +31,7 @@
       "default": {
         "addEnginesConstraint": true,
         "dedupeOnLockfileChange": true,
+        "dependencyVersionFormat": "workspace-caret",
         "inferTasksFromScripts": false,
         "npm": {
           "version": "inherit"
@@ -128,6 +129,14 @@
           "default": true,
           "type": "boolean"
         },
+        "dependencyVersionFormat": {
+          "default": "workspace-caret",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            }
+          ]
+        },
         "inferTasksFromScripts": {
           "default": false,
           "type": "boolean"
@@ -199,6 +208,20 @@
         "npm",
         "pnpm",
         "yarn"
+      ]
+    },
+    "NodeVersionFormat": {
+      "type": "string",
+      "enum": [
+        "file",
+        "link",
+        "star",
+        "version",
+        "version-caret",
+        "version-tilde",
+        "workspace",
+        "workspace-caret",
+        "workspace-tilde"
       ]
     },
     "NodeVersionManager": {

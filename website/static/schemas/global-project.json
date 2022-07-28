@@ -115,6 +115,12 @@
     "TaskOptionsConfig": {
       "type": "object",
       "properties": {
+        "cache": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "mergeArgs": {
           "anyOf": [
             {

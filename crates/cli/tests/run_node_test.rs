@@ -716,8 +716,6 @@ mod yarn {
             .arg("yarn:version")
             .assert();
 
-        moon_utils::test::debug_sandbox(&fixture, &assert);
-
         assert_snapshot!(get_assert_output(&assert));
     }
 
@@ -734,8 +732,6 @@ mod yarn {
             .arg("yarn:version")
             .assert();
 
-        moon_utils::test::debug_sandbox(&fixture, &assert);
-
         assert_snapshot!(get_assert_output(&assert));
     }
 
@@ -749,8 +745,6 @@ mod yarn {
             .arg("yarn:installDep")
             .assert();
 
-        moon_utils::test::debug_sandbox(&fixture, &assert);
-
         assert.success();
     }
 
@@ -763,8 +757,6 @@ mod yarn {
             .arg("run")
             .arg("yarn:runDep")
             .assert();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")

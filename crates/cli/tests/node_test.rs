@@ -92,6 +92,8 @@ mod run_script {
             .args(["node", "run-script", "lint", "--project", "pnpm"])
             .assert();
 
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
         assert.success().stdout(predicate::str::contains("lint"));
     }
 
@@ -105,6 +107,8 @@ mod run_script {
         let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "build", "--project", "yarn"])
             .assert();
+
+        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert.success().stdout(predicate::str::contains("build"));
     }

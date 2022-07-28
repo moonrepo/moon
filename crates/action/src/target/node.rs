@@ -19,7 +19,7 @@ fn create_node_options(
 ) -> Result<Vec<String>, MoonError> {
     let mut options = string_vec![
         // "--inspect", // Enable node inspector
-        // "--preserve-symlinks",
+        // "--preserve-symlinks", // Add an option in a follow-up
         "--title",
         &task.target,
         "--unhandled-rejections",

@@ -46,7 +46,7 @@ pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
     let contents = fs::read_to_string(&bin_path).unwrap();
 
     // Is most likely a symlinked JavaScript file!
-    if contents.starts_with("#!/usr/bin/env node") {
+    if contents.starts_with("#!/usr/bin/env node") || contents.starts_with("#!/usr/bin/node") {
         return bin_path;
     }
 

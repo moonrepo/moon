@@ -198,11 +198,6 @@ impl PackageManager<NodeTool> for PnpmTool {
         String::from(PNPM.manifest_filename)
     }
 
-    fn get_workspace_dependency_range(&self) -> String {
-        // https://pnpm.io/workspaces#workspace-protocol-workspace
-        String::from("workspace:*")
-    }
-
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
         let lockfile = toolchain.workspace_root.join(self.get_lock_filename());

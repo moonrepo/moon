@@ -1,7 +1,7 @@
 use crate::action::{Action, ActionStatus};
 use crate::context::ActionContext;
 use crate::errors::ActionError;
-use moon_config::TypeScriptConfig;
+use moon_config::{NodeVersionProtocol, TypeScriptConfig};
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug};
 use moon_project::Project;
@@ -71,6 +71,52 @@ fn sync_root_tsconfig(
     false
 }
 
+fn sync_project_dependency(
+    base_project: &Project,
+    dep_project: &Project,
+    dep_relative_path: &str,
+    protocol: &NodeVersionProtocol,
+) -> Result<bool, ActionError> {
+    if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
+        let version_prefix = protocol.get_prefix();
+        let dep_version = match protocol {
+            NodeVersionProtocol::File | NodeVersionProtocol::Link => {
+                format!("{}{}", version_prefix, dep_relative_path)
+            }
+            NodeVersionProtocol::Version
+            | NodeVersionProtocol::VersionCaret
+            | NodeVersionProtocol::VersionTilde => format!(
+                "{}{}",
+                version_prefix,
+                dep_package_json.version.unwrap_or_default()
+            ),
+            _ => version_prefix,
+        };
+
+        PackageJson::sync(&base_project.root, |package_json| {
+            if package_json.add_dependency(
+                &dep_package_json.name.unwrap_or_default(),
+                &dep_version,
+                true,
+            ) {
+                debug!(
+                    target: LOG_TARGET,
+                    "Syncing {} as a dependency to {}'s {}",
+                    color::id(&dep_project.id),
+                    color::id(&base_project.id),
+                    color::file("package.json")
+                );
+            }
+
+            Ok(())
+        })?;
+
+        return Ok(true);
+    }
+
+    Ok(false)
+}
+
 pub async fn sync_node_project(
     _action: &mut Action,
     _context: &ActionContext,
@@ -95,40 +141,24 @@ pub async fn sync_node_project(
     }
 
     // Sync each dependency to `tsconfig.json` and `package.json`
-    let dep_version_range = workspace
-        .toolchain
-        .get_node()
-        .get_package_manager()
-        .get_workspace_dependency_range();
-
     for dep_id in project.get_dependencies() {
         let dep_project = workspace.projects.load(&dep_id)?;
+        let dep_relative_path = path::to_string(
+            path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
+        )?;
 
         // Update `dependencies` within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
         // and this `package.json` has not already declared the dep.
-        if node_config.sync_project_workspace_dependencies {
-            if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
-                PackageJson::sync(&project.root, |package_json| {
-                    if package_json.add_dependency(
-                        &dep_package_json.name.unwrap_or_default(),
-                        &dep_version_range,
-                        true,
-                    ) {
-                        mutated_files = true;
-
-                        debug!(
-                            target: LOG_TARGET,
-                            "Syncing {} as a dependency to {}'s {}",
-                            color::id(&dep_id),
-                            color::id(project_id),
-                            color::file("package.json")
-                        );
-                    }
-
-                    Ok(())
-                })?;
-            }
+        if node_config.sync_project_workspace_dependencies
+            && sync_project_dependency(
+                &project,
+                &dep_project,
+                &dep_relative_path,
+                &node_config.dependency_version_protocol,
+            )?
+        {
+            mutated_files = true;
         }
 
         // Update `references` within this project's `tsconfig.json`.
@@ -142,12 +172,7 @@ pub async fn sync_node_project(
                     &project.root,
                     &tsconfig_branch_name,
                     |tsconfig_json| {
-                        let dep_ref_path = path::to_string(
-                            path::relative_from(&dep_project.root, &project.root)
-                                .unwrap_or_default(),
-                        )?;
-
-                        if tsconfig_json.add_project_ref(&dep_ref_path, tsconfig_branch_name) {
+                        if tsconfig_json.add_project_ref(&dep_relative_path, tsconfig_branch_name) {
                             mutated_files = true;
 
                             debug!(

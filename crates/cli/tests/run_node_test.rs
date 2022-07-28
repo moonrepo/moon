@@ -703,7 +703,6 @@ mod yarn1 {
     }
 }
 
-// TODO: This fails in CI for some reason, but not locally...
 mod yarn {
     use super::*;
 
@@ -715,6 +714,7 @@ mod yarn {
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:version")
+            .env("YARN_ENABLE_IMMUTABLE_INSTALLS", "true")
             .assert();
 
         moon_utils::test::debug_sandbox(&fixture, &assert);
@@ -733,6 +733,7 @@ mod yarn {
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:version")
+            .env("YARN_ENABLE_IMMUTABLE_INSTALLS", "true")
             .assert();
 
         moon_utils::test::debug_sandbox(&fixture, &assert);
@@ -748,6 +749,7 @@ mod yarn {
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:installDep")
+            .env("YARN_ENABLE_IMMUTABLE_INSTALLS", "true")
             .assert();
 
         moon_utils::test::debug_sandbox(&fixture, &assert);
@@ -763,6 +765,7 @@ mod yarn {
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:runDep")
+            .env("YARN_ENABLE_IMMUTABLE_INSTALLS", "true")
             .assert();
 
         moon_utils::test::debug_sandbox(&fixture, &assert);

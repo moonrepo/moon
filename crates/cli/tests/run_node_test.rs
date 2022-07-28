@@ -712,12 +712,9 @@ mod yarn {
     fn installs_correct_version() {
         let fixture = create_sandbox_with_git("node-yarn");
 
-        fs::write(fixture.path().join("yarn.lock"), "").unwrap();
-
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:version")
-            .env("YARN_ENABLE_IMMUTABLE_INSTALLS", "true")
             .assert();
 
         moon_utils::test::debug_sandbox(&fixture, &assert);
@@ -730,15 +727,12 @@ mod yarn {
     fn installs_correct_version_using_corepack() {
         let fixture = create_sandbox_with_git("node-yarn");
 
-        fs::write(fixture.path().join("yarn.lock"), "").unwrap();
-
         // Corepack released in v16.9
         update_version_workspace_config(fixture.path(), "16.4.0", "16.13.0");
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:version")
-            .env("YARN_ENABLE_IMMUTABLE_INSTALLS", "true")
             .assert();
 
         moon_utils::test::debug_sandbox(&fixture, &assert);
@@ -751,12 +745,9 @@ mod yarn {
     fn can_install_a_dep() {
         let fixture = create_sandbox_with_git("node-yarn");
 
-        fs::write(fixture.path().join("yarn.lock"), "").unwrap();
-
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:installDep")
-            .env("YARN_ENABLE_IMMUTABLE_INSTALLS", "true")
             .assert();
 
         moon_utils::test::debug_sandbox(&fixture, &assert);
@@ -769,12 +760,9 @@ mod yarn {
     fn can_run_a_deps_bin() {
         let fixture = create_sandbox_with_git("node-yarn");
 
-        fs::write(fixture.path().join("yarn.lock"), "").unwrap();
-
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("yarn:runDep")
-            .env("YARN_ENABLE_IMMUTABLE_INSTALLS", "true")
             .assert();
 
         moon_utils::test::debug_sandbox(&fixture, &assert);

@@ -241,6 +241,32 @@ node:
   dedupeOnLockfileChange: true
 ```
 
+### `dependencyVersionFormat`
+
+> `NodeVersionFormat`
+
+When [syncing project dependencies](#syncprojectworkspacedependencies), customize the format that
+will be used for the dependency version range. The following formats are supported (but use the one
+most applicable to your chosen package manager):
+
+- `file` - Uses `file:../relative/path` and copies package contents.
+- `link` - Uses `link:../relative/path` and symlinks package contents.
+- `star` - Uses an explicit `*`.
+- `version` - Uses the explicit version from the dependent project's `package.json`, e.g., "1.2.3".
+- `version-caret` - Uses the version from the dependent project's `package.json` as a caret range,
+  e.g., "^1.2.3".
+- `version-tilde` - Uses the version from the dependent project's `package.json` as a tilde range,
+  e.g., "~1.2.3".
+- `workspace` - Uses `workspace:*`, which resolves to "1.2.3". Requires package workspaces.
+- `workspace-caret` (default) - Uses `workspace:^`, which resolves to "^1.2.3". Requires package
+  workspaces.
+- `workspace-tilde` - Uses `workspace:~`, which resolves to "~1.2.3". Requires package workspaces.
+
+```yaml title=".moon/workspace.yml" {2}
+node:
+  dependencyVersionFormat: 'link'
+```
+
 ### `inferTasksFromScripts`
 
 > `boolean`
@@ -279,9 +305,9 @@ this feature, especially in regards to `runInCI`, as it may be inaccurate!
 > `boolean`
 
 Will sync a project's [`dependsOn`](./project#dependson) setting as normal dependencies within the
-project's `package.json`, using `workspace:*` or `*` version ranges (depending on what the package
-manager supports). If a dependent project does not have a `package.json`, or if a dependency of the
-same name has an explicit version already defined, the sync will be skipped. Defaults to `true`.
+project's `package.json`. If a dependent project does not have a `package.json`, or if a dependency
+of the same name has an explicit version already defined, the sync will be skipped. Defaults to
+`true`.
 
 ```yaml title=".moon/workspace.yml" {2}
 node:
@@ -296,7 +322,8 @@ dependsOn:
   - 'reactHooks'
 ```
 
-Would result in the following `dependencies` within a project's `package.json`.
+Would result in the following `dependencies` within a project's `package.json`. The version format
+can be customized with [`node.dependencyVersionFormat`](#dependencyversionformat).
 
 ```json title="package.json"
 {

@@ -1,12 +1,17 @@
-use moon_utils::test::{create_moon_command, create_sandbox, get_fixtures_dir};
+use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_fixtures_dir};
 use predicates::prelude::*;
 use serial_test::serial;
 use std::path::Path;
 
-fn setup_toolchain(path: &Path) {
-    let assert = create_moon_command(path).args(["setup"]).assert();
-
-    assert.success();
+fn setup_toolchain(path: &Path, target: &str) {
+    if target.is_empty() {
+        create_moon_command(path).args(["setup"]).assert().success();
+    } else {
+        create_moon_command(path)
+            .args(["run", target])
+            .assert()
+            .success();
+    }
 }
 
 mod run_script {
@@ -15,9 +20,9 @@ mod run_script {
     #[test]
     #[serial]
     fn errors_if_no_project() {
-        let fixture = create_sandbox("node-npm");
+        let fixture = create_sandbox_with_git("node-npm");
 
-        setup_toolchain(fixture.path());
+        setup_toolchain(fixture.path(), "");
 
         let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "unknown"])
@@ -31,9 +36,9 @@ mod run_script {
     #[test]
     #[serial]
     fn errors_for_unknown_script() {
-        let fixture = create_sandbox("node-npm");
+        let fixture = create_sandbox_with_git("node-npm");
 
-        setup_toolchain(fixture.path());
+        setup_toolchain(fixture.path(), "");
 
         let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "unknown", "--project", "npm"])
@@ -47,9 +52,9 @@ mod run_script {
     #[test]
     #[serial]
     fn runs_with_project_option() {
-        let fixture = create_sandbox("node-npm");
+        let fixture = create_sandbox_with_git("node-npm");
 
-        setup_toolchain(fixture.path());
+        setup_toolchain(fixture.path(), "npm:installDep");
 
         let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "test", "--project", "npm"])
@@ -61,9 +66,9 @@ mod run_script {
     #[test]
     #[serial]
     fn runs_with_env_var() {
-        let fixture = create_sandbox("node-npm");
+        let fixture = create_sandbox_with_git("node-npm");
 
-        setup_toolchain(fixture.path());
+        setup_toolchain(fixture.path(), "npm:installDep");
 
         let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "test"])
@@ -79,14 +84,9 @@ mod run_script {
     #[test]
     #[serial]
     fn works_with_pnpm() {
-        // TODO: This passes locally but fails in CI...
-        if cfg!(windows) && moon_utils::is_ci() {
-            return;
-        }
+        let fixture = create_sandbox_with_git("node-pnpm");
 
-        let fixture = create_sandbox("node-pnpm");
-
-        setup_toolchain(fixture.path());
+        setup_toolchain(fixture.path(), "pnpm:installDep");
 
         let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "lint", "--project", "pnpm"])
@@ -100,9 +100,25 @@ mod run_script {
     #[test]
     #[serial]
     fn works_with_yarn() {
-        let fixture = create_sandbox("node-yarn");
+        let fixture = create_sandbox_with_git("node-yarn");
 
-        setup_toolchain(fixture.path());
+        setup_toolchain(fixture.path(), "yarn:installDep");
+
+        let assert = create_moon_command(fixture.path())
+            .args(["node", "run-script", "build", "--project", "yarn"])
+            .assert();
+
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
+        assert.success().stdout(predicate::str::contains("build"));
+    }
+
+    #[test]
+    #[serial]
+    fn works_with_yarn1() {
+        let fixture = create_sandbox_with_git("node-yarn1");
+
+        setup_toolchain(fixture.path(), "yarn:installDep");
 
         let assert = create_moon_command(fixture.path())
             .args(["node", "run-script", "build", "--project", "yarn"])

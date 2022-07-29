@@ -543,6 +543,8 @@ mod npm {
             .arg("npm:runDep")
             .assert();
 
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
                 .eval(&get_assert_output(&assert))
@@ -693,6 +695,8 @@ mod yarn1 {
             .arg("run")
             .arg("yarn:runDep")
             .assert();
+
+        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")

@@ -47,6 +47,10 @@ pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
 
     // Is most likely a symlinked JavaScript file!
     if contents.starts_with("#!/usr/bin/env node") || contents.starts_with("#!/usr/bin/node") {
+        if bin_path.is_symlink() {
+            return bin_path.canonicalize().unwrap();
+        }
+
         return bin_path;
     }
 
@@ -82,15 +86,7 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
         .join(get_bin_name_suffix(bin_name, "cmd", true));
 
     if bin_path.exists() {
-        // On Windows, we must avoid executing the ".cmd" files and instead
-        // must execute the underlying binary. Since we can't infer the package
-        // name from the binary, we must extract the path from the ".cmd" file.
-        // This is... flakey, but there's no alternative.
-        if cfg!(windows) {
-            return Some(extract_canonical_bin_path_from_bin_file(bin_path));
-        }
-
-        return Some(bin_path);
+        return Some(extract_canonical_bin_path_from_bin_file(bin_path));
     }
 
     match starting_dir.parent() {

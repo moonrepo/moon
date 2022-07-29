@@ -4,5 +4,7 @@
   "devDependencies": {
     "prettier": "*"
   },
-  "workspaces": ["yarn"]
+  "workspaces": [
+    "yarn"
+  ]
 }

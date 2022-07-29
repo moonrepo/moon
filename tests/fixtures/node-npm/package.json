@@ -4,5 +4,7 @@
   "devDependencies": {
     "prettier": "*"
   },
-  "workspaces": ["npm"]
+  "workspaces": [
+    "npm"
+  ]
 }

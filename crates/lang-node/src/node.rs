@@ -229,7 +229,7 @@ mod tests {
 
         sandbox
             .child("node_modules/.bin/baz")
-            .write_str("{}")
+            .write_str(&create_cmd(r"../baz/bin.js"))
             .unwrap();
 
         sandbox

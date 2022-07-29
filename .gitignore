@@ -35,3 +35,4 @@ packages/*/moon.exe
 
 # Moon tests/fixtures
 tests/fixtures/*/.moon/cache
+tests/fixtures/*/.yarn

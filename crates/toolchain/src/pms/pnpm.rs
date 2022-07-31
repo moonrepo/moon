@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_lang_node::{node, PNPM};
 use moon_logger::{color, debug, Logable};
-use moon_utils::is_ci;
+use moon_utils::{is_ci, is_test_env};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -208,8 +208,12 @@ impl PackageManager<NodeTool> for PnpmTool {
         let lockfile = toolchain.workspace_root.join(self.get_lock_filename());
 
         // Will fail with "Headless installation requires a pnpm-lock.yaml file"
-        if is_ci() && lockfile.exists() {
-            args.push("--frozen-lockfile");
+        if is_ci() {
+            if is_test_env() {
+                args.push("--no-frozen-lockfile");
+            } else if lockfile.exists() {
+                args.push("--frozen-lockfile");
+            }
         }
 
         let mut cmd = self.create_command();

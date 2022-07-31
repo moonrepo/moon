@@ -600,21 +600,14 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
             let sandbox = create_node_modules_sandbox();
             let path = find_package_bin(sandbox.path(), "baz");
 
-            if cfg!(windows) {
-                assert_eq!(
-                    path.unwrap(),
-                    sandbox
-                        .path()
-                        .join("node_modules")
-                        .join("baz")
-                        .join("bin.js")
-                );
-            } else {
-                assert_eq!(
-                    path.unwrap(),
-                    sandbox.path().join("node_modules/.bin").join("baz")
-                );
-            }
+            assert_eq!(
+                path.unwrap(),
+                sandbox
+                    .path()
+                    .join("node_modules")
+                    .join("baz")
+                    .join("bin.js")
+            );
         }
 
         #[test]
@@ -622,21 +615,14 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
             let sandbox = create_node_modules_sandbox();
             let path = find_package_bin(sandbox.path().join("nested"), "baz");
 
-            if cfg!(windows) {
-                assert_eq!(
-                    path.unwrap(),
-                    sandbox
-                        .path()
-                        .join("node_modules")
-                        .join("baz")
-                        .join("bin.js")
-                );
-            } else {
-                assert_eq!(
-                    path.unwrap(),
-                    sandbox.path().join("node_modules/.bin").join("baz")
-                );
-            }
+            assert_eq!(
+                path.unwrap(),
+                sandbox
+                    .path()
+                    .join("node_modules")
+                    .join("baz")
+                    .join("bin.js")
+            );
         }
 
         #[test]

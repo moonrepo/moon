@@ -26,6 +26,7 @@ previous builds are no longer valid and can be removed.
 #### ⚙️ Internal
 
 - Outputs are now copied to `.moon/cache/out` instead of being hardlinked.
+- Package binaries are now resolved to their canonical path when a symlink.
 
 ### 0.8.1
 

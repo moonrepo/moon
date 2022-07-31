@@ -100,24 +100,24 @@ mod run_script {
         assert.success().stdout(predicate::str::contains("lint"));
     }
 
-    #[test]
-    #[serial]
-    fn works_with_yarn() {
-        // TODO: figure out why this fails on windows
-        if cfg!(windows) && moon_utils::is_ci() {
-            return;
-        }
+    // #[test]
+    // #[serial]
+    // fn works_with_yarn() {
+    //     // TODO: figure out why this fails on windows
+    //     if cfg!(windows) && moon_utils::is_ci() {
+    //         return;
+    //     }
 
-        let fixture = create_sandbox_with_git("node-yarn");
+    //     let fixture = create_sandbox_with_git("node-yarn");
 
-        setup_toolchain(fixture.path(), "yarn:installDep");
+    //     setup_toolchain(fixture.path(), "yarn:installDep");
 
-        let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "build", "--project", "yarn"])
-            .assert();
+    //     let assert = create_moon_command(fixture.path())
+    //         .args(["node", "run-script", "build", "--project", "yarn"])
+    //         .assert();
 
-        assert.success().stdout(predicate::str::contains("build"));
-    }
+    //     assert.success().stdout(predicate::str::contains("build"));
+    // }
 
     #[test]
     #[serial]

@@ -96,13 +96,6 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     cmd
 }
 
-pub fn create_moon_command_in_fixture<T: AsRef<str>>(fixture: T) -> assert_cmd::Command {
-    let mut cmd = create_moon_command(get_fixtures_dir(fixture));
-    // Never cache in these tests since they're not in a sandbox
-    cmd.env("MOON_CACHE", "off");
-    cmd
-}
-
 pub fn get_assert_output(assert: &assert_cmd::assert::Assert) -> String {
     get_assert_stdout_output(assert) + &get_assert_stderr_output_clean(assert)
 }

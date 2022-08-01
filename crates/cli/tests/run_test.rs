@@ -4,7 +4,7 @@ use insta::assert_snapshot;
 use moon_cache::CacheEngine;
 use moon_utils::path::standardize_separators;
 use moon_utils::test::{
-    create_moon_command, create_moon_command_in_fixture, create_sandbox_with_git, get_assert_output,
+    create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
 };
 use predicates::prelude::*;
 use std::fs::read_to_string;
@@ -20,7 +20,9 @@ async fn extract_hash_from_run(fixture: &Path, target: &str) -> String {
 
 #[test]
 fn errors_for_unknown_project() {
-    let assert = create_moon_command_in_fixture("cases")
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("unknown:test")
         .assert();
@@ -30,7 +32,9 @@ fn errors_for_unknown_project() {
 
 #[test]
 fn errors_for_unknown_task_in_project() {
-    let assert = create_moon_command_in_fixture("cases")
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("base:unknown")
         .assert();
@@ -40,7 +44,9 @@ fn errors_for_unknown_task_in_project() {
 
 #[test]
 fn errors_for_unknown_all_target() {
-    let assert = create_moon_command_in_fixture("cases")
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg(":unknown")
         .assert();
@@ -50,7 +56,9 @@ fn errors_for_unknown_all_target() {
 
 #[test]
 fn errors_for_cycle_in_task_deps() {
-    let assert = create_moon_command_in_fixture("cases")
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
         .arg("run")
         .arg("depsA:taskCycle")
         .assert();
@@ -104,7 +112,9 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_workspace_config() {
-        let assert = create_moon_command_in_fixture("config-invalid-workspace")
+        let fixture = create_sandbox("config-invalid-workspace");
+
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("project:task")
             .assert();
@@ -117,7 +127,9 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_global_project_config() {
-        let assert = create_moon_command_in_fixture("config-invalid-global-project")
+        let fixture = create_sandbox("config-invalid-global-project");
+
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("project:task")
             .assert();
@@ -130,7 +142,9 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_project_config() {
-        let assert = create_moon_command_in_fixture("config-invalid-project")
+        let fixture = create_sandbox("config-invalid-project");
+
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("test:task")
             .assert();
@@ -286,7 +300,9 @@ mod target_scopes {
 
     #[test]
     fn errors_for_deps_scope() {
-        let assert = create_moon_command_in_fixture("cases")
+        let fixture = create_sandbox("cases");
+
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("^:test")
             .assert();
@@ -296,7 +312,9 @@ mod target_scopes {
 
     #[test]
     fn errors_for_self_scope() {
-        let assert = create_moon_command_in_fixture("cases")
+        let fixture = create_sandbox("cases");
+
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("~:test")
             .assert();

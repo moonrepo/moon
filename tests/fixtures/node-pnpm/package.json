@@ -2,6 +2,6 @@
   "name": "test-node-pnpm",
   "private": true,
   "devDependencies": {
-    "prettier": "*"
+    "prettier": "2.7.0"
   }
 }

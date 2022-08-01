@@ -32,7 +32,6 @@ async fn generates_paths() {
     let (toolchain, temp_dir) = create_node_tool().await;
     let node = toolchain.get_node();
 
-    // We have to use join a lot to test on windows
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")
             .join("tools")

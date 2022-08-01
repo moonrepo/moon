@@ -141,6 +141,10 @@ impl Executable<NodeTool> for PnpmTool {
 #[async_trait]
 impl PackageManager<NodeTool> for PnpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        if is_test_env() {
+            return Ok(());
+        }
+
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune
         self.create_command()

@@ -554,6 +554,7 @@ mod npm {
 
 mod pnpm {
     use super::*;
+    use std::fs;
 
     #[test]
     #[serial]
@@ -599,8 +600,30 @@ mod pnpm {
 
     #[test]
     #[serial]
-    fn can_run_a_deps_bin() {
+    fn can_run_a_deps_bin_isolated() {
         let fixture = create_sandbox_with_git("node-pnpm");
+
+        fs::write(fixture.path().join(".npmrc"), "node-linker=isolated").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("pnpm:runDep")
+            .assert();
+
+        assert!(
+            predicate::str::contains("All matched files use Prettier code style!")
+                .eval(&get_assert_output(&assert))
+        );
+
+        assert.success();
+    }
+
+    #[test]
+    #[serial]
+    fn can_run_a_deps_bin_hoisted() {
+        let fixture = create_sandbox_with_git("node-pnpm");
+
+        fs::write(fixture.path().join(".npmrc"), "node-linker=hoisted").unwrap();
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -680,7 +703,6 @@ mod yarn1 {
     }
 }
 
-// TODO: This fails in CI for some reason, but not locally...
 // mod yarn {
 //     use super::*;
 
@@ -726,23 +748,23 @@ mod yarn1 {
 //         assert.success();
 //     }
 
-// #[test]
-// #[serial]
-// fn can_run_a_deps_bin() {
-//     let fixture = create_sandbox_with_git("node-yarn1");
+//     #[test]
+//     #[serial]
+//     fn can_run_a_deps_bin() {
+//         let fixture = create_sandbox_with_git("node-yarn");
 
-//     let assert = create_moon_command(fixture.path())
-//         .arg("run")
-//         .arg("yarn:runDep")
-//         .assert();
+//         let assert = create_moon_command(fixture.path())
+//             .arg("run")
+//             .arg("yarn:runDep")
+//             .assert();
 
-// assert!(
-//     predicate::str::contains("All matched files use Prettier code style!")
-//         .eval(&get_assert_output(&assert))
-// );
+//         assert!(
+//             predicate::str::contains("All matched files use Prettier code style!")
+//                 .eval(&get_assert_output(&assert))
+//         );
 
-//     assert.success();
-// }
+//         assert.success();
+//     }
 // }
 
 mod profile {

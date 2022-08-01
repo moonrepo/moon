@@ -18,9 +18,15 @@ previous builds are no longer valid and can be removed.
 - Added environment variable support to task `inputs` and `actionRunner.implicitInputs`, in the
   format of `$ENV_VAR`.
 
+#### 🐞 Fixes
+
+- Fixed an issue where pnpm didn't work with `node-linker=isolated` for nested node modules.
+- Fixed an issue where failing processes would display an empty error message.
+
 #### ⚙️ Internal
 
 - Outputs are now copied to `.moon/cache/out` instead of being hardlinked.
+- Package binaries are now resolved to their canonical path when a symlink.
 
 ### 0.8.1
 

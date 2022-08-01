@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 lazy_static! {
     pub static ref BIN_PATH_PATTERN: Regex = Regex::new(
-        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.((c|m)?js|exe))?"
+        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@+]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.((c|m)?js|exe))?"
     )
     .unwrap();
 }
@@ -43,7 +43,18 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
 #[cached]
 #[track_caller]
 pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
-    let extracted_path = parse_bin_file(&bin_path, fs::read_to_string(&bin_path).unwrap());
+    let contents = fs::read_to_string(&bin_path).unwrap();
+
+    // Is most likely a symlinked JavaScript file!
+    if contents.starts_with("#!/usr/bin/env node") || contents.starts_with("#!/usr/bin/node") {
+        if bin_path.is_symlink() {
+            return bin_path.canonicalize().unwrap();
+        }
+
+        return bin_path;
+    }
+
+    let extracted_path = parse_bin_file(&bin_path, contents);
 
     // canonicalize() actually causes things to break, so normalize
     path::normalize(bin_path.parent().unwrap().join(extracted_path))
@@ -75,15 +86,7 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
         .join(get_bin_name_suffix(bin_name, "cmd", true));
 
     if bin_path.exists() {
-        // On Windows, we must avoid executing the ".cmd" files and instead
-        // must execute the underlying binary. Since we can't infer the package
-        // name from the binary, we must extract the path from the ".cmd" file.
-        // This is... flakey, but there's no alternative.
-        if cfg!(windows) {
-            return Some(extract_canonical_bin_path_from_bin_file(bin_path));
-        }
-
-        return Some(bin_path);
+        return Some(extract_canonical_bin_path_from_bin_file(bin_path));
     }
 
     match starting_dir.parent() {
@@ -226,7 +229,7 @@ mod tests {
 
         sandbox
             .child("node_modules/.bin/baz")
-            .write_str("{}")
+            .write_str(&create_cmd(r"../baz/bin.js"))
             .unwrap();
 
         sandbox
@@ -447,6 +450,36 @@ fi
         }
 
         #[test]
+        fn parses_pnpm_isolated_linker() {
+            assert_eq!(
+                parse_bin_file(
+                    &PathBuf::from("test"),
+                    r#"
+#!/bin/sh
+basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
+
+case `uname` in
+    *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+esac
+
+if [ -z "$NODE_PATH" ]; then
+    export NODE_PATH="/Users/milesj/Projects/moon/node_modules/.pnpm/node_modules"
+else
+    export NODE_PATH="$NODE_PATH:/Users/milesj/Projects/moon/node_modules/.pnpm/node_modules"
+fi
+if [ -x "$basedir/node" ]; then
+    exec "$basedir/node"  "$basedir/../../../node_modules/.pnpm/@docusaurus+core@2.0.0-beta.20_sfoxds7t5ydpegc3knd667wn6m/node_modules/@docusaurus/core/bin/docusaurus.mjs" "$@"
+else
+    exec node  "$basedir/../../../node_modules/.pnpm/@docusaurus+core@2.0.0-beta.20_sfoxds7t5ydpegc3knd667wn6m/node_modules/@docusaurus/core/bin/docusaurus.mjs" "$@"
+fi
+                    "#
+                    .to_string(),
+                ),
+                PathBuf::from(r"../../../node_modules/.pnpm/@docusaurus+core@2.0.0-beta.20_sfoxds7t5ydpegc3knd667wn6m/node_modules/@docusaurus/core/bin/docusaurus.mjs")
+            );
+        }
+
+        #[test]
         fn parses_moon_exe() {
             assert_eq!(
                 parse_bin_file(
@@ -567,21 +600,14 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
             let sandbox = create_node_modules_sandbox();
             let path = find_package_bin(sandbox.path(), "baz");
 
-            if cfg!(windows) {
-                assert_eq!(
-                    path.unwrap(),
-                    sandbox
-                        .path()
-                        .join("node_modules")
-                        .join("baz")
-                        .join("bin.js")
-                );
-            } else {
-                assert_eq!(
-                    path.unwrap(),
-                    sandbox.path().join("node_modules/.bin").join("baz")
-                );
-            }
+            assert_eq!(
+                path.unwrap(),
+                sandbox
+                    .path()
+                    .join("node_modules")
+                    .join("baz")
+                    .join("bin.js")
+            );
         }
 
         #[test]
@@ -589,21 +615,14 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
             let sandbox = create_node_modules_sandbox();
             let path = find_package_bin(sandbox.path().join("nested"), "baz");
 
-            if cfg!(windows) {
-                assert_eq!(
-                    path.unwrap(),
-                    sandbox
-                        .path()
-                        .join("node_modules")
-                        .join("baz")
-                        .join("bin.js")
-                );
-            } else {
-                assert_eq!(
-                    path.unwrap(),
-                    sandbox.path().join("node_modules/.bin").join("baz")
-                );
-            }
+            assert_eq!(
+                path.unwrap(),
+                sandbox
+                    .path()
+                    .join("node_modules")
+                    .join("baz")
+                    .join("bin.js")
+            );
         }
 
         #[test]

@@ -49,7 +49,3 @@ async fn generates_paths() {
 
     temp_dir.close().unwrap();
 }
-
-mod install {
-    // TODO, how to test subprocesses?
-}

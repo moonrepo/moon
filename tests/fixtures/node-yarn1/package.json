@@ -2,7 +2,7 @@
   "name": "test-node-yarn1",
   "private": true,
   "devDependencies": {
-    "prettier": "*"
+    "prettier": "2.7.0"
   },
   "workspaces": [
     "yarn"

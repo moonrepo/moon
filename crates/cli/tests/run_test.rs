@@ -256,9 +256,6 @@ mod caching {
         .unwrap());
 
         assert_eq!(state.item.exit_code, 0);
-        // This is flakey... caused by output capturing?
-        // assert_eq!(state.item.stdout, "stdout");
-        // assert_eq!(state.item.stderr, "stderr");
         assert_eq!(state.item.target, "node:standard");
         assert_eq!(
             state.item.hash,
@@ -647,19 +644,6 @@ mod system_windows {
 
 mod outputs {
     use super::*;
-
-    // fn debug_dir(dir: &Path) {
-    //     for entry in std::fs::read_dir(dir).unwrap() {
-    //         let entry = entry.unwrap();
-    //         let path = entry.path();
-
-    //         if path.is_dir() {
-    //             debug_dir(&path);
-    //         } else {
-    //             println!("{:#?}", path);
-    //         }
-    //     }
-    // }
 
     #[tokio::test]
     async fn doesnt_link_if_cache_disabled() {

@@ -148,7 +148,3 @@ mod download {
         temp_dir.close().unwrap();
     }
 }
-
-mod install {
-    // TODO, how to test unzipping? and mocking subprocesses?
-}

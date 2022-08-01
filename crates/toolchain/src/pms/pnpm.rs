@@ -141,10 +141,6 @@ impl Executable<NodeTool> for PnpmTool {
 #[async_trait]
 impl PackageManager<NodeTool> for PnpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        if is_test_env() {
-            return Ok(());
-        }
-
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune
         self.create_command()
@@ -211,10 +207,10 @@ impl PackageManager<NodeTool> for PnpmTool {
         let mut args = vec!["install"];
         let lockfile = toolchain.workspace_root.join(self.get_lock_filename());
 
-        // Will fail with "Headless installation requires a pnpm-lock.yaml file"
         if is_ci() {
             if is_test_env() {
                 args.push("--no-frozen-lockfile");
+                // Will fail with "Headless installation requires a pnpm-lock.yaml file"
             } else if lockfile.exists() {
                 args.push("--frozen-lockfile");
             }

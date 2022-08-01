@@ -4,6 +4,7 @@ node:
   packageManager: 'npm'
   npm:
     version: '7.0.0'
+  addEnginesConstraint: false
 
 projects:
   npm: npm

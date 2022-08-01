@@ -78,15 +78,15 @@ impl Logable for NpmTool {
 #[async_trait]
 impl Lifecycle<NodeTool> for NpmTool {
     async fn setup(&mut self, _node: &NodeTool, check_version: bool) -> Result<u8, ToolchainError> {
-        if check_version {
-            let output = self
-                .create_command()
-                .args(["config", "get", "prefix"])
-                .exec_capture_output()
-                .await?;
+        // if check_version {
+        //     let output = self
+        //         .create_command()
+        //         .args(["config", "get", "prefix"])
+        //         .exec_capture_output()
+        //         .await?;
 
-            self.global_install_dir = Some(PathBuf::from(output_to_trimmed_string(&output.stdout)));
-        }
+        //     self.global_install_dir = Some(PathBuf::from(output_to_trimmed_string(&output.stdout)));
+        // }
 
         Ok(0)
     }
@@ -201,13 +201,11 @@ impl Executable<NodeTool> for NpmTool {
 #[async_trait]
 impl PackageManager<NodeTool> for NpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        if !is_ci() {
-            self.create_command()
-                .args(["dedupe"])
-                .cwd(&toolchain.workspace_root)
-                .exec_capture_output()
-                .await?;
-        }
+        self.create_command()
+            .args(["dedupe"])
+            .cwd(&toolchain.workspace_root)
+            .exec_capture_output()
+            .await?;
 
         Ok(())
     }

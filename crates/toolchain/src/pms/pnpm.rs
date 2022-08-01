@@ -141,15 +141,13 @@ impl Executable<NodeTool> for PnpmTool {
 #[async_trait]
 impl PackageManager<NodeTool> for PnpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        if !is_ci() {
-            // pnpm doesn't support deduping, but maybe prune is good here?
-            // https://pnpm.io/cli/prune
-            self.create_command()
-                .arg("prune")
-                .cwd(&toolchain.workspace_root)
-                .exec_capture_output()
-                .await?;
-        }
+        // pnpm doesn't support deduping, but maybe prune is good here?
+        // https://pnpm.io/cli/prune
+        self.create_command()
+            .arg("prune")
+            .cwd(&toolchain.workspace_root)
+            .exec_capture_output()
+            .await?;
 
         Ok(())
     }

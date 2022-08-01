@@ -51,7 +51,7 @@ impl NpmTool {
     ) -> Result<(), ToolchainError> {
         self.create_command()
             .args(["install", "-g", &format!("{}@{}", package, version)])
-            .env("PREFIX", self.install_dir)
+            .env("PREFIX", &self.install_dir)
             .exec_capture_output()
             .await?;
 

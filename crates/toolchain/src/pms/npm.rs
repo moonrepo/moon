@@ -7,8 +7,8 @@ use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_lang_node::{node, NPM};
 use moon_logger::{color, debug, Logable};
-use moon_utils::is_ci;
 use moon_utils::process::{output_to_trimmed_string, Command};
+use moon_utils::{is_ci, path};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -50,8 +50,13 @@ impl NpmTool {
         version: &str,
     ) -> Result<(), ToolchainError> {
         self.create_command()
-            .args(["install", "-g", &format!("{}@{}", package, version)])
-            .env("PREFIX", &self.install_dir)
+            .args([
+                "--prefix",
+                self.install_dir.to_str().unwrap(),
+                "install",
+                "-g",
+                &format!("{}@{}", package, version),
+            ])
             .exec_capture_output()
             .await?;
 

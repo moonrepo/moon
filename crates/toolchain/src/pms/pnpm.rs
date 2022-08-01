@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_lang_node::{node, PNPM};
 use moon_logger::{color, debug, Logable};
-use moon_utils::{is_ci, is_test_env};
+use moon_utils::is_ci;
 use std::env;
 use std::path::{Path, PathBuf};
 

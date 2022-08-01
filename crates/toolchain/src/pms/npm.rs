@@ -7,8 +7,8 @@ use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_lang_node::{node, NPM};
 use moon_logger::{color, debug, Logable};
-use moon_utils::process::{output_to_trimmed_string, Command};
-use moon_utils::{is_ci, path};
+use moon_utils::is_ci;
+use moon_utils::process::Command;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -51,6 +51,7 @@ impl NpmTool {
     ) -> Result<(), ToolchainError> {
         self.create_command()
             .args([
+                // We must install them to our install, and not the current environments
                 "--prefix",
                 self.install_dir.to_str().unwrap(),
                 "install",
@@ -83,7 +84,11 @@ impl Logable for NpmTool {
 
 #[async_trait]
 impl Lifecycle<NodeTool> for NpmTool {
-    async fn setup(&mut self, _node: &NodeTool, check_version: bool) -> Result<u8, ToolchainError> {
+    async fn setup(
+        &mut self,
+        _node: &NodeTool,
+        _check_version: bool,
+    ) -> Result<u8, ToolchainError> {
         // if check_version {
         //     let output = self
         //         .create_command()

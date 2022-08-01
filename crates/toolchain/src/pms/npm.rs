@@ -201,11 +201,13 @@ impl Executable<NodeTool> for NpmTool {
 #[async_trait]
 impl PackageManager<NodeTool> for NpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        self.create_command()
-            .args(["dedupe"])
-            .cwd(&toolchain.workspace_root)
-            .exec_capture_output()
-            .await?;
+        if !is_ci() {
+            self.create_command()
+                .args(["dedupe"])
+                .cwd(&toolchain.workspace_root)
+                .exec_capture_output()
+                .await?;
+        }
 
         Ok(())
     }

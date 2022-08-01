@@ -184,6 +184,10 @@ impl Executable<NodeTool> for YarnTool {
 #[async_trait]
 impl PackageManager<NodeTool> for YarnTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+        if is_ci() {
+            return Ok(());
+        }
+
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {

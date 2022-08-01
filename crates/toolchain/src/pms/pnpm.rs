@@ -141,13 +141,15 @@ impl Executable<NodeTool> for PnpmTool {
 #[async_trait]
 impl PackageManager<NodeTool> for PnpmTool {
     async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        // pnpm doesn't support deduping, but maybe prune is good here?
-        // https://pnpm.io/cli/prune
-        self.create_command()
-            .arg("prune")
-            .cwd(&toolchain.workspace_root)
-            .exec_capture_output()
-            .await?;
+        if !is_ci() {
+            // pnpm doesn't support deduping, but maybe prune is good here?
+            // https://pnpm.io/cli/prune
+            self.create_command()
+                .arg("prune")
+                .cwd(&toolchain.workspace_root)
+                .exec_capture_output()
+                .await?;
+        }
 
         Ok(())
     }
@@ -208,10 +210,8 @@ impl PackageManager<NodeTool> for PnpmTool {
         let lockfile = toolchain.workspace_root.join(self.get_lock_filename());
 
         if is_ci() {
-            if is_test_env() {
-                args.push("--no-frozen-lockfile");
-                // Will fail with "Headless installation requires a pnpm-lock.yaml file"
-            } else if lockfile.exists() {
+            // Will fail with "Headless installation requires a pnpm-lock.yaml file"
+            if lockfile.exists() {
                 args.push("--frozen-lockfile");
             }
         }

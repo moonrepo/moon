@@ -6,7 +6,7 @@ use moon_error::map_io_to_fs_error;
 use moon_lang_node::{package::PackageJson, NPM};
 use moon_logger::{color, debug, warn};
 use moon_terminal::{label_checkpoint, Checkpoint};
-use moon_utils::{fs, is_offline};
+use moon_utils::{fs, is_ci, is_offline};
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -151,7 +151,7 @@ pub async fn install_node_deps(
 
         manager.install_dependencies(&workspace.toolchain).await?;
 
-        if node_config.dedupe_on_lockfile_change {
+        if !is_ci() && node_config.dedupe_on_lockfile_change {
             debug!(target: LOG_TARGET, "Dedupeing dependencies");
 
             manager.dedupe_dependencies(&workspace.toolchain).await?;

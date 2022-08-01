@@ -1,9 +1,11 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command_in_fixture, get_assert_output};
+use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output};
 
 #[test]
 fn no_projects() {
-    let assert = create_moon_command_in_fixture("base")
+    let fixture = create_sandbox("base");
+
+    let assert = create_moon_command(fixture.path())
         .arg("project-graph")
         .assert();
 
@@ -12,7 +14,9 @@ fn no_projects() {
 
 #[test]
 fn many_projects() {
-    let assert = create_moon_command_in_fixture("projects")
+    let fixture = create_sandbox("projects");
+
+    let assert = create_moon_command(fixture.path())
         .arg("project-graph")
         .assert();
 
@@ -21,7 +25,9 @@ fn many_projects() {
 
 #[test]
 fn single_project_with_dependencies() {
-    let assert = create_moon_command_in_fixture("projects")
+    let fixture = create_sandbox("projects");
+
+    let assert = create_moon_command(fixture.path())
         .arg("project-graph")
         .arg("foo")
         .assert();
@@ -31,7 +37,9 @@ fn single_project_with_dependencies() {
 
 #[test]
 fn single_project_no_dependencies() {
-    let assert = create_moon_command_in_fixture("projects")
+    let fixture = create_sandbox("projects");
+
+    let assert = create_moon_command(fixture.path())
         .arg("project-graph")
         .arg("baz")
         .assert();

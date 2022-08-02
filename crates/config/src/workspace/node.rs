@@ -51,8 +51,8 @@ pub enum NodeVersionFormat {
     Version,      // 0.0.0
     VersionCaret, // ^0.0.0
     VersionTilde, // ~0.0.0
-    Workspace,    // workspace:*
     #[default]
+    Workspace, // workspace:*
     WorkspaceCaret, // workspace:^
     WorkspaceTilde, // workspace:~
 }

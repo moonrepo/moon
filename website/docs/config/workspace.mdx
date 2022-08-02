@@ -257,9 +257,9 @@ most applicable to your chosen package manager):
   e.g., "^1.2.3".
 - `version-tilde` - Uses the version from the dependent project's `package.json` as a tilde range,
   e.g., "~1.2.3".
-- `workspace` - Uses `workspace:*`, which resolves to "1.2.3". Requires package workspaces.
-- `workspace-caret` (default) - Uses `workspace:^`, which resolves to "^1.2.3". Requires package
+- `workspace` (default) - Uses `workspace:*`, which resolves to "1.2.3". Requires package
   workspaces.
+- `workspace-caret` - Uses `workspace:^`, which resolves to "^1.2.3". Requires package workspaces.
 - `workspace-tilde` - Uses `workspace:~`, which resolves to "~1.2.3". Requires package workspaces.
 
 ```yaml title=".moon/workspace.yml" {2}

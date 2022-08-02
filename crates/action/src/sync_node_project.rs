@@ -7,6 +7,7 @@ use moon_logger::{color, debug};
 use moon_project::Project;
 use moon_utils::{fs, is_ci, path, string_vec};
 use moon_workspace::Workspace;
+use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -71,52 +72,6 @@ fn sync_root_tsconfig(
     false
 }
 
-fn sync_project_dependency(
-    base_project: &Project,
-    dep_project: &Project,
-    dep_relative_path: &str,
-    format: &NodeVersionFormat,
-) -> Result<bool, ActionError> {
-    if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
-        let version_prefix = format.get_prefix();
-        let dep_version = match format {
-            NodeVersionFormat::File | NodeVersionFormat::Link => {
-                format!("{}{}", version_prefix, dep_relative_path)
-            }
-            NodeVersionFormat::Version
-            | NodeVersionFormat::VersionCaret
-            | NodeVersionFormat::VersionTilde => format!(
-                "{}{}",
-                version_prefix,
-                dep_package_json.version.unwrap_or_default()
-            ),
-            _ => version_prefix,
-        };
-
-        PackageJson::sync(&base_project.root, |package_json| {
-            if package_json.add_dependency(
-                &dep_package_json.name.unwrap_or_default(),
-                &dep_version,
-                true,
-            ) {
-                debug!(
-                    target: LOG_TARGET,
-                    "Syncing {} as a dependency to {}'s {}",
-                    color::id(&dep_project.id),
-                    color::id(&base_project.id),
-                    color::file("package.json")
-                );
-            }
-
-            Ok(())
-        })?;
-
-        return Ok(true);
-    }
-
-    Ok(false)
-}
-
 pub async fn sync_node_project(
     _action: &mut Action,
     _context: &ActionContext,
@@ -127,71 +82,108 @@ pub async fn sync_node_project(
     let workspace = workspace.read().await;
     let node_config = &workspace.config.node;
     let typescript_config = &workspace.config.typescript;
+    let tsconfig_branch_name = &typescript_config.project_config_file_name;
     let project = workspace.projects.load(project_id)?;
 
     // Auto-create a `tsconfig.json` if configured and applicable
     if typescript_config.create_missing_config
         && typescript_config.sync_project_references
-        && !project
-            .root
-            .join(&typescript_config.project_config_file_name)
-            .exists()
+        && !project.root.join(&tsconfig_branch_name).exists()
     {
         create_missing_tsconfig(&project, typescript_config, &workspace.root).await?;
     }
 
     // Sync each dependency to `tsconfig.json` and `package.json`
+    let mut package_prod_deps: BTreeMap<String, String> = BTreeMap::new();
+    let mut tsconfig_project_refs: HashSet<String> = HashSet::new();
+
     for dep_id in project.get_dependencies() {
         let dep_project = workspace.projects.load(&dep_id)?;
         let dep_relative_path = path::to_string(
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
         )?;
 
-        // Update `dependencies` within this project's `package.json`.
+        // Update dependencies within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
         // and this `package.json` has not already declared the dep.
-        if node_config.sync_project_workspace_dependencies
-            && sync_project_dependency(
-                &project,
-                &dep_project,
-                &dep_relative_path,
-                &node_config.dependency_version_format,
-            )?
-        {
-            mutated_files = true;
+        if node_config.sync_project_workspace_dependencies {
+            let format = &node_config.dependency_version_format;
+
+            if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
+                if let Some(dep_package_name) = &dep_package_json.name {
+                    let version_prefix = format.get_prefix();
+                    let dep_version = match format {
+                        NodeVersionFormat::File | NodeVersionFormat::Link => {
+                            format!("{}{}", version_prefix, dep_relative_path)
+                        }
+                        NodeVersionFormat::Version
+                        | NodeVersionFormat::VersionCaret
+                        | NodeVersionFormat::VersionTilde => format!(
+                            "{}{}",
+                            version_prefix,
+                            dep_package_json.version.unwrap_or_default()
+                        ),
+                        _ => version_prefix,
+                    };
+
+                    package_prod_deps.insert(dep_package_name.to_owned(), dep_version);
+
+                    debug!(
+                        target: LOG_TARGET,
+                        "Syncing {} as a dependency to {}'s {}",
+                        color::id(&dep_project.id),
+                        color::id(&project.id),
+                        color::file("package.json")
+                    );
+                }
+            }
         }
 
         // Update `references` within this project's `tsconfig.json`.
         // Only add if the dependent project has a `tsconfig.json`,
         // and this `tsconfig.json` has not already declared the dep.
-        if typescript_config.sync_project_references {
-            let tsconfig_branch_name = &typescript_config.project_config_file_name;
+        if typescript_config.sync_project_references
+            && dep_project.root.join(&tsconfig_branch_name).exists()
+        {
+            tsconfig_project_refs.insert(dep_relative_path);
 
-            if dep_project.root.join(tsconfig_branch_name).exists() {
-                TsConfigJson::sync_with_name(
-                    &project.root,
-                    &tsconfig_branch_name,
-                    |tsconfig_json| {
-                        if tsconfig_json.add_project_ref(&dep_relative_path, tsconfig_branch_name) {
-                            mutated_files = true;
-
-                            debug!(
-                                target: LOG_TARGET,
-                                "Syncing {} as a project reference to {}'s {}",
-                                color::id(&dep_id),
-                                color::id(project_id),
-                                color::file(tsconfig_branch_name)
-                            );
-                        }
-
-                        Ok(())
-                    },
-                )?;
-            }
+            debug!(
+                target: LOG_TARGET,
+                "Syncing {} as a project reference to {}'s {}",
+                color::id(&dep_id),
+                color::id(project_id),
+                color::file(tsconfig_branch_name)
+            );
         }
     }
 
-    // Sync to the root `tsconfig.json` (only if the project has a tsconfig)
+    // Sync to the project's `package.json`
+    if !package_prod_deps.is_empty() {
+        PackageJson::sync(&project.root, |package_json| {
+            for (name, version) in package_prod_deps {
+                if package_json.add_dependency(&name, &version, true) {
+                    mutated_files = true;
+                }
+            }
+
+            Ok(())
+        })?;
+    }
+
+    // Sync to the project's `tsconfig.json`
+    if !tsconfig_project_refs.is_empty() {
+        TsConfigJson::sync_with_name(&project.root, &tsconfig_branch_name, |tsconfig_json| {
+            for ref_path in tsconfig_project_refs {
+                if tsconfig_json.add_project_ref(&ref_path, tsconfig_branch_name) {
+                    mutated_files = true;
+                }
+            }
+
+            Ok(())
+        })?;
+    }
+
+    // Sync to the root `tsconfig.json`
     if typescript_config.sync_project_references {
         TsConfigJson::sync_with_name(
             &workspace.root,

@@ -255,15 +255,6 @@ impl PackageManager<NodeTool> for YarnTool {
         String::from(YARN.manifest_filename)
     }
 
-    fn get_workspace_dependency_range(&self) -> String {
-        if self.is_v1() {
-            String::from("*")
-        } else {
-            // https://yarnpkg.com/features/workspaces/#workspace-ranges-workspace
-            String::from("workspace:*")
-        }
-    }
-
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 

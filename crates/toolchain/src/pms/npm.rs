@@ -264,10 +264,6 @@ impl PackageManager<NodeTool> for NpmTool {
         String::from(NPM.manifest_filename)
     }
 
-    fn get_workspace_dependency_range(&self) -> String {
-        String::from("*") // Doesn't support "workspace:*"
-    }
-
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 

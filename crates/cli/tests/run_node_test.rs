@@ -419,13 +419,15 @@ mod version_manager {
 mod sync_depends_on {
     use super::*;
 
-    #[test]
-    fn syncs_as_dependency_to_package_json() {
+    fn test_depends_on_format(format: &str) {
         let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
             &fixture.path().join(".moon/workspace.yml"),
-            "  syncProjectWorkspaceDependencies: true",
+            &format!(
+                "  syncProjectWorkspaceDependencies: true\n  dependencyVersionFormat: {}",
+                format
+            ),
         );
 
         create_moon_command(fixture.path())
@@ -434,7 +436,55 @@ mod sync_depends_on {
             .assert();
 
         // deps-c does not have a `package.json` on purpose
-        assert_snapshot!(read_to_string(fixture.path().join("depends-on/package.json")).unwrap());
+        assert_snapshot!(
+            format!("format_{}", format),
+            read_to_string(fixture.path().join("depends-on/package.json")).unwrap()
+        );
+    }
+
+    #[test]
+    fn syncs_as_file_dependency() {
+        test_depends_on_format("file");
+    }
+
+    #[test]
+    fn syncs_as_link_dependency() {
+        test_depends_on_format("link");
+    }
+
+    #[test]
+    fn syncs_as_star_dependency() {
+        test_depends_on_format("star");
+    }
+
+    #[test]
+    fn syncs_as_version_dependency() {
+        test_depends_on_format("version");
+    }
+
+    #[test]
+    fn syncs_as_version_caret_dependency() {
+        test_depends_on_format("version-caret");
+    }
+
+    #[test]
+    fn syncs_as_version_tilde_dependency() {
+        test_depends_on_format("version-tilde");
+    }
+
+    #[test]
+    fn syncs_as_workspace_dependency() {
+        test_depends_on_format("workspace");
+    }
+
+    #[test]
+    fn syncs_as_workspace_caret_dependency() {
+        test_depends_on_format("workspace-caret");
+    }
+
+    #[test]
+    fn syncs_as_workspace_tilde_dependency() {
+        test_depends_on_format("workspace-tilde");
     }
 
     #[test]

@@ -43,6 +43,37 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum NodeVersionFormat {
+    File,         // file:..
+    Link,         // link:..
+    Star,         // *
+    Version,      // 0.0.0
+    VersionCaret, // ^0.0.0
+    VersionTilde, // ~0.0.0
+    #[default]
+    Workspace, // workspace:*
+    WorkspaceCaret, // workspace:^
+    WorkspaceTilde, // workspace:~
+}
+
+impl NodeVersionFormat {
+    pub fn get_prefix(&self) -> String {
+        match self {
+            NodeVersionFormat::File => String::from("file:"),
+            NodeVersionFormat::Link => String::from("link:"),
+            NodeVersionFormat::Star => String::from("*"),
+            NodeVersionFormat::Version => String::from(""),
+            NodeVersionFormat::VersionCaret => String::from("^"),
+            NodeVersionFormat::VersionTilde => String::from("~"),
+            NodeVersionFormat::Workspace => String::from("workspace:*"),
+            NodeVersionFormat::WorkspaceCaret => String::from("workspace:^"),
+            NodeVersionFormat::WorkspaceTilde => String::from("workspace:~"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum NodePackageManager {
     #[default]
@@ -118,6 +149,8 @@ pub struct NodeConfig {
 
     pub dedupe_on_lockfile_change: bool,
 
+    pub dependency_version_format: NodeVersionFormat,
+
     pub infer_tasks_from_scripts: bool,
 
     #[validate]
@@ -144,6 +177,7 @@ impl Default for NodeConfig {
         NodeConfig {
             add_engines_constraint: true,
             dedupe_on_lockfile_change: true,
+            dependency_version_format: NodeVersionFormat::WorkspaceCaret,
             infer_tasks_from_scripts: false,
             npm: NpmConfig::default(),
             package_manager: NodePackageManager::default(),

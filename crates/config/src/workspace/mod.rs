@@ -14,7 +14,7 @@ use figment::{
     Error as FigmentError, Figment,
 };
 use moon_utils::string_vec;
-pub use node::{NodeConfig, NodePackageManager, NpmConfig, PnpmConfig, YarnConfig};
+use node::NodeConfig;
 use schemars::gen::SchemaGenerator;
 use schemars::schema::Schema;
 use schemars::{schema_for, JsonSchema};
@@ -455,6 +455,7 @@ node:
 
     mod node {
         use super::*;
+        use crate::workspace::node::NodePackageManager;
 
         #[test]
         fn loads_defaults() {

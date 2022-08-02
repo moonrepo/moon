@@ -246,9 +246,6 @@ pub trait PackageManager<T: Send + Sync>:
     /// Return the name of the manifest.
     fn get_manifest_filename(&self) -> String;
 
-    /// Return the dependency range to use when linking local workspace packages.
-    fn get_workspace_dependency_range(&self) -> String;
-
     /// Install dependencies for a defined manifest.
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 

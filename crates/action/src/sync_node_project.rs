@@ -99,7 +99,7 @@ pub async fn sync_node_project(
 
     for dep_id in project.get_dependencies() {
         let dep_project = workspace.projects.load(&dep_id)?;
-        let dep_relative_path = path::to_string(
+        let dep_relative_path = path::to_virtual_string(
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
         )?;
 

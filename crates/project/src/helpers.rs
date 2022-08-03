@@ -1,6 +1,5 @@
 use crate::errors::ProjectError;
 use moon_config::ProjectID;
-use moon_error::MoonError;
 use moon_logger::{color, warn};
 use moon_utils::{glob, path, regex};
 use std::collections::HashMap;
@@ -28,15 +27,26 @@ pub fn detect_projects_with_globs(
     globs: &[String],
     projects: &mut ProjectsSourceMap,
 ) -> Result<(), ProjectError> {
+    let root_source = ".".to_owned();
+
+    // Root-level project has special handling
+    if globs.contains(&root_source) {
+        let root_id = workspace_root
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap_or("root");
+
+        projects.insert(regex::clean_id(root_id), root_source);
+    }
+
+    // Glob for all other projects
     for project_root in glob::walk(workspace_root, globs)? {
         if project_root.is_dir() {
-            let project_source = project_root
-                .strip_prefix(workspace_root)
-                .unwrap()
-                .to_str()
-                .ok_or_else(|| MoonError::PathInvalidUTF8(project_root.clone()))?;
+            let project_source =
+                path::to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;
 
-            let (id, source) = infer_project_name_and_source(project_source);
+            let (id, source) = infer_project_name_and_source(&project_source);
             let id = regex::clean_id(&id);
 
             if let Some(existing_source) = projects.get(&id) {

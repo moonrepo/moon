@@ -1,7 +1,6 @@
 use moon_config::{
-    DependencyConfig, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn,
-    ProjectLanguage, ProjectMetadataConfig, ProjectType, TargetID, TaskConfig, TaskMergeStrategy,
-    TaskOptionsConfig,
+    GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectLanguage,
+    ProjectMetadataConfig, ProjectType, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig,
 };
 use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};

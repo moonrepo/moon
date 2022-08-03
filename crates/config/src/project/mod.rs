@@ -224,38 +224,6 @@ impl ProjectConfig {
     }
 }
 
-// SERDE
-
-struct DeserializeDependsOn;
-
-impl<'de> de::Visitor<'de> for DeserializeDependsOn {
-    type Value = Vec<DependencyConfig>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a sequence of project IDs or dependencies")
-    }
-
-    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        let mut vec = Vec::with_capacity(visitor.size_hint().unwrap_or(0));
-
-        while let Some(elem) = visitor.next_element()? {
-            vec.push(elem);
-        }
-
-        Ok(vec)
-    }
-}
-
-fn deserialize_depends_on<'de, D>(deserializer: D) -> Result<Vec<DependencyConfig>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    deserializer.deserialize_any(DeserializeDependsOn)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

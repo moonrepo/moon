@@ -24,6 +24,7 @@ const sidebars = {
 				'guides/ci',
 				'guides/open-source',
 				'guides/profile',
+				'guides/root-project',
 				'guides/sharing-config',
 				{
 					type: 'category',

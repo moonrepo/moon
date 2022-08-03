@@ -1,0 +1,18 @@
+---
+title: Root-level project
+---
+
+## Caveats
+
+### Inherited tasks
+
+Because a root project is still a project in the workspace, it will inherit all tasks defined in
+[`.moon/project.yml`](../config/global-project), which may be not what you want. To mitigate this,
+you can exclude some or all of these tasks in the root config with
+[`workspace.inheritedTasks`](config/project#inheritedtasks).
+
+```yaml title="/project.yml"
+workspace:
+  inheritedTasks:
+    include: []
+```

@@ -1,4 +1,5 @@
 projects:
+  root: '.'
   base: 'base'
 
   # Project/task deps

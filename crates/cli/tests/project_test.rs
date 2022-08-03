@@ -91,3 +91,15 @@ fn with_tasks() {
 
     assert_snapshot!(get_assert_output(&assert));
 }
+
+#[test]
+fn root_level() {
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("project")
+        .arg("root")
+        .assert();
+
+    assert_snapshot!(get_assert_output(&assert));
+}

@@ -259,7 +259,7 @@ mod caching {
         assert_eq!(state.item.target, "node:standard");
         assert_eq!(
             state.item.hash,
-            "4a4c29359327aad311db5dd4d2b675b9e2840ea988afc60eaccb471be70fc226"
+            "23694966dba4fe565e38f149329ab5de14c369fa484dd9fef8fa00ad30093b50"
         );
     }
 }
@@ -834,6 +834,7 @@ mod noop {
 
         assert_snapshot!(get_assert_output(&assert));
     }
+
     #[test]
     fn runs_noop_deps() {
         let fixture = create_sandbox_with_git("cases");
@@ -844,5 +845,23 @@ mod noop {
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
+    }
+}
+
+mod root_level {
+    use super::*;
+
+    #[test]
+    fn runs_a_task() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("root:oneOff")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("root one off").eval(&output));
     }
 }

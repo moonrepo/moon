@@ -15,10 +15,8 @@ use figment::{
     Error as FigmentError, Figment,
 };
 use schemars::JsonSchema;
-use serde::de::{self, SeqAccess};
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
-use std::fmt;
 use std::path::Path;
 use strum::Display;
 use task::TaskConfig;
@@ -289,6 +287,25 @@ fileGroups:
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "dependsOn: 123")?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "data did not match any variant of untagged enum ProjectDependsOn for key \"project.dependsOn.0\""
+        )]
+        fn invalid_object_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"dependsOn:
+  - id: 'a'
+    scope: 'invalid'"#,
+                )?;
 
                 super::load_jailed_config()?;
 

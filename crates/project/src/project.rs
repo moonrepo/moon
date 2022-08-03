@@ -329,7 +329,7 @@ impl Project {
     }
 
     /// Return a list of project IDs this project depends on.
-    pub fn get_dependencies(&self) -> Vec<ProjectID> {
+    pub fn get_dependency_ids(&self) -> Vec<ProjectID> {
         let mut depends_on = self
             .dependencies
             .iter()

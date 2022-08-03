@@ -114,17 +114,16 @@ pub async fn sync_node_project(
             if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
                 if let Some(dep_package_name) = &dep_package_json.name {
                     let version_prefix = format.get_prefix();
+                    let dep_package_version = dep_package_json.version.unwrap_or_default();
                     let dep_version = match format {
                         NodeVersionFormat::File | NodeVersionFormat::Link => {
                             format!("{}{}", version_prefix, dep_relative_path)
                         }
                         NodeVersionFormat::Version
                         | NodeVersionFormat::VersionCaret
-                        | NodeVersionFormat::VersionTilde => format!(
-                            "{}{}",
-                            version_prefix,
-                            dep_package_json.version.unwrap_or_default()
-                        ),
+                        | NodeVersionFormat::VersionTilde => {
+                            format!("{}{}", version_prefix, dep_package_version)
+                        }
                         _ => version_prefix,
                     };
 
@@ -136,7 +135,12 @@ pub async fn sync_node_project(
                             package_dev_deps.insert(dep_package_name.to_owned(), dep_version);
                         }
                         DependencyScope::Peer => {
-                            package_peer_deps.insert(dep_package_name.to_owned(), dep_version);
+                            // Peers are unique, so lets handle this manually here for now.
+                            // Perhaps we can wrap this in a new setting in the future.
+                            package_peer_deps.insert(
+                                dep_package_name.to_owned(),
+                                format!("^{}", dep_package_version),
+                            );
                         }
                     }
 
@@ -170,10 +174,25 @@ pub async fn sync_node_project(
     }
 
     // Sync to the project's `package.json`
-    if !package_prod_deps.is_empty() {
+    if !package_prod_deps.is_empty()
+        || !package_dev_deps.is_empty()
+        || !package_peer_deps.is_empty()
+    {
         PackageJson::sync(&project.root, |package_json| {
             for (name, version) in package_prod_deps {
                 if package_json.add_dependency(&name, &version, true) {
+                    mutated_files = true;
+                }
+            }
+
+            for (name, version) in package_dev_deps {
+                if package_json.add_dev_dependency(&name, &version, true) {
+                    mutated_files = true;
+                }
+            }
+
+            for (name, version) in package_peer_deps {
+                if package_json.add_peer_dependency(&name, &version, true) {
                     mutated_files = true;
                 }
             }

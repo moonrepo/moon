@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 237
+assertion_line: 251
 expression: "read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.item.hash))).unwrap()"
 ---
 [
@@ -12,7 +12,7 @@ expression: "read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.
     "deps": [],
     "envVars": {},
     "inputs": {
-      ".moon/workspace.yml": "b3e0a424922dbe1770e26bb2d62878ab27001328",
+      ".moon/workspace.yml": "4ee6c3f8684eace040f7db65c2cef7759409801f",
       "node/cjsFile.cjs": "91382f667258361b9397214d0aec54d8d576ae19",
       "node/cwd.js": "47d4aa44cd6363251821ab9c59f4c68df455445c",
       "node/envVars.js": "44b0fda6bce364122223fbfc67b65ecbc52aec91",

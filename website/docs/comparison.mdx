@@ -2,21 +2,63 @@
 title: Feature comparison
 ---
 
-- 🟩 Supported
-- 🟨 Partially supported
-- 🟦 Similarly supported
-- 🟥 Not supported
+import {
+	JavaScriptTable,
+	ProjectsTable,
+	TasksTable,
+	TaskRunnerTable,
+	ToolchainTable,
+	WorkspaceTable,
+} from '@site/src/components/ComparisonTable';
 
-import { TasksTable, TaskRunnerTable, TechTable } from '@site/src/components/ComparisonTable';
+## Questions
 
-## Tasks
+### What about Lerna?
+
+Lerna was a fantastic tool that helped the JavaScript ecosystem grow and excelled at package
+versioning and publishing (and still does), but it offered a very rudimentary build system. While
+Lerna was able to run scripts in parallel, it wasn't the most efficient, as it did not support
+caching, hashing, or performant scheduling.
+
+However, the reason Lerna is not compared below, is that Lerna was unowned and maintained for quite
+some time, and has recently fallen under the Nx umbrella.
+
+## Comparison tables
+
+The following tables are _not_ an exhaustive list of features, and may be inaccurate or out of date,
+but represent a good starting point for investigation. If something is not correct, please
+[create an issue](https://github.com/moonrepo/moon/issues) or
+[submit a patch](https://github.com/moonrepo/moon/blob/master/website/src/components/ComparisonTable.tsx).
+
+<table>
+	<tr>
+		<td>🟩 Supported</td>
+		<td>🟨 Partially supported</td>
+		<td>🟦 Similarly supported</td>
+		<td>🟥 Not supported</td>
+	</tr>
+</table>
+
+### Workspace
+
+<WorkspaceTable />
+
+### Toolchain
+
+<ToolchainTable />
+
+### Projects
+
+<ProjectsTable />
+
+### Tasks
 
 <TasksTable />
 
-## Task runner
+### Task runner
 
 <TaskRunnerTable />
 
-## Technologies
+### JavaScript ecosystem
 
-<TechTable />
+<JavaScriptTable />

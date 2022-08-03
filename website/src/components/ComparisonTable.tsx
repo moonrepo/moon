@@ -15,6 +15,163 @@ interface Comparison {
 
 const headers: Comparable[] = ['moon', 'nx', 'turborepo'];
 
+const workspaceRows: Comparison[] = [
+	{
+		feature: 'Written in',
+		support: {
+			moon: 'Rust',
+			nx: 'Node.js',
+			turborepo: 'Go',
+		},
+	},
+	{
+		feature: 'Workspace configured with',
+		support: {
+			moon: '`.moon/workspace.yml`',
+			nx: '`nx.json`',
+			turborepo: '`turbo.json`',
+		},
+	},
+	{
+		feature: 'Projects configured in',
+		support: {
+			moon: '`.moon/workspace.yml`',
+			nx: '`workspace.json`',
+			turborepo: '`package.json` workspaces',
+		},
+	},
+	{
+		feature: 'Repo / folder structure',
+		support: {
+			moon: 'loose',
+			nx: 'strict',
+			turborepo: 'loose',
+		},
+	},
+	{
+		feature: 'Ignore file support',
+		support: {
+			nx: [SUPPORTED, '.nxignore'],
+		},
+	},
+	{
+		feature: 'Supports inputs inherited by all tasks',
+		support: {
+			moon: [SUPPORTED, 'via `implicitInputs`'],
+			nx: [SUPPORTED, 'via `implicitDependencies`'],
+			turborepo: [SUPPORTED, 'via `globalDependencies`'],
+		},
+	},
+	{
+		feature: 'Supports tasks inherited by all projects',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Integrates with a version control system',
+		support: {
+			moon: [SUPPORTED, 'git', PARTIALLY_SUPPORTED, 'svn'],
+			nx: [SUPPORTED, 'git'],
+			turborepo: [SUPPORTED, 'git'],
+		},
+	},
+	{
+		feature: 'Supports scaffolding / generators',
+		support: {
+			nx: SUPPORTED,
+		},
+	},
+];
+
+const toolchainRows: Comparison[] = [
+	{
+		feature: 'Supported languages',
+		support: {
+			moon: 'Bash, Batch, JavaScript, TypeScript',
+			nx: 'JavaScript, TypeScript',
+			turborepo: 'JavaScript, TypeScript',
+		},
+	},
+	{
+		feature: 'Supported package managers',
+		support: {
+			moon: 'npm, pnpm, yarn',
+			nx: 'npm, pnpm, yarn',
+			turborepo: 'npm, pnpm, yarn',
+		},
+	},
+	{
+		feature: 'Has a built-in toolchain',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Downloads and installs languages (when applicable)',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Configures explicit language/package manager versions',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+];
+
+const projectsRows: Comparison[] = [
+	{
+		feature: 'Dependencies on other projects',
+		support: {
+			moon: [SUPPORTED, 'explicitly defined or migrated from `package.json`'],
+			nx: [SUPPORTED, 'inferred from `package.json` or via `implicitDependencies`'],
+			turborepo: [SUPPORTED, 'inferred from `package.json`'],
+		},
+	},
+	{
+		feature: 'Ownership metadata',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Primary programming language',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Project type (app, lib, etc)',
+		support: {
+			moon: [SUPPORTED, 'app, lib, tool'],
+			nx: [SUPPORTED, 'app, lib'],
+		},
+	},
+	{
+		feature: 'Project-level file groups',
+		support: {
+			moon: SUPPORTED,
+			nx: [SUPPORTED, 'via `namedInputs`'],
+		},
+	},
+	{
+		feature: 'Project-level tasks',
+		support: {
+			moon: SUPPORTED,
+			nx: SUPPORTED,
+			turborepo: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Tags and scopes',
+		support: {
+			nx: SUPPORTED,
+		},
+	},
+];
+
 const tasksRows: Comparison[] = [
 	{
 		feature: 'Known as',
@@ -109,7 +266,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Inputs',
 		support: {
-			moon: [SUPPORTED, 'files, globs'],
+			moon: [SUPPORTED, 'files, globs, env vars'],
 			nx: [SUPPORTED, 'files, globs, env vars, runtime'],
 			turborepo: [SUPPORTED, 'files, globs'],
 		},
@@ -125,7 +282,6 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Output logging style',
 		support: {
-			moon: PARTIALLY_SUPPORTED,
 			nx: [SUPPORTED, 'via `--output-style`'],
 			turborepo: [SUPPORTED, 'via `outputMode`'],
 		},
@@ -198,26 +354,83 @@ const taskRunnerRows: Comparison[] = [
 			turborepo: SUPPORTED,
 		},
 	},
-];
-
-const techRows: Comparison[] = [
 	{
-		feature: 'git',
+		feature: 'Can customize the underlying runner',
+		support: {
+			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can profile running tasks',
+		support: {
+			moon: [SUPPORTED, 'cpu, heap'],
+			nx: [SUPPORTED, 'cpu'],
+			turborepo: [SUPPORTED, 'cpu'],
+		},
+	},
+	{
+		feature: 'Continuous integration (CI) support',
 		support: {
 			moon: SUPPORTED,
-			nx: SUPPORTED,
-			turborepo: SUPPORTED,
+			nx: PARTIALLY_SUPPORTED,
+			turborepo: PARTIALLY_SUPPORTED,
 		},
 	},
 	{
-		feature: 'svn',
-		support: {
-			moon: PARTIALLY_SUPPORTED,
-		},
-	},
-	{
-		feature: 'mercurial',
+		feature: 'Continuous deployment (CD) support',
 		support: {},
+	},
+	{
+		feature: 'Remote / cloud caching and syncing',
+		support: {
+			nx: [SUPPORTED, 'with Nx cloud (paid)'],
+			turborepo: [SUPPORTED, 'requires a Vercel account (free)'],
+		},
+	},
+];
+
+const javascriptRows: Comparison[] = [
+	{
+		feature: 'Will automatically install node modules when lockfile changes',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can automatically dedupe when lockfile changes',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can add `engines` constraint to root `package.json`',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can sync version manager configs (`.nvmrc`, etc)',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can sync cross-project dependencies to `package.json`',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can sync project references to applicable `tsconfig.json`',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can auto-create missing `tsconfig.json`',
+		support: {
+			moon: SUPPORTED,
+		},
 	},
 ];
 
@@ -239,7 +452,8 @@ function Cell({ content }: { content: string[] | string | undefined }) {
 		return <>{NOT_SUPPORTED}</>;
 	}
 
-	const markdown = Array.isArray(content) ? content.join(' ') : content;
+	// nbsp
+	const markdown = Array.isArray(content) ? content.join(' \u00A0') : content;
 
 	if (markdown === SUPPORTED || markdown === PARTIALLY_SUPPORTED) {
 		return <>{markdown}</>;
@@ -264,7 +478,9 @@ function Table({ rows }: { rows: Comparison[] }) {
 			<tbody>
 				{rows.map((row) => (
 					<tr key={row.feature}>
-						<td>{row.feature}</td>
+						<td>
+							<Markdown content={row.feature} />
+						</td>
 						{headers.map((header) => (
 							<td key={row.feature + header} align="center">
 								<Cell content={row.support[header]} />
@@ -281,6 +497,9 @@ function createTable(rows: Comparison[]) {
 	return () => <Table rows={rows} />;
 }
 
+export const JavaScriptTable = createTable(javascriptRows);
+export const ProjectsTable = createTable(projectsRows);
 export const TasksTable = createTable(tasksRows);
 export const TaskRunnerTable = createTable(taskRunnerRows);
-export const TechTable = createTable(techRows);
+export const ToolchainTable = createTable(toolchainRows);
+export const WorkspaceTable = createTable(workspaceRows);

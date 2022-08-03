@@ -15,7 +15,7 @@ use moon_lang_node::node;
 use moon_logger::{color, debug, error, Logable};
 use moon_utils::fs;
 use moon_utils::process::Command;
-use semver::{Version, VersionReq};
+use moon_utils::semver::{Version, VersionReq};
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader};

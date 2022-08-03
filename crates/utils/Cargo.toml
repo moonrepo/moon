@@ -19,6 +19,7 @@ json_comments = "0.2.1"
 lazy_static = "1.4.0"
 pathdiff = "0.2.1"
 regex = "1.6.0"
+semver = "1.0.12"
 serde = "1.0.140"
 serde_json = { version = "1.0.82", features = ["preserve_order"] }
 shell-words = "1.1.0"

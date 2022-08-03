@@ -14,7 +14,6 @@ moon_utils = { path = "../utils" }
 async-trait = "0.1.56"
 flate2 = "1.0.24"
 reqwest = "0.11.11"
-semver = "1.0.12"
 sha2 = "0.10.2"
 tar = "0.4.38"
 thiserror = "1.0.31"

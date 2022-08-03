@@ -11,12 +11,12 @@ exist in a project's root, as configured in [`projects`](./workspace#projects).
 
 ## `dependsOn`
 
-> `ProjectID[]`
+> `(ProjectID | DependencyConfig)[]`
 
 Defines _other_ projects that _this_ project depends on, primarily when generating the project and
 task graphs. The most common use case for this is building those projects _before_ building this
-one, and for syncing [`package.json`](../concepts/project#packagejson) dependencies and
-[`tsconfig.json`](../concepts/project#tsconfigjson) project references when applicable.
+one, and for syncing [`package.json`](./workspace#syncprojectworkspacedependencies) dependencies and
+[`tsconfig.json`](./workspace#syncprojectreferences) project references when applicable.
 
 When defined, this setting requires an array of project names, which are the keys found in the
 [`projects`](./workspace#projects) map.
@@ -25,6 +25,18 @@ When defined, this setting requires an array of project names, which are the key
 dependsOn:
   - 'apiClients'
   - 'designSystem'
+```
+
+A dependency object can also be defined, where a specific `scope` can be assigned, which accepts
+"production" (default), "development", or "peer". This maps to the appropriate field in
+`package.json` when syncing.
+
+```yaml title="project.yml"
+dependsOn:
+  - id: 'apiClients'
+    scope: 'production'
+  - id: 'designSystem'
+    scope: 'peer'
 ```
 
 ## `fileGroups`

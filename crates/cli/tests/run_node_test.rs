@@ -253,7 +253,7 @@ mod install_deps {
 
         assert!(fixture.path().join("node_modules").exists());
 
-        assert!(predicate::str::contains("added 7 packages").eval(&output));
+        assert!(predicate::str::contains("added 9 packages").eval(&output));
     }
 
     #[test]
@@ -267,7 +267,7 @@ mod install_deps {
             .assert();
         let output1 = get_assert_output(&assert);
 
-        assert!(predicate::str::contains("added 7 packages").eval(&output1));
+        assert!(predicate::str::contains("added 9 packages").eval(&output1));
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -276,7 +276,7 @@ mod install_deps {
             .assert();
         let output2 = get_assert_output(&assert);
 
-        assert!(!predicate::str::contains("added 7 packages").eval(&output2));
+        assert!(!predicate::str::contains("added 9 packages").eval(&output2));
     }
 
     #[test]
@@ -485,6 +485,26 @@ mod sync_depends_on {
     #[test]
     fn syncs_as_workspace_tilde_dependency() {
         test_depends_on_format("workspace-tilde");
+    }
+
+    #[test]
+    fn syncs_depends_on_with_scopes() {
+        let fixture = create_sandbox_with_git("cases");
+
+        append_workspace_config(
+            &fixture.path().join(".moon/workspace.yml"),
+            "  syncProjectWorkspaceDependencies: true",
+        );
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("dependsOnScopes:standard")
+            .assert();
+
+        // deps-c does not have a `package.json` on purpose
+        assert_snapshot!(
+            read_to_string(fixture.path().join("depends-on-scopes/package.json")).unwrap()
+        );
     }
 
     #[test]

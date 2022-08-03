@@ -1,5 +1,6 @@
 // <project path>/project.yml
 
+pub mod dep;
 pub mod global;
 pub mod task;
 
@@ -8,6 +9,7 @@ use crate::types::{FileGroups, ProjectID, TaskID};
 use crate::validators::{
     skip_if_btree_empty, skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id,
 };
+use dep::DependencyConfig;
 use figment::{
     providers::{Format, Serialized, Yaml},
     Error as FigmentError, Figment,
@@ -133,13 +135,20 @@ pub struct ProjectWorkspaceConfig {
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
 
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum ProjectDependsOn {
+    String(ProjectID),
+    Object(DependencyConfig),
+}
+
 /// Docs: https://moonrepo.dev/docs/config/project
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectConfig {
     #[serde(skip_serializing_if = "skip_if_vec_empty")]
-    pub depends_on: Vec<ProjectID>,
+    pub depends_on: Vec<ProjectDependsOn>,
 
     #[serde(skip_serializing_if = "skip_if_hash_empty")]
     #[validate(custom = "validate_file_groups")]
@@ -216,6 +225,7 @@ impl ProjectConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::project::dep::DependencyScope;
     use moon_constants as constants;
     use moon_utils::string_vec;
     use std::path::PathBuf;
@@ -268,6 +278,8 @@ fileGroups:
     }
 
     mod depends_on {
+        use super::*;
+
         #[test]
         #[should_panic(
             expected = "invalid type: found unsigned int `123`, expected a sequence for key \"project.dependsOn\""
@@ -277,6 +289,108 @@ fileGroups:
                 jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "dependsOn: 123")?;
 
                 super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "data did not match any variant of untagged enum ProjectDependsOn for key \"project.dependsOn.0\""
+        )]
+        fn invalid_object_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"dependsOn:
+  - id: 'a'
+    scope: 'invalid'"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_list_of_strings() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    "dependsOn: ['a', 'b', 'c']",
+                )?;
+
+                let cfg: ProjectConfig = super::load_jailed_config()?;
+
+                assert_eq!(
+                    cfg.depends_on,
+                    vec![
+                        ProjectDependsOn::String("a".to_owned()),
+                        ProjectDependsOn::String("b".to_owned()),
+                        ProjectDependsOn::String("c".to_owned())
+                    ]
+                );
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_list_of_objects() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"dependsOn:
+  - id: 'a'
+    scope: 'development'
+  - id: 'b'
+    scope: 'production'"#,
+                )?;
+
+                let cfg: ProjectConfig = super::load_jailed_config()?;
+
+                assert_eq!(
+                    cfg.depends_on,
+                    vec![
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: "a".to_owned(),
+                            scope: DependencyScope::Development
+                        }),
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: "b".to_owned(),
+                            scope: DependencyScope::Production
+                        })
+                    ]
+                );
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_list_of_strings_and_objects() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"dependsOn:
+  - 'a'
+  - id: 'b'
+    scope: 'production'"#,
+                )?;
+
+                let cfg: ProjectConfig = super::load_jailed_config()?;
+
+                assert_eq!(
+                    cfg.depends_on,
+                    vec![
+                        ProjectDependsOn::String("a".to_owned()),
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: "b".to_owned(),
+                            scope: DependencyScope::Production
+                        })
+                    ]
+                );
 
                 Ok(())
             });

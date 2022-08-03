@@ -7,7 +7,7 @@
     "dependsOn": {
       "type": "array",
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/ProjectDependsOn"
       }
     },
     "fileGroups": {
@@ -46,12 +46,47 @@
     }
   },
   "definitions": {
+    "DependencyConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "scope": {
+          "default": "production",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencyScope"
+            }
+          ]
+        }
+      }
+    },
+    "DependencyScope": {
+      "type": "string",
+      "enum": [
+        "development",
+        "peer",
+        "production"
+      ]
+    },
     "PlatformType": {
       "type": "string",
       "enum": [
         "node",
         "system",
         "unknown"
+      ]
+    },
+    "ProjectDependsOn": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/DependencyConfig"
+        }
       ]
     },
     "ProjectLanguage": {

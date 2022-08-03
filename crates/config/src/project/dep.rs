@@ -1,6 +1,5 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 use validator::Validate;
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
@@ -26,13 +25,5 @@ impl DependencyConfig {
             id: id.to_owned(),
             scope: DependencyScope::Production,
         }
-    }
-}
-
-impl FromStr for DependencyConfig {
-    type Err = std::io::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(DependencyConfig::new(s))
     }
 }

@@ -1,6 +1,7 @@
 use moon_config::{
-    DependencyConfig, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectLanguage,
-    ProjectMetadataConfig, ProjectType, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig,
+    DependencyConfig, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn,
+    ProjectLanguage, ProjectMetadataConfig, ProjectType, TargetID, TaskConfig, TaskMergeStrategy,
+    TaskOptionsConfig,
 };
 use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
@@ -114,7 +115,7 @@ fn basic_config() {
         Project {
             id: String::from("basic"),
             config: ProjectConfig {
-                depends_on: vec![DependencyConfig::new("noConfig")],
+                depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
@@ -185,7 +186,7 @@ fn overrides_global_file_groups() {
         Project {
             id: String::from("basic"),
             config: ProjectConfig {
-                depends_on: vec![DependencyConfig::new("noConfig")],
+                depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()

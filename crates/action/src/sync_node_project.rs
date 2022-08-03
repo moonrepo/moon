@@ -1,7 +1,7 @@
 use crate::action::{Action, ActionStatus};
 use crate::context::ActionContext;
 use crate::errors::ActionError;
-use moon_config::{NodeVersionFormat, TypeScriptConfig};
+use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug};
 use moon_project::Project;
@@ -95,10 +95,12 @@ pub async fn sync_node_project(
 
     // Sync each dependency to `tsconfig.json` and `package.json`
     let mut package_prod_deps: BTreeMap<String, String> = BTreeMap::new();
+    let mut package_peer_deps: BTreeMap<String, String> = BTreeMap::new();
+    let mut package_dev_deps: BTreeMap<String, String> = BTreeMap::new();
     let mut tsconfig_project_refs: HashSet<String> = HashSet::new();
 
-    for dep_id in project.get_dependencies() {
-        let dep_project = workspace.projects.load(&dep_id)?;
+    for dep_cfg in &project.dependencies {
+        let dep_project = workspace.projects.load(&dep_cfg.id)?;
         let dep_relative_path = path::to_virtual_string(
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
         )?;
@@ -126,7 +128,17 @@ pub async fn sync_node_project(
                         _ => version_prefix,
                     };
 
-                    package_prod_deps.insert(dep_package_name.to_owned(), dep_version);
+                    match dep_cfg.scope {
+                        DependencyScope::Production => {
+                            package_prod_deps.insert(dep_package_name.to_owned(), dep_version);
+                        }
+                        DependencyScope::Development => {
+                            package_dev_deps.insert(dep_package_name.to_owned(), dep_version);
+                        }
+                        DependencyScope::Peer => {
+                            package_peer_deps.insert(dep_package_name.to_owned(), dep_version);
+                        }
+                    }
 
                     debug!(
                         target: LOG_TARGET,
@@ -150,8 +162,8 @@ pub async fn sync_node_project(
             debug!(
                 target: LOG_TARGET,
                 "Syncing {} as a project reference to {}'s {}",
-                color::id(&dep_id),
-                color::id(project_id),
+                color::id(&dep_project.id),
+                color::id(&project.id),
                 color::file(tsconfig_branch_name)
             );
         }

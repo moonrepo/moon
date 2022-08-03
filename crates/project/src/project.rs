@@ -1,7 +1,7 @@
 use crate::errors::ProjectError;
 use moon_config::{
-    format_figment_errors, FilePath, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectID,
-    TaskConfig, TaskID,
+    format_figment_errors, DependencyConfig, FilePath, GlobalProjectConfig, PlatformType,
+    ProjectConfig, ProjectDependsOn, ProjectID, TaskConfig, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
@@ -81,11 +81,34 @@ fn create_file_groups_from_config(
     file_groups
 }
 
+fn create_dependencies_from_config(
+    log_target: &str,
+    config: &ProjectConfig,
+) -> Vec<DependencyConfig> {
+    let mut deps = vec![];
+
+    debug!(target: log_target, "Creating dependencies");
+
+    for dep_cfg in &config.depends_on {
+        match dep_cfg {
+            ProjectDependsOn::String(id) => {
+                deps.push(DependencyConfig::new(id));
+            }
+            ProjectDependsOn::Object(cfg) => {
+                deps.push(cfg.clone());
+            }
+        }
+    }
+
+    deps
+}
+
 fn create_tasks_from_config(
     log_target: &str,
     project_id: &str,
     project_config: &ProjectConfig,
     global_config: &GlobalProjectConfig,
+    dependencies: &[DependencyConfig],
     token_data: &TokenSharedData,
     implicit_inputs: &[String],
 ) -> Result<TasksMap, ProjectError> {
@@ -199,7 +222,7 @@ fn create_tasks_from_config(
         task.inputs.extend(implicit_inputs.iter().cloned());
 
         // Resolve in order!
-        task.expand_deps(project_id, &project_config.depends_on)?;
+        task.expand_deps(project_id, dependencies)?;
         task.expand_inputs(TokenResolver::for_inputs(token_data))?;
         task.expand_outputs(TokenResolver::for_outputs(token_data))?;
 
@@ -215,6 +238,9 @@ fn create_tasks_from_config(
 pub struct Project {
     /// Project configuration loaded from "project.yml", if it exists.
     pub config: ProjectConfig,
+
+    /// List of other projects this project depends on.
+    pub dependencies: Vec<DependencyConfig>,
 
     /// File groups specific to the project. Inherits all file groups from the global config.
     pub file_groups: FileGroupsMap,
@@ -278,18 +304,21 @@ impl Project {
 
         let config = load_project_config(&log_target, &root, source)?;
         let file_groups = create_file_groups_from_config(&log_target, &config, global_config);
+        let dependencies = create_dependencies_from_config(&log_target, &config);
         let token_data = TokenSharedData::new(&file_groups, workspace_root, &root, &config);
         let tasks = create_tasks_from_config(
             &log_target,
             id,
             &config,
             global_config,
+            &dependencies,
             &token_data,
             implicit_inputs,
         )?;
 
         Ok(Project {
             config,
+            dependencies,
             file_groups,
             id: String::from(id),
             log_target,
@@ -302,8 +331,7 @@ impl Project {
     /// Return a list of project IDs this project depends on.
     pub fn get_dependencies(&self) -> Vec<ProjectID> {
         let mut depends_on = self
-            .config
-            .depends_on
+            .dependencies
             .iter()
             .map(|d| d.id.clone())
             .collect::<Vec<String>>();

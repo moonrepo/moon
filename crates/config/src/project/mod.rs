@@ -5,7 +5,7 @@ pub mod global;
 pub mod task;
 
 use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
-use crate::types::{FileGroups, TaskID};
+use crate::types::{FileGroups, ProjectID, TaskID};
 use crate::validators::{
     skip_if_btree_empty, skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id,
 };
@@ -137,16 +137,20 @@ pub struct ProjectWorkspaceConfig {
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
 
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum ProjectDependsOn {
+    String(ProjectID),
+    Object(DependencyConfig),
+}
+
 /// Docs: https://moonrepo.dev/docs/config/project
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectConfig {
-    #[serde(
-        deserialize_with = "deserialize_depends_on",
-        skip_serializing_if = "skip_if_vec_empty"
-    )]
-    pub depends_on: Vec<DependencyConfig>,
+    #[serde(skip_serializing_if = "skip_if_vec_empty")]
+    pub depends_on: Vec<ProjectDependsOn>,
 
     #[serde(skip_serializing_if = "skip_if_hash_empty")]
     #[validate(custom = "validate_file_groups")]
@@ -255,6 +259,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::project::dep::DependencyScope;
     use moon_constants as constants;
     use moon_utils::string_vec;
     use std::path::PathBuf;
@@ -333,7 +338,74 @@ fileGroups:
 
                 let cfg: ProjectConfig = super::load_jailed_config()?;
 
-                assert_eq!(cfg.depends_on, vec![]);
+                assert_eq!(
+                    cfg.depends_on,
+                    vec![
+                        ProjectDependsOn::String("a".to_owned()),
+                        ProjectDependsOn::String("b".to_owned()),
+                        ProjectDependsOn::String("c".to_owned())
+                    ]
+                );
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_list_of_objects() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"dependsOn:
+  - id: 'a'
+    scope: 'development'
+  - id: 'b'
+    scope: 'production'"#,
+                )?;
+
+                let cfg: ProjectConfig = super::load_jailed_config()?;
+
+                assert_eq!(
+                    cfg.depends_on,
+                    vec![
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: "a".to_owned(),
+                            scope: DependencyScope::Development
+                        }),
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: "b".to_owned(),
+                            scope: DependencyScope::Production
+                        })
+                    ]
+                );
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_list_of_strings_and_objects() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::constants::CONFIG_PROJECT_FILENAME,
+                    r#"dependsOn:
+  - 'a'
+  - id: 'b'
+    scope: 'production'"#,
+                )?;
+
+                let cfg: ProjectConfig = super::load_jailed_config()?;
+
+                assert_eq!(
+                    cfg.depends_on,
+                    vec![
+                        ProjectDependsOn::String("a".to_owned()),
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: "b".to_owned(),
+                            scope: DependencyScope::Production
+                        })
+                    ]
+                );
 
                 Ok(())
             });

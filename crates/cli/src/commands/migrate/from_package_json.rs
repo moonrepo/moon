@@ -1,4 +1,4 @@
-use moon_config::{DependencyConfig, DependencyScope};
+use moon_config::{DependencyConfig, DependencyScope, ProjectDependsOn};
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_lang_node::package::{DepsSet, PackageJson};
 use moon_platform_node::create_tasks_from_scripts;
@@ -29,10 +29,17 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
     let mut link_deps = |deps: &DepsSet, scope: DependencyScope| {
         for package_name in deps.keys() {
             if let Some(dep_id) = package_map.get(package_name) {
-                project.config.depends_on.push(DependencyConfig {
-                    id: dep_id.to_owned(),
-                    scope: scope.clone(),
-                });
+                project
+                    .config
+                    .depends_on
+                    .push(if matches!(scope, DependencyScope::Production) {
+                        ProjectDependsOn::String(dep_id.to_owned())
+                    } else {
+                        ProjectDependsOn::Object(DependencyConfig {
+                            id: dep_id.to_owned(),
+                            scope: scope.clone(),
+                        })
+                    });
             }
         }
     };

@@ -41,7 +41,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
 
     let mut deps = vec![];
 
-    for dep_cfg in &config.depends_on {
+    for dep_cfg in &project.dependencies {
         match workspace.projects.load(&dep_cfg.id) {
             Ok(dep) => {
                 deps.push(format!(

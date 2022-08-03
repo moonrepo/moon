@@ -5,7 +5,7 @@ use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug};
 use moon_project::Project;
-use moon_utils::{fs, is_ci, path, string_vec};
+use moon_utils::{fs, is_ci, path, semver, string_vec};
 use moon_workspace::Workspace;
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
@@ -139,7 +139,10 @@ pub async fn sync_node_project(
                             // Perhaps we can wrap this in a new setting in the future.
                             package_peer_deps.insert(
                                 dep_package_name.to_owned(),
-                                format!("^{}", dep_package_version),
+                                format!(
+                                    "^{}.0.0",
+                                    semver::extract_major_version(&dep_package_version)
+                                ),
                             );
                         }
                     }

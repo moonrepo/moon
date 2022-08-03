@@ -1,6 +1,6 @@
 use crate::errors::create_validation_error;
 use moon_utils::regex::{matches_id, matches_target};
-use semver::Version;
+use moon_utils::semver::Version;
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 use validator::{validate_url as validate_base_url, ValidationError};

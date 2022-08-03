@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 509
+assertion_line: 505
 expression: "read_to_string(fixture.path().join(\"depends-on-scopes/package.json\")).unwrap()"
 ---
 {
@@ -12,7 +12,7 @@ expression: "read_to_string(fixture.path().join(\"depends-on-scopes/package.json
     "test-cases-deps-a": "workspace:^"
   },
   "peerDependencies": {
-    "test-cases-deps-b": "^4.5.6"
+    "test-cases-deps-b": "^4.0.0"
   }
 }
 

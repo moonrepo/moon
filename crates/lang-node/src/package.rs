@@ -178,32 +178,52 @@ impl PackageJson {
     }
 
     /// Add a package and version range to the `dependencies` field.
-    /// If `is_missing` is true, only add if it doesn't already exist.
-    /// Return true if the new value is different from the old value.
     pub fn add_dependency<T: AsRef<str>>(&mut self, name: T, range: T, if_missing: bool) -> bool {
-        let name = name.as_ref();
-        let range = range.as_ref();
+        if let Some(deps) =
+            self.internal_add_dependency(self.dependencies.clone(), name, range, if_missing)
+        {
+            self.dependencies = Some(deps);
 
-        if name.is_empty() {
-            return false;
+            return true;
         }
 
-        let mut dependencies = match &self.dependencies {
-            Some(deps) => deps.clone(),
-            None => BTreeMap::new(),
-        };
+        false
+    }
 
-        // Only add if the dependency doesnt already exist
-        if if_missing && dependencies.contains_key(name) {
-            return false;
+    /// Add a package and version range to the `devDependencies` field.
+    pub fn add_dev_dependency<T: AsRef<str>>(
+        &mut self,
+        name: T,
+        range: T,
+        if_missing: bool,
+    ) -> bool {
+        if let Some(deps) =
+            self.internal_add_dependency(self.dev_dependencies.clone(), name, range, if_missing)
+        {
+            self.dev_dependencies = Some(deps);
+
+            return true;
         }
 
-        dependencies.insert(name.to_owned(), range.to_owned());
+        false
+    }
 
-        self.dirty = true;
-        self.dependencies = Some(dependencies);
+    /// Add a package and version range to the `peerDependencies` field.
+    pub fn add_peer_dependency<T: AsRef<str>>(
+        &mut self,
+        name: T,
+        range: T,
+        if_missing: bool,
+    ) -> bool {
+        if let Some(deps) =
+            self.internal_add_dependency(self.peer_dependencies.clone(), name, range, if_missing)
+        {
+            self.peer_dependencies = Some(deps);
 
-        true
+            return true;
+        }
+
+        false
     }
 
     /// Add a version range to the `engines` field.
@@ -258,6 +278,40 @@ impl PackageJson {
         }
 
         true
+    }
+
+    /// Add a package and version range to a dependencies field.
+    /// If `is_missing` is true, only add if it doesn't already exist.
+    /// Return true if the new value is different from the old value.
+    fn internal_add_dependency<T: AsRef<str>>(
+        &mut self,
+        deps_map: Option<DepsSet>,
+        name: T,
+        range: T,
+        if_missing: bool,
+    ) -> Option<DepsSet> {
+        let name = name.as_ref();
+        let range = range.as_ref();
+
+        if name.is_empty() {
+            return None;
+        }
+
+        let mut dependencies = match deps_map {
+            Some(deps) => deps,
+            None => BTreeMap::new(),
+        };
+
+        // Only add if the dependency doesnt already exist
+        if if_missing && dependencies.contains_key(name) {
+            return None;
+        }
+
+        dependencies.insert(name.to_owned(), range.to_owned());
+
+        self.dirty = true;
+
+        Some(dependencies)
     }
 }
 
@@ -422,6 +476,18 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonEr
         data["dependencies"] = json::from(dependencies.clone());
     } else {
         data.remove("dependencies");
+    }
+
+    if let Some(dev_dependencies) = &package.dev_dependencies {
+        data["devDependencies"] = json::from(dev_dependencies.clone());
+    } else {
+        data.remove("devDependencies");
+    }
+
+    if let Some(peer_dependencies) = &package.peer_dependencies {
+        data["peerDependencies"] = json::from(peer_dependencies.clone());
+    } else {
+        data.remove("peerDependencies");
     }
 
     if let Some(engines) = &package.engines {

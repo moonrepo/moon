@@ -5,7 +5,9 @@ projects:
   depsA: 'deps-a'
   depsB: 'deps-b'
   depsC: 'deps-c'
+  depsD: 'deps-d'
   dependsOn: 'depends-on'
+  dependsOnScopes: 'depends-on-scopes'
   noop: 'noop'
 
   # Target scopes

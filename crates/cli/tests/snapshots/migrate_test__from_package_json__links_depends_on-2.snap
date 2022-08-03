@@ -18,8 +18,10 @@ tasks:
       - "**/*"
     outputs:
       - lib
+    type: node
   test:
     command: jest
     inputs:
       - "**/*"
+    type: node
 

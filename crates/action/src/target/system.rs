@@ -3,14 +3,14 @@ use moon_utils::process::Command;
 use std::path::Path;
 
 #[cfg(not(windows))]
-pub fn create_system_target_command(task: &Task, _cwd: &Path) -> Command {
+pub fn create_target_command(task: &Task, _cwd: &Path) -> Command {
     let mut cmd = Command::new(&task.command);
     cmd.args(&task.args).envs(&task.env);
     cmd
 }
 
 #[cfg(windows)]
-pub fn create_system_target_command(task: &Task, cwd: &Path) -> Command {
+pub fn create_target_command(task: &Task, cwd: &Path) -> Command {
     use moon_utils::process::is_windows_script;
 
     let mut cmd = Command::new(&task.command);

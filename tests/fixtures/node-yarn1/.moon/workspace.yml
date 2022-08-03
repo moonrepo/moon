@@ -4,6 +4,7 @@ node:
   packageManager: 'yarn'
   yarn:
     version: '1.22.0'
+  addEnginesConstraint: false
 
 projects:
   yarn: yarn

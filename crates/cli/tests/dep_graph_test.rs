@@ -1,18 +1,24 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command, get_assert_output};
+use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output};
 
 #[test]
 fn all_by_default() {
-    let assert = create_moon_command("cases").arg("dep-graph").assert();
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("dep-graph")
+        .assert();
     let dot = get_assert_output(&assert);
 
     // Snapshot is not deterministic
-    assert_eq!(dot.split('\n').count(), 238);
+    assert_eq!(dot.split('\n').count(), 252);
 }
 
 #[test]
 fn focused_by_target() {
-    let assert = create_moon_command("cases")
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
         .arg("dep-graph")
         .arg("node:standard")
         .assert();
@@ -22,7 +28,9 @@ fn focused_by_target() {
 
 #[test]
 fn includes_dependencies_when_focused() {
-    let assert = create_moon_command("cases")
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
         .arg("dep-graph")
         .arg("dependsOn:standard")
         .assert();
@@ -32,7 +40,9 @@ fn includes_dependencies_when_focused() {
 
 #[test]
 fn includes_dependents_when_focused() {
-    let assert = create_moon_command("cases")
+    let fixture = create_sandbox("cases");
+
+    let assert = create_moon_command(fixture.path())
         .arg("dep-graph")
         .arg("depsC:standard")
         .assert();

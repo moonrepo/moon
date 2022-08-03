@@ -292,14 +292,8 @@ fileGroups:
                     TaskConfig {
                         command: Some(String::from("e")),
                         options: TaskOptionsConfig {
-                            merge_args: None,
-                            merge_deps: None,
-                            merge_env: None,
-                            merge_inputs: None,
-                            merge_outputs: None,
-                            retry_count: None,
                             run_in_ci: Some(false),
-                            run_from_workspace_root: None,
+                            ..TaskOptionsConfig::default()
                         },
                         ..TaskConfig::default()
                     },

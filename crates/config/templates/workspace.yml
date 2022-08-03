@@ -46,8 +46,7 @@ node:
   # not a 1:1 in functionality, so please refer to the documentation.
   inferTasksFromScripts: true
 
-  # Sync a project's `dependsOn` as normal dependencies within the project's
-  # `package.json`. Will use "workspace:*" ranges when available in the package manager.
+  # Sync a project's `dependsOn` as dependencies within the project's `package.json`.
   syncProjectWorkspaceDependencies: true
 
   # Sync `node.version` to a 3rd-party version manager's config file.

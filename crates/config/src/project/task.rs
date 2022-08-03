@@ -1,6 +1,8 @@
-use crate::types::{FilePath, FilePathOrGlob, TargetID};
+use crate::project::{ProjectConfig, ProjectLanguage};
+use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
 use moon_utils::process::split_args;
+use moon_utils::regex::ENV_VAR;
 use schemars::gen::SchemaGenerator;
 use schemars::schema::Schema;
 use schemars::{schema_for, JsonSchema};
@@ -24,7 +26,9 @@ fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
 
 fn validate_inputs(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        validate_child_or_root_path(&format!("inputs[{}]", index), item)?;
+        if !ENV_VAR.is_match(item) {
+            validate_child_or_root_path(&format!("inputs[{}]", index), item)?;
+        }
     }
 
     Ok(())
@@ -40,13 +44,16 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum TaskType {
-    #[default]
+pub enum PlatformType {
     #[strum(serialize = "node")]
     Node,
 
     #[strum(serialize = "system")]
     System,
+
+    #[default]
+    #[strum(serialize = "unknown")]
+    Unknown,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
@@ -61,6 +68,9 @@ pub enum TaskMergeStrategy {
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache: Option<bool>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_args: Option<TaskMergeStrategy>,
 
@@ -110,7 +120,7 @@ pub struct TaskConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_inputs")]
-    pub inputs: Option<Vec<FilePathOrGlob>>,
+    pub inputs: Option<Vec<InputValue>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_outputs")]
@@ -122,7 +132,17 @@ pub struct TaskConfig {
 
     #[serde(skip_serializing_if = "skip_if_default")]
     #[serde(rename = "type")]
-    pub type_of: TaskType,
+    pub type_of: PlatformType,
+}
+
+impl TaskConfig {
+    pub fn detect_platform(project: &ProjectConfig) -> PlatformType {
+        match &project.language {
+            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
+            ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
+            _ => PlatformType::Unknown,
+        }
+    }
 }
 
 // SERDE
@@ -484,6 +504,26 @@ inputs:
                 Ok(())
             });
         }
+
+        #[test]
+        fn supports_env_vars() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+inputs:
+  - $FOO
+  - file.js
+  - /file.js
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
     }
 
     mod outputs {
@@ -532,7 +572,7 @@ outputs:
     mod type_of {
         #[test]
         #[should_panic(
-            expected = "unknown variant: found `unknown`, expected ``node` or `system`` for key \"default.type\""
+            expected = "unknown variant: found `whatisthis`, expected `one of `node`, `system`, `unknown`` for key \"default.type\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -540,7 +580,7 @@ outputs:
                     super::CONFIG_FILENAME,
                     r#"
 command: foo
-type: unknown
+type: whatisthis
 "#,
                 )?;
 

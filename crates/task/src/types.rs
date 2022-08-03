@@ -3,6 +3,4 @@ use std::path::PathBuf;
 
 pub type TouchedFilePaths = HashSet<PathBuf>;
 
-pub type ExpandedFiles = HashSet<PathBuf>;
-
 pub type EnvVars = HashMap<String, String>;

@@ -12,6 +12,9 @@ lazy_static! {
     pub static ref TARGET_PATTERN: Regex = Regex::new(
         "^(?P<project>(?:[A-Za-z]{1}[0-9A-Za-z_-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z_-]*)$").unwrap();
 
+    // Input values
+    pub static ref ENV_VAR: Regex = Regex::new("^\\$[A-Z0-9_]+$").unwrap();
+
     // Token function: `@func(arg)`
     static ref TOKEN_GROUP: &'static str = "([0-9A-Za-z_-]+)";
 

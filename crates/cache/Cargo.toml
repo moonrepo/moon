@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_constants = { path = "../constants"}
-moon_error = { path = "../error"}
-moon_logger = { path = "../logger"}
-moon_utils = { path = "../utils"}
+moon_constants = { path = "../constants" }
+moon_error = { path = "../error" }
+moon_logger = { path = "../logger" }
+moon_utils = { path = "../utils" }
 serde = { version = "1.0.140", features = ["derive"] }
 
 [dev-dependencies]

@@ -11,12 +11,12 @@ exist in a project's root, as configured in [`projects`](./workspace#projects).
 
 ## `dependsOn`
 
-> `ProjectID[]`
+> `(ProjectID | DependencyConfig)[]`
 
 Defines _other_ projects that _this_ project depends on, primarily when generating the project and
 task graphs. The most common use case for this is building those projects _before_ building this
-one, and for syncing [`package.json`](../concepts/project#packagejson) dependencies and
-[`tsconfig.json`](../concepts/project#tsconfigjson) project references when applicable.
+one, and for syncing [`package.json`](./workspace#syncprojectworkspacedependencies) dependencies and
+[`tsconfig.json`](./workspace#syncprojectreferences) project references when applicable.
 
 When defined, this setting requires an array of project names, which are the keys found in the
 [`projects`](./workspace#projects) map.
@@ -25,6 +25,18 @@ When defined, this setting requires an array of project names, which are the key
 dependsOn:
   - 'apiClients'
   - 'designSystem'
+```
+
+A dependency object can also be defined, where a specific `scope` can be assigned, which accepts
+"production" (default), "development", or "peer". This maps to the appropriate field in
+`package.json` when syncing.
+
+```yaml title="project.yml"
+dependsOn:
+  - id: 'apiClients'
+    scope: 'production'
+  - id: 'designSystem'
+    scope: 'peer'
 ```
 
 ## `fileGroups`
@@ -70,7 +82,9 @@ fileGroups:
 
 The primary programming language the project is written in. Supports the following values:
 
-- `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project.
+- `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project (Nix only).
+- `batch` - A [Batch](https://en.wikibooks.org/wiki/Windows_Batch_Scripting) based project (Windows
+  only).
 - `javascript` - A [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) based
   project. Inferred when `package.json` exists.
 - `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project. Inferred when
@@ -268,12 +282,14 @@ tasks:
 
 > `string[]`
 
-The `inputs` field is a list of file paths/globs that are used to calculate whether to execute this
-task based on files that have been touched since the last time the task has been ran. If _not_
+The `inputs` field is a list of sources that calculate whether to execute this task based on the
+environment and files that have been touched since the last time the task has been ran. If _not_
 defined, then all files within a project are considered an input (`**/*`).
 
-Inputs support
-[project and workspace relative file patterns](../concepts/file-pattern#project-relative).
+Inputs support the following source types:
+
+- Environment variables (must start with a `$`).
+- [Project and workspace relative file patterns](../concepts/file-pattern#project-relative)
 
 ```yaml title="project.yml" {4-10}
 tasks:
@@ -286,7 +302,17 @@ tasks:
       # Config files at the workspace root
       - '/.eslintignore'
       - '/.eslintrc.js'
+      # Environment variables
+      - '$ESLINT_CACHE'
 ```
+
+:::caution
+
+When using an environment variable, we assume _it's not defined_ by default, and will trigger an
+affected state when it _is_ defined. If the environment variable always exists, then the task will
+always run and bypass the cache.
+
+:::
 
 ### `outputs`
 
@@ -296,7 +322,8 @@ The `outputs` field is a list of files and folders that are _created_ as a resul
 task, excluding internal cache files that are created from the underlying command (for example,
 `.eslintcache`).
 
-Outputs require [project relative file patterns](../concepts/file-pattern#project-relative).
+Outputs are necessary for [incremental caching and rehydration](../concepts/cache). If you'd prefer
+to avoid that functionality, omit this field.
 
 ```yaml title="project.yml" {4-6}
 tasks:
@@ -306,6 +333,8 @@ tasks:
       # Relative from project root
       - 'build/'
 ```
+
+> Outputs require [project relative file patterns](../concepts/file-pattern#project-relative).
 
 ### `options`
 
@@ -323,6 +352,26 @@ tasks:
     options:
       mergeArgs: 'replace'
       runFromWorkspaceRoot: true
+```
+
+#### `cache`
+
+> `boolean`
+
+Whether to cache the task's execution result using our [smart hashing](../concepts/cache#hashing)
+system. If disabled, _will not_ create a cache hash, and _will not_ persist a task's
+[outputs](#outputs). Defaults to `true`.
+
+We suggest disabling caching when defining cleanup tasks, one-off scripts, or file system heavy
+operations.
+
+```yaml title="project.yml" {6}
+tasks:
+  clean:
+    command: 'rm'
+    args: '-rf'
+    options:
+      cache: false
 ```
 
 #### `mergeArgs`
@@ -408,7 +457,11 @@ tasks:
 ### `type`
 
 The `type` field defines the type of command to run, where to locate its executable, and which tool
-to execute it with. Accepts "node" or "system" and defaults to "node".
+to execute it with. By default will set to a value based on the project's [`language`](#language).
+
+- `node` - Command is a binary within node modules and will be executed with Node.js.
+- `system` - Command is expected to exist within the system's environment.
+- `unknown` - When not inferred.
 
 ```yaml title="project.yml" {4}
 tasks:

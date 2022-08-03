@@ -1,5 +1,5 @@
 use insta::assert_snapshot;
-use moon_utils::test::{create_fixtures_sandbox, create_moon_command_in};
+use moon_utils::test::{create_moon_command, create_sandbox};
 use predicates::prelude::*;
 use serial_test::serial;
 use std::fs;
@@ -7,7 +7,7 @@ use std::fs;
 #[test]
 #[serial]
 fn creates_files_in_dest() {
-    let fixture = create_fixtures_sandbox("init-sandbox");
+    let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
     let workspace_config = root.join(".moon").join("workspace.yml");
     let project_config = root.join(".moon").join("project.yml");
@@ -17,7 +17,7 @@ fn creates_files_in_dest() {
     assert!(!project_config.exists());
     assert!(!gitignore.exists());
 
-    let assert = create_moon_command_in(root)
+    let assert = create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -35,11 +35,11 @@ fn creates_files_in_dest() {
 #[test]
 #[serial]
 fn creates_workspace_config_from_template() {
-    let fixture = create_fixtures_sandbox("init-sandbox");
+    let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
     let workspace_config = root.join(".moon").join("workspace.yml");
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -54,11 +54,11 @@ fn creates_workspace_config_from_template() {
 #[test]
 #[serial]
 fn creates_project_config_from_template() {
-    let fixture = create_fixtures_sandbox("init-sandbox");
+    let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
     let project_config = root.join(".moon").join("project.yml");
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -73,11 +73,11 @@ fn creates_project_config_from_template() {
 #[test]
 #[serial]
 fn creates_gitignore_file() {
-    let fixture = create_fixtures_sandbox("init-sandbox");
+    let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
     let gitignore = root.join(".gitignore");
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -92,13 +92,13 @@ fn creates_gitignore_file() {
 #[test]
 #[serial]
 fn appends_existing_gitignore_file() {
-    let fixture = create_fixtures_sandbox("init-sandbox");
+    let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
     let gitignore = root.join(".gitignore");
 
     fs::write(&gitignore, "*.js\n*.log").unwrap();
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -113,17 +113,17 @@ fn appends_existing_gitignore_file() {
 #[test]
 #[serial]
 fn does_overwrite_existing_config_if_force_passed() {
-    let fixture = create_fixtures_sandbox("init-sandbox");
+    let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
 
-    create_moon_command_in(root)
+    create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
         .assert();
 
     // Run again
-    let assert = create_moon_command_in(root)
+    let assert = create_moon_command(root)
         .arg("init")
         .arg("--yes")
         .arg(&root)
@@ -141,13 +141,13 @@ mod node {
     #[test]
     #[serial]
     fn infers_version_from_nvm() {
-        let fixture = create_fixtures_sandbox("init-sandbox");
+        let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
         fs::write(&root.join(".nvmrc"), "1.2.3").unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg(&root)
@@ -159,13 +159,13 @@ mod node {
     #[test]
     #[serial]
     fn infers_version_from_nodenv() {
-        let fixture = create_fixtures_sandbox("init-sandbox");
+        let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
         fs::write(&root.join(".node-version"), "1.2.3").unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg(&root)
@@ -177,7 +177,7 @@ mod node {
     #[test]
     #[serial]
     fn infers_projects_from_workspaces() {
-        let fixture = create_fixtures_sandbox("init-sandbox");
+        let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
@@ -193,7 +193,7 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg("--inheritProjects")
@@ -207,7 +207,7 @@ mod node {
     #[test]
     #[serial]
     fn infers_projects_from_workspaces_expanded() {
-        let fixture = create_fixtures_sandbox("init-sandbox");
+        let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
@@ -223,7 +223,7 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg("--inheritProjects")
@@ -237,7 +237,7 @@ mod node {
     #[test]
     #[serial]
     fn infers_globs_from_workspaces() {
-        let fixture = create_fixtures_sandbox("init-sandbox");
+        let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
@@ -253,7 +253,7 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg("--inheritProjects")
@@ -267,7 +267,7 @@ mod node {
     #[test]
     #[serial]
     fn infers_globs_from_workspaces_expanded() {
-        let fixture = create_fixtures_sandbox("init-sandbox");
+        let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
@@ -283,7 +283,7 @@ mod node {
         )
         .unwrap();
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg("--inheritProjects")
@@ -300,13 +300,13 @@ mod node {
         #[test]
         #[serial]
         fn infers_npm() {
-            let fixture = create_fixtures_sandbox("init-sandbox");
+            let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
             fs::write(&root.join("package-lock.json"), "").unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -318,7 +318,7 @@ mod node {
         #[test]
         #[serial]
         fn infers_npm_from_package() {
-            let fixture = create_fixtures_sandbox("init-sandbox");
+            let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
@@ -328,7 +328,7 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -340,13 +340,13 @@ mod node {
         #[test]
         #[serial]
         fn infers_pnpm() {
-            let fixture = create_fixtures_sandbox("init-sandbox");
+            let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
             fs::write(&root.join("pnpm-lock.yaml"), "").unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -358,7 +358,7 @@ mod node {
         #[test]
         #[serial]
         fn infers_pnpm_from_package() {
-            let fixture = create_fixtures_sandbox("init-sandbox");
+            let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
@@ -368,7 +368,7 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -380,13 +380,13 @@ mod node {
         #[test]
         #[serial]
         fn infers_yarn() {
-            let fixture = create_fixtures_sandbox("init-sandbox");
+            let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
             fs::write(&root.join("yarn.lock"), "").unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -398,7 +398,7 @@ mod node {
         #[test]
         #[serial]
         fn infers_yarn_from_package() {
-            let fixture = create_fixtures_sandbox("init-sandbox");
+            let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
             let workspace_config = root.join(".moon").join("workspace.yml");
 
@@ -408,7 +408,7 @@ mod node {
             )
             .unwrap();
 
-            create_moon_command_in(root)
+            create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
                 .arg(&root)
@@ -421,21 +421,21 @@ mod node {
 
 mod vcs {
     use super::*;
-    use moon_utils::test::run_git_command;
+    use moon_utils::test::{create_sandbox_with_git, run_git_command};
 
     #[test]
     #[serial]
     fn detects_git() {
-        let fixture = create_fixtures_sandbox("init-sandbox");
+        let fixture = create_sandbox_with_git("init-sandbox");
         let root = fixture.path();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
         // Checkout a new branch
-        run_git_command(root, "Failed to create new branch", |cmd| {
+        run_git_command(root, |cmd| {
             cmd.args(["checkout", "-b", "fixtures-test"]);
         });
 
-        create_moon_command_in(root)
+        create_moon_command(root)
             .arg("init")
             .arg("--yes")
             .arg(&root)

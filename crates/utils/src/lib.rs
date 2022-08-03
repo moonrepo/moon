@@ -3,6 +3,7 @@ pub mod glob;
 pub mod path;
 pub mod process;
 pub mod regex;
+pub mod semver;
 pub mod test;
 pub mod time;
 
@@ -22,7 +23,10 @@ macro_rules! string_vec {
 }
 
 pub fn is_ci() -> bool {
-    env::var("CI").is_ok()
+    match env::var("CI") {
+        Ok(var) => var == "true",
+        Err(_) => false,
+    }
 }
 
 // TODO: This doesn't work behind VPN or corporate proxies. Disabling for now

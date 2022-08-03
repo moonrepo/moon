@@ -255,26 +255,19 @@ impl PackageManager<NodeTool> for YarnTool {
         String::from(YARN.manifest_filename)
     }
 
-    fn get_workspace_dependency_range(&self) -> String {
-        if self.is_v1() {
-            String::from("*")
-        } else {
-            // https://yarnpkg.com/features/workspaces/#workspace-ranges-workspace
-            String::from("workspace:*")
-        }
-    }
-
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
+
+        if self.is_v1() {
+            args.push("--ignore-engines");
+        }
 
         if is_ci() {
             if self.is_v1() {
                 args.push("--check-files");
                 args.push("--frozen-lockfile");
-                args.push("--ignore-engines");
                 args.push("--non-interactive");
             } else {
-                args.push("--check-cache");
                 args.push("--immutable");
             }
         }

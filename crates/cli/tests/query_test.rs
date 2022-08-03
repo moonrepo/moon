@@ -2,18 +2,16 @@ use moon_cli::enums::TouchedStatus;
 use moon_cli::queries::projects::QueryProjectsResult;
 use moon_cli::queries::touched_files::QueryTouchedFilesResult;
 use moon_utils::string_vec;
-use moon_utils::test::{
-    create_fixtures_sandbox, create_moon_command_in, get_assert_output, run_git_command,
-};
+use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output, run_git_command};
 
 mod projects {
     use super::*;
 
     #[test]
     fn returns_all_by_default() {
-        let fixture = create_fixtures_sandbox("projects");
+        let fixture = create_sandbox("projects");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("query")
             .arg("projects")
             .assert();
@@ -41,9 +39,9 @@ mod projects {
 
     #[test]
     fn can_filter_by_id() {
-        let fixture = create_fixtures_sandbox("projects");
+        let fixture = create_sandbox("projects");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("query")
             .arg("projects")
             .args(["--id", "ba(r|z)"])
@@ -58,9 +56,9 @@ mod projects {
 
     #[test]
     fn can_filter_by_source() {
-        let fixture = create_fixtures_sandbox("projects");
+        let fixture = create_sandbox("projects");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("query")
             .arg("projects")
             .args(["--source", "config$"])
@@ -75,9 +73,9 @@ mod projects {
 
     #[test]
     fn can_filter_by_tasks() {
-        let fixture = create_fixtures_sandbox("projects");
+        let fixture = create_sandbox("projects");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("query")
             .arg("projects")
             .args(["--tasks", "lint"])
@@ -92,9 +90,9 @@ mod projects {
 
     #[test]
     fn can_filter_by_language() {
-        let fixture = create_fixtures_sandbox("projects");
+        let fixture = create_sandbox("projects");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("query")
             .arg("projects")
             .args(["--language", "java|bash"])
@@ -109,9 +107,9 @@ mod projects {
 
     #[test]
     fn can_filter_by_type() {
-        let fixture = create_fixtures_sandbox("projects");
+        let fixture = create_sandbox("projects");
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("query")
             .arg("projects")
             .args(["--type", "app"])
@@ -127,16 +125,17 @@ mod projects {
 
 mod touched_files {
     use super::*;
+    use moon_utils::test::create_sandbox_with_git;
 
     #[test]
     fn can_change_options() {
-        let fixture = create_fixtures_sandbox("cases");
+        let fixture = create_sandbox_with_git("cases");
 
-        run_git_command(fixture.path(), "Failed to create branch", |cmd| {
+        run_git_command(fixture.path(), |cmd| {
             cmd.args(["checkout", "-b", "branch"]);
         });
 
-        let assert = create_moon_command_in(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("query")
             .arg("touched-files")
             .args([

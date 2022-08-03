@@ -7,14 +7,13 @@ mod validators;
 mod workspace;
 
 pub use errors::format_figment_errors;
+pub use project::dep::*;
 pub use project::global::GlobalProjectConfig;
 pub use project::task::*;
 pub use project::*;
 pub use types::*;
 pub use validator::ValidationErrors;
-pub use workspace::node::{
-    default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
-};
+pub use workspace::node::*;
 pub use workspace::*;
 
 pub fn load_workspace_config_template() -> &'static str {

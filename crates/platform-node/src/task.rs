@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
-use moon_task::{Target, Task, TaskError, TaskID, TaskType};
+use moon_task::{PlatformType, Target, Task, TaskError, TaskID};
 use moon_utils::{process, regex, string_vec};
 use std::collections::{BTreeMap, HashMap};
 
@@ -113,12 +113,12 @@ fn clean_script_name(name: &str) -> String {
     TASK_ID_CHARS.replace_all(name, "-").to_string()
 }
 
-fn detect_task_type(command: &str) -> TaskType {
+fn detect_platform_type(command: &str) -> PlatformType {
     if SYSTEM_COMMAND.is_match(command) || command == "noop" {
-        return TaskType::System;
+        return PlatformType::System;
     }
 
-    TaskType::Node
+    PlatformType::Node
 }
 
 pub enum TaskContext {
@@ -179,7 +179,7 @@ pub fn create_task(
         task.args = args;
     }
 
-    task.type_of = detect_task_type(&task.command);
+    task.platform = detect_platform_type(&task.command);
     task.options.run_in_ci = should_run_in_ci(script_name, script);
 
     if is_wrapping {

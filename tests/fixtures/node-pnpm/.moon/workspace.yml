@@ -4,6 +4,7 @@ node:
   packageManager: 'pnpm'
   pnpm:
     version: '7.5.0'
+  addEnginesConstraint: false
 
 projects:
   pnpm: pnpm

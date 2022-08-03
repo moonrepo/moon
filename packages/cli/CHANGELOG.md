@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+We've refactored our smart hashing layer to take into account different platforms (a task's type) in
+an effort to be more accurate, which now results in different hashes for the same build. Any
+previous builds are no longer valid and can be removed.
+
+#### 🚀 Updates
+
+- Updated task `type` to be automatically inferred when the value is unknown, based on the owning
+  project's `language` (`javascript` = node, `bash` = system, etc).
+- Updated `dependsOn` in `project.yml` to support an object form, where a scope (production,
+  development, peer) can also be defined. This maps to the appropriate field in `package.json` when
+  syncing.
+- Added `batch` as a supported value for the project `language` setting (Windows counter-part to
+  `bash`).
+- Added a `cache` option to tasks, which will disable smart hashing and output caching.
+- Added a `node.dependencyVersionFormat` setting to `.moon/workspace.yml`, to customize the version
+  format when syncing dependencies.
+- Added environment variable support to task `inputs` and `actionRunner.implicitInputs`, in the
+  format of `$ENV_VAR`.
+
+#### 🐞 Fixes
+
+- Fixed an issue where pnpm didn't work with `node-linker=isolated` for nested node modules.
+- Fixed an issue where failing processes would display an empty error message.
+
+#### ⚙️ Internal
+
+- Outputs are now copied to `.moon/cache/out` instead of being hardlinked.
+- Package binaries are now resolved to their canonical path when a symlink.
+
 ### 0.8.1
 
 #### 🐞 Fixes

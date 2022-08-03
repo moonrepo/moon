@@ -1,0 +1,18 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 505
+expression: "read_to_string(fixture.path().join(\"depends-on-scopes/package.json\")).unwrap()"
+---
+{
+  "name": "test-cases-depends-on-scopes",
+  "dependencies": {
+    "test-cases-deps-d": "workspace:^"
+  },
+  "devDependencies": {
+    "test-cases-deps-a": "workspace:^"
+  },
+  "peerDependencies": {
+    "test-cases-deps-b": "^4.0.0"
+  }
+}
+

@@ -1,5 +1,6 @@
 {
   "name": "test-node-yarn-yarn",
+  "version": "1.0.0",
   "scripts": {
     "build": "echo 'build'"
   }

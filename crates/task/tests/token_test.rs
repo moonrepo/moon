@@ -199,6 +199,8 @@ mod out_token {
 
 mod args {
     use super::*;
+    use moon_config::PlatformType;
+
     #[test]
     fn supports_dirs() {
         let project_root = get_project_root();
@@ -485,7 +487,8 @@ mod args {
         );
         let resolver = TokenResolver::for_args(&metadata);
 
-        let task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
+        let mut task = create_expanded_task(&workspace_root, &project_root, None).unwrap();
+        task.platform = PlatformType::Node;
 
         assert_eq!(
             resolver.resolve_var("$language", &task).unwrap(),

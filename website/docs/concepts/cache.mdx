@@ -18,13 +18,14 @@ input), or updating an npm package version, so don't worry if you see _a lot_ of
 
 Our smart hashing currently takes the following sources into account:
 
-- Node.js version.
 - Command (`command`) being ran and its arguments (`args`).
-- Input files (`inputs`).
+- Input sources (`inputs`).
 - Environment variables (`env`).
 - Dependencies between projects (`dependsOn`) and tasks (`deps`).
-- `package.json` dependencies (including development and peer).
-- `tsconfig.json` compiler options (when applicable).
+- **For Node.js tasks**:
+  - Node.js version.
+  - `package.json` dependencies (including development and peer).
+  - `tsconfig.json` compiler options (when applicable).
 
 ## File structure
 

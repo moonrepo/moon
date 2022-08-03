@@ -2,7 +2,7 @@ use moon_cache::CacheEngine;
 use moon_config::constants::FLAG_PROJECTS_USING_GLOB;
 use moon_config::{GlobalProjectConfig, ProjectID, ProjectLanguage, WorkspaceConfig};
 use moon_logger::{color, debug, map_list, trace};
-use moon_plugin_node::infer_tasks;
+use moon_platform_node::infer_tasks;
 use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -311,7 +311,7 @@ impl ProjectGraph {
         };
 
         let project = self.create_project(id, source)?;
-        let depends_on = project.get_dependencies();
+        let depends_on = project.get_dependency_ids();
 
         // Insert the project into the graph
         let node_index = graph.add_node(project);

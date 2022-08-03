@@ -1,6 +1,6 @@
 use moon_config::{
-    GlobalProjectConfig, ProjectConfig, ProjectLanguage, ProjectMetadataConfig, ProjectType,
-    TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig, TaskType,
+    GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectLanguage,
+    ProjectMetadataConfig, ProjectType, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig,
 };
 use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
@@ -114,7 +114,7 @@ fn basic_config() {
         Project {
             id: String::from("basic"),
             config: ProjectConfig {
-                depends_on: string_vec!["noConfig"],
+                depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
@@ -185,7 +185,7 @@ fn overrides_global_file_groups() {
         Project {
             id: String::from("basic"),
             config: ProjectConfig {
-                depends_on: string_vec!["noConfig"],
+                depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
                 file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
@@ -209,6 +209,7 @@ mod tasks {
     };
     use moon_utils::glob;
     use pretty_assertions::assert_eq;
+    use std::collections::HashSet;
 
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {
@@ -219,6 +220,7 @@ mod tasks {
 
     fn mock_merged_task_options_config(strategy: TaskMergeStrategy) -> TaskOptionsConfig {
         TaskOptionsConfig {
+            cache: None,
             merge_args: Some(strategy.clone()),
             merge_deps: Some(strategy.clone()),
             merge_env: Some(strategy.clone()),
@@ -232,6 +234,7 @@ mod tasks {
 
     fn mock_local_task_options_config(strategy: TaskMergeStrategy) -> TaskOptionsConfig {
         TaskOptionsConfig {
+            cache: None,
             merge_args: Some(strategy.clone()),
             merge_deps: Some(strategy.clone()),
             merge_env: Some(strategy.clone()),
@@ -245,6 +248,7 @@ mod tasks {
 
     fn stub_global_task_options_config() -> TaskOptionsConfig {
         TaskOptionsConfig {
+            cache: Some(true),
             merge_args: None,
             merge_deps: None,
             merge_env: None,
@@ -298,10 +302,11 @@ mod tasks {
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         );
+        task.platform = PlatformType::Node;
 
         // Expanded
         task.input_globs
-            .push(glob::normalize(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
+            .insert(glob::normalize(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
 
         assert_eq!(
             project,
@@ -339,29 +344,37 @@ mod tasks {
             Target::format("id", "build").unwrap(),
             &mock_task_config("webpack"),
         );
+        build.platform = PlatformType::Node;
 
         let mut std = Task::from_config(
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         );
+        std.platform = PlatformType::Node;
 
         let mut test = Task::from_config(
             Target::format("id", "test").unwrap(),
             &mock_task_config("jest"),
         );
+        test.platform = PlatformType::Node;
 
         let mut lint = Task::from_config(
             Target::format("id", "lint").unwrap(),
             &mock_task_config("eslint"),
         );
+        lint.platform = PlatformType::Node;
 
         // Expanded
         let wild_glob = workspace_root.join("tasks/basic/**/*");
 
-        build.input_globs.push(glob::normalize(&wild_glob).unwrap());
-        std.input_globs.push(glob::normalize(&wild_glob).unwrap());
-        test.input_globs.push(glob::normalize(&wild_glob).unwrap());
-        lint.input_globs.push(glob::normalize(&wild_glob).unwrap());
+        build
+            .input_globs
+            .insert(glob::normalize(&wild_glob).unwrap());
+        std.input_globs.insert(glob::normalize(&wild_glob).unwrap());
+        test.input_globs
+            .insert(glob::normalize(&wild_glob).unwrap());
+        lint.input_globs
+            .insert(glob::normalize(&wild_glob).unwrap());
 
         assert_eq!(
             project,
@@ -393,7 +406,7 @@ mod tasks {
     #[test]
     fn inherits_implicit_inputs() {
         let workspace_root = get_fixtures_root();
-        let implicit_inputs = string_vec!["package.json", "/.moon/workspace.yml"];
+        let implicit_inputs = string_vec!["$VAR", "package.json", "/.moon/workspace.yml"];
         let project = Project::new(
             "id",
             "tasks/basic",
@@ -436,6 +449,12 @@ mod tasks {
         assert_eq!(project.get_task("standard").unwrap().inputs, std.inputs);
         assert_eq!(project.get_task("test").unwrap().inputs, test.inputs);
         assert_eq!(project.get_task("lint").unwrap().inputs, lint.inputs);
+
+        // Applies to all tasks
+        assert_eq!(
+            project.get_task("build").unwrap().input_vars,
+            HashSet::from(["VAR".to_owned()])
+        );
     }
 
     #[test]
@@ -457,7 +476,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: TaskType::Node,
+                        type_of: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -481,7 +500,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -501,7 +520,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -532,7 +551,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: TaskType::Node,
+                        type_of: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -556,7 +575,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Append),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -579,7 +598,7 @@ mod tasks {
                             inputs: Some(string_vec!["a.*", "b.*"]),
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Append),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -610,7 +629,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: TaskType::Node,
+                        type_of: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -634,7 +653,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -657,7 +676,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*", "a.*"]),
                             outputs: Some(string_vec!["b.ts", "a.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: TaskType::System,
+                            type_of: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -688,7 +707,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: TaskType::Node,
+                        type_of: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -696,6 +715,34 @@ mod tasks {
             &[],
         )
         .unwrap();
+
+        let mut task = create_expanded_task(
+            Target::format("id", "standard").unwrap(),
+            TaskConfig {
+                args: Some(string_vec!["--a", "--b"]),
+                command: Some(String::from("standard")),
+                deps: Some(string_vec!["b:standard", "a:standard"]),
+                env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
+                inputs: Some(string_vec!["b.*"]),
+                outputs: Some(string_vec!["a.ts", "b.ts"]),
+                options: TaskOptionsConfig {
+                    cache: Some(true),
+                    merge_args: Some(TaskMergeStrategy::Append),
+                    merge_deps: Some(TaskMergeStrategy::Prepend),
+                    merge_env: Some(TaskMergeStrategy::Replace),
+                    merge_inputs: Some(TaskMergeStrategy::Replace),
+                    merge_outputs: Some(TaskMergeStrategy::Append),
+                    retry_count: Some(1),
+                    run_in_ci: Some(true),
+                    run_from_workspace_root: None,
+                },
+                type_of: PlatformType::Unknown,
+            },
+            &workspace_root,
+            project_source,
+        )
+        .unwrap();
+        task.platform = PlatformType::Unknown;
 
         assert_eq!(
             project,
@@ -712,6 +759,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: TaskOptionsConfig {
+                                cache: None,
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
                                 merge_env: Some(TaskMergeStrategy::Replace),
@@ -721,7 +769,7 @@ mod tasks {
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
                             },
-                            type_of: TaskType::Node,
+                            type_of: PlatformType::Unknown,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -729,34 +777,7 @@ mod tasks {
                 log_target: String::from("moon:project:id"),
                 root: workspace_root.join(project_source),
                 source: String::from(project_source),
-                tasks: BTreeMap::from([(
-                    String::from("standard"),
-                    create_expanded_task(
-                        Target::format("id", "standard").unwrap(),
-                        TaskConfig {
-                            args: Some(string_vec!["--a", "--b"]),
-                            command: Some(String::from("standard")),
-                            deps: Some(string_vec!["b:standard", "a:standard"]),
-                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
-                            inputs: Some(string_vec!["b.*"]),
-                            outputs: Some(string_vec!["a.ts", "b.ts"]),
-                            options: TaskOptionsConfig {
-                                merge_args: Some(TaskMergeStrategy::Append),
-                                merge_deps: Some(TaskMergeStrategy::Prepend),
-                                merge_env: Some(TaskMergeStrategy::Replace),
-                                merge_inputs: Some(TaskMergeStrategy::Replace),
-                                merge_outputs: Some(TaskMergeStrategy::Append),
-                                retry_count: Some(1),
-                                run_in_ci: Some(true),
-                                run_from_workspace_root: None,
-                            },
-                            type_of: TaskType::Node,
-                        },
-                        &workspace_root,
-                        project_source
-                    )
-                    .unwrap()
-                )]),
+                tasks: BTreeMap::from([(String::from("standard"), task)]),
                 ..Project::default()
             }
         );
@@ -1082,10 +1103,10 @@ mod tasks {
 
             assert_eq!(
                 task.input_globs,
-                vec![
+                HashSet::from([
                     glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap(),
                     glob::normalize(project_root.join("*.js")).unwrap()
-                ],
+                ]),
             );
 
             let a: HashSet<PathBuf> =
@@ -1122,7 +1143,7 @@ mod tasks {
                         TaskConfig {
                             command: Some(String::from("test")),
                             inputs: Some(string_vec!["local.ts",]),
-                            type_of: TaskType::Node,
+                            type_of: PlatformType::Node,
                             ..TaskConfig::default()
                         },
                     )]),
@@ -1139,7 +1160,7 @@ mod tasks {
 
             assert_eq!(
                 task.input_globs,
-                vec![glob::normalize(project_root.join("*.yml")).unwrap(),]
+                HashSet::from([glob::normalize(project_root.join("*.yml")).unwrap()])
             );
 
             let a: HashSet<PathBuf> =

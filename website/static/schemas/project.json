@@ -7,7 +7,7 @@
     "dependsOn": {
       "type": "array",
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/ProjectDependsOn"
       }
     },
     "fileGroups": {
@@ -46,10 +46,54 @@
     }
   },
   "definitions": {
+    "DependencyConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "scope": {
+          "default": "production",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DependencyScope"
+            }
+          ]
+        }
+      }
+    },
+    "DependencyScope": {
+      "type": "string",
+      "enum": [
+        "development",
+        "peer",
+        "production"
+      ]
+    },
+    "PlatformType": {
+      "type": "string",
+      "enum": [
+        "node",
+        "system",
+        "unknown"
+      ]
+    },
+    "ProjectDependsOn": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/DependencyConfig"
+        }
+      ]
+    },
     "ProjectLanguage": {
       "type": "string",
       "enum": [
         "bash",
+        "batch",
         "javascript",
         "typescript",
         "unknown"
@@ -197,7 +241,7 @@
           }
         },
         "type": {
-          "$ref": "#/definitions/TaskType"
+          "$ref": "#/definitions/PlatformType"
         }
       }
     },
@@ -212,6 +256,12 @@
     "TaskOptionsConfig": {
       "type": "object",
       "properties": {
+        "cache": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "mergeArgs": {
           "anyOf": [
             {
@@ -283,13 +333,6 @@
           ]
         }
       }
-    },
-    "TaskType": {
-      "type": "string",
-      "enum": [
-        "node",
-        "system"
-      ]
     }
   }
 }

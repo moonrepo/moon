@@ -343,7 +343,11 @@ impl Command {
             return MoonError::ProcessNonZero(self.bin.clone(), code);
         }
 
-        let message = output_to_trimmed_string(&output.stderr);
+        let mut message = output_to_trimmed_string(&output.stderr);
+
+        if message.is_empty() {
+            message = output_to_trimmed_string(&output.stdout);
+        }
 
         MoonError::ProcessNonZeroWithOutput(self.bin.clone(), code, message)
     }

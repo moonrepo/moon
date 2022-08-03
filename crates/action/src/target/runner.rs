@@ -78,7 +78,7 @@ impl<'a> TargetRunner<'a> {
         let globset = task.create_globset()?;
         let mut hasher = TargetHasher::new();
 
-        hasher.hash_project_deps(self.project.get_dependencies());
+        hasher.hash_project_deps(self.project.get_dependency_ids());
         hasher.hash_task(task);
         hasher.hash_args(&context.passthrough_args);
 

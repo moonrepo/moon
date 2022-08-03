@@ -311,7 +311,7 @@ impl ProjectGraph {
         };
 
         let project = self.create_project(id, source)?;
-        let depends_on = project.get_dependencies();
+        let depends_on = project.get_dependency_ids();
 
         // Insert the project into the graph
         let node_index = graph.add_node(project);

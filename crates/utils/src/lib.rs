@@ -3,6 +3,7 @@ pub mod glob;
 pub mod path;
 pub mod process;
 pub mod regex;
+pub mod semver;
 pub mod test;
 pub mod time;
 

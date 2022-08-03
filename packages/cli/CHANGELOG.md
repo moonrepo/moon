@@ -12,6 +12,9 @@ previous builds are no longer valid and can be removed.
 
 - Updated task `type` to be automatically inferred when the value is unknown, based on the owning
   project's `language` (`javascript` = node, `bash` = system, etc).
+- Updated `dependsOn` in `project.yml` to support an object form, where a scope (production,
+  development, peer) can also be defined. This maps to the appropriate field in `package.json` when
+  syncing.
 - Added `batch` as a supported value for the project `language` setting (Windows counter-part to
   `bash`).
 - Added a `cache` option to tasks, which will disable smart hashing and output caching.

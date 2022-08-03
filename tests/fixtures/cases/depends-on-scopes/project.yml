@@ -1,0 +1,15 @@
+language: javascript
+
+dependsOn:
+  - id: depsA
+    scope: development
+  - id: depsB
+    scope: peer
+  - id: depsC
+    scope: production
+  - depsD
+
+tasks:
+  standard:
+    command: node
+    args: -e "'noop'"

@@ -95,13 +95,13 @@ jobs:
           profile: minimal
           components: llvm-tools-preview
       - uses: actions-rs/cargo@v1
-        if: ${{ startsWith(github.ref_name, 'develop-') || github.ref_name == 'master' }}
+        if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
         name: Install grcov
         with:
           command: install
           args: --force grcov
       - uses: actions-rs/cargo@v1
-        if: ${{ startsWith(github.ref_name, 'develop-') || github.ref_name == 'master' }}
+        if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
         name: Build debug binary
         with:
           command: build
@@ -123,18 +123,22 @@ jobs:
           LLVM_PROFILE_FILE: ${{ github.workspace }}/moon-%p-%m.profraw
       # Windows fails to compile right now...
       - name: Generate code coverage
-        if: ${{ matrix.os != 'windows-latest' && (startsWith(github.ref_name, 'develop-') || github.ref_name == 'master') }}
+        if:
+          ${{ matrix.os != 'windows-latest' && (contains(github.head_ref, 'develop-') ||
+          endsWith(github.ref, 'master')) }}
         run: |
           grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
       - uses: actions/upload-artifact@v2
-        if: ${{ matrix.os != 'windows-latest' && (startsWith(github.ref_name, 'develop-') || github.ref_name == 'master') }}
+        if:
+          ${{ matrix.os != 'windows-latest' && (contains(github.head_ref, 'develop-') ||
+          endsWith(github.ref, 'master')) }}
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}
           path: ./report.txt
           if-no-files-found: error
   coverage:
-    if: ${{ startsWith(github.ref_name, 'develop-') || github.ref_name == 'master' }}
+    if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:

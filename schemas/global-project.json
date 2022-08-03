@@ -29,6 +29,14 @@
     }
   },
   "definitions": {
+    "PlatformType": {
+      "type": "string",
+      "enum": [
+        "node",
+        "system",
+        "unknown"
+      ]
+    },
     "TaskConfig": {
       "type": "object",
       "properties": {
@@ -92,7 +100,7 @@
           }
         },
         "type": {
-          "$ref": "#/definitions/TaskType"
+          "$ref": "#/definitions/PlatformType"
         }
       }
     },
@@ -107,6 +115,12 @@
     "TaskOptionsConfig": {
       "type": "object",
       "properties": {
+        "cache": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "mergeArgs": {
           "anyOf": [
             {
@@ -178,13 +192,6 @@
           ]
         }
       }
-    },
-    "TaskType": {
-      "type": "string",
-      "enum": [
-        "node",
-        "system"
-      ]
     }
   }
 }

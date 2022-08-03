@@ -31,6 +31,7 @@
       "default": {
         "addEnginesConstraint": true,
         "dedupeOnLockfileChange": true,
+        "dependencyVersionFormat": "workspace-caret",
         "inferTasksFromScripts": false,
         "npm": {
           "version": "inherit"
@@ -128,6 +129,14 @@
           "default": true,
           "type": "boolean"
         },
+        "dependencyVersionFormat": {
+          "default": "workspace-caret",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            }
+          ]
+        },
         "inferTasksFromScripts": {
           "default": false,
           "type": "boolean"
@@ -146,7 +155,7 @@
           "default": "npm",
           "allOf": [
             {
-              "$ref": "#/definitions/PackageManager"
+              "$ref": "#/definitions/NodePackageManager"
             }
           ]
         },
@@ -169,7 +178,7 @@
           "default": null,
           "anyOf": [
             {
-              "$ref": "#/definitions/VersionManager"
+              "$ref": "#/definitions/NodeVersionManager"
             },
             {
               "type": "null"
@@ -193,6 +202,35 @@
         }
       }
     },
+    "NodePackageManager": {
+      "type": "string",
+      "enum": [
+        "npm",
+        "pnpm",
+        "yarn"
+      ]
+    },
+    "NodeVersionFormat": {
+      "type": "string",
+      "enum": [
+        "file",
+        "link",
+        "star",
+        "version",
+        "version-caret",
+        "version-tilde",
+        "workspace",
+        "workspace-caret",
+        "workspace-tilde"
+      ]
+    },
+    "NodeVersionManager": {
+      "type": "string",
+      "enum": [
+        "nodenv",
+        "nvm"
+      ]
+    },
     "NpmConfig": {
       "type": "object",
       "properties": {
@@ -201,14 +239,6 @@
           "type": "string"
         }
       }
-    },
-    "PackageManager": {
-      "type": "string",
-      "enum": [
-        "npm",
-        "pnpm",
-        "yarn"
-      ]
     },
     "PnpmConfig": {
       "type": "object",
@@ -268,13 +298,6 @@
       "enum": [
         "git",
         "svn"
-      ]
-    },
-    "VersionManager": {
-      "type": "string",
-      "enum": [
-        "nodenv",
-        "nvm"
       ]
     },
     "YarnConfig": {

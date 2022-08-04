@@ -23,7 +23,7 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
         }
     }
 
-    // Create or update the local `project.yml`
+    // Create or update the local `moon.yml`
     let mut project = workspace.projects.load(project_id)?;
 
     let mut link_deps = |deps: &DepsSet, scope: DependencyScope| {

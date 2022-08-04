@@ -1,4 +1,4 @@
-// <project path>/project.yml
+// <project path>/moon.yml
 
 pub mod dep;
 pub mod global;

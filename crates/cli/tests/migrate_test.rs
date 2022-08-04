@@ -18,10 +18,9 @@ mod from_package_json {
         )
         .unwrap());
 
-        assert_snapshot!(fs::read_to_string(
-            fixture.path().join("package-json/common/project.yml")
-        )
-        .unwrap());
+        assert_snapshot!(
+            fs::read_to_string(fixture.path().join("package-json/common/moon.yml")).unwrap()
+        );
 
         assert.success();
     }
@@ -39,7 +38,7 @@ mod from_package_json {
         );
 
         assert_snapshot!(
-            fs::read_to_string(fixture.path().join("package-json/deps/project.yml")).unwrap()
+            fs::read_to_string(fixture.path().join("package-json/deps/moon.yml")).unwrap()
         );
 
         assert.success();

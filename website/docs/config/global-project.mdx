@@ -4,7 +4,7 @@ title: .moon/project.yml
 
 The `.moon/project.yml` file configures file groups and tasks that are inherited by _every_ project
 in the workspace. Projects can override or merge with these settings within their respective
-[`project.yml`](./project).
+[`moon.yml`](./project).
 
 ## `extends`
 
@@ -31,7 +31,7 @@ values _are not_ deep merged!
 > `Record<string, string[]>`
 
 > For more information on file group configuration, refer to the
-> [`fileGroups`](./project#filegroups) section in the [`project.yml`](./project) doc.
+> [`fileGroups`](./project#filegroups) section in the [`moon.yml`](./project) doc.
 
 Defines [file groups](../concepts/file-group) that will be inherited by all projects, and also
 enables enforcement of organizational patterns and file locations. For example, encourage all
@@ -63,7 +63,7 @@ fileGroups:
 > `Record<string, TaskConfig>`
 
 > For more information on task configuration, refer to the [`tasks`](./project#tasks) section in the
-> [`project.yml`](./project) doc.
+> [`moon.yml`](./project) doc.
 
 As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
 context of a project, and commonly wrap an npm binary or system command. For most workspaces, every

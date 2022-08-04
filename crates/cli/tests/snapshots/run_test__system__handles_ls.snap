@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 387
+assertion_line: 402
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ system:ls
@@ -9,8 +9,8 @@ envVars.sh
 envVarsMoon.sh
 exitNonZero.sh
 exitZero.sh
+moon.yml
 passthroughArgs.sh
-project.yml
 standard.sh
 
 Tasks: 1 completed

@@ -4,7 +4,7 @@ use moon_config::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
     load_global_project_config_template, load_workspace_config_template,
 };
-use moon_constants::{CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_constants::{CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_lang::{is_using_package_manager, is_using_version_manager};
 use moon_lang_node::package::{PackageJson, PackageWorkspaces};
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
@@ -308,7 +308,7 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     .await?;
 
     fs::write(
-        &moon_dir.join(CONFIG_PROJECT_FILENAME),
+        &moon_dir.join(CONFIG_GLOBAL_PROJECT_FILENAME),
         tera.render("project", &context)?,
     )
     .await?;

@@ -34,7 +34,7 @@ When linting with [ESLint](./eslint) and the
 include the `.vue` extension within the `lint` task. This can be done by extending the top-level
 task within the project (below), or by adding it to the top-level entirely.
 
-```yaml title="<project>/project.yml"
+```yaml title="<project>/moon.yml"
 tasks:
   lint:
     args:
@@ -49,7 +49,7 @@ Vue does not use [TypeScript](./typescript)'s `tsc` binary directly, but instead
 to support Vue components. Because of this, we should update the `typecheck` task in the project to
 utilize this command instead.
 
-```yaml title="<project>/project.yml"
+```yaml title="<project>/moon.yml"
 workspace:
 	inheritedTasks:
 		exclude: ['typecheck']

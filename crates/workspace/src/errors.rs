@@ -30,7 +30,7 @@ pub enum WorkspaceError {
     #[error(
         "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
         constants::CONFIG_DIRNAME,
-        constants::CONFIG_PROJECT_FILENAME
+        constants::CONFIG_GLOBAL_PROJECT_FILENAME
     )]
     InvalidGlobalProjectConfigFile(String),
 

@@ -1,0 +1,19 @@
+---
+source: crates/cli/tests/project_test.rs
+assertion_line: 104
+expression: get_assert_output(&assert)
+---
+
+ ROOT 
+
+ID: root
+Source: .
+Language: TypeScript
+Type: Unknown
+
+ TASKS 
+
+oneOff: node -e console.log('root one off')
+
+
+

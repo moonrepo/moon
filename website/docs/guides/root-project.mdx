@@ -1,0 +1,67 @@
+---
+title: Root-level project
+---
+
+Coming from other repositories or build systems, you may be familiar with tasks available at the
+repository root, in which one-off, organization, maintenance, or process oriented tasks can be ran.
+moon supports this through a concept known as a root-level project.
+
+Begin by adding the root to [`projects`](../config/workspace#projects) with a source value of `.`
+(current directory relative from the workspace).
+
+```yaml title=".moon/workspace.yml"
+# As a map
+projects:
+  root: '.'
+
+# As a list of globs
+projects:
+  - '.'
+```
+
+> When using globs, the root project's name will be inferred from the repository folder name. Be
+> wary of this as it can change based on what a developer has checked out as.
+
+Once added, create a [`project.yml`](../config/project) in the root of the repository. From here you
+can define tasks that can be ran using this new root-level project name, for example,
+`moon run root:<task>`.
+
+```yaml title="project.yml"
+tasks:
+	versionCheck:
+		command: 'yarn'
+		args: 'version check'
+		inputs: []
+		options:
+			cache: false
+```
+
+And that's it, but there are a few caveats to be aware of...
+
+## Caveats
+
+### Greedy inputs
+
+Task [`inputs`](../config/project#inputs) default to `**/*`, which would result in root-level tasks
+scanning _all_ files in the repository. This will be a very expensive operation! We suggest
+restricting inputs to a very succinct whitelist, or disabling inputs entirely.
+
+```yaml title="project.yml"
+tasks:
+	oneOff:
+		# ...
+		inputs: []
+```
+
+### Inherited tasks
+
+Because a root project is still a project in the workspace, it will inherit all tasks defined in
+[`.moon/project.yml`](../config/global-project), which may be not what you want. To mitigate this,
+you can exclude some or all of these tasks in the root config with
+[`workspace.inheritedTasks`](../config/project#inheritedtasks).
+
+```yaml title="project.yml"
+workspace:
+	inheritedTasks:
+		include: []
+```

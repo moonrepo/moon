@@ -82,6 +82,18 @@ tasks:
 		type: 'system'
 ```
 
+### How to run multiple commands within a task?
+
+A task in moon is a single command, representing its inputs and outputs, and as such, cannot run
+multiple commands with `&&` within a single task declaration. However, we do suggest the following
+alternatives:
+
+- Create a task for each command, and link them as dependencies with
+  [`deps`](./config/project#deps). This allows for each command to be incrementally cached (when
+  enabled).
+- Wrap all commands in an external file, and execute that file instead. Refer to the
+  [piping question](#how-to-pipe-or-redirect-tasks) above for an example.
+
 ## JavaScript ecosystem
 
 ### Can we use `package.json` scripts?

@@ -26,8 +26,8 @@ project? Again, while not impossible, it's quite cumbersome to model in `package
 on and so forth.
 
 moon aims to solve this with a different approach, by standardizing all projects in the workspace on
-[`project.yml`](./config/project). With this, the `project.yml` is the source of truth for each
-project, and provides us with the following:
+[`moon.yml`](./config/project). With this, the `moon.yml` is the source of truth for each project,
+and provides us with the following:
 
 - The configuration is language agnostic. All projects are configured in a similar manner.
 - Tasks can reference other tasks easily. For example, npm scripts referencing rake tasks, and vice
@@ -74,7 +74,7 @@ handles this for you, for example:
 moon project foo --json | jq ...
 ```
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 tasks:
 	pipe:
 		command: 'bash'
@@ -98,9 +98,9 @@ alternatives:
 
 ### Can we use `package.json` scripts?
 
-We encourage everyone to define tasks in a [`project.yml`](./config/project#tasks) file, as it
-allows for additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like
-to keep using `package.json` scripts, enable the
+We encourage everyone to define tasks in a [`moon.yml`](./config/project#tasks) file, as it allows
+for additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like to
+keep using `package.json` scripts, enable the
 [`node.inferTasksFromScripts`](./config/workspace#infertasksfromscripts) setting.
 
 View the [official documentation](./migrate-to-moon) for more information on this approach,

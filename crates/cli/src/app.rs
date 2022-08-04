@@ -20,7 +20,7 @@ const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 pub enum MigrateCommands {
     #[clap(
         name = "from-package-json",
-        about = "Migrate `package.json` scripts and dependencies to `project.yml`."
+        about = "Migrate `package.json` scripts and dependencies to `moon.yml`."
     )]
     FromPackageJson {
         #[clap(help = "ID of project to migrate")]

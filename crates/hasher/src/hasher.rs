@@ -23,7 +23,7 @@ pub struct TargetHasher {
     // Input files and globs mapped to a unique hash
     inputs: BTreeMap<String, String>,
 
-    // `project.yml` `dependsOn`
+    // `moon.yml` `dependsOn`
     project_deps: Vec<String>,
 
     // Task `target`

@@ -4,13 +4,13 @@ sidebar_label: from-package-json
 ---
 
 Use the `moon migrate from-package-json <project>` sub-command to migrate a project's `package.json`
-to our [`project.yml`](../../config/project) format. When ran, the following changes are made:
+to our [`moon.yml`](../../config/project) format. When ran, the following changes are made:
 
-- Converts `package.json` scripts to `project.yml` [tasks](../../config/project#tasks). Scripts and
+- Converts `package.json` scripts to `moon.yml` [tasks](../../config/project#tasks). Scripts and
   tasks are not 1:1, so we'll convert as close as possible while retaining functionality.
 - Updates `package.json` by removing all converted scripts. If all scripts were converted, the
   entire block is removed.
-- Links `package.json` dependencies as `project.yml` [dependencies](../../config/project#dependson)
+- Links `package.json` dependencies as `moon.yml` [dependencies](../../config/project#dependson)
   (`dependsOn`). Will map a package's name to their moon project name.
 
 This command is ran _per project_, and for this to operate correctly, requires all

@@ -184,7 +184,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Defines tasks in',
 		support: {
-			moon: '`project.yml` or `package.json` scripts',
+			moon: '`moon.yml` or `package.json` scripts',
 			nx: '`project.json` or `package.json` scripts',
 			turborepo: '`package.json` scripts',
 		},

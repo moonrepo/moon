@@ -282,8 +282,7 @@ This requires the [project's language](./project#language) to be "javascript" or
 
 - Script names will be converted to kebab-case, and will become the task ID.
 - Pre, post, and life cycle hooks are ignored.
-- Tasks defined in `.moon/project.yml` or `project.yml` take precedence over scripts of the same
-  name.
+- Tasks defined in `.moon/project.yml` or `moon.yml` take precedence over scripts of the same name.
 
 To verify inferred tasks, run [`moon project <id>`](../commands/project) (pass `--json` to view raw
 config and options). Tasks that are inferred will have their command and args set to
@@ -319,7 +318,7 @@ node:
 
 A quick example on how this works. Given the following `dependsOn`:
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 dependsOn:
   - 'designSystem'
   - 'reactHooks'

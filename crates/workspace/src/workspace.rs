@@ -35,7 +35,7 @@ fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
 fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, WorkspaceError> {
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
-        .join(constants::CONFIG_PROJECT_FILENAME);
+        .join(constants::CONFIG_GLOBAL_PROJECT_FILENAME);
 
     trace!(
         target: LOG_TARGET,
@@ -43,7 +43,7 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
         color::file(&format!(
             "{}/{}",
             constants::CONFIG_DIRNAME,
-            constants::CONFIG_PROJECT_FILENAME,
+            constants::CONFIG_GLOBAL_PROJECT_FILENAME,
         )),
         color::path(root_dir)
     );

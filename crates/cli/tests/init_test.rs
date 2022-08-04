@@ -1,5 +1,5 @@
 use insta::assert_snapshot;
-use moon_constants::{CONFIG_WORKSPACE_FILENAME, CONFIG_GLOBAL_PROJECT_FILENAME};
+use moon_constants::{CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_utils::test::{create_moon_command, create_sandbox};
 use predicates::prelude::*;
 use serial_test::serial;
@@ -57,7 +57,9 @@ fn creates_workspace_config_from_template() {
 fn creates_project_config_from_template() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
-    let project_config = root.join(".moon").join(moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME);
+    let project_config = root
+        .join(".moon")
+        .join(moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME);
 
     create_moon_command(root)
         .arg("init")

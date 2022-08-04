@@ -25,7 +25,7 @@ is up to you. The following patterns are suggested:
 
 - A `buildPackage` task in [`.moon/project.yml`](../../config/global-project), which can be
   inherited by package based projects.
-- A `build` task in each [`project.yml`](../../config/project).
+- A `build` task in each [`moon.yml`](../../config/project).
 
 <Tabs
   groupId="config-type"
@@ -67,7 +67,7 @@ buildPackage:
 With this being defined globally, all package-based projects can inherit this task and rename it as
 follows.
 
-```yaml title="<package>/project.yml"
+```yaml title="<package>/moon.yml"
 # Rename the `buildPackage` task to `build` for this project
 workspace:
 	inheritedTasks:
@@ -84,7 +84,7 @@ tasks:
 However, for other project types like applications, this task will need to be _excluded_, otherwise
 it will run and fail in CI.
 
-```yaml title="<app>/project.yml"
+```yaml title="<app>/moon.yml"
 # Exclude the `buildPackage` task for this project
 workspace:
 	inheritedTasks:
@@ -94,7 +94,7 @@ workspace:
 </TabItem>
 <TabItem value="local">
 
-```yaml title="<package>/project.yml"
+```yaml title="<package>/moon.yml"
 build:
 	command: 'packemon'
 	args:

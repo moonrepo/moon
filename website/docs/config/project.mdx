@@ -1,13 +1,14 @@
 ---
-title: project.yml
+title: moon.yml
 toc_max_heading_level: 6
 ---
 
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 
-The `project.yml` configuration file _is not required_ but can be used to define additional metadata
-for a project, override inherited tasks, and more at the project-level. When used, this file must
-exist in a project's root, as configured in [`projects`](./workspace#projects).
+The `moon.yml` configuration file (formerly `project.yml`) _is not required_ but can be used to
+define additional metadata for a project, override inherited tasks, and more at the project-level.
+When used, this file must exist in a project's root, as configured in
+[`projects`](./workspace#projects).
 
 ## `dependsOn`
 
@@ -21,7 +22,7 @@ one, and for syncing [`package.json`](./workspace#syncprojectworkspacedependenci
 When defined, this setting requires an array of project names, which are the keys found in the
 [`projects`](./workspace#projects) map.
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 dependsOn:
   - 'apiClients'
   - 'designSystem'
@@ -31,7 +32,7 @@ A dependency object can also be defined, where a specific `scope` can be assigne
 "production" (default), "development", or "peer". This maps to the appropriate field in
 `package.json` when syncing.
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 dependsOn:
   - id: 'apiClients'
     scope: 'production'
@@ -54,7 +55,7 @@ list of [globs or paths](../concepts/file-pattern). Globs and paths are
 [relative to a project](../concepts/file-pattern#project-relative) (even when defined
 [globally](./global-project)).
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 fileGroups:
   configs:
     - '*.config.{js,cjs,mjs}'
@@ -91,7 +92,7 @@ The primary programming language the project is written in. Supports the followi
   `tsconfig.json` exists.
 - `unknown` (default) - When not configured or inferred.
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 language: 'javascript'
 ```
 
@@ -105,7 +106,7 @@ language: 'javascript'
 The `project` setting defines metadata about the project itself. Although this setting is optional,
 when defined, all fields within it _must_ be defined as well.
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 project:
   name: 'moon'
   description: 'A monorepo management tool.'
@@ -160,7 +161,7 @@ Tasks are actions that are ran within the context of a [project](../concepts/pro
 wrap an npm binary or system command. This setting requires a map, where the key is a unique name
 for the task, and the value is an object of task parameters.
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 tasks:
   format:
     command: 'prettier'
@@ -179,7 +180,7 @@ tasks:
 The `command` field is the name of an npm binary or native system command to run when executing the
 task. This field is required when _not_ inheriting a global task of the same name.
 
-```yaml title="project.yml" {3}
+```yaml title="moon.yml" {3}
 tasks:
   format:
     command: 'prettier'
@@ -188,7 +189,7 @@ tasks:
 By default a task assumes the command is an npm binary, and if you'd like to reference a system
 command, you'll also need to set the [`type`](#type) to "system".
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 tasks:
   clean:
     command: 'rm'
@@ -217,7 +218,7 @@ The `args` field is a collection of arguments to pass on the command line when e
 This setting can be defined using a string, or an array of strings. We suggest using arrays when
 dealing with many args, or the args string cannot be parsed easily.
 
-```yaml title="project.yml" {4,5}
+```yaml title="moon.yml" {4,5}
 tasks:
   test:
     command: 'jest'
@@ -233,7 +234,7 @@ tasks:
 However, for the array approach to work correctly, each argument _must_ be its own distinct item,
 including argument values. For example:
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 tasks:
   test:
     command: 'jest'
@@ -255,7 +256,7 @@ The `deps` field is a list of other tasks (known as [targets](../concepts/target
 this project or found in another project, that will be executed _before_ this task. It achieves this
 by generating a directed task graph based on the project graph.
 
-```yaml title="project.yml" {4-6}
+```yaml title="moon.yml" {4-6}
 tasks:
   build:
     command: 'webpack'
@@ -270,7 +271,7 @@ tasks:
 
 The `env` field is map of strings that are passed as environment variables when running the command.
 
-```yaml title="project.yml" {4,5}
+```yaml title="moon.yml" {4,5}
 tasks:
   build:
     command: 'webpack'
@@ -291,7 +292,7 @@ Inputs support the following source types:
 - Environment variables (must start with a `$`).
 - [Project and workspace relative file patterns](../concepts/file-pattern#project-relative)
 
-```yaml title="project.yml" {4-10}
+```yaml title="moon.yml" {4-10}
 tasks:
   lint:
     command: 'eslint'
@@ -325,7 +326,7 @@ task, excluding internal cache files that are created from the underlying comman
 Outputs are necessary for [incremental caching and rehydration](../concepts/cache). If you'd prefer
 to avoid that functionality, omit this field.
 
-```yaml title="project.yml" {4-6}
+```yaml title="moon.yml" {4-6}
 tasks:
   build:
     command: 'webpack'
@@ -344,7 +345,7 @@ The `options` field is an object of configurable options that can be used to mod
 execution. The following fields can be provided, with merge related fields supporting all
 [merge strategies](../concepts/task#merge-strategies).
 
-```yaml title="project.yml" {6-8}
+```yaml title="moon.yml" {6-8}
 tasks:
   typecheck:
     command: 'tsc'
@@ -365,7 +366,7 @@ system. If disabled, _will not_ create a cache hash, and _will not_ persist a ta
 We suggest disabling caching when defining cleanup tasks, one-off scripts, or file system heavy
 operations.
 
-```yaml title="project.yml" {6}
+```yaml title="moon.yml" {6}
 tasks:
   clean:
     command: 'rm'
@@ -415,7 +416,7 @@ The strategy to use when merging the [`outputs`](#outputs) list with an inherite
 The number of attempts the task will retry execution before returning a failure. This is especially
 useful for flaky tasks. Defaults to `0`.
 
-```yaml title="project.yml" {5}
+```yaml title="moon.yml" {5}
 tasks:
   test:
     # ...
@@ -431,7 +432,7 @@ Whether to run the task automatically in a CI (continuous integration) environme
 touched files, typically through the `moon ci` command. Defaults to `true` unless the task name is
 "dev", "start", or "serve", and is _always_ true when a task defines [`outputs`](#outputs).
 
-```yaml title="project.yml" {5}
+```yaml title="moon.yml" {5}
 tasks:
   build:
     # ...
@@ -446,7 +447,7 @@ tasks:
 Whether to use the workspace root as the working directory when executing a task. Defaults to
 `false` and runs from the task's project root.
 
-```yaml title="project.yml" {5}
+```yaml title="moon.yml" {5}
 tasks:
   typecheck:
     # ...
@@ -463,7 +464,7 @@ to execute it with. By default will set to a value based on the project's [`lang
 - `system` - Command is expected to exist within the system's environment.
 - `unknown` - When not inferred.
 
-```yaml title="project.yml" {4}
+```yaml title="moon.yml" {4}
 tasks:
   env:
     command: 'printenv'
@@ -484,7 +485,7 @@ The type of project. Supports the following values:
 - `tool` - An internal tool, command line program, one-off script, etc.
 - `unknown` (default) - When not configured.
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 type: 'application'
 ```
 
@@ -501,7 +502,7 @@ Provides a layer of control when inheriting tasks from [`.moon/project.yml`](./g
 The optional `exclude` setting permits a project to exclude specific tasks from being inherited. It
 accepts a list of strings, where each string is the name of a global task to exclude.
 
-```yaml title="project.yml" {4}
+```yaml title="moon.yml" {4}
 workspace:
   inheritedTasks:
     # Exclude the inherited `test` task for this project
@@ -518,7 +519,7 @@ task to include.
 
 When this field is not defined, the project will inherit all tasks from the global project config.
 
-```yaml title="project.yml" {4,7-9}
+```yaml title="moon.yml" {4,7-9}
 workspace:
   inheritedTasks:
     # Include *no* tasks (works like a full exclude)
@@ -541,7 +542,7 @@ project config), and the value is the new name to use.
 For example, say we have 2 tasks in the global project config called `buildPackage` and
 `buildApplication`, but we only need 1, and since we're an application, we should omit and rename.
 
-```yaml title="project.yml" {4,5}
+```yaml title="moon.yml" {4,5}
 workspace:
   inheritedTasks:
     exclude: ['buildPackage']

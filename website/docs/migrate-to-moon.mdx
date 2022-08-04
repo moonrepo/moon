@@ -11,13 +11,13 @@ important... Should you embrace moon tasks? Or keep using `package.json` scripts
 ## Migrate to moon tasks
 
 We suggest using moon tasks (of course), as they provide far more granular control and configurable
-options than scripts, and a `project.yml` is a better
+options than scripts, and a `moon.yml` is a better
 [source of truth](./faq#what-should-be-considered-the-source-of-truth). Scripts aren't powerful
 enough to scale for large codebases.
 
 To ease the migration process, we offer the
 [`moon migrate from-package-json`](./commands/migrate/from-package-json) command, which will convert
-a project's `package.json` scripts into `project.yml` tasks, while also determining project
+a project's `package.json` scripts into `moon.yml` tasks, while also determining project
 dependencies ([`dependsOn`](./config/project#dependsOn)). This needs to be ran _per project_.
 
 ```shell

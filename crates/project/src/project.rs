@@ -17,7 +17,7 @@ pub type ProjectsMap = HashMap<ProjectID, Project>;
 
 pub type TasksMap = BTreeMap<TaskID, Task>;
 
-// project.yml
+// moon.yml
 fn load_project_config(
     log_target: &str,
     project_root: &Path,
@@ -236,7 +236,7 @@ fn create_tasks_from_config(
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
-    /// Project configuration loaded from "project.yml", if it exists.
+    /// Project configuration loaded from "moon.yml", if it exists.
     pub config: ProjectConfig,
 
     /// List of other projects this project depends on.

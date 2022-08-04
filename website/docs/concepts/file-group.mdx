@@ -9,7 +9,7 @@ deterministic builds, and more.
 
 ## Configuration
 
-File groups can be configured per project through [`project.yml`](../config/project), or for all
+File groups can be configured per project through [`moon.yml`](../config/project), or for all
 projects through [`.moon/project.yml`](../config/global-project).
 
 ## Inheritance and merging
@@ -33,7 +33,7 @@ fileGroups:
     - '**/__tests__/**/*'
 ```
 
-```yaml title="project.yml"
+```yaml title="moon.yml"
 fileGroups:
   # Overrides global
   sources:

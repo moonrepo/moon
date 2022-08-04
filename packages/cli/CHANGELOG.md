@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- Renamed the project-level `project.yml` file to `moon.yml`. The `.moon/project.yml` file has not
+  changed.
+
 ## 0.9.0
 
 #### 💥 Breaking

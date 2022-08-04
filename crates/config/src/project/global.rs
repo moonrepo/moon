@@ -131,7 +131,7 @@ mod tests {
     use std::path::Path;
 
     fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
-        match GlobalProjectConfig::load(root.join(constants::CONFIG_PROJECT_FILENAME)) {
+        match GlobalProjectConfig::load(root.join(constants::CONFIG_GLOBAL_PROJECT_FILENAME)) {
             Ok(cfg) => Ok(cfg),
             Err(errors) => Err(errors.first().unwrap().clone()),
         }
@@ -141,7 +141,7 @@ mod tests {
     fn loads_defaults() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                constants::CONFIG_PROJECT_FILENAME,
+                constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                 r#"
 fileGroups:
     sources:
@@ -178,7 +178,10 @@ fileGroups:
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
-                jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "extends: 123")?;
+                jail.create_file(
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
+                    "extends: 123",
+                )?;
 
                 super::load_jailed_config(jail.directory())?;
 
@@ -193,7 +196,7 @@ fileGroups:
         fn not_a_url_or_file() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     "extends: random value",
                 )?;
 
@@ -210,7 +213,7 @@ fileGroups:
         fn not_a_https_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     "extends: http://domain.com",
                 )?;
 
@@ -225,7 +228,7 @@ fileGroups:
         fn not_a_yaml_url() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     "extends: https://domain.com/file.txt",
                 )?;
 
@@ -244,7 +247,7 @@ fileGroups:
                 jail.create_file("shared/file.txt", "")?;
 
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     "extends: ./shared/file.txt",
                 )?;
 
@@ -309,12 +312,15 @@ fileGroups:
                 fs::create_dir_all(jail.directory().join("shared")).unwrap();
 
                 jail.create_file(
-                    format!("shared/{}", super::constants::CONFIG_PROJECT_FILENAME),
+                    format!(
+                        "shared/{}",
+                        super::constants::CONFIG_GLOBAL_PROJECT_FILENAME
+                    ),
                     include_str!("../../../../tests/fixtures/config-extends/.moon/project.yml"),
                 )?;
 
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     r#"
 extends: ./shared/project.yml
 
@@ -352,7 +358,7 @@ fileGroups:
 
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
 r#"
 extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/project.yml
 
@@ -392,7 +398,7 @@ fileGroups:
         //         fn handles_invalid_url() {
         //             figment::Jail::expect_with(|jail| {
         //                 jail.create_file(
-        //                     super::constants::CONFIG_PROJECT_FILENAME,
+        //                     super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
         //                     r#"
         // extends: https://raw.githubusercontent.com/this/is/an/invalid/file.yml
 
@@ -414,7 +420,10 @@ fileGroups:
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
-                jail.create_file(super::constants::CONFIG_PROJECT_FILENAME, "fileGroups: 123")?;
+                jail.create_file(
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
+                    "fileGroups: 123",
+                )?;
 
                 super::load_jailed_config(jail.directory())?;
 
@@ -429,7 +438,7 @@ fileGroups:
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     r#"
 fileGroups:
     sources: 123"#,
@@ -450,7 +459,7 @@ fileGroups:
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     r#"
 fileGroups: {}
 tasks: 123
@@ -470,7 +479,7 @@ tasks: 123
         fn invalid_value_type() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     r#"
 fileGroups: {}
 tasks:
@@ -491,7 +500,7 @@ tasks:
         fn invalid_value_field() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     r#"
 fileGroups: {}
 tasks:
@@ -511,7 +520,7 @@ tasks:
         fn invalid_value_empty_field() {
             figment::Jail::expect_with(|jail| {
                 jail.create_file(
-                    super::constants::CONFIG_PROJECT_FILENAME,
+                    super::constants::CONFIG_GLOBAL_PROJECT_FILENAME,
                     r#"
 fileGroups:
     sources: []

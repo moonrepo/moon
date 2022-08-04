@@ -1,4 +1,5 @@
 use insta::assert_snapshot;
+use moon_constants::{CONFIG_WORKSPACE_FILENAME, CONFIG_GLOBAL_PROJECT_FILENAME};
 use moon_utils::test::{create_moon_command, create_sandbox};
 use predicates::prelude::*;
 use serial_test::serial;
@@ -9,8 +10,8 @@ use std::fs;
 fn creates_files_in_dest() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
-    let workspace_config = root.join(".moon").join("workspace.yml");
-    let project_config = root.join(".moon").join("project.yml");
+    let workspace_config = root.join(".moon").join(CONFIG_WORKSPACE_FILENAME);
+    let project_config = root.join(".moon").join(CONFIG_GLOBAL_PROJECT_FILENAME);
     let gitignore = root.join(".gitignore");
 
     assert!(!workspace_config.exists());
@@ -56,7 +57,7 @@ fn creates_workspace_config_from_template() {
 fn creates_project_config_from_template() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
-    let project_config = root.join(".moon").join("project.yml");
+    let project_config = root.join(".moon").join(moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME);
 
     create_moon_command(root)
         .arg("init")

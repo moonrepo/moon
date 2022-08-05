@@ -1352,6 +1352,7 @@ dependencies = [
  "moon_logger",
  "moon_utils",
  "tar",
+ "thiserror",
  "zip",
 ]
 

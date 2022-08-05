@@ -1,3 +1,4 @@
+use moon_archive::ArchiveError;
 use moon_error::MoonError;
 use moon_lang::LangError;
 use thiserror::Error;
@@ -12,6 +13,9 @@ pub enum ToolchainError {
 
     #[error("Unable to find a node module binary for <symbol>{0}</symbol>. Have you installed the corresponding package?")]
     MissingNodeModuleBin(String), // bin name
+
+    #[error(transparent)]
+    Archive(#[from] ArchiveError),
 
     #[error(transparent)]
     Lang(#[from] LangError),

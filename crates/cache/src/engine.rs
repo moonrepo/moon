@@ -104,7 +104,8 @@ impl CacheEngine {
                 outputs,
                 self.get_hash_archive_path(hash),
                 None,
-            )?;
+            )
+            .map_err(|e| MoonError::Generic(e.to_string()))?;
 
             trace!(
                 target: LOG_TARGET,

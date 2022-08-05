@@ -1,8 +1,9 @@
+use crate::errors::ArchiveError;
 use crate::helpers::{ensure_dir, prepend_name};
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use moon_error::{map_io_to_fs_error, MoonError};
+use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, map_list, trace};
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -16,7 +17,7 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
     files: &[String],
     output_file: O,
     base_prefix: Option<&str>,
-) -> Result<(), MoonError> {
+) -> Result<(), ArchiveError> {
     let input_root = input_root.as_ref();
     let output_file = output_file.as_ref();
 
@@ -79,7 +80,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     input_file: I,
     output_dir: O,
     remove_prefix: Option<&str>,
-) -> Result<(), MoonError> {
+) -> Result<(), ArchiveError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
 

@@ -1,5 +1,6 @@
+use crate::errors::ArchiveError;
 use crate::helpers::{ensure_dir, prepend_name};
-use moon_error::{map_io_to_fs_error, MoonError};
+use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, map_list, trace};
 use std::fs::{self, File};
 use std::io;
@@ -14,7 +15,7 @@ fn zip_contents<P: AsRef<str>>(
     archive: &mut ZipWriter<File>,
     path: &Path,
     prefix: P,
-) -> Result<(), MoonError> {
+) -> Result<(), ArchiveError> {
     let prefix = prefix.as_ref();
     let name = path
         .file_name()
@@ -24,7 +25,8 @@ fn zip_contents<P: AsRef<str>>(
     let mut options = FileOptions::default().compression_method(CompressionMethod::Stored);
 
     if path.is_file() {
-        if cfg!(unix) {
+        #[cfg(unix)]
+        {
             use std::os::unix::fs::PermissionsExt;
 
             options = options.unix_permissions(path.metadata()?.permissions().mode());
@@ -32,16 +34,14 @@ fn zip_contents<P: AsRef<str>>(
 
         trace!(target: LOG_TARGET, "Zipping file {}", color::path(&path));
 
-        archive
-            .start_file(prepend_name(name, prefix), options)
-            .unwrap();
-        archive.write_all(&fs::read(path)?).unwrap();
+        archive.start_file(prepend_name(name, prefix), options)?;
+        archive.write_all(&fs::read(path)?)?;
 
         return Ok(());
     }
 
     if path.is_dir() {
-        archive.add_directory(name, options).unwrap();
+        archive.add_directory(name, options)?;
 
         for entry in fs::read_dir(path)? {
             let path = entry?.path();
@@ -61,7 +61,7 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
     files: &[String],
     output_file: O,
     base_prefix: Option<&str>,
-) -> Result<(), MoonError> {
+) -> Result<(), ArchiveError> {
     let input_root = input_root.as_ref();
     let output_file = output_file.as_ref();
 
@@ -87,7 +87,7 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
         zip_contents(&mut archive, &input_src, prefix)?;
     }
 
-    archive.finish().unwrap();
+    archive.finish()?;
 
     Ok(())
 }
@@ -97,7 +97,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     input_file: I,
     output_dir: O,
     remove_prefix: Option<&str>,
-) -> Result<(), MoonError> {
+) -> Result<(), ArchiveError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
 
@@ -115,10 +115,10 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
 
     // Unpack the archive into the output dir
-    let mut archive = ZipArchive::new(zip).unwrap();
+    let mut archive = ZipArchive::new(zip)?;
 
     for i in 0..archive.len() {
-        let mut file = archive.by_index(i).unwrap();
+        let mut file = archive.by_index(i)?;
 
         let mut path = match file.enclosed_name() {
             Some(path) => path.to_owned(),
@@ -158,7 +158,8 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
             );
 
             // Update permissions when on a nix machine
-            if cfg!(unix) {
+            #[cfg(unix)]
+            {
                 use std::os::unix::fs::PermissionsExt;
 
                 if let Some(mode) = file.unix_mode() {

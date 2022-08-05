@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Updated `projects` glob matching to support the root project (`'.'`).
+- Updated git/svn to traverse upwards to find the applicable root (`.git`, etc).
+
 ## 0.9.0
 
 #### 💥 Breaking

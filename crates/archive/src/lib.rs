@@ -1,3 +1,4 @@
+mod helpers;
 mod tar;
 mod zip;
 

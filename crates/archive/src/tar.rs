@@ -2,10 +2,12 @@ use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_logger::{color, trace};
+use moon_logger::{color, debug, trace};
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
+
+const TARGET: &str = "moon:archive:tar";
 
 #[track_caller]
 pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
@@ -16,8 +18,8 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
     let input_src = input_src.as_ref();
     let output_file = output_file.as_ref();
 
-    trace!(
-        target: "moon:archive:tar",
+    debug!(
+        target: TARGET,
         "Packing tar archive with {} to {}",
         color::path(input_src),
         color::path(output_file),
@@ -45,6 +47,8 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
             },
             &mut file,
         )?;
+
+        trace!(target: TARGET, "Packing file {}", color::path(&input_src));
     } else {
         archive.append_dir_all(base_prefix.unwrap_or("."), input_src)?;
     }
@@ -63,8 +67,8 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
 
-    trace!(
-        target: "moon:archive:tar",
+    debug!(
+        target: TARGET,
         "Unpacking tar archive {} to {}",
         color::path(input_file),
         color::path(output_dir),
@@ -107,6 +111,12 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
         }
 
         entry.unpack(&output_path)?;
+
+        trace!(
+            target: TARGET,
+            "Unpacking file {}",
+            color::path(&output_path)
+        );
     }
 
     Ok(())

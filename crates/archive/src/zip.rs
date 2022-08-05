@@ -1,5 +1,6 @@
+use crate::helpers::prepend_name;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_logger::{color, trace};
+use moon_logger::{color, debug, trace};
 use std::fs::{self, File};
 use std::io;
 use std::io::prelude::*;
@@ -7,13 +8,7 @@ use std::path::Path;
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
-fn prepend_name(name: &str, prefix: &str) -> String {
-    if prefix.is_empty() {
-        name.to_owned()
-    } else {
-        format!("{}/{}", prefix, name)
-    }
-}
+const TARGET: &str = "moon:archive:zip";
 
 fn zip_contents<P: AsRef<str>>(
     archive: &mut ZipWriter<File>,
@@ -35,6 +30,8 @@ fn zip_contents<P: AsRef<str>>(
 
             options = options.unix_permissions(path.metadata()?.permissions().mode());
         }
+
+        trace!(target: TARGET, "Zipping file {}", color::path(&path));
 
         archive
             .start_file(prepend_name(name, prefix), options)
@@ -77,9 +74,9 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
     let input_src = input_src.as_ref();
     let output_file = output_file.as_ref();
 
-    trace!(
-        target: "moon:archive:zip",
-        "Packing zip archive with {} to {}",
+    debug!(
+        target: TARGET,
+        "Zipping archive with {} to {}",
         color::path(input_src),
         color::path(output_file),
     );
@@ -108,9 +105,9 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
 
-    trace!(
-        target: "moon:archive:zip",
-        "Unzipping zip archive {} to {}",
+    debug!(
+        target: TARGET,
+        "Unzipping archive {} to {}",
         color::path(input_file),
         color::path(output_dir),
     );
@@ -163,15 +160,21 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
             let mut out = File::create(&output_path).map_err(handle_error)?;
 
             io::copy(&mut file, &mut out).map_err(handle_error)?;
-        }
 
-        // Update permissions when on a nix machine
-        if cfg!(unix) {
-            use std::os::unix::fs::PermissionsExt;
+            trace!(
+                target: TARGET,
+                "Unzipping file {}",
+                color::path(&output_path)
+            );
 
-            if let Some(mode) = file.unix_mode() {
-                fs::set_permissions(&output_path, fs::Permissions::from_mode(mode))
-                    .map_err(handle_error)?;
+            // Update permissions when on a nix machine
+            if cfg!(unix) {
+                use std::os::unix::fs::PermissionsExt;
+
+                if let Some(mode) = file.unix_mode() {
+                    fs::set_permissions(&output_path, fs::Permissions::from_mode(mode))
+                        .map_err(handle_error)?;
+                }
             }
         }
     }

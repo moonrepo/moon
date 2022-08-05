@@ -19,6 +19,12 @@ use std::collections::HashMap;
 
 const LOG_TARGET: &str = "moon:action:run-target";
 
+pub enum CacheLocation {
+    Local, // Local cache: .moon/cache/out
+    Previous, // Same hash as previous build
+           // Remote, TODO
+}
+
 pub struct TargetRunner<'a> {
     pub cache: CacheItem<RunTargetState>,
 
@@ -199,7 +205,7 @@ impl<'a> TargetRunner<'a> {
         &mut self,
         common_hasher: impl Hasher + Serialize,
         platform_hasher: impl Hasher + Serialize,
-    ) -> Result<bool, ActionError> {
+    ) -> Result<Option<CacheLocation>, ActionError> {
         let hash = to_hash(&common_hasher, &platform_hasher);
 
         debug!(
@@ -209,23 +215,36 @@ impl<'a> TargetRunner<'a> {
             color::id(&self.target_id)
         );
 
-        if self.cache.item.hash == hash {
-            return Ok(true);
+        // Hash is the same as the previous build, so simply abort!
+        // However, ensure the outputs also exist, otherwise we should hydrate.
+        if self.cache.item.hash == hash && self.has_outputs() {
+            return Ok(Some(CacheLocation::Previous));
         }
 
+        self.cache.item.hash = hash.clone();
+
+        // Refresh the hash manifest
         self.workspace
             .cache
             .create_hash_manifest(&hash, &(common_hasher, platform_hasher))
             .await?;
 
-        self.cache.item.hash = hash;
+        // Hash exists in the cache, so hydrate from it
+        if self.workspace.cache.is_hash_cached(&hash) {
+            return Ok(Some(CacheLocation::Local));
+        }
 
-        Ok(false)
+        Ok(None)
     }
 
     /// Return true if this target is a no-op.
     pub fn is_no_op(&self) -> bool {
         self.task.is_no_op()
+    }
+
+    /// Verify that all task outputs exist for the current target.
+    pub fn has_outputs(&self) -> bool {
+        self.task.output_paths.iter().all(|p| p.exists())
     }
 
     /// Run the command as a child process and capture its output. If the process fails

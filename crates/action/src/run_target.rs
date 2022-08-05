@@ -1,7 +1,7 @@
 use crate::action::{Action, ActionStatus};
 use crate::context::ActionContext;
 use crate::errors::ActionError;
-use crate::target::{node, system, TargetRunner};
+use crate::target::{node, system, CacheLocation, TargetRunner};
 use moon_config::PlatformType;
 use moon_logger::{color, debug};
 use moon_task::Target;
@@ -52,14 +52,19 @@ pub async fn run_target(
             _ => node::create_target_hasher(&workspace, &project)?,
         };
 
-        if runner.is_cached(common_hasher, platform_hasher).await? {
+        if let Some(cache_location) = runner.is_cached(common_hasher, platform_hasher).await? {
             debug!(
                 target: LOG_TARGET,
                 "Hash exists for {}, using cache",
                 color::id(target_id),
             );
 
-            runner.hydrate_outputs().await?;
+            // Only hydrate when the hash is different from the previous build,
+            // as we can assume the outputs from the previous build still exist?
+            if matches!(cache_location, CacheLocation::Local) {
+                runner.hydrate_outputs().await?;
+            }
+
             runner.print_checkpoint(Checkpoint::Pass, "(cached)");
             runner.print_cache_item();
 

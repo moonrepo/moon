@@ -174,6 +174,12 @@ impl CacheEngine {
         self.runs_dir.join(path)
     }
 
+    /// Check to see if a build with the provided hash has been cached.
+    /// We only check for the archive, as the manifest is purely for local debugging!
+    pub fn is_hash_cached(&self, hash: &str) -> bool {
+        self.get_hash_archive_path(hash).exists()
+    }
+
     pub async fn hydrate_from_hash_archive(
         &self,
         hash: &str,

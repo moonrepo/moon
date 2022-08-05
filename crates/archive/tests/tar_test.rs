@@ -8,7 +8,7 @@ fn file_contents_match(a: &Path, b: &Path) -> bool {
 }
 
 #[test]
-fn archives_file() {
+fn tars_file() {
     let fixture = create_sandbox("archives");
 
     // Pack
@@ -33,7 +33,7 @@ fn archives_file() {
 }
 
 #[test]
-fn archives_file_with_prefix() {
+fn tars_file_with_prefix() {
     let fixture = create_sandbox("archives");
 
     // Pack
@@ -61,7 +61,7 @@ fn archives_file_with_prefix() {
 }
 
 #[test]
-fn archives_file_with_prefix_thats_removed() {
+fn tars_file_with_prefix_thats_removed() {
     let fixture = create_sandbox("archives");
 
     // Pack
@@ -86,7 +86,7 @@ fn archives_file_with_prefix_thats_removed() {
 }
 
 #[test]
-fn archives_dir() {
+fn tars_dir() {
     let fixture = create_sandbox("archives");
 
     // Pack
@@ -119,7 +119,7 @@ fn archives_dir() {
 }
 
 #[test]
-fn archives_dir_with_prefix() {
+fn tars_dir_with_prefix() {
     let fixture = create_sandbox("archives");
 
     // Pack
@@ -152,7 +152,7 @@ fn archives_dir_with_prefix() {
 }
 
 #[test]
-fn archives_dir_with_prefix_thats_removed() {
+fn tars_dir_with_prefix_thats_removed() {
     let fixture = create_sandbox("archives");
 
     // Pack

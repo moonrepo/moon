@@ -100,8 +100,10 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 
         // Create parent dirs
         if let Some(parent_dir) = output_path.parent() {
-            fs::create_dir_all(parent_dir)
-                .map_err(|e| map_io_to_fs_error(e, parent_dir.to_path_buf()))?;
+            if !parent_dir.exists() {
+                fs::create_dir_all(parent_dir)
+                    .map_err(|e| map_io_to_fs_error(e, parent_dir.to_path_buf()))?;
+            }
         }
 
         entry.unpack(&output_path)?;

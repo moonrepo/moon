@@ -28,7 +28,7 @@ impl Git {
         let ignore_path = root.join(".gitignore");
 
         if ignore_path.exists() {
-            let mut builder = GitignoreBuilder::new(root);
+            let mut builder = GitignoreBuilder::new(&root);
 
             if let Some(error) = builder.add(ignore_path) {
                 return Err(VcsError::Ignore(error));

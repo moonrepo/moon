@@ -15,15 +15,20 @@ use tokio::sync::RwLock;
 pub struct Svn {
     cache: Arc<RwLock<HashMap<String, String>>>,
     default_branch: String,
-    working_dir: PathBuf,
+    root: PathBuf,
 }
 
 impl Svn {
     pub fn new(default_branch: &str, working_dir: &Path) -> Self {
+        let root = match fs::find_upwards(".svn", working_dir) {
+            Some(dir) => dir.parent().unwrap().to_path_buf(),
+            None => working_dir.to_path_buf(),
+        };
+
         Svn {
             cache: Arc::new(RwLock::new(HashMap::new())),
             default_branch: String::from(default_branch),
-            working_dir: working_dir.to_path_buf(),
+            root,
         }
     }
 
@@ -139,7 +144,7 @@ impl Svn {
 impl Vcs for Svn {
     fn create_command(&self, args: Vec<&str>) -> Command {
         let mut cmd = Command::new("svn");
-        cmd.args(args).cwd(&self.working_dir);
+        cmd.args(args).cwd(&self.root);
         cmd
     }
 

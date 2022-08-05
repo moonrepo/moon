@@ -8,7 +8,7 @@ use std::path::Path;
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
-const TARGET: &str = "moon:archive:zip";
+const LOG_TARGET: &str = "moon:archive:zip";
 
 fn zip_contents<P: AsRef<str>>(
     archive: &mut ZipWriter<File>,
@@ -30,7 +30,7 @@ fn zip_contents<P: AsRef<str>>(
             options = options.unix_permissions(path.metadata()?.permissions().mode());
         }
 
-        trace!(target: TARGET, "Zipping file {}", color::path(&path));
+        trace!(target: LOG_TARGET, "Zipping file {}", color::path(&path));
 
         archive
             .start_file(prepend_name(name, prefix), options)
@@ -66,7 +66,7 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
     let output_file = output_file.as_ref();
 
     debug!(
-        target: TARGET,
+        target: LOG_TARGET,
         "Zipping archive from {} with {} to {}",
         color::path(input_root),
         map_list(files, |f| color::file(f)),
@@ -102,7 +102,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     let output_dir = output_dir.as_ref();
 
     debug!(
-        target: TARGET,
+        target: LOG_TARGET,
         "Unzipping archive {} to {}",
         color::path(input_file),
         color::path(output_dir),
@@ -152,7 +152,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
             io::copy(&mut file, &mut out).map_err(handle_error)?;
 
             trace!(
-                target: TARGET,
+                target: LOG_TARGET,
                 "Unzipping file {}",
                 color::path(&output_path)
             );

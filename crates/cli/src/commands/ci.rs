@@ -12,7 +12,7 @@ use moon_workspace::{Workspace, WorkspaceError};
 
 type TargetList = Vec<Target>;
 
-const TARGET: &str = "moon:ci";
+const LOG_TARGET: &str = "moon:ci";
 
 fn print_header(title: &str) {
     let prefix = if is_ci() { "--- " } else { "" };
@@ -78,7 +78,7 @@ fn gather_runnable_targets(
                 }
             } else {
                 debug!(
-                    target: TARGET,
+                    target: LOG_TARGET,
                     "Not running target {} because it either has no `outputs` or `runInCI` is false",
                     color::target(&target.id),
                 );

@@ -54,12 +54,10 @@ impl<'a> TargetRunner<'a> {
         let hash = &self.cache.item.hash;
 
         if !hash.is_empty() {
-            for output_path in &self.task.output_paths {
-                self.workspace
-                    .cache
-                    .copy_output_to_out(hash, &self.project.root, output_path)
-                    .await?;
-            }
+            self.workspace
+                .cache
+                .create_hash_archive(hash, &self.project.root, &self.task.outputs)
+                .await?;
         }
 
         Ok(())
@@ -202,7 +200,7 @@ impl<'a> TargetRunner<'a> {
 
         self.workspace
             .cache
-            .save_hash(&hash, &(common_hasher, platform_hasher))
+            .create_hash_manifest(&hash, &(common_hasher, platform_hasher))
             .await?;
 
         self.cache.item.hash = hash;

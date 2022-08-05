@@ -8,7 +8,7 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
 
-const TARGET: &str = "moon:archive:tar";
+const LOG_TARGET: &str = "moon:archive:tar";
 
 #[track_caller]
 pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
@@ -21,7 +21,7 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
     let output_file = output_file.as_ref();
 
     debug!(
-        target: TARGET,
+        target: LOG_TARGET,
         "Packing tar archive from {} with {} to {}",
         color::path(input_root),
         map_list(files, |f| color::file(f)),
@@ -48,7 +48,11 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
             .unwrap_or_default();
 
         if input_src.is_file() {
-            trace!(target: TARGET, "Packing file {}", color::path(&input_src));
+            trace!(
+                target: LOG_TARGET,
+                "Packing file {}",
+                color::path(&input_src)
+            );
 
             let mut file = File::open(&input_src)
                 .map_err(|e| map_io_to_fs_error(e, input_src.to_path_buf()))?;
@@ -56,7 +60,7 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
             archive.append_file(prepend_name(name, prefix), &mut file)?;
         } else {
             trace!(
-                target: TARGET,
+                target: LOG_TARGET,
                 "Packing directory {}",
                 color::path(&input_src)
             );
@@ -80,7 +84,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     let output_dir = output_dir.as_ref();
 
     debug!(
-        target: TARGET,
+        target: LOG_TARGET,
         "Unpacking tar archive {} to {}",
         color::path(input_file),
         color::path(output_dir),
@@ -119,7 +123,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
         entry.unpack(&output_path)?;
 
         trace!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Unpacking file {}",
             color::path(&output_path)
         );

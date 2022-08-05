@@ -7,36 +7,66 @@ use std::path::Path;
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
-fn zip_file(
+fn prepend_name(name: &str, prefix: &str) -> String {
+    if prefix.is_empty() {
+        name.to_owned()
+    } else {
+        format!("{}/{}", prefix, name)
+    }
+}
+
+fn zip_contents<P: AsRef<str>>(
     archive: &mut ZipWriter<File>,
-    file: &Path,
-    base_prefix: &Option<&str>,
+    path: &Path,
+    prefix: P,
+    is_root: bool,
 ) -> Result<(), MoonError> {
-    let file_name = file.file_name().unwrap().to_str().unwrap();
-    let options = FileOptions::default()
-        .compression_method(CompressionMethod::Stored)
-        .unix_permissions(0o755);
+    let prefix = prefix.as_ref();
+    let name = path
+        .file_name()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or_default();
+    let mut options = FileOptions::default().compression_method(CompressionMethod::Stored);
 
-    archive
-        .start_file(
-            match base_prefix {
-                Some(prefix) => format!("{}/{}", prefix, file_name),
-                None => file_name.to_owned(),
-            },
-            options,
-        )
-        .unwrap();
+    if path.is_file() {
+        if cfg!(unix) {
+            use std::os::unix::fs::PermissionsExt;
 
-    archive.write_all(&fs::read(file)?).unwrap();
+            options = options.unix_permissions(path.metadata()?.permissions().mode());
+        }
+
+        archive
+            .start_file(prepend_name(name, prefix), options)
+            .unwrap();
+        archive.write_all(&fs::read(path)?).unwrap();
+
+        return Ok(());
+    }
+
+    if path.is_dir() {
+        archive.add_directory(name, options).unwrap();
+
+        for entry in fs::read_dir(path)? {
+            let path = entry?.path();
+
+            zip_contents(
+                archive,
+                &path,
+                if is_root {
+                    prefix.to_owned()
+                } else {
+                    prepend_name(name, prefix)
+                },
+                false,
+            )?;
+        }
+
+        return Ok(());
+    }
 
     Ok(())
 }
-
-// fn zip_dir(dir: &Path) -> Result<(), MoonError> {
-//     for entry in fs::read_dir(dir)? {}
-
-//     Ok(())
-// }
 
 #[track_caller]
 pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
@@ -60,11 +90,9 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
 
     // Add the files to the archive
     let mut archive = ZipWriter::new(zip);
+    let prefix = base_prefix.unwrap_or("");
 
-    if input_src.is_file() {
-        zip_file(&mut archive, input_src, &base_prefix)?;
-    } else {
-    }
+    zip_contents(&mut archive, input_src, prefix, true)?;
 
     archive.finish().unwrap();
 
@@ -101,6 +129,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 
     for i in 0..archive.len() {
         let mut file = archive.by_index(i).unwrap();
+
         let mut path = match file.enclosed_name() {
             Some(path) => path.to_owned(),
             None => continue,
@@ -117,11 +146,16 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
 
         // Create parent dirs
-        if let Some(parent_dir) = output_path.parent() {
+        if let Some(parent_dir) = &output_path.parent() {
             if !parent_dir.exists() {
                 fs::create_dir_all(parent_dir)
                     .map_err(|e| map_io_to_fs_error(e, parent_dir.to_path_buf()))?;
             }
+        }
+
+        // If a folder, create the dir
+        if file.is_dir() && !output_path.exists() {
+            fs::create_dir_all(&output_path).map_err(handle_error)?;
         }
 
         // If a file, copy it to the output dir
@@ -132,8 +166,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         }
 
         // Update permissions when on a nix machine
-        #[cfg(unix)]
-        {
+        if cfg!(unix) {
             use std::os::unix::fs::PermissionsExt;
 
             if let Some(mode) = file.unix_mode() {

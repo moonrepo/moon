@@ -25,8 +25,6 @@ fn zips_file() {
 
     unzip(&archive, &output, None).unwrap();
 
-    moon_utils::test::debug_sandbox_files(fixture.path());
-
     assert!(output.exists());
     assert!(output.join("file.txt").exists());
 
@@ -85,4 +83,103 @@ fn zips_file_with_prefix_thats_removed() {
 
     // Compare
     assert!(file_contents_match(&input, &output.join("file.txt")));
+}
+
+#[test]
+fn zips_dir() {
+    let fixture = create_sandbox("archives");
+
+    // Pack
+    let input = fixture.path().join("folder");
+    let archive = fixture.path().join("out.zip");
+
+    zip(&input, &archive, None).unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = fixture.path().join("out");
+
+    unzip(&archive, &output, None).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("file.js").exists());
+    assert!(output.join("nested/other.js").exists());
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("file.js"),
+        &output.join("file.js")
+    ));
+    assert!(file_contents_match(
+        &input.join("nested/other.js"),
+        &output.join("nested/other.js")
+    ));
+}
+
+#[test]
+fn zips_dir_with_prefix() {
+    let fixture = create_sandbox("archives");
+
+    // Pack
+    let input = fixture.path().join("folder");
+    let archive = fixture.path().join("out.zip");
+
+    zip(&input, &archive, Some("some/prefix")).unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = fixture.path().join("out");
+
+    unzip(&archive, &output, None).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("some/prefix/file.js").exists());
+    assert!(output.join("some/prefix/nested/other.js").exists());
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("file.js"),
+        &output.join("some/prefix/file.js")
+    ));
+    assert!(file_contents_match(
+        &input.join("nested/other.js"),
+        &output.join("some/prefix/nested/other.js")
+    ));
+}
+
+#[test]
+fn zips_dir_with_prefix_thats_removed() {
+    let fixture = create_sandbox("archives");
+
+    // Pack
+    let input = fixture.path().join("folder");
+    let archive = fixture.path().join("out.zip");
+
+    zip(&input, &archive, Some("some/prefix")).unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = fixture.path().join("out");
+
+    unzip(&archive, &output, Some("some/prefix")).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("file.js").exists());
+    assert!(output.join("nested/other.js").exists());
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("file.js"),
+        &output.join("file.js")
+    ));
+    assert!(file_contents_match(
+        &input.join("nested/other.js"),
+        &output.join("nested/other.js")
+    ));
 }

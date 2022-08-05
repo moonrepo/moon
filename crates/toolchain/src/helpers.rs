@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use moon_archive::untar;
+use moon_archive::{untar, unzip};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, trace};
 use moon_utils::fs;
@@ -103,7 +103,7 @@ pub async fn unpack(
     fs::create_dir_all(output_dir).await?;
 
     if input_file.extension().unwrap() == "zip" {
-        // unpack_zip(input_file, output_dir, prefix)?;
+        unzip(input_file, output_dir, Some(prefix))?;
     } else {
         untar(input_file, output_dir, Some(prefix))?;
     }

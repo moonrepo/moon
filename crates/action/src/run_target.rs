@@ -59,6 +59,7 @@ pub async fn run_target(
                 color::id(target_id),
             );
 
+            runner.hydrate_outputs().await?;
             runner.print_checkpoint(Checkpoint::Pass, "(cached)");
             runner.print_cache_item();
 

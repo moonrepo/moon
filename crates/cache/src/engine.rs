@@ -1,7 +1,7 @@
-use crate::helpers::{is_writable, LOG_TARGET};
+use crate::helpers::{is_readable, is_writable, LOG_TARGET};
 use crate::items::{CacheItem, ProjectsState, RunTargetState, WorkspaceState};
 use crate::runfiles::CacheRunfile;
-use moon_archive::tar;
+use moon_archive::{tar, untar};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
@@ -89,7 +89,8 @@ impl CacheEngine {
         project_root: &Path,
         outputs: &[String],
     ) -> Result<(), MoonError> {
-        if is_writable() {
+        if is_writable() && !outputs.is_empty() {
+            // TODO: Remove in v1
             // Old implementation would copy files to a hashed folder,
             // so if we encounter that folder, let's just remove it!
             let old_hash_folder = self.outputs_dir.join(hash);
@@ -171,5 +172,22 @@ impl CacheEngine {
         let path: PathBuf = [&target_id.replace(':', "/")].iter().collect();
 
         self.runs_dir.join(path)
+    }
+
+    pub async fn hydrate_from_hash_archive(
+        &self,
+        hash: &str,
+        project_root: &Path,
+    ) -> Result<(), MoonError> {
+        if is_readable() {
+            let archive_path = self.get_hash_archive_path(hash);
+
+            if archive_path.exists() {
+                untar(archive_path, project_root, None)
+                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+            }
+        }
+
+        Ok(())
     }
 }

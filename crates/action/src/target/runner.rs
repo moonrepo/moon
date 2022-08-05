@@ -53,10 +53,25 @@ impl<'a> TargetRunner<'a> {
     pub async fn cache_outputs(&self) -> Result<(), ActionError> {
         let hash = &self.cache.item.hash;
 
-        if !hash.is_empty() {
+        if !hash.is_empty() && !self.task.outputs.is_empty() {
             self.workspace
                 .cache
                 .create_hash_archive(hash, &self.project.root, &self.task.outputs)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    /// If we are cached (hash match), hydrate the project with the
+    /// cached task outputs found in the hashed archive.
+    pub async fn hydrate_outputs(&self) -> Result<(), ActionError> {
+        let hash = &self.cache.item.hash;
+
+        if !hash.is_empty() {
+            self.workspace
+                .cache
+                .hydrate_from_hash_archive(hash, &self.project.root)
                 .await?;
         }
 

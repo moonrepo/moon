@@ -1,4 +1,4 @@
-use crate::helpers::prepend_name;
+use crate::helpers::{ensure_dir, prepend_name};
 use moon_error::{map_io_to_fs_error, MoonError};
 use moon_logger::{color, debug, trace};
 use std::fs::{self, File};
@@ -112,10 +112,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         color::path(output_dir),
     );
 
-    if !output_dir.exists() {
-        fs::create_dir_all(output_dir)
-            .map_err(|e| map_io_to_fs_error(e, output_dir.to_path_buf()))?;
-    }
+    ensure_dir(output_dir)?;
 
     // Open .zip file
     let zip =
@@ -144,15 +141,12 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 
         // Create parent dirs
         if let Some(parent_dir) = &output_path.parent() {
-            if !parent_dir.exists() {
-                fs::create_dir_all(parent_dir)
-                    .map_err(|e| map_io_to_fs_error(e, parent_dir.to_path_buf()))?;
-            }
+            ensure_dir(parent_dir)?;
         }
 
         // If a folder, create the dir
-        if file.is_dir() && !output_path.exists() {
-            fs::create_dir_all(&output_path).map_err(handle_error)?;
+        if file.is_dir() {
+            ensure_dir(&output_path)?;
         }
 
         // If a file, copy it to the output dir

@@ -1,9 +1,10 @@
+use crate::helpers::{ensure_dir, prepend_name};
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use moon_error::{map_io_to_fs_error, MoonError};
 use moon_logger::{color, debug, trace};
-use std::fs::{self, File};
+use std::fs::File;
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
 
@@ -38,15 +39,14 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
     if input_src.is_file() {
         let mut file =
             File::open(input_src).map_err(|e| map_io_to_fs_error(e, input_src.to_path_buf()))?;
-        let file_name = input_src.file_name().unwrap().to_str().unwrap();
+        let file_name = input_src
+            .file_name()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default();
+        let prefix = base_prefix.unwrap_or_default();
 
-        archive.append_file(
-            match base_prefix {
-                Some(prefix) => format!("{}/{}", prefix, file_name),
-                None => file_name.to_owned(),
-            },
-            &mut file,
-        )?;
+        archive.append_file(prepend_name(file_name, prefix), &mut file)?;
 
         trace!(target: TARGET, "Packing file {}", color::path(&input_src));
     } else {
@@ -74,10 +74,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
         color::path(output_dir),
     );
 
-    if !output_dir.exists() {
-        fs::create_dir_all(output_dir)
-            .map_err(|e| map_io_to_fs_error(e, output_dir.to_path_buf()))?;
-    }
+    ensure_dir(output_dir)?;
 
     // Open .tar.gz file
     let tar_gz =
@@ -104,10 +101,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 
         // Create parent dirs
         if let Some(parent_dir) = output_path.parent() {
-            if !parent_dir.exists() {
-                fs::create_dir_all(parent_dir)
-                    .map_err(|e| map_io_to_fs_error(e, parent_dir.to_path_buf()))?;
-            }
+            ensure_dir(parent_dir)?;
         }
 
         entry.unpack(&output_path)?;

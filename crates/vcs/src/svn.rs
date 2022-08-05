@@ -264,6 +264,6 @@ impl Vcs for Svn {
     }
 
     fn is_enabled(&self) -> bool {
-        fs::find_upwards(".svn", &self.working_dir).is_some()
+        self.root.join(".svn").exists()
     }
 }

@@ -14,16 +14,21 @@ pub struct Git {
     cache: Arc<RwLock<HashMap<String, String>>>,
     default_branch: String,
     ignore: Option<Gitignore>,
-    working_dir: PathBuf,
+    root: PathBuf,
 }
 
 impl Git {
     pub fn new(default_branch: &str, working_dir: &Path) -> VcsResult<Self> {
+        let root = match fs::find_upwards(".git", working_dir) {
+            Some(dir) => dir.parent().unwrap().to_path_buf(),
+            None => working_dir.to_path_buf(),
+        };
+
         let mut ignore: Option<Gitignore> = None;
-        let ignore_path = working_dir.join(".gitignore");
+        let ignore_path = root.join(".gitignore");
 
         if ignore_path.exists() {
-            let mut builder = GitignoreBuilder::new(working_dir);
+            let mut builder = GitignoreBuilder::new(root);
 
             if let Some(error) = builder.add(ignore_path) {
                 return Err(VcsError::Ignore(error));
@@ -36,7 +41,7 @@ impl Git {
             cache: Arc::new(RwLock::new(HashMap::new())),
             default_branch: String::from(default_branch),
             ignore,
-            working_dir: working_dir.to_path_buf(),
+            root,
         })
     }
 
@@ -120,7 +125,7 @@ impl Git {
 impl Vcs for Git {
     fn create_command(&self, args: Vec<&str>) -> Command {
         let mut cmd = Command::new("git");
-        cmd.args(args).cwd(&self.working_dir);
+        cmd.args(args).cwd(&self.root);
         cmd
     }
 
@@ -416,7 +421,7 @@ impl Vcs for Git {
     }
 
     fn is_enabled(&self) -> bool {
-        fs::find_upwards(".git", &self.working_dir).is_some()
+        self.root.join(".git").exists()
     }
 }
 

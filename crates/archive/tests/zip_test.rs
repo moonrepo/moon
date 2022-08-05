@@ -1,4 +1,5 @@
 use moon_archive::{unzip, zip};
+use moon_utils::string_vec;
 use moon_utils::test::create_sandbox;
 use std::fs;
 use std::path::Path;
@@ -12,10 +13,10 @@ fn zips_file() {
     let fixture = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path().join("file.txt");
+    let input = fixture.path();
     let archive = fixture.path().join("out.zip");
 
-    zip(&input, &archive, None).unwrap();
+    zip(&input, &string_vec!["file.txt"], &archive, None).unwrap();
 
     assert!(archive.exists());
     assert_ne!(archive.metadata().unwrap().len(), 0);
@@ -29,7 +30,10 @@ fn zips_file() {
     assert!(output.join("file.txt").exists());
 
     // Compare
-    assert!(file_contents_match(&input, &output.join("file.txt")));
+    assert!(file_contents_match(
+        &input.join("file.txt"),
+        &output.join("file.txt")
+    ));
 }
 
 #[test]

@@ -3,7 +3,7 @@ use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, map_list, trace};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
@@ -12,17 +12,19 @@ const TARGET: &str = "moon:archive:tar";
 
 #[track_caller]
 pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
-    input_src: I,
+    input_root: I,
+    files: &[String],
     output_file: O,
     base_prefix: Option<&str>,
 ) -> Result<(), MoonError> {
-    let input_src = input_src.as_ref();
+    let input_root = input_root.as_ref();
     let output_file = output_file.as_ref();
 
     debug!(
         target: TARGET,
-        "Packing tar archive with {} to {}",
-        color::path(input_src),
+        "Packing tar archive from {} with {} to {}",
+        color::path(input_root),
+        map_list(files, |f| color::file(f)),
         color::path(output_file),
     );
 
@@ -35,22 +37,32 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
 
     // Add the files to the archive
     let mut archive = Builder::new(tar_gz);
+    let prefix = base_prefix.unwrap_or_default();
 
-    if input_src.is_file() {
-        let mut file =
-            File::open(input_src).map_err(|e| map_io_to_fs_error(e, input_src.to_path_buf()))?;
-        let file_name = input_src
+    for file in files {
+        let input_src = input_root.join(file);
+        let name = input_src
             .file_name()
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
-        let prefix = base_prefix.unwrap_or_default();
 
-        archive.append_file(prepend_name(file_name, prefix), &mut file)?;
+        if input_src.is_file() {
+            trace!(target: TARGET, "Packing file {}", color::path(&input_src));
 
-        trace!(target: TARGET, "Packing file {}", color::path(&input_src));
-    } else {
-        archive.append_dir_all(base_prefix.unwrap_or("."), input_src)?;
+            let mut file = File::open(&input_src)
+                .map_err(|e| map_io_to_fs_error(e, input_src.to_path_buf()))?;
+
+            archive.append_file(prepend_name(name, prefix), &mut file)?;
+        } else {
+            trace!(
+                target: TARGET,
+                "Packing directory {}",
+                color::path(&input_src)
+            );
+
+            archive.append_dir_all(prepend_name(name, prefix), input_src)?;
+        }
     }
 
     archive.finish()?;

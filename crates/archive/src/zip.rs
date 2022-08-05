@@ -1,6 +1,6 @@
 use crate::helpers::{ensure_dir, prepend_name};
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, map_list, trace};
 use std::fs::{self, File};
 use std::io;
 use std::io::prelude::*;
@@ -14,7 +14,6 @@ fn zip_contents<P: AsRef<str>>(
     archive: &mut ZipWriter<File>,
     path: &Path,
     prefix: P,
-    is_root: bool,
 ) -> Result<(), MoonError> {
     let prefix = prefix.as_ref();
     let name = path
@@ -47,16 +46,7 @@ fn zip_contents<P: AsRef<str>>(
         for entry in fs::read_dir(path)? {
             let path = entry?.path();
 
-            zip_contents(
-                archive,
-                &path,
-                if is_root {
-                    prefix.to_owned()
-                } else {
-                    prepend_name(name, prefix)
-                },
-                false,
-            )?;
+            zip_contents(archive, &path, prepend_name(name, prefix))?;
         }
 
         return Ok(());
@@ -67,17 +57,19 @@ fn zip_contents<P: AsRef<str>>(
 
 #[track_caller]
 pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
-    input_src: I,
+    input_root: I,
+    files: &[String],
     output_file: O,
     base_prefix: Option<&str>,
 ) -> Result<(), MoonError> {
-    let input_src = input_src.as_ref();
+    let input_root = input_root.as_ref();
     let output_file = output_file.as_ref();
 
     debug!(
         target: TARGET,
-        "Zipping archive with {} to {}",
-        color::path(input_src),
+        "Zipping archive from {} with {} to {}",
+        color::path(input_root),
+        map_list(files, |f| color::file(f)),
         color::path(output_file),
     );
 
@@ -87,9 +79,13 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
 
     // Add the files to the archive
     let mut archive = ZipWriter::new(zip);
-    let prefix = base_prefix.unwrap_or("");
+    let prefix = base_prefix.unwrap_or_default();
 
-    zip_contents(&mut archive, input_src, prefix, true)?;
+    for file in files {
+        let input_src = input_root.join(file);
+
+        zip_contents(&mut archive, &input_src, prefix)?;
+    }
 
     archive.finish().unwrap();
 

@@ -55,12 +55,12 @@ mod delete_hash {
             .write_str("{}")
             .unwrap();
 
-        dir.child(".moon/cache/out/abc123/file.js")
+        dir.child(".moon/cache/out/abc123.tar.gz")
             .write_str("")
             .unwrap();
 
         let hash_file = cache.hashes_dir.join("abc123.json");
-        let out_file = cache.outputs_dir.join("abc123/file.js");
+        let out_file = cache.outputs_dir.join("abc123.tar.gz");
 
         assert!(hash_file.exists());
         assert!(out_file.exists());
@@ -83,12 +83,12 @@ mod delete_hash {
             .write_str("{}")
             .unwrap();
 
-        dir.child(".moon/cache/out/abc123/file.js")
+        dir.child(".moon/cache/out/abc123.tar.gz")
             .write_str("")
             .unwrap();
 
         let hash_file = cache.hashes_dir.join("abc123.json");
-        let out_file = cache.outputs_dir.join("abc123/file.js");
+        let out_file = cache.outputs_dir.join("abc123.tar.gz");
 
         assert!(hash_file.exists());
         assert!(out_file.exists());
@@ -113,12 +113,12 @@ mod delete_hash {
             .write_str("{}")
             .unwrap();
 
-        dir.child(".moon/cache/out/abc123/file.js")
+        dir.child(".moon/cache/out/abc123.tar.gz")
             .write_str("")
             .unwrap();
 
         let hash_file = cache.hashes_dir.join("abc123.json");
-        let out_file = cache.outputs_dir.join("abc123/file.js");
+        let out_file = cache.outputs_dir.join("abc123.tar.gz");
 
         assert!(hash_file.exists());
         assert!(out_file.exists());

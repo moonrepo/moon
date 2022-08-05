@@ -683,8 +683,7 @@ mod outputs {
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(hash)
-            .join("lib/one.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 
@@ -710,14 +709,7 @@ mod outputs {
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/one.js")
-            .exists());
-        assert!(fixture
-            .path()
-            .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/two.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 
@@ -743,14 +735,7 @@ mod outputs {
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/one.js")
-            .exists());
-        assert!(fixture
-            .path()
-            .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/two.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 
@@ -776,14 +761,7 @@ mod outputs {
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/one.js")
-            .exists());
-        assert!(fixture
-            .path()
-            .join(".moon/cache/out")
-            .join(&hash)
-            .join("esm/two.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 
@@ -804,18 +782,12 @@ mod outputs {
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
+
         // outputs
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/one.js")
-            .exists());
-        assert!(fixture
-            .path()
-            .join(".moon/cache/out")
-            .join(&hash)
-            .join("esm/two.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 }

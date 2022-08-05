@@ -4,8 +4,10 @@
 
 #### 🐞 Fixes
 
-- Updated `projects` glob matching to support the root project (`'.'`).
-- Updated git/svn to traverse upwards to find the applicable root (`.git`, etc).
+- Fixed an issue where a root-level project cannot be configured with a glob. Updated `projects`
+  glob matching to support `'.'`.
+- Fixed an issue where moon was setup in a sub-folder. Updated git/svn to traverse upwards to find
+  the applicable root (`.git`, etc).
 
 ## 0.9.0
 

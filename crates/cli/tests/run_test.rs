@@ -7,7 +7,7 @@ use moon_utils::test::{
     create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
 };
 use predicates::prelude::*;
-use std::fs::read_to_string;
+use std::fs;
 use std::path::Path;
 use utils::get_path_safe_output;
 
@@ -248,7 +248,7 @@ mod caching {
             .await
             .unwrap();
 
-        assert_snapshot!(read_to_string(
+        assert_snapshot!(fs::read_to_string(
             fixture
                 .path()
                 .join(format!(".moon/cache/hashes/{}.json", state.item.hash))
@@ -646,7 +646,7 @@ mod outputs {
     use super::*;
 
     #[tokio::test]
-    async fn doesnt_link_if_cache_disabled() {
+    async fn doesnt_cache_if_cache_disabled() {
         let fixture = create_sandbox_with_git("cases");
 
         create_moon_command(fixture.path())
@@ -662,7 +662,7 @@ mod outputs {
     }
 
     #[tokio::test]
-    async fn links_single_file() {
+    async fn caches_single_file() {
         let fixture = create_sandbox_with_git("cases");
 
         create_moon_command(fixture.path())
@@ -683,13 +683,12 @@ mod outputs {
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(hash)
-            .join("lib/one.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 
     #[tokio::test]
-    async fn links_multiple_files() {
+    async fn caches_multiple_files() {
         let fixture = create_sandbox_with_git("cases");
 
         create_moon_command(fixture.path())
@@ -710,19 +709,12 @@ mod outputs {
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/one.js")
-            .exists());
-        assert!(fixture
-            .path()
-            .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/two.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 
     #[tokio::test]
-    async fn links_single_folder() {
+    async fn caches_single_folder() {
         let fixture = create_sandbox_with_git("cases");
 
         create_moon_command(fixture.path())
@@ -743,19 +735,12 @@ mod outputs {
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/one.js")
-            .exists());
-        assert!(fixture
-            .path()
-            .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/two.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 
     #[tokio::test]
-    async fn links_multiple_folders() {
+    async fn caches_multiple_folders() {
         let fixture = create_sandbox_with_git("cases");
 
         create_moon_command(fixture.path())
@@ -776,19 +761,12 @@ mod outputs {
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/one.js")
-            .exists());
-        assert!(fixture
-            .path()
-            .join(".moon/cache/out")
-            .join(&hash)
-            .join("esm/two.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
     }
 
     #[tokio::test]
-    async fn links_both_file_and_folder() {
+    async fn caches_both_file_and_folder() {
         let fixture = create_sandbox_with_git("cases");
 
         create_moon_command(fixture.path())
@@ -804,19 +782,127 @@ mod outputs {
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
+
         // outputs
         assert!(fixture
             .path()
             .join(".moon/cache/out")
-            .join(&hash)
-            .join("lib/one.js")
+            .join(format!("{}.tar.gz", hash))
             .exists());
-        assert!(fixture
-            .path()
-            .join(".moon/cache/out")
-            .join(&hash)
-            .join("esm/two.js")
-            .exists());
+    }
+
+    mod hydration {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[tokio::test]
+        async fn reuses_cache_from_previous_run() {
+            let fixture = create_sandbox_with_git("cases");
+
+            let assert1 = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            let hash1 =
+                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+
+            let assert2 = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            let hash2 =
+                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+
+            assert_eq!(hash1, hash2);
+            assert_snapshot!(get_assert_output(&assert1));
+            assert_snapshot!(get_assert_output(&assert2));
+        }
+
+        #[tokio::test]
+        async fn hydrates_missing_outputs_from_previous_run() {
+            let fixture = create_sandbox_with_git("cases");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            // Remove outputs
+            fs::remove_dir_all(fixture.path().join("outputs/esm")).unwrap();
+            fs::remove_dir_all(fixture.path().join("outputs/lib")).unwrap();
+
+            assert!(!fixture.path().join("outputs/esm").exists());
+            assert!(!fixture.path().join("outputs/lib").exists());
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            // Outputs should come back
+            assert!(fixture.path().join("outputs/esm").exists());
+            assert!(fixture.path().join("outputs/lib").exists());
+        }
+
+        #[tokio::test]
+        async fn hydrates_with_a_different_hash_cache() {
+            let fixture = create_sandbox_with_git("cases");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            let hash1 =
+                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+            let contents1 = fs::read_to_string(fixture.path().join("outputs/lib/one.js")).unwrap();
+
+            // Create a file to trigger an inputs change
+            fs::write(fixture.path().join("outputs/trigger.js"), "").unwrap();
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            let hash2 =
+                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+            let contents2 = fs::read_to_string(fixture.path().join("outputs/lib/one.js")).unwrap();
+
+            // Hashes and contents should be different!
+            assert_ne!(hash1, hash2);
+            assert_ne!(contents1, contents2);
+
+            // Remove outputs
+            fs::remove_dir_all(fixture.path().join("outputs/esm")).unwrap();
+            fs::remove_dir_all(fixture.path().join("outputs/lib")).unwrap();
+
+            assert!(!fixture.path().join("outputs/esm").exists());
+            assert!(!fixture.path().join("outputs/lib").exists());
+
+            // Remove the trigger file
+            fs::remove_file(fixture.path().join("outputs/trigger.js")).unwrap();
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            let hash3 =
+                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+            let contents3 = fs::read_to_string(fixture.path().join("outputs/lib/one.js")).unwrap();
+
+            // Hashes and contents should match the original!
+            assert_eq!(hash1, hash3);
+            assert_eq!(contents1, contents3);
+            assert_ne!(contents2, contents3);
+
+            // Outputs should come back
+            assert!(fixture.path().join("outputs/esm").exists());
+            assert!(fixture.path().join("outputs/lib").exists());
+        }
     }
 }
 

@@ -4,34 +4,46 @@ tasks:
   generateFile:
     command: node
     args: generate.js single-file
+    inputs:
+      - '*.js'
     outputs:
       - 'lib/one.js'
   generateFiles:
     command: node
     args: generate.js multiple-files
+    inputs:
+      - '*.js'
     outputs:
       - 'lib/one.js'
       - 'lib/two.js'
   generateFolder:
     command: node
     args: generate.js single-folder
+    inputs:
+      - '*.js'
     outputs:
       - 'lib'
   generateFolders:
     command: node
     args: generate.js multiple-folders
+    inputs:
+      - '*.js'
     outputs:
       - 'lib'
       - 'esm'
   generateFileAndFolder:
     command: node
     args: generate.js both
+    inputs:
+      - '*.js'
     outputs:
       - 'lib/one.js'
       - 'esm'
   noCache:
     command: node
     args: generate.js both
+    inputs:
+      - '*.js'
     outputs:
       - 'lib/one.js'
       - 'esm'

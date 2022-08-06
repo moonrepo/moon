@@ -4,8 +4,16 @@
 
 #### 💥 Breaking
 
+- Task outputs are now cached as `.tar.gz` archives, instead of being copied as-is. This shouldn't
+  affect consumers, but we're raising awareness in case of any platform specific issues.
 - Renamed the project-level `project.yml` file to `moon.yml`. The `.moon/project.yml` file has not
   changed.
+
+#### 🐞 Fixes
+
+- Fixed some issues where task outputs were not being hydrated based on the state of the
+  target/project.
+- Fixed an issue where task outputs were not considered for hash generation.
 
 ## 0.9.1
 

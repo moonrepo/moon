@@ -46,4 +46,5 @@ moon_cache = { path = "../cache" }
 assert_cmd = "2.0.4"
 insta = "1.16.0"
 predicates = "2.1.1"
+pretty_assertions = "1.2.1"
 serial_test = "0.8.0"

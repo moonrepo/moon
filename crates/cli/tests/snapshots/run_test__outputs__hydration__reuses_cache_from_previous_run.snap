@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 823
+expression: get_assert_output(&assert1)
+---
+▪▪▪▪ npm install
+▪▪▪▪ outputs:generateFileAndFolder
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

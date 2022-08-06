@@ -23,6 +23,9 @@ pub struct TargetHasher {
     // Input files and globs mapped to a unique hash
     inputs: BTreeMap<String, String>,
 
+    // Relative output paths
+    outputs: Vec<String>,
+
     // `moon.yml` `dependsOn`
     project_deps: Vec<String>,
 
@@ -75,11 +78,13 @@ impl TargetHasher {
         self.args = task.args.clone();
         self.env_vars.extend(task.env.clone());
         self.deps = task.deps.clone();
+        self.outputs = task.outputs.clone();
         self.target = task.target.clone();
 
         // Sort vectors to be deterministic
         self.args.sort();
         self.deps.sort();
+        self.outputs.sort();
 
         // Inherits vars from inputs
         for var_name in &task.input_vars {
@@ -101,6 +106,7 @@ impl Hasher for TargetHasher {
         hash_vec(&self.deps, sha);
         hash_btree(&self.env_vars, sha);
         hash_btree(&self.inputs, sha);
+        hash_vec(&self.outputs, sha);
         hash_vec(&self.project_deps, sha);
     }
 }

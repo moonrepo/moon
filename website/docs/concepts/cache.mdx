@@ -20,6 +20,7 @@ Our smart hashing currently takes the following sources into account:
 
 - Command (`command`) being ran and its arguments (`args`).
 - Input sources (`inputs`).
+- Output targets (`outputs`).
 - Environment variables (`env`).
 - Dependencies between projects (`dependsOn`) and tasks (`deps`).
 - **For Node.js tasks**:
@@ -40,16 +41,14 @@ The following diagram outlines our cache folder structure and why each piece exi
 	# State of the workspace. Mainly for tracking install times.
 	workspaceState.json
 
-	# Stores hashes of every ran task. Exists purely for debugging purposes.
+	# Stores hash manifests of every ran task. Exists purely for debugging purposes.
 	hashes/
 		# Contents includes all sources used to generate the hash.
 		<hash>.json
 
-	# Task outputs that are hard linked between the cache and project,
-	# grouped by the tasks unique hash (same hash as above).
+	# Stores `tar.gz` archives of a task's outputs based on its generated hash.
 	out/
-		<hash>/
-			...
+		<hash>.tar.gz
 
 	# State of targets that have been ran or are running, grouped by project and task.
 	runs/

@@ -9,7 +9,7 @@ use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{
-    is_ci, is_test_env, path,
+    fs, is_ci, is_test_env, path,
     process::{self, output_to_string, Command, Output},
     time,
 };
@@ -18,6 +18,11 @@ use serde::Serialize;
 use std::collections::HashMap;
 
 const LOG_TARGET: &str = "moon:action:run-target";
+
+pub enum HydrateFrom {
+    LocalCache,
+    PreviousOutput,
+}
 
 pub struct TargetRunner<'a> {
     pub cache: CacheItem<RunTargetState>,
@@ -53,14 +58,38 @@ impl<'a> TargetRunner<'a> {
     pub async fn cache_outputs(&self) -> Result<(), ActionError> {
         let hash = &self.cache.item.hash;
 
-        if !hash.is_empty() {
-            for output_path in &self.task.output_paths {
-                self.workspace
-                    .cache
-                    .copy_output_to_out(hash, &self.project.root, output_path)
-                    .await?;
-            }
+        if !hash.is_empty() && !self.task.outputs.is_empty() {
+            self.workspace
+                .cache
+                .create_hash_archive(hash, &self.project.root, &self.task.outputs)
+                .await?;
         }
+
+        Ok(())
+    }
+
+    /// If we are cached (hash match), hydrate the project with the
+    /// cached task outputs found in the hashed archive.
+    pub async fn hydrate_outputs(&self) -> Result<(), ActionError> {
+        let hash = &self.cache.item.hash;
+
+        if hash.is_empty() {
+            return Ok(());
+        }
+
+        // Remove previous outputs so we avoid stale artifacts
+        for output in &self.task.output_paths {
+            fs::remove(output).await?;
+        }
+
+        // Hydrate outputs from the cache
+        self.workspace
+            .cache
+            .hydrate_from_hash_archive(hash, &self.project.root)
+            .await?;
+
+        // Update the run state with the new hash
+        self.cache.save().await?;
 
         Ok(())
     }
@@ -181,12 +210,13 @@ impl<'a> TargetRunner<'a> {
     }
 
     /// Hash the target based on all current parameters and return early
-    /// if this target hash has already been cached.
+    /// if this target hash has already been cached. Based on the state
+    /// of the target and project, determine the hydration strategy as well.
     pub async fn is_cached(
         &mut self,
         common_hasher: impl Hasher + Serialize,
         platform_hasher: impl Hasher + Serialize,
-    ) -> Result<bool, ActionError> {
+    ) -> Result<Option<HydrateFrom>, ActionError> {
         let hash = to_hash(&common_hasher, &platform_hasher);
 
         debug!(
@@ -196,23 +226,55 @@ impl<'a> TargetRunner<'a> {
             color::id(&self.target_id)
         );
 
-        if self.cache.item.hash == hash {
-            return Ok(true);
+        // Hash is the same as the previous build, so simply abort!
+        // However, ensure the outputs also exist, otherwise we should hydrate.
+        if self.cache.item.hash == hash && self.has_outputs() {
+            debug!(
+                target: LOG_TARGET,
+                "Cache hit for hash {}, reusing previous build",
+                color::symbol(&hash),
+            );
+
+            return Ok(Some(HydrateFrom::PreviousOutput));
         }
 
+        self.cache.item.hash = hash.clone();
+
+        // Refresh the hash manifest
         self.workspace
             .cache
-            .save_hash(&hash, &(common_hasher, platform_hasher))
+            .create_hash_manifest(&hash, &(common_hasher, platform_hasher))
             .await?;
 
-        self.cache.item.hash = hash;
+        // Hash exists in the cache, so hydrate from it
+        if self.workspace.cache.is_hash_cached(&hash) {
+            debug!(
+                target: LOG_TARGET,
+                "Cache hit for hash {}, hydrating from local cache",
+                color::symbol(&hash),
+            );
 
-        Ok(false)
+            return Ok(Some(HydrateFrom::LocalCache));
+        }
+
+        debug!(
+            target: LOG_TARGET,
+            "Cache miss for hash {}, continuing run",
+            color::symbol(&hash),
+        );
+
+        Ok(None)
     }
 
     /// Return true if this target is a no-op.
     pub fn is_no_op(&self) -> bool {
         self.task.is_no_op()
+    }
+
+    /// Verify that all task outputs exist for the current target.
+    /// TODO: We dont verify contents, should we?
+    pub fn has_outputs(&self) -> bool {
+        self.task.output_paths.iter().all(|p| p.exists())
     }
 
     /// Run the command as a child process and capture its output. If the process fails

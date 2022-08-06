@@ -229,6 +229,7 @@ mod tasks {
             retry_count: Some(1),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
+            stream_output: None,
         }
     }
 
@@ -243,6 +244,7 @@ mod tasks {
             retry_count: None,
             run_in_ci: None,
             run_from_workspace_root: None,
+            stream_output: None,
         }
     }
 
@@ -257,6 +259,7 @@ mod tasks {
             retry_count: Some(1),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
+            stream_output: None,
         }
     }
 
@@ -735,6 +738,7 @@ mod tasks {
                     retry_count: Some(1),
                     run_in_ci: Some(true),
                     run_from_workspace_root: None,
+                    stream_output: None,
                 },
                 type_of: PlatformType::Unknown,
             },
@@ -768,6 +772,7 @@ mod tasks {
                                 retry_count: None,
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
+                                stream_output: None,
                             },
                             type_of: PlatformType::Unknown,
                         }

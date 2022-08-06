@@ -33,6 +33,8 @@ pub struct TaskOptions {
     pub run_in_ci: bool,
 
     pub run_from_workspace_root: bool,
+
+    pub stream_output: bool,
 }
 
 impl Default for TaskOptions {
@@ -47,6 +49,7 @@ impl Default for TaskOptions {
             retry_count: 0,
             run_in_ci: true,
             run_from_workspace_root: false,
+            stream_output: false,
         }
     }
 }
@@ -84,6 +87,10 @@ impl TaskOptions {
         if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
             self.run_from_workspace_root = *run_from_workspace_root;
         }
+
+        if let Some(stream_output) = &config.stream_output {
+            self.stream_output = *stream_output;
+        }
     }
 
     pub fn to_config(&self) -> TaskOptionsConfig {
@@ -102,6 +109,10 @@ impl TaskOptions {
 
         if self.run_from_workspace_root != default_options.run_from_workspace_root {
             config.run_from_workspace_root = Some(self.run_from_workspace_root);
+        }
+
+        if self.stream_output != default_options.stream_output {
+            config.stream_output = Some(self.stream_output);
         }
 
         config
@@ -187,6 +198,7 @@ impl Task {
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
                 run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_long_running),
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
+                stream_output: cloned_options.stream_output.unwrap_or_default(),
             },
             outputs: cloned_config.outputs.unwrap_or_default(),
             output_paths: HashSet::new(),

@@ -94,6 +94,9 @@ pub struct TaskOptionsConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_from_workspace_root: Option<bool>,
+
+    #[serde(rename = "streamOutput", skip_serializing_if = "Option::is_none")]
+    pub stream_output: Option<bool>,
 }
 
 // We use serde(default) here because figment *does not* apply defaults

@@ -242,7 +242,7 @@ impl<'a> TargetRunner<'a> {
         let mut attempts = vec![];
         let is_primary = context.primary_targets.contains(self.target_id);
         let is_real_ci = is_ci() && !is_test_env();
-        let stream_output = is_primary || is_real_ci;
+        let stream_output = is_primary || is_real_ci || self.task.options.stream_output;
         let output;
 
         loop {

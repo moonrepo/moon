@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 824
+expression: get_assert_output(&assert2)
+---
+▪▪▪▪ outputs:generateFileAndFolder (cached)
+
+Tasks: 1 completed (1 cached)
+ Time: 100ms
+
+
+

@@ -4,7 +4,7 @@ use moon_utils::regex;
 use moon_workspace::{Workspace, WorkspaceError};
 use serde::{Deserialize, Serialize};
 
-const TARGET: &str = "moon:query:projects";
+const LOG_TARGET: &str = "moon:query:projects";
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
@@ -28,7 +28,7 @@ fn convert_to_regex(
     match value {
         Some(pattern) => {
             trace!(
-                target: TARGET,
+                target: LOG_TARGET,
                 "Filtering projects \"{}\" by matching pattern \"{}\"",
                 field,
                 pattern
@@ -45,7 +45,7 @@ pub async fn query_projects(
     workspace: &Workspace,
     options: &QueryProjectsOptions,
 ) -> Result<Vec<Project>, WorkspaceError> {
-    debug!(target: TARGET, "Querying for projects");
+    debug!(target: LOG_TARGET, "Querying for projects");
 
     let mut projects = vec![];
     let id_regex = convert_to_regex("id", &options.id)?;

@@ -43,22 +43,3 @@ pub fn to_millis(time: SystemTime) -> u128 {
         Err(_) => 0,
     }
 }
-
-#[cfg(test)]
-pub async fn run_with_env<T, F, Fut>(env: &str, callback: F) -> T
-where
-    F: FnOnce() -> Fut,
-    Fut: std::future::Future<Output = T>,
-{
-    if env.is_empty() {
-        env::remove_var("MOON_CACHE");
-    } else {
-        env::set_var("MOON_CACHE", env);
-    }
-
-    let result = callback().await;
-
-    env::remove_var("MOON_CACHE");
-
-    result
-}

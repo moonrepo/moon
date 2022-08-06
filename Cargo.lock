@@ -1344,11 +1344,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_archive"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "moon_error",
+ "moon_logger",
+ "moon_utils",
+ "tar",
+ "thiserror",
+ "zip",
+]
+
+[[package]]
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
  "filetime",
+ "moon_archive",
  "moon_constants",
  "moon_error",
  "moon_logger",
@@ -1387,6 +1401,7 @@ dependencies = [
  "moon_vcs",
  "moon_workspace",
  "predicates",
+ "pretty_assertions",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1554,8 +1569,8 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "async-trait",
- "flate2",
  "mockito",
+ "moon_archive",
  "moon_config",
  "moon_constants",
  "moon_error",
@@ -1566,10 +1581,8 @@ dependencies = [
  "predicates",
  "reqwest",
  "sha2",
- "tar",
  "thiserror",
  "tokio",
- "zip",
 ]
 
 [[package]]

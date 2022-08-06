@@ -15,7 +15,7 @@ use std::collections::{HashMap, HashSet};
 
 pub use petgraph::graph::NodeIndex;
 
-const TARGET: &str = "moon:dep-graph";
+const LOG_TARGET: &str = "moon:dep-graph";
 
 fn get_lang_from_project(project: &Project) -> SupportedLanguage {
     match &project.config.language {
@@ -38,7 +38,7 @@ pub struct DepGraph {
 
 impl DepGraph {
     pub fn default() -> Self {
-        debug!(target: TARGET, "Creating dependency graph",);
+        debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         let mut graph: DepGraphType = Graph::new();
         let setup_toolchain_index = graph.add_node(Node::SetupToolchain);
@@ -76,7 +76,11 @@ impl DepGraph {
             return *index;
         }
 
-        trace!(target: TARGET, "Installing {} dependencies", lang.label());
+        trace!(
+            target: LOG_TARGET,
+            "Installing {} dependencies",
+            lang.label()
+        );
 
         let setup_toolchain_index = self.get_or_insert_node(Node::SetupToolchain);
         let install_deps_index = self.get_or_insert_node(node);
@@ -150,7 +154,7 @@ impl DepGraph {
         projects: &ProjectGraph,
     ) -> Result<(), DepGraphError> {
         trace!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Adding dependents to run for target {}",
             color::target(&target.id),
         );
@@ -254,7 +258,7 @@ impl DepGraph {
         }
 
         trace!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Syncing project {} configs and dependencies",
             color::id(project_id),
         );
@@ -346,7 +350,7 @@ impl DepGraph {
         if let Some(touched) = touched_files {
             if !project.get_task(task_id)?.is_affected(touched)? {
                 trace!(
-                    target: TARGET,
+                    target: LOG_TARGET,
                     "Project {} task {} not affected based on touched files, skipping",
                     color::id(project_id),
                     color::id(task_id),
@@ -357,7 +361,7 @@ impl DepGraph {
         }
 
         trace!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Target {} does not exist in the dependency graph, inserting",
             color::target(&target_id),
         );
@@ -377,7 +381,7 @@ impl DepGraph {
 
         if !task.deps.is_empty() {
             trace!(
-                target: TARGET,
+                target: LOG_TARGET,
                 "Adding dependencies {} from target {}",
                 map_list(&task.deps, |f| color::symbol(f)),
                 color::target(&target_id),

@@ -7,7 +7,7 @@ function createFile(file) {
 	const filePath = path.join(__dirname, file);
 
 	fs.mkdirSync(path.dirname(filePath), { recursive: true });
-	fs.writeFileSync(filePath, '', 'utf8');
+	fs.writeFileSync(filePath, String(Date.now()), 'utf8');
 }
 
 switch (type) {

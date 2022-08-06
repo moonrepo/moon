@@ -5,7 +5,7 @@ use moon_task::{PlatformType, Target, Task, TaskError, TaskID};
 use moon_utils::{process, regex, string_vec};
 use std::collections::{BTreeMap, HashMap};
 
-const TARGET: &str = "moon:node-task";
+const LOG_TARGET: &str = "moon:node-task";
 
 pub type TasksMap = BTreeMap<TaskID, Task>;
 pub type ScriptsMap = HashMap<String, String>;
@@ -318,7 +318,7 @@ impl<'a> ScriptParser<'a> {
             // Do not allow "cd ..."
             if INVALID_CD.is_match(script) {
                 warn!(
-                    target: TARGET,
+                    target: LOG_TARGET,
                     "Changing directories (cd ...) is not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable to handle it: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,
@@ -330,7 +330,7 @@ impl<'a> ScriptParser<'a> {
             // Rust commands do not support redirects natively
             if INVALID_REDIRECT.is_match(script) {
                 warn!(
-                    target: TARGET,
+                    target: LOG_TARGET,
                     "Redirects (<, >, etc) are not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable that does the redirect: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,
@@ -342,7 +342,7 @@ impl<'a> ScriptParser<'a> {
             // Rust commands do not support pipes natively
             if INVALID_PIPE.is_match(script) {
                 warn!(
-                    target: TARGET,
+                    target: LOG_TARGET,
                     "Pipes (|) are not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable that does the piping: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,
@@ -354,7 +354,7 @@ impl<'a> ScriptParser<'a> {
             // Rust commands do not support operators natively
             if INVALID_OPERATOR.is_match(script) {
                 warn!(
-                    target: TARGET,
+                    target: LOG_TARGET,
                     "OR operator (||) is not supported by moon, skipping script \"{}\" for project \"{}\". As an alternative, create an executable to handle it: https://moonrepo.dev/docs/faq#how-to-pipe-or-redirect-tasks",
                     name,
                     self.project_id,

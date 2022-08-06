@@ -9,7 +9,7 @@ use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{
-    is_ci, is_test_env, path,
+    fs, is_ci, is_test_env, path,
     process::{self, output_to_string, Command, Output},
     time,
 };
@@ -74,15 +74,23 @@ impl<'a> TargetRunner<'a> {
     pub async fn hydrate_outputs(&self) -> Result<(), ActionError> {
         let hash = &self.cache.item.hash;
 
-        if !hash.is_empty() {
-            self.workspace
-                .cache
-                .hydrate_from_hash_archive(hash, &self.project.root)
-                .await?;
-
-            // Update the run state with the new hash
-            self.cache.save().await?;
+        if hash.is_empty() {
+            return Ok(());
         }
+
+        // Remove previous outputs so we avoid stale artifacts
+        for output in &self.task.output_paths {
+            fs::remove(output).await?;
+        }
+
+        // Hydrate outputs from the cache
+        self.workspace
+            .cache
+            .hydrate_from_hash_archive(hash, &self.project.root)
+            .await?;
+
+        // Update the run state with the new hash
+        self.cache.save().await?;
 
         Ok(())
     }

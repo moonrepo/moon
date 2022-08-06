@@ -57,7 +57,10 @@ workspace:
 tasks:
 	typecheck:
 		command: 'vue-tsc'
-		args: '--noEmit'
+		args:
+			- '--noEmit'
+			# Always use pretty output
+			- '--pretty'
 		inputs:
 			- 'env.d.ts'
 			# Source and test files

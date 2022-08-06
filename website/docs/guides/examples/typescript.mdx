@@ -32,6 +32,8 @@ tasks:
 		args:
 			# Use incremental builds with project references
 			- '--build'
+			# Always use pretty output
+			- '--pretty'
 			# Use verbose logging to see affected projects
 			- '--verbose'
 		inputs:
@@ -159,3 +161,11 @@ Within another `tsconfig.json`, you can extend this package to inherit the setti
 	"extends": "tsconfig-company/tsconfig.json"
 }
 ```
+
+## FAQ
+
+### How to preserve pretty output?
+
+TypeScript supports a pretty format where it includes codeframes and color highlighting for
+failures. However, when `tsc` is piped or the terminal is not a TTY, the pretty format is lost. To
+preserve and always display the pretty format, be sure to pass the `--pretty` argument!

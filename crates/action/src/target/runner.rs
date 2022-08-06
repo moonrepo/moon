@@ -19,10 +19,9 @@ use std::collections::HashMap;
 
 const LOG_TARGET: &str = "moon:action:run-target";
 
-pub enum CacheLocation {
-    Local, // Local cache: .moon/cache/out
-    Previous, // Same hash as previous build
-           // Remote, TODO
+pub enum HydrateFrom {
+    LocalCache,
+    PreviousOutput,
 }
 
 pub struct TargetRunner<'a> {
@@ -211,12 +210,13 @@ impl<'a> TargetRunner<'a> {
     }
 
     /// Hash the target based on all current parameters and return early
-    /// if this target hash has already been cached.
+    /// if this target hash has already been cached. Based on the state
+    /// of the target and project, determine the hydration strategy as well.
     pub async fn is_cached(
         &mut self,
         common_hasher: impl Hasher + Serialize,
         platform_hasher: impl Hasher + Serialize,
-    ) -> Result<Option<CacheLocation>, ActionError> {
+    ) -> Result<Option<HydrateFrom>, ActionError> {
         let hash = to_hash(&common_hasher, &platform_hasher);
 
         debug!(
@@ -235,7 +235,7 @@ impl<'a> TargetRunner<'a> {
                 color::symbol(&hash),
             );
 
-            return Ok(Some(CacheLocation::Previous));
+            return Ok(Some(HydrateFrom::PreviousOutput));
         }
 
         self.cache.item.hash = hash.clone();
@@ -254,7 +254,7 @@ impl<'a> TargetRunner<'a> {
                 color::symbol(&hash),
             );
 
-            return Ok(Some(CacheLocation::Local));
+            return Ok(Some(HydrateFrom::LocalCache));
         }
 
         debug!(
@@ -272,6 +272,7 @@ impl<'a> TargetRunner<'a> {
     }
 
     /// Verify that all task outputs exist for the current target.
+    /// TODO: We dont verify contents, should we?
     pub fn has_outputs(&self) -> bool {
         self.task.output_paths.iter().all(|p| p.exists())
     }

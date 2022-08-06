@@ -53,12 +53,6 @@ pub async fn run_target(
         };
 
         if let Some(cache_location) = runner.is_cached(common_hasher, platform_hasher).await? {
-            debug!(
-                target: LOG_TARGET,
-                "Hash exists for {}, using cache",
-                color::id(target_id),
-            );
-
             // Only hydrate when the hash is different from the previous build,
             // as we can assume the outputs from the previous build still exist?
             if matches!(cache_location, CacheLocation::Local) {

@@ -105,6 +105,80 @@ fn zips_file_with_prefix_thats_removed() {
 }
 
 #[test]
+fn zips_nested_file_and_preserves_path() {
+    let fixture = create_sandbox("archives");
+
+    // Pack
+    let input = fixture.path();
+    let archive = fixture.path().join("out.zip");
+
+    zip(
+        &input,
+        &string_vec!["folder/nested/other.js"],
+        &archive,
+        None,
+    )
+    .unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = fixture.path().join("out");
+
+    unzip(&archive, &output, None).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("folder/nested/other.js").exists());
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("folder/nested/other.js"),
+        &output.join("folder/nested/other.js")
+    ));
+}
+
+#[test]
+fn zips_file_and_dir_explicitly() {
+    let fixture = create_sandbox("archives");
+
+    // Pack
+    let input = fixture.path();
+    let archive = fixture.path().join("out.zip");
+
+    zip(
+        &input,
+        &string_vec!["folder/nested", "file.txt"],
+        &archive,
+        None,
+    )
+    .unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = fixture.path().join("out");
+
+    unzip(&archive, &output, None).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("file.txt").exists());
+    assert!(output.join("folder/nested/other.js").exists());
+    assert!(!output.join("folder/file.js").exists()); // Should not exist!
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("file.txt"),
+        &output.join("file.txt")
+    ));
+    assert!(file_contents_match(
+        &input.join("folder/nested/other.js"),
+        &output.join("folder/nested/other.js")
+    ));
+}
+
+#[test]
 fn zips_dir() {
     let fixture = create_sandbox("archives");
 

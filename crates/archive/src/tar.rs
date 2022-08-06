@@ -42,11 +42,6 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
 
     for file in files {
         let input_src = input_root.join(file);
-        let name = input_src
-            .file_name()
-            .unwrap_or_default()
-            .to_str()
-            .unwrap_or_default();
 
         if input_src.is_file() {
             trace!(
@@ -55,10 +50,10 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
                 color::path(&input_src)
             );
 
-            let mut file = File::open(&input_src)
+            let mut fh = File::open(&input_src)
                 .map_err(|e| map_io_to_fs_error(e, input_src.to_path_buf()))?;
 
-            archive.append_file(prepend_name(name, prefix), &mut file)?;
+            archive.append_file(prepend_name(file, prefix), &mut fh)?;
         } else {
             trace!(
                 target: LOG_TARGET,
@@ -66,7 +61,7 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
                 color::path(&input_src)
             );
 
-            archive.append_dir_all(prepend_name(name, prefix), input_src)?;
+            archive.append_dir_all(prepend_name(file, prefix), input_src)?;
         }
     }
 

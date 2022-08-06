@@ -107,12 +107,6 @@ impl CacheEngine {
                 None,
             )
             .map_err(|e| MoonError::Generic(e.to_string()))?;
-
-            trace!(
-                target: LOG_TARGET,
-                "Archiving outputs for {}",
-                color::symbol(hash)
-            );
         }
 
         Ok(())

@@ -218,6 +218,12 @@ impl<'a> TargetRunner<'a> {
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
         if self.cache.item.hash == hash && self.has_outputs() {
+            debug!(
+                target: LOG_TARGET,
+                "Cache hit for hash {}, reusing previous build",
+                color::symbol(&hash),
+            );
+
             return Ok(Some(CacheLocation::Previous));
         }
 
@@ -231,8 +237,20 @@ impl<'a> TargetRunner<'a> {
 
         // Hash exists in the cache, so hydrate from it
         if self.workspace.cache.is_hash_cached(&hash) {
+            debug!(
+                target: LOG_TARGET,
+                "Cache hit for hash {}, hydrating from local cache",
+                color::symbol(&hash),
+            );
+
             return Ok(Some(CacheLocation::Local));
         }
+
+        debug!(
+            target: LOG_TARGET,
+            "Cache miss for hash {}, continuing run",
+            color::symbol(&hash),
+        );
 
         Ok(None)
     }

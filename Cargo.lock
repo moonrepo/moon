@@ -1401,6 +1401,7 @@ dependencies = [
  "moon_vcs",
  "moon_workspace",
  "predicates",
+ "pretty_assertions",
  "serde",
  "serde_json",
  "serde_yaml",

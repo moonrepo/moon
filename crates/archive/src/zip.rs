@@ -2,6 +2,7 @@ use crate::errors::ArchiveError;
 use crate::helpers::{ensure_dir, prepend_name};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, map_list, trace};
+use moon_utils::path::to_string;
 use std::fs::{self, File};
 use std::io;
 use std::io::prelude::*;
@@ -14,14 +15,11 @@ const LOG_TARGET: &str = "moon:archive:zip";
 fn zip_contents<P: AsRef<str>>(
     archive: &mut ZipWriter<File>,
     path: &Path,
+    root: &Path,
     prefix: P,
 ) -> Result<(), ArchiveError> {
     let prefix = prefix.as_ref();
-    let name = path
-        .file_name()
-        .unwrap_or_default()
-        .to_str()
-        .unwrap_or_default();
+    let name = to_string(path.strip_prefix(root).unwrap())?;
     let mut options = FileOptions::default().compression_method(CompressionMethod::Stored);
 
     if path.is_file() {
@@ -34,7 +32,7 @@ fn zip_contents<P: AsRef<str>>(
 
         trace!(target: LOG_TARGET, "Zipping file {}", color::path(&path));
 
-        archive.start_file(prepend_name(name, prefix), options)?;
+        archive.start_file(prepend_name(&name, prefix), options)?;
         archive.write_all(&fs::read(path)?)?;
 
         return Ok(());
@@ -46,7 +44,7 @@ fn zip_contents<P: AsRef<str>>(
         for entry in fs::read_dir(path)? {
             let path = entry?.path();
 
-            zip_contents(archive, &path, prepend_name(name, prefix))?;
+            zip_contents(archive, &path, root, prefix)?;
         }
 
         return Ok(());
@@ -84,7 +82,7 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
     for file in files {
         let input_src = input_root.join(file);
 
-        zip_contents(&mut archive, &input_src, prefix)?;
+        zip_contents(&mut archive, &input_src, &input_root, prefix)?;
     }
 
     archive.finish()?;

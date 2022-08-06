@@ -79,6 +79,9 @@ impl<'a> TargetRunner<'a> {
                 .cache
                 .hydrate_from_hash_archive(hash, &self.project.root)
                 .await?;
+
+            // Update the run state with the new hash
+            self.cache.save().await?;
         }
 
         Ok(())

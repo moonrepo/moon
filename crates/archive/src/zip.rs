@@ -82,7 +82,7 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
     for file in files {
         let input_src = input_root.join(file);
 
-        zip_contents(&mut archive, &input_src, &input_root, prefix)?;
+        zip_contents(&mut archive, &input_src, input_root, prefix)?;
     }
 
     archive.finish()?;

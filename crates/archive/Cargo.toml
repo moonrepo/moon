@@ -1,0 +1,13 @@
+[package]
+name = "moon_archive"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_error = { path = "../error" }
+moon_logger = { path = "../logger" }
+moon_utils = { path = "../utils" }
+flate2 = "1.0.24"
+tar = "0.4.38"
+thiserror = "1.0.31"
+zip = "0.6.2"

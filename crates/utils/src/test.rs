@@ -131,7 +131,7 @@ pub fn get_assert_stdout_output(assert: &assert_cmd::assert::Assert) -> String {
     String::from_utf8(assert.get_output().stdout.to_owned()).unwrap()
 }
 
-fn debug_sandbox_files(dir: &Path) {
+pub fn debug_sandbox_files(dir: &Path) {
     for entry in std::fs::read_dir(dir).unwrap() {
         let path = entry.unwrap().path();
 

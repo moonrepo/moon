@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-const TARGET: &str = "moon:query:touched-files";
+const LOG_TARGET: &str = "moon:query:touched-files";
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,7 +32,7 @@ pub async fn query_touched_files(
     workspace: &Workspace,
     options: &mut QueryTouchedFilesOptions,
 ) -> Result<TouchedFilePaths, WorkspaceError> {
-    debug!(target: TARGET, "Querying for touched files");
+    debug!(target: LOG_TARGET, "Querying for touched files");
 
     let vcs = &workspace.vcs;
     let default_branch = vcs.get_default_branch();
@@ -49,7 +49,7 @@ pub async fn query_touched_files(
     // On default branch, so compare against self -1 revision
     let touched_files_map = if options.default_branch && vcs.is_default_branch(&current_branch) {
         trace!(
-            target: TARGET,
+            target: LOG_TARGET,
             "On default branch {}, comparing against previous revision",
             current_branch
         );
@@ -60,7 +60,7 @@ pub async fn query_touched_files(
         // On a branch, so compare branch against upstream base/default branch
     } else if !options.local {
         trace!(
-            target: TARGET,
+            target: LOG_TARGET,
             "Against upstream using base \"{}\" with head \"{}\"",
             options.base,
             options.head,
@@ -71,7 +71,7 @@ pub async fn query_touched_files(
 
         // Otherwise, check locally touched files
     } else {
-        trace!(target: TARGET, "Against locally touched",);
+        trace!(target: LOG_TARGET, "Against locally touched",);
 
         vcs.get_touched_files().await?
     };
@@ -79,7 +79,7 @@ pub async fn query_touched_files(
     let mut touched_files_to_log = vec![];
 
     debug!(
-        target: TARGET,
+        target: LOG_TARGET,
         "Filtering based on touched status \"{}\"", options.status
     );
 

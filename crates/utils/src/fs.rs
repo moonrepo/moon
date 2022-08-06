@@ -189,6 +189,18 @@ pub async fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonErr
     clean_json(json)
 }
 
+pub async fn remove<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
+    let path = path.as_ref();
+
+    if path.is_file() {
+        remove_file(path).await?;
+    } else if path.is_dir() {
+        remove_dir_all(path).await?;
+    }
+
+    Ok(())
+}
+
 pub async fn remove_file<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
     let path = path.as_ref();
 

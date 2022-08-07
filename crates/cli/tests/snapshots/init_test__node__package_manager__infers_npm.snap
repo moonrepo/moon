@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/init_test.rs
-assertion_line: 315
+assertion_line: 318
 expression: "fs::read_to_string(workspace_config).unwrap()"
 ---
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
@@ -21,7 +21,7 @@ projects:
 node:
   # The version to use. Must be a semantic version that includes major, minor, and patch.
   # We suggest using the latest active LTS version: https://nodejs.org/en/about/releases
-  version: '16.15.0'
+  version: '16.16.0'
 
   # The package manager to use when managing dependencies.
   # Accepts "npm" (default), "pnpm", or "yarn".

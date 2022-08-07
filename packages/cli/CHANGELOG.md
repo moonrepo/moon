@@ -13,6 +13,11 @@
 
 - Updated tasks to automatically detect their `type` (when undefined) based on their defined
   `command`. Will attempt to match against common system commands, like `rm`, `mkdir`, etc.
+- Updated default versions of tools:
+  - node 16.15.0 -> 16.16.0
+  - npm 8.10.0 -> 8.16.0
+  - pnpm 7.1.5 -> 7.9.0
+  - yarn 3.2.1 -> 3.2.2
 
 #### 🐞 Fixes
 

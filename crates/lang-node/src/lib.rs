@@ -6,7 +6,7 @@ use moon_lang::{Language, PackageManager, VersionManager};
 
 pub const NODE: Language = Language {
     binary: "node",
-    default_version: "16.15.0",
+    default_version: "16.16.0",
     vendor_bins_dir: "node_modules/.bin",
     vendor_dir: "node_modules",
 };
@@ -16,7 +16,7 @@ pub const NODE: Language = Language {
 pub const NPM: PackageManager = PackageManager {
     binary: "npm",
     config_filenames: &[".npmrc"],
-    default_version: "8.10.0",
+    default_version: "8.16.0",
     lock_filenames: &["package-lock.json", "npm-shrinkwrap.json"],
     manifest_filename: "package.json",
 };
@@ -24,7 +24,7 @@ pub const NPM: PackageManager = PackageManager {
 pub const PNPM: PackageManager = PackageManager {
     binary: "pnpm",
     config_filenames: &["pnpm-workspace.yaml", ".pnpmfile.cjs"],
-    default_version: "7.1.5",
+    default_version: "7.9.0",
     lock_filenames: &["pnpm-lock.yaml"],
     manifest_filename: "package.json",
 };

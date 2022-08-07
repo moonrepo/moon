@@ -2,7 +2,7 @@ use crate::project::{ProjectConfig, ProjectLanguage};
 use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
 use moon_utils::process::split_args;
-use moon_utils::regex::ENV_VAR;
+use moon_utils::regex::{ENV_VAR, NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use schemars::gen::SchemaGenerator;
 use schemars::schema::Schema;
 use schemars::{schema_for, JsonSchema};
@@ -136,7 +136,15 @@ pub struct TaskConfig {
 }
 
 impl TaskConfig {
-    pub fn detect_platform(project: &ProjectConfig) -> PlatformType {
+    pub fn detect_platform(project: &ProjectConfig, command: &str) -> PlatformType {
+        if NODE_COMMAND.is_match(command) {
+            return PlatformType::Node;
+        }
+
+        if UNIX_SYSTEM_COMMAND.is_match(command) || WINDOWS_SYSTEM_COMMAND.is_match(command) {
+            return PlatformType::System;
+        }
+
         match &project.language {
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
             ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,

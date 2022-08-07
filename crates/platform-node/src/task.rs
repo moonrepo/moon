@@ -111,7 +111,10 @@ fn clean_script_name(name: &str) -> String {
 }
 
 fn detect_platform_type(command: &str) -> PlatformType {
-    if UNIX_SYSTEM_COMMAND.is_match(command) || WINDOWS_SYSTEM_COMMAND.is_match(command) {
+    if UNIX_SYSTEM_COMMAND.is_match(command)
+        || WINDOWS_SYSTEM_COMMAND.is_match(command)
+        || command == "noop"
+    {
         return PlatformType::System;
     }
 

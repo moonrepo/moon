@@ -2,6 +2,7 @@ use crate::action::Attempt;
 use crate::context::ActionContext;
 use crate::errors::ActionError;
 use moon_cache::{CacheItem, RunTargetState};
+use moon_config::TaskOutputStyle;
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};
@@ -242,7 +243,11 @@ impl<'a> TargetRunner<'a> {
         let mut attempts = vec![];
         let is_primary = context.primary_targets.contains(self.target_id);
         let is_real_ci = is_ci() && !is_test_env();
-        let stream_output = is_primary || is_real_ci || self.task.options.stream_output;
+        let stream_output = match self.task.options.output_style {
+            Some(TaskOutputStyle::Stream) => true,
+            Some(TaskOutputStyle::OnExit) => false,
+            None => is_primary || is_real_ci,
+        };
         let output;
 
         loop {

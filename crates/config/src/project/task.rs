@@ -65,6 +65,13 @@ pub enum TaskMergeStrategy {
     Replace,
 }
 
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TaskOutputStyle {
+    OnExit,
+    Stream,
+}
+
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
@@ -86,6 +93,9 @@ pub struct TaskOptionsConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_outputs: Option<TaskMergeStrategy>,
 
+    #[serde(rename = "outputStyle", skip_serializing_if = "Option::is_none")]
+    pub output_style: Option<TaskOutputStyle>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<u8>,
 
@@ -94,9 +104,6 @@ pub struct TaskOptionsConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_from_workspace_root: Option<bool>,
-
-    #[serde(rename = "streamOutput", skip_serializing_if = "Option::is_none")]
-    pub stream_output: Option<bool>,
 }
 
 // We use serde(default) here because figment *does not* apply defaults

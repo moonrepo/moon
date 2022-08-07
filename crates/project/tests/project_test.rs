@@ -226,10 +226,10 @@ mod tasks {
             merge_env: Some(strategy.clone()),
             merge_inputs: Some(strategy.clone()),
             merge_outputs: Some(strategy),
+            output_style: None,
             retry_count: Some(1),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
-            stream_output: None,
         }
     }
 
@@ -241,10 +241,10 @@ mod tasks {
             merge_env: Some(strategy.clone()),
             merge_inputs: Some(strategy.clone()),
             merge_outputs: Some(strategy),
+            output_style: None,
             retry_count: None,
             run_in_ci: None,
             run_from_workspace_root: None,
-            stream_output: None,
         }
     }
 
@@ -256,10 +256,10 @@ mod tasks {
             merge_env: None,
             merge_inputs: None,
             merge_outputs: None,
+            output_style: None,
             retry_count: Some(1),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
-            stream_output: None,
         }
     }
 
@@ -735,10 +735,10 @@ mod tasks {
                     merge_env: Some(TaskMergeStrategy::Replace),
                     merge_inputs: Some(TaskMergeStrategy::Replace),
                     merge_outputs: Some(TaskMergeStrategy::Append),
+                    output_style: None,
                     retry_count: Some(1),
                     run_in_ci: Some(true),
                     run_from_workspace_root: None,
-                    stream_output: None,
                 },
                 type_of: PlatformType::Unknown,
             },
@@ -769,10 +769,10 @@ mod tasks {
                                 merge_env: Some(TaskMergeStrategy::Replace),
                                 merge_inputs: Some(TaskMergeStrategy::Replace),
                                 merge_outputs: Some(TaskMergeStrategy::Append),
+                                output_style: None,
                                 retry_count: None,
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
-                                stream_output: None,
                             },
                             type_of: PlatformType::Unknown,
                         }

@@ -23,9 +23,9 @@ reqwest = { version = "0.11.11", features = ["blocking"] }
 schemars = "0.8.10"
 serde = { version = "1.0.140", features = ["derive"] }
 serde_json = { version = "1.0.82", features = ["preserve_order"] }
-serde_yaml = "0.8.26"
+serde_yaml = "0.9.4"
 strum = { version = "0.24.1", features = ["derive"] }
-validator = { version = "0.15.0", features = ["derive"] }
+validator = { version = "0.16.0", features = ["derive"] }
 
 [dev-dependencies]
 assert_fs = "1.0.7"

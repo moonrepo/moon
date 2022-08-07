@@ -305,7 +305,7 @@ mod tasks {
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         );
-        task.platform = PlatformType::Node;
+        task.platform = PlatformType::System;
 
         // Expanded
         task.input_globs
@@ -353,7 +353,7 @@ mod tasks {
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         );
-        std.platform = PlatformType::Node;
+        std.platform = PlatformType::System;
 
         let mut test = Task::from_config(
             Target::format("id", "test").unwrap(),

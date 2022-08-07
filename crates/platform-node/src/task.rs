@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
 use moon_task::{PlatformType, Target, Task, TaskError, TaskID};
-use moon_utils::regex::{NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
+use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{process, regex, string_vec};
 use std::collections::{BTreeMap, HashMap};
 
@@ -111,15 +111,11 @@ fn clean_script_name(name: &str) -> String {
 }
 
 fn detect_platform_type(command: &str) -> PlatformType {
-    if NODE_COMMAND.is_match(command) {
-        return PlatformType::Node;
-    }
-
     if UNIX_SYSTEM_COMMAND.is_match(command) || WINDOWS_SYSTEM_COMMAND.is_match(command) {
         return PlatformType::System;
     }
 
-    PlatformType::Unknown
+    PlatformType::Node
 }
 
 pub enum TaskContext {

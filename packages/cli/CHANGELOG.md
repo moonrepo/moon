@@ -9,6 +9,11 @@
 - Renamed the project-level `project.yml` file to `moon.yml`. The `.moon/project.yml` file has not
   changed.
 
+#### 🚀 Updates
+
+- Updated tasks to automatically detect their `type` (when undefined) based on their defined
+  `command`. Will attempt to match against common system commands, like `rm`, `mkdir`, etc.
+
 #### 🐞 Fixes
 
 - Fixed some issues where task outputs were not being hydrated based on the state of the

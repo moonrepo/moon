@@ -38,6 +38,7 @@ const sidebars = {
 						'guides/examples/packemon',
 						'guides/examples/prettier',
 						'guides/examples/react',
+						'guides/examples/remix',
 						'guides/examples/typescript',
 						'guides/examples/vite',
 						'guides/examples/vue',

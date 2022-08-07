@@ -1,0 +1,143 @@
+---
+title: Remix example
+sidebar_label: Remix
+---
+
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+import CreateDepTabs from '@site/src/components/CreateDepTabs';
+
+> Remix has been prototyped in our
+> [examples repository](https://github.com/moonrepo/examples/tree/master/apps/remix-app), check it
+> out!
+
+In this guide, you'll learn how to integrate [Remix](https://remix.run) into moon.
+
+Begin by creating a new Remix project at a specified folder path (this should not be created in the
+workspace root, unless a polyrepo).
+
+```shell
+cd apps && npx create-remix
+```
+
+During this installation, Remix will ask a handful of questions, but be sure to answer "No" for the
+"Do you want me to run `npm install`?" question. We suggest installing dependencies at the workspace
+root via package workspaces!
+
+> View the [official Remix docs](https://remix.run/docs/en/v1) for a more in-depth guide to getting
+> started!
+
+## Setup
+
+Since Remix is per-project, the associated moon tasks should be defined in each project's `moon.yml`
+file.
+
+```yaml title="<project>/moon.yml"
+fileGroups:
+	remix:
+		- 'app/**/*'
+		- 'public/**/*'
+		- 'remix.env.d.ts'
+		- 'remix.config.*'
+
+tasks:
+	# Development server
+	dev:
+		command: 'remix'
+		args: 'dev'
+		inputs:
+			- '@group(remix)'
+		options:
+			runInCI: false
+
+	# Production build
+	build:
+		command: 'remix'
+		args: 'build'
+		inputs:
+			- '@group(remix)'
+		outputs:
+			- 'build'
+
+	# Serve the build
+	start:
+		command: 'remix-serve'
+		args: './build'
+		deps:
+			- '~:build'
+		inputs:
+			- '@group(remix)'
+		options:
+			runInCI: false
+```
+
+### ESLint integration
+
+Remix does not provide a built-in linting abstraction, and instead provides a simple ESLint
+configuration package,
+[`@remix-run/eslint-config`](https://www.npmjs.com/package/@remix-run/eslint-config). For the rest
+of this section, we're going to assume that a [global `lint` task](./eslint) has been configured.
+
+Begin be installing the `@remix-run/eslint-config` dependency in the application's `package.json`.
+We can then enable this configuration by creating an `.eslintrc.js` file in the project root. Be
+sure this file is listed in your `lint` task's inputs!
+
+```js title="<project>/.eslintrc.js"
+module.exports = {
+	extends: ['@remix-run/eslint-config', '@remix-run/eslint-config/node'],
+
+	// If using TypeScript
+	parser: '@typescript-eslint/parser',
+	parserOptions: {
+		project: 'tsconfig.json',
+		tsconfigRootDir: __dirname,
+	},
+};
+```
+
+### TypeScript integration
+
+Remix ships with TypeScript support (when enabled during installation), but the `tsconfig.json` it
+generates is _not_ setup for TypeScript project references, which we suggest using with a
+[global `typecheck` task](./typescript).
+
+When using project references, we suggest the following `tsconfig.json`, which is a mix of Remix and
+moon. Other compiler options, like `isolatedModules` and `esModuleInterop`, should be declared in a
+shared configuration found in the workspace root (`tsconfig.projectOptions.json` in the example).
+
+```json title="<project>/tsconfig.json"
+{
+	"extends": "../../tsconfig.projectOptions.json",
+	"compilerOptions": {
+		"baseUrl": ".",
+		"emitDeclarationOnly": false,
+		"jsx": "react-jsx",
+		"resolveJsonModule": true,
+		"moduleResolution": "node",
+		"noEmit": true,
+		"paths": {
+			"~/*": ["./app/*"]
+		}
+	},
+	"include": [".eslintrc.js", "remix.env.d.ts", "**/*"],
+	"exclude": [".cache", "build", "public"]
+}
+```
+
+## Configuration
+
+### Root-level
+
+We suggest _against_ root-level configuration, as Remix should be installed per-project, and the
+`remix` command expects the configuration to live relative to the project root.
+
+### Project-level
+
+When creating a new Remix project, a
+[`remix.config.js`](https://remix.run/docs/en/v1/api/conventions) is created, and _must_ exist in
+the project root. This allows each project to configure Remix for their needs.
+
+```js title="<project>/remix.config.js"
+module.exports = {
+	appDirectory: 'app',
+};
+```

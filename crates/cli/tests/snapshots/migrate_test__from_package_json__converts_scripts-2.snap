@@ -3,24 +3,23 @@ source: crates/cli/tests/migrate_test.rs
 assertion_line: 21
 expression: "fs::read_to_string(fixture.path().join(\"package-json/common/moon.yml\")).unwrap()"
 ---
----
 language: javascript
 tasks:
   lint:
     command: eslint
     args:
-      - "."
+    - .
     inputs:
-      - "**/*"
+    - '**/*'
     type: node
   lint-fix:
     command: moon
     args:
-      - run
-      - "common:lint"
-      - "--"
-      - "--fix"
+    - run
+    - common:lint
+    - --
+    - --fix
     inputs:
-      - "**/*"
+    - '**/*'
     type: node
 

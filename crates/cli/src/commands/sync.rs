@@ -2,13 +2,14 @@ use indicatif::{ProgressBar, ProgressStyle};
 use moon_action_runner::{ActionRunner, DepGraph};
 use moon_terminal::create_theme;
 use moon_workspace::Workspace;
+use std::time::Duration;
 
 pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
     let theme = create_theme();
 
     let pb = ProgressBar::new_spinner();
     pb.set_message("Syncing projects...");
-    pb.enable_steady_tick(20);
+    pb.enable_steady_tick(Duration::from_millis(50));
 
     let workspace = Workspace::load().await?;
     let mut project_count = 0;
@@ -22,7 +23,11 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
     let mut runner = ActionRunner::new(workspace);
     let results = runner.run(graph, None).await?;
 
-    pb.set_style(ProgressStyle::default_spinner().template("{prefix} {msg}"));
+    pb.set_style(
+        ProgressStyle::default_spinner()
+            .template("{prefix} {msg}")
+            .unwrap(),
+    );
 
     if runner.has_failed() {
         pb.set_prefix(theme.error_prefix.to_string());

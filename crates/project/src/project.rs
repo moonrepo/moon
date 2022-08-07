@@ -215,7 +215,7 @@ fn create_tasks_from_config(
     // Expand deps, args, inputs, and outputs after all tasks have been created
     for task in tasks.values_mut() {
         if matches!(task.platform, PlatformType::Unknown) {
-            task.platform = TaskConfig::detect_platform(project_config);
+            task.platform = TaskConfig::detect_platform(project_config, &task.command);
         }
 
         // Inherit implicit inputs before resolving

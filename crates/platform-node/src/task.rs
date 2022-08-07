@@ -2,6 +2,7 @@ use lazy_static::lazy_static;
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
 use moon_task::{PlatformType, Target, Task, TaskError, TaskID};
+use moon_utils::regex::{NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{process, regex, string_vec};
 use std::collections::{BTreeMap, HashMap};
 
@@ -34,10 +35,6 @@ lazy_static! {
     pub static ref DEV_ONLY_NAME: regex::Regex =
             regex::create_regex(r#"(^(dev|start|serve)$)|(^(start|serve):)|(:(start|serve)$)"#)
                 .unwrap();
-
-    pub static ref SYSTEM_COMMAND: regex::Regex =
-                regex::create_regex(r#"^(bash|cp|echo|find|git|make|mkdir|rm|rsync|svn)$"#)
-                    .unwrap();
 
     // Special package manager handling
     pub static ref PM_RUN_COMMAND: regex::Regex = regex::create_regex(r#"(?:npm|pnpm|yarn) run ([a-zA-Z0-9:-_]+)([^&]+)?"#)
@@ -114,11 +111,15 @@ fn clean_script_name(name: &str) -> String {
 }
 
 fn detect_platform_type(command: &str) -> PlatformType {
-    if SYSTEM_COMMAND.is_match(command) || command == "noop" {
+    if NODE_COMMAND.is_match(command) {
+        return PlatformType::Node;
+    }
+
+    if UNIX_SYSTEM_COMMAND.is_match(command) || WINDOWS_SYSTEM_COMMAND.is_match(command) {
         return PlatformType::System;
     }
 
-    PlatformType::Node
+    PlatformType::Unknown
 }
 
 pub enum TaskContext {

@@ -3,6 +3,7 @@ mod errors;
 
 pub use errors::LangError;
 use std::fmt;
+use std::fs;
 use std::path::Path;
 
 type StaticString = &'static str;
@@ -37,6 +38,19 @@ pub struct VersionManager {
     pub config_filename: Option<StaticString>,
 
     pub version_filename: StaticString,
+}
+
+pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language) -> bool {
+    let vendor_path = dir.as_ref().join(lang.vendor_dir);
+
+    if !vendor_path.exists() {
+        return false;
+    }
+
+    match fs::read_dir(vendor_path) {
+        Ok(mut contents) => contents.next().is_some(),
+        Err(_) => false,
+    }
 }
 
 pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &PackageManager) -> bool {

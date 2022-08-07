@@ -1292,6 +1292,7 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_hasher",
+ "moon_lang",
  "moon_lang_node",
  "moon_logger",
  "moon_platform_node",

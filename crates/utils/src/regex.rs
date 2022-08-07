@@ -21,6 +21,16 @@ lazy_static! {
     pub static ref TOKEN_FUNC_PATTERN: Regex = Regex::new(&format!("^@([a-z]+)\\({}\\)$", *TOKEN_GROUP)).unwrap();
     pub static ref TOKEN_FUNC_ANYWHERE_PATTERN: Regex = Regex::new(&format!("@([a-z]+)\\({}\\)", *TOKEN_GROUP)).unwrap();
     pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$(language|projectRoot|projectSource|projectType|project|target|taskType|task|workspaceRoot)").unwrap();
+
+    // Task commands (these are not exhaustive)
+    pub static ref NODE_COMMAND: regex::Regex =
+                Regex::new("^(node|nodejs|npm|npx|yarn|pnpm|corepack)$").unwrap();
+
+    pub static ref UNIX_SYSTEM_COMMAND: regex::Regex =
+                Regex::new("^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$").unwrap();
+
+    pub static ref WINDOWS_SYSTEM_COMMAND: regex::Regex =
+                Regex::new("^(cd|cmd|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy)$").unwrap();
 }
 
 pub fn create_regex(value: &str) -> Result<Regex, MoonError> {

@@ -8,6 +8,7 @@ moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
+moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
 moon_platform_node = { path = "../platform-node" }

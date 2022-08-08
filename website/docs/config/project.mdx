@@ -424,6 +424,23 @@ tasks:
       retryCount: 3
 ```
 
+#### `runDepsInParallel`
+
+> boolean
+
+Whether to run the task's [`deps`](#deps) in parallel or serial (in order). Defaults to `true`.
+
+```yaml title="moon.yml" {8}
+tasks:
+  start:
+    # ...
+    deps:
+      - '~:clean'
+      - '~:build'
+    options:
+      runDepsInParallel: false
+```
+
 #### `runInCI`
 
 > `boolean`

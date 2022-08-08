@@ -1,0 +1,25 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 303
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm install
+▪▪▪▪ depsB:standard
+▪▪▪▪ depsB:standard (100ms)
+deps=b
+
+▪▪▪▪ depsC:standard
+▪▪▪▪ depsC:standard (100ms)
+deps=c
+
+▪▪▪▪ depsA:standard
+▪▪▪▪ depsA:standard (100ms)
+deps=a
+
+▪▪▪▪ dependsOn:serialDeps
+
+Tasks: 4 completed
+ Time: 100ms
+
+
+

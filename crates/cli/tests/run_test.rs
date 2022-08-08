@@ -290,6 +290,18 @@ mod dependencies {
 
         assert_snapshot!(get_assert_output(&assert));
     }
+
+    #[test]
+    fn can_run_deps_in_serial() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("dependsOn:serialDeps")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
 }
 
 mod target_scopes {

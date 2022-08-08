@@ -11,6 +11,7 @@
 
 #### 🚀 Updates
 
+- Project and tasks names (identifiers) now support forward slashes (`/`).
 - Added a `runDepsInParallel` option to tasks, that controls whether task dependencies run in
   parallel or serial (in order).
 - Updated tasks to automatically detect their `type` (when undefined) based on their defined

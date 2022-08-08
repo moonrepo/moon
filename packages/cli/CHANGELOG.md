@@ -11,6 +11,8 @@
 
 #### 🚀 Updates
 
+- Added a `runDepsInParallel` option to tasks, that controls whether task dependencies run in
+  parallel or serial (in order).
 - Updated tasks to automatically detect their `type` (when undefined) based on their defined
   `command`. Will attempt to match against common system commands, like `rm`, `mkdir`, etc.
 - When in CI, Node.js will not install dependencies if they were already installed before moon runs.

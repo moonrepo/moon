@@ -228,6 +228,7 @@ mod tasks {
             merge_outputs: Some(strategy),
             output_style: None,
             retry_count: Some(1),
+            run_deps_in_parallel: Some(true),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
         }
@@ -243,6 +244,7 @@ mod tasks {
             merge_outputs: Some(strategy),
             output_style: None,
             retry_count: None,
+            run_deps_in_parallel: None,
             run_in_ci: None,
             run_from_workspace_root: None,
         }
@@ -258,6 +260,7 @@ mod tasks {
             merge_outputs: None,
             output_style: None,
             retry_count: Some(1),
+            run_deps_in_parallel: Some(true),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
         }
@@ -737,6 +740,7 @@ mod tasks {
                     merge_outputs: Some(TaskMergeStrategy::Append),
                     output_style: None,
                     retry_count: Some(1),
+                    run_deps_in_parallel: Some(true),
                     run_in_ci: Some(true),
                     run_from_workspace_root: None,
                 },
@@ -771,6 +775,7 @@ mod tasks {
                                 merge_outputs: Some(TaskMergeStrategy::Append),
                                 output_style: None,
                                 retry_count: None,
+                                run_deps_in_parallel: None,
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
                             },

@@ -19,6 +19,20 @@ typically can be written with less key strokes.
 
 Lastly, a project name can be paired with a task name to create a [target](./target).
 
+## Aliases
+
+Aliases are a secondary approach for naming projects, and can be used as a drop-in replacement for
+standard names. What this means is that an alias can also be used when configuring dependencies, or
+defining [targets](./target).
+
+However, the difference between aliases and names is that aliases _can not_ be explicit configured
+in moon. Instead, they are specific to a project's primary programming language, and are inferred
+based on that context (when enabled in settings). For example, a JavaScript or TypeScript project
+will use the `name` field from its `package.json` as the alias.
+
+Because of this, a project can either be reference by its name or alias, or both. Choose the pattern
+that makes the most sense for your company or team!
+
 ## Configuration
 
 Projects can be configured with an optional [`moon.yml`](../config/project) in the project root, or

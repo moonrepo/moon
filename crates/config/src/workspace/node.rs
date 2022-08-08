@@ -42,6 +42,13 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.yarn.version", value)
 }
 
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum NodeProjectAliasFormat {
+    NameAndScope, // @scope/name
+    NameOnly,     // name
+}
+
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum NodeVersionFormat {
@@ -147,6 +154,8 @@ impl Default for YarnConfig {
 pub struct NodeConfig {
     pub add_engines_constraint: bool,
 
+    pub alias_package_name: Option<NodeProjectAliasFormat>,
+
     pub dedupe_on_lockfile_change: bool,
 
     pub dependency_version_format: NodeVersionFormat,
@@ -176,6 +185,7 @@ impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
             add_engines_constraint: true,
+            alias_package_name: None,
             dedupe_on_lockfile_change: true,
             dependency_version_format: NodeVersionFormat::WorkspaceCaret,
             infer_tasks_from_scripts: false,

@@ -3,7 +3,8 @@ use crate::context::ActionContext;
 use crate::errors::ActionError;
 use moon_config::NodePackageManager;
 use moon_error::map_io_to_fs_error;
-use moon_lang_node::{package::PackageJson, NPM};
+use moon_lang::has_vendor_installed_dependencies;
+use moon_lang_node::{package::PackageJson, NODE, NPM};
 use moon_logger::{color, debug, warn};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{fs, is_ci, is_offline};
@@ -131,6 +132,17 @@ pub async fn install_node_deps(
         || last_modified > cache.item.last_node_install_time
     {
         debug!(target: LOG_TARGET, "Installing Node.js dependencies");
+
+        // When in CI, we can avoid installing dependencies because
+        // we can assume they've already been installed before moon runs!
+        if is_ci() && has_vendor_installed_dependencies(&workspace.root, &NODE) {
+            warn!(
+                target: LOG_TARGET,
+                "In a CI environment and dependencies already exist, skipping install"
+            );
+
+            return Ok(ActionStatus::Skipped);
+        }
 
         if is_offline() {
             warn!(

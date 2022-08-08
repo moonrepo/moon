@@ -227,6 +227,7 @@ mod tasks {
             merge_inputs: Some(strategy.clone()),
             merge_outputs: Some(strategy),
             retry_count: Some(1),
+            run_deps_in_parallel: Some(true),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
         }
@@ -241,6 +242,7 @@ mod tasks {
             merge_inputs: Some(strategy.clone()),
             merge_outputs: Some(strategy),
             retry_count: None,
+            run_deps_in_parallel: None,
             run_in_ci: None,
             run_from_workspace_root: None,
         }
@@ -255,6 +257,7 @@ mod tasks {
             merge_inputs: None,
             merge_outputs: None,
             retry_count: Some(1),
+            run_deps_in_parallel: Some(true),
             run_in_ci: Some(true),
             run_from_workspace_root: None,
         }
@@ -733,6 +736,7 @@ mod tasks {
                     merge_inputs: Some(TaskMergeStrategy::Replace),
                     merge_outputs: Some(TaskMergeStrategy::Append),
                     retry_count: Some(1),
+                    run_deps_in_parallel: Some(true),
                     run_in_ci: Some(true),
                     run_from_workspace_root: None,
                 },
@@ -766,6 +770,7 @@ mod tasks {
                                 merge_inputs: Some(TaskMergeStrategy::Replace),
                                 merge_outputs: Some(TaskMergeStrategy::Append),
                                 retry_count: None,
+                                run_deps_in_parallel: None,
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
                             },

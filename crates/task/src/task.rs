@@ -3,7 +3,7 @@ use crate::target::{Target, TargetProjectScope};
 use crate::token::TokenResolver;
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
-    DependencyConfig, FileGlob, FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig,
+    DependencyConfig, FileGlob, FilePath, InputValue, PlatformType, TargetID, TaskConfig,
     TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_logger::{color, debug, trace, Logable};
@@ -32,6 +32,8 @@ pub struct TaskOptions {
 
     pub retry_count: u8,
 
+    pub run_deps_in_parallel: bool,
+
     pub run_in_ci: bool,
 
     pub run_from_workspace_root: bool,
@@ -48,6 +50,7 @@ impl Default for TaskOptions {
             merge_outputs: TaskMergeStrategy::Append,
             output_style: None,
             retry_count: 0,
+            run_deps_in_parallel: true,
             run_in_ci: true,
             run_from_workspace_root: false,
         }
@@ -84,6 +87,10 @@ impl TaskOptions {
             self.retry_count = *retry_count;
         }
 
+        if let Some(run_deps_in_parallel) = &config.run_deps_in_parallel {
+            self.run_deps_in_parallel = *run_deps_in_parallel;
+        }
+
         if let Some(run_in_ci) = &config.run_in_ci {
             self.run_in_ci = *run_in_ci;
         }
@@ -101,6 +108,10 @@ impl TaskOptions {
 
         if let Some(output_style) = &self.output_style {
             config.output_style = Some(output_style.clone());
+        }
+
+        if self.run_deps_in_parallel != default_options.run_deps_in_parallel {
+            config.run_deps_in_parallel = Some(self.run_deps_in_parallel);
         }
 
         if self.retry_count != default_options.retry_count {
@@ -130,7 +141,7 @@ pub struct Task {
 
     pub env: EnvVars,
 
-    pub inputs: Vec<FilePathOrGlob>,
+    pub inputs: Vec<InputValue>,
 
     pub input_globs: HashSet<FileGlob>,
 
@@ -197,6 +208,7 @@ impl Task {
                 merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
                 output_style: cloned_options.output_style,
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
+                run_deps_in_parallel: cloned_options.run_deps_in_parallel.unwrap_or(true),
                 run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_long_running),
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },

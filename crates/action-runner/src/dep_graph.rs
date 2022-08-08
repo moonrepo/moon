@@ -380,6 +380,9 @@ impl DepGraph {
         let task = project.get_task(task_id)?;
 
         if !task.deps.is_empty() {
+            let parallel = task.options.run_deps_in_parallel;
+            let mut previous_target_index = None;
+
             trace!(
                 target: LOG_TARGET,
                 "Adding dependencies {} from target {}",
@@ -396,9 +399,23 @@ impl DepGraph {
                     projects,
                     touched_files,
                 )? {
-                    self.graph
-                        .add_edge(run_target_index, run_dep_target_index, ());
+                    // When parallel, parent depends on child
+                    if parallel {
+                        self.graph
+                            .add_edge(run_target_index, run_dep_target_index, ());
+
+                        // When serial, next child depends on previous child
+                    } else if let Some(prev) = previous_target_index {
+                        self.graph.add_edge(run_dep_target_index, prev, ());
+                    }
+
+                    previous_target_index = Some(run_dep_target_index);
                 }
+            }
+
+            if !parallel {
+                self.graph
+                    .add_edge(run_target_index, previous_target_index.unwrap(), ());
             }
         }
 

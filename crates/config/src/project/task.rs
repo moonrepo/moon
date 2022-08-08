@@ -99,6 +99,9 @@ pub struct TaskOptionsConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<u8>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub run_deps_in_parallel: Option<bool>,
+
     #[serde(rename = "runInCI", skip_serializing_if = "Option::is_none")]
     pub run_in_ci: Option<bool>,
 

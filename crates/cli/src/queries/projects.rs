@@ -8,6 +8,7 @@ const LOG_TARGET: &str = "moon:query:projects";
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
+    pub alias: Option<String>,
     pub id: Option<String>,
     pub language: Option<String>,
     pub source: Option<String>,
@@ -48,6 +49,7 @@ pub async fn query_projects(
     debug!(target: LOG_TARGET, "Querying for projects");
 
     let mut projects = vec![];
+    let alias_regex = convert_to_regex("alias", &options.alias)?;
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
     let source_regex = convert_to_regex("source", &options.source)?;
@@ -62,6 +64,14 @@ pub async fn query_projects(
         }
 
         let project = workspace.projects.load(&project_id)?;
+
+        if let Some(regex) = &alias_regex {
+            if let Some(alias) = &project.alias {
+                if !regex.is_match(alias) {
+                    continue;
+                }
+            }
+        }
 
         if let Some(regex) = &source_regex {
             if !regex.is_match(&project.source) {

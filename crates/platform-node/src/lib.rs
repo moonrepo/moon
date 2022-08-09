@@ -62,23 +62,26 @@ pub fn load_project_aliases_from_packages(
                 };
 
                 if let Some(existing_source) = projects_map.get(&alias) {
-                    warn!(
-                        target: LOG_TARGET,
-                        "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
-                        color::id(alias),
-                        color::file(existing_source),
-                        color::file(project_source)
-                    );
+                    if existing_source != project_source {
+                        warn!(
+                            target: LOG_TARGET,
+                            "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
+                            color::id(alias),
+                            color::file(existing_source),
+                            color::file(project_source)
+                        );
 
-                    continue;
+                        continue;
+                    }
                 }
 
                 if let Some(existing_id) = aliases_map.get(&alias) {
                     warn!(
                         target: LOG_TARGET,
-                        "A project already exists with the alias {} (for project {}), skipping conflicting alias",
+                        "A project already exists with the alias {} (for project {}), skipping conflicting alias ({})",
                         color::id(alias),
-                        color::id(existing_id)
+                        color::id(existing_id),
+                        color::file(project_source)
                     );
 
                     continue;

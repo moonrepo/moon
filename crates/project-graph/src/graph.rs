@@ -174,7 +174,7 @@ impl ProjectGraph {
     /// misconfigured, an error will be returned.
     #[track_caller]
     pub fn load(&self, alias_or_id: &str) -> Result<Project, ProjectError> {
-        let id = self.get_id_from_alias(alias_or_id);
+        let id = self.resolve_id(alias_or_id);
 
         // Check if the project already exists in read-only mode,
         // so that it may be dropped immediately after!
@@ -240,11 +240,8 @@ impl ProjectGraph {
         Ok(deps)
     }
 
-    pub fn get_id_from_alias(&self, alias_or_id: &str) -> String {
-        if self.projects_map.contains_key(alias_or_id) {
-            return alias_or_id.to_owned();
-        }
-
+    /// Resolve a project ID from the provided value, which can be an ID or alias.
+    pub fn resolve_id(&self, alias_or_id: &str) -> String {
         match self.aliases.get(alias_or_id) {
             Some(project_id) => project_id.to_owned(),
             None => alias_or_id.to_owned(),
@@ -343,7 +340,7 @@ impl ProjectGraph {
         indices: &mut RwLockWriteGuard<IndicesType>,
         graph: &mut RwLockWriteGuard<GraphType>,
     ) -> Result<NodeIndex, ProjectError> {
-        let id = self.get_id_from_alias(alias_or_id);
+        let id = self.resolve_id(alias_or_id);
 
         // Already loaded, abort early
         if indices.contains_key(&id) || id == ROOT_NODE_ID {

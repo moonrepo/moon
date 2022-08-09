@@ -4,7 +4,7 @@ use crate::token::TokenResolver;
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
     DependencyConfig, FileGlob, FilePath, FilePathOrGlob, PlatformType, TargetID, TaskConfig,
-    TaskMergeStrategy, TaskOptionsConfig,
+    TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{glob, path, regex::ENV_VAR, string_vec};
@@ -28,6 +28,8 @@ pub struct TaskOptions {
 
     pub merge_outputs: TaskMergeStrategy,
 
+    pub output_style: Option<TaskOutputStyle>,
+
     pub retry_count: u8,
 
     pub run_in_ci: bool,
@@ -44,6 +46,7 @@ impl Default for TaskOptions {
             merge_env: TaskMergeStrategy::Append,
             merge_inputs: TaskMergeStrategy::Append,
             merge_outputs: TaskMergeStrategy::Append,
+            output_style: None,
             retry_count: 0,
             run_in_ci: true,
             run_from_workspace_root: false,
@@ -73,6 +76,10 @@ impl TaskOptions {
             self.merge_outputs = merge_outputs.clone();
         }
 
+        if let Some(output_style) = &config.output_style {
+            self.output_style = Some(output_style.clone());
+        }
+
         if let Some(retry_count) = &config.retry_count {
             self.retry_count = *retry_count;
         }
@@ -91,6 +98,10 @@ impl TaskOptions {
         let mut config = TaskOptionsConfig::default();
 
         // Skip merge options until we need them
+
+        if let Some(output_style) = &self.output_style {
+            config.output_style = Some(output_style.clone());
+        }
 
         if self.retry_count != default_options.retry_count {
             config.retry_count = Some(self.retry_count);
@@ -184,6 +195,7 @@ impl Task {
                 merge_env: cloned_options.merge_env.unwrap_or_default(),
                 merge_inputs: cloned_options.merge_inputs.unwrap_or_default(),
                 merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
+                output_style: cloned_options.output_style,
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
                 run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_long_running),
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),

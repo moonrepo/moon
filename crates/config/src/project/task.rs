@@ -65,6 +65,13 @@ pub enum TaskMergeStrategy {
     Replace,
 }
 
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TaskOutputStyle {
+    OnExit,
+    Stream,
+}
+
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
@@ -85,6 +92,9 @@ pub struct TaskOptionsConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_outputs: Option<TaskMergeStrategy>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_style: Option<TaskOutputStyle>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<u8>,

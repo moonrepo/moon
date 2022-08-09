@@ -23,6 +23,7 @@ title: Terminology
 | Tool                   | A programming language or package manager within the [toolchain][toolchain].                                                               |
 | Touched                | A file that has been created, modified, deleted, or changed in any way.                                                                    |
 | [Toolchain][toolchain] | Installs and manages tools within the [workspace][workspace].                                                                              |
+| Transitive target      | A target that is the dependency of the primary target, and must be ran before the primary.                                                 |
 | Upstream               | Dependencies or producers of the item in question.                                                                                         |
 | VCS                    | Version control system (like git or svn).                                                                                                  |
 | [Workspace][workspace] | Root of the moon installation, and houses one or many [projects][project]. _Also refers to package manager workspaces (like Yarn)._        |

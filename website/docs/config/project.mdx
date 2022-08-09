@@ -409,6 +409,25 @@ The strategy to use when merging the [`inputs`](#inputs) list with an inherited 
 The strategy to use when merging the [`outputs`](#outputs) list with an inherited task. Defaults to
 "append".
 
+#### `outputStyle`
+
+> `TaskOutputStyle`
+
+Controls how stdout/stderr is displayed when the task is ran as a _transitive target_. By default,
+this setting is not defined and defers to the action runner, but can be overridden with one of the
+following values:
+
+- `on-exit` - Buffers output until the task has ran, then displays.
+- `stream` - Streams output directly to the terminal.
+
+```yaml title="moon.yml" {5}
+tasks:
+  test:
+    # ...
+    options:
+      outputStyle: 'stream'
+```
+
 #### `retryCount`
 
 > `number`

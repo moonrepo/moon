@@ -315,7 +315,7 @@ impl<'a> TargetRunner<'a> {
                 // If this target matches the primary target (the last task to run),
                 // then we want to stream the output directly to the parent (inherit mode).
                 command
-                    .exec_stream_and_capture_output(if is_real_ci {
+                    .exec_stream_and_capture_output(if !is_primary {
                         Some(&self.task.target)
                     } else {
                         None

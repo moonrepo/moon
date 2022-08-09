@@ -154,7 +154,7 @@ impl Default for YarnConfig {
 pub struct NodeConfig {
     pub add_engines_constraint: bool,
 
-    pub alias_package_name: Option<NodeProjectAliasFormat>,
+    pub alias_package_names: Option<NodeProjectAliasFormat>,
 
     pub dedupe_on_lockfile_change: bool,
 
@@ -185,7 +185,7 @@ impl Default for NodeConfig {
     fn default() -> Self {
         NodeConfig {
             add_engines_constraint: true,
-            alias_package_name: None,
+            alias_package_names: None,
             dedupe_on_lockfile_change: true,
             dependency_version_format: NodeVersionFormat::WorkspaceCaret,
             infer_tasks_from_scripts: false,

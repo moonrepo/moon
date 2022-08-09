@@ -229,6 +229,35 @@ ensure other Node.js processes outside of our toolchain are utilizing the same v
 }
 ```
 
+### `aliasPackageNames`
+
+> `NodeProjectAliasFormat`
+
+When enabled, will assign [aliases](../concepts/project#aliases) to configured [projects](#projects)
+based on the `name` field in the project's `package.json`. Aliases can be used as a substitute for
+project names, allowing for the familiar package name to be used within
+[targets](../concepts/target) or configuration.
+
+This setting accepts one of the following values, which determines how to parse and assign the
+alias.
+
+- `name-and-scope` - Will use the package name as-is, including any scope. For example,
+  `@scope/example` or `example`.
+- `name-only` - Will only use the name and disregard any scope. For example, `@scope/example` will
+  become `example`.
+
+```yaml title=".moon/workspace.yml" {2}
+node:
+  aliasPackageNames: 'name-only'
+```
+
+:::caution
+
+This setting will eager load all `package.json`s within the repository, which may result in reduced
+performance for a large amount of projects.
+
+:::
+
 ### `dedupeOnLockfileChange`
 
 > `boolean`

@@ -36,7 +36,7 @@ const managementFeatures: Feature[] = [
 		icon: faFingerprint,
 		description:
 			'Collects inputs from multiple sources to ensure builds are deterministic and reproducible.',
-		status: 'experimental',
+		status: 'new',
 	},
 	{
 		title: 'Remote caching',
@@ -105,7 +105,7 @@ const orchestrationFeatures: Feature[] = [
 		icon: faArrowUpRightDots,
 		description:
 			'With our smart hashing, only rebuild projects that have been touched since the last build.',
-		status: 'experimental',
+		status: 'new',
 	},
 ];
 

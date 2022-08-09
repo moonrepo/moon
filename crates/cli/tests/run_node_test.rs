@@ -884,3 +884,19 @@ mod profile {
         assert!(profile.exists());
     }
 }
+
+mod aliases {
+    use super::*;
+
+    #[test]
+    fn runs_via_package_name() {
+        let fixture = create_sandbox_with_git("project-graph/aliases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("@scope/pkg-foo:standard")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+}

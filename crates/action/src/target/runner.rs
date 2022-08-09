@@ -29,8 +29,6 @@ pub struct TargetRunner<'a> {
 
     project: &'a Project,
 
-    target_id: &'a str,
-
     task: &'a Task,
 
     workspace: &'a Workspace,
@@ -41,12 +39,10 @@ impl<'a> TargetRunner<'a> {
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
-        target_id: &'a str,
     ) -> Result<TargetRunner<'a>, MoonError> {
         Ok(TargetRunner {
-            cache: workspace.cache.cache_run_target_state(target_id).await?,
+            cache: workspace.cache.cache_run_target_state(&task.target).await?,
             project,
-            target_id,
             task,
             workspace,
         })
@@ -223,7 +219,7 @@ impl<'a> TargetRunner<'a> {
             target: LOG_TARGET,
             "Generated hash {} for target {}",
             color::symbol(&hash),
-            color::id(&self.target_id)
+            color::id(&self.task.target)
         );
 
         // Hash is the same as the previous build, so simply abort!
@@ -302,7 +298,7 @@ impl<'a> TargetRunner<'a> {
         let attempt_total = self.task.options.retry_count + 1;
         let mut attempt_index = 1;
         let mut attempts = vec![];
-        let is_primary = context.primary_targets.contains(self.target_id);
+        let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
         let stream_output = is_primary || is_real_ci;
         let output;
@@ -320,7 +316,7 @@ impl<'a> TargetRunner<'a> {
                 // then we want to stream the output directly to the parent (inherit mode).
                 command
                     .exec_stream_and_capture_output(if is_real_ci {
-                        Some(self.target_id)
+                        Some(&self.task.target)
                     } else {
                         None
                     })
@@ -358,7 +354,7 @@ impl<'a> TargetRunner<'a> {
                         warn!(
                             target: LOG_TARGET,
                             "Target {} failed, running again with attempt {}",
-                            color::target(&self.target_id),
+                            color::target(&self.task.target),
                             attempt_index
                         );
                     }
@@ -397,7 +393,7 @@ impl<'a> TargetRunner<'a> {
     pub fn print_checkpoint(&self, checkpoint: Checkpoint, comment: &str) {
         println!(
             "{} {}",
-            label_checkpoint(&self.target_id, checkpoint),
+            label_checkpoint(&self.task.target, checkpoint),
             color::muted(comment)
         );
     }
@@ -443,7 +439,7 @@ impl<'a> TargetRunner<'a> {
 
     pub fn print_target_label(&self, checkpoint: Checkpoint, attempt: &Attempt, attempt_total: u8) {
         let failed = matches!(checkpoint, Checkpoint::Fail);
-        let mut label = label_checkpoint(&self.target_id, checkpoint);
+        let mut label = label_checkpoint(&self.task.target, checkpoint);
         let mut comments = vec![];
 
         if attempt.index > 1 {

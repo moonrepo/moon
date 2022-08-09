@@ -189,6 +189,23 @@ where
     )
 }
 
+pub fn parse_package_name(package_name: &str) -> (Option<String>, String) {
+    let scope;
+    let name;
+
+    if package_name.contains('/') {
+        let mut parts = package_name.split('/');
+
+        scope = Some(parts.next().unwrap().to_owned());
+        name = parts.next().unwrap().to_owned();
+    } else {
+        scope = None;
+        name = package_name.to_owned();
+    }
+
+    (scope, name)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

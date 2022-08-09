@@ -2,7 +2,7 @@ use moon_cache::CacheEngine;
 use moon_config::constants::FLAG_PROJECTS_USING_GLOB;
 use moon_config::{GlobalProjectConfig, ProjectID, ProjectLanguage, WorkspaceConfig};
 use moon_logger::{color, debug, map_list, trace};
-use moon_platform_node::infer_tasks;
+use moon_platform_node::{infer_tasks_from_package, load_project_aliases_from_packages};
 use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -22,12 +22,15 @@ const ROOT_NODE_ID: &str = "(workspace)";
 
 async fn load_projects_from_cache(
     workspace_root: &Path,
-    projects: &ProjectsSourceMap,
+    workspace_config: &WorkspaceConfig,
     engine: &CacheEngine,
 ) -> Result<ProjectsSourceMap, ProjectError> {
     // Projects were mapped manually and are not using globs
-    if !projects.contains_key(FLAG_PROJECTS_USING_GLOB) {
-        return Ok(projects.clone());
+    if !workspace_config
+        .projects
+        .contains_key(FLAG_PROJECTS_USING_GLOB)
+    {
+        return Ok(workspace_config.projects.clone());
     }
 
     let mut cache = engine.cache_projects_state().await?;
@@ -40,7 +43,8 @@ async fn load_projects_from_cache(
     }
 
     // Extract globs from our fake projects map
-    let globs = projects
+    let globs = workspace_config
+        .projects
         .iter()
         .filter_map(|(key, value)| {
             if key == FLAG_PROJECTS_USING_GLOB {
@@ -70,7 +74,25 @@ async fn load_projects_from_cache(
     Ok(map)
 }
 
+async fn load_project_aliases(
+    workspace_root: &Path,
+    workspace_config: &WorkspaceConfig,
+    projects: &ProjectsSourceMap,
+) -> Result<ProjectsSourceMap, ProjectError> {
+    let mut aliases = HashMap::new();
+
+    // JavaScript/TypeScript
+    if let Some(alias_format) = &workspace_config.node.alias_package_name {
+        load_project_aliases_from_packages(workspace_root, projects, alias_format, &mut aliases)?;
+    }
+
+    Ok(aliases)
+}
+
 pub struct ProjectGraph {
+    /// A mapping of an alias to a project ID.
+    aliases: HashMap<String, ProjectID>,
+
     /// The global project configuration that all projects inherit from.
     /// Is loaded from `.moon/project.yml`.
     global_config: GlobalProjectConfig,
@@ -117,16 +139,17 @@ impl ProjectGraph {
             ..Project::default()
         });
 
+        // Load projects and aliases
+        let projects_map =
+            load_projects_from_cache(workspace_root, workspace_config, cache).await?;
+        let aliases = load_project_aliases(workspace_root, workspace_config, &projects_map).await?;
+
         Ok(ProjectGraph {
+            aliases,
             global_config,
             graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(HashMap::new())),
-            projects_map: load_projects_from_cache(
-                workspace_root,
-                &workspace_config.projects,
-                cache,
-            )
-            .await?,
+            projects_map,
             workspace_config: workspace_config.clone(),
             workspace_root: workspace_root.to_path_buf(),
         })
@@ -144,7 +167,12 @@ impl ProjectGraph {
     /// project graph. If the project does not exist or has been
     /// misconfigured, an error will be returned.
     #[track_caller]
-    pub fn load(&self, id: &str) -> Result<Project, ProjectError> {
+    pub fn load(&self, alias_or_id: &str) -> Result<Project, ProjectError> {
+        let id = match self.aliases.get(alias_or_id) {
+            Some(project_id) => project_id,
+            None => alias_or_id,
+        };
+
         // Check if the project already exists in read-only mode,
         // so that it may be dropped immediately after!
         {
@@ -268,7 +296,7 @@ impl ProjectGraph {
                 color::file("package.json")
             );
 
-            if let Some(tasks) = infer_tasks(id, &project.root)? {
+            if let Some(tasks) = infer_tasks_from_package(id, &project.root)? {
                 // Scripts should not override global tasks
                 for (task_id, task) in tasks {
                     project.tasks.entry(task_id).or_insert(task);

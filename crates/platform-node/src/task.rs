@@ -1,3 +1,4 @@
+use crate::LOG_TARGET;
 use lazy_static::lazy_static;
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
@@ -5,8 +6,6 @@ use moon_task::{PlatformType, Target, Task, TaskError, TaskID};
 use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{process, regex, string_vec};
 use std::collections::{BTreeMap, HashMap};
-
-const LOG_TARGET: &str = "moon:node-task";
 
 pub type TasksMap = BTreeMap<TaskID, Task>;
 pub type ScriptsMap = HashMap<String, String>;

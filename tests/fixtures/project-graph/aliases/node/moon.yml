@@ -1,0 +1,13 @@
+dependsOn:
+  - '@scope/pkg-foo'
+  - 'pkg-bar'
+
+tasks:
+  test:
+    command: 'noop'
+
+  aliasDeps:
+    command: 'noop'
+    deps:
+      - '@scope/pkg-foo:standard'
+      - 'pkg-bar:standard'

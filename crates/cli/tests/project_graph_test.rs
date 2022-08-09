@@ -72,4 +72,16 @@ mod aliases {
 
         assert_snapshot!(get_assert_output(&assert));
     }
+
+    #[test]
+    fn resolves_aliases_in_depends_on() {
+        let fixture = create_sandbox("project-graph/aliases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("project-graph")
+            .arg("noLang")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
 }

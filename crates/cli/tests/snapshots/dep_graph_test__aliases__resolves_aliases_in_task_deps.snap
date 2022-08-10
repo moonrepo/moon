@@ -1,0 +1,32 @@
+---
+source: crates/cli/tests/dep_graph_test.rs
+assertion_line: 77
+expression: get_assert_output(&assert)
+---
+digraph {
+    0 [ label="SetupToolchain" style=filled, shape=oval, fillcolor=black, fontcolor=white]
+    1 [ label="InstallNodeDeps" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="SyncNodeProject(node)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="SyncNodeProject(nodeNameOnly)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="SyncNodeProject(nodeNameScoped)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    5 [ label="RunTarget(node:aliasDeps)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    6 [ label="RunTarget(nodeNameScoped:standard)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    7 [ label="RunTarget(nodeNameOnly:standard)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 0 [ arrowhead=box, arrowtail=box]
+    3 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 3 [ arrowhead=box, arrowtail=box]
+    4 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 4 [ arrowhead=box, arrowtail=box]
+    5 -> 1 [ arrowhead=box, arrowtail=box]
+    5 -> 2 [ arrowhead=box, arrowtail=box]
+    6 -> 1 [ arrowhead=box, arrowtail=box]
+    6 -> 4 [ arrowhead=box, arrowtail=box]
+    5 -> 6 [ arrowhead=box, arrowtail=box]
+    7 -> 1 [ arrowhead=box, arrowtail=box]
+    7 -> 3 [ arrowhead=box, arrowtail=box]
+    5 -> 7 [ arrowhead=box, arrowtail=box]
+}
+
+
+

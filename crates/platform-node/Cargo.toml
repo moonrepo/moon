@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../config" }
 moon_hasher = { path = "../hasher" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }

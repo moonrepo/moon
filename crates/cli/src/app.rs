@@ -51,6 +51,9 @@ pub enum QueryCommands {
         long_about = "Query for projects within the project graph. All options support regex patterns."
     )]
     Projects {
+        #[clap(long, help = "Filter projects that match this alias")]
+        alias: Option<String>,
+
         #[clap(long, help = "Filter projects that match this ID")]
         id: Option<String>,
 

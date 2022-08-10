@@ -106,6 +106,7 @@ pub async fn run_cli() {
         Commands::Sync => sync().await,
         Commands::Query { command } => match command {
             QueryCommands::Projects {
+                alias,
                 id,
                 language,
                 source,
@@ -113,6 +114,7 @@ pub async fn run_cli() {
                 type_of,
             } => {
                 query::projects(&QueryProjectsOptions {
+                    alias: alias.clone(),
                     id: id.clone(),
                     language: language.clone(),
                     source: source.clone(),

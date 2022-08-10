@@ -29,8 +29,6 @@ projects:
 	server: 'apps/server'
 ```
 
-> For easier maintenance, we suggest alpha sorting the `projects` map!
-
 We can now run [`moon project client`](./commands/project) and
 [`moon project server`](./commands/project) to display information about each project. If these
 projects were not mapped, or were pointing to an invalid source, the command would throw an error.
@@ -39,6 +37,13 @@ projects were not mapped, or were pointing to an invalid source, the command wou
 
 The [`projects`](./config/workspace#projects) setting also supports a list of globs, if you'd prefer
 to not manually curate the projects list!
+
+:::
+
+:::info
+
+Want to use `package.json` names? Enable the
+[`node.aliasPackageNames`](./config/workspace#aliaspackagenames) setting!
 
 :::
 

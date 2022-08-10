@@ -150,6 +150,34 @@ mod tests {
     }
 
     #[test]
+    fn format_with_slashes() {
+        assert_eq!(
+            Target::format("foo/sub", "build/esm").unwrap(),
+            "foo/sub:build/esm"
+        );
+    }
+
+    #[test]
+    fn format_node() {
+        assert_eq!(
+            Target::format("@scope/foo", "build").unwrap(),
+            "@scope/foo:build"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "InvalidFormat(\"foo$:build\")")]
+    fn invalid_chars() {
+        Target::parse("foo$:build").unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "InvalidFormat(\"foo:@build\")")]
+    fn invalid_task_no_at() {
+        Target::parse("foo:@build").unwrap();
+    }
+
+    #[test]
     fn parse_ids() {
         assert_eq!(
             Target::parse("foo:build").unwrap(),
@@ -245,5 +273,33 @@ mod tests {
     #[should_panic(expected = "TooWild")]
     fn parse_too_wild() {
         Target::parse(":").unwrap();
+    }
+
+    #[test]
+    fn parse_node() {
+        assert_eq!(
+            Target::parse("@scope/foo:build").unwrap(),
+            Target {
+                id: String::from("@scope/foo:build"),
+                project: TargetProjectScope::Id("@scope/foo".to_owned()),
+                project_id: Some("@scope/foo".to_owned()),
+                task_id: "build".to_owned(),
+                // task: TargetTask::Id("build".to_owned())
+            }
+        );
+    }
+
+    #[test]
+    fn parse_slashes() {
+        assert_eq!(
+            Target::parse("foo/sub:build/esm").unwrap(),
+            Target {
+                id: String::from("foo/sub:build/esm"),
+                project: TargetProjectScope::Id("foo/sub".to_owned()),
+                project_id: Some("foo/sub".to_owned()),
+                task_id: "build/esm".to_owned(),
+                // task: TargetTask::Id("build".to_owned())
+            }
+        );
     }
 }

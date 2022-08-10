@@ -49,3 +49,31 @@ fn includes_dependents_when_focused() {
 
     assert_snapshot!(get_assert_output(&assert));
 }
+
+mod aliases {
+    use super::*;
+
+    #[test]
+    fn can_focus_using_an_alias() {
+        let fixture = create_sandbox("project-graph/aliases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("dep-graph")
+            .arg("@scope/pkg-foo:test")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn resolves_aliases_in_task_deps() {
+        let fixture = create_sandbox("project-graph/aliases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("dep-graph")
+            .arg("node:aliasDeps")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+}

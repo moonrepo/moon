@@ -236,6 +236,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Supports pipes, redirects, etc',
 		support: {
+			moon: [PARTIALLY_SUPPORTED, 'encapsulated in a file'],
 			nx: [PARTIALLY_SUPPORTED, 'within the executor or script'],
 			turborepo: [PARTIALLY_SUPPORTED, 'within the script'],
 		},
@@ -246,6 +247,20 @@ const tasksRows: Comparison[] = [
 			moon: [SUPPORTED, 'via `deps`'],
 			nx: [SUPPORTED, 'via `dependsOn`'],
 			turborepo: [SUPPORTED, 'via `dependsOn`'],
+		},
+	},
+	{
+		feature: 'Runs task dependencies in parallel',
+		support: {
+			moon: SUPPORTED,
+			nx: SUPPORTED,
+			turborepo: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can run task dependencies in serial',
+		support: {
+			moon: SUPPORTED,
 		},
 	},
 	{
@@ -274,9 +289,9 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Outputs',
 		support: {
-			moon: SUPPORTED,
-			nx: SUPPORTED,
-			turborepo: SUPPORTED,
+			moon: [SUPPORTED, 'files'],
+			nx: [SUPPORTED, 'files, globs'],
+			turborepo: [SUPPORTED, 'files'],
 		},
 	},
 	{
@@ -398,6 +413,12 @@ const javascriptRows: Comparison[] = [
 	},
 	{
 		feature: 'Can automatically dedupe when lockfile changes',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can alias `package.json` names for projects',
 		support: {
 			moon: SUPPORTED,
 		},

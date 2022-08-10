@@ -179,6 +179,12 @@
           "format": "uint8",
           "minimum": 0.0
         },
+        "runDepsInParallel": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "runFromWorkspaceRoot": {
           "type": [
             "boolean",

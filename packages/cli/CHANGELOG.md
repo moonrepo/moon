@@ -11,6 +11,13 @@
 
 #### 🚀 Updates
 
+- Projects now support language specific aliases, which can be used as a drop-in replacement for
+  names within targets and dependencies.
+- Project and tasks names now support forward slashes (`/`).
+- Added a `node.aliasPackageNames` setting to `.moon/workspace.yml`, that aliases the `package.json`
+  name to the respective project.
+- Added an experimental `outputStyle` option to tasks, providing some control of how stdout/stderr
+  is handled.
 - Added a `runDepsInParallel` option to tasks, that controls whether task dependencies run in
   parallel or serial (in order).
 - Updated tasks to automatically detect their `type` (when undefined) based on their defined

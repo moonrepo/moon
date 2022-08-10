@@ -20,6 +20,20 @@ pub struct RunOptions {
 pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std::error::Error>> {
     let target = Target::parse(target_id)?;
     let workspace = Workspace::load().await?;
+    let mut primary_targets = HashSet::new();
+
+    // If a fully qualified target, mark it as the primary
+    if let Some(project_id) = &target.project_id {
+        primary_targets.insert(
+            // We load from the graph to resolve any aliases
+            workspace
+                .projects
+                .load(project_id)?
+                .get_task(&target.task_id)?
+                .target
+                .clone(),
+        );
+    }
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();
@@ -74,7 +88,7 @@ pub async fn run(target_id: &str, options: RunOptions) -> Result<(), Box<dyn std
     // Process all tasks in the graph
     let context = ActionContext {
         passthrough_args: options.passthrough,
-        primary_targets: HashSet::from([target_id.to_owned()]),
+        primary_targets,
         profile: options.profile,
         touched_files,
     };

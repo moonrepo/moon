@@ -30,6 +30,7 @@
     "node": {
       "default": {
         "addEnginesConstraint": true,
+        "aliasPackageNames": null,
         "dedupeOnLockfileChange": true,
         "dependencyVersionFormat": "workspace-caret",
         "inferTasksFromScripts": false,
@@ -40,7 +41,7 @@
         "pnpm": null,
         "syncProjectWorkspaceDependencies": true,
         "syncVersionManagerConfig": null,
-        "version": "16.15.0",
+        "version": "16.16.0",
         "yarn": null
       },
       "allOf": [
@@ -125,6 +126,17 @@
           "default": true,
           "type": "boolean"
         },
+        "aliasPackageNames": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeProjectAliasFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "dedupeOnLockfileChange": {
           "default": true,
           "type": "boolean"
@@ -186,7 +198,7 @@
           ]
         },
         "version": {
-          "default": "16.15.0",
+          "default": "16.16.0",
           "type": "string"
         },
         "yarn": {
@@ -208,6 +220,13 @@
         "npm",
         "pnpm",
         "yarn"
+      ]
+    },
+    "NodeProjectAliasFormat": {
+      "type": "string",
+      "enum": [
+        "name-and-scope",
+        "name-only"
       ]
     },
     "NodeVersionFormat": {

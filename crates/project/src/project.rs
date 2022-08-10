@@ -236,6 +236,10 @@ fn create_tasks_from_config(
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
+    /// Unique alias of the project, alongside its official ID.
+    /// This is typically reserved for language specific semantics, like `name` from `package.json`.
+    pub alias: Option<String>,
+
     /// Project configuration loaded from "moon.yml", if it exists.
     pub config: ProjectConfig,
 
@@ -317,6 +321,7 @@ impl Project {
         )?;
 
         Ok(Project {
+            alias: None,
             config,
             dependencies,
             file_groups,

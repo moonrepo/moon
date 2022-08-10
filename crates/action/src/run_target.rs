@@ -18,24 +18,24 @@ pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
     target_id: &str,
 ) -> Result<ActionStatus, ActionError> {
-    debug!(
-        target: LOG_TARGET,
-        "Running target {}",
-        color::id(target_id)
-    );
-
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let workspace = workspace.read().await;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
-    let mut runner = TargetRunner::new(&workspace, &project, task, target_id).await?;
+    let mut runner = TargetRunner::new(&workspace, &project, task).await?;
+
+    debug!(
+        target: LOG_TARGET,
+        "Running target {}",
+        color::id(&task.target)
+    );
 
     // Abort early if a no operation
     if runner.is_no_op() {
         debug!(
             target: LOG_TARGET,
             "Target {} is a no operation, skipping",
-            color::id(target_id),
+            color::id(&task.target),
         );
 
         runner.print_checkpoint(Checkpoint::Pass, "(no op)");

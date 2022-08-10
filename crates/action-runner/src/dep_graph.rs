@@ -119,7 +119,7 @@ impl DepGraph {
 
                     if project.tasks.contains_key(task_id)
                         && self
-                            .insert_target(&project_id, task_id, projects, touched_files)?
+                            .insert_target(&project.id, task_id, projects, touched_files)?
                             .is_some()
                     {
                         inserted_count += 1;
@@ -132,8 +132,10 @@ impl DepGraph {
             }
             // project:task
             TargetProjectScope::Id(project_id) => {
+                let project = projects.load(project_id)?;
+
                 if self
-                    .insert_target(project_id, task_id, projects, touched_files)?
+                    .insert_target(&project.id, task_id, projects, touched_files)?
                     .is_some()
                 {
                     inserted_count += 1;
@@ -251,7 +253,7 @@ impl DepGraph {
     ) -> Result<NodeIndex, DepGraphError> {
         let project = projects.load(project_id)?;
         let lang = get_lang_from_project(&project);
-        let node = Node::SyncProject(lang, project_id.to_owned());
+        let node = Node::SyncProject(lang, project.id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(*index);
@@ -260,7 +262,7 @@ impl DepGraph {
         trace!(
             target: LOG_TARGET,
             "Syncing project {} configs and dependencies",
-            color::id(project_id),
+            color::id(&project.id),
         );
 
         // Sync can be run in parallel while deps are installing
@@ -337,14 +339,13 @@ impl DepGraph {
         projects: &ProjectGraph,
         touched_files: Option<&TouchedFilePaths>,
     ) -> Result<Option<NodeIndex>, DepGraphError> {
-        let target_id = Target::format(project_id, task_id)?;
+        let project = projects.load(project_id)?;
+        let target_id = Target::format(&project.id, task_id)?;
         let node = Node::RunTarget(target_id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(Some(*index));
         }
-
-        let project = projects.load(project_id)?;
 
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
@@ -352,7 +353,7 @@ impl DepGraph {
                 trace!(
                     target: LOG_TARGET,
                     "Project {} task {} not affected based on touched files, skipping",
-                    color::id(project_id),
+                    color::id(&project.id),
                     color::id(task_id),
                 );
 

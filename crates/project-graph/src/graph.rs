@@ -1,8 +1,8 @@
 use moon_cache::CacheEngine;
 use moon_config::constants::FLAG_PROJECTS_USING_GLOB;
-use moon_config::{GlobalProjectConfig, ProjectID, ProjectLanguage, WorkspaceConfig};
+use moon_config::{GlobalProjectConfig, ProjectAlias, ProjectID, ProjectLanguage, WorkspaceConfig};
 use moon_logger::{color, debug, map_list, trace};
-use moon_platform_node::infer_tasks;
+use moon_platform_node::{infer_tasks_from_package, load_project_aliases_from_packages};
 use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -22,12 +22,15 @@ const ROOT_NODE_ID: &str = "(workspace)";
 
 async fn load_projects_from_cache(
     workspace_root: &Path,
-    projects: &ProjectsSourceMap,
+    workspace_config: &WorkspaceConfig,
     engine: &CacheEngine,
 ) -> Result<ProjectsSourceMap, ProjectError> {
     // Projects were mapped manually and are not using globs
-    if !projects.contains_key(FLAG_PROJECTS_USING_GLOB) {
-        return Ok(projects.clone());
+    if !workspace_config
+        .projects
+        .contains_key(FLAG_PROJECTS_USING_GLOB)
+    {
+        return Ok(workspace_config.projects.clone());
     }
 
     let mut cache = engine.cache_projects_state().await?;
@@ -40,7 +43,8 @@ async fn load_projects_from_cache(
     }
 
     // Extract globs from our fake projects map
-    let globs = projects
+    let globs = workspace_config
+        .projects
         .iter()
         .filter_map(|(key, value)| {
             if key == FLAG_PROJECTS_USING_GLOB {
@@ -70,7 +74,31 @@ async fn load_projects_from_cache(
     Ok(map)
 }
 
+async fn load_project_aliases(
+    workspace_root: &Path,
+    workspace_config: &WorkspaceConfig,
+    projects: &ProjectsSourceMap,
+) -> Result<ProjectsSourceMap, ProjectError> {
+    let mut aliases = HashMap::new();
+
+    // JavaScript/TypeScript
+    if let Some(alias_format) = &workspace_config.node.alias_package_names {
+        debug!(
+            target: LOG_TARGET,
+            "Assigning project aliases from project {}s",
+            color::file("package.json")
+        );
+
+        load_project_aliases_from_packages(workspace_root, projects, alias_format, &mut aliases)?;
+    }
+
+    Ok(aliases)
+}
+
 pub struct ProjectGraph {
+    /// A mapping of an alias to a project ID.
+    pub aliases: HashMap<ProjectAlias, ProjectID>,
+
     /// The global project configuration that all projects inherit from.
     /// Is loaded from `.moon/project.yml`.
     global_config: GlobalProjectConfig,
@@ -117,16 +145,17 @@ impl ProjectGraph {
             ..Project::default()
         });
 
+        // Load projects and aliases
+        let projects_map =
+            load_projects_from_cache(workspace_root, workspace_config, cache).await?;
+        let aliases = load_project_aliases(workspace_root, workspace_config, &projects_map).await?;
+
         Ok(ProjectGraph {
+            aliases,
             global_config,
             graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(HashMap::new())),
-            projects_map: load_projects_from_cache(
-                workspace_root,
-                &workspace_config.projects,
-                cache,
-            )
-            .await?,
+            projects_map,
             workspace_config: workspace_config.clone(),
             workspace_root: workspace_root.to_path_buf(),
         })
@@ -144,13 +173,15 @@ impl ProjectGraph {
     /// project graph. If the project does not exist or has been
     /// misconfigured, an error will be returned.
     #[track_caller]
-    pub fn load(&self, id: &str) -> Result<Project, ProjectError> {
+    pub fn load(&self, alias_or_id: &str) -> Result<Project, ProjectError> {
+        let id = self.resolve_id(alias_or_id);
+
         // Check if the project already exists in read-only mode,
         // so that it may be dropped immediately after!
         {
             let indices = self.indices.read().expect(READ_ERROR);
 
-            if let Some(index) = indices.get(id) {
+            if let Some(index) = indices.get(&id) {
                 let graph = self.graph.read().expect(READ_ERROR);
 
                 return Ok(graph.node_weight(*index).unwrap().clone());
@@ -160,7 +191,7 @@ impl ProjectGraph {
         // Otherwise we need to load the project in write mode
         let mut indices = self.indices.write().expect(WRITE_ERROR);
         let mut graph = self.graph.write().expect(WRITE_ERROR);
-        let index = self.internal_load(id, &mut indices, &mut graph)?;
+        let index = self.internal_load(&id, &mut indices, &mut graph)?;
 
         Ok(graph.node_weight(index).unwrap().clone())
     }
@@ -207,6 +238,14 @@ impl ProjectGraph {
             .collect();
 
         Ok(deps)
+    }
+
+    /// Resolve a project ID from the provided value, which can be an ID or alias.
+    pub fn resolve_id(&self, alias_or_id: &str) -> String {
+        match self.aliases.get(alias_or_id) {
+            Some(project_id) => project_id.to_owned(),
+            None => alias_or_id.to_owned(),
+        }
     }
 
     /// Format as a DOT string.
@@ -256,6 +295,8 @@ impl ProjectGraph {
             &self.workspace_config.action_runner.implicit_inputs,
         )?;
 
+        project.alias = self.find_alias_for_id(id);
+
         // Create tasks from `package.json` scripts
         if (matches!(project.config.language, ProjectLanguage::JavaScript)
             || matches!(project.config.language, ProjectLanguage::TypeScript))
@@ -268,9 +309,9 @@ impl ProjectGraph {
                 color::file("package.json")
             );
 
-            if let Some(tasks) = infer_tasks(id, &project.root)? {
-                // Scripts should not override global tasks
+            if let Some(tasks) = infer_tasks_from_package(id, &project.root)? {
                 for (task_id, task) in tasks {
+                    // Scripts should not override global tasks
                     project.tasks.entry(task_id).or_insert(task);
                 }
             }
@@ -279,38 +320,52 @@ impl ProjectGraph {
         Ok(project)
     }
 
+    /// Find the alias for a given ID. This is currently... not performant,
+    /// so revisit once it becomes an issue!
+    fn find_alias_for_id(&self, id: &str) -> Option<String> {
+        for (alias, project_id) in &self.aliases {
+            if project_id == id {
+                return Some(alias.clone());
+            }
+        }
+
+        None
+    }
+
     /// Internal method for lazily loading a project and its
     /// dependencies into the graph.
     fn internal_load(
         &self,
-        id: &str,
+        alias_or_id: &str,
         indices: &mut RwLockWriteGuard<IndicesType>,
         graph: &mut RwLockWriteGuard<GraphType>,
     ) -> Result<NodeIndex, ProjectError> {
+        let id = self.resolve_id(alias_or_id);
+
         // Already loaded, abort early
-        if indices.contains_key(id) || id == ROOT_NODE_ID {
+        if indices.contains_key(&id) || id == ROOT_NODE_ID {
             trace!(
                 target: LOG_TARGET,
                 "Project {} already exists in the project graph",
-                color::id(id),
+                color::id(&id),
             );
 
-            return Ok(*indices.get(id).unwrap());
+            return Ok(*indices.get(&id).unwrap());
         }
 
         trace!(
             target: LOG_TARGET,
             "Project {} does not exist in the project graph, attempting to load",
-            color::id(id),
+            color::id(&id),
         );
 
         // Create project based on ID and source
-        let source = match self.projects_map.get(id) {
+        let source = match self.projects_map.get(&id) {
             Some(path) => path,
-            None => return Err(ProjectError::UnconfiguredID(String::from(id))),
+            None => return Err(ProjectError::UnconfiguredID(id)),
         };
 
-        let project = self.create_project(id, source)?;
+        let project = self.create_project(&id, source)?;
         let depends_on = project.get_dependency_ids();
 
         // Insert the project into the graph

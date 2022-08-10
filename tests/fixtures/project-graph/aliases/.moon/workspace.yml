@@ -1,0 +1,10 @@
+node:
+  # Use a unique version as to not collide with other tests
+  version: '16.0.0'
+  aliasPackageNames: 'name-and-scope'
+
+projects:
+  noLang: no-lang
+  node: node
+  nodeNameOnly: node-name-only
+  nodeNameScoped: node-name-scope

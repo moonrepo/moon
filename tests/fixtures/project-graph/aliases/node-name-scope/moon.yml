@@ -1,0 +1,7 @@
+tasks:
+  test:
+    command: 'noop'
+
+  standard:
+    command: node
+    args: -e "console.log('name-only')"

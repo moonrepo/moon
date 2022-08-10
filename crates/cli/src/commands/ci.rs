@@ -70,7 +70,7 @@ fn gather_runnable_targets(
         let project = workspace.projects.load(&project_id)?;
 
         for (task_id, task) in &project.tasks {
-            let target = Target::new(&project_id, task_id)?;
+            let target = Target::new(&project.id, task_id)?;
 
             if task.should_run_in_ci() {
                 if task.is_affected(touched_files)? {

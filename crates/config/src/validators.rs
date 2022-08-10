@@ -84,7 +84,7 @@ pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_id",
             key,
-            String::from("Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), and must start with a letter)"),
+            String::from("Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)"),
         ));
     }
 

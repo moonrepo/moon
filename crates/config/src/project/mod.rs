@@ -61,7 +61,7 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectLanguage {
     #[strum(serialize = "bash")]
@@ -81,7 +81,7 @@ pub enum ProjectLanguage {
     Unknown,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {
     #[strum(serialize = "application")]
@@ -98,7 +98,7 @@ pub enum ProjectType {
     Unknown,
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
     pub name: String,
 
@@ -112,7 +112,7 @@ pub struct ProjectMetadataConfig {
     pub channel: String,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
@@ -126,7 +126,7 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
     pub rename: Option<HashMap<TaskID, TaskID>>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
@@ -135,7 +135,7 @@ pub struct ProjectWorkspaceConfig {
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ProjectDependsOn {
     String(ProjectID),
@@ -143,7 +143,7 @@ pub enum ProjectDependsOn {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/project
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectConfig {

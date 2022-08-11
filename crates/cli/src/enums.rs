@@ -21,7 +21,9 @@ pub enum LogLevel {
     Trace,
 }
 
-#[derive(ValueEnum, Clone, Copy, Debug, Deserialize, Display, Default, PartialEq, Serialize)]
+#[derive(
+    ValueEnum, Clone, Copy, Debug, Deserialize, Display, Default, Eq, PartialEq, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum TouchedStatus {
     Added,

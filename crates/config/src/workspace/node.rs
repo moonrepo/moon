@@ -42,14 +42,14 @@ fn validate_yarn_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.yarn.version", value)
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum NodeProjectAliasFormat {
     NameAndScope, // @scope/name
     NameOnly,     // name
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum NodeVersionFormat {
     File,         // file:..
@@ -80,7 +80,7 @@ impl NodeVersionFormat {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum NodePackageManager {
     #[default]
@@ -89,7 +89,7 @@ pub enum NodePackageManager {
     Yarn,
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum NodeVersionManager {
     Nodenv,
@@ -105,7 +105,7 @@ impl NodeVersionManager {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 pub struct NpmConfig {
     #[validate(custom = "validate_npm_version")]
@@ -120,7 +120,7 @@ impl Default for NpmConfig {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct PnpmConfig {
     #[validate(custom = "validate_pnpm_version")]
     pub version: String,
@@ -134,7 +134,7 @@ impl Default for PnpmConfig {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct YarnConfig {
     #[validate(custom = "validate_yarn_version")]
     pub version: String,
@@ -148,7 +148,7 @@ impl Default for YarnConfig {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeConfig {

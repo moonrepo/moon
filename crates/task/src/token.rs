@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 type PathsGlobsNormalized = (Vec<PathBuf>, Vec<FileGlob>);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ResolverType {
     Args,
     Inputs,
@@ -57,7 +57,7 @@ impl<'a> ResolverData<'a> {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum TokenType {
     Var(String),
 

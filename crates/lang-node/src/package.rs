@@ -17,7 +17,7 @@ config_cache!(
     write_preserved_json
 );
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageJson {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -323,21 +323,21 @@ pub type OverridesSet = BTreeMap<String, StringOrObject<DepsSet>>;
 pub type PeerDepsMetaSet = BTreeMap<String, PeerDependencyMeta>;
 pub type ScriptsSet = BTreeMap<String, String>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum StringOrArray<T> {
     String(String),
     Array(Vec<T>),
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum StringOrObject<T> {
     String(String),
     Object(T),
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum StringArrayOrObject<T> {
     String(String),
@@ -347,7 +347,7 @@ pub enum StringArrayOrObject<T> {
 
 pub type Bin = StringOrObject<BinSet>;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Bug {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -356,7 +356,7 @@ pub struct Bug {
     pub url: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct DependencyMeta {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub optional: Option<bool>,
@@ -373,7 +373,7 @@ pub struct DependencyMeta {
     pub injected: Option<bool>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Directories {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bin: Option<String>,
@@ -382,7 +382,7 @@ pub struct Directories {
     pub man: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct FundingMetadata {
     #[serde(rename = "type")]
     pub type_of: String,
@@ -391,7 +391,7 @@ pub struct FundingMetadata {
 
 pub type Funding = StringArrayOrObject<FundingMetadata>;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct LicenseMetadata {
     #[serde(rename = "type")]
     pub type_of: String,
@@ -400,7 +400,7 @@ pub struct LicenseMetadata {
 
 pub type License = StringArrayOrObject<LicenseMetadata>;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct PersonMetadata {
     pub name: String,
 
@@ -413,13 +413,13 @@ pub struct PersonMetadata {
 
 pub type Person = StringOrObject<PersonMetadata>;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct PeerDependencyMeta {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub optional: Option<bool>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Pnpm {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub never_built_dependencies: Option<Vec<String>>,
@@ -431,7 +431,7 @@ pub struct Pnpm {
     pub package_extensions: Option<Value>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct RepositoryMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub directory: Option<String>,
@@ -444,7 +444,7 @@ pub struct RepositoryMetadata {
 
 pub type Repository = StringOrObject<RepositoryMetadata>;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct PackageWorkspacesExpanded {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nohoist: Option<Vec<String>>,
@@ -453,7 +453,7 @@ pub struct PackageWorkspacesExpanded {
     pub packages: Option<Vec<String>>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PackageWorkspaces {
     Array(Vec<String>),

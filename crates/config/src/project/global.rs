@@ -43,7 +43,7 @@ fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationEr
 }
 
 /// Docs: https://moonrepo.dev/docs/config/global-project
-#[derive(Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalProjectConfig {
     #[validate(custom = "validate_extends")]

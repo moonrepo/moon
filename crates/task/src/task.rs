@@ -1,6 +1,6 @@
 use crate::errors::{TargetError, TaskError};
 use crate::target::{Target, TargetProjectScope};
-use crate::token::TokenResolver;
+use crate::token::{TokenResolver, TokenSharedData};
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
     DependencyConfig, FileGlob, FilePath, InputValue, PlatformType, TargetID, TaskConfig,
@@ -17,6 +17,8 @@ use std::path::PathBuf;
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptions {
     pub cache: bool,
+
+    pub env_file: Option<String>,
 
     pub merge_args: TaskMergeStrategy,
 
@@ -43,6 +45,7 @@ impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
             cache: true,
+            env_file: None,
             merge_args: TaskMergeStrategy::Append,
             merge_deps: TaskMergeStrategy::Append,
             merge_env: TaskMergeStrategy::Append,
@@ -59,6 +62,10 @@ impl Default for TaskOptions {
 
 impl TaskOptions {
     pub fn merge(&mut self, config: &TaskOptionsConfig) {
+        if let Some(env_file) = &config.env_file {
+            self.env_file = Some(env_file.clone());
+        }
+
         if let Some(merge_args) = &config.merge_args {
             self.merge_args = merge_args.clone();
         }
@@ -105,6 +112,10 @@ impl TaskOptions {
         let mut config = TaskOptionsConfig::default();
 
         // Skip merge options until we need them
+
+        if let Some(env_file) = &self.env_file {
+            config.env_file = Some(env_file.clone());
+        }
 
         if let Some(output_style) = &self.output_style {
             config.output_style = Some(output_style.clone());
@@ -201,6 +212,7 @@ impl Task {
             log_target,
             options: TaskOptions {
                 cache: cloned_options.cache.unwrap_or(!is_long_running),
+                env_file: cloned_options.env_file,
                 merge_args: cloned_options.merge_args.unwrap_or_default(),
                 merge_deps: cloned_options.merge_deps.unwrap_or_default(),
                 merge_env: cloned_options.merge_env.unwrap_or_default(),
@@ -388,6 +400,24 @@ impl Task {
         }
 
         self.deps = deps;
+
+        Ok(())
+    }
+
+    /// Expand environment variables by loading a `.env` file if configured.
+    pub fn expand_env(&mut self, token_data: &TokenSharedData) -> Result<(), TaskError> {
+        if let Some(env_file) = &self.options.env_file {
+            let env_path = token_data.project_root.join(env_file);
+
+            if env_path.exists() {
+                for entry in dotenvy::from_path_iter(env_path)? {
+                    let (key, value) = entry?;
+
+                    // Vars defined in `env` take precedence over those in the env file
+                    self.env.entry(key).or_insert(value);
+                }
+            }
+        }
 
         Ok(())
     }

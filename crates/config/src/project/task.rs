@@ -79,6 +79,9 @@ pub struct TaskOptionsConfig {
     pub cache: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub env_file: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_args: Option<TaskMergeStrategy>,
 
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -24,6 +24,9 @@ pub enum TaskError {
     ArgsParse(#[from] ArgsParseError),
 
     #[error(transparent)]
+    Dotenvy(#[from] dotenvy::Error),
+
+    #[error(transparent)]
     FileGroup(#[from] FileGroupError),
 
     #[error(transparent)]

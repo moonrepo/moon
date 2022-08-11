@@ -87,6 +87,7 @@ pub fn create_expanded_task(
     let metadata =
         TokenSharedData::new(&file_groups, workspace_root, project_root, &project_config);
 
+    task.expand_env(&metadata)?;
     task.expand_inputs(TokenResolver::for_inputs(&metadata))?;
     task.expand_outputs(TokenResolver::for_outputs(&metadata))?;
     task.expand_args(TokenResolver::for_args(&metadata))?; // Must be last

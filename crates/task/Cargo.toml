@@ -9,5 +9,6 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 common-path = "1.0.0"
+dotenvy = "0.15.1"
 serde = { version = "1.0.140", features = ["derive"] }
 thiserror = "1.0.31"

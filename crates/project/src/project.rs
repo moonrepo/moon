@@ -222,6 +222,7 @@ fn create_tasks_from_config(
         task.inputs.extend(implicit_inputs.iter().cloned());
 
         // Resolve in order!
+        task.expand_env(token_data)?;
         task.expand_deps(project_id, dependencies)?;
         task.expand_inputs(TokenResolver::for_inputs(token_data))?;
         task.expand_outputs(TokenResolver::for_outputs(token_data))?;

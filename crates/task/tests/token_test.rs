@@ -1,6 +1,6 @@
 use moon_config::{ProjectConfig, ProjectLanguage, ProjectType, TaskConfig};
 use moon_task::test::{create_expanded_task, create_file_groups, create_initial_task};
-use moon_task::{TokenResolver, TokenSharedData};
+use moon_task::{ResolverData, TokenResolver};
 use moon_utils::test::get_fixtures_dir;
 use moon_utils::{glob, string_vec};
 use std::path::PathBuf;
@@ -20,7 +20,7 @@ fn errors_for_unknown_file_group() {
     let project_config = ProjectConfig::new(&project_root);
     let workspace_root = get_workspace_root();
     let file_groups = create_file_groups();
-    let metadata = TokenSharedData::new(
+    let metadata = ResolverData::new(
         &file_groups,
         &workspace_root,
         &project_root,
@@ -41,7 +41,7 @@ fn errors_if_no_globs_in_file_group() {
     let project_config = ProjectConfig::new(&project_root);
     let workspace_root = get_workspace_root();
     let file_groups = create_file_groups();
-    let metadata = TokenSharedData::new(
+    let metadata = ResolverData::new(
         &file_groups,
         &workspace_root,
         &project_root,
@@ -61,7 +61,7 @@ fn doesnt_match_when_not_alone() {
     let project_config = ProjectConfig::new(&project_root);
     let workspace_root = get_workspace_root();
     let file_groups = create_file_groups();
-    let metadata = TokenSharedData::new(
+    let metadata = ResolverData::new(
         &file_groups,
         &workspace_root,
         &project_root,
@@ -88,7 +88,7 @@ mod in_token {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -116,7 +116,7 @@ mod in_token {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -147,7 +147,7 @@ mod out_token {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -175,7 +175,7 @@ mod out_token {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -207,7 +207,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -233,7 +233,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -259,7 +259,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -292,7 +292,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -325,7 +325,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -354,7 +354,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -384,7 +384,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -417,7 +417,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -452,7 +452,7 @@ mod args {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -479,7 +479,7 @@ mod args {
             type_of: ProjectType::Tool,
             ..ProjectConfig::default()
         };
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -542,7 +542,7 @@ mod inputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -568,7 +568,7 @@ mod inputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -594,7 +594,7 @@ mod inputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -627,7 +627,7 @@ mod inputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -660,7 +660,7 @@ mod inputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -690,7 +690,7 @@ mod inputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -709,7 +709,7 @@ mod inputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -727,7 +727,7 @@ mod inputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -755,7 +755,7 @@ mod outputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -776,7 +776,7 @@ mod outputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -797,7 +797,7 @@ mod outputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -818,7 +818,7 @@ mod outputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -839,7 +839,7 @@ mod outputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -858,7 +858,7 @@ mod outputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -877,7 +877,7 @@ mod outputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,
@@ -898,7 +898,7 @@ mod outputs {
         let project_config = ProjectConfig::new(&project_root);
         let workspace_root = get_workspace_root();
         let file_groups = create_file_groups();
-        let metadata = TokenSharedData::new(
+        let metadata = ResolverData::new(
             &file_groups,
             &workspace_root,
             &project_root,

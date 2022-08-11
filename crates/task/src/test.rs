@@ -1,4 +1,4 @@
-use crate::{FileGroup, Target, Task, TaskError, TokenResolver, TokenSharedData};
+use crate::{FileGroup, ResolverData, Target, Task, TaskError, TokenResolver};
 use moon_config::{ProjectConfig, TaskConfig};
 use moon_utils::string_vec;
 use std::collections::HashMap;
@@ -84,9 +84,9 @@ pub fn create_expanded_task(
     let mut task = create_initial_task(config);
     let file_groups = create_file_groups();
     let project_config = ProjectConfig::new(project_root);
-    let metadata =
-        TokenSharedData::new(&file_groups, workspace_root, project_root, &project_config);
+    let metadata = ResolverData::new(&file_groups, workspace_root, project_root, &project_config);
 
+    task.expand_env(&metadata)?;
     task.expand_inputs(TokenResolver::for_inputs(&metadata))?;
     task.expand_outputs(TokenResolver::for_outputs(&metadata))?;
     task.expand_args(TokenResolver::for_args(&metadata))?; // Must be last

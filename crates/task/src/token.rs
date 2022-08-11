@@ -31,6 +31,32 @@ impl ResolverType {
     }
 }
 
+pub struct ResolverData<'a> {
+    pub file_groups: &'a HashMap<String, FileGroup>,
+
+    pub project_config: &'a ProjectConfig,
+
+    pub project_root: &'a Path,
+
+    pub workspace_root: &'a Path,
+}
+
+impl<'a> ResolverData<'a> {
+    pub fn new(
+        file_groups: &'a HashMap<String, FileGroup>,
+        workspace_root: &'a Path,
+        project_root: &'a Path,
+        project_config: &'a ProjectConfig,
+    ) -> ResolverData<'a> {
+        ResolverData {
+            file_groups,
+            project_config,
+            project_root,
+            workspace_root,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum TokenType {
     Var(String),
@@ -87,54 +113,28 @@ impl TokenType {
     }
 }
 
-pub struct TokenSharedData<'a> {
-    pub file_groups: &'a HashMap<String, FileGroup>,
-
-    pub project_config: &'a ProjectConfig,
-
-    pub project_root: &'a Path,
-
-    pub workspace_root: &'a Path,
-}
-
-impl<'a> TokenSharedData<'a> {
-    pub fn new(
-        file_groups: &'a HashMap<String, FileGroup>,
-        workspace_root: &'a Path,
-        project_root: &'a Path,
-        project_config: &'a ProjectConfig,
-    ) -> TokenSharedData<'a> {
-        TokenSharedData {
-            file_groups,
-            project_config,
-            project_root,
-            workspace_root,
-        }
-    }
-}
-
 pub struct TokenResolver<'a> {
     context: ResolverType,
 
-    pub data: &'a TokenSharedData<'a>,
+    pub data: &'a ResolverData<'a>,
 }
 
 impl<'a> TokenResolver<'a> {
-    pub fn for_args(data: &'a TokenSharedData<'a>) -> TokenResolver<'a> {
+    pub fn for_args(data: &'a ResolverData<'a>) -> TokenResolver<'a> {
         TokenResolver {
             context: ResolverType::Args,
             data,
         }
     }
 
-    pub fn for_inputs(data: &'a TokenSharedData<'a>) -> TokenResolver<'a> {
+    pub fn for_inputs(data: &'a ResolverData<'a>) -> TokenResolver<'a> {
         TokenResolver {
             context: ResolverType::Inputs,
             data,
         }
     }
 
-    pub fn for_outputs(data: &'a TokenSharedData<'a>) -> TokenResolver<'a> {
+    pub fn for_outputs(data: &'a ResolverData<'a>) -> TokenResolver<'a> {
         TokenResolver {
             context: ResolverType::Outputs,
             data,

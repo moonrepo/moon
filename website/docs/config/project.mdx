@@ -316,6 +316,28 @@ always run and bypass the cache.
 
 :::
 
+### `local`
+
+> `boolean`
+
+Marks the task as local only. This should primarily be enabled for long-running or never-ending
+tasks, like development servers and watch mode. Defaults to `true` if the task name is "dev",
+"start", or "serve", and `false` otherwise.
+
+This is a convenience setting for local development that sets the following task options:
+
+- [`cache`](#cache) -> Turned off
+- [`outputStyle`](#outputstyle) -> Set to "stream"
+- [`runInCI`](#runinci) -> Turned off
+
+```yaml title="moon.yml" {5}
+tasks:
+  dev:
+    command: 'webpack'
+    args: 'server'
+    local: true
+```
+
 ### `outputs`
 
 > `string[]`
@@ -485,8 +507,9 @@ tasks:
 > `boolean`
 
 Whether to run the task automatically in a CI (continuous integration) environment when affected by
-touched files, typically through the `moon ci` command. Defaults to `true` unless the task name is
-"dev", "start", or "serve", and is _always_ true when a task defines [`outputs`](#outputs).
+touched files, typically through the [`moon ci`](../commands/ci) command. Defaults to `true` unless
+the [`local`](#local) setting is disabled, but is _always_ true when a task defines
+[`outputs`](#outputs).
 
 ```yaml title="moon.yml" {5}
 tasks:

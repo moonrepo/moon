@@ -166,6 +166,9 @@ pub struct TaskConfig {
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<InputValue>>,
 
+    #[serde(skip_serializing_if = "skip_if_default")]
+    pub local: bool,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_outputs")]
     pub outputs: Option<Vec<FilePath>>,

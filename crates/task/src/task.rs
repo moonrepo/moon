@@ -408,10 +408,12 @@ impl Task {
     pub fn expand_env(&mut self, token_data: &TokenSharedData) -> Result<(), TaskError> {
         if let Some(env_file) = &self.options.env_file {
             let env_path = token_data.project_root.join(env_file);
+            let error_handler =
+                |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
             if env_path.exists() {
-                for entry in dotenvy::from_path_iter(env_path)? {
-                    let (key, value) = entry?;
+                for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
+                    let (key, value) = entry.map_err(error_handler)?;
 
                     // Vars defined in `env` take precedence over those in the env file
                     self.env.entry(key).or_insert(value);

@@ -1,6 +1,8 @@
 use crate::project::{ProjectConfig, ProjectLanguage};
 use crate::types::{FilePath, InputValue, TargetID};
-use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
+use crate::validators::{
+    skip_if_default, validate_child_or_root_path, validate_child_relative_path, validate_target,
+};
 use moon_utils::process::split_args;
 use moon_utils::regex::{ENV_VAR, NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use schemars::gen::SchemaGenerator;
@@ -42,6 +44,12 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
+fn validate_env_file(path: &str) -> Result<(), ValidationError> {
+    validate_child_relative_path("env_file", path)?;
+
+    Ok(())
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PlatformType {
@@ -79,6 +87,7 @@ pub struct TaskOptionsConfig {
     pub cache: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate(custom = "validate_env_file")]
     pub env_file: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]

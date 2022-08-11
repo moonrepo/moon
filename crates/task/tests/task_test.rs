@@ -212,7 +212,9 @@ mod expand_env {
     }
 
     #[test]
-    #[should_panic(expected = "No such file or directory")]
+    // Windows = "The system cannot find the file specified"
+    // Unix = "No such file or directory"
+    #[should_panic(expected = "InvalidEnvFile")]
     fn errors_on_missing_file() {
         let fixture = create_sandbox("cases");
         let project_root = fixture.path().join("base");

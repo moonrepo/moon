@@ -109,7 +109,7 @@ fn create_tasks_from_config(
     project_config: &ProjectConfig,
     global_config: &GlobalProjectConfig,
     dependencies: &[DependencyConfig],
-    token_data: &ResolverData,
+    resolver_data: &ResolverData,
     implicit_inputs: &[String],
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = BTreeMap::<String, Task>::new();
@@ -222,13 +222,13 @@ fn create_tasks_from_config(
         task.inputs.extend(implicit_inputs.iter().cloned());
 
         // Resolve in order!
-        task.expand_env(token_data)?;
+        task.expand_env(resolver_data)?;
         task.expand_deps(project_id, dependencies)?;
-        task.expand_inputs(TokenResolver::for_inputs(token_data))?;
-        task.expand_outputs(TokenResolver::for_outputs(token_data))?;
+        task.expand_inputs(TokenResolver::for_inputs(resolver_data))?;
+        task.expand_outputs(TokenResolver::for_outputs(resolver_data))?;
 
         // Must be last as it references inputs/outputs
-        task.expand_args(TokenResolver::for_args(token_data))?;
+        task.expand_args(TokenResolver::for_args(resolver_data))?;
     }
 
     Ok(tasks)
@@ -310,14 +310,14 @@ impl Project {
         let config = load_project_config(&log_target, &root, source)?;
         let file_groups = create_file_groups_from_config(&log_target, &config, global_config);
         let dependencies = create_dependencies_from_config(&log_target, &config);
-        let token_data = ResolverData::new(&file_groups, workspace_root, &root, &config);
+        let resolver_data = ResolverData::new(&file_groups, workspace_root, &root, &config);
         let tasks = create_tasks_from_config(
             &log_target,
             id,
             &config,
             global_config,
             &dependencies,
-            &token_data,
+            &resolver_data,
             implicit_inputs,
         )?;
 

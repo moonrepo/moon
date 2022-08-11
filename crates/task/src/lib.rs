@@ -12,5 +12,5 @@ pub use errors::*;
 pub use file_group::FileGroup;
 pub use target::{Target, TargetProjectScope};
 pub use task::{Task, TaskOptions};
-pub use token::{ResolverType, TokenResolver, TokenSharedData, TokenType};
+pub use token::{ResolverData, ResolverType, TokenResolver, TokenType};
 pub use types::*;

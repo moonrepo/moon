@@ -112,6 +112,16 @@
         "replace"
       ]
     },
+    "TaskOptionEnvFile": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
     "TaskOptionsConfig": {
       "type": "object",
       "properties": {
@@ -119,6 +129,16 @@
           "type": [
             "boolean",
             "null"
+          ]
+        },
+        "envFile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOptionEnvFile"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "mergeArgs": {
@@ -171,6 +191,16 @@
             }
           ]
         },
+        "outputStyle": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOutputStyle"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "retryCount": {
           "type": [
             "integer",
@@ -198,6 +228,13 @@
           ]
         }
       }
+    },
+    "TaskOutputStyle": {
+      "type": "string",
+      "enum": [
+        "on-exit",
+        "stream"
+      ]
     }
   }
 }

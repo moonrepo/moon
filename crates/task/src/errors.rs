@@ -1,10 +1,14 @@
 use moon_error::MoonError;
 use moon_utils::glob::GlobError;
 use moon_utils::process::ArgsParseError;
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum TaskError {
+    #[error("Failed to parse env file <path>{0}</path>: {1}")]
+    InvalidEnvFile(PathBuf, String),
+
     #[error(
         "Task outputs do not support file globs. Found <file>{0}</file> in <target>{1}</target>."
     )]

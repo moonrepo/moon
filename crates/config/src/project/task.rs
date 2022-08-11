@@ -44,8 +44,10 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn validate_env_file(path: &str) -> Result<(), ValidationError> {
-    validate_child_relative_path("env_file", path)?;
+fn validate_env_file(file: &TaskEnvFile) -> Result<(), ValidationError> {
+    if let TaskEnvFile::File(path) = file {
+        validate_child_relative_path("env_file", path)?
+    }
 
     Ok(())
 }
@@ -62,6 +64,23 @@ pub enum PlatformType {
     #[default]
     #[strum(serialize = "unknown")]
     Unknown,
+}
+
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum TaskEnvFile {
+    Enabled(bool),
+    File(String),
+}
+
+impl TaskEnvFile {
+    pub fn to_option(&self) -> Option<String> {
+        match self {
+            TaskEnvFile::Enabled(true) => Some(".env".to_owned()),
+            TaskEnvFile::Enabled(false) => None,
+            TaskEnvFile::File(path) => Some(path.to_owned()),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
@@ -88,7 +107,7 @@ pub struct TaskOptionsConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_env_file")]
-    pub env_file: Option<String>,
+    pub env_file: Option<TaskEnvFile>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_args: Option<TaskMergeStrategy>,

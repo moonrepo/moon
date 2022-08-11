@@ -245,6 +245,16 @@
         }
       }
     },
+    "TaskEnvFile": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
     "TaskMergeStrategy": {
       "type": "string",
       "enum": [
@@ -260,6 +270,16 @@
           "type": [
             "boolean",
             "null"
+          ]
+        },
+        "envFile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskEnvFile"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "mergeArgs": {
@@ -312,6 +332,16 @@
             }
           ]
         },
+        "outputStyle": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOutputStyle"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "retryCount": {
           "type": [
             "integer",
@@ -339,6 +369,13 @@
           ]
         }
       }
+    },
+    "TaskOutputStyle": {
+      "type": "string",
+      "enum": [
+        "on-exit",
+        "stream"
+      ]
     }
   }
 }

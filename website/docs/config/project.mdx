@@ -270,6 +270,7 @@ tasks:
 > `Record<string, string>`
 
 The `env` field is map of strings that are passed as environment variables when running the command.
+Variables defined here will take precedence over those loaded with [`envFile`](#envfile).
 
 ```yaml title="moon.yml" {4,5}
 tasks:
@@ -373,6 +374,25 @@ tasks:
     args: '-rf ./temp'
     options:
       cache: false
+```
+
+#### `envFile`
+
+> `boolean | string`
+
+A boolean or path to a project relative file (also know as dotenv file) that defines a collection of
+[environment variables](#env) for the current task. Variables will be loaded on project creation,
+but will _not_ override those defined in [`env`](#env).
+
+```yaml title="moon.yml" {6}
+tasks:
+  build:
+    command: 'webpack'
+    options:
+      # Defaults to .env
+      envFile: true
+      # Or
+      envFile: '.env.production'
 ```
 
 #### `mergeArgs`

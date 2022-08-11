@@ -4,7 +4,7 @@ use crate::token::{TokenResolver, TokenSharedData};
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
     DependencyConfig, FileGlob, FilePath, InputValue, PlatformType, TargetID, TaskConfig,
-    TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle,
+    TaskEnvFile, TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{glob, path, regex::ENV_VAR, string_vec};
@@ -63,7 +63,7 @@ impl Default for TaskOptions {
 impl TaskOptions {
     pub fn merge(&mut self, config: &TaskOptionsConfig) {
         if let Some(env_file) = &config.env_file {
-            self.env_file = Some(env_file.clone());
+            self.env_file = env_file.to_option();
         }
 
         if let Some(merge_args) = &config.merge_args {
@@ -114,7 +114,7 @@ impl TaskOptions {
         // Skip merge options until we need them
 
         if let Some(env_file) = &self.env_file {
-            config.env_file = Some(env_file.clone());
+            config.env_file = Some(TaskEnvFile::File(env_file.clone()));
         }
 
         if let Some(output_style) = &self.output_style {
@@ -212,7 +212,9 @@ impl Task {
             log_target,
             options: TaskOptions {
                 cache: cloned_options.cache.unwrap_or(!is_long_running),
-                env_file: cloned_options.env_file,
+                env_file: cloned_options
+                    .env_file
+                    .map(|env_file| env_file.to_option().unwrap()),
                 merge_args: cloned_options.merge_args.unwrap_or_default(),
                 merge_deps: cloned_options.merge_deps.unwrap_or_default(),
                 merge_env: cloned_options.merge_env.unwrap_or_default(),

@@ -52,7 +52,7 @@ fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum PlatformType {
     #[strum(serialize = "node")]
@@ -66,7 +66,7 @@ pub enum PlatformType {
     Unknown,
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum TaskOptionEnvFile {
     Enabled(bool),
@@ -83,7 +83,7 @@ impl TaskOptionEnvFile {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TaskMergeStrategy {
     #[default]
@@ -92,14 +92,14 @@ pub enum TaskMergeStrategy {
     Replace,
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum TaskOutputStyle {
     OnExit,
     Stream,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -142,7 +142,7 @@ pub struct TaskOptionsConfig {
 
 // We use serde(default) here because figment *does not* apply defaults
 // for structs nested within collections. Primarily hash maps.
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(default)]
 pub struct TaskConfig {
     #[serde(skip_serializing_if = "Option::is_none")]

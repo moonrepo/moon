@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:task:file-group";
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct FileGroup {
     pub files: Vec<String>,
 

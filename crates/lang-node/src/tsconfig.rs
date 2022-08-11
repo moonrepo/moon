@@ -32,7 +32,7 @@ config_cache!(
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -170,7 +170,7 @@ pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<Value, Moo
     Ok(json)
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Reference {
     pub path: String,
 
@@ -178,7 +178,7 @@ pub struct Reference {
     pub prepend: Option<bool>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TypeAcquisition {
     pub enable: bool,
@@ -194,7 +194,7 @@ pub struct TypeAcquisition {
 }
 
 // https://www.typescriptlang.org/tsconfig#compilerOptions
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompilerOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -511,7 +511,7 @@ pub struct CompilerOptions {
 }
 
 // https://www.typescriptlang.org/tsconfig#watch-options
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WatchOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -534,7 +534,7 @@ pub struct WatchOptions {
 }
 
 // https://www.typescriptlang.org/tsconfig#module
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Module {
     Amd,
@@ -583,7 +583,7 @@ impl<'de> Deserialize<'de> for Module {
 }
 
 // https://www.typescriptlang.org/tsconfig#moduleResolution
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ModuleResolution {
     Classic,
@@ -614,7 +614,7 @@ impl<'de> Deserialize<'de> for ModuleResolution {
 }
 
 // https://www.typescriptlang.org/tsconfig#jsx
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Jsx {
     React,
@@ -625,7 +625,7 @@ pub enum Jsx {
 }
 
 // https://www.typescriptlang.org/tsconfig#target
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Target {
     Es3,

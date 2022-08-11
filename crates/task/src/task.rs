@@ -1,6 +1,6 @@
 use crate::errors::{TargetError, TaskError};
 use crate::target::{Target, TargetProjectScope};
-use crate::token::{TokenResolver, TokenSharedData};
+use crate::token::{ResolverData, TokenResolver};
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
     DependencyConfig, FileGlob, FilePath, InputValue, PlatformType, TargetID, TaskConfig,
@@ -407,9 +407,9 @@ impl Task {
     }
 
     /// Expand environment variables by loading a `.env` file if configured.
-    pub fn expand_env(&mut self, token_data: &TokenSharedData) -> Result<(), TaskError> {
+    pub fn expand_env(&mut self, data: &ResolverData) -> Result<(), TaskError> {
         if let Some(env_file) = &self.options.env_file {
-            let env_path = token_data.project_root.join(env_file);
+            let env_path = data.project_root.join(env_file);
             let error_handler =
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 

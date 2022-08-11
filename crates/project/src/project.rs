@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
-use moon_task::{FileGroup, Target, Task, TokenResolver, TokenSharedData};
+use moon_task::{FileGroup, ResolverData, Target, Task, TokenResolver};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -109,7 +109,7 @@ fn create_tasks_from_config(
     project_config: &ProjectConfig,
     global_config: &GlobalProjectConfig,
     dependencies: &[DependencyConfig],
-    token_data: &TokenSharedData,
+    token_data: &ResolverData,
     implicit_inputs: &[String],
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = BTreeMap::<String, Task>::new();
@@ -310,7 +310,7 @@ impl Project {
         let config = load_project_config(&log_target, &root, source)?;
         let file_groups = create_file_groups_from_config(&log_target, &config, global_config);
         let dependencies = create_dependencies_from_config(&log_target, &config);
-        let token_data = TokenSharedData::new(&file_groups, workspace_root, &root, &config);
+        let token_data = ResolverData::new(&file_groups, workspace_root, &root, &config);
         let tasks = create_tasks_from_config(
             &log_target,
             id,

@@ -50,7 +50,7 @@ fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionRunnerConfig {
@@ -78,7 +78,7 @@ impl Default for ActionRunnerConfig {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/workspace
-#[derive(Clone, Debug, Default, Deserialize, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceConfig {

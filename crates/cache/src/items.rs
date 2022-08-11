@@ -83,7 +83,7 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     }
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunTargetState {
     pub exit_code: i32,
@@ -99,7 +99,7 @@ pub struct RunTargetState {
     pub target: String,
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectsState {
     #[serde(default)]
@@ -109,7 +109,7 @@ pub struct ProjectsState {
     pub projects: HashMap<String, String>,
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceState {
     #[serde(default)]

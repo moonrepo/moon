@@ -13,7 +13,7 @@ use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptions {
     pub cache: bool,
@@ -145,7 +145,7 @@ impl TaskOptions {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Task {
     pub args: Vec<String>,

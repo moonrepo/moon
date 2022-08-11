@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added an `envFile` option to tasks, allowing `.env` files to be loaded for environment variables.
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.63.
+
 ## 0.10.0
 
 #### 💥 Breaking

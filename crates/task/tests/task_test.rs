@@ -1,8 +1,8 @@
-use moon_config::TaskConfig;
+use moon_config::{TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
 use moon_task::test::create_expanded_task;
-use moon_utils::test::get_fixtures_dir;
+use moon_utils::test::{create_sandbox, get_fixtures_dir};
 use moon_utils::{glob, string_vec};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::env;
 
 #[test]
@@ -45,6 +45,7 @@ mod is_affected {
 
         env::remove_var("FOO");
     }
+
     #[test]
     fn returns_false_if_var_missing() {
         let workspace_root = get_fixtures_dir("base");
@@ -181,6 +182,141 @@ mod is_affected {
         set.insert(project_root.join("another.rs"));
 
         assert!(!task.is_affected(&set).unwrap());
+    }
+}
+
+mod expand_env {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    #[should_panic(expected = "Error parsing line: 'FOO', error at line index: 3")]
+    fn errors_on_invalid_file() {
+        let fixture = create_sandbox("cases");
+        let project_root = fixture.path().join("base");
+
+        fs::write(project_root.join(".env"), "FOO").unwrap();
+
+        create_expanded_task(
+            fixture.path(),
+            &project_root,
+            Some(TaskConfig {
+                options: TaskOptionsConfig {
+                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            }),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "No such file or directory")]
+    fn errors_on_missing_file() {
+        let fixture = create_sandbox("cases");
+        let project_root = fixture.path().join("base");
+
+        create_expanded_task(
+            fixture.path(),
+            &project_root,
+            Some(TaskConfig {
+                options: TaskOptionsConfig {
+                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            }),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn loads_using_bool() {
+        let fixture = create_sandbox("cases");
+        let project_root = fixture.path().join("base");
+
+        fs::write(project_root.join(".env"), "FOO=foo\nBAR=123").unwrap();
+
+        let task = create_expanded_task(
+            fixture.path(),
+            &project_root,
+            Some(TaskConfig {
+                options: TaskOptionsConfig {
+                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            }),
+        )
+        .unwrap();
+
+        assert_eq!(
+            task.env,
+            HashMap::from([
+                ("FOO".to_owned(), "foo".to_owned()),
+                ("BAR".to_owned(), "123".to_owned())
+            ])
+        );
+    }
+
+    #[test]
+    fn loads_using_custom_path() {
+        let fixture = create_sandbox("cases");
+        let project_root = fixture.path().join("base");
+
+        fs::write(project_root.join(".env.production"), "FOO=foo\nBAR=123").unwrap();
+
+        let task = create_expanded_task(
+            fixture.path(),
+            &project_root,
+            Some(TaskConfig {
+                options: TaskOptionsConfig {
+                    env_file: Some(TaskOptionEnvFile::File(".env.production".to_owned())),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            }),
+        )
+        .unwrap();
+
+        assert_eq!(
+            task.env,
+            HashMap::from([
+                ("FOO".to_owned(), "foo".to_owned()),
+                ("BAR".to_owned(), "123".to_owned())
+            ])
+        );
+    }
+
+    #[test]
+    fn doesnt_override_other_env() {
+        let fixture = create_sandbox("cases");
+        let project_root = fixture.path().join("base");
+
+        fs::write(project_root.join(".env"), "FOO=foo\nBAR=123").unwrap();
+
+        let task = create_expanded_task(
+            fixture.path(),
+            &project_root,
+            Some(TaskConfig {
+                env: Some(HashMap::from([("FOO".to_owned(), "original".to_owned())])),
+                options: TaskOptionsConfig {
+                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            }),
+        )
+        .unwrap();
+
+        assert_eq!(
+            task.env,
+            HashMap::from([
+                ("FOO".to_owned(), "original".to_owned()),
+                ("BAR".to_owned(), "123".to_owned())
+            ])
+        );
     }
 }
 

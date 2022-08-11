@@ -44,8 +44,8 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn validate_env_file(file: &TaskEnvFile) -> Result<(), ValidationError> {
-    if let TaskEnvFile::File(path) = file {
+fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidationError> {
+    if let TaskOptionEnvFile::File(path) = file {
         validate_child_relative_path("env_file", path)?;
     }
 
@@ -68,17 +68,17 @@ pub enum PlatformType {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(untagged)]
-pub enum TaskEnvFile {
+pub enum TaskOptionEnvFile {
     Enabled(bool),
     File(String),
 }
 
-impl TaskEnvFile {
+impl TaskOptionEnvFile {
     pub fn to_option(&self) -> Option<String> {
         match self {
-            TaskEnvFile::Enabled(true) => Some(".env".to_owned()),
-            TaskEnvFile::Enabled(false) => None,
-            TaskEnvFile::File(path) => Some(path.to_owned()),
+            TaskOptionEnvFile::Enabled(true) => Some(".env".to_owned()),
+            TaskOptionEnvFile::Enabled(false) => None,
+            TaskOptionEnvFile::File(path) => Some(path.to_owned()),
         }
     }
 }
@@ -107,7 +107,7 @@ pub struct TaskOptionsConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_env_file")]
-    pub env_file: Option<TaskEnvFile>,
+    pub env_file: Option<TaskOptionEnvFile>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_args: Option<TaskMergeStrategy>,
@@ -708,7 +708,7 @@ options:
 
         #[test]
         #[should_panic(
-            expected = "data did not match any variant of untagged enum TaskEnvFile for key \"default.options.envFile\""
+            expected = "data did not match any variant of untagged enum TaskOptionEnvFile for key \"default.options.envFile\""
         )]
         fn invalid_env_file_type() {
             figment::Jail::expect_with(|jail| {

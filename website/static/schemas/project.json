@@ -245,7 +245,15 @@
         }
       }
     },
-    "TaskEnvFile": {
+    "TaskMergeStrategy": {
+      "type": "string",
+      "enum": [
+        "append",
+        "prepend",
+        "replace"
+      ]
+    },
+    "TaskOptionEnvFile": {
       "anyOf": [
         {
           "type": "boolean"
@@ -253,14 +261,6 @@
         {
           "type": "string"
         }
-      ]
-    },
-    "TaskMergeStrategy": {
-      "type": "string",
-      "enum": [
-        "append",
-        "prepend",
-        "replace"
       ]
     },
     "TaskOptionsConfig": {
@@ -275,7 +275,7 @@
         "envFile": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskEnvFile"
+              "$ref": "#/definitions/TaskOptionEnvFile"
             },
             {
               "type": "null"

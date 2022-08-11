@@ -4,7 +4,7 @@ use crate::token::{ResolverData, TokenResolver};
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
     DependencyConfig, FileGlob, FilePath, InputValue, PlatformType, TargetID, TaskConfig,
-    TaskEnvFile, TaskMergeStrategy, TaskOptionsConfig, TaskOutputStyle,
+    TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{glob, path, regex::ENV_VAR, string_vec};
@@ -114,7 +114,11 @@ impl TaskOptions {
         // Skip merge options until we need them
 
         if let Some(env_file) = &self.env_file {
-            config.env_file = Some(TaskEnvFile::File(env_file.clone()));
+            config.env_file = Some(if env_file == ".env" {
+                TaskOptionEnvFile::Enabled(true)
+            } else {
+                TaskOptionEnvFile::File(env_file.clone())
+            });
         }
 
         if let Some(output_style) = &self.output_style {
@@ -413,13 +417,11 @@ impl Task {
             let error_handler =
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
-            if env_path.exists() {
-                for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
-                    let (key, value) = entry.map_err(error_handler)?;
+            for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
+                let (key, value) = entry.map_err(error_handler)?;
 
-                    // Vars defined in `env` take precedence over those in the env file
-                    self.env.entry(key).or_insert(value);
-                }
+                // Vars defined in `env` take precedence over those in the env file
+                self.env.entry(key).or_insert(value);
             }
         }
 

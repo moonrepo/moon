@@ -46,7 +46,7 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
 fn validate_env_file(file: &TaskEnvFile) -> Result<(), ValidationError> {
     if let TaskEnvFile::File(path) = file {
-        validate_child_relative_path("env_file", path)?
+        validate_child_relative_path("env_file", path)?;
     }
 
     Ok(())
@@ -705,5 +705,47 @@ options:
                 Ok(())
             });
         }
+
+        #[test]
+        #[should_panic(
+            expected = "data did not match any variant of untagged enum TaskEnvFile for key \"default.options.envFile\""
+        )]
+        fn invalid_env_file_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+options:
+    envFile: 123
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        // Enums validation is currently not supported:
+        // https://github.com/Keats/validator/issues/77
+        //         #[test]
+        //         #[should_panic(expected = "todo")]
+        //         fn invalid_env_file_path() {
+        //             figment::Jail::expect_with(|jail| {
+        //                 jail.create_file(
+        //                     super::CONFIG_FILENAME,
+        //                     r#"
+        // command: foo
+        // options:
+        //     envFile: '../.env'
+        // "#,
+        //                 )?;
+
+        //                 super::load_jailed_config()?;
+
+        //                 Ok(())
+        //             });
+        //         }
     }
 }

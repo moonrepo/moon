@@ -301,11 +301,9 @@ impl<'a> TargetRunner<'a> {
         let mut attempts = vec![];
         let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
-        let stream_output = match self.task.options.output_style {
-            Some(TaskOutputStyle::Stream) => true,
-            Some(TaskOutputStyle::OnExit) => false,
-            None => is_primary || is_real_ci,
-        };
+        let stream_output = matches!(self.task.options.output_style, TaskOutputStyle::Stream)
+            || is_primary
+            || is_real_ci;
         let output;
 
         loop {

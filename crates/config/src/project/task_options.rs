@@ -40,7 +40,10 @@ pub enum TaskMergeStrategy {
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum TaskOutputStyle {
-    OnExit,
+    Buffer,
+    BufferOnFailure,
+    Hash,
+    None,
     Stream,
 }
 

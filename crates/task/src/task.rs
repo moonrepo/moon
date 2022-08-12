@@ -227,7 +227,7 @@ impl Task {
                 merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
                 output_style: cloned_options
                     .output_style
-                    .or(is_local.then_some(TaskOutputStyle::Stream)),
+                    .or_else(|| is_local.then_some(TaskOutputStyle::Stream)),
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
                 run_deps_in_parallel: cloned_options.run_deps_in_parallel.unwrap_or(true),
                 run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_local),

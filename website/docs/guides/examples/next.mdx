@@ -45,8 +45,7 @@ tasks:
 		args: 'dev'
 		inputs:
 			- '@group(next)'
-		options:
-			runInCI: false
+		local: true
 
 	# Production build (SSR)
 	build:
@@ -72,8 +71,7 @@ tasks:
 		args: 'start'
 		inputs:
 			- '@group(next)'
-		options:
-			runInCI: false
+		local: true
 ```
 
 ### ESLint integration

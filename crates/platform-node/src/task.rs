@@ -1,5 +1,6 @@
 use crate::LOG_TARGET;
 use lazy_static::lazy_static;
+use moon_config::TaskConfig;
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
 use moon_task::{PlatformType, Target, Task, TaskError, TaskID};
@@ -134,15 +135,17 @@ pub fn create_task(
 ) -> Result<Task, TaskError> {
     let is_wrapping = matches!(context, TaskContext::WrapRunScript);
     let script_args = process::split_args(script)?;
-    let mut task = Task::new(target_id);
+    let mut task_config = TaskConfig::default();
     let mut args = vec![];
+    let mut outputs = vec![];
+    let mut env = HashMap::new();
 
     for (index, arg) in script_args.iter().enumerate() {
         // Extract environment variables
         if ARG_ENV_VAR.is_match(arg) {
             let (key, val) = clean_env_var(arg);
 
-            task.env.insert(key, val);
+            env.insert(key, val);
 
             continue;
         }
@@ -150,7 +153,7 @@ pub fn create_task(
         // Detect possible outputs
         if ARG_OUTPUT_FLAG.is_match(arg) {
             if let Some(output) = script_args.get(index + 1) {
-                task.outputs.push(clean_output_path(target_id, output)?);
+                outputs.push(clean_output_path(target_id, output)?);
             }
         }
 
@@ -160,26 +163,30 @@ pub fn create_task(
     }
 
     if is_wrapping {
-        task.command = "moon".to_owned();
-        task.args = string_vec!["node", "run-script", script_name];
+        task_config.command = Some("moon".to_owned());
+        task_config.args = Some(string_vec!["node", "run-script", script_name]);
     } else {
         if let Some(command) = args.get(0) {
             if is_bash_script(command) {
-                task.command = "bash".to_owned();
+                task_config.command = Some("bash".to_owned());
             } else if is_node_script(command) {
-                task.command = "node".to_owned();
+                task_config.command = Some("node".to_owned());
             } else {
-                task.command = args.remove(0);
+                task_config.command = Some(args.remove(0));
             }
         } else {
-            task.command = "noop".to_owned();
+            task_config.command = Some("noop".to_owned());
         }
 
-        task.args = args;
+        task_config.args = Some(args);
     }
 
-    task.platform = detect_platform_type(&task.command);
-    task.options.run_in_ci = should_run_in_ci(script_name, script);
+    task_config.env = Some(env);
+    task_config.outputs = Some(outputs);
+    task_config.type_of = detect_platform_type(task_config.command.as_ref().unwrap());
+    task_config.local = !should_run_in_ci(script_name, script);
+
+    let task = Task::from_config(target_id.to_owned(), &task_config);
 
     if is_wrapping {
         debug!(

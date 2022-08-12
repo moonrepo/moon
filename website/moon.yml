@@ -10,8 +10,7 @@ tasks:
   start:
     command: 'docusaurus'
     args: 'start'
-    options:
-      runInCI: false
+    local: true
   typecheck:
     command: 'tsc'
     args:

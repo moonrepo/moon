@@ -461,8 +461,14 @@ Controls how stdout/stderr is displayed when the task is ran as a _transitive ta
 this setting is not defined and defers to the action runner, but can be overridden with one of the
 following values:
 
-- `on-exit` - Buffers output until the task has ran, then displays.
-- `stream` - Streams output directly to the terminal.
+- `buffer` - Buffers output and displays after the task has exited (either success or failure).
+- `buffer-on-failure` - Like `buffer`, but only displays on failures.
+  <VersionLabel version="0.11" />
+- `hash` - Ignores output and only displays the generated [hash](../concepts/cache#hashing).
+  <VersionLabel version="0.11" />
+- `none` - Ignores output. <VersionLabel version="0.11" />
+- `stream` - Streams output directly to the terminal. Will prefix each line of output with the
+  target.
 
 ```yaml title="moon.yml" {5}
 tasks:

@@ -6,6 +6,8 @@
 
 - Added a `local` setting to tasks, that marks the task for local development only.
 - Added an `envFile` option to tasks, allowing `.env` files to be loaded for environment variables.
+- Updated the `outputStyle` task option with additional variants: `buffer`, `buffer-on-failure`,
+  `hash`, `none`.
 
 #### ⚙️ Internal
 

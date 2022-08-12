@@ -225,16 +225,9 @@ impl Task {
                 merge_env: cloned_options.merge_env.unwrap_or_default(),
                 merge_inputs: cloned_options.merge_inputs.unwrap_or_default(),
                 merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
-                output_style: match cloned_options.output_style {
-                    Some(style) => Some(style),
-                    None => {
-                        if is_local {
-                            Some(TaskOutputStyle::Stream)
-                        } else {
-                            None
-                        }
-                    }
-                },
+                output_style: cloned_options
+                    .output_style
+                    .or(is_local.then_some(TaskOutputStyle::Stream)),
                 retry_count: cloned_options.retry_count.unwrap_or_default(),
                 run_deps_in_parallel: cloned_options.run_deps_in_parallel.unwrap_or(true),
                 run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_local),

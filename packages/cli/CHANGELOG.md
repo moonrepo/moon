@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added a `local` setting to tasks, that marks the task for local development only.
 - Added an `envFile` option to tasks, allowing `.env` files to be loaded for environment variables.
 
 #### ⚙️ Internal

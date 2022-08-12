@@ -420,6 +420,7 @@ mod create_task {
 
 mod infer_tasks_from_scripts {
     use super::*;
+    use moon_config::TaskOutputStyle;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -458,6 +459,8 @@ mod infer_tasks_from_scripts {
                         command: "moon".to_owned(),
                         args: string_vec!["node", "run-script", "dev"],
                         options: TaskOptions {
+                            cache: false,
+                            output_style: Some(TaskOutputStyle::Stream),
                             run_in_ci: false,
                             ..TaskOptions::default()
                         },

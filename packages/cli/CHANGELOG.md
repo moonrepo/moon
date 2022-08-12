@@ -214,6 +214,10 @@ This release was largely focused on interoperability with the Node.js ecosystem,
 
 - More fixes around terminal color output and handling.
 
+#### 📚 Documentation
+
+- Add "released in version" badges/labels to new features across all docs.
+
 #### ⚙️ Internal
 
 - Temporarily disabling offline internet checks as it has issues with VPNs. Will revisit in the

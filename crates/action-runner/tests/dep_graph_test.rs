@@ -1,7 +1,7 @@
 use insta::assert_snapshot;
 use moon_action_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, WorkspaceConfig};
+use moon_config::{GlobalProjectConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project_graph::ProjectGraph;
 use moon_task::Target;
 use moon_utils::test::get_fixtures_dir;
@@ -10,7 +10,7 @@ use std::collections::{HashMap, HashSet};
 async fn create_project_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("projects");
     let workspace_config = WorkspaceConfig {
-        projects: HashMap::from([
+        projects: WorkspaceProjects::Map(HashMap::from([
             ("advanced".to_owned(), "advanced".to_owned()),
             ("basic".to_owned(), "basic".to_owned()),
             ("emptyConfig".to_owned(), "empty-config".to_owned()),
@@ -19,7 +19,7 @@ async fn create_project_graph() -> ProjectGraph {
             ("bar".to_owned(), "deps/bar".to_owned()),
             ("baz".to_owned(), "deps/baz".to_owned()),
             ("tasks".to_owned(), "tasks".to_owned()),
-        ]),
+        ])),
         ..WorkspaceConfig::default()
     };
 
@@ -36,7 +36,7 @@ async fn create_project_graph() -> ProjectGraph {
 async fn create_tasks_project_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("tasks");
     let workspace_config = WorkspaceConfig {
-        projects: HashMap::from([
+        projects: WorkspaceProjects::Map(HashMap::from([
             ("basic".to_owned(), "basic".to_owned()),
             ("build-a".to_owned(), "build-a".to_owned()),
             ("build-b".to_owned(), "build-b".to_owned()),
@@ -50,7 +50,7 @@ async fn create_tasks_project_graph() -> ProjectGraph {
             ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("no-tasks".to_owned(), "no-tasks".to_owned()),
-        ]),
+        ])),
         ..WorkspaceConfig::default()
     };
     let global_config = GlobalProjectConfig {

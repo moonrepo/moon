@@ -1,6 +1,8 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, WorkspaceConfig};
+use moon_config::{
+    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, WorkspaceConfig, WorkspaceProjects,
+};
 use moon_project_graph::ProjectGraph;
 use moon_utils::string_vec;
 use moon_utils::test::get_fixtures_dir;
@@ -9,12 +11,12 @@ use std::collections::HashMap;
 async fn get_dependencies_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependencies");
     let workspace_config = WorkspaceConfig {
-        projects: HashMap::from([
+        projects: WorkspaceProjects::Map(HashMap::from([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
             ("d".to_owned(), "d".to_owned()),
-        ]),
+        ])),
         ..WorkspaceConfig::default()
     };
 
@@ -31,12 +33,12 @@ async fn get_dependencies_graph() -> ProjectGraph {
 async fn get_dependents_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependents");
     let workspace_config = WorkspaceConfig {
-        projects: HashMap::from([
+        projects: WorkspaceProjects::Map(HashMap::from([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
             ("d".to_owned(), "d".to_owned()),
-        ]),
+        ])),
         ..WorkspaceConfig::default()
     };
 
@@ -53,11 +55,11 @@ async fn get_dependents_graph() -> ProjectGraph {
 async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/aliases");
     let workspace_config = WorkspaceConfig {
-        projects: HashMap::from([
+        projects: WorkspaceProjects::Map(HashMap::from([
             ("noLang".to_owned(), "no-lang".to_owned()),
             ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
             ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),
-        ]),
+        ])),
         node: node_config,
         ..WorkspaceConfig::default()
     };

@@ -137,7 +137,10 @@ pub struct ProjectWorkspaceConfig {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(untagged)]
+#[serde(
+    untagged,
+    expecting = "expected a project name or dependency config object"
+)]
 pub enum ProjectDependsOn {
     String(ProjectID),
     Object(DependencyConfig),

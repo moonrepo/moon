@@ -9,6 +9,10 @@
 - Updated the `outputStyle` task option with additional variants: `buffer`, `buffer-only-failure`,
   `hash`, `none`.
 
+#### 🐞 Fixes
+
+- Fixed an issue where output hydration was bypassing "off" cache.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.63.

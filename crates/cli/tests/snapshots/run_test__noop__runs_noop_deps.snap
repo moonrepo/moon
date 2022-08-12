@@ -8,16 +8,13 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ depsC:dependencyOrder (100ms)
 deps=c
 
-
 ▪▪▪▪ depsB:dependencyOrder
 ▪▪▪▪ depsB:dependencyOrder (100ms)
 deps=b
 
-
 ▪▪▪▪ depsA:dependencyOrder
 ▪▪▪▪ depsA:dependencyOrder (100ms)
 deps=a
-
 
 ▪▪▪▪ noop:noopWithDeps (no op)
 

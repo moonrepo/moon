@@ -301,37 +301,43 @@ impl<'a> TargetRunner<'a> {
         let mut attempts = vec![];
         let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
-        let stream_output = if let Some(output_style) = &self.task.options.output_style {
+        let output;
+
+        // When the primary target, always stream the output for a better developer experience.
+        // However, transitive targets can opt into streaming as well.
+        let should_stream_output = if let Some(output_style) = &self.task.options.output_style {
             matches!(output_style, TaskOutputStyle::Stream)
         } else {
             is_primary || is_real_ci
         };
-        let output;
+
+        // Transitive targets may run concurrently, so differentiate them with a prefix.
+        let stream_prefix = if !is_primary || is_real_ci {
+            Some(&self.task.target)
+        } else {
+            None
+        };
 
         loop {
             let mut attempt = Attempt::new(attempt_index);
 
-            let possible_output = if stream_output {
-                // Print label *before* output is streamed since it may stay open forever,
-                // or it may use ANSI escape codes to alter the terminal.
-                self.print_target_label(Checkpoint::Pass, &attempt, attempt_total);
-                self.print_target_command(&context.passthrough_args);
+            self.print_target_label(
+                // Mark primary streamed output as passed, since it may stay open forever,
+                // or it may use ANSI escape codes to alter the terminal!
+                if is_primary && should_stream_output {
+                    Checkpoint::Pass
+                } else {
+                    Checkpoint::Start
+                },
+                &attempt,
+                attempt_total,
+            );
 
-                // If this target matches the primary target (the last task to run),
-                // then we want to stream the output directly to the parent (inherit mode).
-                command
-                    .exec_stream_and_capture_output(if !is_primary || is_real_ci {
-                        Some(&self.task.target)
-                    } else {
-                        None
-                    })
-                    .await
+            self.print_target_command(&context.passthrough_args);
+
+            let possible_output = if should_stream_output {
+                command.exec_stream_and_capture_output(stream_prefix).await
             } else {
-                self.print_target_label(Checkpoint::Start, &attempt, attempt_total);
-                self.print_target_command(&context.passthrough_args);
-
-                // Otherwise we run the process in the background and write the output
-                // once it has completed.
                 command.exec_capture_output().await
             };
 
@@ -340,7 +346,7 @@ impl<'a> TargetRunner<'a> {
             match possible_output {
                 // zero and non-zero exit codes
                 Ok(out) => {
-                    if stream_output {
+                    if should_stream_output {
                         self.handle_streamed_output(&attempt, attempt_total, &out);
                     } else {
                         self.handle_captured_output(&attempt, attempt_total, &out);

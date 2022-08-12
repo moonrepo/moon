@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 824
+assertion_line: 945
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
@@ -8,13 +8,16 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ depsC:dependencyOrder (100ms)
 deps=c
 
+
 ▪▪▪▪ depsB:dependencyOrder
 ▪▪▪▪ depsB:dependencyOrder (100ms)
 deps=b
 
+
 ▪▪▪▪ depsA:dependencyOrder
 ▪▪▪▪ depsA:dependencyOrder (100ms)
 deps=a
+
 
 ▪▪▪▪ noop:noopWithDeps (no op)
 

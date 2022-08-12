@@ -8,13 +8,16 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ depsB:standard (100ms)
 deps=b
 
+
 ▪▪▪▪ depsC:standard
 ▪▪▪▪ depsC:standard (100ms)
 deps=c
 
+
 ▪▪▪▪ depsA:standard
 ▪▪▪▪ depsA:standard (100ms)
 deps=a
+
 
 ▪▪▪▪ dependsOn:serialDeps
 

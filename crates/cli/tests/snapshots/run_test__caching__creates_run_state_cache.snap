@@ -12,7 +12,7 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
     "deps": [],
     "envVars": {},
     "inputs": {
-      ".moon/workspace.yml": "2ad82fa9d7f8b59219a4e75fe76ed80088435548",
+      ".moon/workspace.yml": "ec07941c11e1b121e5fcbf07a3d4e193a1e3c3b8",
       "node/cjsFile.cjs": "91382f667258361b9397214d0aec54d8d576ae19",
       "node/cwd.js": "47d4aa44cd6363251821ab9c59f4c68df455445c",
       "node/envVars.js": "44b0fda6bce364122223fbfc67b65ecbc52aec91",

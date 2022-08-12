@@ -1,12 +1,12 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 423
+assertion_line: 450
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ system:exitNonZero
 stdout
-stderr
 ▪▪▪▪ system:exitNonZero (100ms)
+stderr
 
  ERROR  Process bash failed with a 1 exit code.
 

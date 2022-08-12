@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 149
+assertion_line: 279
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
@@ -17,5 +17,6 @@ deps=a
 
 Tasks: 3 completed
  Time: 100ms
+
 
 

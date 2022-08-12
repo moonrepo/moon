@@ -103,7 +103,7 @@ mod from_config {
             &TaskConfig {
                 local: true,
                 options: TaskOptionsConfig {
-                    output_style: Some(TaskOutputStyle::OnExit),
+                    output_style: Some(TaskOutputStyle::Buffer),
                     ..TaskOptionsConfig::default()
                 },
                 ..TaskConfig::default()
@@ -114,7 +114,7 @@ mod from_config {
             task.options,
             TaskOptions {
                 cache: false,
-                output_style: Some(TaskOutputStyle::OnExit),
+                output_style: Some(TaskOutputStyle::Buffer),
                 run_in_ci: false,
                 ..TaskOptions::default()
             }

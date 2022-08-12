@@ -6,6 +6,12 @@
 
 - Added a `local` setting to tasks, that marks the task for local development only.
 - Added an `envFile` option to tasks, allowing `.env` files to be loaded for environment variables.
+- Updated the `outputStyle` task option with additional variants: `buffer`, `buffer-only-failure`,
+  `hash`, `none`.
+
+#### 🐞 Fixes
+
+- Fixed an issue where output hydration was bypassing "off" cache.
 
 #### ⚙️ Internal
 

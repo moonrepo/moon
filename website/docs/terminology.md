@@ -15,6 +15,7 @@ title: Terminology
 | Hashing                | The mechanism of generating a hash based on multiple sources: inputs, dependencies, configs, etc.                                          |
 | LTS                    | Long-term support.                                                                                                                         |
 | Package manager        | Installs and manages dependencies for a specific tool (`npm`), using a manifest file (`package.json`).                                     |
+| Primary target         | The target that was explicitly ran, and is the dependee of transitive targets.                                                             |
 | [Project][project]     | An collection of source and test files, configurations, a manifest and dependencies, and much more. Exists within a [workspace][workspace] |
 | Revision               | In the context of a VCS: a branch, revision, commit, hash, or point in history.                                                            |
 | [Target][target]       | A label and reference to a task within the project, in the format of `project:task`.                                                       |

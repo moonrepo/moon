@@ -10,6 +10,7 @@ pub use errors::format_figment_errors;
 pub use project::dep::*;
 pub use project::global::GlobalProjectConfig;
 pub use project::task::*;
+pub use project::task_options::*;
 pub use project::*;
 pub use types::*;
 pub use validator::ValidationErrors;

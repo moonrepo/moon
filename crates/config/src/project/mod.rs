@@ -3,6 +3,7 @@
 pub mod dep;
 pub mod global;
 pub mod task;
+pub mod task_options;
 
 use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
 use crate::types::{FileGroups, ProjectID, TaskID};

@@ -200,9 +200,9 @@ impl Command {
     }
 
     #[track_caller]
-    pub async fn exec_stream_and_capture_output(
+    pub async fn exec_stream_and_capture_output<T: AsRef<str>>(
         &mut self,
-        prefix: Option<&str>,
+        prefix: Option<T>,
     ) -> Result<Output, MoonError> {
         self.log_command_info(None);
 
@@ -229,7 +229,7 @@ impl Command {
         let captured_stdout_clone = Arc::clone(&captured_stdout);
 
         let prefix: Arc<str> = prefix
-            .map(|p| color::muted(format!("[{}]", p)))
+            .map(|p| color::muted(format!("[{}]", p.as_ref())))
             .unwrap_or_default()
             .into();
         let stderr_prefix = Arc::clone(&prefix);

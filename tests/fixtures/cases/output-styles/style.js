@@ -1,5 +1,5 @@
 console.log('stdout');
-console.log('stderr');
+console.error('stderr');
 
 if (process.argv.includes('--fail')) {
 	process.exitCode = 1;

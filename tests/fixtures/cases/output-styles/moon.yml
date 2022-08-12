@@ -15,7 +15,7 @@ tasks:
     command: node
     args: ./style.js
     options:
-      outputStyle: buffer-on-failure
+      outputStyle: buffer-only-failure
   bufferFailurePassPrimary:
     command: noop
     deps:
@@ -25,7 +25,7 @@ tasks:
     command: node
     args: ./style.js --fail
     options:
-      outputStyle: buffer-on-failure
+      outputStyle: buffer-only-failure
   bufferFailureFailPrimary:
     command: noop
     deps:

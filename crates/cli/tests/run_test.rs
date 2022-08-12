@@ -991,6 +991,7 @@ mod output_styles {
         assert_snapshot!(get_assert_output(&assert));
     }
 
+    #[cfg(not(windows))] // Different path output in snapshot
     #[test]
     fn buffer_on_failure_when_failure() {
         let fixture = create_sandbox_with_git("cases");

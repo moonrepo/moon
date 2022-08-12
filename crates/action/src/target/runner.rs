@@ -405,20 +405,18 @@ impl<'a> TargetRunner<'a> {
         let print_stdout = || {
             if !stdout.is_empty() {
                 println!("{}", stdout);
-                println!();
             }
         };
 
         let print_stderr = || {
             if !stderr.is_empty() {
                 eprintln!("{}", stderr);
-                eprintln!();
             }
         };
 
         match self.task.options.output_style {
             // Only show output on failure
-            Some(TaskOutputStyle::BufferOnFailure) => {
+            Some(TaskOutputStyle::BufferOnlyFailure) => {
                 if failed {
                     print_stdout();
                     print_stderr();
@@ -429,7 +427,8 @@ impl<'a> TargetRunner<'a> {
                 let hash = &self.cache.item.hash;
 
                 if !hash.is_empty() {
-                    println!("{}", hash);
+                    // Print to stderr so it can be captured
+                    eprintln!("{}", hash);
                 }
             }
             // Show nothing
@@ -482,7 +481,6 @@ impl<'a> TargetRunner<'a> {
     }
 
     pub fn print_target_label(&self, checkpoint: Checkpoint, attempt: &Attempt, attempt_total: u8) {
-        let failed = matches!(checkpoint, Checkpoint::Fail);
         let mut label = label_checkpoint(&self.task.target, checkpoint);
         let mut comments = vec![];
 
@@ -500,11 +498,7 @@ impl<'a> TargetRunner<'a> {
             label = format!("{} {}", label, metadata);
         };
 
-        if failed {
-            eprintln!("{}", label);
-        } else {
-            println!("{}", label);
-        }
+        println!("{}", label);
     }
 
     // Print label *after* output has been captured, so parallel tasks

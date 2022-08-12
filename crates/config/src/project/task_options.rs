@@ -41,7 +41,7 @@ pub enum TaskMergeStrategy {
 #[serde(rename_all = "kebab-case")]
 pub enum TaskOutputStyle {
     Buffer,
-    BufferOnFailure,
+    BufferOnlyFailure,
     Hash,
     None,
     Stream,

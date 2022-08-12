@@ -1,11 +1,10 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 83
+assertion_line: 214
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ node:standard (cached)
 stdout
-
 
 Tasks: 1 completed (1 cached)
  Time: 100ms

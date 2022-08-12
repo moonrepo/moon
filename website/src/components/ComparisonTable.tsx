@@ -297,6 +297,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Output logging style',
 		support: {
+			moon: [SUPPORTED, 'via `outputStyle`'],
 			nx: [SUPPORTED, 'via `--output-style`'],
 			turborepo: [SUPPORTED, 'via `outputMode`'],
 		},

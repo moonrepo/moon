@@ -169,7 +169,7 @@ fileGroups:
 
     mod extends {
         use super::*;
-        use crate::project::task::TaskOptionsConfig;
+        use crate::project::task_options::TaskOptionsConfig;
         use std::fs;
 
         #[test]

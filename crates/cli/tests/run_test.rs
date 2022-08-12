@@ -259,7 +259,7 @@ mod caching {
         assert_eq!(state.item.target, "node:standard");
         assert_eq!(
             state.item.hash,
-            "19d7b388a47d11983c8dae1fcf69a7a4cef5a122b6fa0f9da0bacab019eb5b1e"
+            "b690c7bdbfb85bf385be5b0c6d68e2616a140352f9c854fd376ee3e2096ab688"
         );
     }
 }
@@ -961,5 +961,82 @@ mod root_level {
         let output = get_assert_output(&assert);
 
         assert!(predicate::str::contains("root one off").eval(&output));
+    }
+}
+
+mod output_styles {
+    use super::*;
+
+    #[test]
+    fn buffer() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputStyles:bufferPrimary")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn buffer_on_failure_when_success() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputStyles:bufferFailurePassPrimary")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[cfg(not(windows))] // Different path output in snapshot
+    #[test]
+    fn buffer_on_failure_when_failure() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputStyles:bufferFailureFailPrimary")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn hash() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputStyles:hashPrimary")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn none() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputStyles:nonePrimary")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn stream() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputStyles:streamPrimary")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
     }
 }

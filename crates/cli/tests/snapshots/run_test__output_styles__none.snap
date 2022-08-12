@@ -1,0 +1,15 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 1027
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm install
+▪▪▪▪ outputStyles:none
+▪▪▪▪ outputStyles:none (100ms)
+▪▪▪▪ outputStyles:nonePrimary (no op)
+
+Tasks: 2 completed
+ Time: 100ms
+
+
+

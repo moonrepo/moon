@@ -39,8 +39,7 @@ tasks:
 		args: 'dev'
 		inputs:
 			- '@group(vite)'
-		options:
-			runInCI: false
+		local: true
 
 	# Production build
 	build:
@@ -59,8 +58,7 @@ tasks:
 			- '@group(vite)'
 		deps:
 			- '~:build'
-		options:
-			runInCI: false
+		local: true
 
 	# Unit testing (if using Vitest)
 	test:

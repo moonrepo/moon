@@ -228,6 +228,9 @@
             "type": "string"
           }
         },
+        "local": {
+          "type": "boolean"
+        },
         "options": {
           "$ref": "#/definitions/TaskOptionsConfig"
         },

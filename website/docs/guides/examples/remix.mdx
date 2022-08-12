@@ -46,8 +46,7 @@ tasks:
 		args: 'dev'
 		inputs:
 			- '@group(remix)'
-		options:
-			runInCI: false
+		local: true
 
 	# Production build
 	build:
@@ -66,8 +65,7 @@ tasks:
 			- '~:build'
 		inputs:
 			- '@group(remix)'
-		options:
-			runInCI: false
+		local: true
 ```
 
 ### ESLint integration

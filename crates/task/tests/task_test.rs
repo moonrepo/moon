@@ -1,5 +1,6 @@
 use moon_config::{TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
 use moon_task::test::create_expanded_task;
+use moon_task::{Task, TaskOptions};
 use moon_utils::test::{create_sandbox, get_fixtures_dir};
 use moon_utils::{glob, string_vec};
 use std::collections::{HashMap, HashSet};
@@ -20,6 +21,127 @@ fn errors_for_output_glob() {
         }),
     )
     .unwrap();
+}
+
+mod from_config {
+    use moon_config::{TaskMergeStrategy, TaskOutputStyle};
+
+    use super::*;
+
+    #[test]
+    fn sets_defaults() {
+        let task = Task::from_config("foo:test".to_owned(), &TaskConfig::default());
+
+        assert_eq!(task.inputs, string_vec!["**/*"]);
+        assert_eq!(task.log_target, "moon:project:foo:test");
+        assert_eq!(task.target, "foo:test");
+        assert_eq!(
+            task.options,
+            TaskOptions {
+                cache: true,
+                env_file: None,
+                merge_args: TaskMergeStrategy::Append,
+                merge_deps: TaskMergeStrategy::Append,
+                merge_env: TaskMergeStrategy::Append,
+                merge_inputs: TaskMergeStrategy::Append,
+                merge_outputs: TaskMergeStrategy::Append,
+                output_style: None,
+                retry_count: 0,
+                run_deps_in_parallel: true,
+                run_in_ci: true,
+                run_from_workspace_root: false
+            }
+        )
+    }
+
+    #[test]
+    fn changes_options_if_local() {
+        let task = Task::from_config(
+            "foo:test".to_owned(),
+            &TaskConfig {
+                local: true,
+                ..TaskConfig::default()
+            },
+        );
+
+        assert_eq!(
+            task.options,
+            TaskOptions {
+                cache: false,
+                output_style: Some(TaskOutputStyle::Stream),
+                run_in_ci: false,
+                ..TaskOptions::default()
+            }
+        )
+    }
+
+    #[test]
+    fn determines_local_from_command() {
+        let task = Task::from_config(
+            "foo:test".to_owned(),
+            &TaskConfig {
+                command: Some("dev".to_owned()),
+                ..TaskConfig::default()
+            },
+        );
+
+        assert_eq!(
+            task.options,
+            TaskOptions {
+                cache: false,
+                output_style: Some(TaskOutputStyle::Stream),
+                run_in_ci: false,
+                ..TaskOptions::default()
+            }
+        )
+    }
+
+    #[test]
+    fn can_override_local_output_style() {
+        let task = Task::from_config(
+            "foo:test".to_owned(),
+            &TaskConfig {
+                local: true,
+                options: TaskOptionsConfig {
+                    output_style: Some(TaskOutputStyle::OnExit),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            },
+        );
+
+        assert_eq!(
+            task.options,
+            TaskOptions {
+                cache: false,
+                output_style: Some(TaskOutputStyle::OnExit),
+                run_in_ci: false,
+                ..TaskOptions::default()
+            }
+        )
+    }
+
+    #[test]
+    fn converts_env_file_enum() {
+        let task = Task::from_config(
+            "foo:test".to_owned(),
+            &TaskConfig {
+                options: TaskOptionsConfig {
+                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            },
+        );
+
+        assert_eq!(
+            task.options,
+            TaskOptions {
+                env_file: Some(".env".to_owned()),
+                ..TaskOptions::default()
+            }
+        )
+    }
 }
 
 mod is_affected {

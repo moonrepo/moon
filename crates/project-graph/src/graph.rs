@@ -106,7 +106,7 @@ pub struct ProjectGraph {
 
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
-    projects_map: HashMap<ProjectID, String>,
+    pub projects_map: HashMap<ProjectID, String>,
 
     /// The workspace configuration. Necessary for project variants.
     /// Is loaded from `.moon/workspace.yml`.

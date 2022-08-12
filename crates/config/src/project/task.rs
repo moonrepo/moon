@@ -628,7 +628,7 @@ options:
 
         #[test]
         #[should_panic(
-            expected = "data did not match any variant of untagged enum TaskOptionEnvFile for key \"default.options.envFile\""
+            expected = "expected a boolean or a relative file system path for key \"default.options.envFile\""
         )]
         fn invalid_env_file_type() {
             figment::Jail::expect_with(|jail| {

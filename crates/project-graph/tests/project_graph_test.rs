@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_project_graph::ProjectGraph;
 use moon_utils::string_vec;
-use moon_utils::test::get_fixtures_dir;
+use moon_utils::test::{create_sandbox_with_git, get_fixtures_dir};
 use std::collections::HashMap;
 
 async fn get_dependencies_graph() -> ProjectGraph {
@@ -72,6 +72,55 @@ async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
     )
     .await
     .unwrap()
+}
+
+mod globs {
+    use super::*;
+    use std::fs;
+
+    #[tokio::test]
+    async fn ignores_dot_folders() {
+        // Use git so we can test against the .git folder
+        let fixture = create_sandbox_with_git("projects");
+
+        // Create fake node modules
+        fs::create_dir_all(fixture.path().join("node_modules/moon")).unwrap();
+        fs::write(fixture.path().join("node_modules/moon/package.json"), "{}").unwrap();
+
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::List(string_vec!["**"]),
+            ..WorkspaceConfig::default()
+        };
+
+        let graph = ProjectGraph::create(
+            fixture.path(),
+            &workspace_config,
+            GlobalProjectConfig::default(),
+            &CacheEngine::create(fixture.path()).await.unwrap(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            graph.projects_map,
+            HashMap::from([
+                ("advanced".to_owned(), "advanced".to_owned()),
+                ("bar".to_owned(), "deps/bar".to_owned()),
+                ("bash".to_owned(), "langs/bash".to_owned()),
+                ("basic".to_owned(), "basic".to_owned()),
+                ("baz".to_owned(), "deps/baz".to_owned()),
+                ("deps".to_owned(), "deps".to_owned()),
+                ("empty-config".to_owned(), "empty-config".to_owned()),
+                ("foo".to_owned(), "deps/foo".to_owned()),
+                ("js".to_owned(), "langs/js".to_owned()),
+                ("langs".to_owned(), "langs".to_owned()),
+                ("no-config".to_owned(), "no-config".to_owned()),
+                ("package-json".to_owned(), "package-json".to_owned()),
+                ("tasks".to_owned(), "tasks".to_owned()),
+                ("ts".to_owned(), "langs/ts".to_owned()),
+            ])
+        );
+    }
 }
 
 mod get_dependencies_of {

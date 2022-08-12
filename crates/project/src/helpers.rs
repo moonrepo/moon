@@ -28,6 +28,11 @@ pub fn detect_projects_with_globs(
     projects: &mut ProjectsSourceMap,
 ) -> Result<(), ProjectError> {
     let root_source = ".".to_owned();
+    let mut globs = globs.clone().to_vec();
+
+    // Always ignore common directories
+    globs.push("!**/.*/**".to_owned()); // .git, .moon, .yarn, etc
+    globs.push("!**/node_modules/**".to_owned());
 
     // Root-level project has special handling
     if globs.contains(&root_source) {
@@ -41,7 +46,7 @@ pub fn detect_projects_with_globs(
     }
 
     // Glob for all other projects
-    for project_root in glob::walk(workspace_root, globs)? {
+    for project_root in glob::walk(workspace_root, &globs)? {
         if project_root.is_dir() {
             let project_source =
                 path::to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;

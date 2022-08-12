@@ -300,7 +300,7 @@ fileGroups:
 
         #[test]
         #[should_panic(
-            expected = "data did not match any variant of untagged enum ProjectDependsOn for key \"project.dependsOn.0\""
+            expected = "expected a project name or dependency config object for key \"project.dependsOn.0\""
         )]
         fn invalid_object_type() {
             figment::Jail::expect_with(|jail| {

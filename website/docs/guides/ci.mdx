@@ -27,7 +27,8 @@ by automatically running the following steps:
 
 By default, _all tasks_ run in CI, as you should always be building, linting, type-checking,
 testing, so on and so forth. However, this isn't always true, so this can be disabled on a per-task
-basis through the [`runInCI`](../config/project#runinci) option.
+basis through the [`runInCI`](../config/project#runinci) or [`local`](../config/project#local)
+options.
 
 ```yaml
 tasks:
@@ -42,7 +43,7 @@ tasks:
 
 This option _must_ be set to false for tasks that spawn a long-running or never-ending process, like
 HTTP or development servers. To help mitigate this, tasks named `dev`, `start`, or `serve` are false
-by default.
+by default. This can be easily controlled with the [`local`](../config/project#local) setting.
 
 :::
 

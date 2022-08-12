@@ -23,9 +23,9 @@ $ moon --log debug migrate from-package-json app
 
 :::caution
 
-moon does its best to infer the [`runInCI`](../../config/project#runinci) option, given the small
-amount of information available to use. When this option is incorrectly set, it'll result in CI
-environments hanging for tasks that are long-running or never close (development servers, etc), or
+moon does its best to infer the [`local`](../../config/project#local) option, given the small amount
+of information available to use. When this option is incorrectly set, it'll result in CI
+environments hanging for tasks that are long-running or never-ending (development servers, etc), or
 won't run builds that should be. Be sure to audit each task after migration!
 
 :::

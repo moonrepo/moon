@@ -1,0 +1,17 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 1039
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm install
+▪▪▪▪ outputStyles:stream
+[outputStyles:stream] stdout
+[outputStyles:stream] stderr
+▪▪▪▪ outputStyles:stream (100ms)
+▪▪▪▪ outputStyles:streamPrimary (no op)
+
+Tasks: 2 completed
+ Time: 100ms
+
+
+

@@ -301,9 +301,11 @@ impl<'a> TargetRunner<'a> {
         let mut attempts = vec![];
         let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
-        let stream_output = matches!(self.task.options.output_style, TaskOutputStyle::Stream)
-            || is_primary
-            || is_real_ci;
+        let stream_output = if let Some(output_style) = &self.task.options.output_style {
+            matches!(output_style, TaskOutputStyle::Stream)
+        } else {
+            is_primary || is_real_ci
+        };
         let output;
 
         loop {
@@ -318,7 +320,7 @@ impl<'a> TargetRunner<'a> {
                 // If this target matches the primary target (the last task to run),
                 // then we want to stream the output directly to the parent (inherit mode).
                 command
-                    .exec_stream_and_capture_output(if !is_primary {
+                    .exec_stream_and_capture_output(if !is_primary || is_real_ci {
                         Some(&self.task.target)
                     } else {
                         None
@@ -382,15 +384,7 @@ impl<'a> TargetRunner<'a> {
     pub fn print_cache_item(&self) {
         let item = &self.cache.item;
 
-        if !item.stderr.is_empty() {
-            eprintln!("{}", item.stderr.trim());
-            eprintln!();
-        }
-
-        if !item.stdout.is_empty() {
-            println!("{}", item.stdout.trim());
-            println!();
-        }
+        self.print_output_with_style(&item.stdout, &item.stderr, item.exit_code != 0);
     }
 
     pub fn print_checkpoint(&self, checkpoint: Checkpoint, comment: &str) {
@@ -399,6 +393,47 @@ impl<'a> TargetRunner<'a> {
             label_checkpoint(&self.task.target, checkpoint),
             color::muted(comment)
         );
+    }
+
+    pub fn print_output_with_style(&self, stdout: &str, stderr: &str, failed: bool) {
+        let print_stdout = || {
+            if !stdout.is_empty() {
+                println!("{}", stdout);
+                println!();
+            }
+        };
+
+        let print_stderr = || {
+            if !stderr.is_empty() {
+                eprintln!("{}", stderr);
+                eprintln!();
+            }
+        };
+
+        match self.task.options.output_style {
+            // Only show output on failure
+            Some(TaskOutputStyle::BufferOnFailure) => {
+                if failed {
+                    print_stdout();
+                    print_stderr();
+                }
+            }
+            // Only show the hash
+            Some(TaskOutputStyle::Hash) => {
+                let hash = &self.cache.item.hash;
+
+                if !hash.is_empty() {
+                    println!("{}", hash);
+                }
+            }
+            // Show nothing
+            Some(TaskOutputStyle::None) => {}
+            // Show output on both success and failure
+            _ => {
+                print_stdout();
+                print_stderr();
+            }
+        }
     }
 
     pub fn print_target_command(&self, passthrough_args: &[String]) {
@@ -479,24 +514,29 @@ impl<'a> TargetRunner<'a> {
             attempt_total,
         );
 
-        let stderr = output_to_string(&output.stderr);
         let stdout = output_to_string(&output.stdout);
+        let stderr = output_to_string(&output.stderr);
 
-        if !stderr.is_empty() {
-            eprintln!("{}", stderr.trim());
-            eprintln!();
-        }
-
-        if !stdout.is_empty() {
-            println!("{}", stdout.trim());
-            println!();
-        }
+        self.print_output_with_style(&stdout, &stderr, !output.status.success());
     }
 
     // Only print the label when the process has failed,
     // as the actual output has already been streamed to the console.
     fn handle_streamed_output(&self, attempt: &Attempt, attempt_total: u8, output: &Output) {
-        if !output.status.success() {
+        // Transitive target finished streaming, so display the success checkpoint
+        if let Some(TaskOutputStyle::Stream) = self.task.options.output_style {
+            self.print_target_label(
+                if output.status.success() {
+                    Checkpoint::Pass
+                } else {
+                    Checkpoint::Fail
+                },
+                attempt,
+                attempt_total,
+            );
+
+            // Otherwise the primary target failed for some reason
+        } else if !output.status.success() {
             self.print_target_label(Checkpoint::Fail, attempt, attempt_total);
         }
     }

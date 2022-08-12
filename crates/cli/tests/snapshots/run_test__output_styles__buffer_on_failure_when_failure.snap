@@ -1,0 +1,17 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 1003
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ npm install
+▪▪▪▪ outputStyles:bufferFailureFail
+stdout
+stderr
+
+
+▪▪▪▪ outputStyles:bufferFailureFail (100ms)
+
+ ERROR  Process ~/.moon/tools/node/16.0.0/bin/node failed with a 1 exit code.
+
+
+

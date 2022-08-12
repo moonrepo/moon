@@ -1,0 +1,62 @@
+language: javascript
+
+tasks:
+  buffer:
+    command: node
+    args: ./style.js
+    options:
+      outputStyle: buffer
+  bufferPrimary:
+    command: noop
+    deps:
+      - '~:buffer'
+
+  bufferFailurePass:
+    command: node
+    args: ./style.js
+    options:
+      outputStyle: buffer-on-failure
+  bufferFailurePassPrimary:
+    command: noop
+    deps:
+      - '~:bufferFailurePass'
+
+  bufferFailureFail:
+    command: node
+    args: ./style.js --fail
+    options:
+      outputStyle: buffer-on-failure
+  bufferFailureFailPrimary:
+    command: noop
+    deps:
+      - '~:bufferFailureFail'
+
+  hash:
+    command: node
+    args: ./style.js
+    options:
+      outputStyle: hash
+  hashPrimary:
+    command: noop
+    deps:
+      - '~:hash'
+
+  none:
+    command: node
+    args: ./style.js
+    options:
+      outputStyle: none
+  nonePrimary:
+    command: noop
+    deps:
+      - '~:none'
+
+  stream:
+    command: node
+    args: ./style.js
+    options:
+      outputStyle: stream
+  streamPrimary:
+    command: noop
+    deps:
+      - '~:stream'

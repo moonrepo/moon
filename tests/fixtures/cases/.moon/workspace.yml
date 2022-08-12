@@ -23,6 +23,7 @@ projects:
 
   # Outputs
   outputs: 'outputs'
+  outputStyles: 'output-styles'
 
 typescript:
   syncProjectReferences: false

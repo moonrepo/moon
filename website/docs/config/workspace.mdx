@@ -6,6 +6,7 @@ toc_max_heading_level: 6
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/workspace.yml` file configures available projects and their locations, the toolchain, and
 the workspace development environment.
@@ -16,7 +17,7 @@ the workspace development environment.
 
 Configures aspects of the action runner.
 
-### `implicitInputs`
+### `implicitInputs`<VersionLabel updated version="0.9" />
 
 > string[]
 
@@ -40,7 +41,7 @@ actionRunner:
 > defined_, that list will be overwritten, so be sure to explicitly define them if you would like to
 > retain that functionality.
 
-### `inheritColorsForPipedTasks`
+### `inheritColorsForPipedTasks`<VersionLabel version="0.3" />
 
 > `boolean`
 
@@ -53,7 +54,7 @@ actionRunner:
   inheritColorsForPipedTasks: true
 ```
 
-### `logRunningCommand`
+### `logRunningCommand`<VersionLabel version="0.4" />
 
 > `boolean`
 
@@ -65,7 +66,7 @@ actionRunner:
   logRunningCommand: true
 ```
 
-## `extends`
+## `extends`<VersionLabel version="0.4" />
 
 > `string`
 
@@ -229,7 +230,7 @@ ensure other Node.js processes outside of our toolchain are utilizing the same v
 }
 ```
 
-### `aliasPackageNames`
+### `aliasPackageNames`<VersionLabel version="0.10" />
 
 > `NodeProjectAliasFormat`
 
@@ -270,7 +271,7 @@ node:
   dedupeOnLockfileChange: true
 ```
 
-### `dependencyVersionFormat`
+### `dependencyVersionFormat`<VersionLabel version="0.9" />
 
 > `NodeVersionFormat`
 
@@ -299,7 +300,7 @@ node:
 > This setting does not apply to peer dependencies, as they will always use a format of
 > `^<major>.0.0`.
 
-### `inferTasksFromScripts`
+### `inferTasksFromScripts`<VersionLabel version="0.8" />
 
 > `boolean`
 
@@ -389,7 +390,7 @@ the same version, which is a very common practice when managing dependencies.
 
 Dictates how moon interacts with and utilizes TypeScript within the workspace.
 
-### `createMissingConfig`
+### `createMissingConfig`<VersionLabel version="0.6" />
 
 > `boolean`
 
@@ -425,7 +426,7 @@ typescript:
   rootConfigFileName: 'tsconfig.projects.json'
 ```
 
-### `rootOptionsConfigFileName`
+### `rootOptionsConfigFileName`<VersionLabel version="0.6" />
 
 > `string`
 

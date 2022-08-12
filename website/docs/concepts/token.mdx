@@ -2,6 +2,8 @@
 title: Tokens
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 Tokens are variables and functions that can be used by [`args`](../config/project#args),
 [`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs) when configuring a
 task. They provide a way of accessing file group paths, referencing values from other task fields,
@@ -20,7 +22,7 @@ functionality.
 
 These functions reference file groups by name, where the name is passed as the argument.
 
-### `@group`
+### `@group`<VersionLabel version="0.6" />
 
 > Usable in `args` and `inputs`.
 
@@ -301,7 +303,7 @@ A token variable is a value that starts with `$` and is substituted to a value d
 current workspace, project, and task. And unlike token functions, token variables can be placed
 _within_ content when necessary, and supports multiple variables within the same content.
 
-### `$language`
+### `$language`<VersionLabel version="0.7" />
 
 Programming language the project is written in, as defined in [`moon.yml`](../config/project). If
 the project has not defined the [`language`](../config/project#language) setting, or does not have a
@@ -387,7 +389,7 @@ tasks:
       - '../../.cache/apps/web'
 ```
 
-### `$projectType`
+### `$projectType`<VersionLabel version="0.7" />
 
 The type of project, as defined in [`moon.yml`](../config/project). If the project has not defined
 the [`type`](../config/project#type-1) setting, or does not have a config, this defaults to
@@ -447,7 +449,7 @@ tasks:
       - '--task=build'
 ```
 
-### `$taskType`
+### `$taskType`<VersionLabel version="0.7" />
 
 The type of task that is currently running.
 

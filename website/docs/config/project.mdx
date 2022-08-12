@@ -4,13 +4,14 @@ toc_max_heading_level: 6
 ---
 
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `moon.yml` configuration file (formerly `project.yml` in version <=0.9) _is not required_ but
 can be used to define additional metadata for a project, override inherited tasks, and more at the
 project-level. When used, this file must exist in a project's root, as configured in
 [`projects`](./workspace#projects).
 
-## `dependsOn`
+## `dependsOn`<VersionLabel updated version="0.9" />
 
 > `(ProjectID | DependencyConfig)[]`
 
@@ -77,15 +78,16 @@ fileGroups:
 > modify the glob lists, add and remove groups, or implement completely new groups. The choice is
 > yours!
 
-## `language`
+## `language`<VersionLabel version="0.3" />
 
 > `ProjectLanguage`
 
 The primary programming language the project is written in. Supports the following values:
 
 - `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project (Unix only).
+  <VersionLabel version="0.6" />
 - `batch` - A [Batch](https://en.wikibooks.org/wiki/Windows_Batch_Scripting) based project (Windows
-  only).
+  only). <VersionLabel version="0.9" />
 - `javascript` - A [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) based
   project. Inferred when `package.json` exists.
 - `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project. Inferred when
@@ -280,7 +282,7 @@ tasks:
       NODE_ENV: 'production'
 ```
 
-### `inputs`
+### `inputs`<VersionLabel updated version="0.9" />
 
 > `string[]`
 
@@ -290,7 +292,7 @@ defined, then all files within a project are considered an input (`**/*`).
 
 Inputs support the following source types:
 
-- Environment variables (must start with a `$`).
+- Environment variables (must start with a `$`). <VersionLabel version="0.9" />
 - [Project and workspace relative file patterns](../concepts/file-pattern#project-relative)
 
 ```yaml title="moon.yml" {4-10}
@@ -378,7 +380,7 @@ tasks:
       runFromWorkspaceRoot: true
 ```
 
-#### `cache`
+#### `cache`<VersionLabel version="0.9" />
 
 > `boolean`
 
@@ -398,7 +400,7 @@ tasks:
       cache: false
 ```
 
-#### `envFile`
+#### `envFile`<VersionLabel version="0.11" />
 
 > `boolean | string`
 
@@ -451,7 +453,7 @@ The strategy to use when merging the [`inputs`](#inputs) list with an inherited 
 The strategy to use when merging the [`outputs`](#outputs) list with an inherited task. Defaults to
 "append".
 
-#### `outputStyle`
+#### `outputStyle`<VersionLabel version="0.10" />
 
 > `TaskOutputStyle`
 
@@ -485,7 +487,7 @@ tasks:
       retryCount: 3
 ```
 
-#### `runDepsInParallel`
+#### `runDepsInParallel`<VersionLabel version="0.10" />
 
 > boolean
 

@@ -94,6 +94,7 @@ pub fn remove_drive_prefix<T: AsRef<str>>(glob: T) -> String {
 
 /// Wax currently doesn't support negated globs (starts with !),
 /// so we must extract them manually.
+#[track_caller]
 pub fn split_patterns(patterns: &[String]) -> Result<(Vec<Glob>, Vec<Glob>), GlobError> {
     let mut expressions = vec![];
     let mut negations = vec![];

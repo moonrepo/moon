@@ -28,7 +28,7 @@ pub fn detect_projects_with_globs(
     projects: &mut ProjectsSourceMap,
 ) -> Result<(), ProjectError> {
     let root_source = ".".to_owned();
-    let mut globs = globs.clone().to_vec();
+    let mut globs = globs.to_vec();
 
     // Always ignore common directories
     globs.push("!**/.*/**".to_owned()); // .git, .moon, .yarn, etc

@@ -15,7 +15,9 @@
 
 #### 🐞 Fixes
 
-- Project globs will no longer pickup dot folders (`.git`, `.moon`, etc) or `node_modules`.
+- Fixed an issue where project globs would pickup dot folders (`.git`, `.moon`, etc) or
+  `node_modules`.
+- Fixed an issue where project names were stripping capital letters when using globs.
 
 #### ⚙️ Internal
 

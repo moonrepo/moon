@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_project_graph::ProjectGraph;
 use moon_utils::string_vec;
-use moon_utils::test::{create_sandbox_with_git, get_fixtures_dir};
+use moon_utils::test::{create_sandbox, create_sandbox_with_git, get_fixtures_dir};
 use std::collections::HashMap;
 
 async fn get_dependencies_graph() -> ProjectGraph {
@@ -118,6 +118,37 @@ mod globs {
                 ("package-json".to_owned(), "package-json".to_owned()),
                 ("tasks".to_owned(), "tasks".to_owned()),
                 ("ts".to_owned(), "langs/ts".to_owned()),
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn supports_all_id_formats() {
+        let fixture = create_sandbox("project-graph/ids");
+
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::List(string_vec!["*"]),
+            ..WorkspaceConfig::default()
+        };
+
+        let graph = ProjectGraph::create(
+            fixture.path(),
+            &workspace_config,
+            GlobalProjectConfig::default(),
+            &CacheEngine::create(fixture.path()).await.unwrap(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            graph.projects_map,
+            HashMap::from([
+                ("camelCase".to_owned(), "camelCase".to_owned()),
+                ("Capital".to_owned(), "Capital".to_owned()),
+                ("kebab-case".to_owned(), "kebab-case".to_owned()),
+                ("PascalCase".to_owned(), "PascalCase".to_owned()),
+                ("snake_case".to_owned(), "snake_case".to_owned()),
+                ("With_nums-123".to_owned(), "With_nums-123".to_owned())
             ])
         );
     }

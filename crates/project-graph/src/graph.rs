@@ -1,6 +1,8 @@
 use moon_cache::CacheEngine;
-use moon_config::constants::FLAG_PROJECTS_USING_GLOB;
-use moon_config::{GlobalProjectConfig, ProjectAlias, ProjectID, ProjectLanguage, WorkspaceConfig};
+use moon_config::{
+    GlobalProjectConfig, ProjectAlias, ProjectID, ProjectLanguage, WorkspaceConfig,
+    WorkspaceProjects,
+};
 use moon_logger::{color, debug, map_list, trace};
 use moon_platform_node::{infer_tasks_from_package, load_project_aliases_from_packages};
 use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
@@ -25,53 +27,45 @@ async fn load_projects_from_cache(
     workspace_config: &WorkspaceConfig,
     engine: &CacheEngine,
 ) -> Result<ProjectsSourceMap, ProjectError> {
-    // Projects were mapped manually and are not using globs
-    if !workspace_config
-        .projects
-        .contains_key(FLAG_PROJECTS_USING_GLOB)
-    {
-        return Ok(workspace_config.projects.clone());
-    }
+    let projects = match &workspace_config.projects {
+        WorkspaceProjects::Map(map) => map.clone(),
+        WorkspaceProjects::List(globs) => {
+            let mut cache = engine.cache_projects_state().await?;
 
-    let mut cache = engine.cache_projects_state().await?;
+            // Return the values from the cache
+            if !cache.item.projects.is_empty() {
+                debug!(target: LOG_TARGET, "Loading projects from cache");
 
-    // Return the values from the cache
-    if !cache.item.projects.is_empty() {
-        debug!(target: LOG_TARGET, "Loading projects from cache");
-
-        return Ok(cache.item.projects);
-    }
-
-    // Extract globs from our fake projects map
-    let globs = workspace_config
-        .projects
-        .iter()
-        .filter_map(|(key, value)| {
-            if key == FLAG_PROJECTS_USING_GLOB {
-                None
-            } else {
-                Some(value.clone())
+                return Ok(cache.item.projects);
             }
-        })
-        .collect::<Vec<String>>();
+
+            // Generate a new projects map by globbing the filesystem
+            debug!(
+                target: LOG_TARGET,
+                "Finding projects with globs: {}",
+                map_list(globs, |g| color::file(g))
+            );
+
+            let mut map = HashMap::new();
+
+            detect_projects_with_globs(workspace_root, globs, &mut map)?;
+
+            // Update the cache
+            cache.item.globs = globs.clone();
+            cache.item.projects = map.clone();
+            cache.save().await?;
+
+            map
+        }
+    };
 
     debug!(
         target: LOG_TARGET,
-        "Finding projects with globs: {}",
-        map_list(&globs, |g| color::file(g))
+        "Creating project graph with {} projects",
+        projects.len(),
     );
 
-    // Generate a new projects map by globbing the filesystem
-    let mut map = HashMap::new();
-
-    detect_projects_with_globs(workspace_root, &globs, &mut map)?;
-
-    // Update the cache
-    cache.item.globs = globs;
-    cache.item.projects = map.clone();
-    cache.save().await?;
-
-    Ok(map)
+    Ok(projects)
 }
 
 async fn load_project_aliases(
@@ -112,7 +106,7 @@ pub struct ProjectGraph {
 
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
-    projects_map: HashMap<ProjectID, String>,
+    pub projects_map: HashMap<ProjectID, String>,
 
     /// The workspace configuration. Necessary for project variants.
     /// Is loaded from `.moon/workspace.yml`.
@@ -129,12 +123,6 @@ impl ProjectGraph {
         global_config: GlobalProjectConfig,
         cache: &CacheEngine,
     ) -> Result<ProjectGraph, ProjectError> {
-        debug!(
-            target: LOG_TARGET,
-            "Creating project graph with {} projects",
-            workspace_config.projects.len(),
-        );
-
         let mut graph = DiGraph::new();
 
         // Add a virtual root node

@@ -12,7 +12,10 @@ fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidationError> {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(untagged)]
+#[serde(
+    untagged,
+    expecting = "expected a boolean or a relative file system path"
+)]
 pub enum TaskOptionEnvFile {
     Enabled(bool),
     File(String),

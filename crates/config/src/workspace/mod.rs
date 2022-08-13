@@ -4,7 +4,6 @@ pub mod node;
 mod typescript;
 mod vcs;
 
-use crate::constants::FLAG_PROJECTS_USING_GLOB;
 use crate::errors::map_validation_errors_to_figment_errors;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
@@ -15,14 +14,10 @@ use figment::{
 };
 use moon_utils::string_vec;
 use node::NodeConfig;
-use schemars::gen::SchemaGenerator;
-use schemars::schema::Schema;
-use schemars::{schema_for, JsonSchema};
-use serde::de::{self, MapAccess, SeqAccess};
-use serde::{Deserialize, Deserializer, Serialize};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
-use std::fmt;
 use std::path::PathBuf;
 pub use typescript::TypeScriptConfig;
 use validator::{Validate, ValidationError};
@@ -33,17 +28,15 @@ type ProjectsMap = HashMap<String, FilePath>;
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
-fn validate_projects(projects: &ProjectsMap) -> Result<(), ValidationError> {
-    if projects.contains_key(FLAG_PROJECTS_USING_GLOB) {
-        return Ok(());
-    }
+fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidationError> {
+    if let WorkspaceProjects::Map(map) = projects {
+        for (key, value) in map {
+            validate_id(&format!("projects.{}", key), key)?;
 
-    for (key, value) in projects {
-        validate_id(&format!("projects.{}", key), key)?;
-
-        match validate_child_relative_path("projects", value) {
-            Ok(_) => {}
-            Err(e) => return Err(e),
+            match validate_child_relative_path("projects", value) {
+                Ok(_) => {}
+                Err(e) => return Err(e),
+            }
         }
     }
 
@@ -77,6 +70,22 @@ impl Default for ActionRunnerConfig {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+#[serde(
+    untagged,
+    expecting = "expected a sequence of globs or a map of projects"
+)]
+pub enum WorkspaceProjects {
+    List(Vec<FileGlob>),
+    Map(ProjectsMap),
+}
+
+impl Default for WorkspaceProjects {
+    fn default() -> Self {
+        WorkspaceProjects::Map(HashMap::new())
+    }
+}
+
 /// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
@@ -91,10 +100,8 @@ pub struct WorkspaceConfig {
     #[validate]
     pub node: NodeConfig,
 
-    #[serde(deserialize_with = "deserialize_projects")]
-    #[schemars(schema_with = "make_projects_schema")]
     #[validate(custom = "validate_projects")]
-    pub projects: ProjectsMap,
+    pub projects: WorkspaceProjects,
 
     #[validate]
     pub typescript: TypeScriptConfig,
@@ -171,77 +178,6 @@ impl WorkspaceConfig {
     }
 }
 
-// SERDE
-
-struct DeserializeProjects;
-
-impl<'de> de::Visitor<'de> for DeserializeProjects {
-    type Value = ProjectsMap;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a sequence of globs or a map of projects")
-    }
-
-    fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: MapAccess<'de>,
-    {
-        let mut map = HashMap::with_capacity(visitor.size_hint().unwrap_or(0));
-
-        while let Some((key, value)) = visitor.next_entry()? {
-            map.insert(key, value);
-        }
-
-        Ok(map)
-    }
-
-    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        let mut map = HashMap::new();
-        let mut index: u8 = 65; // ASCII A
-
-        while let Some(elem) = visitor.next_element()? {
-            // We can't use an integer as a key, as our project ID
-            // validation will fail, so convert integers to ASCII chars.
-            map.insert((index as char).to_string(), elem);
-            index += 1;
-        }
-
-        // We want to defer globbing so that we can cache it through
-        // our engine, so we must fake this here until config resolving
-        // has completed. Annoying, but a serde limitation.
-        map.insert(FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned());
-
-        Ok(map)
-    }
-}
-
-fn deserialize_projects<'de, D>(deserializer: D) -> Result<ProjectsMap, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    deserializer.deserialize_any(DeserializeProjects)
-}
-
-// JSON SCHEMA
-
-#[derive(JsonSchema)]
-#[serde(untagged)]
-enum ProjectsField {
-    #[allow(dead_code)]
-    Map(ProjectsMap),
-    #[allow(dead_code)]
-    Globs(Vec<FileGlob>),
-}
-
-fn make_projects_schema(_gen: &mut SchemaGenerator) -> Schema {
-    let root = schema_for!(ProjectsField);
-
-    Schema::Object(root.schema)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -268,7 +204,7 @@ mod tests {
                     action_runner: ActionRunnerConfig::default(),
                     extends: None,
                     node: NodeConfig::default(),
-                    projects: HashMap::new(),
+                    projects: WorkspaceProjects::default(),
                     typescript: TypeScriptConfig::default(),
                     vcs: VcsConfig::default(),
                     schema: String::new(),
@@ -479,7 +415,7 @@ node:
                             package_manager: NodePackageManager::Yarn,
                             ..NodeConfig::default()
                         },
-                        projects: HashMap::new(),
+                        projects: WorkspaceProjects::default(),
                         typescript: TypeScriptConfig::default(),
                         vcs: VcsConfig::default(),
                         schema: String::new(),
@@ -849,7 +785,7 @@ projects: {}
 
         #[test]
         #[should_panic(
-            expected = "invalid type: found string \"apps/*\", expected a sequence of globs or a map of projects for key \"workspace.projects\""
+            expected = "expected a sequence of globs or a map of projects for key \"workspace.projects\""
         )]
         fn invalid_type() {
             figment::Jail::expect_with(|jail| {
@@ -919,10 +855,10 @@ projects:
 
                 assert_eq!(
                     config.projects,
-                    HashMap::from([
+                    WorkspaceProjects::Map(HashMap::from([
                         (String::from("app"), String::from("apps/app")),
                         (String::from("foo"), String::from("./packages/foo"))
-                    ]),
+                    ])),
                 );
 
                 Ok(())
@@ -944,11 +880,7 @@ projects:
 
                 assert_eq!(
                     config.projects,
-                    HashMap::from([
-                        (FLAG_PROJECTS_USING_GLOB.to_owned(), "true".to_owned()),
-                        ("A".to_owned(), "apps/*".to_owned()),
-                        ("B".to_owned(), "packages/*".to_owned())
-                    ])
+                    WorkspaceProjects::List(string_vec!["apps/*", "packages/*"])
                 );
 
                 Ok(())
@@ -978,7 +910,7 @@ vcs:
                         action_runner: ActionRunnerConfig::default(),
                         extends: None,
                         node: NodeConfig::default(),
-                        projects: HashMap::new(),
+                        projects: WorkspaceProjects::default(),
                         typescript: TypeScriptConfig::default(),
                         vcs: VcsConfig {
                             manager: VcsManager::Svn,

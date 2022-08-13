@@ -6,7 +6,7 @@ pub use regex::{Captures, Regex};
 lazy_static! {
     // Capture group for IDs/names/etc
     static ref ID_GROUP: &'static str = "([A-Za-z]{1}[0-9A-Za-z/_-]*)";
-    static ref ID_CLEAN: Regex = Regex::new("[^a-z0-9/_-]+").unwrap();
+    static ref ID_CLEAN: Regex = Regex::new("[^0-9A-Za-z/_-]+").unwrap();
 
     pub static ref ID_PATTERN: Regex = Regex::new(&format!("^{}$", *ID_GROUP)).unwrap();
     pub static ref TARGET_PATTERN: Regex = Regex::new(

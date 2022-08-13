@@ -1054,6 +1054,11 @@ mod multi_run {
             .arg("node:mjs")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("[node:cjs] stdout").eval(&output));
+        assert!(predicate::str::contains("[node:mjs] stdout").eval(&output));
+        assert!(predicate::str::contains("[node:cjs] stderr").eval(&output));
+        assert!(predicate::str::contains("[node:mjs] stderr").eval(&output));
     }
 }

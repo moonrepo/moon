@@ -312,12 +312,11 @@ impl<'a> TargetRunner<'a> {
         };
 
         // Transitive targets may run concurrently, so differentiate them with a prefix.
-        let stream_prefix =
-            if is_real_ci || !is_primary || is_primary && context.primary_targets.len() > 1 {
-                Some(&self.task.target)
-            } else {
-                None
-            };
+        let stream_prefix = if is_real_ci || !is_primary || context.primary_targets.len() > 1 {
+            Some(&self.task.target)
+        } else {
+            None
+        };
 
         loop {
             let mut attempt = Attempt::new(attempt_index);

@@ -118,7 +118,7 @@ impl NodeTool {
         starting_dir: &Path,
         bin_name: &str,
     ) -> Result<PathBuf, ToolchainError> {
-        match node::find_package_bin(starting_dir, bin_name) {
+        match node::find_package_bin(starting_dir, bin_name)? {
             Some(path) => Ok(path),
             None => Err(ToolchainError::MissingNodeModuleBin(bin_name.to_owned())),
         }

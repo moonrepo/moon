@@ -186,7 +186,7 @@ impl PackageManager<NodeTool> for PnpmTool {
         Ok(if cfg!(windows) {
             bin_path // already extracted from *.cmd
         } else {
-            node::extract_canonical_bin_path_from_bin_file(bin_path)
+            node::extract_canonical_bin_path_from_bin_file(bin_path)?
         })
     }
 

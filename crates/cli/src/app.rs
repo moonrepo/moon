@@ -245,7 +245,7 @@ pub enum Commands {
         alias = "r"
     )]
     Run {
-        #[clap(help = "List of targets (project:task) to run")]
+        #[clap(required = true, help = "List of targets (project:task) to run")]
         targets: Vec<TargetID>,
 
         #[clap(

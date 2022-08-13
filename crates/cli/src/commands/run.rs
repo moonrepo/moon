@@ -41,7 +41,7 @@ pub async fn run(
         None
     };
 
-    // Run targets based on affected files
+    // Run targets, optionally based on affected files
     let (primary_targets, inserted_count) =
         dep_graph.run_targets_by_id(target_ids, &workspace.projects, &touched_files)?;
 

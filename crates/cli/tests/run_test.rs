@@ -1040,3 +1040,20 @@ mod output_styles {
         assert_snapshot!(get_assert_output(&assert));
     }
 }
+
+mod multi_run {
+    use super::*;
+
+    #[test]
+    fn can_run_many_targets() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("node:cjs")
+            .arg("node:mjs")
+            .assert();
+
+        assert_snapshot!(get_assert_output(&assert));
+    }
+}

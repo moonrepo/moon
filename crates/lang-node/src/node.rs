@@ -1,6 +1,7 @@
 use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;
+use moon_error::{map_io_to_fs_error, MoonError};
 use moon_lang::LangError;
 use moon_utils::path;
 use regex::Regex;
@@ -40,24 +41,29 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
     PathBuf::from(captures.get(0).unwrap().as_str())
 }
 
-#[cached]
+#[cached(result)]
 #[track_caller]
-pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> PathBuf {
-    let contents = fs::read_to_string(&bin_path).unwrap();
+pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> Result<PathBuf, MoonError> {
+    let contents =
+        fs::read_to_string(&bin_path).map_err(|e| map_io_to_fs_error(e, bin_path.clone()))?;
 
     // Is most likely a symlinked JavaScript file!
     if contents.starts_with("#!/usr/bin/env node") || contents.starts_with("#!/usr/bin/node") {
         if bin_path.is_symlink() {
-            return bin_path.canonicalize().unwrap();
+            return bin_path
+                .canonicalize()
+                .map_err(|e| map_io_to_fs_error(e, bin_path.clone()));
         }
 
-        return bin_path;
+        return Ok(bin_path);
     }
 
     let extracted_path = parse_bin_file(&bin_path, contents);
 
     // canonicalize() actually causes things to break, so normalize
-    path::normalize(bin_path.parent().unwrap().join(extracted_path))
+    Ok(path::normalize(
+        bin_path.parent().unwrap().join(extracted_path),
+    ))
 }
 
 pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {
@@ -78,7 +84,7 @@ pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Opti
 pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
     starting_dir: P,
     bin_name: T,
-) -> Option<PathBuf> {
+) -> Result<Option<PathBuf>, MoonError> {
     let starting_dir = starting_dir.as_ref();
     let bin_name = bin_name.as_ref();
     let bin_path = starting_dir
@@ -86,13 +92,13 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
         .join(get_bin_name_suffix(bin_name, "cmd", true));
 
     if bin_path.exists() {
-        return Some(extract_canonical_bin_path_from_bin_file(bin_path));
+        return Ok(Some(extract_canonical_bin_path_from_bin_file(bin_path)?));
     }
 
-    match starting_dir.parent() {
-        Some(dir) => find_package_bin(dir, bin_name),
+    Ok(match starting_dir.parent() {
+        Some(dir) => find_package_bin(dir, bin_name)?,
         None => None,
-    }
+    })
 }
 
 pub fn find_package_manager_bin<P: AsRef<Path>, T: AsRef<str>>(
@@ -618,7 +624,7 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
             let path = find_package_bin(sandbox.path(), "baz");
 
             assert_eq!(
-                path.unwrap(),
+                path.unwrap().unwrap(),
                 sandbox
                     .path()
                     .join("node_modules")
@@ -633,7 +639,7 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
             let path = find_package_bin(sandbox.path().join("nested"), "baz");
 
             assert_eq!(
-                path.unwrap(),
+                path.unwrap().unwrap(),
                 sandbox
                     .path()
                     .join("node_modules")
@@ -647,7 +653,7 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
             let sandbox = create_node_modules_sandbox();
             let path = find_package_bin(sandbox.path(), "unknown-binary");
 
-            assert_eq!(path, None);
+            assert_eq!(path.unwrap(), None);
         }
     }
 }

@@ -36,11 +36,15 @@ pub fn detect_projects_with_globs(
 
     // Root-level project has special handling
     if globs.contains(&root_source) {
-        let root_id = workspace_root
+        let mut root_id = workspace_root
             .file_name()
-            .unwrap()
+            .unwrap_or_default()
             .to_str()
-            .unwrap_or("root");
+            .unwrap_or_default();
+
+        if root_id.is_empty() {
+            root_id = "root";
+        }
 
         projects.insert(regex::clean_id(root_id), root_source);
     }

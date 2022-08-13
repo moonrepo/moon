@@ -96,10 +96,18 @@ pub async fn create_target_command(
             cmd = node.get_npm().get_bin_path().clone();
         }
         "pnpm" => {
-            cmd = node.get_pnpm().unwrap().get_bin_path().clone();
+            cmd = node
+                .get_pnpm()
+                .expect("pnpm must be enabled")
+                .get_bin_path()
+                .clone();
         }
         "yarn" => {
-            cmd = node.get_yarn().unwrap().get_bin_path().clone();
+            cmd = node
+                .get_yarn()
+                .expect("yarn must be enabled")
+                .get_bin_path()
+                .clone();
         }
         bin => {
             let bin_path = path::relative_from(

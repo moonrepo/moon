@@ -14,14 +14,14 @@ pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::er
     if let Some(id) = target_id {
         let target = Target::parse(id)?;
 
-        graph.run_target(&target, &projects, None)?;
+        graph.run_target(&target, &projects, &None)?;
         graph.run_target_dependents(&target, &projects)?;
 
     // Show all targets and actions
     } else {
         for project_id in projects.ids() {
             for task_id in projects.load(&project_id)?.tasks.keys() {
-                graph.run_target(&Target::new(&project_id, task_id)?, &projects, None)?;
+                graph.run_target(&Target::new(&project_id, task_id)?, &projects, &None)?;
             }
         }
     }

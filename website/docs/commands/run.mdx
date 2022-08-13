@@ -2,13 +2,16 @@
 title: run
 ---
 
-The `moon run` (or `moon r`) command will run a [target](../concepts/target) (a task within a
-project) and all of it's dependencies in topological order. Each run will incrementally cache each
-task, improving speed and development times... over time.
+The `moon run` (or `moon r`) command will run one or many [targets](../concepts/target) (a task
+within a project) and all of its dependencies in topological order. Each run will incrementally
+cache each task, improving speed and development times... over time.
 
 ```shell
 # Run `lint` in project `app`
 $ moon run app:lint
+
+# Run `lint` in project `app` and `server`
+$ moon run app:lint server:lint
 
 # Run `lint` in all projects
 $ moon run :lint
@@ -18,7 +21,7 @@ $ moon run :lint
 
 ### Arguments
 
-- `<target>` - [Target](../concepts/target) to run.
+- `...<target>` - [Targets](../concepts/target) to run.
 - `[-- <args>]` - Additional arguments to
   [pass to the underlying command](../run-task#passing-arguments-to-the-underlying-command).
 

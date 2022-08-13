@@ -102,13 +102,13 @@ async fn detects_cycles() {
 
     let mut graph = DepGraph::default();
     graph
-        .run_target(&Target::new("cycle", "a").unwrap(), &projects, None)
+        .run_target(&Target::new("cycle", "a").unwrap(), &projects, &None)
         .unwrap();
     graph
-        .run_target(&Target::new("cycle", "b").unwrap(), &projects, None)
+        .run_target(&Target::new("cycle", "b").unwrap(), &projects, &None)
         .unwrap();
     graph
-        .run_target(&Target::new("cycle", "c").unwrap(), &projects, None)
+        .run_target(&Target::new("cycle", "c").unwrap(), &projects, &None)
         .unwrap();
 
     assert_eq!(
@@ -126,10 +126,10 @@ mod run_target {
 
         let mut graph = DepGraph::default();
         graph
-            .run_target(&Target::new("tasks", "test").unwrap(), &projects, None)
+            .run_target(&Target::new("tasks", "test").unwrap(), &projects, &None)
             .unwrap();
         graph
-            .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+            .run_target(&Target::new("tasks", "lint").unwrap(), &projects, &None)
             .unwrap();
         assert_snapshot!(graph.to_dot());
 
@@ -159,13 +159,13 @@ mod run_target {
 
         let mut graph = DepGraph::default();
         graph
-            .run_target(&Target::new("basic", "test").unwrap(), &projects, None)
+            .run_target(&Target::new("basic", "test").unwrap(), &projects, &None)
             .unwrap();
         graph
-            .run_target(&Target::new("basic", "lint").unwrap(), &projects, None)
+            .run_target(&Target::new("basic", "lint").unwrap(), &projects, &None)
             .unwrap();
         graph
-            .run_target(&Target::new("chain", "a").unwrap(), &projects, None)
+            .run_target(&Target::new("chain", "a").unwrap(), &projects, &None)
             .unwrap();
 
         assert_snapshot!(graph.to_dot());
@@ -207,13 +207,13 @@ mod run_target {
 
         let mut graph = DepGraph::default();
         graph
-            .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+            .run_target(&Target::new("tasks", "lint").unwrap(), &projects, &None)
             .unwrap();
         graph
-            .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+            .run_target(&Target::new("tasks", "lint").unwrap(), &projects, &None)
             .unwrap();
         graph
-            .run_target(&Target::new("tasks", "lint").unwrap(), &projects, None)
+            .run_target(&Target::new("tasks", "lint").unwrap(), &projects, &None)
             .unwrap();
 
         assert_snapshot!(graph.to_dot());
@@ -243,7 +243,7 @@ mod run_target {
 
         let mut graph = DepGraph::default();
         graph
-            .run_target(&Target::parse(":build").unwrap(), &projects, None)
+            .run_target(&Target::parse(":build").unwrap(), &projects, &None)
             .unwrap();
 
         assert_snapshot!(graph.to_dot());
@@ -286,7 +286,7 @@ mod run_target {
 
         let mut graph = DepGraph::default();
         graph
-            .run_target(&Target::parse("^:lint").unwrap(), &projects, None)
+            .run_target(&Target::parse("^:lint").unwrap(), &projects, &None)
             .unwrap();
     }
 
@@ -297,7 +297,7 @@ mod run_target {
 
         let mut graph = DepGraph::default();
         graph
-            .run_target(&Target::parse("~:lint").unwrap(), &projects, None)
+            .run_target(&Target::parse("~:lint").unwrap(), &projects, &None)
             .unwrap();
     }
 
@@ -308,7 +308,7 @@ mod run_target {
 
         let mut graph = DepGraph::default();
         graph
-            .run_target(&Target::new("unknown", "test").unwrap(), &projects, None)
+            .run_target(&Target::new("unknown", "test").unwrap(), &projects, &None)
             .unwrap();
 
         assert_snapshot!(graph.to_dot());
@@ -321,7 +321,7 @@ mod run_target {
 
         let mut graph = DepGraph::default();
         graph
-            .run_target(&Target::new("tasks", "build").unwrap(), &projects, None)
+            .run_target(&Target::new("tasks", "build").unwrap(), &projects, &None)
             .unwrap();
 
         assert_snapshot!(graph.to_dot());
@@ -338,20 +338,21 @@ mod run_target_if_touched {
         let mut touched_files = HashSet::new();
         touched_files.insert(get_fixtures_dir("tasks").join("input-a/a.ts"));
         touched_files.insert(get_fixtures_dir("tasks").join("input-c/c.ts"));
+        let touched_files = Some(touched_files);
 
         let mut graph = DepGraph::default();
         graph
             .run_target(
                 &Target::new("inputA", "a").unwrap(),
                 &projects,
-                Some(&touched_files),
+                &touched_files,
             )
             .unwrap();
         graph
             .run_target(
                 &Target::new("inputB", "b").unwrap(),
                 &projects,
-                Some(&touched_files),
+                &touched_files,
             )
             .unwrap();
 
@@ -366,27 +367,28 @@ mod run_target_if_touched {
         touched_files.insert(get_fixtures_dir("tasks").join("input-a/a2.ts"));
         touched_files.insert(get_fixtures_dir("tasks").join("input-b/b2.ts"));
         touched_files.insert(get_fixtures_dir("tasks").join("input-c/any.ts"));
+        let touched_files = Some(touched_files);
 
         let mut graph = DepGraph::default();
         graph
             .run_target(
                 &Target::new("inputA", "a").unwrap(),
                 &projects,
-                Some(&touched_files),
+                &touched_files,
             )
             .unwrap();
         graph
             .run_target(
                 &Target::new("inputB", "b2").unwrap(),
                 &projects,
-                Some(&touched_files),
+                &touched_files,
             )
             .unwrap();
         graph
             .run_target(
                 &Target::new("inputC", "c").unwrap(),
                 &projects,
-                Some(&touched_files),
+                &touched_files,
             )
             .unwrap();
 

@@ -91,6 +91,7 @@ alternatives:
 - Create a task for each command, and link them as dependencies with
   [`deps`](./config/project#deps). This allows for each command to be incrementally cached (when
   enabled).
+- Create a task for each command, and run them concurrently with [`moon run`](./commands/run).
 - Wrap all commands in an external file, and execute that file instead. Refer to the
   [piping question](#how-to-pipe-or-redirect-tasks) above for an example.
 

@@ -46,3 +46,45 @@ impl Default for ActionRunnerConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::errors::map_validation_errors_to_figment_errors;
+    use figment::{
+        providers::{Format, Serialized, Yaml},
+        Figment,
+    };
+    use std::path::PathBuf;
+
+    const CONFIG_FILENAME: &str = "action-runner.yml";
+
+    fn load_jailed_config() -> Result<ActionRunnerConfig, figment::Error> {
+        let figment = Figment::from(Serialized::defaults(ActionRunnerConfig::default()))
+            .merge(Yaml::file(&PathBuf::from(CONFIG_FILENAME)));
+        let config: ActionRunnerConfig = figment.extract()?;
+
+        config
+            .validate()
+            .map_err(|e| map_validation_errors_to_figment_errors(&figment, &e)[0].clone())?;
+
+        Ok(config)
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid lifetime duration: expected number at 0")]
+    fn invalid_cache_lifetime() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                CONFIG_FILENAME,
+                r#"
+cacheLifetime: 'bad unit'
+"#,
+            )?;
+
+            load_jailed_config()?;
+
+            Ok(())
+        });
+    }
+}

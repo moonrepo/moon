@@ -92,8 +92,11 @@ impl CacheEngine {
             lifetime
         );
 
-        let (hashes_deleted, hashes_bytes) = fs::clean_dir(&self.hashes_dir, duration).await?;
-        let (outs_deleted, outs_bytes) = fs::clean_dir(&self.outputs_dir, duration).await?;
+        let (hashes_deleted, hashes_bytes) =
+            fs::remove_dir_stale_contents(&self.hashes_dir, duration).await?;
+
+        let (outs_deleted, outs_bytes) =
+            fs::remove_dir_stale_contents(&self.outputs_dir, duration).await?;
 
         trace!(
             target: LOG_TARGET,

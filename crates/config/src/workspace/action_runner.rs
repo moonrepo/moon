@@ -9,7 +9,7 @@ fn validate_cache_lifetime(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_duration",
             "cache_lifetime",
-            format!("Invalid lifetime duration: {}", e.to_string()),
+            format!("Invalid lifetime duration: {}", e),
         ));
     }
 
@@ -33,7 +33,7 @@ pub struct ActionRunnerConfig {
 impl Default for ActionRunnerConfig {
     fn default() -> Self {
         ActionRunnerConfig {
-            cache_lifetime: "7days".to_owned(),
+            cache_lifetime: "7 days".to_owned(),
             implicit_inputs: string_vec![
                 // When a project changes
                 "package.json",

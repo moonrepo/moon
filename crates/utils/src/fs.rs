@@ -9,42 +9,6 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use tokio::fs;
 
-pub async fn clean_dir<P: AsRef<Path>>(
-    dir: P,
-    duration: Duration,
-) -> Result<(usize, u64), MoonError> {
-    let mut files_deleted: usize = 0;
-    let mut bytes_saved: u64 = 0;
-    let threshold = SystemTime::now() - duration;
-
-    for entry in read_dir(dir.as_ref()).await? {
-        let path = entry.path();
-
-        if path.is_file() {
-            let bytes;
-
-            if let Ok(metadata) = entry.metadata().await {
-                bytes = metadata.len();
-
-                // Not stale yet
-                if metadata.created()? > threshold {
-                    continue;
-                }
-            } else {
-                // We cant verify staleness
-                continue;
-            }
-
-            if let Ok(_) = remove_file(path).await {
-                files_deleted += 1;
-                bytes_saved += bytes;
-            }
-        }
-    }
-
-    Ok((files_deleted, bytes_saved))
-}
-
 pub fn clean_json<T: AsRef<str>>(json: T) -> Result<String, MoonError> {
     let json = json.as_ref();
 
@@ -260,6 +224,41 @@ pub async fn remove_dir_all<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
     }
 
     Ok(())
+}
+
+pub type RemoveDirContentsResult = (usize, u64);
+
+pub async fn remove_dir_stale_contents<P: AsRef<Path>>(
+    dir: P,
+    duration: Duration,
+) -> Result<RemoveDirContentsResult, MoonError> {
+    let mut files_deleted: usize = 0;
+    let mut bytes_saved: u64 = 0;
+    let threshold = SystemTime::now() - duration;
+
+    for entry in read_dir(dir.as_ref()).await? {
+        let path = entry.path();
+
+        if path.is_file() {
+            let mut bytes = 0;
+
+            if let Ok(metadata) = entry.metadata().await {
+                bytes = metadata.len();
+
+                // Not stale yet
+                if metadata.created()? > threshold {
+                    continue;
+                }
+            }
+
+            if remove_file(path).await.is_ok() {
+                files_deleted += 1;
+                bytes_saved += bytes;
+            }
+        }
+    }
+
+    Ok((files_deleted, bytes_saved))
 }
 
 pub async fn write<T: AsRef<Path>>(path: T, data: impl AsRef<[u8]>) -> Result<(), MoonError> {

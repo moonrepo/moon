@@ -6,6 +6,7 @@ pub mod queries;
 
 use crate::commands::bin::bin;
 use crate::commands::ci::{ci, CiOptions};
+use crate::commands::clean::{clean, CleanOptions};
 use crate::commands::dep_graph::dep_graph;
 use crate::commands::init::{init, InitOptions};
 use crate::commands::migrate;
@@ -73,6 +74,12 @@ pub async fn run_cli() {
                 head: head.clone(),
                 job: *job,
                 job_total: *job_total,
+            })
+            .await
+        }
+        Commands::Clean { lifetime } => {
+            clean(CleanOptions {
+                cache_liftime: lifetime.to_owned(),
             })
             .await
         }

@@ -83,8 +83,12 @@ impl CacheEngine {
         .await
     }
 
-    pub async fn clean_stale_cache(&self, lifetime: &str) -> Result<(), MoonError> {
-        let duration = time::parse_duration(lifetime).expect("invalid duration");
+    pub async fn clean_stale_cache(
+        &self,
+        lifetime: &str,
+    ) -> Result<fs::RemoveDirContentsResult, MoonError> {
+        let duration = time::parse_duration(lifetime)
+            .map_err(|e| MoonError::Generic(format!("Invalid lifetime: {}", e)))?;
 
         trace!(
             target: LOG_TARGET,
@@ -98,14 +102,17 @@ impl CacheEngine {
         let (outs_deleted, outs_bytes) =
             fs::remove_dir_stale_contents(&self.outputs_dir, duration).await?;
 
+        let deleted = hashes_deleted + outs_deleted;
+        let bytes = hashes_bytes + outs_bytes;
+
         trace!(
             target: LOG_TARGET,
             "Deleted {} files and saved {} bytes",
-            hashes_deleted + outs_deleted,
-            hashes_bytes + outs_bytes
+            deleted,
+            bytes
         );
 
-        Ok(())
+        Ok((deleted, bytes))
     }
 
     pub async fn create_hash_archive(

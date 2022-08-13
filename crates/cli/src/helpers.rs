@@ -1,6 +1,27 @@
 use console::{set_colors_enabled, set_colors_enabled_stderr};
+use indicatif::{ProgressBar, ProgressStyle};
 use moon_logger::color::{no_color, supports_color};
+use moon_terminal::create_theme;
 use std::env;
+use std::time::Duration;
+
+pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F) {
+    let pb = ProgressBar::new_spinner();
+    pb.set_message(start.as_ref().to_owned());
+    pb.enable_steady_tick(Duration::from_millis(50));
+
+    move |finish| {
+        let theme = create_theme();
+
+        pb.set_style(
+            ProgressStyle::default_spinner()
+                .template("{prefix} {msg}")
+                .unwrap(),
+        );
+        pb.set_prefix(theme.success_prefix.to_string());
+        pb.finish_with_message(finish.as_ref().to_owned());
+    }
+}
 
 fn setup_no_colors() {
     env::set_var("NO_COLOR", "1");

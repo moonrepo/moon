@@ -1,20 +1,22 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, WorkspaceConfig};
+use moon_config::{
+    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, WorkspaceConfig, WorkspaceProjects,
+};
 use moon_project_graph::ProjectGraph;
 use moon_utils::string_vec;
-use moon_utils::test::get_fixtures_dir;
+use moon_utils::test::{create_sandbox, create_sandbox_with_git, get_fixtures_dir};
 use std::collections::HashMap;
 
 async fn get_dependencies_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependencies");
     let workspace_config = WorkspaceConfig {
-        projects: HashMap::from([
+        projects: WorkspaceProjects::Map(HashMap::from([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
             ("d".to_owned(), "d".to_owned()),
-        ]),
+        ])),
         ..WorkspaceConfig::default()
     };
 
@@ -31,12 +33,12 @@ async fn get_dependencies_graph() -> ProjectGraph {
 async fn get_dependents_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependents");
     let workspace_config = WorkspaceConfig {
-        projects: HashMap::from([
+        projects: WorkspaceProjects::Map(HashMap::from([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
             ("d".to_owned(), "d".to_owned()),
-        ]),
+        ])),
         ..WorkspaceConfig::default()
     };
 
@@ -53,11 +55,11 @@ async fn get_dependents_graph() -> ProjectGraph {
 async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/aliases");
     let workspace_config = WorkspaceConfig {
-        projects: HashMap::from([
+        projects: WorkspaceProjects::Map(HashMap::from([
             ("noLang".to_owned(), "no-lang".to_owned()),
             ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
             ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),
-        ]),
+        ])),
         node: node_config,
         ..WorkspaceConfig::default()
     };
@@ -70,6 +72,86 @@ async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
     )
     .await
     .unwrap()
+}
+
+mod globs {
+    use super::*;
+    use std::fs;
+
+    #[tokio::test]
+    async fn ignores_dot_folders() {
+        // Use git so we can test against the .git folder
+        let fixture = create_sandbox_with_git("projects");
+
+        // Create fake node modules
+        fs::create_dir_all(fixture.path().join("node_modules/moon")).unwrap();
+        fs::write(fixture.path().join("node_modules/moon/package.json"), "{}").unwrap();
+
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::List(string_vec!["**"]),
+            ..WorkspaceConfig::default()
+        };
+
+        let graph = ProjectGraph::create(
+            fixture.path(),
+            &workspace_config,
+            GlobalProjectConfig::default(),
+            &CacheEngine::create(fixture.path()).await.unwrap(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            graph.projects_map,
+            HashMap::from([
+                ("advanced".to_owned(), "advanced".to_owned()),
+                ("bar".to_owned(), "deps/bar".to_owned()),
+                ("bash".to_owned(), "langs/bash".to_owned()),
+                ("basic".to_owned(), "basic".to_owned()),
+                ("baz".to_owned(), "deps/baz".to_owned()),
+                ("deps".to_owned(), "deps".to_owned()),
+                ("empty-config".to_owned(), "empty-config".to_owned()),
+                ("foo".to_owned(), "deps/foo".to_owned()),
+                ("js".to_owned(), "langs/js".to_owned()),
+                ("langs".to_owned(), "langs".to_owned()),
+                ("no-config".to_owned(), "no-config".to_owned()),
+                ("package-json".to_owned(), "package-json".to_owned()),
+                ("tasks".to_owned(), "tasks".to_owned()),
+                ("ts".to_owned(), "langs/ts".to_owned()),
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn supports_all_id_formats() {
+        let fixture = create_sandbox("project-graph/ids");
+
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::List(string_vec!["*"]),
+            ..WorkspaceConfig::default()
+        };
+
+        let graph = ProjectGraph::create(
+            fixture.path(),
+            &workspace_config,
+            GlobalProjectConfig::default(),
+            &CacheEngine::create(fixture.path()).await.unwrap(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            graph.projects_map,
+            HashMap::from([
+                ("camelCase".to_owned(), "camelCase".to_owned()),
+                ("Capital".to_owned(), "Capital".to_owned()),
+                ("kebab-case".to_owned(), "kebab-case".to_owned()),
+                ("PascalCase".to_owned(), "PascalCase".to_owned()),
+                ("snake_case".to_owned(), "snake_case".to_owned()),
+                ("With_nums-123".to_owned(), "With_nums-123".to_owned())
+            ])
+        );
+    }
 }
 
 mod get_dependencies_of {

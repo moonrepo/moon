@@ -13,6 +13,12 @@
 
 - Fixed an issue where output hydration was bypassing "off" cache.
 
+#### 🐞 Fixes
+
+- Fixed an issue where project globs would pickup dot folders (`.git`, `.moon`, etc) or
+  `node_modules`.
+- Fixed an issue where project names were stripping capital letters when using globs.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.63.

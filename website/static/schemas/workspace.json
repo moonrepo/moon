@@ -51,20 +51,10 @@
       ]
     },
     "projects": {
-      "title": "ProjectsField",
       "default": {},
-      "anyOf": [
+      "allOf": [
         {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "$ref": "#/definitions/WorkspaceProjects"
         }
       ]
     },
@@ -317,6 +307,22 @@
       "enum": [
         "git",
         "svn"
+      ]
+    },
+    "WorkspaceProjects": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
       ]
     },
     "YarnConfig": {

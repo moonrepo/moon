@@ -104,7 +104,7 @@ impl DepGraph {
 
     pub fn run_target(
         &mut self,
-        target: &Target,
+        target: Target,
         projects: &ProjectGraph,
         touched_files: Option<&TouchedFilePaths>,
     ) -> Result<usize, DepGraphError> {
@@ -152,7 +152,7 @@ impl DepGraph {
 
     pub fn run_target_dependents(
         &mut self,
-        target: &Target,
+        target: Target,
         projects: &ProjectGraph,
     ) -> Result<(), DepGraphError> {
         trace!(
@@ -169,11 +169,42 @@ impl DepGraph {
             let dependent = projects.load(&dependent_id)?;
 
             if dependent.tasks.contains_key(&task_id) {
-                self.run_target(&Target::new(&dependent_id, &task_id)?, projects, None)?;
+                self.run_target(Target::new(&dependent_id, &task_id)?, projects, None)?;
             }
         }
 
         Ok(())
+    }
+
+    pub fn run_targets_by_id(
+        &mut self,
+        target_ids: &[String],
+        projects: &ProjectGraph,
+        touched_files: Option<&TouchedFilePaths>,
+    ) -> Result<(Vec<String>, usize), DepGraphError> {
+        let mut qualified_targets = vec![];
+        let mut inserted_count = 0;
+
+        for target_id in target_ids {
+            let target = Target::parse(target_id)?;
+
+            // Extract the fully qualified target name from the task itself.
+            // We do this to resolve any project aliases being used.
+            if let Some(project_id) = &target.project_id {
+                qualified_targets.push(
+                    projects
+                        .load(project_id)?
+                        .get_task(&target.task_id)?
+                        .target
+                        .clone(),
+                );
+            }
+
+            // Keep track of how many transitive targets were inserted!
+            inserted_count += self.run_target(target, projects, touched_files)?;
+        }
+
+        Ok((qualified_targets, inserted_count))
     }
 
     pub fn sort_topological(&self) -> Result<Vec<NodeIndex>, DepGraphError> {

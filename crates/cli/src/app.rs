@@ -241,12 +241,12 @@ pub enum Commands {
     // moon run [...targets]
     #[clap(
         name = "run",
-        about = "Run a project task and all its dependent tasks.",
+        about = "Run one or many project tasks and their dependent tasks.",
         alias = "r"
     )]
     Run {
-        #[clap(help = "Target (project:task) to run")]
-        target: TargetID,
+        #[clap(required = true, help = "List of targets (project:task) to run")]
+        targets: Vec<TargetID>,
 
         #[clap(
             long,

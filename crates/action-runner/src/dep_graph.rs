@@ -102,12 +102,13 @@ impl DepGraph {
         Ok(self.install_deps(lang))
     }
 
-    pub fn run_target(
+    pub fn run_target<T: AsRef<Target>>(
         &mut self,
-        target: &Target,
+        target: T,
         projects: &ProjectGraph,
-        touched_files: Option<&TouchedFilePaths>,
+        touched_files: &Option<TouchedFilePaths>,
     ) -> Result<usize, DepGraphError> {
+        let target = target.as_ref();
         let task_id = &target.task_id;
         let mut inserted_count = 0;
 
@@ -150,11 +151,13 @@ impl DepGraph {
         Ok(inserted_count)
     }
 
-    pub fn run_target_dependents(
+    pub fn run_target_dependents<T: AsRef<Target>>(
         &mut self,
-        target: &Target,
+        target: T,
         projects: &ProjectGraph,
     ) -> Result<(), DepGraphError> {
+        let target = target.as_ref();
+
         trace!(
             target: LOG_TARGET,
             "Adding dependents to run for target {}",
@@ -169,11 +172,42 @@ impl DepGraph {
             let dependent = projects.load(&dependent_id)?;
 
             if dependent.tasks.contains_key(&task_id) {
-                self.run_target(&Target::new(&dependent_id, &task_id)?, projects, None)?;
+                self.run_target(Target::new(&dependent_id, &task_id)?, projects, &None)?;
             }
         }
 
         Ok(())
+    }
+
+    pub fn run_targets_by_id(
+        &mut self,
+        target_ids: &[String],
+        projects: &ProjectGraph,
+        touched_files: &Option<TouchedFilePaths>,
+    ) -> Result<(Vec<String>, usize), DepGraphError> {
+        let mut qualified_targets = vec![];
+        let mut inserted_count = 0;
+
+        for target_id in target_ids {
+            let target = Target::parse(target_id)?;
+
+            // Extract the fully qualified target name from the task itself.
+            // We do this to resolve any project aliases being used.
+            if let Some(project_id) = &target.project_id {
+                qualified_targets.push(
+                    projects
+                        .load(project_id)?
+                        .get_task(&target.task_id)?
+                        .target
+                        .clone(),
+                );
+            }
+
+            // Keep track of how many transitive targets were inserted!
+            inserted_count += self.run_target(target, projects, touched_files)?;
+        }
+
+        Ok((qualified_targets, inserted_count))
     }
 
     pub fn sort_topological(&self) -> Result<Vec<NodeIndex>, DepGraphError> {
@@ -337,7 +371,7 @@ impl DepGraph {
         project_id: &str,
         task_id: &str,
         projects: &ProjectGraph,
-        touched_files: Option<&TouchedFilePaths>,
+        touched_files: &Option<TouchedFilePaths>,
     ) -> Result<Option<NodeIndex>, DepGraphError> {
         let project = projects.load(project_id)?;
         let target_id = Target::format(&project.id, task_id)?;

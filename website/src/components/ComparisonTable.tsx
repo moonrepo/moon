@@ -200,7 +200,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Run multiple tasks with',
 		support: {
-			moon: '`moon run :task`',
+			moon: '`moon run :task` or `moon run a:task b:task ...`',
 			nx: '`nx run-many --target=target`',
 			turborepo: '`turbo run task`',
 		},

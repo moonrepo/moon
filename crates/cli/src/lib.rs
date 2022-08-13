@@ -142,7 +142,7 @@ pub async fn run_cli() {
             }
         },
         Commands::Run {
-            target,
+            targets,
             affected,
             dependents,
             status,
@@ -151,7 +151,7 @@ pub async fn run_cli() {
             upstream,
         } => {
             run(
-                target,
+                targets,
                 RunOptions {
                     affected: *affected,
                     dependents: *dependents,

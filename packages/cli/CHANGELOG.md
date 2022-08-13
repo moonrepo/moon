@@ -8,6 +8,7 @@
 - Added an `envFile` option to tasks, allowing `.env` files to be loaded for environment variables.
 - Updated the `outputStyle` task option with additional variants: `buffer`, `buffer-only-failure`,
   `hash`, `none`.
+- Updated `moon run` to support running multiple targets concurrently.
 
 #### 🐞 Fixes
 

@@ -220,6 +220,14 @@ impl ActionRunner {
             self.duration.unwrap()
         );
 
+        // Clean up stale cache and artifacts!
+        let workspace = self.workspace.read().await;
+
+        workspace
+            .cache
+            .clean_stale_cache(&workspace.config.action_runner.cache_lifetime)
+            .await?;
+
         Ok(results)
     }
 

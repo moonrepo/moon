@@ -4,6 +4,7 @@ use crate::is_test_env;
 use std::time::Duration as StdDuration;
 
 pub use chrono;
+pub use humantime::{format_duration, parse_duration};
 
 pub fn elapsed(duration: StdDuration) -> String {
     if is_test_env() {

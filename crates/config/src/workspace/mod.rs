@@ -1,5 +1,6 @@
 // .moon/workspace.yml
 
+mod action_runner;
 pub mod node;
 mod typescript;
 mod vcs;
@@ -8,11 +9,11 @@ use crate::errors::map_validation_errors_to_figment_errors;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
+use action_runner::ActionRunnerConfig;
 use figment::{
     providers::{Format, Serialized, Yaml},
     Error as FigmentError, Figment,
 };
-use moon_utils::string_vec;
 use node::NodeConfig;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -41,33 +42,6 @@ fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidationError
     }
 
     Ok(())
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
-#[serde(rename_all = "camelCase")]
-pub struct ActionRunnerConfig {
-    pub implicit_inputs: Vec<String>,
-
-    pub inherit_colors_for_piped_tasks: bool,
-
-    pub log_running_command: bool,
-}
-
-impl Default for ActionRunnerConfig {
-    fn default() -> Self {
-        ActionRunnerConfig {
-            implicit_inputs: string_vec![
-                // When a project changes
-                "package.json",
-                // When root config changes
-                "/.moon/project.yml",
-                "/.moon/workspace.yml",
-            ],
-            inherit_colors_for_piped_tasks: true,
-            log_running_command: false,
-        }
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
@@ -880,7 +854,7 @@ projects:
 
                 assert_eq!(
                     config.projects,
-                    WorkspaceProjects::List(string_vec!["apps/*", "packages/*"])
+                    WorkspaceProjects::List(moon_utils::string_vec!["apps/*", "packages/*"])
                 );
 
                 Ok(())

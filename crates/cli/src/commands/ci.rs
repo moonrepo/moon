@@ -140,7 +140,7 @@ fn generate_dep_graph(
 
     for target in targets {
         // Run the target and its dependencies
-        dep_graph.run_target(target, &workspace.projects, None)?;
+        dep_graph.run_target(target, &workspace.projects, &None)?;
 
         // And also run its dependents to ensure consumers still work correctly
         dep_graph.run_target_dependents(target, &workspace.projects)?;

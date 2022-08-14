@@ -9,7 +9,7 @@ use moon_lang_node::{node, YARN};
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct YarnTool {
     bin_path: PathBuf,
@@ -233,18 +233,6 @@ impl PackageManager<NodeTool> for YarnTool {
             .await?;
 
         Ok(())
-    }
-
-    async fn find_package_bin(
-        &self,
-        toolchain: &Toolchain,
-        starting_dir: &Path,
-        bin_name: &str,
-    ) -> Result<PathBuf, ToolchainError> {
-        // Yarn binaries are symlinks to actual JavaScript files
-        toolchain
-            .get_node()
-            .find_package_bin(starting_dir, bin_name)
     }
 
     fn get_lock_filename(&self) -> String {

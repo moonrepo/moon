@@ -9,7 +9,7 @@ use moon_lang_node::{node, PNPM};
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct PnpmTool {
     bin_path: PathBuf,
@@ -169,25 +169,6 @@ impl PackageManager<NodeTool> for PnpmTool {
             .await?;
 
         Ok(())
-    }
-
-    async fn find_package_bin(
-        &self,
-        toolchain: &Toolchain,
-        starting_dir: &Path,
-        bin_name: &str,
-    ) -> Result<PathBuf, ToolchainError> {
-        // pnpm binaries are shell scripts that execute node and the binary
-        // under the hood. We must extract the binary path from it!
-        let bin_path = toolchain
-            .get_node()
-            .find_package_bin(starting_dir, bin_name)?;
-
-        Ok(if cfg!(windows) {
-            bin_path // already extracted from *.cmd
-        } else {
-            node::extract_canonical_bin_path_from_bin_file(bin_path)?
-        })
     }
 
     fn get_lock_filename(&self) -> String {

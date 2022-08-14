@@ -2,7 +2,11 @@ use crate::context::{ActionContext, ProfileType};
 use crate::errors::ActionError;
 use moon_config::NodePackageManager;
 use moon_error::MoonError;
-use moon_lang_node::{node, package::PackageJson, tsconfig::TsConfigJson};
+use moon_lang_node::{
+    node::{self, BinFile},
+    package::PackageJson,
+    tsconfig::TsConfigJson,
+};
 use moon_logger::{color, trace};
 use moon_platform_node::NodeTargetHasher;
 use moon_project::Project;
@@ -110,20 +114,19 @@ pub async fn create_target_command(
                 .clone();
         }
         bin => {
-            let bin_path = path::relative_from(
-                node.get_package_manager()
-                    .find_package_bin(toolchain, &project.root, bin)
-                    .await?,
-                &project.root,
-            )
-            .unwrap();
-
-            if bin_path.extension().unwrap_or_default() == "exe" {
-                cmd = bin_path;
-            } else {
-                args.extend(create_node_options(context, workspace, task)?);
-                args.push(path::to_string(&bin_path)?);
-            }
+            match node.find_package_bin(&project.root, bin)? {
+                // Rust, Go
+                BinFile::Binary(bin_path) => {
+                    cmd = bin_path;
+                }
+                // JavaScript
+                BinFile::Script(bin_path) => {
+                    args.extend(create_node_options(context, workspace, task)?);
+                    args.push(path::to_string(
+                        path::relative_from(bin_path, &project.root).unwrap(),
+                    )?);
+                }
+            };
         }
     };
 

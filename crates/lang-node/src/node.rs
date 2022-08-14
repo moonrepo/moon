@@ -41,29 +41,45 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
     PathBuf::from(captures.get(0).unwrap().as_str())
 }
 
+#[derive(Clone)]
+pub enum BinFile {
+    Binary(PathBuf), // Rust, Go
+    Script(PathBuf), // JavaScript
+}
+
 #[cached(result)]
 #[track_caller]
-pub fn extract_canonical_bin_path_from_bin_file(bin_path: PathBuf) -> Result<PathBuf, MoonError> {
-    let contents =
-        fs::read_to_string(&bin_path).map_err(|e| map_io_to_fs_error(e, bin_path.clone()))?;
+pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> Result<BinFile, MoonError> {
+    let error_handler = |e| map_io_to_fs_error(e, bin_path.clone());
 
-    // Is most likely a symlinked JavaScript file!
-    if contents.starts_with("#!/usr/bin/env node") || contents.starts_with("#!/usr/bin/node") {
-        if bin_path.is_symlink() {
-            return bin_path
-                .canonicalize()
-                .map_err(|e| map_io_to_fs_error(e, bin_path.clone()));
-        }
+    // Resolve to the real file location if applicable
+    let bin_path = if bin_path.is_symlink() {
+        bin_path.canonicalize().map_err(error_handler)?
+    } else {
+        bin_path.clone()
+    };
 
-        return Ok(bin_path);
+    let buffer = fs::read(&bin_path).map_err(error_handler)?;
+
+    // Rust or Go binary shipped in node modules
+    if content_inspector::inspect(&buffer).is_binary() {
+        return Ok(BinFile::Binary(bin_path));
     }
 
+    let contents = String::from_utf8(buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
+
+    // Symlinked JavaScript file
+    if contents.starts_with("#!/usr/bin/env node") || contents.starts_with("#!/usr/bin/node") {
+        return Ok(BinFile::Script(bin_path));
+    }
+
+    // A shell script that executes the relative binat
     let extracted_path = parse_bin_file(&bin_path, contents);
 
     // canonicalize() actually causes things to break, so normalize
-    Ok(path::normalize(
+    Ok(BinFile::Script(path::normalize(
         bin_path.parent().unwrap().join(extracted_path),
-    ))
+    )))
 }
 
 pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {
@@ -84,7 +100,7 @@ pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Opti
 pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
     starting_dir: P,
     bin_name: T,
-) -> Result<Option<PathBuf>, MoonError> {
+) -> Result<Option<BinFile>, MoonError> {
     let starting_dir = starting_dir.as_ref();
     let bin_name = bin_name.as_ref();
     let bin_path = starting_dir
@@ -92,7 +108,7 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
         .join(get_bin_name_suffix(bin_name, "cmd", true));
 
     if bin_path.exists() {
-        return Ok(Some(extract_canonical_bin_path_from_bin_file(bin_path)?));
+        return Ok(Some(extract_canonical_node_module_bin(bin_path)?));
     }
 
     Ok(match starting_dir.parent() {

@@ -41,7 +41,7 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
     PathBuf::from(captures.get(0).unwrap().as_str())
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BinFile {
     Binary(PathBuf), // Rust, Go
     Script(PathBuf), // JavaScript
@@ -61,22 +61,21 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> Result<BinFile, M
 
     let buffer = fs::read(&bin_path).map_err(error_handler)?;
 
-    // Rust or Go binary shipped in node modules
+    // Found a Rust or Go binary shipped in node modules, abort early
     if content_inspector::inspect(&buffer).is_binary() {
         return Ok(BinFile::Binary(bin_path));
     }
 
     let contents = String::from_utf8(buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
 
-    // Symlinked JavaScript file
+    // Found a JavaScript file, use as-is
     if contents.starts_with("#!/usr/bin/env node") || contents.starts_with("#!/usr/bin/node") {
         return Ok(BinFile::Script(bin_path));
     }
 
-    // A shell script that executes the relative binat
+    // Found a bash/batch script, extract the relative bin path from it
     let extracted_path = parse_bin_file(&bin_path, contents);
 
-    // canonicalize() actually causes things to break, so normalize
     Ok(BinFile::Script(path::normalize(
         bin_path.parent().unwrap().join(extracted_path),
     )))
@@ -641,11 +640,13 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
 
             assert_eq!(
                 path.unwrap().unwrap(),
-                sandbox
-                    .path()
-                    .join("node_modules")
-                    .join("baz")
-                    .join("bin.js")
+                BinFile::Script(
+                    sandbox
+                        .path()
+                        .join("node_modules")
+                        .join("baz")
+                        .join("bin.js")
+                )
             );
         }
 
@@ -656,11 +657,13 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
 
             assert_eq!(
                 path.unwrap().unwrap(),
-                sandbox
-                    .path()
-                    .join("node_modules")
-                    .join("baz")
-                    .join("bin.js")
+                BinFile::Script(
+                    sandbox
+                        .path()
+                        .join("node_modules")
+                        .join("baz")
+                        .join("bin.js")
+                )
             );
         }
 

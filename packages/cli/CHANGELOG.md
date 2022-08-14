@@ -17,6 +17,8 @@
 
 - Fixed an issue where output hydration was bypassing "off" cache.
 - Fixed an issue where parsing a node module binary would panic.
+- Fixed an issue where moon would panic attempting to read non-JS code shipped in node modules (Rust
+  or Go binaries).
 - Fixed an issue where project globs would pickup dot folders (`.git`, `.moon`, etc) or
   `node_modules`.
 - Fixed an issue where project names were stripping capital letters when using globs.

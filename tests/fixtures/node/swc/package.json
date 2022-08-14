@@ -1,0 +1,13 @@
+{
+  "name": "test-node-swc",
+  "version": "1.0.0",
+  "dependencies": {
+    "@swc/cli": "0.1.57",
+    "@swc/core": "1.2.229"
+  },
+  "optionalDependencies": {
+    "@swc/core-darwin-x64": "1.2.229",
+    "@swc/core-linux-x64-gnu": "1.2.229",
+    "@swc/core-win32-x64-msvc": "1.2.229"
+  }
+}

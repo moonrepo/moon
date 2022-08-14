@@ -17,9 +17,22 @@ the workspace development environment.
 
 Configures aspects of the action runner.
 
+### `cacheLifetime`<VersionLabel updated version="0.11" />
+
+> `string`
+
+The maximum lifetime of cached artifacts before they're marked as stale and automatically removed by
+the action runner. Defaults to "7 days". This field requires an integer and a timeframe unit that
+can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
+
+```yaml title=".moon/workspace.yml" {2}
+actionRunner:
+  cacheLifetime: '24 hours'
+```
+
 ### `implicitInputs`<VersionLabel updated version="0.9" />
 
-> string[]
+> `string[]`
 
 Defines task [`inputs`](./project#inputs) that are implicit inherited by _all_ tasks within the
 workspace. This is extremely useful for the "changes to these files should always trigger a task"
@@ -29,7 +42,7 @@ Like `inputs`, file paths/globs defined here are relative from the inheriting pr
 [Project and workspace relative file patterns](../concepts/file-pattern#project-relative) are
 supported and encouraged.
 
-```yaml title=".moon/workspace.yml" {2}
+```yaml title=".moon/workspace.yml" {2-5}
 actionRunner:
   implicitInputs:
     - 'package.json'

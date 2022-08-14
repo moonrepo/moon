@@ -5,7 +5,7 @@ use moon_archive::{tar, untar};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
-use moon_utils::fs;
+use moon_utils::{fs, time};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -81,6 +81,38 @@ impl CacheEngine {
             0,
         )
         .await
+    }
+
+    pub async fn clean_stale_cache(
+        &self,
+        lifetime: &str,
+    ) -> Result<fs::RemoveDirContentsResult, MoonError> {
+        let duration = time::parse_duration(lifetime)
+            .map_err(|e| MoonError::Generic(format!("Invalid lifetime: {}", e)))?;
+
+        trace!(
+            target: LOG_TARGET,
+            "Cleaning up and deleting stale cache older than \"{}\"",
+            lifetime
+        );
+
+        let (hashes_deleted, hashes_bytes) =
+            fs::remove_dir_stale_contents(&self.hashes_dir, duration).await?;
+
+        let (outs_deleted, outs_bytes) =
+            fs::remove_dir_stale_contents(&self.outputs_dir, duration).await?;
+
+        let deleted = hashes_deleted + outs_deleted;
+        let bytes = hashes_bytes + outs_bytes;
+
+        trace!(
+            target: LOG_TARGET,
+            "Deleted {} files and saved {} bytes",
+            deleted,
+            bytes
+        );
+
+        Ok((deleted, bytes))
     }
 
     pub async fn create_hash_archive(

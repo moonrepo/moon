@@ -11,7 +11,7 @@
 
 ### CLI
 
-- [ ] `run-many`
+- [x] `run-many`
 - [ ] `graph`
   - [ ] Spin up an interactive website with full project/task data
 

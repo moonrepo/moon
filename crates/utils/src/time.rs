@@ -1,11 +1,12 @@
 use crate::is_test_env;
 // use chrono::Duration;
 // use chrono_humanize::HumanTime;
-use std::time::Duration as StdDuration;
+use std::time::Duration;
 
 pub use chrono;
+pub use humantime::{format_duration, parse_duration};
 
-pub fn elapsed(duration: StdDuration) -> String {
+pub fn elapsed(duration: Duration) -> String {
     if is_test_env() {
         return String::from("100ms"); // Snapshots
     }
@@ -67,3 +68,19 @@ pub fn elapsed(duration: StdDuration) -> String {
 // pub fn relative(duration: Duration) -> String {
 //     format!("{}", HumanTime::from(duration))
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_durations() {
+        assert_eq!(parse_duration("7 days").unwrap(), Duration::new(604800, 0));
+    }
+
+    #[test]
+    #[should_panic(expected = "UnknownUnit")]
+    fn handles_invalid_durations() {
+        parse_duration("7 unknown").unwrap();
+    }
+}

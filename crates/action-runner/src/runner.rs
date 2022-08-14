@@ -86,6 +86,17 @@ impl ActionRunner {
         self
     }
 
+    pub async fn clean_stale_cache(&self) -> Result<(), ActionRunnerError> {
+        let workspace = self.workspace.read().await;
+
+        workspace
+            .cache
+            .clean_stale_cache(&workspace.config.action_runner.cache_lifetime)
+            .await?;
+
+        Ok(())
+    }
+
     pub fn get_duration(&self) -> Duration {
         self.duration
             .expect("Cannot get duration, action runner not ran!")
@@ -219,6 +230,8 @@ impl ActionRunner {
             node_count,
             self.duration.unwrap()
         );
+
+        self.clean_stale_cache().await?;
 
         Ok(results)
     }

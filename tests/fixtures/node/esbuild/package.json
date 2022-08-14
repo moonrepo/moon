@@ -1,0 +1,7 @@
+{
+  "name": "test-node-esbuild",
+  "version": "1.0.0",
+  "dependencies": {
+    "esbuild": "0.15.2"
+  }
+}

@@ -1,0 +1,10 @@
+node:
+  # Use a unique version as to not collide with other tests
+  version: '16.1.0'
+
+typescript:
+  syncProjectReferences: false
+
+projects:
+  esbuild: esbuild
+  swc: swc

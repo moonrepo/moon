@@ -88,7 +88,7 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     // Let our code know were running tests
     cmd.env("MOON_TEST", "true");
     // Hide install output as it disrupts testing snapshots
-    cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
+    // cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
     // Standardize file system paths for testing snapshots
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Enable logging for code coverage

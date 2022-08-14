@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use moon_logger::{debug, Logable};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_offline};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[async_trait]
 pub trait Downloadable<T: Send + Sync>: Send + Sync + Logable {
@@ -233,12 +233,12 @@ pub trait PackageManager<T: Send + Sync>:
 
     /// Find a canonical path to a package's binary file.
     /// This is typically in "node_modules/.bin".
-    async fn find_package_bin(
-        &self,
-        toolchain: &Toolchain,
-        starting_dir: &Path,
-        bin_name: &str,
-    ) -> Result<PathBuf, ToolchainError>;
+    // async fn find_package_bin(
+    //     &self,
+    //     toolchain: &Toolchain,
+    //     starting_dir: &Path,
+    //     bin_name: &str,
+    // ) -> Result<PathBuf, ToolchainError>;
 
     /// Return the name of the lockfile.
     fn get_lock_filename(&self) -> String;

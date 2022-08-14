@@ -1,0 +1,8 @@
+{
+  "name": "test-node",
+  "private": true,
+  "workspaces": [
+    "esbuild",
+    "swc"
+  ]
+}

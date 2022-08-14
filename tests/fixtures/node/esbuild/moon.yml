@@ -1,0 +1,10 @@
+language: javascript
+
+tasks:
+  build:
+    command: esbuild
+    args: 'index.js --bundle --outfile=out.js'
+    inputs:
+      - 'index.js'
+    outputs:
+      - 'out.js'

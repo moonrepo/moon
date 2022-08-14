@@ -900,3 +900,40 @@ mod aliases {
         assert_snapshot!(get_assert_output(&assert));
     }
 }
+
+mod non_js_bins {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn works_with_esbuild() {
+        let fixture = create_sandbox_with_git("node");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("esbuild:build")
+            .assert()
+            .success();
+
+        assert_eq!(
+            fs::read_to_string(fixture.path().join("esbuild/out.js")).unwrap(),
+            "(() => {\n  // index.js\n  var ESBUILD = \"esbuild\";\n})();\n"
+        );
+    }
+
+    #[test]
+    fn works_with_swc() {
+        let fixture = create_sandbox_with_git("node");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("swc:build")
+            .assert()
+            .success();
+
+        assert_eq!(
+            fs::read_to_string(fixture.path().join("swc/out.js")).unwrap(),
+            "export var SWC = \"swc\";\n\n\n//# sourceMappingURL=out.js.map"
+        );
+    }
+}

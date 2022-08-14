@@ -296,6 +296,14 @@ pub enum Commands {
     },
 
     // OTHER
+    #[clap(
+        name = "clean",
+        about = "Clean the workspace and delete any stale or invalid artifacts."
+    )]
+    Clean {
+        #[clap(long, default_value = "7 days", help = "Lifetime of cached artifacts")]
+        lifetime: String,
+    },
 
     // moon migrate <operation>
     #[clap(

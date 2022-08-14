@@ -4,8 +4,11 @@
 
 #### 🚀 Updates
 
-- Added a `local` setting to tasks, that marks the task for local development only.
+- Added a `moon clean` command for manually clearing the cache.
+- Added an `actionRunner.cacheLifetime` setting to `.moon/workspace.yml`, for controlling the stale
+  cache threshold.
 - Added an `envFile` option to tasks, allowing `.env` files to be loaded for environment variables.
+- Added a `local` setting to tasks, that marks the task for local development only.
 - Updated the `outputStyle` task option with additional variants: `buffer`, `buffer-only-failure`,
   `hash`, `none`.
 - Updated `moon run` to support running multiple targets concurrently.

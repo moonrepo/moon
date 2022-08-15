@@ -47,12 +47,26 @@ pub async fn run_target(
     if task.options.cache {
         let common_hasher = runner.create_common_hasher(context).await?;
 
-        let platform_hasher = match task.platform {
-            PlatformType::Node => node::create_target_hasher(&workspace, &project)?,
-            _ => system::create_target_hasher(&workspace, &project)?,
+        let is_cached = match task.platform {
+            PlatformType::Node => {
+                runner
+                    .is_cached(
+                        common_hasher,
+                        node::create_target_hasher(&workspace, &project)?,
+                    )
+                    .await?
+            }
+            _ => {
+                runner
+                    .is_cached(
+                        common_hasher,
+                        system::create_target_hasher(&workspace, &project)?,
+                    )
+                    .await?
+            }
         };
 
-        if let Some(cache_location) = runner.is_cached(common_hasher, platform_hasher).await? {
+        if let Some(cache_location) = is_cached {
             // Only hydrate when the hash is different from the previous build,
             // as we can assume the outputs from the previous build still exist?
             if matches!(cache_location, HydrateFrom::LocalCache) {

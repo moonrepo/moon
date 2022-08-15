@@ -1,0 +1,34 @@
+{
+  "name": "@moonrepo/core-linux-arm64-gnu",
+  "version": "0.11.0",
+  "description": "Linux arm64 GNU binary for moon.",
+  "keywords": [
+    "moon",
+    "repo",
+    "linux",
+    "arm64",
+    "gnu"
+  ],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "libc": [
+    "glibc"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moonrepo/moon",
+    "directory": "packages/core-linux-arm64-gnu"
+  },
+  "publishConfig": {
+    "access": "public",
+    "executableFiles": [
+      "moon"
+    ]
+  }
+}

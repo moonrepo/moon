@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where `system` tasks were hashing incorrect contents.
+- Fixed an issue where `envFile` is enabled and the relevant `.env` file may not exist in CI.
 
 ## 0.11.0
 

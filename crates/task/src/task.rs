@@ -7,7 +7,7 @@ use moon_config::{
     TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_logger::{color, debug, trace, Logable};
-use moon_utils::{glob, path, regex::ENV_VAR, string_vec};
+use moon_utils::{glob, is_ci, path, regex::ENV_VAR, string_vec};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::env;
@@ -419,6 +419,16 @@ impl Task {
             let env_path = data.project_root.join(env_file);
             let error_handler =
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
+
+            // The `.env` file may not have been committed, so avoid crashing in CI
+            if is_ci() && !env_path.exists() {
+                debug!(
+                    target: self.get_log_target(),
+                    "The `envFile` option is enabled but no `.env` file exists in CI, skipping as this may be intentional",
+                );
+
+                return Ok(());
+            }
 
             for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
                 let (key, value) = entry.map_err(error_handler)?;

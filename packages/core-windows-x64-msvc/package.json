@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/core-windows-x64-msvc",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "Windows x64 MSVC binary for moon.",
   "keywords": [
     "moon",

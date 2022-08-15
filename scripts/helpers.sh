@@ -25,6 +25,14 @@ function getPackageFromTarget() {
 			echo -n "core-macos-arm64"
 			;;
 
+		aarch64-unknown-linux-gnu)
+			echo -n "core-linux-arm64-gnu"
+			;;
+
+		aarch64-unknown-linux-musl)
+			echo -n "core-linux-arm64-musl"
+			;;
+
 		x86_64-apple-darwin)
 			echo -n "core-macos-x64"
 			;;

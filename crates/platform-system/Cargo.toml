@@ -1,0 +1,8 @@
+[package]
+name = "moon_platform_system"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_hasher = { path = "../hasher" }
+serde = { version = "1.0.140", features = ["derive"] }

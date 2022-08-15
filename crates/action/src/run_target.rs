@@ -49,7 +49,7 @@ pub async fn run_target(
 
         let platform_hasher = match task.platform {
             PlatformType::Node => node::create_target_hasher(&workspace, &project)?,
-            _ => node::create_target_hasher(&workspace, &project)?,
+            _ => system::create_target_hasher(&workspace, &project)?,
         };
 
         if let Some(cache_location) = runner.is_cached(common_hasher, platform_hasher).await? {

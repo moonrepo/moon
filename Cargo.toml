@@ -2,8 +2,3 @@
 resolver = "2"
 members = ["crates/*"]
 default-members = ["crates/cli"]
-
-[profile.release]
-codegen-units = 1
-panic = "abort"
-strip = "debuginfo"

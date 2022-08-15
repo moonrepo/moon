@@ -15,6 +15,10 @@ on:
   # Uncomment to test in PRs (its safe)
   # pull_request:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build:
     strategy:
@@ -24,11 +28,26 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             host: ubuntu-latest
             binary: moon
+            docker-target: bin-gnu
+            docker-platform: linux/amd64
 
           - target: x86_64-unknown-linux-musl
             host: ubuntu-latest
             binary: moon
-            image: clux/muslrust:stable
+            docker-target: bin-musl
+            docker-platform: linux/amd64
+
+          - target: aarch64-unknown-linux-gnu
+            host: ubuntu-latest
+            binary: moon
+            docker-target: bin-gnu
+            docker-platform: linux/arm64
+
+          - target: aarch64-unknown-linux-musl
+            host: ubuntu-latest
+            binary: moon
+            docker-target: bin-musl
+            docker-platform: linux/arm64
 
           - target: x86_64-apple-darwin
             host: macos-latest
@@ -55,6 +74,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
         name: Cache cargo
+        if: ${{ !matrix.docker-target }}
         with:
           path: |
             ~/.cargo/bin
@@ -63,33 +83,47 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
+        if: ${{ !matrix.docker-target }}
         with:
           override: true
           profile: minimal
           target: ${{ matrix.target }}
           toolchain: stable
-      - uses: actions-rs/cargo@v1
-        name: Generate lockfile
+      - name: Generate lockfile
+        uses: actions-rs/cargo@v1
+        if: ${{ !matrix.docker-target }}
         with:
           command: generate-lockfile
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
       - name: Add target
+        if: ${{ !matrix.docker-target }}
         run: rustup target add ${{ matrix.target }}
       - name: Build binary
-        if: ${{ !matrix.image }}
+        if: ${{ !matrix.docker-target }}
         run: bash ./scripts/release/buildBinary.sh
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      - name: Build binary with Docker
-        if: ${{ matrix.image }}
-        uses: mosteo-actions/docker-run@v1
+      - name: Install Depot CLI
+        if: ${{ matrix.docker-target }}
+        uses: depot/setup-action@v1
+      - name: Build binary with Docker / Depot
+        if: ${{ matrix.docker-target }}
+        uses: depot/build-push-action@v1
         with:
-          image: ${{ matrix.image }}
-          params: -e TARGET=${{ matrix.target }} -e BINARY=${{ matrix.binary }}
-          command: bash ./scripts/release/buildBinary.sh
+          context: .
+          file: ./scripts/Dockerfile
+          target: ${{ matrix.docker-target }}
+          platforms: ${{ matrix.docker-platform }}
+          outputs: |
+            type=local,dest=.
+      - name: Prepare artifacts
+        run: bash ./scripts/release/prepareArtifacts.sh
+        env:
+          BINARY: ${{ matrix.binary }}
+          TARGET: ${{ matrix.target }}
       - uses: actions/upload-artifact@v2
         name: Upload artifact
         with:

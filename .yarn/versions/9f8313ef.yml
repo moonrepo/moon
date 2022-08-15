@@ -1,5 +1,7 @@
 releases:
   "@moonrepo/cli": minor
+  "@moonrepo/core-linux-arm64-gnu": minor
+  "@moonrepo/core-linux-arm64-musl": minor
   "@moonrepo/core-linux-x64-gnu": minor
   "@moonrepo/core-linux-x64-musl": minor
   "@moonrepo/core-macos-arm64": minor

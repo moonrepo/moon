@@ -2842,6 +2842,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@moonrepo/cli@workspace:packages/cli"
   dependencies:
+    "@moonrepo/core-linux-arm64-gnu": ^0.11.0
+    "@moonrepo/core-linux-arm64-musl": ^0.11.0
     "@moonrepo/core-linux-x64-gnu": ^0.11.1
     "@moonrepo/core-linux-x64-musl": ^0.11.1
     "@moonrepo/core-macos-arm64": ^0.11.1
@@ -2849,6 +2851,10 @@ __metadata:
     "@moonrepo/core-windows-x64-msvc": ^0.11.1
     detect-libc: ^2.0.1
   dependenciesMeta:
+    "@moonrepo/core-linux-arm64-gnu":
+      optional: true
+    "@moonrepo/core-linux-arm64-musl":
+      optional: true
     "@moonrepo/core-linux-x64-gnu":
       optional: true
     "@moonrepo/core-linux-x64-musl":
@@ -2861,6 +2867,18 @@ __metadata:
       optional: true
   bin:
     moon: moon
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-linux-arm64-gnu@^0.11.0, @moonrepo/core-linux-arm64-gnu@workspace:packages/core-linux-arm64-gnu":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-linux-arm64-gnu@workspace:packages/core-linux-arm64-gnu"
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/core-linux-arm64-musl@^0.11.0, @moonrepo/core-linux-arm64-musl@workspace:packages/core-linux-arm64-musl":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-linux-arm64-musl@workspace:packages/core-linux-arm64-musl"
   languageName: unknown
   linkType: soft
 

@@ -1,0 +1,49 @@
+# Git
+/.git
+
+# GitHub
+/.github
+
+# Rust
+/target
+
+# Node.js
+node_modules/
+
+# Yarn
+/.yarn
+.pnp.*
+
+# Build folders
+coverage/
+build/
+cjs/
+dts/
+esm/
+lib/
+mjs/
+umd/
+
+# Artifacts
+.eslintcache
+*.map
+*.min.js
+*.tsbuildinfo
+
+# Moon
+.moon/cache
+packages/*/moon
+packages/*/moon.exe
+/moon
+/moon.exe
+
+# Moon tests/fixtures
+tests/fixtures/*/.moon/cache
+tests/fixtures/*/.yarn
+
+# Docker
+.dockerignore
+Dockerfile
+
+# Website
+/website

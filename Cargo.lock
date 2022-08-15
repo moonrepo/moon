@@ -1320,6 +1320,7 @@ dependencies = [
  "moon_lang_node",
  "moon_logger",
  "moon_platform_node",
+ "moon_platform_system",
  "moon_project",
  "moon_task",
  "moon_terminal",
@@ -1519,6 +1520,14 @@ dependencies = [
  "moon_task",
  "moon_utils",
  "pretty_assertions",
+ "serde",
+]
+
+[[package]]
+name = "moon_platform_system"
+version = "0.1.0"
+dependencies = [
+ "moon_hasher",
  "serde",
 ]
 

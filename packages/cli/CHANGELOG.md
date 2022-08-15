@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `system` tasks were hashing incorrect contents.
+
 ## 0.11.0
 
 #### 🚀 Updates

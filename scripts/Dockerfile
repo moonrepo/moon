@@ -13,14 +13,16 @@ COPY rust-toolchain.toml .
 RUN rustup update
 
 FROM base-gnu AS plan-gnu
-COPY . .
+COPY Cargo* .
+COPY crates crates
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM base-gnu AS build-gnu
 ENV RUSTFLAGS "-C strip=symbols"
 COPY --from=plan-gnu /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
-COPY . .
+COPY Cargo* .
+COPY crates crates
 RUN cargo build --bin moon --release
 RUN set -ex; \
   export target="$(rustc --version --verbose | grep 'host:' | cut -d' ' -f2)"; \
@@ -38,14 +40,16 @@ COPY rust-toolchain.toml .
 RUN rustup update && rustup target add x86_64-unknown-linux-musl
 
 FROM base-musl-amd64 AS plan-musl-amd64
-COPY . .
+COPY Cargo* .
+COPY crates crates
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM base-musl-amd64 AS build-musl-amd64
 ENV RUSTFLAGS "-C strip=symbols"
 COPY --from=plan-musl-amd64 /app/recipe.json recipe.json
 RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
-COPY . .
+COPY Cargo* .
+COPY crates crates
 RUN cargo build --bin moon --release --target x86_64-unknown-linux-musl
 RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 
@@ -58,14 +62,16 @@ COPY rust-toolchain.toml .
 RUN rustup update && rustup target add aarch64-unknown-linux-musl
 
 FROM base-musl-arm64 AS plan-musl-arm64
-COPY . .
+COPY Cargo* .
+COPY crates crates
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM base-musl-arm64 AS build-musl-arm64
 ENV RUSTFLAGS "-C strip=symbols"
 COPY --from=plan-musl-arm64 /app/recipe.json recipe.json
 RUN cargo chef cook --release --target aarch64-unknown-linux-musl --recipe-path recipe.json
-COPY . .
+COPY Cargo* .
+COPY crates crates
 RUN cargo build --bin moon --release --target aarch64-unknown-linux-musl
 RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 

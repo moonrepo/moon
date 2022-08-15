@@ -338,21 +338,23 @@ mod expand_env {
     // Unix = "No such file or directory"
     #[should_panic(expected = "InvalidEnvFile")]
     fn errors_on_missing_file() {
-        let fixture = create_sandbox("cases");
-        let project_root = fixture.path().join("base");
+        if !moon_utils::is_ci() {
+            let fixture = create_sandbox("cases");
+            let project_root = fixture.path().join("base");
 
-        create_expanded_task(
-            fixture.path(),
-            &project_root,
-            Some(TaskConfig {
-                options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
-                    ..TaskOptionsConfig::default()
-                },
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+            create_expanded_task(
+                fixture.path(),
+                &project_root,
+                Some(TaskConfig {
+                    options: TaskOptionsConfig {
+                        env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                        ..TaskOptionsConfig::default()
+                    },
+                    ..TaskConfig::default()
+                }),
+            )
+            .unwrap();
+        }
     }
 
     #[test]

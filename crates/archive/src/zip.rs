@@ -151,12 +151,6 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 
             io::copy(&mut file, &mut out).map_err(handle_error)?;
 
-            trace!(
-                target: LOG_TARGET,
-                "Unzipping file {}",
-                color::path(&output_path)
-            );
-
             // Update permissions when on a nix machine
             #[cfg(unix)]
             {

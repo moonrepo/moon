@@ -95,6 +95,7 @@ pub async fn sync_node_project(
         let dep_relative_path = path::to_virtual_string(
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
         )?;
+        let is_dep_typescript_enabled = dep_project.config.workspace.typescript;
 
         // Update dependencies within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
@@ -154,6 +155,7 @@ pub async fn sync_node_project(
         // and this `tsconfig.json` has not already declared the dep.
         if let Some(typescript_config) = &workspace.config.typescript {
             if is_project_typescript_enabled
+                && is_dep_typescript_enabled
                 && typescript_config.sync_project_references
                 && dep_project
                     .root

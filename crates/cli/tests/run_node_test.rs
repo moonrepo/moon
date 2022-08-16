@@ -949,4 +949,41 @@ mod typescript {
 
         assert!(!fixture.path().join("create-config/tsconfig.json").exists());
     }
+
+    #[test]
+    fn syncs_ref_to_root_config() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        let initial_root = read_to_string(fixture.path().join("tsconfig.json")).unwrap();
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("create-config:test")
+            .assert();
+
+        let synced_root = read_to_string(fixture.path().join("tsconfig.json")).unwrap();
+
+        assert_ne!(initial_root, synced_root);
+        assert_snapshot!(synced_root);
+    }
+
+    #[test]
+    fn syncs_depends_on_as_refs() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        assert!(!fixture
+            .path()
+            .join("syncs-deps-refs/tsconfig.json")
+            .exists());
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("syncs-deps-refs:test")
+            .assert();
+
+        // should not have `deps-no-config-disabled` or `deps-with-config-disabled`
+        assert_snapshot!(
+            read_to_string(fixture.path().join("syncs-deps-refs/tsconfig.json")).unwrap()
+        );
+    }
 }

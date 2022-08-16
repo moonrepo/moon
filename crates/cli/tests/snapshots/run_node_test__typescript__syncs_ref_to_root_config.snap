@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 967
+expression: synced_root
+---
+{
+  "files": [],
+  "references": [
+    {
+      "path": "create-config"
+    }
+  ]
+}
+

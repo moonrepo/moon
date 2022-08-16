@@ -1,1 +1,1 @@
-module.exports = 'prettier-config-beemo';
+module.exports = 'prettier-config-moon';

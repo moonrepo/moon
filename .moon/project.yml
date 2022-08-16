@@ -72,7 +72,7 @@ tasks:
       - '--cache'
       - '--color'
       - '--preset'
-      - 'jest-preset-beemo'
+      - 'jest-preset-moon'
       - '--passWithNoTests'
     inputs:
       - '@globs(sources)'

@@ -15,6 +15,11 @@ pub fn append_workspace_config(root: &Path, yaml: &str) {
         .unwrap();
 
     writeln!(file, "{}", yaml).unwrap();
+
+    println!(
+        "{}",
+        fs::read_to_string(root.join(".moon/workspace.yml")).unwrap()
+    );
 }
 
 pub fn update_version_workspace_config(dir: &Path, old_version: &str, new_version: &str) {

@@ -152,28 +152,21 @@ pub async fn sync_node_project(
         // Only add if the dependent project has a `tsconfig.json`,
         // and this `tsconfig.json` has not already declared the dep.
         if let Some(typescript_config) = &workspace.config.typescript {
-            let tsconfig_branch_name = &typescript_config.project_config_file_name;
+            if typescript_config.sync_project_references
+                && dep_project
+                    .root
+                    .join(&typescript_config.project_config_file_name)
+                    .exists()
+            {
+                tsconfig_project_refs.insert(dep_relative_path);
 
-            if typescript_config.sync_project_references {
-                // Auto-create a `tsconfig.json` if configured and applicable
-                if typescript_config.create_missing_config
-                    && !dep_project.root.join(&tsconfig_branch_name).exists()
-                {
-                    create_missing_tsconfig(&dep_project, typescript_config, &workspace.root)
-                        .await?;
-                }
-
-                if dep_project.root.join(tsconfig_branch_name).exists() {
-                    tsconfig_project_refs.insert(dep_relative_path);
-
-                    debug!(
-                        target: LOG_TARGET,
-                        "Syncing {} as a project reference to {}'s {}",
-                        color::id(&dep_project.id),
-                        color::id(&project.id),
-                        color::file(tsconfig_branch_name)
-                    );
-                }
+                debug!(
+                    target: LOG_TARGET,
+                    "Syncing {} as a project reference to {}'s {}",
+                    color::id(&dep_project.id),
+                    color::id(&project.id),
+                    color::file(&typescript_config.project_config_file_name)
+                );
             }
         }
     }
@@ -207,6 +200,16 @@ pub async fn sync_node_project(
     }
 
     if let Some(typescript_config) = &workspace.config.typescript {
+        // Auto-create a `tsconfig.json` if configured and applicable
+        if typescript_config.create_missing_config
+            && !project
+                .root
+                .join(&typescript_config.project_config_file_name)
+                .exists()
+        {
+            create_missing_tsconfig(&project, typescript_config, &workspace.root).await?;
+        }
+
         // Sync to the project's `tsconfig.json`
         if !tsconfig_project_refs.is_empty() {
             TsConfigJson::sync_with_name(

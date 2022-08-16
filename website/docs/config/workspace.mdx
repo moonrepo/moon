@@ -401,7 +401,8 @@ the same version, which is a very common practice when managing dependencies.
 
 > `TypeScriptConfig`
 
-Dictates how moon interacts with and utilizes TypeScript within the workspace.
+Dictates how moon interacts with and utilizes TypeScript within the workspace. This field is
+optional, and by default it is undefined.
 
 ### `createMissingConfig`<VersionLabel version="0.6" />
 
@@ -458,7 +459,8 @@ typescript:
 > `boolean`
 
 Will sync a project's [`dependsOn`](./project#dependson) setting as project references within that
-project's `tsconfig.json`, and the workspace root `tsconfig.json`. Defaults to `true`.
+project's `tsconfig.json`, and the workspace root `tsconfig.json`. Defaults to `true` when the
+parent `typescript` setting is defined, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 typescript:

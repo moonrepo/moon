@@ -204,6 +204,7 @@ pub async fn sync_node_project(
     if let Some(typescript_config) = &workspace.config.typescript {
         // Auto-create a `tsconfig.json` if configured and applicable
         if is_project_typescript_enabled
+            && typescript_config.sync_project_references
             && typescript_config.create_missing_config
             && !project
                 .root

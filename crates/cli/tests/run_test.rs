@@ -75,10 +75,7 @@ mod general {
     fn logs_command_for_project_root() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            "actionRunner:\n  logRunningCommand: true",
-        );
+        append_workspace_config(fixture.path(), "actionRunner:\n  logRunningCommand: true");
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -92,10 +89,7 @@ mod general {
     fn logs_command_for_workspace_root() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            "actionRunner:\n  logRunningCommand: true",
-        );
+        append_workspace_config(fixture.path(), "actionRunner:\n  logRunningCommand: true");
 
         let assert = create_moon_command(fixture.path())
             .arg("run")

@@ -1,0 +1,7 @@
+extends: '../../shared-workspace.yml'
+
+projects:
+  - '*'
+
+typescript:
+  syncProjectReferences: true

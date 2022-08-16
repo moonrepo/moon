@@ -78,7 +78,7 @@ pub struct WorkspaceConfig {
     pub projects: WorkspaceProjects,
 
     #[validate]
-    pub typescript: TypeScriptConfig,
+    pub typescript: Option<TypeScriptConfig>,
 
     #[validate]
     pub vcs: VcsConfig,
@@ -179,7 +179,7 @@ mod tests {
                     extends: None,
                     node: NodeConfig::default(),
                     projects: WorkspaceProjects::default(),
-                    typescript: TypeScriptConfig::default(),
+                    typescript: None,
                     vcs: VcsConfig::default(),
                     schema: String::new(),
                 }
@@ -301,7 +301,7 @@ node:
 
                 // Inherits from extended file
                 assert!(!config.node.add_engines_constraint);
-                assert!(!config.typescript.sync_project_references);
+                assert!(!config.typescript.unwrap().sync_project_references);
                 assert_eq!(config.vcs.manager, VcsManager::Svn);
 
                 // Ensure we can override the extended config
@@ -336,7 +336,7 @@ node:
 
                 // Inherits from extended file
                 assert!(!config.node.add_engines_constraint);
-                assert!(!config.typescript.sync_project_references);
+                assert!(!config.typescript.unwrap().sync_project_references);
                 assert_eq!(config.vcs.manager, VcsManager::Svn);
 
                 // Ensure we can override the extended config
@@ -390,7 +390,7 @@ node:
                             ..NodeConfig::default()
                         },
                         projects: WorkspaceProjects::default(),
-                        typescript: TypeScriptConfig::default(),
+                        typescript: None,
                         vcs: VcsConfig::default(),
                         schema: String::new(),
                     }
@@ -885,7 +885,7 @@ vcs:
                         extends: None,
                         node: NodeConfig::default(),
                         projects: WorkspaceProjects::default(),
-                        typescript: TypeScriptConfig::default(),
+                        typescript: None,
                         vcs: VcsConfig {
                             manager: VcsManager::Svn,
                             ..VcsConfig::default()

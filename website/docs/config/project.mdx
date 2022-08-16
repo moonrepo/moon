@@ -423,35 +423,36 @@ tasks:
 
 > `TaskMergeStrategy`
 
-The strategy to use when merging the [`args`](#args) list with an inherited task. Defaults to
-"append".
+The [strategy](../concepts/task#merge-strategies) to use when merging the [`args`](#args) list with
+an inherited task. Defaults to "append".
 
 #### `mergeDeps`
 
 > `TaskMergeStrategy`
 
-The strategy to use when merging the [`deps`](#deps) list with an inherited task. Defaults to
-"append".
+The [strategy](../concepts/task#merge-strategies) to use when merging the [`deps`](#deps) list with
+an inherited task. Defaults to "append".
 
 #### `mergeEnv`
 
 > `TaskMergeStrategy`
 
-The strategy to use when merging the [`env`](#env) map with an inherited task. Defaults to "append".
+The [strategy](../concepts/task#merge-strategies) to use when merging the [`env`](#env) map with an
+inherited task. Defaults to "append".
 
 #### `mergeInputs`
 
 > `TaskMergeStrategy`
 
-The strategy to use when merging the [`inputs`](#inputs) list with an inherited task. Defaults to
-"append".
+The [strategy](../concepts/task#merge-strategies) to use when merging the [`inputs`](#inputs) list
+with an inherited task. Defaults to "append".
 
 #### `mergeOutputs`
 
 > `TaskMergeStrategy`
 
-The strategy to use when merging the [`outputs`](#outputs) list with an inherited task. Defaults to
-"append".
+The [strategy](../concepts/task#merge-strategies) to use when merging the [`outputs`](#outputs) list
+with an inherited task. Defaults to "append".
 
 #### `outputStyle`<VersionLabel version="0.10" />
 
@@ -586,6 +587,8 @@ Provides a layer of control when inheriting tasks from [`.moon/project.yml`](./g
 
 #### `exclude`
 
+> `string[]`
+
 The optional `exclude` setting permits a project to exclude specific tasks from being inherited. It
 accepts a list of strings, where each string is the name of a global task to exclude.
 
@@ -599,6 +602,8 @@ workspace:
 > Exclusion is applied after inclusion and before renaming.
 
 #### `include`
+
+> `string[]`
 
 The optional `include` setting permits a project to _only_ include specific inherited tasks (works
 like an allow/white list). It accepts a list of strings, where each string is the name of a global
@@ -622,6 +627,8 @@ workspace:
 
 #### `rename`
 
+> `Record<string, string>`
+
 The optional `rename` setting permits a project to rename the inherited task within the current
 project. It accepts a map of strings, where the key is the original name (found in the global
 project config), and the value is the new name to use.
@@ -638,3 +645,15 @@ workspace:
 ```
 
 > Renaming occurs after inclusion and exclusion.
+
+### `typescript`<VersionLabel version="0.12" />
+
+> `boolean`
+
+Enables or disables [TypeScript support](./workspace#typescript) for this specific project.
+Currently controls project reference syncing and `tsconfig.json` creation. Defaults to `true`.
+
+```yaml title="moon.yml" {2}
+workspace:
+  typescript: false
+```

@@ -82,6 +82,7 @@ pub async fn sync_node_project(
     let workspace = workspace.read().await;
     let node_config = &workspace.config.node;
     let project = workspace.projects.load(project_id)?;
+    let is_project_typescript_enabled = project.config.workspace.typescript;
 
     // Sync each dependency to `tsconfig.json` and `package.json`
     let mut package_prod_deps: BTreeMap<String, String> = BTreeMap::new();
@@ -152,7 +153,8 @@ pub async fn sync_node_project(
         // Only add if the dependent project has a `tsconfig.json`,
         // and this `tsconfig.json` has not already declared the dep.
         if let Some(typescript_config) = &workspace.config.typescript {
-            if typescript_config.sync_project_references
+            if is_project_typescript_enabled
+                && typescript_config.sync_project_references
                 && dep_project
                     .root
                     .join(&typescript_config.project_config_file_name)
@@ -201,7 +203,8 @@ pub async fn sync_node_project(
 
     if let Some(typescript_config) = &workspace.config.typescript {
         // Auto-create a `tsconfig.json` if configured and applicable
-        if typescript_config.create_missing_config
+        if is_project_typescript_enabled
+            && typescript_config.create_missing_config
             && !project
                 .root
                 .join(&typescript_config.project_config_file_name)
@@ -211,7 +214,7 @@ pub async fn sync_node_project(
         }
 
         // Sync to the project's `tsconfig.json`
-        if !tsconfig_project_refs.is_empty() {
+        if is_project_typescript_enabled && !tsconfig_project_refs.is_empty() {
             TsConfigJson::sync_with_name(
                 &project.root,
                 &typescript_config.project_config_file_name,
@@ -230,7 +233,7 @@ pub async fn sync_node_project(
         }
 
         // Sync to the root `tsconfig.json`
-        if typescript_config.sync_project_references {
+        if is_project_typescript_enabled && typescript_config.sync_project_references {
             TsConfigJson::sync_with_name(
                 &workspace.root,
                 &typescript_config.root_config_file_name,

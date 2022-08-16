@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for Linux ARM GNU (`aarch64-unknown-linux-gnu`).
+- Added support for Linux ARM musl (`aarch64-unknown-linux-musl`).
+- Added a `typescript` setting to `moon.yml`, allow TS to be controlled per project.
+
 ## 0.11.1
 
 #### 🐞 Fixes

@@ -7,12 +7,6 @@ module.exports = {
 	},
 	overrides: [
 		{
-			files: ['**/*.config.js'],
-			rules: {
-				'import/no-commonjs': 'off',
-			},
-		},
-		{
 			files: ['scripts/**/*'],
 			rules: {
 				'no-console': 'off',

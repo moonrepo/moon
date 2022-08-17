@@ -57,7 +57,11 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
     match GlobalProjectConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(
-            format_figment_errors(errors),
+            if let ConfigError::FailedValidation(valids) = errors {
+                format_figment_errors(valids)
+            } else {
+                format_error_line(errors.to_string())
+            },
         )),
     }
 }

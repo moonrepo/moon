@@ -200,8 +200,6 @@ node:
 
             let config: WorkspaceConfig = super::load_jailed_config(jail.directory())?;
 
-            assert_eq!(config.extends, Some("./shared/workspace.yml".to_owned()));
-
             // Inherits from extended file
             assert!(!config.node.add_engines_constraint);
             assert!(!config.typescript.unwrap().sync_project_references);
@@ -231,11 +229,6 @@ node:
                 )?;
 
             let config: WorkspaceConfig = super::load_jailed_config(jail.directory())?;
-
-            assert_eq!(
-                    config.extends,
-                    Some("https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/workspace.yml".to_owned())
-                );
 
             // Inherits from extended file
             assert!(!config.node.add_engines_constraint);

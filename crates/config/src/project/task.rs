@@ -1,5 +1,5 @@
+use crate::project::local::{ProjectConfig, ProjectLanguage};
 use crate::project::task_options::TaskOptionsConfig;
-use crate::project::{ProjectConfig, ProjectLanguage};
 use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
 use moon_utils::process::split_args;

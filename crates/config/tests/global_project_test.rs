@@ -1,4 +1,3 @@
-use figment;
 use moon_config::{ConfigError, GlobalProjectConfig};
 use moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME;
 use moon_utils::string_vec;

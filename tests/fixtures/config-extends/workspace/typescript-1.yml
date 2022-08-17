@@ -1,0 +1,4 @@
+extends: './typescript-0.yml'
+
+typescript:
+  syncProjectReferences: false

@@ -105,32 +105,7 @@ impl WorkspaceConfig {
         }
 
         let mut config = WorkspaceConfig::load_config(figment.select(&profile_name))?;
-
-        // let mut config = WorkspaceConfig::load_config(
-        //     Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name))
-        //         .merge(Yaml::file(&path).profile(&profile_name))
-        //         .select(&profile_name),
-        // )?;
-
-        // This is janky, but figment does not support any kind of extends mechanism,
-        // and figment providers do not have access to the current config dataset,
-        // so we need to double-load this config and extract in the correct order!
-        // if let Some(extends) = config.extends {
-        //     let mut figment = Figment::from(
-        //         Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name),
-        //     );
-
-        // if extends.starts_with("http") {
-        //     figment = figment.merge(Url::from(extends).profile(&profile_name));
-        // } else {
-        //     figment = figment
-        //         .merge(Yaml::file(path.parent().unwrap().join(extends)).profile(&profile_name));
-        // };
-
-        //     figment = figment.merge(Yaml::file(&path).profile(&profile_name));
-
-        //     config = WorkspaceConfig::load_config(figment.select(&profile_name))?;
-        // }
+        config.extends = None;
 
         // Versions from env vars should take precedence
         if let Ok(node_version) = env::var("MOON_NODE_VERSION") {

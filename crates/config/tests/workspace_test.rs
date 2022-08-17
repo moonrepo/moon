@@ -3,6 +3,7 @@ use moon_config::{
     WorkspaceProjects,
 };
 use moon_constants::CONFIG_WORKSPACE_FILENAME;
+use moon_utils::test::get_fixtures_dir;
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
@@ -42,7 +43,57 @@ fn loads_defaults() {
 
 mod extends {
     use super::*;
+    use moon_config::{NodePackageManager, TypeScriptConfig, YarnConfig};
+    use pretty_assertions::assert_eq;
     use std::fs;
+
+    #[test]
+    fn recursive_merges() {
+        let fixture = get_fixtures_dir("config-extends/workspace");
+        let config = WorkspaceConfig::load(fixture.join("base-2.yml")).unwrap();
+
+        assert_eq!(
+            config,
+            WorkspaceConfig {
+                action_runner: ActionRunnerConfig {
+                    cache_lifetime: "3 hours".into(),
+                    log_running_command: false,
+                    ..ActionRunnerConfig::default()
+                },
+                node: NodeConfig {
+                    version: "4.5.6".into(),
+                    add_engines_constraint: true,
+                    dedupe_on_lockfile_change: false,
+                    package_manager: NodePackageManager::Yarn,
+                    yarn: Some(YarnConfig {
+                        version: "3.0.0".into()
+                    }),
+                    ..NodeConfig::default()
+                },
+                vcs: VcsConfig {
+                    manager: VcsManager::Svn,
+                    ..VcsConfig::default()
+                },
+                ..WorkspaceConfig::default()
+            }
+        );
+    }
+
+    #[test]
+    fn recursive_merges_typescript() {
+        let fixture = get_fixtures_dir("config-extends/workspace");
+        let config = WorkspaceConfig::load(fixture.join("typescript-2.yml")).unwrap();
+
+        assert_eq!(
+            config.typescript,
+            Some(TypeScriptConfig {
+                create_missing_config: false,
+                root_config_file_name: "tsconfig.root.json".into(),
+                sync_project_references: true,
+                ..TypeScriptConfig::default()
+            })
+        );
+    }
 
     #[test]
     #[should_panic(expected = "Invalid <id>extends</id> field, must be a string.")]

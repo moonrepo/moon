@@ -161,28 +161,27 @@ pub fn create_target_hasher(
 ) -> Result<NodeTargetHasher, ActionError> {
     let mut hasher = NodeTargetHasher::new(workspace.config.node.version.clone());
 
-    // Hash root configs first
     if let Some(root_package) = PackageJson::read(&workspace.root)? {
         hasher.hash_package_json(&root_package);
     }
 
-    if let Some(root_tsconfig) = TsConfigJson::read_with_name(
-        &workspace.root,
-        &workspace.config.typescript.root_config_file_name,
-    )? {
-        hasher.hash_tsconfig_json(&root_tsconfig);
-    }
-
-    // Hash project configs second so they can override
     if let Some(package) = PackageJson::read(&project.root)? {
         hasher.hash_package_json(&package);
     }
 
-    if let Some(tsconfig) = TsConfigJson::read_with_name(
-        &project.root,
-        &workspace.config.typescript.project_config_file_name,
-    )? {
-        hasher.hash_tsconfig_json(&tsconfig);
+    if let Some(typescript_config) = &workspace.config.typescript {
+        if let Some(root_tsconfig) =
+            TsConfigJson::read_with_name(&workspace.root, &typescript_config.root_config_file_name)?
+        {
+            hasher.hash_tsconfig_json(&root_tsconfig);
+        }
+
+        if let Some(tsconfig) = TsConfigJson::read_with_name(
+            &project.root,
+            &typescript_config.project_config_file_name,
+        )? {
+            hasher.hash_tsconfig_json(&tsconfig);
+        }
     }
 
     Ok(hasher)

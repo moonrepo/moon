@@ -117,12 +117,6 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
         }
 
         entry.unpack(&output_path)?;
-
-        trace!(
-            target: LOG_TARGET,
-            "Unpacking file {}",
-            color::path(&output_path)
-        );
     }
 
     Ok(())

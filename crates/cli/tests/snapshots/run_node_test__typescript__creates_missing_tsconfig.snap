@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 894
+expression: "read_to_string(fixture.path().join(\"tsconfig.json\")).unwrap()"
+---
+{
+  "files": [],
+  "references": [
+    {
+      "path": "create-config"
+    }
+  ]
+}
+

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- The `typescript` setting in `.moon/workspace.yml` is now optional, allowing repos to opt-out of
+  TypeScript support. This shouldn't affect you if the setting is already explicitly defined.
+
+#### 🚀 Updates
+
+- Added support for Linux ARM GNU (`aarch64-unknown-linux-gnu`).
+- Added support for Linux ARM musl (`aarch64-unknown-linux-musl`).
+- Added a `typescript` setting to `moon.yml`, allowing TypeScript support to be toggled per project.
+
 ## 0.11.1
 
 #### 🐞 Fixes

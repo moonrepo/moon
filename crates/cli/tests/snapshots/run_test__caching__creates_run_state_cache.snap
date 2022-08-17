@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 251
+assertion_line: 245
 expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.item.hash))).unwrap()"
 ---
 [

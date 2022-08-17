@@ -302,10 +302,7 @@ mod engines {
     fn adds_engines_constraint() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            r#"  addEnginesConstraint: true"#,
-        );
+        append_workspace_config(fixture.path(), r#"  addEnginesConstraint: true"#);
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -319,10 +316,7 @@ mod engines {
     fn doesnt_add_engines_constraint() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            r#"  addEnginesConstraint: false"#,
-        );
+        append_workspace_config(fixture.path(), r#"  addEnginesConstraint: false"#);
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -353,10 +347,7 @@ mod version_manager {
     fn adds_nvmrc_file() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            r#"  syncVersionManagerConfig: nvm"#,
-        );
+        append_workspace_config(fixture.path(), r#"  syncVersionManagerConfig: nvm"#);
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -375,10 +366,7 @@ mod version_manager {
     fn adds_nodenv_file() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            r#"  syncVersionManagerConfig: nodenv"#,
-        );
+        append_workspace_config(fixture.path(), r#"  syncVersionManagerConfig: nodenv"#);
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -397,10 +385,7 @@ mod version_manager {
     fn errors_for_invalid_value() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            r#"  syncVersionManagerConfig: invalid"#,
-        );
+        append_workspace_config(fixture.path(), r#"  syncVersionManagerConfig: invalid"#);
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -423,7 +408,7 @@ mod sync_depends_on {
         let fixture = create_sandbox_with_git("cases");
 
         append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
+            fixture.path(),
             &format!(
                 "  syncProjectWorkspaceDependencies: true\n  dependencyVersionFormat: {}",
                 format
@@ -491,10 +476,7 @@ mod sync_depends_on {
     fn syncs_depends_on_with_scopes() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            "  syncProjectWorkspaceDependencies: true",
-        );
+        append_workspace_config(fixture.path(), "  syncProjectWorkspaceDependencies: true");
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -505,54 +487,6 @@ mod sync_depends_on {
         assert_snapshot!(
             read_to_string(fixture.path().join("depends-on-scopes/package.json")).unwrap()
         );
-    }
-
-    #[test]
-    fn syncs_as_reference_to_tsconfig_json() {
-        let fixture = create_sandbox_with_git("cases");
-
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            "typescript:\n  syncProjectReferences: true\n  createMissingConfig: false",
-        );
-
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("dependsOn:standard")
-            .assert();
-
-        // root
-        assert_snapshot!(read_to_string(fixture.path().join("tsconfig.json")).unwrap());
-
-        // project
-        // deps-a does not have a `tsconfig.json` on purpose
-        assert!(!fixture.path().join("deps-a/tsconfig.json").exists());
-        assert_snapshot!(read_to_string(fixture.path().join("depends-on/tsconfig.json")).unwrap());
-    }
-
-    #[test]
-    fn creates_missing_tsconfig_json_when_syncs_as_reference() {
-        let fixture = create_sandbox_with_git("cases");
-
-        append_workspace_config(
-            &fixture.path().join(".moon/workspace.yml"),
-            "typescript:\n  syncProjectReferences: true\n  createMissingConfig: true",
-        );
-
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("dependsOn:standard")
-            .assert();
-
-        // root
-        assert_snapshot!(read_to_string(fixture.path().join("tsconfig.json")).unwrap());
-
-        // project
-        assert_snapshot!(read_to_string(fixture.path().join("depends-on/tsconfig.json")).unwrap());
-
-        // deps-a config that was created
-        assert!(fixture.path().join("deps-a/tsconfig.json").exists());
-        assert_snapshot!(read_to_string(fixture.path().join("deps-a/tsconfig.json")).unwrap());
     }
 }
 
@@ -934,6 +868,122 @@ mod non_js_bins {
         assert_eq!(
             fs::read_to_string(fixture.path().join("swc/out.js")).unwrap(),
             "export var SWC = \"swc\";\n\n\n//# sourceMappingURL=out.js.map"
+        );
+    }
+}
+
+mod typescript {
+    use super::*;
+
+    #[test]
+    fn creates_missing_tsconfig() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        append_workspace_config(fixture.path(), "  createMissingConfig: true");
+
+        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("create-config:test")
+            .assert();
+
+        assert!(fixture.path().join("create-config/tsconfig.json").exists());
+
+        // root
+        assert_snapshot!(read_to_string(fixture.path().join("tsconfig.json")).unwrap());
+
+        // project
+        assert_snapshot!(
+            read_to_string(fixture.path().join("create-config/tsconfig.json")).unwrap()
+        );
+    }
+
+    #[test]
+    fn doesnt_create_missing_tsconfig_if_setting_off() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        append_workspace_config(fixture.path(), "  createMissingConfig: false");
+
+        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("create-config:test")
+            .assert();
+
+        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+    }
+
+    #[test]
+    fn doesnt_create_missing_tsconfig_if_syncing_off() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        append_workspace_config(
+            fixture.path(),
+            "  createMissingConfig: true\n  syncProjectReferences: false",
+        );
+
+        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("create-config:test")
+            .assert();
+
+        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+    }
+
+    #[test]
+    fn doesnt_create_missing_tsconfig_if_project_disabled() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        append_workspace_config(fixture.path(), "  createMissingConfig: true");
+
+        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("create-config-disabled:test")
+            .assert();
+
+        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+    }
+
+    #[test]
+    fn syncs_ref_to_root_config() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        let initial_root = read_to_string(fixture.path().join("tsconfig.json")).unwrap();
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("create-config:test")
+            .assert();
+
+        let synced_root = read_to_string(fixture.path().join("tsconfig.json")).unwrap();
+
+        assert_ne!(initial_root, synced_root);
+        assert_snapshot!(synced_root);
+    }
+
+    #[test]
+    fn syncs_depends_on_as_refs() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        assert!(!fixture
+            .path()
+            .join("syncs-deps-refs/tsconfig.json")
+            .exists());
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("syncs-deps-refs:test")
+            .assert();
+
+        // should not have `deps-no-config-disabled` or `deps-with-config-disabled`
+        assert_snapshot!(
+            read_to_string(fixture.path().join("syncs-deps-refs/tsconfig.json")).unwrap()
         );
     }
 }

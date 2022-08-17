@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 985
+expression: "read_to_string(fixture.path().join(\"syncs-deps-refs/tsconfig.json\")).unwrap()"
+---
+{
+  "extends": "../tsconfig.options.json",
+  "include": [
+    "**/*"
+  ],
+  "references": [
+    {
+      "path": "../deps-no-config"
+    },
+    {
+      "path": "../deps-with-config"
+    }
+  ]
+}
+

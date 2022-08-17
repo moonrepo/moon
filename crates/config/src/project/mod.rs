@@ -127,13 +127,24 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
     pub rename: Option<HashMap<TaskID, TaskID>>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
     #[serde(skip_serializing_if = "skip_if_default")]
     #[validate]
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
+
+    pub typescript: bool,
+}
+
+impl Default for ProjectWorkspaceConfig {
+    fn default() -> Self {
+        ProjectWorkspaceConfig {
+            inherited_tasks: ProjectWorkspaceInheritedTasksConfig::default(),
+            typescript: true,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]

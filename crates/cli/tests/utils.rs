@@ -7,11 +7,11 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::Path;
 
-pub fn append_workspace_config(path: &Path, yaml: &str) {
+pub fn append_workspace_config(root: &Path, yaml: &str) {
     let mut file = OpenOptions::new()
         .write(true)
         .append(true)
-        .open(path)
+        .open(root.join(".moon/workspace.yml"))
         .unwrap();
 
     writeln!(file, "{}", yaml).unwrap();

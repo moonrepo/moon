@@ -397,11 +397,12 @@ node:
 This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
 the same version, which is a very common practice when managing dependencies.
 
-## `typescript`
+## `typescript`<VersionLabel updated version="0.12" />
 
 > `TypeScriptConfig`
 
-Dictates how moon interacts with and utilizes TypeScript within the workspace.
+Dictates how moon interacts with and utilizes TypeScript within the workspace. This field is
+optional and is undefined by default. Define it to enable TypeScript support.
 
 ### `createMissingConfig`<VersionLabel version="0.6" />
 
@@ -458,7 +459,8 @@ typescript:
 > `boolean`
 
 Will sync a project's [`dependsOn`](./project#dependson) setting as project references within that
-project's `tsconfig.json`, and the workspace root `tsconfig.json`. Defaults to `true`.
+project's `tsconfig.json`, and the workspace root `tsconfig.json`. Defaults to `true` when the
+parent `typescript` setting is defined, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 typescript:

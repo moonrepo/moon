@@ -2972,10 +2972,15 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@moonrepo/dev@npm:^0.0.1":
-  version: 0.0.1
-  resolution: "@moonrepo/dev@npm:0.0.1"
-  checksum: bf6294ea3c3e11fbd6894093bbdf00726ae43b3ee44ded7f7573944ae49cfa5e0ac587045d6e118e56ebaefb95babd8cf871b413eb7a63329db3b0b145ef1278
+"@moonrepo/dev@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "@moonrepo/dev@npm:0.1.0"
+  dependencies:
+    conventional-changelog-beemo: ^3.0.1
+    execa: ^5.1.1
+  bin:
+    lerna-release: lib/bin/lernaRelease.js
+  checksum: 6442d5c094ef1b053c64f39bf11f5b391b9997e0fa23a594ed30b62719b7d5a14305771f7953df6f729a4c6e4e33e52bd27478c78ac2625c6f6cf74b212b5898
   languageName: node
   linkType: hard
 
@@ -3546,10 +3551,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tsconfig/docusaurus@npm:^1.0.5":
-  version: 1.0.5
-  resolution: "@tsconfig/docusaurus@npm:1.0.5"
-  checksum: 3089de4a1ae9444c97caaee52dc5e429cc5e719fa596fb8862c19695259818d7e0b86c0eea15f6abe0749757cdc4048771d4b9332059f1b0bd8d4a80b32d51e9
+"@tsconfig/docusaurus@npm:^1.0.6":
+  version: 1.0.6
+  resolution: "@tsconfig/docusaurus@npm:1.0.6"
+  checksum: fb0d7965c01fe64fc6369a72695b903d654bd5fb145f373d707c2bae3c2d828703517d812cef1c041ae44b108f44e52778b9d9837a54fdf782e68e6619a90a4d
   languageName: node
   linkType: hard
 
@@ -3764,7 +3769,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jest@npm:^28.1.6":
+"@types/jest@npm:^28.1.7":
   version: 28.1.7
   resolution: "@types/jest@npm:28.1.7"
   dependencies:
@@ -3831,10 +3836,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*, @types/node@npm:^17.0.32, @types/node@npm:^17.0.5":
-  version: 17.0.32
-  resolution: "@types/node@npm:17.0.32"
-  checksum: afb05704b42032566b3da8b2d80a68883cd3b888472d1b8b4dd6c84f8fad371454f083d4e28bd30c10589187296119d92aba255638b30067afe062b5922388a5
+"@types/node@npm:*, @types/node@npm:^17.0.45, @types/node@npm:^17.0.5":
+  version: 17.0.45
+  resolution: "@types/node@npm:17.0.45"
+  checksum: aa04366b9103b7d6cfd6b2ef64182e0eaa7d4462c3f817618486ea0422984c51fc69fd0d436eae6c9e696ddfdbec9ccaa27a917f7c2e8c75c5d57827fe3d95e8
   languageName: node
   linkType: hard
 
@@ -4059,7 +4064,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:^5.30.7":
+"@typescript-eslint/eslint-plugin@npm:^5.33.1":
   version: 5.33.1
   resolution: "@typescript-eslint/eslint-plugin@npm:5.33.1"
   dependencies:
@@ -4082,7 +4087,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:^5.30.7":
+"@typescript-eslint/parser@npm:^5.33.1":
   version: 5.33.1
   resolution: "@typescript-eslint/parser@npm:5.33.1"
   dependencies:
@@ -5902,6 +5907,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"conventional-changelog-beemo@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "conventional-changelog-beemo@npm:3.0.1"
+  checksum: ad01a2e0da086b715de24a38c64dd585e033598094cbbc7b0ebe9ec5950474eb07fd8a5580f7c5136d8bd88d926157fb4cb397e7be1c10116821dfbd537699dd
+  languageName: node
+  linkType: hard
+
 "convert-source-map@npm:^1.4.0, convert-source-map@npm:^1.6.0, convert-source-map@npm:^1.7.0":
   version: 1.8.0
   resolution: "convert-source-map@npm:1.8.0"
@@ -7005,18 +7017,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-config-moon@npm:^0.0.1":
-  version: 0.0.1
-  resolution: "eslint-config-moon@npm:0.0.1"
+"eslint-config-moon@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "eslint-config-moon@npm:0.1.0"
   dependencies:
-    "@moonrepo/dev": ^0.0.1
-    "@typescript-eslint/eslint-plugin": ^5.30.7
-    "@typescript-eslint/parser": ^5.30.7
+    "@moonrepo/dev": ^0.1.0
+    "@typescript-eslint/eslint-plugin": ^5.33.1
+    "@typescript-eslint/parser": ^5.33.1
     eslint-config-airbnb-base: ^15.0.0
     eslint-config-prettier: ^8.5.0
     eslint-plugin-compat: ^4.0.2
     eslint-plugin-import: ^2.26.0
-    eslint-plugin-jest: ^26.6.0
+    eslint-plugin-jest: ^26.8.3
     eslint-plugin-jsx-a11y: ^6.6.1
     eslint-plugin-node: ^11.1.0
     eslint-plugin-promise: ^6.0.0
@@ -7024,10 +7036,11 @@ __metadata:
     eslint-plugin-react-hooks: ^4.6.0
     eslint-plugin-react-perf: ^3.3.1
     eslint-plugin-simple-import-sort: ^7.0.0
+    eslint-plugin-solid: ^0.7.1
     eslint-plugin-unicorn: ^43.0.2
   peerDependencies:
     eslint: ^8.0.0
-  checksum: 0eaca0b45f654245c528e9db98b88b687ed733de82ce8cf49e93fcaadaea9e56efe494a3a31989235baf11e7d68339edda74bf03a1b3118e0cabc763d101a37a
+  checksum: d779a85070c9ab4003846ab69d84d598c1fa18e8f1889b0d2fa31a27e6edfa2290cd4dbfae8d4500db89c7f3efdee0a25c9027219ebddc43f75ce1b5ad245f68
   languageName: node
   linkType: hard
 
@@ -7115,7 +7128,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-jest@npm:^26.6.0":
+"eslint-plugin-jest@npm:^26.8.3":
   version: 26.8.3
   resolution: "eslint-plugin-jest@npm:26.8.3"
   dependencies:
@@ -7228,6 +7241,22 @@ __metadata:
   peerDependencies:
     eslint: ">=5.0.0"
   checksum: 6aacb7179c213cd2081950630368d1f3b1dcb4f5674d8b989fe7839e7b317ee521d74761676e8b1a7cab49f20405dbcc9aac05358ae804e6bcba6cbf1daccb3d
+  languageName: node
+  linkType: hard
+
+"eslint-plugin-solid@npm:^0.7.1":
+  version: 0.7.1
+  resolution: "eslint-plugin-solid@npm:0.7.1"
+  dependencies:
+    "@typescript-eslint/utils": ^5.10.0
+    is-html: ^2.0.0
+    jsx-ast-utils: ^3.2.0
+    kebab-case: ^1.0.1
+    known-css-properties: ^0.24.0
+    style-to-object: ^0.3.0
+  peerDependencies:
+    eslint: ^6.0.0 || ^7.0.0 || ^8.0.0
+  checksum: 6a68bd95d2027736bc413466def4130954a0812c3ca979973adbbf65dceac96b1ba181a64a73841afb98b13c9908accc0ef046ab2f688b28b9d0d2d701a128f8
   languageName: node
   linkType: hard
 
@@ -8579,7 +8608,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"html-tags@npm:^3.2.0":
+"html-tags@npm:^3.0.0, html-tags@npm:^3.2.0":
   version: 3.2.0
   resolution: "html-tags@npm:3.2.0"
   checksum: a0c9e96ac26c84adad9cc66d15d6711a17f60acda8d987218f1d4cbaacd52864939b230e635cce5a1179f3ddab2a12b9231355617dfbae7945fcfec5e96d2041
@@ -9221,6 +9250,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"is-html@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "is-html@npm:2.0.0"
+  dependencies:
+    html-tags: ^3.0.0
+  checksum: 0cc233e3851453913023560bcd2411a9294bfa18f994d4428f2692d2cfb7f90e5521a42cd4c6a62bf1bc7d42301cb214de442766cbd12a9aa52398d34ab5a2a7
+  languageName: node
+  linkType: hard
+
 "is-installed-globally@npm:^0.4.0":
   version: 0.4.0
   resolution: "is-installed-globally@npm:0.4.0"
@@ -9790,17 +9828,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-preset-moon@npm:^0.0.1":
-  version: 0.0.1
-  resolution: "jest-preset-moon@npm:0.0.1"
+"jest-preset-moon@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "jest-preset-moon@npm:0.1.0"
   dependencies:
-    "@moonrepo/dev": ^0.0.1
-    "@types/jest": ^28.1.6
+    "@moonrepo/dev": ^0.1.0
+    "@types/jest": ^28.1.7
     jest-circus: ^28.1.3
     jest-environment-jsdom: ^28.1.3
   peerDependencies:
     jest: ">=26.0.0"
-  checksum: 3516f8895438d8b4f4c6255f07d3fa9dbb4f58c13d99711087a5a628d7232b9ef4db9734dba83ad82aa2d7b9b8e646b47b9fcfe42d7bc8d9bb91c43cccb3c2b6
+  checksum: 2bfddaeee63130063ce313a943e6d5e4129529217771947d11aaae8691d05b5412d6ddc7f3a6a19b1d9788d3c16d6c4a14ef199170b9f3d58494032927947820
   languageName: node
   linkType: hard
 
@@ -10189,13 +10227,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsx-ast-utils@npm:^2.4.1 || ^3.0.0, jsx-ast-utils@npm:^3.3.2":
+"jsx-ast-utils@npm:^2.4.1 || ^3.0.0, jsx-ast-utils@npm:^3.2.0, jsx-ast-utils@npm:^3.3.2":
   version: 3.3.3
   resolution: "jsx-ast-utils@npm:3.3.3"
   dependencies:
     array-includes: ^3.1.5
     object.assign: ^4.1.3
   checksum: a2ed78cac49a0f0c4be8b1eafe3c5257a1411341d8e7f1ac740debae003de04e5f6372bfcfbd9d082e954ffd99aac85bcda85b7c6bc11609992483f4cdc0f745
+  languageName: node
+  linkType: hard
+
+"kebab-case@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "kebab-case@npm:1.0.1"
+  checksum: 8cf5f5d534c534cbe0bef0a633290ed4ca4821d32108e5016a1e4d07b6844d863150b9ff00ef56848e1ed4cf6b96ac7b019ebc2658b80547034c12a057f4e231
   languageName: node
   linkType: hard
 
@@ -10226,6 +10271,13 @@ __metadata:
   version: 2.0.5
   resolution: "klona@npm:2.0.5"
   checksum: 8c976126ea252b766e648a4866e1bccff9d3b08432474ad80c559f6c7265cf7caede2498d463754d8c88c4759895edd8210c85c0d3155e6aae4968362889466f
+  languageName: node
+  linkType: hard
+
+"known-css-properties@npm:^0.24.0":
+  version: 0.24.0
+  resolution: "known-css-properties@npm:0.24.0"
+  checksum: 071c3a9457ed2c5c46b6172d2c7b6a253ca4aec0c5c84da06e705026c377529fc57b690957c87f9313606be63a5152dc706102c09ba36102cc484936ec2f96b9
   languageName: node
   linkType: hard
 
@@ -10984,16 +11036,16 @@ __metadata:
   resolution: "moon@workspace:."
   dependencies:
     "@moonrepo/cli": "workspace:*"
-    "@types/node": ^17.0.32
+    "@types/node": ^17.0.45
     eslint: ^8.22.0
-    eslint-config-moon: ^0.0.1
+    eslint-config-moon: ^0.1.0
     execa: ^6.1.0
     jest: ^28.1.3
-    jest-preset-moon: ^0.0.1
+    jest-preset-moon: ^0.1.0
     packemon: ^2.3.3
     prettier: ^2.7.1
     prettier-config-moon: ^0.0.1
-    tsconfig-moon: ^0.0.1
+    tsconfig-moon: ^0.1.0
     typescript: ^4.7.4
   languageName: unknown
   linkType: soft
@@ -14685,10 +14737,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsconfig-moon@npm:^0.0.1":
-  version: 0.0.1
-  resolution: "tsconfig-moon@npm:0.0.1"
-  checksum: f5580fff9e5e08401fb9327fce11568a7b3987359bac1886c40275b402f326cd1a85a6765fe5626c8a4207014d1410e7f944bdd63cbb79b1af200533727270c3
+"tsconfig-moon@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "tsconfig-moon@npm:0.1.0"
+  checksum: a445bc89e6107e9b5be0e96187b5410abb0de115f1ec52d382b63887bea500554630d161ab5f573233485b57d8a1198b4a2a3104d401aabf45ad054eb47e3aa2
   languageName: node
   linkType: hard
 
@@ -15542,7 +15594,7 @@ __metadata:
     "@fortawesome/pro-regular-svg-icons": ^6.1.1
     "@fortawesome/react-fontawesome": ^0.1.18
     "@mdx-js/react": ^1.6.22
-    "@tsconfig/docusaurus": ^1.0.5
+    "@tsconfig/docusaurus": ^1.0.6
     clsx: ^1.1.1
     docusaurus-plugin-typedoc-api: ^1.11.0
     prism-react-renderer: ^1.3.5

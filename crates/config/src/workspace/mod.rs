@@ -6,13 +6,15 @@ mod typescript;
 mod vcs;
 
 use crate::errors::map_validation_errors_to_figment_errors;
+use crate::helpers::gather_extended_sources;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
+use crate::ConfigError;
 use action_runner::ActionRunnerConfig;
 use figment::{
     providers::{Format, Serialized, Yaml},
-    Error as FigmentError, Figment,
+    Figment,
 };
 use node::NodeConfig;
 use schemars::JsonSchema;
@@ -89,33 +91,46 @@ pub struct WorkspaceConfig {
 }
 
 impl WorkspaceConfig {
-    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, Vec<FigmentError>> {
+    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ConfigError> {
         let profile_name = "workspace";
-        let mut config = WorkspaceConfig::load_config(
-            Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name))
-                .merge(Yaml::file(&path).profile(&profile_name))
-                .select(&profile_name),
-        )?;
+        let mut figment =
+            Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name));
+
+        for source in gather_extended_sources(&path)? {
+            if source.starts_with("http") {
+                figment = figment.merge(Url::from(source).profile(&profile_name));
+            } else {
+                figment = figment.merge(Yaml::file(source).profile(&profile_name));
+            };
+        }
+
+        let mut config = WorkspaceConfig::load_config(figment.select(&profile_name))?;
+
+        // let mut config = WorkspaceConfig::load_config(
+        //     Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name))
+        //         .merge(Yaml::file(&path).profile(&profile_name))
+        //         .select(&profile_name),
+        // )?;
 
         // This is janky, but figment does not support any kind of extends mechanism,
         // and figment providers do not have access to the current config dataset,
         // so we need to double-load this config and extract in the correct order!
-        if let Some(extends) = config.extends {
-            let mut figment = Figment::from(
-                Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name),
-            );
+        // if let Some(extends) = config.extends {
+        //     let mut figment = Figment::from(
+        //         Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name),
+        //     );
 
-            if extends.starts_with("http") {
-                figment = figment.merge(Url::from(extends).profile(&profile_name));
-            } else {
-                figment = figment
-                    .merge(Yaml::file(path.parent().unwrap().join(extends)).profile(&profile_name));
-            };
+        // if extends.starts_with("http") {
+        //     figment = figment.merge(Url::from(extends).profile(&profile_name));
+        // } else {
+        //     figment = figment
+        //         .merge(Yaml::file(path.parent().unwrap().join(extends)).profile(&profile_name));
+        // };
 
-            figment = figment.merge(Yaml::file(&path).profile(&profile_name));
+        //     figment = figment.merge(Yaml::file(&path).profile(&profile_name));
 
-            config = WorkspaceConfig::load_config(figment.select(&profile_name))?;
-        }
+        //     config = WorkspaceConfig::load_config(figment.select(&profile_name))?;
+        // }
 
         // Versions from env vars should take precedence
         if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
@@ -141,11 +156,13 @@ impl WorkspaceConfig {
         Ok(config)
     }
 
-    fn load_config(figment: Figment) -> Result<WorkspaceConfig, Vec<FigmentError>> {
-        let config: WorkspaceConfig = figment.extract().map_err(|e| vec![e])?;
+    fn load_config(figment: Figment) -> Result<WorkspaceConfig, ConfigError> {
+        let config: WorkspaceConfig = figment.extract()?;
 
         if let Err(errors) = config.validate() {
-            return Err(map_validation_errors_to_figment_errors(&figment, &errors));
+            return Err(ConfigError::FailedValidation(
+                map_validation_errors_to_figment_errors(&figment, &errors),
+            ));
         }
 
         Ok(config)
@@ -161,7 +178,11 @@ mod tests {
     fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
         match WorkspaceConfig::load(root.join(constants::CONFIG_WORKSPACE_FILENAME)) {
             Ok(cfg) => Ok(cfg),
-            Err(errors) => Err(errors.first().unwrap().clone()),
+            Err(error) => Err(match error {
+                ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
+                ConfigError::Figment(f) => f,
+                _ => figment::Error::from("Unknown".to_string()),
+            }),
         }
     }
 

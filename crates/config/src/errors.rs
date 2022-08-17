@@ -1,7 +1,34 @@
 use figment::{Error as FigmentError, Figment};
+use moon_error::MoonError;
 use serde_json::Value;
 use std::borrow::Cow;
+use std::path::PathBuf;
+use thiserror::Error;
 use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
+
+#[derive(Error, Debug)]
+pub enum ConfigError {
+    #[error("Failed validation.")]
+    FailedValidation(Vec<FigmentError>),
+
+    #[error("Invalid <id>extends</id> field, must be a string.")]
+    InvalidExtendsField,
+
+    #[error("Failed to parse YAML document <path>{0}</path>: {1}")]
+    InvalidYaml(PathBuf, String),
+
+    #[error("Cannot extend configuration file <file>{0}</file> as it does not exist.")]
+    MissingFile(String),
+
+    #[error("Unable to extend <file>{0}<file>, only YAML documents are supported.")]
+    UnsupportedExtendsDocument(String),
+
+    #[error(transparent)]
+    Figment(#[from] FigmentError),
+
+    #[error(transparent)]
+    Moon(#[from] MoonError),
+}
 
 pub fn create_validation_error(code: &'static str, path: &str, message: String) -> ValidationError {
     let mut error = ValidationError::new(code);

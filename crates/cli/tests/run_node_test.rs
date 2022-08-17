@@ -888,8 +888,6 @@ mod typescript {
             .arg("create-config:test")
             .assert();
 
-        moon_utils::test::debug_sandbox(&fixture, &assert);
-
         assert!(fixture.path().join("create-config/tsconfig.json").exists());
 
         // root
@@ -962,8 +960,6 @@ mod typescript {
             .arg("run")
             .arg("create-config:test")
             .assert();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         let synced_root = read_to_string(fixture.path().join("tsconfig.json")).unwrap();
 

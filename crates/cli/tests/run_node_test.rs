@@ -883,7 +883,7 @@ mod typescript {
 
         assert!(!fixture.path().join("create-config/tsconfig.json").exists());
 
-        let assert = create_moon_command(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("create-config:test")
             .assert();
@@ -956,7 +956,7 @@ mod typescript {
 
         let initial_root = read_to_string(fixture.path().join("tsconfig.json")).unwrap();
 
-        let assert = create_moon_command(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("create-config:test")
             .assert();
@@ -976,12 +976,10 @@ mod typescript {
             .join("syncs-deps-refs/tsconfig.json")
             .exists());
 
-        let assert = create_moon_command(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("syncs-deps-refs:test")
             .assert();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         // should not have `deps-no-config-disabled` or `deps-with-config-disabled`
         assert_snapshot!(

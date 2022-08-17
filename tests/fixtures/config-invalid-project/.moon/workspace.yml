@@ -1,2 +1,4 @@
+extends: '../shared-workspace.yml'
+
 projects:
   test: test

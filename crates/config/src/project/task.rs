@@ -1,4 +1,4 @@
-use crate::project::local::{ProjectConfig, ProjectLanguage};
+use crate::project::local_config::{ProjectConfig, ProjectLanguage};
 use crate::project::task_options::TaskOptionsConfig;
 use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};

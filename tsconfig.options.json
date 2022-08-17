@@ -1,3 +1,3 @@
 {
-  "extends": "tsconfig-beemo/tsconfig.workspaces.json"
+  "extends": "tsconfig-moon/tsconfig.projects.json"
 }

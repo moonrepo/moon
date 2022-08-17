@@ -1,0 +1,11 @@
+extends: './global-1.yml'
+
+fileGroups:
+  sources:
+    - 'sources/**/*'
+
+tasks:
+  format:
+    command: 'prettier'
+  test:
+    command: 'noop'

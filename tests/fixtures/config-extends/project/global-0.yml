@@ -1,0 +1,5 @@
+tasks:
+  test:
+    command: 'jest'
+    inputs:
+      - 'tests'

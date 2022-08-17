@@ -1,6 +1,7 @@
 use moon_config::{ConfigError, GlobalProjectConfig};
 use moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME;
 use moon_utils::string_vec;
+use moon_utils::test::get_fixtures_dir;
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
@@ -45,7 +46,48 @@ fileGroups:
 mod extends {
     use super::*;
     use moon_config::{TaskConfig, TaskOptionsConfig};
+    use pretty_assertions::assert_eq;
     use std::fs;
+
+    #[test]
+    fn recursive_merges() {
+        let fixture = get_fixtures_dir("config-extends/project");
+        let config = GlobalProjectConfig::load(fixture.join("global-2.yml")).unwrap();
+
+        assert_eq!(
+            config,
+            GlobalProjectConfig {
+                file_groups: HashMap::from([
+                    ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
+                    ("tests".to_owned(), string_vec!["tests/**/*"]),
+                ]),
+                tasks: BTreeMap::from([
+                    (
+                        "lint".to_owned(),
+                        TaskConfig {
+                            command: Some(String::from("eslint")),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                    (
+                        "format".to_owned(),
+                        TaskConfig {
+                            command: Some(String::from("prettier")),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                    (
+                        "test".to_owned(),
+                        TaskConfig {
+                            command: Some(String::from("noop")),
+                            ..TaskConfig::default()
+                        },
+                    )
+                ]),
+                ..GlobalProjectConfig::default()
+            }
+        )
+    }
 
     #[test]
     // #[should_panic(

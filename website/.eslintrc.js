@@ -9,5 +9,7 @@ module.exports = {
 
 		// Tailwind composition
 		'no-magic-numbers': 'off',
+
+		'unicorn/prefer-module': 'off',
 	},
 };

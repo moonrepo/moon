@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-commonjs
 module.exports = {
 	ignorePatterns: ['prism.config.js', 'tailwind.config.js'],
 	rules: {
@@ -10,5 +9,7 @@ module.exports = {
 
 		// Tailwind composition
 		'no-magic-numbers': 'off',
+
+		'unicorn/prefer-module': 'off',
 	},
 };

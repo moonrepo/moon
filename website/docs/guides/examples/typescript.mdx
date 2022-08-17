@@ -18,7 +18,7 @@ it ensures that only affected projects are built, and not the entire repository.
 Begin by installing `typescript` and any pre-configured tsconfig packages in your root. We suggest
 using the same version across the entire repository.
 
-<AddDepsTabs dep="typescript tsconfig-beemo" dev />
+<AddDepsTabs dep="typescript tsconfig-moon" dev />
 
 ## Setup
 
@@ -70,13 +70,13 @@ Multiple root-level TypeScript configs are _required_, as we need to define comp
 are shared across the repository, and we need to house a list of all project references.
 
 To start, let's create a `tsconfig.options.json` that will contain our compiler options. In our
-example, we'll extend [tsconfig-beemo](https://www.npmjs.com/package/tsconfig-beemo) for
-convenience. Specifically, the `tsconfig.workspaces.json` config, which enables ECMAScript modules,
-composite mode, declaration emitting, and incremental builds.
+example, we'll extend [tsconfig-moon](https://www.npmjs.com/package/tsconfig-moon) for convenience.
+Specifically, the `tsconfig.workspaces.json` config, which enables ECMAScript modules, composite
+mode, declaration emitting, and incremental builds.
 
 ```json title="tsconfig.options.json"
 {
-	"extends": "tsconfig-beemo/tsconfig.workspaces.json",
+	"extends": "tsconfig-moon/tsconfig.projects.json",
 	"compilerOptions": {
 		// Your custom options
 		"moduleResolution": "nodenext",

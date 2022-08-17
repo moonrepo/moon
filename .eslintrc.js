@@ -1,17 +1,11 @@
 module.exports = {
 	root: true,
-	extends: ['beemo', 'beemo/node'],
+	extends: ['moon', 'moon/node'],
 	parserOptions: {
 		project: 'tsconfig.eslint.json',
 		tsconfigRootDir: __dirname,
 	},
 	overrides: [
-		{
-			files: ['**/*.config.js'],
-			rules: {
-				'import/no-commonjs': 'off',
-			},
-		},
 		{
 			files: ['scripts/**/*'],
 			rules: {

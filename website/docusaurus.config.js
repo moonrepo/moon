@@ -101,6 +101,40 @@ const config = {
 					// 	position: 'left',
 					// },
 					{
+						type: 'dropdown',
+						label: 'Packages',
+						items: [
+							{
+								label: '@moonrepo/cli',
+								href: 'https://www.npmjs.com/package/@moonrepo/cli',
+							},
+							{
+								label: '@moonrepo/dev',
+								href: 'https://www.npmjs.com/package/@moonrepo/dev',
+							},
+							{
+								label: 'babel-preset-moon',
+								href: 'https://www.npmjs.com/package/babel-preset-moon',
+							},
+							{
+								label: 'eslint-config-moon',
+								href: 'https://www.npmjs.com/package/eslint-config-moon',
+							},
+							{
+								label: 'jest-preset-moon',
+								href: 'https://www.npmjs.com/package/jest-preset-moon',
+							},
+							{
+								label: 'prettier-config-moon',
+								href: 'https://www.npmjs.com/package/prettier-config-moon',
+							},
+							{
+								label: 'tsconfig-moon',
+								href: 'https://www.npmjs.com/package/tsconfig-moon',
+							},
+						],
+					},
+					{
 						...social[0],
 						position: 'right',
 					},
@@ -137,6 +171,10 @@ const config = {
 								label: 'Discussions',
 								to: 'https://github.com/moonrepo/moon/discussions',
 							},
+							{
+								label: 'Tooling configurations',
+								href: 'https://github.com/moonrepo/dev',
+							},
 						],
 					},
 					{
@@ -166,7 +204,7 @@ const config = {
 			return {
 				name: 'docusaurus-tailwindcss',
 				configurePostCss(postcssOptions) {
-					// eslint-disable-next-line import/no-extraneous-dependencies, node/no-unpublished-require
+					// eslint-disable-next-line import/no-extraneous-dependencies
 					postcssOptions.plugins.push(require('tailwindcss'));
 
 					return postcssOptions;

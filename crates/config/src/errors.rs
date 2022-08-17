@@ -37,12 +37,16 @@ pub fn create_validation_error(code: &'static str, path: &str, message: String) 
     error
 }
 
+pub fn format_error_line<T: AsRef<str>>(msg: T) -> String {
+    format!("  <accent>▪</accent> {}", msg.as_ref())
+}
+
 pub fn format_figment_errors(errors: Vec<FigmentError>) -> String {
     let mut list = vec![];
 
     for error in errors {
         for nested_error in error {
-            list.push(format!("  <accent>▪</accent> {}", nested_error));
+            list.push(format_error_line(nested_error.to_string()));
         }
     }
 

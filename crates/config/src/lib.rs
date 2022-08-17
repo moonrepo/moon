@@ -6,7 +6,7 @@ mod types;
 mod validators;
 mod workspace;
 
-pub use errors::{format_figment_errors, ConfigError};
+pub use errors::{format_error_line, format_figment_errors, ConfigError};
 pub use project::dep::*;
 pub use project::global::GlobalProjectConfig;
 pub use project::task::*;

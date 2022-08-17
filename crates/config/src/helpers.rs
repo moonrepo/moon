@@ -4,7 +4,7 @@ use moon_utils::path;
 use std::collections::VecDeque;
 use std::fs;
 use std::path::{Path, PathBuf};
-use yaml_rust::YamlLoader;
+use yaml_rust::{Yaml, YamlLoader};
 
 pub fn gather_extended_sources<T: AsRef<Path>>(base_config: T) -> Result<Vec<String>, ConfigError> {
     let base_config = base_config.as_ref();
@@ -43,17 +43,21 @@ pub fn gather_extended_sources<T: AsRef<Path>>(base_config: T) -> Result<Vec<Str
 
             let doc = &yaml[0];
 
-            if doc["extends"].is_badvalue() || doc["extends"].is_null() || doc["extends"].is_array()
-            {
-                return Err(ConfigError::InvalidExtendsField);
+            // Field does not exist!
+            if doc["extends"].is_badvalue() {
+                continue;
             }
 
-            queue.push_back(path::to_string(
-                config_path
-                    .parent()
-                    .unwrap()
-                    .join(doc["extends"].as_str().unwrap()),
-            )?);
+            match &doc["extends"] {
+                Yaml::String(extends) => {
+                    queue.push_back(path::to_string(
+                        config_path.parent().unwrap().join(extends),
+                    )?);
+                }
+                _ => {
+                    return Err(ConfigError::InvalidExtendsField);
+                }
+            }
         }
     }
 

@@ -4,6 +4,7 @@ use validator::Validate;
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
+// `default` is required since the parent field is `Option`
 #[serde(default, rename_all = "camelCase")]
 pub struct TypeScriptConfig {
     pub create_missing_config: bool,

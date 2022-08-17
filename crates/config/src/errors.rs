@@ -23,6 +23,9 @@ pub enum ConfigError {
     #[error("Unable to extend <file>{0}<file>, only YAML documents are supported.")]
     UnsupportedExtendsDocument(String),
 
+    #[error("Cannot extend configuration file <file>{0}</file>, only HTTPS URLs are supported.")]
+    UnsupportedHttps(String),
+
     #[error(transparent)]
     Figment(#[from] FigmentError),
 

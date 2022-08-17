@@ -18,9 +18,11 @@ pub fn gather_extended_sources<T: AsRef<Path>>(base_config: T) -> Result<Vec<Str
             }
 
             // We cant parse URLs, so end immediately
-            if config.starts_with("http") {
+            if config.starts_with("https") {
                 sources.push(config);
                 break;
+            } else if config.starts_with("http") {
+                return Err(ConfigError::UnsupportedHttps(config));
             }
 
             // Otherwise we have a possible file path
@@ -50,9 +52,13 @@ pub fn gather_extended_sources<T: AsRef<Path>>(base_config: T) -> Result<Vec<Str
 
             match &doc["extends"] {
                 Yaml::String(extends) => {
-                    queue.push_back(path::to_string(
-                        config_path.parent().unwrap().join(extends),
-                    )?);
+                    if extends.starts_with("http") {
+                        queue.push_back(extends.to_owned());
+                    } else {
+                        queue.push_back(path::to_string(
+                            config_path.parent().unwrap().join(extends),
+                        )?);
+                    }
                 }
                 _ => {
                     return Err(ConfigError::InvalidExtendsField);

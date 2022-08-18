@@ -52,9 +52,7 @@ fn convert_to_regex(
 async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, WorkspaceError> {
     let mut buffer = String::new();
 
-    stdin()
-        .read_to_string(&mut buffer)
-        .map_err(|e| MoonError::Io(e))?;
+    stdin().read_to_string(&mut buffer).map_err(MoonError::Io)?;
 
     // If piped via stdin, parse and use it
     if !buffer.is_empty() {
@@ -64,14 +62,14 @@ async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, W
         return Ok(result.files);
     }
 
-    Ok(query_touched_files(
+    query_touched_files(
         workspace,
         &mut QueryTouchedFilesOptions {
             local: !is_ci(),
             ..QueryTouchedFilesOptions::default()
         },
     )
-    .await?)
+    .await
 }
 
 pub async fn query_projects(

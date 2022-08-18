@@ -1,14 +1,17 @@
 use moon_cli::enums::TouchedStatus;
 use moon_cli::queries::projects::QueryProjectsResult;
 use moon_cli::queries::touched_files::QueryTouchedFilesResult;
-use moon_utils::string_vec;
 use moon_utils::test::{
     create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
     run_git_command,
 };
+use moon_utils::{is_ci, string_vec};
 use std::fs;
+use std::path::Path;
 
 mod projects {
+    use moon_utils::test::get_assert_stdout_output;
+
     use super::*;
 
     #[test]
@@ -41,12 +44,26 @@ mod projects {
         );
     }
 
+    fn touch_file(path: &Path) {
+        fs::write(path.join("advanced/file"), "contents").unwrap();
+
+        // CI uses `git diff` while local uses `git status`
+        if is_ci() {
+            run_git_command(path, |cmd| {
+                cmd.args(["add", "advanced/file"]);
+            });
+
+            run_git_command(path, |cmd| {
+                cmd.args(["commit", "-m", "Touch"]);
+            });
+        }
+    }
+
     #[test]
     fn can_filter_by_affected() {
         let fixture = create_sandbox_with_git("projects");
 
-        // Create a file to trigger affected
-        fs::write(fixture.path().join("advanced/file"), "contents").unwrap();
+        touch_file(fixture.path());
 
         let assert = create_moon_command(fixture.path())
             .arg("query")
@@ -58,7 +75,36 @@ mod projects {
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
 
         assert_eq!(ids, string_vec!["advanced"]);
-        assert_eq!(json.options.affected, true);
+        assert!(json.options.affected);
+    }
+
+    #[test]
+    fn can_filter_by_affected_via_stdin() {
+        let fixture = create_sandbox_with_git("projects");
+
+        touch_file(fixture.path());
+
+        let mut query = create_moon_command(fixture.path());
+        query.arg("query").arg("touched-files");
+
+        if !is_ci() {
+            query.arg("--local");
+        }
+
+        let query = query.assert();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("query")
+            .arg("projects")
+            .arg("--affected")
+            .write_stdin(get_assert_stdout_output(&query))
+            .assert();
+
+        let json: QueryProjectsResult = serde_json::from_str(&get_assert_output(&assert)).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        assert_eq!(ids, string_vec!["advanced"]);
+        assert!(json.options.affected);
     }
 
     #[test]

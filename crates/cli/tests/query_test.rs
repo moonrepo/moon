@@ -9,6 +9,29 @@ use moon_utils::{is_ci, string_vec};
 use std::fs;
 use std::path::Path;
 
+fn change_branch(path: &Path) {
+    run_git_command(path, |cmd| {
+        cmd.args(["checkout", "-b", "branch"]);
+    });
+}
+
+fn touch_file(path: &Path) {
+    fs::write(path.join("advanced/file"), "contents").unwrap();
+
+    // CI uses `git diff` while local uses `git status`
+    if is_ci() {
+        change_branch(path);
+
+        run_git_command(path, |cmd| {
+            cmd.args(["add", "advanced/file"]);
+        });
+
+        run_git_command(path, |cmd| {
+            cmd.args(["commit", "-m", "Touch"]);
+        });
+    }
+}
+
 mod projects {
     use moon_utils::test::get_assert_stdout_output;
 
@@ -42,21 +65,6 @@ mod projects {
                 "ts"
             ]
         );
-    }
-
-    fn touch_file(path: &Path) {
-        fs::write(path.join("advanced/file"), "contents").unwrap();
-
-        // CI uses `git diff` while local uses `git status`
-        if is_ci() {
-            run_git_command(path, |cmd| {
-                cmd.args(["add", "advanced/file"]);
-            });
-
-            run_git_command(path, |cmd| {
-                cmd.args(["commit", "-m", "Touch"]);
-            });
-        }
     }
 
     #[test]
@@ -201,9 +209,7 @@ mod touched_files {
     fn can_change_options() {
         let fixture = create_sandbox_with_git("cases");
 
-        run_git_command(fixture.path(), |cmd| {
-            cmd.args(["checkout", "-b", "branch"]);
-        });
+        change_branch(fixture.path());
 
         let assert = create_moon_command(fixture.path())
             .arg("query")

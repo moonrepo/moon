@@ -77,20 +77,16 @@ per project.
 ```yaml title=".moon/project.yml"
 tasks:
   format:
-    command: 'prettier'
-    args: '--check .'
+    command: 'prettier --check .'
 
   lint:
-    command: 'eslint'
-    args: '--no-error-on-unmatched-pattern .'
+    command: 'eslint --no-error-on-unmatched-pattern .'
 
   test:
-    command: 'jest'
-    args: '--passWithNoTests'
+    command: 'jest --passWithNoTests'
 
   typecheck:
-    command: 'tsc'
-    args: '--build'
+    command: 'tsc --build'
 ```
 
 > Relative file paths and globs used within a task are relative from the inherited project's root,

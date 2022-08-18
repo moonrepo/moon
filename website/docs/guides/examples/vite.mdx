@@ -35,16 +35,14 @@ fileGroups:
 tasks:
 	# Development server
 	dev:
-		command: 'vite'
-		args: 'dev'
+		command: 'vite dev'
 		inputs:
 			- '@group(vite)'
 		local: true
 
 	# Production build
 	build:
-		command: 'vite'
-		args: 'build'
+		command: 'vite build'
 		inputs:
 			- '@group(vite)'
 		outputs:
@@ -52,8 +50,7 @@ tasks:
 
 	# Preview production build locally
 	preview:
-		command: 'vite'
-		args: 'preview'
+		command: 'vite preview'
 		inputs:
 			- '@group(vite)'
 		deps:
@@ -62,8 +59,8 @@ tasks:
 
 	# Unit testing (if using Vitest)
 	test:
-		command: 'vitest'
-		args:
+		command:
+			- 'vitest'
 			- 'run'
 			# Always run code coverage
 			- '--coverage'

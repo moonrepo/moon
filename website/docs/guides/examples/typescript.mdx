@@ -28,8 +28,8 @@ Since type-checking is a universal workflow, add a `typecheck` task to
 ```yaml title=".moon/project.yml"
 tasks:
 	typecheck:
-		command: 'tsc'
-		args:
+		command:
+			- 'tsc'
 			# Use incremental builds with project references
 			- '--build'
 			# Always use pretty output

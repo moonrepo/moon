@@ -56,8 +56,8 @@ workspace:
 
 tasks:
 	typecheck:
-		command: 'vue-tsc'
-		args:
+		command:
+			- 'vue-tsc'
 			- '--noEmit'
 			# Always use pretty output
 			- '--pretty'

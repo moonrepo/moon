@@ -24,8 +24,8 @@ Since testing is a universal workflow, add a `test` task to
 ```yaml title=".moon/project.yml"
 tasks:
 	test:
-		command: 'jest'
-		args:
+		command:
+			- 'jest'
 			# Always run code coverage
 			- '--coverage'
 			# Dont fail if a project has no tests

@@ -24,8 +24,8 @@ Since linting is a universal workflow, add a `lint` task to
 ```yaml title=".moon/project.yml"
 tasks:
 	lint:
-		command: 'eslint'
-		args:
+		command:
+		 	- 'eslint'
 			# Support other extensions
 			- '--ext'
 			- '.js,.jsx,.ts,.tsx'

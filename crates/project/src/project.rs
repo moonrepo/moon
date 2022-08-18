@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
-use moon_task::{FileGroup, ResolverData, Target, Task, TokenResolver};
+use moon_task::{FileGroup, ResolverData, Target, Task, TokenResolver, TouchedFilePaths};
 use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -355,5 +355,17 @@ impl Project {
                 self.id.to_owned(),
             )),
         }
+    }
+
+    /// Return true if this project is affected based on touched files.
+    /// Since the project is a folder, we check if a file starts with the root.
+    pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {
+        for file in touched_files {
+            if file.starts_with(&self.root) {
+                return true;
+            }
+        }
+
+        false
     }
 }

@@ -1,14 +1,21 @@
+use crate::queries::touched_files::{
+    query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
+};
+use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;
-use moon_utils::regex;
+use moon_task::TouchedFilePaths;
+use moon_utils::{is_ci, regex};
 use moon_workspace::{Workspace, WorkspaceError};
 use serde::{Deserialize, Serialize};
+use std::io::{stdin, Read};
 
 const LOG_TARGET: &str = "moon:query:projects";
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
     pub alias: Option<String>,
+    pub affected: bool,
     pub id: Option<String>,
     pub language: Option<String>,
     pub source: Option<String>,
@@ -42,6 +49,29 @@ fn convert_to_regex(
     }
 }
 
+async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, WorkspaceError> {
+    let mut buffer = String::new();
+
+    stdin().read_to_string(&mut buffer).map_err(MoonError::Io)?;
+
+    // If piped via stdin, parse and use it
+    if !buffer.is_empty() {
+        let result: QueryTouchedFilesResult =
+            serde_json::from_str(&buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
+
+        return Ok(result.files);
+    }
+
+    query_touched_files(
+        workspace,
+        &mut QueryTouchedFilesOptions {
+            local: !is_ci(),
+            ..QueryTouchedFilesOptions::default()
+        },
+    )
+    .await
+}
+
 pub async fn query_projects(
     workspace: &Workspace,
     options: &QueryProjectsOptions,
@@ -55,6 +85,11 @@ pub async fn query_projects(
     let source_regex = convert_to_regex("source", &options.source)?;
     let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
     let type_regex = convert_to_regex("type", &options.type_of)?;
+    let touched_files = if options.affected {
+        Some(load_touched_files(workspace).await?)
+    } else {
+        None
+    };
 
     for project_id in workspace.projects.ids() {
         if let Some(regex) = &id_regex {
@@ -64,6 +99,14 @@ pub async fn query_projects(
         }
 
         let project = workspace.projects.load(&project_id)?;
+
+        if options.affected {
+            if let Some(touched) = &touched_files {
+                if !project.is_affected(touched) {
+                    continue;
+                }
+            }
+        }
 
         if let Some(regex) = &alias_regex {
             if let Some(alias) = &project.alias {

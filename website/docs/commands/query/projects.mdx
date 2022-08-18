@@ -30,11 +30,25 @@ This will return a list of project objects with the following structure:
 }
 ```
 
+### Affected projects
+
+This command can also be used to query for affected projects, based on the state of the VCS working
+tree. For advanced control, you can also pass the results of `moon query touched-files` to stdin.
+
+```shell
+# Find all affected projects
+$ moon query projects --affected
+
+# Find all affected projects using the results of another query
+$ moon query touched-files | moon query projects --affected
+```
+
 ### Options
 
 All values are case-insensitive regex patterns.
 
 - `--alias <regex>` - Filter projects that match this alias.
+- `--affected` - Filter projects that have been affected by touched files.
 - `--id <regex>` - Filter projects that match this ID/name.
 - `--language <regex>` - Filter projects of this programming language.
 - `--source <regex>` - Filter projects that match this source path.

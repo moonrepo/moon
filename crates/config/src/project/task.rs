@@ -2,8 +2,8 @@ use crate::project::local_config::{ProjectConfig, ProjectLanguage};
 use crate::project::task_options::TaskOptionsConfig;
 use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
-use crate::ConfigError;
 use moon_utils::process::split_args;
+use moon_utils::process::ArgsParseError;
 use moon_utils::regex::{ENV_VAR, NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -137,7 +137,7 @@ impl TaskConfig {
         String::new()
     }
 
-    pub fn get_command_and_args(&self) -> Result<(Option<String>, Vec<String>), ConfigError> {
+    pub fn get_command_and_args(&self) -> Result<(Option<String>, Vec<String>), ArgsParseError> {
         let mut command = None;
         let mut args = vec![];
 

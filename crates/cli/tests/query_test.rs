@@ -2,7 +2,11 @@ use moon_cli::enums::TouchedStatus;
 use moon_cli::queries::projects::QueryProjectsResult;
 use moon_cli::queries::touched_files::QueryTouchedFilesResult;
 use moon_utils::string_vec;
-use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output, run_git_command};
+use moon_utils::test::{
+    create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
+    run_git_command,
+};
+use std::fs;
 
 mod projects {
     use super::*;
@@ -35,6 +39,26 @@ mod projects {
                 "ts"
             ]
         );
+    }
+
+    #[test]
+    fn can_filter_by_affected() {
+        let fixture = create_sandbox_with_git("projects");
+
+        // Create a file to trigger affected
+        fs::write(fixture.path().join("advanced/file"), "contents").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("query")
+            .arg("projects")
+            .arg("--affected")
+            .assert();
+
+        let json: QueryProjectsResult = serde_json::from_str(&get_assert_output(&assert)).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        assert_eq!(ids, string_vec!["advanced"]);
+        assert_eq!(json.options.affected, true);
     }
 
     #[test]

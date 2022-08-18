@@ -491,7 +491,7 @@ impl Task {
         Ok(())
     }
 
-    /// Return true if this task is affected, based on touched files.
+    /// Return true if this task is affected based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, TaskError> {
         for var_name in &self.input_vars {

@@ -114,6 +114,7 @@ pub async fn run_cli() {
         Commands::Query { command } => match command {
             QueryCommands::Projects {
                 alias,
+                affected,
                 id,
                 language,
                 source,
@@ -122,6 +123,7 @@ pub async fn run_cli() {
             } => {
                 query::projects(&QueryProjectsOptions {
                     alias: alias.clone(),
+                    affected: *affected,
                     id: id.clone(),
                     language: language.clone(),
                     source: source.clone(),

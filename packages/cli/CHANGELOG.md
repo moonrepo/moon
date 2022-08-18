@@ -12,6 +12,7 @@
 - Added support for Linux ARM GNU (`aarch64-unknown-linux-gnu`).
 - Added support for Linux ARM musl (`aarch64-unknown-linux-musl`).
 - Added a `typescript` setting to `moon.yml`, allowing TypeScript support to be toggled per project.
+- Added an `--affected` option to the `moon query projects` command.
 
 ## 0.11.1
 

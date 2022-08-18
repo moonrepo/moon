@@ -1,10 +1,14 @@
-use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use crate::queries::touched_files::{
+    query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
+};
+use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;
 use moon_task::TouchedFilePaths;
 use moon_utils::{is_ci, regex};
 use moon_workspace::{Workspace, WorkspaceError};
 use serde::{Deserialize, Serialize};
+use std::io::{stdin, Read};
 
 const LOG_TARGET: &str = "moon:query:projects";
 
@@ -46,6 +50,20 @@ fn convert_to_regex(
 }
 
 async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, WorkspaceError> {
+    let mut buffer = String::new();
+
+    stdin()
+        .read_to_string(&mut buffer)
+        .map_err(|e| MoonError::Io(e))?;
+
+    // If piped via stdin, parse and use it
+    if !buffer.is_empty() {
+        let result: QueryTouchedFilesResult =
+            serde_json::from_str(&buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
+
+        return Ok(result.files);
+    }
+
     Ok(query_touched_files(
         workspace,
         &mut QueryTouchedFilesOptions {

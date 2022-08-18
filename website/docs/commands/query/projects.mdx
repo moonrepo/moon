@@ -30,6 +30,19 @@ This will return a list of project objects with the following structure:
 }
 ```
 
+### Affected projects
+
+This command can also be used to query for affected projects, based on the state of the VCS working
+tree. For advanced control, you can also pass the results of `moon query touched-files` to stdin.
+
+```shell
+# Find all affected projects
+$ moon query projects --affected
+
+# Find all affected projects using the results of another query
+$ moon query touched-files | moon query projects --affected
+```
+
 ### Options
 
 All values are case-insensitive regex patterns.

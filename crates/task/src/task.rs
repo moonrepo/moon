@@ -3,8 +3,8 @@ use crate::target::{Target, TargetProjectScope};
 use crate::token::{ResolverData, TokenResolver};
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
-    DependencyConfig, FileGlob, FilePath, InputValue, PlatformType, TargetID, TaskConfig,
-    TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig, TaskOutputStyle,
+    DependencyConfig, FileGlob, FilePath, InputValue, PlatformType, TargetID, TaskCommandArgs,
+    TaskConfig, TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{glob, is_ci, path, regex::ENV_VAR, string_vec};
@@ -200,13 +200,15 @@ impl Task {
     pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
-        let command = cloned_config.command.unwrap_or_default();
+
+        let (command, args) = config.get_command_and_args().unwrap();
+        let command = command.unwrap_or_default();
         let is_local =
             cloned_config.local || command == "dev" || command == "serve" || command == "start";
         let log_target = format!("moon:project:{}", target);
 
         let task = Task {
-            args: cloned_config.args.unwrap_or_default(),
+            args,
             command,
             deps: cloned_config.deps.unwrap_or_default(),
             env: cloned_config.env.unwrap_or_default(),
@@ -250,15 +252,14 @@ impl Task {
     }
 
     pub fn to_config(&self) -> TaskConfig {
+        let mut command = vec![self.command.clone()];
+        command.extend(self.args.clone());
+
         let mut config = TaskConfig {
-            command: Some(self.command.clone()),
+            command: Some(TaskCommandArgs::Sequence(command)),
             options: self.options.to_config(),
             ..TaskConfig::default()
         };
-
-        if !self.args.is_empty() {
-            config.args = Some(self.args.clone());
-        }
 
         if !self.deps.is_empty() {
             config.deps = Some(self.deps.clone());
@@ -542,17 +543,19 @@ impl Task {
     }
 
     pub fn merge(&mut self, config: &TaskConfig) {
+        let (command, args) = config.get_command_and_args().unwrap();
+
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
         self.platform = config.type_of.clone();
 
         // Then merge the actual task fields
-        if let Some(command) = &config.command {
-            self.command = command.clone();
+        if let Some(cmd) = command {
+            self.command = cmd;
         }
 
-        if let Some(args) = &config.args {
-            self.args = self.merge_string_vec(&self.args, args, &self.options.merge_args);
+        if !args.is_empty() {
+            self.args = self.merge_string_vec(&self.args, &args, &self.options.merge_args);
         }
 
         if let Some(deps) = &config.deps {

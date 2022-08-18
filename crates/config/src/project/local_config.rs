@@ -31,8 +31,8 @@ fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationEr
         validate_id(&format!("tasks.{}", name), name)?;
 
         // Only fail for empty strings and not `None`
-        if let Some(command) = &task.command {
-            if command.is_empty() {
+        if task.command.is_some() {
+            if task.get_command().is_empty() {
                 return Err(create_validation_error(
                     "required_command",
                     &format!("tasks.{}.command", name),

@@ -1,5 +1,6 @@
 use figment::{Error as FigmentError, Figment};
 use moon_error::MoonError;
+use moon_utils::process::ArgsParseError;
 use serde_json::Value;
 use std::borrow::Cow;
 use std::path::PathBuf;
@@ -25,6 +26,9 @@ pub enum ConfigError {
 
     #[error("Cannot extend configuration file <file>{0}</file>, only HTTPS URLs are supported.")]
     UnsupportedHttps(String),
+
+    #[error(transparent)]
+    ArgsParse(#[from] ArgsParseError),
 
     #[error(transparent)]
     Figment(#[from] FigmentError),

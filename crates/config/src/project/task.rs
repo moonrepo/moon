@@ -2,15 +2,12 @@ use crate::project::local_config::{ProjectConfig, ProjectLanguage};
 use crate::project::task_options::TaskOptionsConfig;
 use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
+use crate::ConfigError;
 use moon_utils::process::split_args;
 use moon_utils::regex::{ENV_VAR, NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
-use schemars::gen::SchemaGenerator;
-use schemars::schema::Schema;
-use schemars::{schema_for, JsonSchema};
-use serde::de::{self, SeqAccess};
-use serde::{Deserialize, Deserializer, Serialize};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
 use strum::Display;
 use validator::{Validate, ValidationError};
 
@@ -57,20 +54,23 @@ pub enum PlatformType {
     Unknown,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+#[serde(untagged, expecting = "expected a string or a sequence of strings")]
+pub enum TaskCommandArgs {
+    String(String),
+    Sequence(Vec<String>),
+}
+
 // We use serde(default) here because figment *does not* apply defaults
 // for structs nested within collections. Primarily hash maps.
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[serde(default)]
 pub struct TaskConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub command: Option<String>,
+    pub command: Option<TaskCommandArgs>,
 
-    #[serde(
-        deserialize_with = "deserialize_args",
-        skip_serializing_if = "Option::is_none"
-    )]
-    #[schemars(schema_with = "make_args_schema")]
-    pub args: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub args: Option<TaskCommandArgs>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_deps")]
@@ -115,63 +115,50 @@ impl TaskConfig {
             _ => PlatformType::Unknown,
         }
     }
-}
 
-// SERDE
+    pub fn get_command(&self) -> String {
+        if let Some(cmd) = &self.command {
+            match cmd {
+                TaskCommandArgs::String(cmd_string) => {
+                    let mut parts = cmd_string.split(' ');
 
-struct DeserializeArgs;
-
-impl<'de> de::Visitor<'de> for DeserializeArgs {
-    type Value = Vec<String>;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a sequence of strings or a string")
-    }
-
-    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        let mut vec = Vec::new();
-
-        while let Some(elem) = visitor.next_element()? {
-            vec.push(elem);
+                    if let Some(part) = parts.next() {
+                        return part.to_owned();
+                    }
+                }
+                TaskCommandArgs::Sequence(cmd_args) => {
+                    if !cmd_args.is_empty() {
+                        return cmd_args[0].to_owned();
+                    }
+                }
+            };
         }
 
-        Ok(vec)
+        String::new()
     }
 
-    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        match split_args(value) {
-            Ok(args) => Ok(args),
-            Err(error) => Err(E::custom(error)),
+    pub fn get_command_and_args(&self) -> Result<(Option<String>, Vec<String>), ConfigError> {
+        let mut command = None;
+        let mut args = vec![];
+
+        if let Some(cmd) = &self.command {
+            let mut cmd_list = match cmd {
+                TaskCommandArgs::String(cmd_string) => split_args(cmd_string)?,
+                TaskCommandArgs::Sequence(cmd_args) => cmd_args.clone(),
+            };
+
+            if !cmd_list.is_empty() {
+                command = Some(cmd_list.remove(0));
+                args.extend(cmd_list.clone());
+            }
         }
+
+        match &self.args {
+            Some(TaskCommandArgs::String(args_string)) => args.extend(split_args(args_string)?),
+            Some(TaskCommandArgs::Sequence(args_list)) => args.extend(args_list.clone()),
+            _ => {}
+        }
+
+        Ok((command, args))
     }
-}
-
-fn deserialize_args<'de, D>(deserializer: D) -> Result<Option<Vec<String>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Ok(Some(deserializer.deserialize_any(DeserializeArgs)?))
-}
-
-// JSON SCHEMA
-
-#[derive(JsonSchema)]
-#[serde(untagged)]
-enum ArgsField {
-    #[allow(dead_code)]
-    String(String),
-    #[allow(dead_code)]
-    Sequence(Vec<String>),
-}
-
-fn make_args_schema(_gen: &mut SchemaGenerator) -> Schema {
-    let root = schema_for!(ArgsField);
-
-    Schema::Object(root.schema)
 }

@@ -3,6 +3,8 @@ pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use moon_workspace::Workspace;
+use std::io;
+use std::io::prelude::*;
 
 pub async fn projects(options: &QueryProjectsOptions) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = Workspace::load().await?;
@@ -12,7 +14,10 @@ pub async fn projects(options: &QueryProjectsOptions) -> Result<(), Box<dyn std:
         options: options.clone(),
     };
 
-    println!("{}", serde_json::to_string_pretty(&result)?);
+    // Write to stdout directly to avoid broken pipe panics
+    let mut stdout = io::stdout().lock();
+
+    writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
 
     Ok(())
 }
@@ -27,7 +32,10 @@ pub async fn touched_files(
         options: options.clone(),
     };
 
-    println!("{}", serde_json::to_string_pretty(&result)?);
+    // Write to stdout directly to avoid broken pipe panics
+    let mut stdout = io::stdout().lock();
+
+    writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
 
     Ok(())
 }

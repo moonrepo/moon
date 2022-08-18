@@ -1,10 +1,40 @@
 use moon_cli::enums::TouchedStatus;
 use moon_cli::queries::projects::QueryProjectsResult;
 use moon_cli::queries::touched_files::QueryTouchedFilesResult;
-use moon_utils::string_vec;
-use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output, run_git_command};
+use moon_utils::test::{
+    create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
+    run_git_command,
+};
+use moon_utils::{is_ci, string_vec};
+use std::fs;
+use std::path::Path;
+
+fn change_branch(path: &Path) {
+    run_git_command(path, |cmd| {
+        cmd.args(["checkout", "-b", "branch"]);
+    });
+}
+
+fn touch_file(path: &Path) {
+    fs::write(path.join("advanced/file"), "contents").unwrap();
+
+    // CI uses `git diff` while local uses `git status`
+    if is_ci() {
+        change_branch(path);
+
+        run_git_command(path, |cmd| {
+            cmd.args(["add", "advanced/file"]);
+        });
+
+        run_git_command(path, |cmd| {
+            cmd.args(["commit", "-m", "Touch"]);
+        });
+    }
+}
 
 mod projects {
+    use moon_utils::test::get_assert_stdout_output;
+
     use super::*;
 
     #[test]
@@ -35,6 +65,54 @@ mod projects {
                 "ts"
             ]
         );
+    }
+
+    #[test]
+    fn can_filter_by_affected() {
+        let fixture = create_sandbox_with_git("projects");
+
+        touch_file(fixture.path());
+
+        let assert = create_moon_command(fixture.path())
+            .arg("query")
+            .arg("projects")
+            .arg("--affected")
+            .assert();
+
+        let json: QueryProjectsResult = serde_json::from_str(&get_assert_output(&assert)).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        assert_eq!(ids, string_vec!["advanced"]);
+        assert!(json.options.affected);
+    }
+
+    #[test]
+    fn can_filter_by_affected_via_stdin() {
+        let fixture = create_sandbox_with_git("projects");
+
+        touch_file(fixture.path());
+
+        let mut query = create_moon_command(fixture.path());
+        query.arg("query").arg("touched-files");
+
+        if !is_ci() {
+            query.arg("--local");
+        }
+
+        let query = query.assert();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("query")
+            .arg("projects")
+            .arg("--affected")
+            .write_stdin(get_assert_stdout_output(&query))
+            .assert();
+
+        let json: QueryProjectsResult = serde_json::from_str(&get_assert_output(&assert)).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        assert_eq!(ids, string_vec!["advanced"]);
+        assert!(json.options.affected);
     }
 
     #[test]
@@ -131,9 +209,7 @@ mod touched_files {
     fn can_change_options() {
         let fixture = create_sandbox_with_git("cases");
 
-        run_git_command(fixture.path(), |cmd| {
-            cmd.args(["checkout", "-b", "branch"]);
-        });
+        change_branch(fixture.path());
 
         let assert = create_moon_command(fixture.path())
             .arg("query")

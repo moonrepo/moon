@@ -114,6 +114,7 @@ pub async fn run_cli() {
         Commands::Query { command } => match command {
             QueryCommands::Projects {
                 alias,
+                affected,
                 id,
                 language,
                 source,
@@ -122,6 +123,7 @@ pub async fn run_cli() {
             } => {
                 query::projects(&QueryProjectsOptions {
                     alias: alias.clone(),
+                    affected: *affected,
                     id: id.clone(),
                     language: language.clone(),
                     source: source.clone(),
@@ -175,6 +177,15 @@ pub async fn run_cli() {
     };
 
     if let Err(error) = result {
-        Term::buffered_stderr().render_error(error);
+        let error_message = error.to_string();
+
+        // Rust crashes with a broken pipe error by default,
+        // so we unfortunately need to work around it with this hack!
+        // https://github.com/rust-lang/rust/issues/46016
+        if error_message.to_lowercase().contains("broken pipe") {
+            std::process::exit(0);
+        } else {
+            Term::buffered_stderr().render_error(error);
+        }
     }
 }

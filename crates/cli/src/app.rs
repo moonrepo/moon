@@ -54,6 +54,12 @@ pub enum QueryCommands {
         #[clap(long, help = "Filter projects that match this alias")]
         alias: Option<String>,
 
+        #[clap(
+            long,
+            help = "Filter projects that are affected based on touched files"
+        )]
+        affected: bool,
+
         #[clap(long, help = "Filter projects that match this ID")]
         id: Option<String>,
 

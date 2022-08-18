@@ -1,0 +1,11 @@
+extends: './global-0.yml'
+
+fileGroups:
+  sources:
+    - 'src/**/*'
+  tests:
+    - 'tests/**/*'
+
+tasks:
+  lint:
+    command: 'eslint'

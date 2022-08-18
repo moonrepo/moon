@@ -1,6 +1,8 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
-use moon_config::{format_figment_errors, GlobalProjectConfig, WorkspaceConfig};
+use moon_config::{
+    format_error_line, format_figment_errors, ConfigError, GlobalProjectConfig, WorkspaceConfig,
+};
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
 use moon_project_graph::ProjectGraph;
@@ -55,7 +57,11 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
     match GlobalProjectConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(
-            format_figment_errors(errors),
+            if let ConfigError::FailedValidation(valids) = errors {
+                format_figment_errors(valids)
+            } else {
+                format_error_line(errors.to_string())
+            },
         )),
     }
 }
@@ -84,7 +90,11 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     match WorkspaceConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidWorkspaceConfigFile(
-            format_figment_errors(errors),
+            if let ConfigError::FailedValidation(valids) = errors {
+                format_figment_errors(valids)
+            } else {
+                format_error_line(errors.to_string())
+            },
         )),
     }
 }

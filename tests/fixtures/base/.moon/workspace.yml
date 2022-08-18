@@ -1,4 +1,3 @@
-node:
-  version: '16.0.0'
+extends: '../shared-workspace.yml'
 
 projects: {}

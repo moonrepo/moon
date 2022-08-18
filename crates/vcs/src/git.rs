@@ -479,6 +479,10 @@ mod test {
                     (
                         "foo".to_owned(),
                         "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
+                    ),
+                    (
+                        "shared-workspace.yml".to_owned(),
+                        "511e2d347c72a54de0e6a984fcde48367ed31ba5".to_owned()
                     )
                 ])
             );

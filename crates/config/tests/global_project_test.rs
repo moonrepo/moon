@@ -1,4 +1,4 @@
-use moon_config::{ConfigError, GlobalProjectConfig};
+use moon_config::{ConfigError, GlobalProjectConfig, TaskCommandArgs};
 use moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME;
 use moon_utils::string_vec;
 use moon_utils::test::get_fixtures_dir;
@@ -65,21 +65,21 @@ mod extends {
                     (
                         "lint".to_owned(),
                         TaskConfig {
-                            command: Some(String::from("eslint")),
+                            command: Some(TaskCommandArgs::String("eslint".to_owned())),
                             ..TaskConfig::default()
                         },
                     ),
                     (
                         "format".to_owned(),
                         TaskConfig {
-                            command: Some(String::from("prettier")),
+                            command: Some(TaskCommandArgs::String("prettier".to_owned())),
                             ..TaskConfig::default()
                         },
                     ),
                     (
                         "test".to_owned(),
                         TaskConfig {
-                            command: Some(String::from("noop")),
+                            command: Some(TaskCommandArgs::String("noop".to_owned())),
                             ..TaskConfig::default()
                         },
                     )
@@ -178,30 +178,30 @@ mod extends {
             (
                 "onlyCommand".to_owned(),
                 TaskConfig {
-                    command: Some(String::from("a")),
+                    command: Some(TaskCommandArgs::String("a".to_owned())),
                     ..TaskConfig::default()
                 },
             ),
             (
                 "stringArgs".to_owned(),
                 TaskConfig {
-                    command: Some(String::from("b")),
-                    args: Some(string_vec!["string", "args"]),
+                    command: Some(TaskCommandArgs::String("b".to_owned())),
+                    args: Some(TaskCommandArgs::String("string args".to_owned())),
                     ..TaskConfig::default()
                 },
             ),
             (
                 "arrayArgs".to_owned(),
                 TaskConfig {
-                    command: Some(String::from("c")),
-                    args: Some(string_vec!["array", "args"]),
+                    command: Some(TaskCommandArgs::String("c".to_owned())),
+                    args: Some(TaskCommandArgs::Sequence(string_vec!["array", "args"])),
                     ..TaskConfig::default()
                 },
             ),
             (
                 "inputs".to_owned(),
                 TaskConfig {
-                    command: Some(String::from("d")),
+                    command: Some(TaskCommandArgs::String("d".to_owned())),
                     inputs: Some(string_vec!["src/**/*"]),
                     ..TaskConfig::default()
                 },
@@ -209,7 +209,7 @@ mod extends {
             (
                 "options".to_owned(),
                 TaskConfig {
-                    command: Some(String::from("e")),
+                    command: Some(TaskCommandArgs::String("e".to_owned())),
                     options: TaskOptionsConfig {
                         run_in_ci: Some(false),
                         ..TaskOptionsConfig::default()
@@ -398,7 +398,7 @@ tasks:
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a string for key \"globalProject.tasks.test.command\""
+        expected = "expected a string or a sequence of strings for key \"globalProject.tasks.test.command\""
     )]
     fn invalid_value_field() {
         figment::Jail::expect_with(|jail| {

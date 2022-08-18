@@ -163,7 +163,7 @@ pub fn create_task(
     }
 
     if is_wrapping {
-        task_config.type_of = PlatformType::System;
+        task_config.type_of = PlatformType::Node;
         task_config.command = Some(TaskCommandArgs::Sequence(string_vec![
             "moon",
             "node",
@@ -184,7 +184,11 @@ pub fn create_task(
         }
 
         task_config.type_of = detect_platform_type(&args[0]);
-        task_config.command = Some(TaskCommandArgs::Sequence(args));
+        task_config.command = Some(if args.len() == 1 {
+            TaskCommandArgs::String(args.remove(0))
+        } else {
+            TaskCommandArgs::Sequence(args)
+        });
     }
 
     task_config.env = Some(env);

@@ -2,7 +2,7 @@ use figment::{
     providers::{Format, Yaml},
     Figment,
 };
-use moon_config::TaskConfig;
+use moon_config::{TaskCommandArgs, TaskConfig};
 use std::path::PathBuf;
 
 const CONFIG_FILENAME: &str = "tasks.yml";
@@ -17,7 +17,7 @@ fn load_jailed_config() -> Result<TaskConfig, figment::Error> {
 mod command {
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a string for key \"default.command\""
+        expected = "expected a string or a sequence of strings for key \"default.command\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
@@ -31,12 +31,12 @@ mod command {
 }
 
 mod args {
-    use super::TaskConfig;
+    use super::*;
     use moon_utils::string_vec;
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a sequence of strings or a string for key \"default.args\""
+        expected = "expected a string or a sequence of strings for key \"default.args\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
@@ -56,7 +56,7 @@ args: 123
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a string for key \"default.args.0\""
+        expected = "expected a string or a sequence of strings for key \"default.args\""
     )]
     fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
@@ -97,15 +97,15 @@ args:
             assert_eq!(
                 config,
                 TaskConfig {
-                    command: Some(String::from("foo")),
-                    args: Some(string_vec![
+                    command: Some(TaskCommandArgs::String("foo".to_owned())),
+                    args: Some(TaskCommandArgs::Sequence(string_vec![
                         "arg",
                         "-o",
                         "@token(0)",
                         "--opt",
                         "value",
                         "quoted arg"
-                    ]),
+                    ])),
                     ..TaskConfig::default()
                 }
             );
@@ -130,15 +130,10 @@ args: 'arg -o @token(0) --opt value "quoted arg"'
             assert_eq!(
                 config,
                 TaskConfig {
-                    command: Some(String::from("foo")),
-                    args: Some(string_vec![
-                        "arg",
-                        "-o",
-                        "@token(0)",
-                        "--opt",
-                        "value",
-                        "quoted arg"
-                    ]),
+                    command: Some(TaskCommandArgs::String("foo".to_owned())),
+                    args: Some(TaskCommandArgs::String(
+                        "arg -o @token(0) --opt value \"quoted arg\"".to_owned()
+                    )),
                     ..TaskConfig::default()
                 }
             );

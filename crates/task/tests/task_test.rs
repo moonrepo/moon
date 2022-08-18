@@ -1,4 +1,4 @@
-use moon_config::{TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
+use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
 use moon_task::test::create_expanded_task;
 use moon_task::{Task, TaskOptions};
 use moon_utils::test::{create_sandbox, get_fixtures_dir};
@@ -80,7 +80,7 @@ mod from_config {
         let task = Task::from_config(
             "foo:test".to_owned(),
             &TaskConfig {
-                command: Some("dev".to_owned()),
+                command: Some(TaskCommandArgs::String("dev".to_owned())),
                 ..TaskConfig::default()
             },
         );

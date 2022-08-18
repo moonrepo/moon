@@ -1442,8 +1442,10 @@ dependencies = [
  "serde_json",
  "serde_yaml 0.9.4",
  "strum",
+ "thiserror",
  "tokio",
  "validator",
+ "yaml-rust",
 ]
 
 [[package]]

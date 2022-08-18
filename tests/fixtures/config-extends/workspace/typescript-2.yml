@@ -1,0 +1,6 @@
+extends: './typescript-1.yml'
+
+typescript:
+  rootConfigFileName: 'tsconfig.root.json'
+  createMissingConfig: false
+  syncProjectReferences: true

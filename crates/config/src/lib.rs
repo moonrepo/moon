@@ -1,20 +1,15 @@
-pub mod constants;
 mod errors;
+mod helpers;
 mod project;
 mod providers;
 mod types;
 mod validators;
 mod workspace;
 
-pub use errors::format_figment_errors;
-pub use project::dep::*;
-pub use project::global::GlobalProjectConfig;
-pub use project::task::*;
-pub use project::task_options::*;
+pub use errors::{format_error_line, format_figment_errors, ConfigError};
 pub use project::*;
 pub use types::*;
 pub use validator::ValidationErrors;
-pub use workspace::node::*;
 pub use workspace::*;
 
 pub fn load_workspace_config_template() -> &'static str {

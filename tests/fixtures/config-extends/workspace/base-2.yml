@@ -1,0 +1,8 @@
+extends: './base-1.yml'
+
+actionRunner:
+  logRunningCommand: false
+
+node:
+  version: '4.5.6'
+  dedupeOnLockfileChange: false

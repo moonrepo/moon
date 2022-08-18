@@ -1,6 +1,4 @@
-node:
-  # Use a unique version as to not collide with other tests
-  version: '16.0.0'
+extends: '../shared-workspace.yml'
 
 projects:
   a: a

@@ -2,7 +2,8 @@ use figment::{
     providers::{Format, Yaml},
     Figment,
 };
-use moon_config::TaskConfig;
+use moon_config::{TaskCommandArgs, TaskConfig};
+use moon_utils::string_vec;
 use std::path::PathBuf;
 
 const CONFIG_FILENAME: &str = "tasks.yml";
@@ -15,9 +16,11 @@ fn load_jailed_config() -> Result<TaskConfig, figment::Error> {
 }
 
 mod command {
+    use super::*;
+
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a string for key \"default.command\""
+        expected = "expected a string or a sequence of strings for key \"default.command\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
@@ -28,15 +31,195 @@ mod command {
             Ok(())
         });
     }
+
+    #[test]
+    fn returns_empty_string() {
+        let config = TaskConfig::default();
+
+        assert_eq!(config.get_command(), "");
+    }
+
+    #[test]
+    fn returns_only_from_string() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::String("foo".to_owned())),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(config.get_command(), "foo");
+    }
+
+    #[test]
+    fn returns_first_from_string() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --bar baz".to_owned())),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(config.get_command(), "foo");
+    }
+
+    #[test]
+    fn returns_only_from_list() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::Sequence(string_vec!["foo"])),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(config.get_command(), "foo");
+    }
+
+    #[test]
+    fn returns_first_from_list() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::Sequence(string_vec![
+                "foo", "--bar", "baz"
+            ])),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(config.get_command(), "foo");
+    }
+}
+
+mod command_args {
+    use super::*;
+
+    #[test]
+    fn cmd_string_no_args() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --bar baz".to_owned())),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(
+            config.get_command_and_args().unwrap(),
+            (Some("foo".to_owned()), string_vec!["--bar", "baz"])
+        );
+    }
+
+    #[test]
+    fn cmd_string_with_args_string() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --bar baz".to_owned())),
+            args: Some(TaskCommandArgs::String("--qux -x".to_owned())),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(
+            config.get_command_and_args().unwrap(),
+            (
+                Some("foo".to_owned()),
+                string_vec!["--bar", "baz", "--qux", "-x"]
+            )
+        );
+    }
+
+    #[test]
+    fn cmd_string_with_args_list() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --bar baz".to_owned())),
+            args: Some(TaskCommandArgs::Sequence(string_vec!["--qux", "-x"])),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(
+            config.get_command_and_args().unwrap(),
+            (
+                Some("foo".to_owned()),
+                string_vec!["--bar", "baz", "--qux", "-x"]
+            )
+        );
+    }
+
+    #[test]
+    fn cmd_list_no_args() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::Sequence(string_vec![
+                "foo", "--bar", "baz"
+            ])),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(
+            config.get_command_and_args().unwrap(),
+            (Some("foo".to_owned()), string_vec!["--bar", "baz"])
+        );
+    }
+
+    #[test]
+    fn cmd_list_with_args_string() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::Sequence(string_vec![
+                "foo", "--bar", "baz"
+            ])),
+            args: Some(TaskCommandArgs::String("--qux -x".to_owned())),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(
+            config.get_command_and_args().unwrap(),
+            (
+                Some("foo".to_owned()),
+                string_vec!["--bar", "baz", "--qux", "-x"]
+            )
+        );
+    }
+
+    #[test]
+    fn cmd_list_with_args_list() {
+        let config = TaskConfig {
+            command: Some(TaskCommandArgs::Sequence(string_vec![
+                "foo", "--bar", "baz"
+            ])),
+            args: Some(TaskCommandArgs::Sequence(string_vec!["--qux", "-x"])),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(
+            config.get_command_and_args().unwrap(),
+            (
+                Some("foo".to_owned()),
+                string_vec!["--bar", "baz", "--qux", "-x"]
+            )
+        );
+    }
+
+    #[test]
+    fn args_string_no_cmd() {
+        let config = TaskConfig {
+            command: None,
+            args: Some(TaskCommandArgs::String("--foo bar".to_owned())),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(
+            config.get_command_and_args().unwrap(),
+            (None, string_vec!["--foo", "bar"])
+        );
+    }
+
+    #[test]
+    fn args_list_no_cmd() {
+        let config = TaskConfig {
+            command: None,
+            args: Some(TaskCommandArgs::Sequence(string_vec!["--foo", "bar"])),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(
+            config.get_command_and_args().unwrap(),
+            (None, string_vec!["--foo", "bar"])
+        );
+    }
 }
 
 mod args {
-    use super::TaskConfig;
-    use moon_utils::string_vec;
+    use super::*;
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a sequence of strings or a string for key \"default.args\""
+        expected = "expected a string or a sequence of strings for key \"default.args\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
@@ -56,7 +239,7 @@ args: 123
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a string for key \"default.args.0\""
+        expected = "expected a string or a sequence of strings for key \"default.args\""
     )]
     fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
@@ -97,15 +280,15 @@ args:
             assert_eq!(
                 config,
                 TaskConfig {
-                    command: Some(String::from("foo")),
-                    args: Some(string_vec![
+                    command: Some(TaskCommandArgs::String("foo".to_owned())),
+                    args: Some(TaskCommandArgs::Sequence(string_vec![
                         "arg",
                         "-o",
                         "@token(0)",
                         "--opt",
                         "value",
                         "quoted arg"
-                    ]),
+                    ])),
                     ..TaskConfig::default()
                 }
             );
@@ -130,15 +313,10 @@ args: 'arg -o @token(0) --opt value "quoted arg"'
             assert_eq!(
                 config,
                 TaskConfig {
-                    command: Some(String::from("foo")),
-                    args: Some(string_vec![
-                        "arg",
-                        "-o",
-                        "@token(0)",
-                        "--opt",
-                        "value",
-                        "quoted arg"
-                    ]),
+                    command: Some(TaskCommandArgs::String("foo".to_owned())),
+                    args: Some(TaskCommandArgs::String(
+                        "arg -o @token(0) --opt value \"quoted arg\"".to_owned()
+                    )),
                     ..TaskConfig::default()
                 }
             );

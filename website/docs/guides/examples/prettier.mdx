@@ -24,8 +24,8 @@ Since code formatting is a universal workflow, add a `format` task to
 ```yaml title=".moon/project.yml"
 tasks:
 	format:
-		command: 'prettier'
-		args:
+		command:
+			- 'packemon'
 			# Use the same config for the entire repo
 			- '--config'
 			- '@in(4)'

@@ -41,23 +41,20 @@ fileGroups:
 tasks:
 	# Development server
 	dev:
-		command: 'next'
-		args: 'dev'
+		command: 'next dev'
 		inputs:
 			- '@group(next)'
 		local: true
 
 	# Production build (SSR)
 	build:
-		command: 'next'
-		args: 'build'
+		command: 'next build'
 		inputs:
 			- '@group(next)'
 
 	# Production build (SSG)
 	export:
-		command: 'next'
-		args: 'export -o ./build'
+		command: 'next export -o ./build'
 		deps:
 			- '~:build'
 		inputs:
@@ -67,8 +64,7 @@ tasks:
 
 	# Serve the build
 	start:
-		command: 'next'
-		args: 'start'
+		command: 'next start'
 		inputs:
 			- '@group(next)'
 		local: true
@@ -138,8 +134,7 @@ If you'd prefer to use the `next lint` command, add it as a task to the project'
 ```yaml title="<project>/moon.yml"
 tasks:
 	lint:
-		command: 'next'
-		args: 'lint'
+		command: 'next lint'
 		inputs:
 			- '@group(next)'
 ```

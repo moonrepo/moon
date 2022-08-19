@@ -6,6 +6,7 @@
   "properties": {
     "actionRunner": {
       "default": {
+        "cacheLifetime": "7 days",
         "implicitInputs": [
           "package.json",
           "/.moon/project.yml",
@@ -59,16 +60,13 @@
       ]
     },
     "typescript": {
-      "default": {
-        "createMissingConfig": true,
-        "projectConfigFileName": "tsconfig.json",
-        "rootConfigFileName": "tsconfig.json",
-        "rootOptionsConfigFileName": "tsconfig.options.json",
-        "syncProjectReferences": true
-      },
-      "allOf": [
+      "default": null,
+      "anyOf": [
         {
           "$ref": "#/definitions/TypeScriptConfig"
+        },
+        {
+          "type": "null"
         }
       ]
     },
@@ -88,6 +86,10 @@
     "ActionRunnerConfig": {
       "type": "object",
       "properties": {
+        "cacheLifetime": {
+          "default": "7 days",
+          "type": "string"
+        },
         "implicitInputs": {
           "default": [
             "package.json",

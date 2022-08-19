@@ -6,15 +6,15 @@ expression: "fs::read_to_string(fixture.path().join(\"package-json/common/moon.y
 language: javascript
 tasks:
   lint:
-    command: eslint
-    args:
+    command:
+    - eslint
     - .
     inputs:
     - '**/*'
     type: node
   lint-fix:
-    command: moon
-    args:
+    command:
+    - moon
     - run
     - common:lint
     - --

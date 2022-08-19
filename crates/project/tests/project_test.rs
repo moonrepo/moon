@@ -1,6 +1,7 @@
 use moon_config::{
     GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectLanguage,
-    ProjectMetadataConfig, ProjectType, TargetID, TaskConfig, TaskMergeStrategy, TaskOptionsConfig,
+    ProjectMetadataConfig, ProjectType, TargetID, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
+    TaskOptionsConfig,
 };
 use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
@@ -213,7 +214,7 @@ mod tasks {
 
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {
-            command: Some(command.to_owned()),
+            command: Some(TaskCommandArgs::String(command.to_owned())),
             ..TaskConfig::default()
         }
     }
@@ -310,7 +311,8 @@ mod tasks {
         let mut task = Task::from_config(
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
-        );
+        )
+        .unwrap();
         task.platform = PlatformType::System;
 
         // Expanded
@@ -352,25 +354,29 @@ mod tasks {
         let mut build = Task::from_config(
             Target::format("id", "build").unwrap(),
             &mock_task_config("webpack"),
-        );
+        )
+        .unwrap();
         build.platform = PlatformType::Node;
 
         let mut std = Task::from_config(
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
-        );
+        )
+        .unwrap();
         std.platform = PlatformType::System;
 
         let mut test = Task::from_config(
             Target::format("id", "test").unwrap(),
             &mock_task_config("jest"),
-        );
+        )
+        .unwrap();
         test.platform = PlatformType::Node;
 
         let mut lint = Task::from_config(
             Target::format("id", "lint").unwrap(),
             &mock_task_config("eslint"),
-        );
+        )
+        .unwrap();
         lint.platform = PlatformType::Node;
 
         // Expanded
@@ -431,22 +437,26 @@ mod tasks {
         let mut build = Task::from_config(
             Target::format("id", "build").unwrap(),
             &mock_task_config("webpack"),
-        );
+        )
+        .unwrap();
 
         let mut std = Task::from_config(
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
-        );
+        )
+        .unwrap();
 
         let mut test = Task::from_config(
             Target::format("id", "test").unwrap(),
             &mock_task_config("jest"),
-        );
+        )
+        .unwrap();
 
         let mut lint = Task::from_config(
             Target::format("id", "lint").unwrap(),
             &mock_task_config("eslint"),
-        );
+        )
+        .unwrap();
 
         // Expanded
         build.inputs.extend(implicit_inputs.clone());
@@ -478,8 +488,8 @@ mod tasks {
                 tasks: BTreeMap::from([(
                     String::from("standard"),
                     TaskConfig {
-                        args: Some(string_vec!["--a"]),
-                        command: Some(String::from("standard")),
+                        args: Some(TaskCommandArgs::Sequence(string_vec!["--a"])),
+                        command: Some(TaskCommandArgs::String("standard".to_owned())),
                         deps: Some(string_vec!["a:standard"]),
                         env: Some(stub_global_env_vars()),
                         local: false,
@@ -503,8 +513,8 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("standard"),
                         TaskConfig {
-                            args: Some(string_vec!["--b"]),
-                            command: Some(String::from("newcmd")),
+                            args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
+                            command: Some(TaskCommandArgs::String("newcmd".to_owned())),
                             deps: Some(string_vec!["b:standard"]),
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             local: false,
@@ -524,8 +534,8 @@ mod tasks {
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
                         TaskConfig {
-                            args: Some(string_vec!["--b"]),
-                            command: Some(String::from("newcmd")),
+                            args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
+                            command: Some(TaskCommandArgs::String("newcmd".to_owned())),
                             deps: Some(string_vec!["b:standard"]),
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             local: false,
@@ -556,8 +566,8 @@ mod tasks {
                 tasks: BTreeMap::from([(
                     String::from("standard"),
                     TaskConfig {
-                        args: Some(string_vec!["--a"]),
-                        command: Some(String::from("standard")),
+                        args: Some(TaskCommandArgs::Sequence(string_vec!["--a"])),
+                        command: Some(TaskCommandArgs::String("standard".to_owned())),
                         deps: Some(string_vec!["a:standard"]),
                         env: Some(stub_global_env_vars()),
                         local: false,
@@ -581,7 +591,7 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("standard"),
                         TaskConfig {
-                            args: Some(string_vec!["--b"]),
+                            args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: None,
                             deps: Some(string_vec!["b:standard"]),
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
@@ -602,8 +612,8 @@ mod tasks {
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
                         TaskConfig {
-                            args: Some(string_vec!["--a", "--b"]),
-                            command: Some(String::from("standard")),
+                            args: Some(TaskCommandArgs::Sequence(string_vec!["--a", "--b"])),
+                            command: Some(TaskCommandArgs::String("standard".to_owned())),
                             deps: Some(string_vec!["a:standard", "b:standard"]),
                             env: Some(HashMap::from([
                                 ("GLOBAL".to_owned(), "1".to_owned()),
@@ -637,8 +647,8 @@ mod tasks {
                 tasks: BTreeMap::from([(
                     String::from("standard"),
                     TaskConfig {
-                        args: Some(string_vec!["--a"]),
-                        command: Some(String::from("standard")),
+                        args: Some(TaskCommandArgs::Sequence(string_vec!["--a"])),
+                        command: Some(TaskCommandArgs::String("standard".to_owned())),
                         deps: Some(string_vec!["a:standard"]),
                         env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
@@ -662,8 +672,8 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("standard"),
                         TaskConfig {
-                            args: Some(string_vec!["--b"]),
-                            command: Some(String::from("newcmd")),
+                            args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
+                            command: Some(TaskCommandArgs::String("newcmd".to_owned())),
                             deps: Some(string_vec!["b:standard"]),
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
@@ -683,8 +693,8 @@ mod tasks {
                     create_expanded_task(
                         Target::format("id", "standard").unwrap(),
                         TaskConfig {
-                            args: Some(string_vec!["--b", "--a"]),
-                            command: Some(String::from("newcmd")),
+                            args: Some(TaskCommandArgs::Sequence(string_vec!["--b", "--a"])),
+                            command: Some(TaskCommandArgs::String("newcmd".to_owned())),
                             deps: Some(string_vec!["b:standard", "a:standard"]),
                             env: Some(HashMap::from([
                                 ("GLOBAL".to_owned(), "1".to_owned()),
@@ -718,8 +728,8 @@ mod tasks {
                 tasks: BTreeMap::from([(
                     String::from("standard"),
                     TaskConfig {
-                        args: Some(string_vec!["--a"]),
-                        command: Some(String::from("standard")),
+                        args: Some(TaskCommandArgs::Sequence(string_vec!["--a"])),
+                        command: Some(TaskCommandArgs::String("standard".to_owned())),
                         deps: Some(string_vec!["a:standard"]),
                         env: Some(stub_global_env_vars()),
                         inputs: Some(string_vec!["a.*"]),
@@ -738,8 +748,8 @@ mod tasks {
         let mut task = create_expanded_task(
             Target::format("id", "standard").unwrap(),
             TaskConfig {
-                args: Some(string_vec!["--a", "--b"]),
-                command: Some(String::from("standard")),
+                args: Some(TaskCommandArgs::Sequence(string_vec!["--a", "--b"])),
+                command: Some(TaskCommandArgs::String("standard".to_owned())),
                 deps: Some(string_vec!["b:standard", "a:standard"]),
                 env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
                 inputs: Some(string_vec!["b.*"]),
@@ -774,7 +784,7 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("standard"),
                         TaskConfig {
-                            args: Some(string_vec!["--b"]),
+                            args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: None,
                             deps: Some(string_vec!["b:standard"]),
                             env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
@@ -912,7 +922,7 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
-                            args: Some(string_vec![
+                            args: Some(TaskCommandArgs::Sequence(string_vec![
                                 "--dirs",
                                 "@dirs(static)",
                                 "--files",
@@ -921,8 +931,8 @@ mod tasks {
                                 "@globs(globs)",
                                 "--root",
                                 "@root(static)",
-                            ]),
-                            command: Some(String::from("test")),
+                            ])),
+                            command: Some(TaskCommandArgs::String("test".to_owned())),
                             ..TaskConfig::default()
                         },
                     )]),
@@ -981,7 +991,7 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
-                            args: Some(string_vec![
+                            args: Some(TaskCommandArgs::Sequence(string_vec![
                                 "--dirs",
                                 "@dirs(static)",
                                 "--files",
@@ -990,8 +1000,8 @@ mod tasks {
                                 "@globs(globs)",
                                 "--root",
                                 "@root(static)",
-                            ]),
-                            command: Some(String::from("test")),
+                            ])),
+                            command: Some(TaskCommandArgs::String("test".to_owned())),
                             options: TaskOptionsConfig {
                                 run_from_workspace_root: Some(true),
                                 ..TaskOptionsConfig::default()
@@ -1046,7 +1056,7 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
-                            args: Some(string_vec![
+                            args: Some(TaskCommandArgs::Sequence(string_vec![
                                 "some/$unknown/var", // Unknown
                                 "--pid",
                                 "$project/foo", // At start
@@ -1059,8 +1069,8 @@ mod tasks {
                                 "--tid=$task",     // As an arg
                                 "--wsroot",
                                 "$workspaceRoot" // Alone
-                            ]),
-                            command: Some(String::from("test")),
+                            ])),
+                            command: Some(TaskCommandArgs::String("test".to_owned())),
                             ..TaskConfig::default()
                         },
                     )]),
@@ -1107,7 +1117,7 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
-                            command: Some(String::from("test")),
+                            command: Some(TaskCommandArgs::String("test".to_owned())),
                             inputs: Some(string_vec![
                                 "file.ts",
                                 "@dirs(static)",
@@ -1167,7 +1177,7 @@ mod tasks {
                     tasks: BTreeMap::from([(
                         String::from("test"),
                         TaskConfig {
-                            command: Some(String::from("test")),
+                            command: Some(TaskCommandArgs::String("test".to_owned())),
                             inputs: Some(string_vec!["local.ts",]),
                             type_of: PlatformType::Node,
                             ..TaskConfig::default()
@@ -1219,21 +1229,21 @@ mod workspace {
                     (
                         String::from("a"),
                         TaskConfig {
-                            command: Some(String::from("a")),
+                            command: Some(TaskCommandArgs::String("a".to_owned())),
                             ..TaskConfig::default()
                         },
                     ),
                     (
                         String::from("b"),
                         TaskConfig {
-                            command: Some(String::from("b")),
+                            command: Some(TaskCommandArgs::String("b".to_owned())),
                             ..TaskConfig::default()
                         },
                     ),
                     (
                         String::from("c"),
                         TaskConfig {
-                            command: Some(String::from("c")),
+                            command: Some(TaskCommandArgs::String("c".to_owned())),
                             ..TaskConfig::default()
                         },
                     ),

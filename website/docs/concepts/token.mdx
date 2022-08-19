@@ -86,16 +86,15 @@ fileGroups:
 # Configured as
 tasks:
   lint:
-    command: 'eslint'
-    args: '@dirs(lintable) --color'
+    command: 'eslint @dirs(lintable) --color'
     inputs:
       - '@dirs(lintable)'
 
 # Resolves to
 tasks:
   lint:
-    command: 'eslint'
-    args:
+    command:
+      - 'eslint'
       - 'src'
       - 'tests'
       - 'scripts'
@@ -126,16 +125,15 @@ fileGroups:
 # Configured as
 tasks:
   build:
-    command: 'webpack'
-    args: 'build @files(config)'
+    command: 'webpack build @files(config)'
     inputs:
       - '@files(config)'
 
 # Resolves to
 tasks:
   build:
-    command: 'webpack'
-    args:
+    command:
+      - 'webpack'
       - 'build'
       - 'babel.config.js'
       - 'webpack.config.js'
@@ -167,16 +165,15 @@ fileGroups:
 # Configured as
 tasks:
   test:
-    command: 'jest'
-    args: '--testMatch @globs(tests)'
+    command: 'jest --testMatch @globs(tests)'
     inputs:
       - '@globs(tests)'
 
 # Resolves to
 tasks:
   test:
-    command: 'jest'
-    args:
+    command:
+      - 'jest'
       - '--testMatch'
       - 'tests/**/*'
       - '**/__tests__/**/*'
@@ -206,16 +203,15 @@ fileGroups:
 # Configured as
 tasks:
   format:
-    command: 'prettier'
-    args: '--write @root(sources)'
+    command: 'prettier --write @root(sources)'
     inputs:
       - '@root(sources)'
 
 # Resolves to
 tasks:
   format:
-    command: 'prettier'
-    args:
+    command:
+      - 'prettier'
       - '--write'
       - 'src'
     inputs:
@@ -239,8 +235,8 @@ the glob will be used as-is, instead of returning the expanded list of files.
 # Configured as
 tasks:
   build:
-    command: 'babel'
-    args:
+    command:
+      - 'babel'
       - '--copy-files'
       - '--config-file'
       - '@in(1)'
@@ -252,8 +248,8 @@ tasks:
 # Resolves to
 tasks:
   build:
-    command: 'babel'
-    args:
+    command:
+      - 'babel'
       - '--copy-files'
       - '--config-file'
       - 'babel.config.js'
@@ -275,8 +271,8 @@ the process will **fail**, as it requires literal folder and file paths.
 # Configured as
 tasks:
   build:
-    command: 'babel'
-    args:
+    command:
+      - 'babel'
       - '.'
       - '--out-dir'
       - '@out(0)'
@@ -286,8 +282,8 @@ tasks:
 # Resolves to
 tasks:
   build:
-    command: 'babel'
-    args:
+    command:
+      - 'babel'
       - '.'
       - '--out-dir'
       - 'lib'
@@ -313,14 +309,13 @@ config, this defaults to "unknown".
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args: 'debug $language'
+    command: 'example debug $language'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - 'debug'
       - 'node'
 ```
@@ -334,14 +329,13 @@ ID/name of the project that owns the currently running task, as defined in
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args: '--project $project'
+    command: 'example --project $project'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - '--project'
       - 'web'
 ```
@@ -354,14 +348,13 @@ Absolute file path to the project root.
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args: '--cwd $projectRoot'
+    command: 'example --cwd $projectRoot'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - '--cwd'
       - '/path/to/repo/apps/web'
 ```
@@ -375,16 +368,16 @@ Relative file path from the workspace root to the project root, as defined in
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - '--cache-dir'
       - '../../.cache/$projectSource'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - '--cache-dir'
       - '../../.cache/apps/web'
 ```
@@ -399,14 +392,13 @@ the [`type`](../config/project#type-1) setting, or does not have a config, this 
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args: 'debug $projectType'
+    command: 'example debug $projectType'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - 'debug'
       - 'application'
 ```
@@ -419,14 +411,13 @@ Target that is currently running. Is a combination of project and task name.
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args: '$target'
+    command: 'example $target'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - 'web:build'
 ```
 
@@ -438,14 +429,13 @@ ID/name of the task that is currently running.
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args: '--task=$task'
+    command: 'example --task=$task'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - '--task=build'
 ```
 
@@ -457,14 +447,13 @@ The type of task that is currently running.
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args: '--type $taskType'
+    command: 'example --type $taskType'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - '--type'
       - 'system'
 ```
@@ -477,16 +466,16 @@ Absolute file path to the workspace root.
 # Configured as
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - '--cwd'
       - '$workspaceRoot'
 
 # Resolves to
 tasks:
   build:
-    command: 'example'
-    args:
+    command:
+      - 'example'
       - '--cwd'
       - '/path/to/repo'
 ```

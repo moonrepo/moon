@@ -46,8 +46,8 @@ is up to you. The following patterns are suggested:
 
 ```yaml title=".moon/project.yml"
 buildPackage:
-	command: 'packemon'
-	args:
+	command:
+		- 'packemon'
 		- 'pack'
 		# Add `engines` field to package
 		- '--addEngines'
@@ -103,8 +103,8 @@ workspace:
 
 ```yaml title="<package>/moon.yml"
 build:
-	command: 'packemon'
-	args:
+	command:
+		- 'packemon'
 		- 'pack'
 		# Add `engines` field to package
 		- '--addEngines'

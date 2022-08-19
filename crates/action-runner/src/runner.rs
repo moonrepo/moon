@@ -1,7 +1,7 @@
 use crate::actions;
 use crate::dep_graph::DepGraph;
 use crate::errors::{ActionRunnerError, DepGraphError};
-use crate::node::Node;
+use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_error::MoonError;
@@ -21,23 +21,23 @@ const LOG_TARGET: &str = "moon:action-runner";
 pub type ActionResults = Vec<Action>;
 
 async fn run_action(
-    node: &Node,
+    node: &ActionNode,
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<(), ActionRunnerError> {
     let result = match node {
-        Node::InstallDeps(lang) => match lang {
+        ActionNode::InstallDeps(lang) => match lang {
             SupportedLanguage::Node => node_actions::install_deps(action, context, workspace)
                 .await
                 .map_err(ActionRunnerError::Workspace),
             _ => Ok(ActionStatus::Passed),
         },
-        Node::RunTarget(target_id) => {
+        ActionNode::RunTarget(target_id) => {
             actions::run_target(action, context, workspace, target_id).await
         }
-        Node::SetupToolchain => actions::setup_toolchain(action, context, workspace).await,
-        Node::SyncProject(lang, project_id) => match lang {
+        ActionNode::SetupToolchain => actions::setup_toolchain(action, context, workspace).await,
+        ActionNode::SyncProject(lang, project_id) => match lang {
             SupportedLanguage::Node => {
                 node_actions::sync_project(action, context, workspace, project_id)
                     .await
@@ -55,7 +55,9 @@ async fn run_action(
             action.fail(error.to_string());
 
             // If these fail, we should abort instead of trying to continue
-            if matches!(node, Node::SetupToolchain) || matches!(node, Node::InstallDeps(_)) {
+            if matches!(node, ActionNode::SetupToolchain)
+                || matches!(node, ActionNode::InstallDeps(_))
+            {
                 action.abort();
             }
         }

@@ -309,7 +309,7 @@ impl Project {
         let resolver_data =
             ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
 
-        for (_, task) in &mut self.tasks {
+        for task in self.tasks.values_mut() {
             if matches!(task.platform, PlatformType::Unknown) {
                 task.platform = TaskConfig::detect_platform(&self.config, &task.command);
             }

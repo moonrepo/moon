@@ -42,13 +42,8 @@ pub fn infer_tasks_from_scripts(
     Ok(parser.tasks)
 }
 
+#[derive(Default)]
 pub struct NodePlatform;
-
-impl NodePlatform {
-    pub fn new() -> Self {
-        NodePlatform {}
-    }
-}
 
 impl Platform for NodePlatform {
     fn load_project_graph_aliases(

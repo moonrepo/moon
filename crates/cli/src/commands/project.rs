@@ -1,12 +1,12 @@
+use crate::helpers::load_workspace;
 use console::Term;
 use itertools::Itertools;
 use moon_logger::color;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
-use moon_workspace::Workspace;
 
 pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
     let project = workspace.projects.load(id)?;
     let config = &project.config;
 

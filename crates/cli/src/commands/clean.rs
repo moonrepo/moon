@@ -1,12 +1,11 @@
-use crate::helpers::create_progress_bar;
-use moon_workspace::Workspace;
+use crate::helpers::{create_progress_bar, load_workspace};
 
 pub struct CleanOptions {
     pub cache_liftime: String,
 }
 
 pub async fn clean(options: CleanOptions) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
 
     let done = create_progress_bar(format!(
         "Cleaning stale cache older than {}",

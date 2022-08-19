@@ -1,14 +1,14 @@
+use crate::helpers::load_workspace;
 use moon_config::{DependencyConfig, DependencyScope, ProjectDependsOn};
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_lang_node::package::{DepsSet, PackageJson};
 use moon_platform_node::create_tasks_from_scripts;
 use moon_utils::fs;
-use moon_workspace::Workspace;
 use serde_yaml::to_string;
 use std::collections::HashMap;
 
 pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
 
     // Create a mapping of `package.json` names to project IDs
     let mut package_map: HashMap<String, String> = HashMap::new();

@@ -1,7 +1,7 @@
+use crate::helpers::load_workspace;
 use indicatif::{ProgressBar, ProgressStyle};
 use moon_action_runner::{ActionRunner, DepGraph};
 use moon_terminal::create_theme;
-use moon_workspace::Workspace;
 use std::time::Duration;
 
 pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
@@ -11,7 +11,7 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
     pb.set_message("Syncing projects...");
     pb.enable_steady_tick(Duration::from_millis(50));
 
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
     let mut project_count = 0;
     let mut graph = DepGraph::default();
 

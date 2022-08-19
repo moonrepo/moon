@@ -4,12 +4,7 @@ mod hasher;
 pub use hasher::SystemTargetHasher;
 use moon_contract::Platform;
 
+#[derive(Default)]
 pub struct SystemPlatform;
-
-impl SystemPlatform {
-    pub fn new() -> Self {
-        SystemPlatform {}
-    }
-}
 
 impl Platform for SystemPlatform {}

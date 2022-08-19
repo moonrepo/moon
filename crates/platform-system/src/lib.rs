@@ -2,8 +2,8 @@ pub mod actions;
 mod hasher;
 
 pub use hasher::SystemTargetHasher;
-use moon_contract::PlatformBridge;
+use moon_contract::Platform;
 
-pub struct SystemPlatformBridge;
+pub struct SystemPlatform;
 
-impl PlatformBridge for SystemPlatformBridge {}
+impl Platform for SystemPlatform {}

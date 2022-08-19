@@ -1,11 +1,13 @@
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, ProjectID, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
-    WorkspaceConfig, WorkspaceProjects,
+    GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
+    WorkspaceProjects,
 };
+use moon_contract::{Platform, Platformable, RegisteredPlatforms};
+use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
-// use moon_platform_node::{infer_tasks_from_package, load_project_aliases_from_packages};
 use moon_project::{detect_projects_with_globs, Project, ProjectError};
+use moon_task::{Target, Task};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -68,16 +70,6 @@ async fn load_projects_from_cache(
     Ok(projects)
 }
 
-async fn load_project_aliases(
-    workspace_root: &Path,
-    workspace_config: &WorkspaceConfig,
-    projects: &ProjectsSourcesMap,
-) -> Result<ProjectsSourcesMap, ProjectError> {
-    let mut aliases = HashMap::new();
-
-    Ok(aliases)
-}
-
 pub struct ProjectGraph {
     /// A mapping of an alias to a project ID.
     pub aliases_map: ProjectsAliasesMap,
@@ -93,6 +85,9 @@ pub struct ProjectGraph {
     /// to query the graph by ID as it only supports it by index.
     indices: Arc<RwLock<IndicesType>>,
 
+    /// List of platforms that provide unique functionality.
+    platforms: RegisteredPlatforms,
+
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
     pub projects_map: ProjectsSourcesMap,
@@ -103,6 +98,21 @@ pub struct ProjectGraph {
 
     /// The workspace root, in which projects are relatively loaded from.
     workspace_root: PathBuf,
+}
+
+impl Platformable for ProjectGraph {
+    fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError> {
+        platform.load_project_graph_aliases(
+            &self.workspace_root,
+            &self.workspace_config,
+            &self.projects_map,
+            &mut self.aliases_map,
+        )?;
+
+        self.platforms.push(platform);
+
+        Ok(())
+    }
 }
 
 impl ProjectGraph {
@@ -122,18 +132,13 @@ impl ProjectGraph {
             ..Project::default()
         });
 
-        // Load projects and aliases
-        let projects_map =
-            load_projects_from_cache(workspace_root, workspace_config, cache).await?;
-        let aliases_map =
-            load_project_aliases(workspace_root, workspace_config, &projects_map).await?;
-
         Ok(ProjectGraph {
-            aliases_map,
+            aliases_map: HashMap::new(),
             global_config,
             graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(HashMap::new())),
-            projects_map,
+            platforms: vec![],
+            projects_map: load_projects_from_cache(workspace_root, workspace_config, cache).await?,
             workspace_config: workspace_config.clone(),
             workspace_root: workspace_root.to_path_buf(),
         })
@@ -275,24 +280,21 @@ impl ProjectGraph {
 
         project.alias = self.find_alias_for_id(id);
 
-        // Create tasks from `package.json` scripts
-        if (matches!(project.config.language, ProjectLanguage::JavaScript)
-            || matches!(project.config.language, ProjectLanguage::TypeScript))
-            && self.workspace_config.node.infer_tasks_from_scripts
-        {
-            debug!(
-                target: LOG_TARGET,
-                "Inferring {} tasks from {}",
-                color::id(id),
-                color::file("package.json")
-            );
+        for platform in &self.platforms {
+            for (task_id, task_config) in platform.load_project_tasks(
+                &self.workspace_root,
+                &self.workspace_config,
+                id,
+                &project.root,
+                &project.config,
+            )? {
+                // Inferred tasks should not override explicit tasks
+                if !project.tasks.contains_key(&task_id) {
+                    let task = Task::from_config(Target::format(id, &task_id)?, &task_config)?;
 
-            // if let Some(tasks) = infer_tasks_from_package(id, &project.root)? {
-            //     for (task_id, task) in tasks {
-            //         // Scripts should not override global tasks
-            //         project.tasks.entry(task_id).or_insert(task);
-            //     }
-            // }
+                    project.tasks.insert(task_id, task);
+                }
+            }
         }
 
         Ok(project)

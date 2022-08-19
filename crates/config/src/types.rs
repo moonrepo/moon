@@ -1,3 +1,4 @@
+use crate::TaskConfig;
 use std::collections::HashMap;
 
 pub type FileGlob = String;
@@ -19,5 +20,7 @@ pub type ProjectsAliasesMap = HashMap<ProjectAlias, ProjectID>;
 pub type ProjectID = String;
 
 pub type TaskID = String;
+
+pub type TasksConfigsMap = HashMap<TaskID, TaskConfig>;
 
 pub type TargetID = String; // project_id:task_id

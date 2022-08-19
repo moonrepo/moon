@@ -4,15 +4,17 @@ pub mod task;
 
 pub use hasher::NodeTargetHasher;
 use moon_config::{
-    NodeProjectAliasFormat, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
+    NodeProjectAliasFormat, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
+    WorkspaceConfig,
 };
-use moon_contract::PlatformBridge;
+use moon_contract::Platform;
 use moon_error::MoonError;
 use moon_lang_node::node::parse_package_name;
 use moon_lang_node::package::PackageJson;
+use moon_lang_node::NPM;
 use moon_logger::{color, debug, warn};
 use moon_task::TaskError;
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 use task::{ScriptParser, TasksMap};
 
 pub const LOG_TARGET: &str = "moon:platform-node";
@@ -51,10 +53,17 @@ pub fn infer_tasks_from_package(
     Ok(None)
 }
 
-pub struct NodePlatformBridge;
+pub struct NodePlatform;
 
-impl PlatformBridge for NodePlatformBridge {
-    fn load_project_aliases(
+impl NodePlatform {
+    pub fn new() -> Self {
+        NodePlatform {}
+    }
+}
+
+impl Platform for NodePlatform {
+    fn load_project_graph_aliases(
+        &self,
         workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
         projects_map: &ProjectsSourcesMap,
@@ -69,7 +78,7 @@ impl PlatformBridge for NodePlatformBridge {
         debug!(
             target: LOG_TARGET,
             "Assigning project aliases from project {}s",
-            color::file("package.json")
+            color::file(&NPM.manifest_filename)
         );
 
         for (project_id, project_source) in projects_map {
@@ -112,5 +121,31 @@ impl PlatformBridge for NodePlatformBridge {
         }
 
         Ok(())
+    }
+
+    fn load_project_tasks(
+        &self,
+        _workspace_root: &Path,
+        workspace_config: &WorkspaceConfig,
+        project_id: &str,
+        _project_root: &Path,
+        project_config: &ProjectConfig,
+    ) -> Result<TasksConfigsMap, MoonError> {
+        let tasks = HashMap::new();
+
+        if !project_config.language.is_node_platform()
+            || !workspace_config.node.infer_tasks_from_scripts
+        {
+            return Ok(tasks);
+        }
+
+        debug!(
+            target: LOG_TARGET,
+            "Inferring {} tasks from {}",
+            color::id(project_id),
+            color::file(&NPM.manifest_filename)
+        );
+
+        Ok(tasks)
     }
 }

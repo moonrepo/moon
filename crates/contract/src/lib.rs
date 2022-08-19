@@ -4,7 +4,8 @@ use moon_config::{
     ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
 };
 use moon_error::MoonError;
-use std::{collections::HashMap, path::Path};
+use std::collections::BTreeMap;
+use std::path::Path;
 
 pub trait Platform: Send + Sync {
     /// During project graph creation, load project aliases for the resolved
@@ -29,7 +30,7 @@ pub trait Platform: Send + Sync {
         project_root: &Path,
         project_config: &ProjectConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
-        Ok(HashMap::new())
+        Ok(BTreeMap::new())
     }
 }
 

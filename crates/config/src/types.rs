@@ -1,5 +1,5 @@
 use crate::TaskConfig;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 pub type FileGlob = String;
 
@@ -21,6 +21,6 @@ pub type ProjectID = String;
 
 pub type TaskID = String;
 
-pub type TasksConfigsMap = HashMap<TaskID, TaskConfig>;
+pub type TasksConfigsMap = BTreeMap<TaskID, TaskConfig>;
 
 pub type TargetID = String; // project_id:task_id

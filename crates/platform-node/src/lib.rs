@@ -14,15 +14,15 @@ use moon_lang_node::package::PackageJson;
 use moon_lang_node::NPM;
 use moon_logger::{color, debug, warn};
 use moon_task::TaskError;
-use std::{collections::HashMap, path::Path};
-use task::{ScriptParser, TasksMap};
+use std::{collections::BTreeMap, path::Path};
+use task::ScriptParser;
 
 pub const LOG_TARGET: &str = "moon:platform-node";
 
 pub fn create_tasks_from_scripts(
     project_id: &str,
     package_json: &mut PackageJson,
-) -> Result<TasksMap, TaskError> {
+) -> Result<TasksConfigsMap, TaskError> {
     let mut parser = ScriptParser::new(project_id);
 
     parser.parse_scripts(package_json)?;
@@ -34,23 +34,12 @@ pub fn create_tasks_from_scripts(
 pub fn infer_tasks_from_scripts(
     project_id: &str,
     package_json: &PackageJson,
-) -> Result<TasksMap, TaskError> {
+) -> Result<TasksConfigsMap, TaskError> {
     let mut parser = ScriptParser::new(project_id);
 
     parser.infer_scripts(package_json)?;
 
     Ok(parser.tasks)
-}
-
-pub fn infer_tasks_from_package(
-    project_id: &str,
-    project_root: &Path,
-) -> Result<Option<TasksMap>, TaskError> {
-    if let Some(package_json) = PackageJson::read(project_root)? {
-        return Ok(Some(infer_tasks_from_scripts(project_id, &package_json)?));
-    }
-
-    Ok(None)
 }
 
 pub struct NodePlatform;
@@ -128,10 +117,10 @@ impl Platform for NodePlatform {
         _workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
         project_id: &str,
-        _project_root: &Path,
+        project_root: &Path,
         project_config: &ProjectConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
-        let tasks = HashMap::new();
+        let mut tasks = BTreeMap::new();
 
         if !project_config.language.is_node_platform()
             || !workspace_config.node.infer_tasks_from_scripts
@@ -145,6 +134,13 @@ impl Platform for NodePlatform {
             color::id(project_id),
             color::file(&NPM.manifest_filename)
         );
+
+        if let Some(package_json) = PackageJson::read(project_root)? {
+            tasks.extend(
+                infer_tasks_from_scripts(project_id, &package_json)
+                    .map_err(|e| MoonError::Generic(e.to_string()))?,
+            );
+        }
 
         Ok(tasks)
     }

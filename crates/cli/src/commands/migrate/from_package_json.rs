@@ -46,8 +46,9 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
 
     PackageJson::sync(&project.root, |package_json| {
         // Create tasks from `package.json` scripts
-        for (task_id, task) in create_tasks_from_scripts(&project.id, package_json).unwrap() {
-            project.config.tasks.insert(task_id, task.to_config());
+        for (task_id, task_config) in create_tasks_from_scripts(&project.id, package_json).unwrap()
+        {
+            project.config.tasks.insert(task_id, task_config);
         }
 
         // Link deps from `package.json` dependencies

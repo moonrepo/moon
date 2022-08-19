@@ -42,16 +42,14 @@ fileGroups:
 tasks:
 	# Development server
 	dev:
-		command: 'remix'
-		args: 'dev'
+		command: 'remix dev'
 		inputs:
 			- '@group(remix)'
 		local: true
 
 	# Production build
 	build:
-		command: 'remix'
-		args: 'build'
+		command: 'remix build'
 		inputs:
 			- '@group(remix)'
 		outputs:
@@ -59,8 +57,7 @@ tasks:
 
 	# Serve the build
 	start:
-		command: 'remix-serve'
-		args: './build'
+		command: 'remix-serve ./build'
 		deps:
 			- '~:build'
 		inputs:

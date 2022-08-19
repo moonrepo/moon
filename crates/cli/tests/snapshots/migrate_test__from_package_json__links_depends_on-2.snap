@@ -8,8 +8,8 @@ dependsOn:
 language: javascript
 tasks:
   build:
-    command: babel
-    args:
+    command:
+    - babel
     - ./src
     - --out
     - ./lib
@@ -19,7 +19,8 @@ tasks:
     - lib
     type: node
   test:
-    command: jest
+    command:
+    - jest
     inputs:
     - '**/*'
     type: node

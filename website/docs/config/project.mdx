@@ -177,31 +177,38 @@ tasks:
 
 ### `command`<RequiredLabel />
 
-> `string`
+> `string | string[]`
 
-The `command` field is the name of an npm binary or native system command to run when executing the
-task. This field is required when _not_ inheriting a global task of the same name.
+The `command` field is the command line to run for the task, including the command name (must be
+first) and any optional [arguments](#args). This field is required when _not_ inheriting a global
+task of the same name.
 
 ```yaml title="moon.yml" {3}
 tasks:
   format:
-    command: 'prettier'
+    # Using a string
+    command: 'prettier --check .'
+    # Using an array
+    command:
+      - 'prettier'
+      - '--check'
+      - '.'
 ```
 
-By default a task assumes the command is an npm binary, and if you'd like to reference a system
-command, you'll also need to set the [`type`](#type) to "system".
+By default a task assumes the command name is an npm binary, and if you'd like to reference a system
+command, you'll also need to set the [`type`](#type) to "system". We do our best to automatically
+detect this, but it's not perfect.
 
 ```yaml title="moon.yml"
 tasks:
   clean:
-    command: 'rm'
-    args: '-rf dist'
+    command: 'rm -rf ./dist'
     type: 'system'
 ```
 
 #### Special commands
 
-For interoperability reasons, the following commands have special handling.
+For interoperability reasons, the following command names have special handling.
 
 - `noop`, `no-op`, `nop` - Marks the task as a "no operation". Will not execute a command in the
   action runner but can define dependencies.
@@ -216,7 +223,10 @@ For interoperability reasons, the following commands have special handling.
 
 > `string | string[]`
 
-The `args` field is a collection of arguments to pass on the command line when executing the task.
+The `args` field is a collection of _additional_ arguments to pass to the command line when
+executing the task. This field exists purely to provide arguments for
+[inherited tasks](./global-project#tasks).
+
 This setting can be defined using a string, or an array of strings. We suggest using arrays when
 dealing with many args, or the args string cannot be parsed easily.
 
@@ -224,9 +234,9 @@ dealing with many args, or the args string cannot be parsed easily.
 tasks:
   test:
     command: 'jest'
-    # String
+    # Using a string
     args: '--color --maxWorkers 3'
-    # Array
+    # Using an array
     args:
       - '--color'
       - '--maxWorkers'
@@ -335,8 +345,7 @@ This is a convenience setting for local development that sets the following task
 ```yaml title="moon.yml" {5}
 tasks:
   dev:
-    command: 'webpack'
-    args: 'server'
+    command: 'webpack server'
     local: true
 ```
 
@@ -373,8 +382,7 @@ execution. The following fields can be provided, with merge related fields suppo
 ```yaml title="moon.yml" {6-8}
 tasks:
   typecheck:
-    command: 'tsc'
-    args: '--noEmit'
+    command: 'tsc --noEmit'
     options:
       mergeArgs: 'replace'
       runFromWorkspaceRoot: true
@@ -394,8 +402,7 @@ operations.
 ```yaml title="moon.yml" {6}
 tasks:
   clean:
-    command: 'rm'
-    args: '-rf ./temp'
+    command: 'rm -rf ./temp'
     options:
       cache: false
 ```

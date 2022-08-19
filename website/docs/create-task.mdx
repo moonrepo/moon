@@ -41,8 +41,7 @@ for project boundaries and strict encapsulation, and as such, we'll use it below
 ```yaml title=".moon/project.yml" {4}
 tasks:
 	typecheck:
-		command: 'tsc'
-		args: '--build --verbose'
+		command: 'tsc --build --verbose'
 ```
 
 With this, the task can be ran from the command line with
@@ -66,8 +65,7 @@ to exist in the project, and probably in the workspace root too.
 ```yaml title=".moon/project.yml" {5-11}
 tasks:
 	typecheck:
-		command: 'tsc'
-		args: '--build --verbose'
+		command: 'tsc --build --verbose'
 		inputs:
 			- 'src/**/*'
 			- 'tests/**/*'
@@ -111,8 +109,7 @@ task with the [`outputs`](./config/project#outputs) setting.
 ```yaml title=".moon/project.yml" {12,13}
 tasks:
 	typecheck:
-		command: 'tsc'
-		args: '--build --verbose'
+		command: 'tsc --build --verbose'
 		inputs:
 			- 'src/**/*'
 			- 'tests/**/*'
@@ -189,8 +186,7 @@ to their documentation for more information!
 ```yaml title=".moon/project.yml" {6-8}
 tasks:
 	typecheck:
-		command: 'tsc'
-		args: '--build --verbose'
+		command: 'tsc --build --verbose'
 		inputs:
 			- '@globs(sources)'
 			- '@globs(tests)'

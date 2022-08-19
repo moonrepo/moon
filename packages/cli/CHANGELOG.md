@@ -13,6 +13,8 @@
 - Added support for Linux ARM musl (`aarch64-unknown-linux-musl`).
 - Added a `typescript` setting to `moon.yml`, allowing TypeScript support to be toggled per project.
 - Added an `--affected` option to the `moon query projects` command.
+- Updated the task `command` to also support inline arguments. You can now merge `command` and
+  `args` into a single field.
 
 ## 0.11.1
 

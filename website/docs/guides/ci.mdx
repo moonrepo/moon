@@ -33,10 +33,11 @@ options.
 ```yaml
 tasks:
   dev:
-    command: 'webpack'
-    args: 'server'
+    command: 'webpack server'
     options:
       runInCI: false
+    # Or
+    local: true
 ```
 
 :::caution

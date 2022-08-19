@@ -1,6 +1,6 @@
 use crate::LOG_TARGET;
 use lazy_static::lazy_static;
-use moon_config::TaskConfig;
+use moon_config::{TaskCommandArgs, TaskConfig};
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
 use moon_task::{PlatformType, Target, Task, TaskError, TaskID};
@@ -163,30 +163,39 @@ pub fn create_task(
     }
 
     if is_wrapping {
-        task_config.command = Some("moon".to_owned());
-        task_config.args = Some(string_vec!["node", "run-script", script_name]);
+        task_config.type_of = PlatformType::Node;
+        task_config.command = Some(TaskCommandArgs::Sequence(string_vec![
+            "moon",
+            "node",
+            "run-script",
+            script_name
+        ]));
     } else {
         if let Some(command) = args.get(0) {
             if is_bash_script(command) {
-                task_config.command = Some("bash".to_owned());
+                args.insert(0, "bash".to_owned());
             } else if is_node_script(command) {
-                task_config.command = Some("node".to_owned());
+                args.insert(0, "node".to_owned());
             } else {
-                task_config.command = Some(args.remove(0));
+                // Already there
             }
         } else {
-            task_config.command = Some("noop".to_owned());
+            args.insert(0, "noop".to_owned());
         }
 
-        task_config.args = Some(args);
+        task_config.type_of = detect_platform_type(&args[0]);
+        task_config.command = Some(if args.len() == 1 {
+            TaskCommandArgs::String(args.remove(0))
+        } else {
+            TaskCommandArgs::Sequence(args)
+        });
     }
 
     task_config.env = Some(env);
     task_config.outputs = Some(outputs);
-    task_config.type_of = detect_platform_type(task_config.command.as_ref().unwrap());
     task_config.local = !should_run_in_ci(script_name, script);
 
-    let task = Task::from_config(target_id.to_owned(), &task_config);
+    let task = Task::from_config(target_id.to_owned(), &task_config)?;
 
     if is_wrapping {
         debug!(

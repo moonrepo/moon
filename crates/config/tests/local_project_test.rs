@@ -1,4 +1,6 @@
-use moon_config::{DependencyConfig, DependencyScope, ProjectConfig, ProjectDependsOn, TaskConfig};
+use moon_config::{
+    DependencyConfig, DependencyScope, ProjectConfig, ProjectDependsOn, TaskCommandArgs, TaskConfig,
+};
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_utils::string_vec;
 use std::collections::{BTreeMap, HashMap};
@@ -225,8 +227,8 @@ tasks:
                     tasks: BTreeMap::from([(
                         String::from("lint"),
                         TaskConfig {
-                            args: Some(vec![".".to_owned()]),
-                            command: Some("eslint".to_owned()),
+                            command: Some(TaskCommandArgs::String("eslint".to_owned())),
+                            args: Some(TaskCommandArgs::Sequence(vec![".".to_owned()])),
                             ..TaskConfig::default()
                         }
                     )]),
@@ -273,7 +275,7 @@ tasks:
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a string for key \"project.tasks.test.command\""
+        expected = "expected a string or a sequence of strings for key \"project.tasks.test.command\""
     )]
     fn invalid_value_field() {
         figment::Jail::expect_with(|jail| {

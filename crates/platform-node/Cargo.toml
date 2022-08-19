@@ -14,6 +14,7 @@ moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_terminal = { path = "../terminal" }
+moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 lazy_static = "1.4.0"

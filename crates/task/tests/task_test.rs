@@ -146,6 +146,196 @@ mod from_config {
             }
         )
     }
+
+    #[test]
+    fn handles_command_string() {
+        let task = Task::from_config(
+            "foo:test".to_owned(),
+            &TaskConfig {
+                command: Some(TaskCommandArgs::String("foo --bar".to_owned())),
+                args: Some(TaskCommandArgs::Sequence(string_vec!["--baz"])),
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(task.command, "foo".to_owned());
+        assert_eq!(task.args, string_vec!["--bar", "--baz"]);
+    }
+
+    #[test]
+    fn handles_command_list() {
+        let task = Task::from_config(
+            "foo:test".to_owned(),
+            &TaskConfig {
+                command: Some(TaskCommandArgs::Sequence(string_vec!["foo", "--bar"])),
+                args: Some(TaskCommandArgs::String("--baz".to_owned())),
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(task.command, "foo".to_owned());
+        assert_eq!(task.args, string_vec!["--bar", "--baz"]);
+    }
+}
+
+mod merge {
+    use moon_config::TaskMergeStrategy;
+
+    use super::*;
+
+    #[test]
+    fn merges_command_string() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --bar".to_owned())),
+            args: Some(TaskCommandArgs::Sequence(string_vec!["--baz"])),
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.command, "foo".to_owned());
+        assert_eq!(task.args, string_vec!["--arg", "--bar", "--baz"]);
+    }
+
+    #[test]
+    fn merges_command_list() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            command: Some(TaskCommandArgs::Sequence(string_vec!["foo", "--bar"])),
+            args: Some(TaskCommandArgs::String("--baz".to_owned())),
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.command, "foo".to_owned());
+        assert_eq!(task.args, string_vec!["--arg", "--bar", "--baz"]);
+    }
+
+    #[test]
+    fn appends_command_args() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --after".to_owned())),
+            args: Some(TaskCommandArgs::String("--post".to_owned())),
+            options: TaskOptionsConfig {
+                merge_args: Some(TaskMergeStrategy::Append),
+                ..TaskOptionsConfig::default()
+            },
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.args, string_vec!["--arg", "--after", "--post"]);
+    }
+
+    #[test]
+    fn prepends_command_args() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --before".to_owned())),
+            args: Some(TaskCommandArgs::String("--pre".to_owned())),
+            options: TaskOptionsConfig {
+                merge_args: Some(TaskMergeStrategy::Prepend),
+                ..TaskOptionsConfig::default()
+            },
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.args, string_vec!["--before", "--pre", "--arg"]);
+    }
+
+    #[test]
+    fn replaces_command_args() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --new".to_owned())),
+            args: Some(TaskCommandArgs::String("--hot".to_owned())),
+            options: TaskOptionsConfig {
+                merge_args: Some(TaskMergeStrategy::Replace),
+                ..TaskOptionsConfig::default()
+            },
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.args, string_vec!["--new", "--hot"]);
+    }
+
+    #[test]
+    fn handles_all_strategies() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            args: Some(TaskCommandArgs::String("--a".to_owned())),
+            options: TaskOptionsConfig {
+                merge_args: Some(TaskMergeStrategy::Append),
+                ..TaskOptionsConfig::default()
+            },
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.command, "cmd".to_owned());
+        assert_eq!(task.args, string_vec!["--arg", "--a"]);
+
+        task.merge(&TaskConfig {
+            args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
+            options: TaskOptionsConfig {
+                merge_args: Some(TaskMergeStrategy::Prepend),
+                ..TaskOptionsConfig::default()
+            },
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.command, "cmd".to_owned());
+        assert_eq!(task.args, string_vec!["--b", "--arg", "--a"]);
+
+        task.merge(&TaskConfig {
+            command: Some(TaskCommandArgs::String("foo --r".to_owned())),
+            options: TaskOptionsConfig {
+                merge_args: Some(TaskMergeStrategy::Replace),
+                ..TaskOptionsConfig::default()
+            },
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.command, "foo".to_owned());
+        assert_eq!(task.args, string_vec!["--r"]);
+    }
 }
 
 mod is_affected {

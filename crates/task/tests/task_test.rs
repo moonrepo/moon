@@ -30,7 +30,7 @@ mod from_config {
 
     #[test]
     fn sets_defaults() {
-        let task = Task::from_config("foo:test".to_owned(), &TaskConfig::default());
+        let task = Task::from_config("foo:test".to_owned(), &TaskConfig::default()).unwrap();
 
         assert_eq!(task.inputs, string_vec!["**/*"]);
         assert_eq!(task.log_target, "moon:project:foo:test");
@@ -62,7 +62,8 @@ mod from_config {
                 local: true,
                 ..TaskConfig::default()
             },
-        );
+        )
+        .unwrap();
 
         assert_eq!(
             task.options,
@@ -83,7 +84,8 @@ mod from_config {
                 command: Some(TaskCommandArgs::String("dev".to_owned())),
                 ..TaskConfig::default()
             },
-        );
+        )
+        .unwrap();
 
         assert_eq!(
             task.options,
@@ -108,7 +110,8 @@ mod from_config {
                 },
                 ..TaskConfig::default()
             },
-        );
+        )
+        .unwrap();
 
         assert_eq!(
             task.options,
@@ -132,7 +135,8 @@ mod from_config {
                 },
                 ..TaskConfig::default()
             },
-        );
+        )
+        .unwrap();
 
         assert_eq!(
             task.options,

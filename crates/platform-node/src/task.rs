@@ -195,7 +195,7 @@ pub fn create_task(
     task_config.outputs = Some(outputs);
     task_config.local = !should_run_in_ci(script_name, script);
 
-    let task = Task::from_config(target_id.to_owned(), &task_config);
+    let task = Task::from_config(target_id.to_owned(), &task_config)?;
 
     if is_wrapping {
         debug!(

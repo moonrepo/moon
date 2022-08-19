@@ -197,11 +197,11 @@ impl Task {
         }
     }
 
-    pub fn from_config(target: TargetID, config: &TaskConfig) -> Self {
+    pub fn from_config(target: TargetID, config: &TaskConfig) -> Result<Self, TaskError> {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
 
-        let (command, args) = config.get_command_and_args().unwrap();
+        let (command, args) = config.get_command_and_args()?;
         let command = command.unwrap_or_default();
         let is_local =
             cloned_config.local || command == "dev" || command == "serve" || command == "start";
@@ -248,7 +248,7 @@ impl Task {
             color::shell(&task.command)
         );
 
-        task
+        Ok(task)
     }
 
     pub fn to_config(&self) -> TaskConfig {
@@ -542,8 +542,8 @@ impl Task {
         self.command == "nop" || self.command == "noop" || self.command == "no-op"
     }
 
-    pub fn merge(&mut self, config: &TaskConfig) {
-        let (command, args) = config.get_command_and_args().unwrap();
+    pub fn merge(&mut self, config: &TaskConfig) -> Result<(), TaskError> {
+        let (command, args) = config.get_command_and_args()?;
 
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
@@ -574,6 +574,8 @@ impl Task {
             self.outputs =
                 self.merge_string_vec(&self.outputs, outputs, &self.options.merge_outputs);
         }
+
+        Ok(())
     }
 
     pub fn should_run_in_ci(&self) -> bool {

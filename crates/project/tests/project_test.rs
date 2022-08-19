@@ -311,7 +311,8 @@ mod tasks {
         let mut task = Task::from_config(
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
-        );
+        )
+        .unwrap();
         task.platform = PlatformType::System;
 
         // Expanded
@@ -353,25 +354,29 @@ mod tasks {
         let mut build = Task::from_config(
             Target::format("id", "build").unwrap(),
             &mock_task_config("webpack"),
-        );
+        )
+        .unwrap();
         build.platform = PlatformType::Node;
 
         let mut std = Task::from_config(
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
-        );
+        )
+        .unwrap();
         std.platform = PlatformType::System;
 
         let mut test = Task::from_config(
             Target::format("id", "test").unwrap(),
             &mock_task_config("jest"),
-        );
+        )
+        .unwrap();
         test.platform = PlatformType::Node;
 
         let mut lint = Task::from_config(
             Target::format("id", "lint").unwrap(),
             &mock_task_config("eslint"),
-        );
+        )
+        .unwrap();
         lint.platform = PlatformType::Node;
 
         // Expanded
@@ -432,22 +437,26 @@ mod tasks {
         let mut build = Task::from_config(
             Target::format("id", "build").unwrap(),
             &mock_task_config("webpack"),
-        );
+        )
+        .unwrap();
 
         let mut std = Task::from_config(
             Target::format("id", "standard").unwrap(),
             &mock_task_config("cmd"),
-        );
+        )
+        .unwrap();
 
         let mut test = Task::from_config(
             Target::format("id", "test").unwrap(),
             &mock_task_config("jest"),
-        );
+        )
+        .unwrap();
 
         let mut lint = Task::from_config(
             Target::format("id", "lint").unwrap(),
             &mock_task_config("eslint"),
-        );
+        )
+        .unwrap();
 
         // Expanded
         build.inputs.extend(implicit_inputs.clone());

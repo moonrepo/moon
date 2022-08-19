@@ -74,6 +74,7 @@ pub fn create_initial_task(config: Option<TaskConfig>) -> Task {
         Target::format("project", "task").unwrap(),
         &config.unwrap_or_default(),
     )
+    .unwrap()
 }
 
 pub fn create_expanded_task(

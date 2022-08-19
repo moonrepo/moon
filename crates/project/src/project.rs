@@ -188,13 +188,13 @@ fn create_tasks_from_config(
 
         tasks.insert(
             task_name.to_owned(),
-            Task::from_config(Target::format(project_id, task_name)?, task_config),
+            Task::from_config(Target::format(project_id, task_name)?, task_config)?,
         );
     }
 
     // Add local tasks second
     for (task_id, task_config) in &project_config.tasks {
-        if tasks.contains_key(task_id) {
+        if let Some(existing_task) = tasks.get_mut(task_id) {
             debug!(
                 target: log_target,
                 "Merging task {} with global config",
@@ -202,12 +202,12 @@ fn create_tasks_from_config(
             );
 
             // Task already exists, so merge with it
-            tasks.get_mut(task_id).unwrap().merge(task_config);
+            existing_task.merge(task_config)?;
         } else {
             // Insert a new task
             tasks.insert(
                 task_id.clone(),
-                Task::from_config(Target::format(project_id, task_id)?, task_config),
+                Task::from_config(Target::format(project_id, task_id)?, task_config)?,
             );
         }
     }

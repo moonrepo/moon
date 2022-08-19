@@ -1,0 +1,8 @@
+[package]
+name = "moon_contract"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../config" }
+moon_error = { path = "../error" }

@@ -1440,6 +1440,14 @@ name = "moon_constants"
 version = "0.1.0"
 
 [[package]]
+name = "moon_contract"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_error",
+]
+
+[[package]]
 name = "moon_error"
 version = "0.1.0"
 dependencies = [
@@ -1504,6 +1512,7 @@ dependencies = [
  "lazy_static",
  "moon_action",
  "moon_config",
+ "moon_contract",
  "moon_error",
  "moon_hasher",
  "moon_lang",
@@ -1524,6 +1533,7 @@ dependencies = [
 name = "moon_platform_system"
 version = "0.1.0"
 dependencies = [
+ "moon_contract",
  "moon_hasher",
  "moon_project",
  "moon_task",

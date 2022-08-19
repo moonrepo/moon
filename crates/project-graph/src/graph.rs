@@ -1,11 +1,11 @@
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, ProjectAlias, ProjectID, ProjectLanguage, WorkspaceConfig,
-    WorkspaceProjects,
+    GlobalProjectConfig, ProjectID, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_logger::{color, debug, map_list, trace};
 // use moon_platform_node::{infer_tasks_from_package, load_project_aliases_from_packages};
-use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
+use moon_project::{detect_projects_with_globs, Project, ProjectError};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -26,7 +26,7 @@ async fn load_projects_from_cache(
     workspace_root: &Path,
     workspace_config: &WorkspaceConfig,
     engine: &CacheEngine,
-) -> Result<ProjectsSourceMap, ProjectError> {
+) -> Result<ProjectsSourcesMap, ProjectError> {
     let projects = match &workspace_config.projects {
         WorkspaceProjects::Map(map) => map.clone(),
         WorkspaceProjects::List(globs) => {
@@ -71,27 +71,16 @@ async fn load_projects_from_cache(
 async fn load_project_aliases(
     workspace_root: &Path,
     workspace_config: &WorkspaceConfig,
-    projects: &ProjectsSourceMap,
-) -> Result<ProjectsSourceMap, ProjectError> {
+    projects: &ProjectsSourcesMap,
+) -> Result<ProjectsSourcesMap, ProjectError> {
     let mut aliases = HashMap::new();
-
-    // JavaScript/TypeScript
-    // if let Some(alias_format) = &workspace_config.node.alias_package_names {
-    //     debug!(
-    //         target: LOG_TARGET,
-    //         "Assigning project aliases from project {}s",
-    //         color::file("package.json")
-    //     );
-
-    //     load_project_aliases_from_packages(workspace_root, projects, alias_format, &mut aliases)?;
-    // }
 
     Ok(aliases)
 }
 
 pub struct ProjectGraph {
     /// A mapping of an alias to a project ID.
-    pub aliases: HashMap<ProjectAlias, ProjectID>,
+    pub aliases_map: ProjectsAliasesMap,
 
     /// The global project configuration that all projects inherit from.
     /// Is loaded from `.moon/project.yml`.
@@ -106,7 +95,7 @@ pub struct ProjectGraph {
 
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
-    pub projects_map: HashMap<ProjectID, String>,
+    pub projects_map: ProjectsSourcesMap,
 
     /// The workspace configuration. Necessary for project variants.
     /// Is loaded from `.moon/workspace.yml`.
@@ -136,10 +125,11 @@ impl ProjectGraph {
         // Load projects and aliases
         let projects_map =
             load_projects_from_cache(workspace_root, workspace_config, cache).await?;
-        let aliases = load_project_aliases(workspace_root, workspace_config, &projects_map).await?;
+        let aliases_map =
+            load_project_aliases(workspace_root, workspace_config, &projects_map).await?;
 
         Ok(ProjectGraph {
-            aliases,
+            aliases_map,
             global_config,
             graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(HashMap::new())),
@@ -230,7 +220,7 @@ impl ProjectGraph {
 
     /// Resolve a project ID from the provided value, which can be an ID or alias.
     pub fn resolve_id(&self, alias_or_id: &str) -> String {
-        match self.aliases.get(alias_or_id) {
+        match self.aliases_map.get(alias_or_id) {
             Some(project_id) => project_id.to_owned(),
             None => alias_or_id.to_owned(),
         }
@@ -311,7 +301,7 @@ impl ProjectGraph {
     /// Find the alias for a given ID. This is currently... not performant,
     /// so revisit once it becomes an issue!
     fn find_alias_for_id(&self, id: &str) -> Option<String> {
-        for (alias, project_id) in &self.aliases {
+        for (alias, project_id) in &self.aliases_map {
             if project_id == id {
                 return Some(alias.clone());
             }

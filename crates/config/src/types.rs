@@ -12,6 +12,10 @@ pub type InputValue = String; // file path, glob, env var
 
 pub type ProjectAlias = String;
 
+pub type ProjectsSourcesMap = HashMap<ProjectID, String>;
+
+pub type ProjectsAliasesMap = HashMap<ProjectAlias, ProjectID>;
+
 pub type ProjectID = String;
 
 pub type TaskID = String;

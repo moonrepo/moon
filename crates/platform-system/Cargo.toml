@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_contract = { path = "../contract" }
 moon_hasher = { path = "../hasher" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }

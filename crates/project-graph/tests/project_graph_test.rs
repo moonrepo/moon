@@ -226,7 +226,7 @@ mod aliases {
         .await;
 
         assert_eq!(
-            graph.aliases,
+            graph.aliases_map,
             HashMap::from([
                 ("pkg-bar".to_owned(), "nodeNameOnly".to_owned()),
                 ("pkg-foo".to_owned(), "nodeNameScope".to_owned())
@@ -243,7 +243,7 @@ mod aliases {
         .await;
 
         assert_eq!(
-            graph.aliases,
+            graph.aliases_map,
             HashMap::from([
                 ("pkg-bar".to_owned(), "nodeNameOnly".to_owned()),
                 ("@scope/pkg-foo".to_owned(), "nodeNameScope".to_owned())

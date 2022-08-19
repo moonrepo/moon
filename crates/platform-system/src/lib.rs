@@ -6,4 +6,10 @@ use moon_contract::Platform;
 
 pub struct SystemPlatform;
 
+impl SystemPlatform {
+    pub fn new() -> Self {
+        SystemPlatform {}
+    }
+}
+
 impl Platform for SystemPlatform {}

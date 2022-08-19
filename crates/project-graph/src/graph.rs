@@ -271,7 +271,6 @@ impl ProjectGraph {
 
     fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectError> {
         let mut project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
-
         project.alias = self.find_alias_for_id(id);
 
         // Inherit platform specific tasks

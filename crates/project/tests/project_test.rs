@@ -34,7 +34,6 @@ fn doesnt_exist() {
         "projects/missing",
         &get_fixtures_root(),
         &mock_global_project_config(),
-        &[],
     )
     .unwrap();
 }
@@ -47,7 +46,6 @@ fn no_config() {
         "projects/no-config",
         &workspace_root,
         &mock_global_project_config(),
-        &[],
     )
     .unwrap();
 
@@ -72,7 +70,6 @@ fn empty_config() {
         "projects/empty-config",
         &workspace_root,
         &mock_global_project_config(),
-        &[],
     )
     .unwrap();
 
@@ -98,7 +95,6 @@ fn basic_config() {
         "projects/basic",
         &workspace_root,
         &mock_global_project_config(),
-        &[],
     )
     .unwrap();
     let project_root = workspace_root.join("projects/basic");
@@ -137,7 +133,6 @@ fn advanced_config() {
         "projects/advanced",
         &workspace_root,
         &mock_global_project_config(),
-        &[],
     )
     .unwrap();
 
@@ -177,7 +172,6 @@ fn overrides_global_file_groups() {
             file_groups: HashMap::from([(String::from("tests"), string_vec!["tests/**/*"])]),
             ..GlobalProjectConfig::default()
         },
-        &[],
     )
     .unwrap();
 
@@ -304,7 +298,6 @@ mod tasks {
                 tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
                 ..GlobalProjectConfig::default()
             },
-            &[],
         )
         .unwrap();
 
@@ -347,7 +340,6 @@ mod tasks {
                 tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
                 ..GlobalProjectConfig::default()
             },
-            &[],
         )
         .unwrap();
 
@@ -422,7 +414,7 @@ mod tasks {
     fn inherits_implicit_inputs() {
         let workspace_root = get_fixtures_root();
         let implicit_inputs = string_vec!["$VAR", "package.json", "/.moon/workspace.yml"];
-        let project = Project::new(
+        let mut project = Project::new(
             "id",
             "tasks/basic",
             &workspace_root,
@@ -430,9 +422,12 @@ mod tasks {
                 tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
                 ..GlobalProjectConfig::default()
             },
-            &implicit_inputs,
         )
         .unwrap();
+
+        project
+            .expand_tasks(&workspace_root, &implicit_inputs)
+            .unwrap();
 
         let mut build = Task::from_config(
             Target::format("id", "build").unwrap(),
@@ -501,7 +496,6 @@ mod tasks {
                 )]),
                 ..GlobalProjectConfig::default()
             },
-            &[],
         )
         .unwrap();
 
@@ -579,7 +573,6 @@ mod tasks {
                 )]),
                 ..GlobalProjectConfig::default()
             },
-            &[],
         )
         .unwrap();
 
@@ -660,7 +653,6 @@ mod tasks {
                 )]),
                 ..GlobalProjectConfig::default()
             },
-            &[],
         )
         .unwrap();
 
@@ -741,7 +733,6 @@ mod tasks {
                 )]),
                 ..GlobalProjectConfig::default()
             },
-            &[],
         )
         .unwrap();
 
@@ -830,7 +821,6 @@ mod tasks {
                 "self",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -847,7 +837,6 @@ mod tasks {
                 "self-dupes",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -864,7 +853,6 @@ mod tasks {
                 "deps",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -881,7 +869,6 @@ mod tasks {
                 "deps-dupes",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -899,7 +886,6 @@ mod tasks {
                 "all",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
         }
@@ -938,7 +924,6 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-                &[],
             )
             .unwrap();
 
@@ -1011,7 +996,6 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-                &[],
             )
             .unwrap();
 
@@ -1076,7 +1060,6 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-                &[],
             )
             .unwrap();
 
@@ -1131,7 +1114,6 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-                &[],
             )
             .unwrap();
 
@@ -1168,7 +1150,7 @@ mod tasks {
         fn expands_implicit_inputs() {
             let workspace_root = get_fixtures_dir("base");
             let project_root = workspace_root.join("files-and-dirs");
-            let project = Project::new(
+            let mut project = Project::new(
                 "id",
                 "files-and-dirs",
                 &workspace_root,
@@ -1185,12 +1167,18 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-                &[
-                    "/.moon/$taskType-$projectType.yml".to_owned(),
-                    "*.yml".to_owned(),
-                ],
             )
             .unwrap();
+
+            project
+                .expand_tasks(
+                    &workspace_root,
+                    &[
+                        "/.moon/$taskType-$projectType.yml".to_owned(),
+                        "*.yml".to_owned(),
+                    ],
+                )
+                .unwrap();
 
             let task = project.tasks.get("test").unwrap();
 
@@ -1265,7 +1253,6 @@ mod workspace {
                 "include",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -1279,7 +1266,6 @@ mod workspace {
                 "include-none",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -1293,7 +1279,6 @@ mod workspace {
                 "exclude",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -1307,7 +1292,6 @@ mod workspace {
                 "exclude-all",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -1321,7 +1305,6 @@ mod workspace {
                 "exclude-none",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -1335,7 +1318,6 @@ mod workspace {
                 "rename",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -1353,7 +1335,6 @@ mod workspace {
                 "rename-merge",
                 &workspace_root,
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -1377,7 +1358,6 @@ mod workspace {
                 "include-exclude",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 
@@ -1391,7 +1371,6 @@ mod workspace {
                 "include-exclude-rename",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-                &[],
             )
             .unwrap();
 

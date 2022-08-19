@@ -1,18 +1,16 @@
-use crate::action::{Action, ActionStatus};
-use crate::context::ActionContext;
-use crate::errors::ActionError;
+use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use moon_logger::{color, debug};
 use moon_project::Project;
 use moon_utils::{fs, is_ci, path, semver, string_vec};
-use moon_workspace::Workspace;
+use moon_workspace::{Workspace, WorkspaceError};
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action:sync-node-project";
+const LOG_TARGET: &str = "moon:platform-node:sync-project";
 
 // Automatically create missing config files when we are syncing project references.
 #[track_caller]
@@ -20,7 +18,7 @@ async fn create_missing_tsconfig(
     project: &Project,
     typescript_config: &TypeScriptConfig,
     workspace_root: &Path,
-) -> Result<bool, ActionError> {
+) -> Result<bool, WorkspaceError> {
     let tsconfig_path = project
         .root
         .join(&typescript_config.project_config_file_name);
@@ -72,12 +70,12 @@ fn sync_root_tsconfig(
     false
 }
 
-pub async fn sync_node_project(
+pub async fn sync_project(
     _action: &mut Action,
     _context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
     project_id: &str,
-) -> Result<ActionStatus, ActionError> {
+) -> Result<ActionStatus, WorkspaceError> {
     let mut mutated_files = false;
     let workspace = workspace.read().await;
     let node_config = &workspace.config.node;

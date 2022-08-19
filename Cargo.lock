@@ -1507,6 +1507,7 @@ dependencies = [
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
+ "moon_project",
  "moon_task",
  "moon_terminal",
  "moon_utils",

@@ -4,7 +4,7 @@ use moon_config::{
     WorkspaceProjects,
 };
 use moon_logger::{color, debug, map_list, trace};
-use moon_platform_node::{infer_tasks_from_package, load_project_aliases_from_packages};
+// use moon_platform_node::{infer_tasks_from_package, load_project_aliases_from_packages};
 use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -76,15 +76,15 @@ async fn load_project_aliases(
     let mut aliases = HashMap::new();
 
     // JavaScript/TypeScript
-    if let Some(alias_format) = &workspace_config.node.alias_package_names {
-        debug!(
-            target: LOG_TARGET,
-            "Assigning project aliases from project {}s",
-            color::file("package.json")
-        );
+    // if let Some(alias_format) = &workspace_config.node.alias_package_names {
+    //     debug!(
+    //         target: LOG_TARGET,
+    //         "Assigning project aliases from project {}s",
+    //         color::file("package.json")
+    //     );
 
-        load_project_aliases_from_packages(workspace_root, projects, alias_format, &mut aliases)?;
-    }
+    //     load_project_aliases_from_packages(workspace_root, projects, alias_format, &mut aliases)?;
+    // }
 
     Ok(aliases)
 }
@@ -297,12 +297,12 @@ impl ProjectGraph {
                 color::file("package.json")
             );
 
-            if let Some(tasks) = infer_tasks_from_package(id, &project.root)? {
-                for (task_id, task) in tasks {
-                    // Scripts should not override global tasks
-                    project.tasks.entry(task_id).or_insert(task);
-                }
-            }
+            // if let Some(tasks) = infer_tasks_from_package(id, &project.root)? {
+            //     for (task_id, task) in tasks {
+            //         // Scripts should not override global tasks
+            //         project.tasks.entry(task_id).or_insert(task);
+            //     }
+            // }
         }
 
         Ok(project)

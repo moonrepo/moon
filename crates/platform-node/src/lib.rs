@@ -1,3 +1,4 @@
+pub mod actions;
 mod hasher;
 pub mod task;
 

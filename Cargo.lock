@@ -1312,22 +1312,7 @@ name = "moon_action"
 version = "0.1.0"
 dependencies = [
  "clap",
- "moon_cache",
- "moon_config",
  "moon_error",
- "moon_hasher",
- "moon_lang",
- "moon_lang_node",
- "moon_logger",
- "moon_platform_node",
- "moon_platform_system",
- "moon_project",
- "moon_task",
- "moon_terminal",
- "moon_toolchain",
- "moon_utils",
- "moon_vcs",
- "moon_workspace",
  "serde",
  "thiserror",
  "tokio",
@@ -1515,14 +1500,20 @@ name = "moon_platform_node"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "moon_action",
  "moon_config",
+ "moon_error",
  "moon_hasher",
+ "moon_lang",
  "moon_lang_node",
  "moon_logger",
  "moon_task",
+ "moon_terminal",
  "moon_utils",
+ "moon_workspace",
  "pretty_assertions",
  "serde",
+ "tokio",
 ]
 
 [[package]]
@@ -1556,7 +1547,6 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_logger",
- "moon_platform_node",
  "moon_project",
  "moon_utils",
  "petgraph",

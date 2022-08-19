@@ -1312,10 +1312,6 @@ name = "moon_action"
 version = "0.1.0"
 dependencies = [
  "clap",
- "moon_error",
- "serde",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
@@ -1328,15 +1324,21 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_lang",
  "moon_logger",
+ "moon_platform_node",
+ "moon_platform_system",
  "moon_project",
  "moon_project_graph",
  "moon_task",
  "moon_terminal",
+ "moon_toolchain",
  "moon_utils",
+ "moon_vcs",
  "moon_workspace",
  "petgraph",
+ "serde",
  "thiserror",
  "tokio",
 ]

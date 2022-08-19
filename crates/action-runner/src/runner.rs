@@ -1,14 +1,13 @@
+use crate::actions;
 use crate::dep_graph::DepGraph;
 use crate::errors::{ActionRunnerError, DepGraphError};
 use crate::node::Node;
 use console::Term;
-use moon_action::{
-    install_node_deps, run_target, setup_toolchain, sync_node_project, Action, ActionContext,
-    ActionStatus,
-};
+use moon_action::{Action, ActionContext, ActionStatus};
 use moon_error::MoonError;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
+use moon_platform_node::actions as node_actions;
 use moon_terminal::{replace_style_tokens, ExtendedTerm};
 use moon_utils::time;
 use moon_workspace::Workspace;
@@ -29,14 +28,20 @@ async fn run_action(
 ) -> Result<(), ActionRunnerError> {
     let result = match node {
         Node::InstallDeps(lang) => match lang {
-            SupportedLanguage::Node => install_node_deps(action, context, workspace).await,
+            SupportedLanguage::Node => node_actions::install_deps(action, context, workspace)
+                .await
+                .map_err(ActionRunnerError::Workspace),
             _ => Ok(ActionStatus::Passed),
         },
-        Node::RunTarget(target_id) => run_target(action, context, workspace, target_id).await,
-        Node::SetupToolchain => setup_toolchain(action, context, workspace).await,
+        Node::RunTarget(target_id) => {
+            actions::run_target(action, context, workspace, target_id).await
+        }
+        Node::SetupToolchain => actions::setup_toolchain(action, context, workspace).await,
         Node::SyncProject(lang, project_id) => match lang {
             SupportedLanguage::Node => {
-                sync_node_project(action, context, workspace, project_id).await
+                node_actions::sync_project(action, context, workspace, project_id)
+                    .await
+                    .map_err(ActionRunnerError::Workspace)
             }
             _ => Ok(ActionStatus::Passed),
         },

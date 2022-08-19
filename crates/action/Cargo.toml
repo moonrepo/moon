@@ -4,8 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_error = { path = "../error" }
 clap = { version = "3.2.14", features = ["derive"] }
-serde = "1.0.140"
-thiserror = "1.0.31"
-tokio = { version = "1.20.0", features = ["full"] }

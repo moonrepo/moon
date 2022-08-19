@@ -270,16 +270,11 @@ impl ProjectGraph {
     }
 
     fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectError> {
-        let mut project = Project::new(
-            id,
-            source,
-            &self.workspace_root,
-            &self.global_config,
-            &self.workspace_config.action_runner.implicit_inputs,
-        )?;
+        let mut project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
 
         project.alias = self.find_alias_for_id(id);
 
+        // Inherit platform specific tasks
         for platform in &self.platforms {
             for (task_id, task_config) in platform.load_project_tasks(
                 &self.workspace_root,
@@ -296,6 +291,12 @@ impl ProjectGraph {
                 }
             }
         }
+
+        // Expand all tasks for the project (this must happen last)
+        project.expand_tasks(
+            &self.workspace_root,
+            &self.workspace_config.action_runner.implicit_inputs,
+        )?;
 
         Ok(project)
     }

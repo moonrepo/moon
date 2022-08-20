@@ -1,7 +1,7 @@
+use crate::helpers::load_workspace;
 use clap::ValueEnum;
 use moon_terminal::safe_exit;
 use moon_toolchain::{Executable, Installable};
-use moon_workspace::Workspace;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum BinTools {
@@ -33,7 +33,7 @@ fn log_bin_path<T: Send + Sync>(tool: &dyn Executable<T>) {
 }
 
 pub async fn bin(tool_type: &BinTools) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
     let toolchain = &workspace.toolchain;
 
     match tool_type {

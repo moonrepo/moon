@@ -1,14 +1,17 @@
-use crate::action::Attempt;
-use crate::context::ActionContext;
-use crate::errors::ActionError;
+use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
+use moon_config::PlatformType;
 use moon_config::TaskOutputStyle;
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};
+use moon_platform_node::actions as node_actions;
+use moon_platform_system::actions as system_actions;
 use moon_project::Project;
+use moon_task::Target;
 use moon_task::Task;
-use moon_terminal::{label_checkpoint, Checkpoint};
+use moon_terminal::label_checkpoint;
+use moon_terminal::Checkpoint;
 use moon_utils::{
     fs, is_ci, is_test_env, path,
     process::{self, output_to_string, Command, Output},
@@ -17,6 +20,10 @@ use moon_utils::{
 use moon_workspace::Workspace;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+
+use crate::ActionRunnerError;
 
 const LOG_TARGET: &str = "moon:action:run-target";
 
@@ -52,7 +59,7 @@ impl<'a> TargetRunner<'a> {
     /// Cache outputs to the `.moon/cache/out` folder and to the cloud,
     /// so that subsequent builds are faster, and any local outputs
     /// can be rehydrated easily.
-    pub async fn cache_outputs(&self) -> Result<(), ActionError> {
+    pub async fn cache_outputs(&self) -> Result<(), MoonError> {
         let hash = &self.cache.item.hash;
 
         if !hash.is_empty() && !self.task.outputs.is_empty() {
@@ -67,7 +74,7 @@ impl<'a> TargetRunner<'a> {
 
     /// If we are cached (hash match), hydrate the project with the
     /// cached task outputs found in the hashed archive.
-    pub async fn hydrate_outputs(&self) -> Result<(), ActionError> {
+    pub async fn hydrate_outputs(&self) -> Result<(), MoonError> {
         let hash = &self.cache.item.hash;
 
         if hash.is_empty() {
@@ -96,7 +103,7 @@ impl<'a> TargetRunner<'a> {
     pub async fn create_common_hasher(
         &self,
         context: &ActionContext,
-    ) -> Result<TargetHasher, ActionError> {
+    ) -> Result<TargetHasher, ActionRunnerError> {
         let vcs = &self.workspace.vcs;
         let task = &self.task;
         let project = &self.project;
@@ -161,7 +168,7 @@ impl<'a> TargetRunner<'a> {
         Ok(hasher)
     }
 
-    pub async fn create_env_vars(&self) -> Result<HashMap<String, String>, ActionError> {
+    pub async fn create_env_vars(&self) -> Result<HashMap<String, String>, MoonError> {
         let mut env_vars = HashMap::new();
 
         env_vars.insert(
@@ -213,7 +220,7 @@ impl<'a> TargetRunner<'a> {
         &mut self,
         common_hasher: impl Hasher + Serialize,
         platform_hasher: impl Hasher + Serialize,
-    ) -> Result<Option<HydrateFrom>, ActionError> {
+    ) -> Result<Option<HydrateFrom>, MoonError> {
         let hash = to_hash(&common_hasher, &platform_hasher);
 
         debug!(
@@ -280,7 +287,7 @@ impl<'a> TargetRunner<'a> {
         &mut self,
         context: &ActionContext,
         command: &mut Command,
-    ) -> Result<Vec<Attempt>, ActionError> {
+    ) -> Result<Vec<Attempt>, ActionRunnerError> {
         command.envs(self.create_env_vars().await?);
 
         if !context.passthrough_args.is_empty() {
@@ -358,7 +365,9 @@ impl<'a> TargetRunner<'a> {
                         output = out;
                         break;
                     } else if attempt_index >= attempt_total {
-                        return Err(ActionError::Moon(command.output_to_error(&out, false)));
+                        return Err(ActionRunnerError::Moon(
+                            command.output_to_error(&out, false),
+                        ));
                     } else {
                         attempt_index += 1;
 
@@ -372,7 +381,7 @@ impl<'a> TargetRunner<'a> {
                 }
                 // process itself failed
                 Err(error) => {
-                    return Err(ActionError::Moon(error));
+                    return Err(ActionRunnerError::Moon(error));
                 }
             }
         }
@@ -540,4 +549,109 @@ impl<'a> TargetRunner<'a> {
             self.print_target_label(Checkpoint::Fail, attempt, attempt_total);
         }
     }
+}
+
+pub async fn run_target(
+    action: &mut Action,
+    context: &ActionContext,
+    workspace: Arc<RwLock<Workspace>>,
+    target_id: &str,
+) -> Result<ActionStatus, ActionRunnerError> {
+    let (project_id, task_id) = Target::parse(target_id)?.ids()?;
+    let workspace = workspace.read().await;
+    let project = workspace.projects.load(&project_id)?;
+    let task = project.get_task(&task_id)?;
+    let mut runner = TargetRunner::new(&workspace, &project, task).await?;
+
+    debug!(
+        target: LOG_TARGET,
+        "Running target {}",
+        color::id(&task.target)
+    );
+
+    // Abort early if a no operation
+    if runner.is_no_op() {
+        debug!(
+            target: LOG_TARGET,
+            "Target {} is a no operation, skipping",
+            color::id(&task.target),
+        );
+
+        runner.print_checkpoint(Checkpoint::Pass, "(no op)");
+
+        return Ok(ActionStatus::Passed);
+    }
+
+    // Abort early if this build has already been cached/hashed
+    if task.options.cache {
+        let common_hasher = runner.create_common_hasher(context).await?;
+
+        let is_cached = match task.platform {
+            PlatformType::Node => {
+                runner
+                    .is_cached(
+                        common_hasher,
+                        node_actions::create_target_hasher(&workspace, &project)?,
+                    )
+                    .await?
+            }
+            _ => {
+                runner
+                    .is_cached(
+                        common_hasher,
+                        system_actions::create_target_hasher(&workspace, &project)?,
+                    )
+                    .await?
+            }
+        };
+
+        if let Some(cache_location) = is_cached {
+            // Only hydrate when the hash is different from the previous build,
+            // as we can assume the outputs from the previous build still exist?
+            if matches!(cache_location, HydrateFrom::LocalCache) {
+                runner.hydrate_outputs().await?;
+            }
+
+            runner.print_checkpoint(Checkpoint::Pass, "(cached)");
+            runner.print_cache_item();
+
+            return Ok(ActionStatus::Cached);
+        }
+    }
+
+    // Create the command to run based on the task
+    let working_dir = if task.options.run_from_workspace_root {
+        &workspace.root
+    } else {
+        &project.root
+    };
+
+    let mut command = match task.platform {
+        PlatformType::Node => {
+            node_actions::create_target_command(context, &workspace, &project, task).await?
+        }
+        _ => system_actions::create_target_command(task, working_dir),
+    };
+
+    command
+        .cwd(working_dir)
+        // We need to handle non-zero's manually
+        .no_error_on_failure();
+
+    debug!(
+        target: LOG_TARGET,
+        "Creating {} command (in working directory {})",
+        color::target(&task.target),
+        color::path(working_dir)
+    );
+
+    // Execute the command and return the number of attempts
+    action.attempts = Some(runner.run_command(context, &mut command).await?);
+
+    // If successful, cache the task outputs
+    if task.options.cache {
+        runner.cache_outputs().await?;
+    }
+
+    Ok(ActionStatus::Passed)
 }

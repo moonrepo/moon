@@ -1,5 +1,5 @@
 use crate::errors::DepGraphError;
-use crate::node::Node;
+use crate::node::ActionNode;
 use moon_config::ProjectLanguage;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, map_list, trace};
@@ -24,7 +24,7 @@ fn get_lang_from_project(project: &Project) -> SupportedLanguage {
     }
 }
 
-pub type DepGraphType = DiGraph<Node, ()>;
+pub type DepGraphType = DiGraph<ActionNode, ()>;
 pub type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 
 /// A directed acyclic graph (DAG) for the work that needs to be processed, based on a
@@ -33,7 +33,7 @@ pub type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 pub struct DepGraph {
     pub graph: DepGraphType,
 
-    indices: HashMap<Node, NodeIndex>,
+    indices: HashMap<ActionNode, NodeIndex>,
 }
 
 impl DepGraph {
@@ -41,23 +41,23 @@ impl DepGraph {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         let mut graph: DepGraphType = Graph::new();
-        let setup_toolchain_index = graph.add_node(Node::SetupToolchain);
+        let setup_toolchain_index = graph.add_node(ActionNode::SetupToolchain);
 
         DepGraph {
             graph,
-            indices: HashMap::from([(Node::SetupToolchain, setup_toolchain_index)]),
+            indices: HashMap::from([(ActionNode::SetupToolchain, setup_toolchain_index)]),
         }
     }
 
-    pub fn get_index_from_node(&self, node: &Node) -> Option<&NodeIndex> {
+    pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {
         self.indices.get(node)
     }
 
-    pub fn get_node_from_index(&self, index: &NodeIndex) -> Option<&Node> {
+    pub fn get_node_from_index(&self, index: &NodeIndex) -> Option<&ActionNode> {
         self.graph.node_weight(*index)
     }
 
-    pub fn get_or_insert_node(&mut self, node: Node) -> NodeIndex {
+    pub fn get_or_insert_node(&mut self, node: ActionNode) -> NodeIndex {
         if let Some(index) = self.get_index_from_node(&node) {
             return *index;
         }
@@ -70,7 +70,7 @@ impl DepGraph {
     }
 
     pub fn install_deps(&mut self, lang: SupportedLanguage) -> NodeIndex {
-        let node = Node::InstallDeps(lang.clone());
+        let node = ActionNode::InstallDeps(lang.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return *index;
@@ -82,7 +82,7 @@ impl DepGraph {
             lang.label()
         );
 
-        let setup_toolchain_index = self.get_or_insert_node(Node::SetupToolchain);
+        let setup_toolchain_index = self.get_or_insert_node(ActionNode::SetupToolchain);
         let install_deps_index = self.get_or_insert_node(node);
 
         self.graph
@@ -287,7 +287,7 @@ impl DepGraph {
     ) -> Result<NodeIndex, DepGraphError> {
         let project = projects.load(project_id)?;
         let lang = get_lang_from_project(&project);
-        let node = Node::SyncProject(lang, project.id.clone());
+        let node = ActionNode::SyncProject(lang, project.id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(*index);
@@ -300,7 +300,7 @@ impl DepGraph {
         );
 
         // Sync can be run in parallel while deps are installing
-        let setup_toolchain_index = self.get_or_insert_node(Node::SetupToolchain);
+        let setup_toolchain_index = self.get_or_insert_node(ActionNode::SetupToolchain);
         let sync_project_index = self.get_or_insert_node(node);
 
         self.graph
@@ -333,7 +333,7 @@ impl DepGraph {
             &|_, n| {
                 let id = n.1;
 
-                if id == &Node::SetupToolchain.label() {
+                if id == &ActionNode::SetupToolchain.label() {
                     format!(
                         "label=\"{}\" style=filled, shape=oval, fillcolor=black, fontcolor=white",
                         id
@@ -375,7 +375,7 @@ impl DepGraph {
     ) -> Result<Option<NodeIndex>, DepGraphError> {
         let project = projects.load(project_id)?;
         let target_id = Target::format(&project.id, task_id)?;
-        let node = Node::RunTarget(target_id.clone());
+        let node = ActionNode::RunTarget(target_id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(Some(*index));

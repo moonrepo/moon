@@ -1,9 +1,9 @@
+use crate::helpers::load_workspace;
 use moon_action_runner::DepGraph;
 use moon_task::Target;
-use moon_workspace::Workspace;
 
 pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
     let projects = workspace.projects;
     let mut graph = DepGraph::default();
 

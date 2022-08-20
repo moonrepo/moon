@@ -6,9 +6,11 @@ edition = "2021"
 [dependencies]
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
+moon_contract = { path = "../contract" }
+moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
-moon_platform_node = { path = "../platform-node" }
 moon_project = { path = "../project" }
+moon_task = { path = "../task" }
 petgraph = "0.6.2"
 thiserror = "1.0.31"
 

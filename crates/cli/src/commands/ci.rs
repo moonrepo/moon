@@ -1,4 +1,5 @@
 use crate::enums::TouchedStatus;
+use crate::helpers::load_workspace;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
 use moon_action::ActionContext;
@@ -160,7 +161,7 @@ pub struct CiOptions {
 }
 
 pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
     let touched_files = gather_touched_files(&workspace, &options).await?;
     let targets = gather_runnable_targets(&workspace, &touched_files)?;
 

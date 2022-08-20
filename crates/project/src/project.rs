@@ -11,11 +11,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-pub type FileGroupsMap = HashMap<String, FileGroup>;
+type FileGroupsMap = HashMap<String, FileGroup>;
 
-pub type ProjectsMap = HashMap<ProjectID, Project>;
-
-pub type TasksMap = BTreeMap<TaskID, Task>;
+type TasksMap = BTreeMap<TaskID, Task>;
 
 // moon.yml
 fn load_project_config(
@@ -108,9 +106,6 @@ fn create_tasks_from_config(
     project_id: &str,
     project_config: &ProjectConfig,
     global_config: &GlobalProjectConfig,
-    dependencies: &[DependencyConfig],
-    resolver_data: &ResolverData,
-    implicit_inputs: &[String],
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = BTreeMap::<String, Task>::new();
 
@@ -212,25 +207,6 @@ fn create_tasks_from_config(
         }
     }
 
-    // Expand deps, args, inputs, and outputs after all tasks have been created
-    for task in tasks.values_mut() {
-        if matches!(task.platform, PlatformType::Unknown) {
-            task.platform = TaskConfig::detect_platform(project_config, &task.command);
-        }
-
-        // Inherit implicit inputs before resolving
-        task.inputs.extend(implicit_inputs.iter().cloned());
-
-        // Resolve in order!
-        task.expand_env(resolver_data)?;
-        task.expand_deps(project_id, dependencies)?;
-        task.expand_inputs(TokenResolver::for_inputs(resolver_data))?;
-        task.expand_outputs(TokenResolver::for_outputs(resolver_data))?;
-
-        // Must be last as it references inputs/outputs
-        task.expand_args(TokenResolver::for_args(resolver_data))?;
-    }
-
     Ok(tasks)
 }
 
@@ -290,7 +266,6 @@ impl Project {
         source: &str,
         workspace_root: &Path,
         global_config: &GlobalProjectConfig,
-        implicit_inputs: &[String],
     ) -> Result<Project, ProjectError> {
         let root = workspace_root.join(path::normalize_separators(source));
         let log_target = format!("moon:project:{}", id);
@@ -310,16 +285,7 @@ impl Project {
         let config = load_project_config(&log_target, &root, source)?;
         let file_groups = create_file_groups_from_config(&log_target, &config, global_config);
         let dependencies = create_dependencies_from_config(&log_target, &config);
-        let resolver_data = ResolverData::new(&file_groups, workspace_root, &root, &config);
-        let tasks = create_tasks_from_config(
-            &log_target,
-            id,
-            &config,
-            global_config,
-            &dependencies,
-            &resolver_data,
-            implicit_inputs,
-        )?;
+        let tasks = create_tasks_from_config(&log_target, id, &config, global_config)?;
 
         Ok(Project {
             alias: None,
@@ -332,6 +298,36 @@ impl Project {
             source: String::from(source),
             tasks,
         })
+    }
+
+    // Expand deps, args, inputs, and outputs after all tasks have been created.
+    pub fn expand_tasks(
+        &mut self,
+        workspace_root: &Path,
+        implicit_inputs: &[String],
+    ) -> Result<(), ProjectError> {
+        let resolver_data =
+            ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
+
+        for task in self.tasks.values_mut() {
+            if matches!(task.platform, PlatformType::Unknown) {
+                task.platform = TaskConfig::detect_platform(&self.config, &task.command);
+            }
+
+            // Inherit implicit inputs before resolving
+            task.inputs.extend(implicit_inputs.iter().cloned());
+
+            // Resolve in order!
+            task.expand_env(&resolver_data)?;
+            task.expand_deps(&self.id, &self.dependencies)?;
+            task.expand_inputs(TokenResolver::for_inputs(&resolver_data))?;
+            task.expand_outputs(TokenResolver::for_outputs(&resolver_data))?;
+
+            // Must be last as it references inputs/outputs
+            task.expand_args(TokenResolver::for_args(&resolver_data))?;
+        }
+
+        Ok(())
     }
 
     /// Return a list of project IDs this project depends on.

@@ -1,6 +1,6 @@
 use clap::ValueEnum;
-use moon_task::TouchedFilePaths;
 use std::collections::HashSet;
+use std::path::PathBuf;
 
 #[derive(ValueEnum, Clone, Debug)]
 pub enum ProfileType {
@@ -16,5 +16,5 @@ pub struct ActionContext {
 
     pub profile: Option<ProfileType>,
 
-    pub touched_files: TouchedFilePaths,
+    pub touched_files: HashSet<PathBuf>,
 }

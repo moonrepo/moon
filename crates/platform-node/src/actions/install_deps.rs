@@ -1,6 +1,4 @@
-use crate::action::{Action, ActionStatus};
-use crate::context::ActionContext;
-use crate::errors::ActionError;
+use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::NodePackageManager;
 use moon_error::map_io_to_fs_error;
 use moon_lang::has_vendor_installed_dependencies;
@@ -8,11 +6,11 @@ use moon_lang_node::{package::PackageJson, NODE, NPM};
 use moon_logger::{color, debug, warn};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{fs, is_ci, is_offline};
-use moon_workspace::Workspace;
+use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action:install-node-deps";
+const LOG_TARGET: &str = "moon:platform-node:install-deps";
 
 /// Add `packageManager` to root `package.json`.
 fn add_package_manager(workspace: &Workspace, package_json: &mut PackageJson) -> bool {
@@ -71,11 +69,11 @@ fn add_engines_constraint(workspace: &Workspace, package_json: &mut PackageJson)
     false
 }
 
-pub async fn install_node_deps(
+pub async fn install_deps(
     _action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-) -> Result<ActionStatus, ActionError> {
+) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
     let node_config = &workspace.config.node;
     let mut cache = workspace.cache.cache_workspace_state().await?;

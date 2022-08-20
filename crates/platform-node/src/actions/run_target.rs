@@ -1,5 +1,5 @@
-use crate::context::{ActionContext, ProfileType};
-use crate::errors::ActionError;
+use crate::hasher::NodeTargetHasher;
+use moon_action::{ActionContext, ProfileType};
 use moon_config::NodePackageManager;
 use moon_error::MoonError;
 use moon_lang_node::{
@@ -8,13 +8,14 @@ use moon_lang_node::{
     tsconfig::TsConfigJson,
 };
 use moon_logger::{color, trace};
-use moon_platform_node::NodeTargetHasher;
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
-use moon_workspace::Workspace;
+use moon_workspace::{Workspace, WorkspaceError};
+
+const LOG_TARGET: &str = "moon:platform-node:run-target";
 
 fn create_node_options(
     context: &ActionContext,
@@ -36,10 +37,10 @@ fn create_node_options(
         match profile {
             ProfileType::Cpu => {
                 trace!(
-                    target: "moon:action:run-node-target",
-                     "Writing CPU profile for {} to {}",
-                     color::target(&task.target),
-                     color::path(&prof_dir)
+                    target: LOG_TARGET,
+                    "Writing CPU profile for {} to {}",
+                    color::target(&task.target),
+                    color::path(&prof_dir)
                 );
 
                 options.extend(string_vec![
@@ -52,10 +53,10 @@ fn create_node_options(
             }
             ProfileType::Heap => {
                 trace!(
-                    target: "moon:action:run-node-target",
-                     "Writing heap profile for {} to {}",
-                     color::target(&task.target),
-                     color::path(&prof_dir)
+                    target: LOG_TARGET,
+                    "Writing heap profile for {} to {}",
+                    color::target(&task.target),
+                    color::path(&prof_dir)
                 );
 
                 options.extend(string_vec![
@@ -86,7 +87,7 @@ pub async fn create_target_command(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
-) -> Result<Command, ActionError> {
+) -> Result<Command, WorkspaceError> {
     let toolchain = &workspace.toolchain;
     let node = toolchain.get_node();
     let mut cmd = node.get_bin_path().clone();
@@ -158,7 +159,7 @@ pub async fn create_target_command(
 pub fn create_target_hasher(
     workspace: &Workspace,
     project: &Project,
-) -> Result<NodeTargetHasher, ActionError> {
+) -> Result<NodeTargetHasher, WorkspaceError> {
     let mut hasher = NodeTargetHasher::new(workspace.config.node.version.clone());
 
     if let Some(root_package) = PackageJson::read(&workspace.root)? {

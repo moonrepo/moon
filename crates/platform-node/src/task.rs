@@ -1,14 +1,13 @@
 use crate::LOG_TARGET;
 use lazy_static::lazy_static;
-use moon_config::{TaskCommandArgs, TaskConfig};
+use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_lang_node::package::{PackageJson, ScriptsSet};
 use moon_logger::{color, debug, warn};
-use moon_task::{PlatformType, Target, Task, TaskError, TaskID};
+use moon_task::{PlatformType, Target, TaskError, TaskID};
 use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{process, regex, string_vec};
 use std::collections::{BTreeMap, HashMap};
 
-pub type TasksMap = BTreeMap<TaskID, Task>;
 pub type ScriptsMap = HashMap<String, String>;
 
 lazy_static! {
@@ -121,6 +120,14 @@ fn detect_platform_type(command: &str) -> PlatformType {
     PlatformType::Node
 }
 
+fn add_task_dep(config: &mut TaskConfig, dep: String) {
+    if let Some(deps) = &mut config.deps {
+        deps.push(dep);
+    } else {
+        config.deps = Some(vec![dep]);
+    }
+}
+
 pub enum TaskContext {
     ConvertToTask,
     WrapRunScript,
@@ -132,7 +139,7 @@ pub fn create_task(
     script_name: &str,
     script: &str,
     context: TaskContext,
-) -> Result<Task, TaskError> {
+) -> Result<TaskConfig, TaskError> {
     let is_wrapping = matches!(context, TaskContext::WrapRunScript);
     let script_args = process::split_args(script)?;
     let mut task_config = TaskConfig::default();
@@ -191,30 +198,24 @@ pub fn create_task(
         });
     }
 
-    task_config.env = Some(env);
-    task_config.outputs = Some(outputs);
-    task_config.local = !should_run_in_ci(script_name, script);
-
-    let task = Task::from_config(target_id.to_owned(), &task_config)?;
-
-    if is_wrapping {
-        debug!(
-            target: &task.log_target,
-            "Creating task {} {}",
-            color::target(target_id),
-            color::muted_light(format!("(for script {})", color::symbol(script_name)))
-        );
-    } else {
-        debug!(
-            target: &task.log_target,
-            "Creating task {} with command {} {}",
-            color::target(target_id),
-            color::shell(&task.command),
-            color::muted_light(format!("(from script {})", color::symbol(script_name)))
-        );
+    if !env.is_empty() {
+        task_config.env = Some(env);
     }
 
-    Ok(task)
+    if !outputs.is_empty() {
+        task_config.outputs = Some(outputs);
+    }
+
+    task_config.local = !should_run_in_ci(script_name, script);
+
+    debug!(
+        target: LOG_TARGET,
+        "Creating task {} {}",
+        color::target(target_id),
+        color::muted_light(format!("(for script {})", color::symbol(script_name)))
+    );
+
+    Ok(task_config)
 }
 
 pub struct ScriptParser<'a> {
@@ -237,7 +238,7 @@ pub struct ScriptParser<'a> {
     scripts: ScriptsMap,
 
     /// Tasks that have been parsed and converted from scripts.
-    pub tasks: TasksMap,
+    pub tasks: TasksConfigsMap,
 
     /// Scripts that ran into issues while parsing.
     unresolved_scripts: ScriptsMap,
@@ -492,7 +493,7 @@ impl<'a> ScriptParser<'a> {
             )? {
                 if !previous_task_id.is_empty() {
                     if let Some(task) = self.tasks.get_mut(&task_id) {
-                        task.deps.push(format!("~:{}", previous_task_id));
+                        add_task_dep(task, format!("~:{}", previous_task_id));
                     }
                 }
 
@@ -538,7 +539,7 @@ impl<'a> ScriptParser<'a> {
 
             if let Some(pre_task_id) = self.parse_script(format!("pre{}", script_name), pre)? {
                 if let Some(task) = self.tasks.get_mut(task_id) {
-                    task.deps.push(format!("~:{}", pre_task_id));
+                    add_task_dep(task, format!("~:{}", pre_task_id));
                 }
             }
         }
@@ -549,7 +550,7 @@ impl<'a> ScriptParser<'a> {
 
             if let Some(post_task_id) = self.parse_script(format!("post{}", script_name), post)? {
                 if let Some(task) = self.tasks.get_mut(&post_task_id) {
-                    task.deps.push(format!("~:{}", task_id));
+                    add_task_dep(task, format!("~:{}", task_id));
                 }
             }
         }

@@ -1,7 +1,7 @@
-use moon_workspace::Workspace;
+use crate::helpers::load_workspace;
 
 pub async fn project_graph(project_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
 
     if let Some(id) = project_id {
         workspace.projects.load(id)?;

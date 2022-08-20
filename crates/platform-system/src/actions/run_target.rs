@@ -1,9 +1,8 @@
-use crate::errors::ActionError;
-use moon_platform_system::SystemTargetHasher;
+use crate::hasher::SystemTargetHasher;
 use moon_project::Project;
 use moon_task::Task;
 use moon_utils::process::Command;
-use moon_workspace::Workspace;
+use moon_workspace::{Workspace, WorkspaceError};
 use std::path::Path;
 
 #[cfg(not(windows))]
@@ -35,6 +34,6 @@ pub fn create_target_command(task: &Task, cwd: &Path) -> Command {
 pub fn create_target_hasher(
     _workspace: &Workspace,
     _project: &Project,
-) -> Result<SystemTargetHasher, ActionError> {
+) -> Result<SystemTargetHasher, WorkspaceError> {
     Ok(SystemTargetHasher::new())
 }

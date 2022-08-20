@@ -1312,25 +1312,6 @@ name = "moon_action"
 version = "0.1.0"
 dependencies = [
  "clap",
- "moon_cache",
- "moon_config",
- "moon_error",
- "moon_hasher",
- "moon_lang",
- "moon_lang_node",
- "moon_logger",
- "moon_platform_node",
- "moon_platform_system",
- "moon_project",
- "moon_task",
- "moon_terminal",
- "moon_toolchain",
- "moon_utils",
- "moon_vcs",
- "moon_workspace",
- "serde",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
@@ -1343,15 +1324,21 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_lang",
  "moon_logger",
+ "moon_platform_node",
+ "moon_platform_system",
  "moon_project",
  "moon_project_graph",
  "moon_task",
  "moon_terminal",
+ "moon_toolchain",
  "moon_utils",
+ "moon_vcs",
  "moon_workspace",
  "petgraph",
+ "serde",
  "thiserror",
  "tokio",
 ]
@@ -1401,11 +1388,13 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_constants",
+ "moon_contract",
  "moon_error",
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
  "moon_platform_node",
+ "moon_platform_system",
  "moon_project",
  "moon_task",
  "moon_terminal",
@@ -1451,6 +1440,14 @@ dependencies = [
 [[package]]
 name = "moon_constants"
 version = "0.1.0"
+
+[[package]]
+name = "moon_contract"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_error",
+]
 
 [[package]]
 name = "moon_error"
@@ -1514,22 +1511,39 @@ dependencies = [
 name = "moon_platform_node"
 version = "0.1.0"
 dependencies = [
+ "insta",
  "lazy_static",
+ "moon_action",
+ "moon_cache",
  "moon_config",
+ "moon_contract",
+ "moon_error",
  "moon_hasher",
+ "moon_lang",
  "moon_lang_node",
  "moon_logger",
+ "moon_project",
+ "moon_project_graph",
  "moon_task",
+ "moon_terminal",
+ "moon_toolchain",
  "moon_utils",
+ "moon_workspace",
  "pretty_assertions",
  "serde",
+ "tokio",
 ]
 
 [[package]]
 name = "moon_platform_system"
 version = "0.1.0"
 dependencies = [
+ "moon_contract",
  "moon_hasher",
+ "moon_project",
+ "moon_task",
+ "moon_utils",
+ "moon_workspace",
  "serde",
 ]
 
@@ -1555,9 +1569,11 @@ dependencies = [
  "insta",
  "moon_cache",
  "moon_config",
+ "moon_contract",
+ "moon_error",
  "moon_logger",
- "moon_platform_node",
  "moon_project",
+ "moon_task",
  "moon_utils",
  "petgraph",
  "thiserror",

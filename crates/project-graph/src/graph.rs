@@ -1,11 +1,13 @@
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, ProjectAlias, ProjectID, ProjectLanguage, WorkspaceConfig,
+    GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
     WorkspaceProjects,
 };
+use moon_contract::{Platform, Platformable, RegisteredPlatforms};
+use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
-use moon_platform_node::{infer_tasks_from_package, load_project_aliases_from_packages};
-use moon_project::{detect_projects_with_globs, Project, ProjectError, ProjectsSourceMap};
+use moon_project::{detect_projects_with_globs, Project, ProjectError};
+use moon_task::{Target, Task};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -26,7 +28,7 @@ async fn load_projects_from_cache(
     workspace_root: &Path,
     workspace_config: &WorkspaceConfig,
     engine: &CacheEngine,
-) -> Result<ProjectsSourceMap, ProjectError> {
+) -> Result<ProjectsSourcesMap, ProjectError> {
     let projects = match &workspace_config.projects {
         WorkspaceProjects::Map(map) => map.clone(),
         WorkspaceProjects::List(globs) => {
@@ -68,30 +70,9 @@ async fn load_projects_from_cache(
     Ok(projects)
 }
 
-async fn load_project_aliases(
-    workspace_root: &Path,
-    workspace_config: &WorkspaceConfig,
-    projects: &ProjectsSourceMap,
-) -> Result<ProjectsSourceMap, ProjectError> {
-    let mut aliases = HashMap::new();
-
-    // JavaScript/TypeScript
-    if let Some(alias_format) = &workspace_config.node.alias_package_names {
-        debug!(
-            target: LOG_TARGET,
-            "Assigning project aliases from project {}s",
-            color::file("package.json")
-        );
-
-        load_project_aliases_from_packages(workspace_root, projects, alias_format, &mut aliases)?;
-    }
-
-    Ok(aliases)
-}
-
 pub struct ProjectGraph {
     /// A mapping of an alias to a project ID.
-    pub aliases: HashMap<ProjectAlias, ProjectID>,
+    pub aliases_map: ProjectsAliasesMap,
 
     /// The global project configuration that all projects inherit from.
     /// Is loaded from `.moon/project.yml`.
@@ -104,9 +85,12 @@ pub struct ProjectGraph {
     /// to query the graph by ID as it only supports it by index.
     indices: Arc<RwLock<IndicesType>>,
 
+    /// List of platforms that provide unique functionality.
+    platforms: RegisteredPlatforms,
+
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
-    pub projects_map: HashMap<ProjectID, String>,
+    pub projects_map: ProjectsSourcesMap,
 
     /// The workspace configuration. Necessary for project variants.
     /// Is loaded from `.moon/workspace.yml`.
@@ -114,6 +98,21 @@ pub struct ProjectGraph {
 
     /// The workspace root, in which projects are relatively loaded from.
     workspace_root: PathBuf,
+}
+
+impl Platformable for ProjectGraph {
+    fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError> {
+        platform.load_project_graph_aliases(
+            &self.workspace_root,
+            &self.workspace_config,
+            &self.projects_map,
+            &mut self.aliases_map,
+        )?;
+
+        self.platforms.push(platform);
+
+        Ok(())
+    }
 }
 
 impl ProjectGraph {
@@ -133,17 +132,13 @@ impl ProjectGraph {
             ..Project::default()
         });
 
-        // Load projects and aliases
-        let projects_map =
-            load_projects_from_cache(workspace_root, workspace_config, cache).await?;
-        let aliases = load_project_aliases(workspace_root, workspace_config, &projects_map).await?;
-
         Ok(ProjectGraph {
-            aliases,
+            aliases_map: HashMap::new(),
             global_config,
             graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(HashMap::new())),
-            projects_map,
+            platforms: vec![],
+            projects_map: load_projects_from_cache(workspace_root, workspace_config, cache).await?,
             workspace_config: workspace_config.clone(),
             workspace_root: workspace_root.to_path_buf(),
         })
@@ -230,7 +225,7 @@ impl ProjectGraph {
 
     /// Resolve a project ID from the provided value, which can be an ID or alias.
     pub fn resolve_id(&self, alias_or_id: &str) -> String {
-        match self.aliases.get(alias_or_id) {
+        match self.aliases_map.get(alias_or_id) {
             Some(project_id) => project_id.to_owned(),
             None => alias_or_id.to_owned(),
         }
@@ -275,35 +270,33 @@ impl ProjectGraph {
     }
 
     fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectError> {
-        let mut project = Project::new(
-            id,
-            source,
-            &self.workspace_root,
-            &self.global_config,
-            &self.workspace_config.action_runner.implicit_inputs,
-        )?;
-
+        let mut project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
         project.alias = self.find_alias_for_id(id);
 
-        // Create tasks from `package.json` scripts
-        if (matches!(project.config.language, ProjectLanguage::JavaScript)
-            || matches!(project.config.language, ProjectLanguage::TypeScript))
-            && self.workspace_config.node.infer_tasks_from_scripts
-        {
-            debug!(
-                target: LOG_TARGET,
-                "Inferring {} tasks from {}",
-                color::id(id),
-                color::file("package.json")
-            );
+        // Inherit platform specific tasks
+        for platform in &self.platforms {
+            for (task_id, task_config) in platform.load_project_tasks(
+                &self.workspace_root,
+                &self.workspace_config,
+                id,
+                &project.root,
+                &project.config,
+            )? {
+                // Inferred tasks should not override explicit tasks
+                #[allow(clippy::map_entry)]
+                if !project.tasks.contains_key(&task_id) {
+                    let task = Task::from_config(Target::format(id, &task_id)?, &task_config)?;
 
-            if let Some(tasks) = infer_tasks_from_package(id, &project.root)? {
-                for (task_id, task) in tasks {
-                    // Scripts should not override global tasks
-                    project.tasks.entry(task_id).or_insert(task);
+                    project.tasks.insert(task_id, task);
                 }
             }
         }
+
+        // Expand all tasks for the project (this must happen last)
+        project.expand_tasks(
+            &self.workspace_root,
+            &self.workspace_config.action_runner.implicit_inputs,
+        )?;
 
         Ok(project)
     }
@@ -311,7 +304,7 @@ impl ProjectGraph {
     /// Find the alias for a given ID. This is currently... not performant,
     /// so revisit once it becomes an issue!
     fn find_alias_for_id(&self, id: &str) -> Option<String> {
-        for (alias, project_id) in &self.aliases {
+        for (alias, project_id) in &self.aliases_map {
             if project_id == id {
                 return Some(alias.clone());
             }

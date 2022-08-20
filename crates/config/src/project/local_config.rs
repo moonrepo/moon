@@ -75,6 +75,18 @@ pub enum ProjectLanguage {
     Unknown,
 }
 
+impl ProjectLanguage {
+    pub fn is_node_platform(&self) -> bool {
+        matches!(self, ProjectLanguage::JavaScript) || matches!(self, ProjectLanguage::TypeScript)
+    }
+
+    pub fn is_system_platform(&self) -> bool {
+        matches!(self, ProjectLanguage::Bash)
+            || matches!(self, ProjectLanguage::Batch)
+            || matches!(self, ProjectLanguage::Unknown)
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {

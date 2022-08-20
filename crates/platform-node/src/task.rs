@@ -120,6 +120,14 @@ fn detect_platform_type(command: &str) -> PlatformType {
     PlatformType::Node
 }
 
+fn add_task_dep(config: &mut TaskConfig, dep: String) {
+    if let Some(deps) = &mut config.deps {
+        deps.push(dep);
+    } else {
+        config.deps = Some(vec![dep]);
+    }
+}
+
 pub enum TaskContext {
     ConvertToTask,
     WrapRunScript,
@@ -485,9 +493,7 @@ impl<'a> ScriptParser<'a> {
             )? {
                 if !previous_task_id.is_empty() {
                     if let Some(task) = self.tasks.get_mut(&task_id) {
-                        if let Some(task_deps) = &mut task.deps {
-                            task_deps.push(format!("~:{}", previous_task_id));
-                        }
+                        add_task_dep(task, format!("~:{}", previous_task_id));
                     }
                 }
 
@@ -533,9 +539,7 @@ impl<'a> ScriptParser<'a> {
 
             if let Some(pre_task_id) = self.parse_script(format!("pre{}", script_name), pre)? {
                 if let Some(task) = self.tasks.get_mut(task_id) {
-                    if let Some(task_deps) = &mut task.deps {
-                        task_deps.push(format!("~:{}", pre_task_id));
-                    }
+                    add_task_dep(task, format!("~:{}", pre_task_id));
                 }
             }
         }
@@ -546,9 +550,7 @@ impl<'a> ScriptParser<'a> {
 
             if let Some(post_task_id) = self.parse_script(format!("post{}", script_name), post)? {
                 if let Some(task) = self.tasks.get_mut(&post_task_id) {
-                    if let Some(task_deps) = &mut task.deps {
-                        task_deps.push(format!("~:{}", task_id));
-                    }
+                    add_task_dep(task, format!("~:{}", task_id));
                 }
             }
         }

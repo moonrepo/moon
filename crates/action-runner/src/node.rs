@@ -4,31 +4,31 @@ use moon_task::TargetID;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Eq)]
-pub enum Node {
+pub enum ActionNode {
     InstallDeps(SupportedLanguage),
     RunTarget(TargetID),
     SetupToolchain,
     SyncProject(SupportedLanguage, ProjectID),
 }
 
-impl Node {
+impl ActionNode {
     pub fn label(&self) -> String {
         match self {
-            Node::InstallDeps(lang) => format!("Install{}Deps", lang),
-            Node::RunTarget(id) => format!("RunTarget({})", id),
-            Node::SetupToolchain => "SetupToolchain".into(),
-            Node::SyncProject(lang, id) => format!("Sync{}Project({})", lang, id),
+            ActionNode::InstallDeps(lang) => format!("Install{}Deps", lang),
+            ActionNode::RunTarget(id) => format!("RunTarget({})", id),
+            ActionNode::SetupToolchain => "SetupToolchain".into(),
+            ActionNode::SyncProject(lang, id) => format!("Sync{}Project({})", lang, id),
         }
     }
 }
 
-impl PartialEq for Node {
+impl PartialEq for ActionNode {
     fn eq(&self, other: &Self) -> bool {
         self.label() == other.label()
     }
 }
 
-impl Hash for Node {
+impl Hash for ActionNode {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.label().hash(state);
     }

@@ -1,13 +1,13 @@
+use crate::helpers::load_workspace;
 use moon_error::MoonError;
 use moon_utils::process::Command;
-use moon_workspace::Workspace;
 use std::env;
 
 pub async fn run_script(
     name: &str,
     project: &Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
     let mut command = Command::new(
         workspace
             .toolchain

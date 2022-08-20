@@ -1,11 +1,8 @@
 use crate::errors::ProjectError;
-use moon_config::ProjectID;
+use moon_config::ProjectsSourcesMap;
 use moon_logger::{color, warn};
 use moon_utils::{glob, path, regex};
-use std::collections::HashMap;
 use std::path::Path;
-
-pub type ProjectsSourceMap = HashMap<ProjectID, String>;
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
@@ -25,7 +22,7 @@ pub fn infer_project_name_and_source(source: &str) -> (String, String) {
 pub fn detect_projects_with_globs(
     workspace_root: &Path,
     globs: &[String],
-    projects: &mut ProjectsSourceMap,
+    projects: &mut ProjectsSourcesMap,
 ) -> Result<(), ProjectError> {
     let root_source = ".".to_owned();
     let mut globs = globs.to_vec();

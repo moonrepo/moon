@@ -1,10 +1,10 @@
 use crate::enums::TouchedStatus;
+use crate::helpers::load_workspace;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use moon_action::{ActionContext, ProfileType};
 use moon_action_runner::{ActionRunner, DepGraph};
 use moon_logger::{color, map_list};
 use moon_task::Target;
-use moon_workspace::Workspace;
 use std::collections::HashSet;
 use std::string::ToString;
 
@@ -21,7 +21,7 @@ pub async fn run(
     target_ids: &[String],
     options: RunOptions,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = Workspace::load().await?;
+    let workspace = load_workspace().await?;
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();

@@ -4,5 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_contract = { path = "../contract" }
 moon_hasher = { path = "../hasher" }
+moon_project = { path = "../project" }
+moon_task = { path = "../task" }
+moon_utils = { path = "../utils" }
+moon_workspace = { path = "../workspace" }
 serde = { version = "1.0.140", features = ["derive"] }

@@ -53,11 +53,12 @@ impl Platform for NodePlatform {
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
-        if workspace_config.node.alias_package_names.is_none() {
-            return Ok(());
-        }
-
-        let alias_format = workspace_config.node.alias_package_names.as_ref().unwrap();
+        let alias_format = match &workspace_config.node.alias_package_names {
+            Some(f) => f,
+            None => {
+                return Ok(());
+            }
+        };
 
         debug!(
             target: LOG_TARGET,

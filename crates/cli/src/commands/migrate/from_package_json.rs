@@ -1,6 +1,7 @@
 use crate::helpers::load_workspace;
 use moon_config::{DependencyConfig, DependencyScope, ProjectDependsOn};
 use moon_constants::CONFIG_PROJECT_FILENAME;
+use moon_error::MoonError;
 use moon_lang_node::package::{DepsSet, PackageJson};
 use moon_platform_node::create_tasks_from_scripts;
 use moon_utils::fs;
@@ -46,7 +47,8 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
 
     PackageJson::sync(&project.root, |package_json| {
         // Create tasks from `package.json` scripts
-        for (task_id, task_config) in create_tasks_from_scripts(&project.id, package_json).unwrap()
+        for (task_id, task_config) in create_tasks_from_scripts(&project.id, package_json)
+            .map_err(|e| MoonError::Generic(e.to_string()))?
         {
             project.config.tasks.insert(task_id, task_config);
         }

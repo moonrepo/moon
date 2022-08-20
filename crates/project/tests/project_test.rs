@@ -26,6 +26,19 @@ fn mock_global_project_config() -> GlobalProjectConfig {
     }
 }
 
+fn create_expanded_project(
+    id: &str,
+    source: &str,
+    workspace_root: &Path,
+    config: &GlobalProjectConfig,
+) -> Project {
+    let mut project = Project::new(id, source, workspace_root, config).unwrap();
+
+    project.expand_tasks(workspace_root, &[]).unwrap();
+
+    project
+}
+
 #[test]
 #[should_panic(expected = "MissingProject(\"projects/missing\")")]
 fn doesnt_exist() {
@@ -290,7 +303,7 @@ mod tasks {
     #[test]
     fn inherits_global_tasks() {
         let workspace_root = get_fixtures_root();
-        let project = Project::new(
+        let project = create_expanded_project(
             "id",
             "tasks/no-tasks",
             &workspace_root,
@@ -298,8 +311,7 @@ mod tasks {
                 tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
                 ..GlobalProjectConfig::default()
             },
-        )
-        .unwrap();
+        );
 
         let mut task = Task::from_config(
             Target::format("id", "standard").unwrap(),
@@ -332,7 +344,7 @@ mod tasks {
     #[test]
     fn merges_with_global_tasks() {
         let workspace_root = get_fixtures_root();
-        let project = Project::new(
+        let project = create_expanded_project(
             "id",
             "tasks/basic",
             &workspace_root,
@@ -340,8 +352,7 @@ mod tasks {
                 tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
                 ..GlobalProjectConfig::default()
             },
-        )
-        .unwrap();
+        );
 
         let mut build = Task::from_config(
             Target::format("id", "build").unwrap(),
@@ -475,7 +486,7 @@ mod tasks {
     fn strategy_replace() {
         let workspace_root = get_fixtures_root();
         let project_source = "tasks/merge-replace";
-        let project = Project::new(
+        let project = create_expanded_project(
             "id",
             project_source,
             &workspace_root,
@@ -496,8 +507,7 @@ mod tasks {
                 )]),
                 ..GlobalProjectConfig::default()
             },
-        )
-        .unwrap();
+        );
 
         assert_eq!(
             project,
@@ -552,7 +562,7 @@ mod tasks {
     fn strategy_append() {
         let workspace_root = get_fixtures_root();
         let project_source = "tasks/merge-append";
-        let project = Project::new(
+        let project = create_expanded_project(
             "id",
             project_source,
             &workspace_root,
@@ -573,8 +583,7 @@ mod tasks {
                 )]),
                 ..GlobalProjectConfig::default()
             },
-        )
-        .unwrap();
+        );
 
         assert_eq!(
             project,
@@ -632,7 +641,7 @@ mod tasks {
     fn strategy_prepend() {
         let workspace_root = get_fixtures_root();
         let project_source = "tasks/merge-prepend";
-        let project = Project::new(
+        let project = create_expanded_project(
             "id",
             project_source,
             &workspace_root,
@@ -653,8 +662,7 @@ mod tasks {
                 )]),
                 ..GlobalProjectConfig::default()
             },
-        )
-        .unwrap();
+        );
 
         assert_eq!(
             project,
@@ -712,7 +720,7 @@ mod tasks {
     fn strategy_all() {
         let workspace_root = get_fixtures_root();
         let project_source = "tasks/merge-all-strategies";
-        let project = Project::new(
+        let project = create_expanded_project(
             "id",
             project_source,
             &workspace_root,
@@ -733,8 +741,7 @@ mod tasks {
                 )]),
                 ..GlobalProjectConfig::default()
             },
-        )
-        .unwrap();
+        );
 
         let mut task = create_expanded_task(
             Target::format("id", "standard").unwrap(),
@@ -816,13 +823,12 @@ mod tasks {
 
         #[test]
         fn resolves_self_scope() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "self",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(
                 project.tasks.get("lint").unwrap().deps,
@@ -832,13 +838,12 @@ mod tasks {
 
         #[test]
         fn resolves_self_scope_without_dupes() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "self-dupes",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(
                 project.tasks.get("lint").unwrap().deps,
@@ -848,13 +853,12 @@ mod tasks {
 
         #[test]
         fn resolves_deps_scope() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "deps",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(
                 project.tasks.get("build").unwrap().deps,
@@ -864,13 +868,12 @@ mod tasks {
 
         #[test]
         fn resolves_deps_scope_without_dupes() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "deps-dupes",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(
                 project.tasks.get("build").unwrap().deps,
@@ -881,13 +884,12 @@ mod tasks {
         #[test]
         #[should_panic(expected = "Target(NoProjectAllInTaskDeps(\":build\"))")]
         fn errors_for_all_scope() {
-            Project::new(
+            create_expanded_project(
                 "id",
                 "all",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
         }
     }
 
@@ -899,7 +901,7 @@ mod tasks {
 
         #[test]
         fn expands_args() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "base/files-and-dirs",
                 &get_fixtures_root(),
@@ -924,8 +926,7 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-            )
-            .unwrap();
+            );
 
             assert_eq!(
                 *project.tasks.get("test").unwrap().args,
@@ -967,7 +968,7 @@ mod tasks {
         fn expands_args_from_workspace() {
             let workspace_root = get_fixtures_root();
             let project_root = workspace_root.join("base").join("files-and-dirs");
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "base/files-and-dirs",
                 &workspace_root,
@@ -996,8 +997,7 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-            )
-            .unwrap();
+            );
 
             assert_eq!(
                 *project.tasks.get("test").unwrap().args,
@@ -1031,7 +1031,7 @@ mod tasks {
         fn expands_args_with_vars() {
             let workspace_root = get_fixtures_root();
             let project_root = workspace_root.join("base").join("files-and-dirs");
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "base/files-and-dirs",
                 &workspace_root,
@@ -1060,8 +1060,7 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-            )
-            .unwrap();
+            );
 
             assert_eq!(
                 *project.tasks.get("test").unwrap().args,
@@ -1091,7 +1090,7 @@ mod tasks {
         fn expands_inputs() {
             let workspace_root = get_fixtures_dir("base");
             let project_root = workspace_root.join("files-and-dirs");
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "files-and-dirs",
                 &workspace_root,
@@ -1114,8 +1113,7 @@ mod tasks {
                     )]),
                     ..GlobalProjectConfig::default()
                 },
-            )
-            .unwrap();
+            );
 
             let task = project.tasks.get("test").unwrap();
 
@@ -1248,78 +1246,72 @@ mod workspace {
 
         #[test]
         fn include() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "include",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(get_project_task_ids(project), string_vec!["a", "c"])
         }
 
         #[test]
         fn include_none() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "include-none",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(get_project_task_ids(project), string_vec![])
         }
 
         #[test]
         fn exclude() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "exclude",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(get_project_task_ids(project), string_vec!["b"])
         }
 
         #[test]
         fn exclude_all() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "exclude-all",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(get_project_task_ids(project), string_vec![])
         }
 
         #[test]
         fn exclude_none() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "exclude-none",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(get_project_task_ids(project), string_vec!["a", "b", "c"])
         }
 
         #[test]
         fn rename() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "rename",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(
                 get_project_task_ids(project),
@@ -1330,13 +1322,12 @@ mod workspace {
         #[test]
         fn rename_merge() {
             let workspace_root = get_fixtures_dir("task-inheritance");
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "rename-merge",
                 &workspace_root,
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             let mut task =
                 create_expanded_task(&workspace_root, &workspace_root.join("rename-merge"), None)
@@ -1353,26 +1344,24 @@ mod workspace {
 
         #[test]
         fn include_exclude() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "include-exclude",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(get_project_task_ids(project), string_vec!["a"])
         }
 
         #[test]
         fn include_exclude_rename() {
-            let project = Project::new(
+            let project = create_expanded_project(
                 "id",
                 "include-exclude-rename",
                 &get_fixtures_dir("task-inheritance"),
                 &mock_global_project_config(),
-            )
-            .unwrap();
+            );
 
             assert_eq!(get_project_task_ids(project), string_vec!["only"])
         }

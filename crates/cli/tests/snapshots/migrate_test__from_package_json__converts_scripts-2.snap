@@ -9,8 +9,6 @@ tasks:
     command:
     - eslint
     - .
-    inputs:
-    - '**/*'
     type: node
   lint-fix:
     command:
@@ -19,7 +17,5 @@ tasks:
     - common:lint
     - --
     - --fix
-    inputs:
-    - '**/*'
     type: node
 

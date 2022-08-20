@@ -1511,8 +1511,10 @@ dependencies = [
 name = "moon_platform_node"
 version = "0.1.0"
 dependencies = [
+ "insta",
  "lazy_static",
  "moon_action",
+ "moon_cache",
  "moon_config",
  "moon_contract",
  "moon_error",
@@ -1521,6 +1523,7 @@ dependencies = [
  "moon_lang_node",
  "moon_logger",
  "moon_project",
+ "moon_project_graph",
  "moon_task",
  "moon_terminal",
  "moon_toolchain",

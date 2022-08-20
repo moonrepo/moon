@@ -13,15 +13,10 @@ tasks:
     - ./src
     - --out
     - ./lib
-    inputs:
-    - '**/*'
     outputs:
     - lib
     type: node
   test:
-    command:
-    - jest
-    inputs:
-    - '**/*'
+    command: jest
     type: node
 

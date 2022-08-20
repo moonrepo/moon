@@ -190,8 +190,14 @@ pub fn create_task(
         });
     }
 
-    task_config.env = Some(env);
-    task_config.outputs = Some(outputs);
+    if !env.is_empty() {
+        task_config.env = Some(env);
+    }
+
+    if !outputs.is_empty() {
+        task_config.outputs = Some(outputs);
+    }
+
     task_config.local = !should_run_in_ci(script_name, script);
 
     debug!(

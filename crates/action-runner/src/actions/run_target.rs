@@ -654,12 +654,17 @@ pub async fn run_target(
     );
 
     // Execute the command and return the number of attempts
-    action.attempts = Some(runner.run_command(context, &mut command).await?);
+    let attempts = runner.run_command(context, &mut command).await?;
+    let status = if action.set_attempts(attempts) {
+        ActionStatus::Passed
+    } else {
+        ActionStatus::Failed
+    };
 
     // If successful, cache the task outputs
     if task.options.cache {
         runner.cache_outputs().await?;
     }
 
-    Ok(ActionStatus::Passed)
+    Ok(status)
 }

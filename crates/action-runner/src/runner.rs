@@ -49,7 +49,7 @@ async fn run_action(
 
     match result {
         Ok(status) => {
-            action.pass(status);
+            action.stop(status);
         }
         Err(error) => {
             action.fail(error.to_string());

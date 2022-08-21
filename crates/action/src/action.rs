@@ -11,7 +11,6 @@ pub enum ActionStatus {
     FailedAndAbort,
     Invalid,
     Passed,
-    Pending,
     Running,
     Skipped, // When nothing happened
 }
@@ -43,14 +42,13 @@ impl Attempt {
             index,
             started_at: None,
             start_time: None,
-            status: ActionStatus::Pending,
+            status: ActionStatus::Running,
         }
     }
 
     pub fn start(&mut self) {
         self.started_at = Some(Utc::now());
         self.start_time = Some(Instant::now());
-        self.status = ActionStatus::Running;
     }
 
     pub fn stop(&mut self, status: ActionStatus) {
@@ -93,7 +91,7 @@ impl Action {
             label,
             node_index,
             start_time: Some(Instant::now()),
-            status: ActionStatus::Pending,
+            status: ActionStatus::Running,
         }
     }
 
@@ -103,11 +101,7 @@ impl Action {
 
     pub fn fail(&mut self, error: String) {
         self.error = Some(error);
-        self.status = ActionStatus::Failed;
-
-        if let Some(start) = &self.start_time {
-            self.duration = Some(start.elapsed());
-        }
+        self.stop(ActionStatus::Failed);
     }
 
     pub fn has_failed(&self) -> bool {
@@ -115,7 +109,17 @@ impl Action {
             || matches!(self.status, ActionStatus::FailedAndAbort)
     }
 
-    pub fn pass(&mut self, status: ActionStatus) {
+    pub fn set_attempts(&mut self, attempts: Vec<Attempt>) -> bool {
+        let passed = attempts
+            .iter()
+            .all(|a| matches!(a.status, ActionStatus::Passed));
+
+        self.attempts = Some(attempts);
+
+        passed
+    }
+
+    pub fn stop(&mut self, status: ActionStatus) {
         self.status = status;
 
         if let Some(start) = &self.start_time {

@@ -18,11 +18,11 @@ pub struct CacheEngine {
     /// The `.moon/cache/hashes` directory. Stores hash manifests.
     pub hashes_dir: PathBuf,
 
-    /// The `.moon/cache/runs` directory. Stores run states and runfiles.
-    pub runs_dir: PathBuf,
-
     /// The `.moon/cache/out` directory. Stores task outputs as hashed archives.
     pub outputs_dir: PathBuf,
+
+    /// The `.moon/cache/runs` directory. Stores run states and runfiles.
+    pub runs_dir: PathBuf,
 }
 
 impl CacheEngine {
@@ -159,6 +159,16 @@ impl CacheEngine {
 
             fs::write_json(&path, &hasher, true).await?;
         }
+
+        Ok(())
+    }
+
+    pub async fn create_json_report<T: Serialize>(
+        &self,
+        name: &str,
+        data: &T,
+    ) -> Result<(), MoonError> {
+        fs::write_json(self.dir.join(name), data, true).await?;
 
         Ok(())
     }

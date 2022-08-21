@@ -342,8 +342,6 @@ impl<'a> TargetRunner<'a> {
 
             self.print_target_command(&context.passthrough_args);
 
-            attempt.start();
-
             let possible_output = if should_stream_output {
                 command.exec_stream_and_capture_output(stream_prefix).await
             } else {

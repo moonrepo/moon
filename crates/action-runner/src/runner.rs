@@ -4,12 +4,13 @@ use crate::errors::{ActionRunnerError, DepGraphError};
 use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};
+use moon_cache::RunReport;
 use moon_error::MoonError;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
 use moon_platform_node::actions as node_actions;
 use moon_terminal::{replace_style_tokens, ExtendedTerm};
-use moon_utils::time;
+use moon_utils::{is_ci, time};
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -99,6 +100,28 @@ impl ActionRunner {
         workspace
             .cache
             .clean_stale_cache(&workspace.config.action_runner.cache_lifetime)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn create_run_report(
+        &self,
+        actions: &ActionResults,
+        context: &ActionContext,
+    ) -> Result<(), ActionRunnerError> {
+        let workspace = self.workspace.read().await;
+
+        workspace
+            .cache
+            .create_json_report(
+                if is_ci() {
+                    "ciReport.json"
+                } else {
+                    "runReport.json"
+                },
+                &RunReport { actions, context },
+            )
             .await?;
 
         Ok(())
@@ -239,6 +262,7 @@ impl ActionRunner {
         );
 
         self.clean_stale_cache().await?;
+        self.create_run_report(&results, &context).await?;
 
         Ok(results)
     }

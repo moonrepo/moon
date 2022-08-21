@@ -17,15 +17,13 @@ pub enum ActionStatus {
 
 #[derive(Deserialize, Serialize)]
 pub struct Attempt {
-    pub created_at: DateTime<Utc>,
-
     pub duration: Option<Duration>,
 
     pub finished_at: Option<DateTime<Utc>>,
 
     pub index: u8,
 
-    pub started_at: Option<DateTime<Utc>>,
+    pub started_at: DateTime<Utc>,
 
     #[serde(skip)]
     pub start_time: Option<Instant>,
@@ -36,19 +34,13 @@ pub struct Attempt {
 impl Attempt {
     pub fn new(index: u8) -> Self {
         Attempt {
-            created_at: Utc::now(),
             duration: None,
             finished_at: None,
             index,
-            started_at: None,
-            start_time: None,
+            started_at: Utc::now(),
+            start_time: Some(Instant::now()),
             status: ActionStatus::Running,
         }
-    }
-
-    pub fn start(&mut self) {
-        self.started_at = Some(Utc::now());
-        self.start_time = Some(Instant::now());
     }
 
     pub fn stop(&mut self, status: ActionStatus) {

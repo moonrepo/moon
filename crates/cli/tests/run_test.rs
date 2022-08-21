@@ -1056,3 +1056,32 @@ mod multi_run {
         assert!(predicate::str::contains("[node:mjs] stderr").eval(&output));
     }
 }
+
+mod reports {
+    use super::*;
+
+    #[test]
+    fn doesnt_create_a_report_by_default() {
+        let fixture = create_sandbox_with_git("cases");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("base:base")
+            .assert();
+
+        assert!(!fixture.path().join(".moon/cache/runReport.json").exists());
+    }
+
+    #[test]
+    fn creates_report_when_option_passed() {
+        let fixture = create_sandbox_with_git("cases");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("base:base")
+            .arg("--report")
+            .assert();
+
+        assert!(fixture.path().join(".moon/cache/runReport.json").exists());
+    }
+}

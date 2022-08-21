@@ -86,7 +86,7 @@ pub async fn run(
     let mut runner = ActionRunner::new(workspace);
 
     if options.report {
-        runner.generate_report();
+        runner.generate_report("runReport.json");
     }
 
     let results = runner.bail_on_error().run(dep_graph, Some(context)).await?;

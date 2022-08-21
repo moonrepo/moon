@@ -10,7 +10,7 @@ use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
 use moon_platform_node::actions as node_actions;
 use moon_terminal::{replace_style_tokens, ExtendedTerm};
-use moon_utils::{is_ci, time};
+use moon_utils::time;
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -50,7 +50,7 @@ async fn run_action(
 
     match result {
         Ok(status) => {
-            action.stop(status);
+            action.done(status);
         }
         Err(error) => {
             action.fail(error.to_string());
@@ -74,7 +74,7 @@ pub struct ActionRunner {
 
     error_count: u8,
 
-    report: bool,
+    report_name: Option<String>,
 
     workspace: Arc<RwLock<Workspace>>,
 }
@@ -87,7 +87,7 @@ impl ActionRunner {
             bail: false,
             duration: None,
             error_count: 0,
-            report: false,
+            report_name: None,
             workspace: Arc::new(RwLock::new(workspace)),
         }
     }
@@ -97,43 +97,8 @@ impl ActionRunner {
         self
     }
 
-    pub async fn clean_stale_cache(&self) -> Result<(), ActionRunnerError> {
-        let workspace = self.workspace.read().await;
-
-        workspace
-            .cache
-            .clean_stale_cache(&workspace.config.action_runner.cache_lifetime)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn create_run_report(
-        &self,
-        actions: &ActionResults,
-        context: &ActionContext,
-    ) -> Result<(), ActionRunnerError> {
-        if self.report {
-            let workspace = self.workspace.read().await;
-
-            workspace
-                .cache
-                .create_json_report(
-                    if is_ci() {
-                        "ciReport.json"
-                    } else {
-                        "runReport.json"
-                    },
-                    &RunReport { actions, context },
-                )
-                .await?;
-        }
-
-        Ok(())
-    }
-
-    pub fn generate_report(&mut self) -> &mut Self {
-        self.report = true;
+    pub fn generate_report(&mut self, name: &str) -> &mut Self {
+        self.report_name = Some(name.to_owned());
         self
     }
 
@@ -390,6 +355,34 @@ impl ActionRunner {
 
         term.write_line("")?;
         term.flush()?;
+
+        Ok(())
+    }
+
+    async fn clean_stale_cache(&self) -> Result<(), ActionRunnerError> {
+        let workspace = self.workspace.read().await;
+
+        workspace
+            .cache
+            .clean_stale_cache(&workspace.config.action_runner.cache_lifetime)
+            .await?;
+
+        Ok(())
+    }
+
+    async fn create_run_report(
+        &self,
+        actions: &ActionResults,
+        context: &ActionContext,
+    ) -> Result<(), ActionRunnerError> {
+        if let Some(name) = &self.report_name {
+            let workspace = self.workspace.read().await;
+
+            workspace
+                .cache
+                .create_json_report(name, RunReport { actions, context })
+                .await?;
+        }
 
         Ok(())
     }

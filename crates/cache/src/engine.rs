@@ -166,9 +166,17 @@ impl CacheEngine {
     pub async fn create_json_report<T: Serialize>(
         &self,
         name: &str,
-        data: &T,
+        data: T,
     ) -> Result<(), MoonError> {
-        fs::write_json(self.dir.join(name), data, true).await?;
+        let path = self.dir.join(name);
+
+        trace!(
+            target: LOG_TARGET,
+            "Writing run report {}",
+            color::path(&path)
+        );
+
+        fs::write_json(path, &data, true).await?;
 
         Ok(())
     }

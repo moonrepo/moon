@@ -178,7 +178,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     let mut runner = ActionRunner::new(workspace);
 
     let results = runner
-        .generate_report()
+        .generate_report("ciReport.json")
         .run(
             dep_graph,
             Some(ActionContext {

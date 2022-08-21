@@ -43,7 +43,7 @@ impl Attempt {
         }
     }
 
-    pub fn stop(&mut self, status: ActionStatus) {
+    pub fn done(&mut self, status: ActionStatus) {
         self.finished_at = Some(Utc::now());
         self.status = status;
 
@@ -91,9 +91,17 @@ impl Action {
         self.status = ActionStatus::FailedAndAbort;
     }
 
+    pub fn done(&mut self, status: ActionStatus) {
+        self.status = status;
+
+        if let Some(start) = &self.start_time {
+            self.duration = Some(start.elapsed());
+        }
+    }
+
     pub fn fail(&mut self, error: String) {
         self.error = Some(error);
-        self.stop(ActionStatus::Failed);
+        self.done(ActionStatus::Failed);
     }
 
     pub fn has_failed(&self) -> bool {
@@ -109,14 +117,6 @@ impl Action {
         self.attempts = Some(attempts);
 
         passed
-    }
-
-    pub fn stop(&mut self, status: ActionStatus) {
-        self.status = status;
-
-        if let Some(start) = &self.start_time {
-            self.duration = Some(start.elapsed());
-        }
     }
 
     pub fn should_abort(&self) -> bool {

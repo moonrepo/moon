@@ -351,17 +351,18 @@ impl<'a> TargetRunner<'a> {
             match possible_output {
                 // zero and non-zero exit codes
                 Ok(out) => {
+                    attempt.done(if out.status.success() {
+                        ActionStatus::Passed
+                    } else {
+                        ActionStatus::Failed
+                    });
+
                     if should_stream_output {
                         self.handle_streamed_output(&attempt, attempt_total, &out);
                     } else {
                         self.handle_captured_output(&attempt, attempt_total, &out);
                     }
 
-                    attempt.stop(if out.status.success() {
-                        ActionStatus::Passed
-                    } else {
-                        ActionStatus::Failed
-                    });
                     attempts.push(attempt);
 
                     if out.status.success() {
@@ -384,7 +385,7 @@ impl<'a> TargetRunner<'a> {
                 }
                 // process itself failed
                 Err(error) => {
-                    attempt.stop(ActionStatus::Failed);
+                    attempt.done(ActionStatus::Failed);
                     attempts.push(attempt);
 
                     return Err(ActionRunnerError::Moon(error));

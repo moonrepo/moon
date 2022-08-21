@@ -29,7 +29,7 @@ pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnc
     pb.set_message(start.as_ref().to_owned());
     pb.enable_steady_tick(Duration::from_millis(50));
 
-    move |finish, pass| {
+    move |finish, passed| {
         let theme = create_theme();
 
         pb.set_style(
@@ -38,7 +38,7 @@ pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnc
                 .unwrap(),
         );
 
-        if pass {
+        if passed {
             pb.set_prefix(theme.success_prefix.to_string());
         } else {
             pb.set_prefix(theme.error_prefix.to_string());

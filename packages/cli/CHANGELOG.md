@@ -12,6 +12,7 @@
 - Added support for Linux ARM GNU (`aarch64-unknown-linux-gnu`).
 - Added support for Linux ARM musl (`aarch64-unknown-linux-musl`).
 - Added a `typescript` setting to `moon.yml`, allowing TypeScript support to be toggled per project.
+- Added a `--report` option to the `moon run` command, for generating run reports for debugging.
 - Added an `--affected` option to the `moon query projects` command.
 - Updated the task `command` to also support inline arguments. You can now merge `command` and
   `args` into a single field.

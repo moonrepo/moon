@@ -32,6 +32,7 @@ const sidebars = {
 					collapsed: false,
 					collapsible: true,
 					items: [
+						'guides/examples/astro',
 						'guides/examples/eslint',
 						'guides/examples/jest',
 						'guides/examples/next',

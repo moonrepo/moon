@@ -78,14 +78,14 @@ sure this file is listed in your `lint` task's inputs!
 
 ```js title="<project>/.eslintrc.js"
 module.exports = {
-	extends: ['@remix-run/eslint-config', '@remix-run/eslint-config/node'],
+  extends: ['@remix-run/eslint-config', '@remix-run/eslint-config/node'],
 
-	// If using TypeScript
-	parser: '@typescript-eslint/parser',
-	parserOptions: {
-		project: 'tsconfig.json',
-		tsconfigRootDir: __dirname,
-	},
+  // If using TypeScript
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: 'tsconfig.json',
+    tsconfigRootDir: __dirname,
+  },
 };
 ```
 
@@ -101,20 +101,20 @@ shared configuration found in the workspace root (`tsconfig.projectOptions.json`
 
 ```json title="<project>/tsconfig.json"
 {
-	"extends": "../../tsconfig.projectOptions.json",
-	"compilerOptions": {
-		"baseUrl": ".",
-		"emitDeclarationOnly": false,
-		"jsx": "react-jsx",
-		"resolveJsonModule": true,
-		"moduleResolution": "node",
-		"noEmit": true,
-		"paths": {
-			"~/*": ["./app/*"]
-		}
-	},
-	"include": [".eslintrc.js", "remix.env.d.ts", "**/*"],
-	"exclude": [".cache", "build", "public"]
+  "extends": "../../tsconfig.projectOptions.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "emitDeclarationOnly": false,
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "noEmit": true,
+    "paths": {
+      "~/*": ["./app/*"]
+    }
+  },
+  "include": [".eslintrc.js", "remix.env.d.ts", "**/*"],
+  "exclude": [".cache", "build", "public"]
 }
 ```
 
@@ -133,6 +133,6 @@ the project root. This allows each project to configure Remix for their needs.
 
 ```js title="<project>/remix.config.js"
 module.exports = {
-	appDirectory: 'app',
+  appDirectory: 'app',
 };
 ```

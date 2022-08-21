@@ -90,12 +90,12 @@ locate it. This can be achieved with a project-level `.eslintrc.js` file.
 
 ```js title="<project>/.eslintrc.js"
 module.exports = {
-	extends: 'next', // or 'next/core-web-vitals'
-	settings: {
-		next: {
-			rootDir: __dirname,
-		},
-	},
+  extends: 'next', // or 'next/core-web-vitals'
+  settings: {
+    next: {
+      rootDir: __dirname,
+    },
+  },
 };
 ```
 
@@ -120,9 +120,9 @@ a potential alternative, add the `lint` task as a dependency for the `build` tas
 
 ```js title="<project>/next.config.js"
 module.exports = {
-	eslint: {
-		ignoreDuringBuilds: true,
-	},
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 ```
 
@@ -167,9 +167,9 @@ task.
 
 ```js title="<project>/next.config.js"
 module.exports = {
-	typescript: {
-		ignoreBuildErrors: true,
-	},
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 ```
 
@@ -189,6 +189,6 @@ their needs.
 
 ```js title="<project>/next.config.js"
 module.exports = {
-	compress: true,
+  compress: true,
 };
 ```

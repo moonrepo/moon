@@ -4,6 +4,7 @@ use crate::errors::{ActionRunnerError, DepGraphError};
 use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};
+use moon_cache::RunReport;
 use moon_error::MoonError;
 use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
@@ -49,7 +50,7 @@ async fn run_action(
 
     match result {
         Ok(status) => {
-            action.pass(status);
+            action.done(status);
         }
         Err(error) => {
             action.fail(error.to_string());
@@ -73,6 +74,8 @@ pub struct ActionRunner {
 
     error_count: u8,
 
+    report_name: Option<String>,
+
     workspace: Arc<RwLock<Workspace>>,
 }
 
@@ -84,6 +87,7 @@ impl ActionRunner {
             bail: false,
             duration: None,
             error_count: 0,
+            report_name: None,
             workspace: Arc::new(RwLock::new(workspace)),
         }
     }
@@ -93,15 +97,9 @@ impl ActionRunner {
         self
     }
 
-    pub async fn clean_stale_cache(&self) -> Result<(), ActionRunnerError> {
-        let workspace = self.workspace.read().await;
-
-        workspace
-            .cache
-            .clean_stale_cache(&workspace.config.action_runner.cache_lifetime)
-            .await?;
-
-        Ok(())
+    pub fn generate_report(&mut self, name: &str) -> &mut Self {
+        self.report_name = Some(name.to_owned());
+        self
     }
 
     pub fn get_duration(&self) -> Duration {
@@ -239,6 +237,7 @@ impl ActionRunner {
         );
 
         self.clean_stale_cache().await?;
+        self.create_run_report(&results, &context).await?;
 
         Ok(results)
     }
@@ -356,6 +355,34 @@ impl ActionRunner {
 
         term.write_line("")?;
         term.flush()?;
+
+        Ok(())
+    }
+
+    async fn clean_stale_cache(&self) -> Result<(), ActionRunnerError> {
+        let workspace = self.workspace.read().await;
+
+        workspace
+            .cache
+            .clean_stale_cache(&workspace.config.action_runner.cache_lifetime)
+            .await?;
+
+        Ok(())
+    }
+
+    async fn create_run_report(
+        &self,
+        actions: &ActionResults,
+        context: &ActionContext,
+    ) -> Result<(), ActionRunnerError> {
+        if let Some(name) = &self.report_name {
+            let workspace = self.workspace.read().await;
+
+            workspace
+                .cache
+                .create_json_report(name, RunReport { actions, context })
+                .await?;
+        }
 
         Ok(())
     }

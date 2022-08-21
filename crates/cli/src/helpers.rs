@@ -24,12 +24,12 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
     Ok(workspace)
 }
 
-pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F) {
+pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F, bool) {
     let pb = ProgressBar::new_spinner();
     pb.set_message(start.as_ref().to_owned());
     pb.enable_steady_tick(Duration::from_millis(50));
 
-    move |finish| {
+    move |finish, passed| {
         let theme = create_theme();
 
         pb.set_style(
@@ -37,7 +37,13 @@ pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnc
                 .template("{prefix} {msg}")
                 .unwrap(),
         );
-        pb.set_prefix(theme.success_prefix.to_string());
+
+        if passed {
+            pb.set_prefix(theme.success_prefix.to_string());
+        } else {
+            pb.set_prefix(theme.error_prefix.to_string());
+        }
+
         pb.finish_with_message(finish.as_ref().to_owned());
     }
 }

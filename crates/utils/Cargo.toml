@@ -10,7 +10,7 @@ assert_cmd = "2.0.4"
 assert_fs = "1.0.7"
 async-recursion = "1.0.0"
 cached = "0.38.0"
-chrono = "0.4.19"
+chrono = { version = "0.4.19", features = ["serde"] }
 chrono-humanize = "0.2.1"
 clean-path = "0.2.1"
 dirs = "4.0.0"

@@ -157,6 +157,7 @@ pub async fn run_cli() {
             status,
             passthrough,
             profile,
+            report,
             upstream,
         } => {
             run(
@@ -167,6 +168,7 @@ pub async fn run_cli() {
                     status: *status,
                     passthrough: passthrough.clone(),
                     profile: profile.clone(),
+                    report: *report,
                     upstream: *upstream,
                 },
             )

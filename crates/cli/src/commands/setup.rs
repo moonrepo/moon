@@ -5,7 +5,7 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
 
     load_workspace().await?.toolchain.setup(true).await?;
 
-    done("Setup complete");
+    done("Setup complete", true);
 
     Ok(())
 }

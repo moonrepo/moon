@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_action = { path = "../action" }
 moon_archive = { path = "../archive" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }

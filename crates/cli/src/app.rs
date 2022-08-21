@@ -269,6 +269,9 @@ pub enum Commands {
         )]
         profile: Option<ProfileType>,
 
+        #[clap(long, help = "Generate a run report for the current actions")]
+        report: bool,
+
         // Affected
         #[clap(
             long,

@@ -1,15 +1,8 @@
-use crate::helpers::load_workspace;
-use indicatif::{ProgressBar, ProgressStyle};
+use crate::helpers::{create_progress_bar, load_workspace};
 use moon_action_runner::{ActionRunner, DepGraph};
-use moon_terminal::create_theme;
-use std::time::Duration;
 
 pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
-    let theme = create_theme();
-
-    let pb = ProgressBar::new_spinner();
-    pb.set_message("Syncing projects...");
-    pb.enable_steady_tick(Duration::from_millis(50));
+    let done = create_progress_bar("Syncing projects...");
 
     let workspace = load_workspace().await?;
     let mut project_count = 0;
@@ -23,18 +16,13 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
     let mut runner = ActionRunner::new(workspace);
     let results = runner.run(graph, None).await?;
 
-    pb.set_style(
-        ProgressStyle::default_spinner()
-            .template("{prefix} {msg}")
-            .unwrap(),
-    );
-
     if runner.has_failed() {
-        pb.set_prefix(theme.error_prefix.to_string());
-        pb.finish_with_message("Failed to sync projects");
+        done("Failed to sync projects", false);
     } else {
-        pb.set_prefix(theme.success_prefix.to_string());
-        pb.finish_with_message(format!("Successfully synced {} projects", project_count));
+        done(
+            &format!("Successfully synced {} projects", project_count),
+            true,
+        );
     }
 
     runner.render_results(&results)?;

@@ -1,4 +1,6 @@
 tasks:
+  base:
+    command: noop
   runFromProject:
     command: echo
     args: '"in project"'

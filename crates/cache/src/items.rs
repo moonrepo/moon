@@ -1,4 +1,5 @@
 use crate::helpers::{is_readable, is_writable, to_millis};
+use moon_action::{Action, ActionContext};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_utils::fs;
@@ -81,6 +82,13 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     pub fn to_millis(&self, time: SystemTime) -> u128 {
         to_millis(time)
     }
+}
+
+#[derive(Serialize)]
+pub struct RunReport<'a> {
+    pub actions: &'a Vec<Action>,
+
+    pub context: &'a ActionContext,
 }
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]

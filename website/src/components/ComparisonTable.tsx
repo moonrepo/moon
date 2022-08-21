@@ -385,6 +385,12 @@ const taskRunnerRows: Comparison[] = [
 		},
 	},
 	{
+		feature: 'Can generate run reports',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
 		feature: 'Continuous integration (CI) support',
 		support: {
 			moon: SUPPORTED,

@@ -5,7 +5,7 @@ pub async fn teardown() -> Result<(), Box<dyn std::error::Error>> {
 
     load_workspace().await?.toolchain.teardown().await?;
 
-    done("Teardown complete");
+    done("Teardown complete", true);
 
     Ok(())
 }

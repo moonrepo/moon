@@ -17,10 +17,13 @@ pub async fn clean(options: CleanOptions) -> Result<(), Box<dyn std::error::Erro
         .clean_stale_cache(&options.cache_liftime)
         .await?;
 
-    done(format!(
-        "Deleted {} files and saved {} bytes",
-        files_deleted, bytes_saved
-    ));
+    done(
+        format!(
+            "Deleted {} files and saved {} bytes",
+            files_deleted, bytes_saved
+        ),
+        true,
+    );
 
     Ok(())
 }

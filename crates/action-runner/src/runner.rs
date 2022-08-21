@@ -74,6 +74,8 @@ pub struct ActionRunner {
 
     error_count: u8,
 
+    report: bool,
+
     workspace: Arc<RwLock<Workspace>>,
 }
 
@@ -85,6 +87,7 @@ impl ActionRunner {
             bail: false,
             duration: None,
             error_count: 0,
+            report: false,
             workspace: Arc::new(RwLock::new(workspace)),
         }
     }
@@ -110,21 +113,28 @@ impl ActionRunner {
         actions: &ActionResults,
         context: &ActionContext,
     ) -> Result<(), ActionRunnerError> {
-        let workspace = self.workspace.read().await;
+        if self.report {
+            let workspace = self.workspace.read().await;
 
-        workspace
-            .cache
-            .create_json_report(
-                if is_ci() {
-                    "ciReport.json"
-                } else {
-                    "runReport.json"
-                },
-                &RunReport { actions, context },
-            )
-            .await?;
+            workspace
+                .cache
+                .create_json_report(
+                    if is_ci() {
+                        "ciReport.json"
+                    } else {
+                        "runReport.json"
+                    },
+                    &RunReport { actions, context },
+                )
+                .await?;
+        }
 
         Ok(())
+    }
+
+    pub fn generate_report(&mut self) -> &mut Self {
+        self.report = true;
+        self
     }
 
     pub fn get_duration(&self) -> Duration {

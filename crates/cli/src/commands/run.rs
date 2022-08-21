@@ -14,6 +14,7 @@ pub struct RunOptions {
     pub status: TouchedStatus,
     pub passthrough: Vec<String>,
     pub profile: Option<ProfileType>,
+    pub report: bool,
     pub upstream: bool,
 }
 
@@ -83,6 +84,11 @@ pub async fn run(
     };
 
     let mut runner = ActionRunner::new(workspace);
+
+    if options.report {
+        runner.generate_report();
+    }
+
     let results = runner.bail_on_error().run(dep_graph, Some(context)).await?;
 
     runner.render_stats(&results, true)?;

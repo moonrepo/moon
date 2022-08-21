@@ -310,6 +310,7 @@ dependencies = [
  "libc",
  "num-integer",
  "num-traits",
+ "serde",
  "time 0.1.44",
  "winapi",
 ]
@@ -1312,6 +1313,8 @@ name = "moon_action"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "moon_utils",
+ "serde",
 ]
 
 [[package]]

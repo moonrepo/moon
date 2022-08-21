@@ -342,13 +342,13 @@ impl<'a> TargetRunner<'a> {
 
             self.print_target_command(&context.passthrough_args);
 
+            attempt.start();
+
             let possible_output = if should_stream_output {
                 command.exec_stream_and_capture_output(stream_prefix).await
             } else {
                 command.exec_capture_output().await
             };
-
-            attempt.done();
 
             match possible_output {
                 // zero and non-zero exit codes
@@ -359,6 +359,11 @@ impl<'a> TargetRunner<'a> {
                         self.handle_captured_output(&attempt, attempt_total, &out);
                     }
 
+                    attempt.stop(if out.status.success() {
+                        ActionStatus::Passed
+                    } else {
+                        ActionStatus::Failed
+                    });
                     attempts.push(attempt);
 
                     if out.status.success() {
@@ -381,6 +386,9 @@ impl<'a> TargetRunner<'a> {
                 }
                 // process itself failed
                 Err(error) => {
+                    attempt.stop(ActionStatus::Failed);
+                    attempts.push(attempt);
+
                     return Err(ActionRunnerError::Moon(error));
                 }
             }

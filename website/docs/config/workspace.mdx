@@ -236,10 +236,10 @@ ensure other Node.js processes outside of our toolchain are utilizing the same v
 
 ```json title="package.json"
 {
-	// ...
-	"engines": {
-		"node": "16.15.0"
-	}
+  // ...
+  "engines": {
+    "node": "16.15.0"
+  }
 }
 ```
 
@@ -372,12 +372,12 @@ can be customized with [`node.dependencyVersionFormat`](#dependencyversionformat
 
 ```json title="package.json"
 {
-	// ...
-	"dependencies": {
-		"@company/design-system": "workspace:*",
-		"@company/react-hooks": "workspace:*"
-		// ...
-	}
+  // ...
+  "dependencies": {
+    "@company/design-system": "workspace:*",
+    "@company/react-hooks": "workspace:*"
+    // ...
+  }
 }
 ```
 
@@ -479,12 +479,12 @@ Would result in the following `references` within both `tsconfig.json`s.
 
 ```json title="tsconfig.json"
 {
-	// ...
-	"references": [
-		// ...
-		{ "path": "../../design-system" },
-		{ "path": "../../react-hooks" }
-	]
+  // ...
+  "references": [
+    // ...
+    { "path": "../../design-system" },
+    { "path": "../../react-hooks" }
+  ]
 }
 ```
 

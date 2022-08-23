@@ -62,8 +62,8 @@ project root. This is optional, but necessary when defining project specific set
 
 ```js title="<project>/jest.config.js"
 module.exports = {
-	// Project specific settings
-	testEnvironment: 'node',
+  // Project specific settings
+  testEnvironment: 'node',
 };
 ```
 
@@ -76,8 +76,8 @@ package for consumption.
 
 ```js title="packages/company-jest-preset/jest-preset.js"
 module.exports = {
-	testEnvironment: 'jsdom',
-	watchman: true,
+  testEnvironment: 'jsdom',
+  watchman: true,
 };
 ```
 
@@ -85,7 +85,7 @@ Within your project-level Jest config, you can extend the preset to inherit the 
 
 ```js title="<project>/jest.config.js"
 module.exports = {
-	preset: 'company-jest-preset',
+  preset: 'company-jest-preset',
 };
 ```
 

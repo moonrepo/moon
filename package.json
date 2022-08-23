@@ -23,14 +23,14 @@
     "@moonrepo/cli": "workspace:*",
     "@types/node": "^17.0.45",
     "eslint": "^8.22.0",
-    "eslint-config-moon": "^0.1.0",
+    "eslint-config-moon": "^1.0.0",
     "execa": "^6.1.0",
     "jest": "^28.1.3",
-    "jest-preset-moon": "^0.1.0",
+    "jest-preset-moon": "^1.0.0",
     "packemon": "^2.3.3",
     "prettier": "^2.7.1",
-    "prettier-config-moon": "^0.0.1",
-    "tsconfig-moon": "^0.1.0",
+    "prettier-config-moon": "^1.0.0",
+    "tsconfig-moon": "^1.0.0",
     "typescript": "^4.7.4"
   }
 }

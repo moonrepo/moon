@@ -113,18 +113,18 @@ repository.
 
 ```js title=".eslintrc.js"
 module.exports = {
-	root: true, // Required!
-	extends: ['moon'],
-	rules: {
-		'no-console': 'error',
-	},
+  root: true, // Required!
+  extends: ['moon'],
+  rules: {
+    'no-console': 'error',
+  },
 
-	// TypeScript support
-	parser: '@typescript-eslint/parser',
-	parserOptions: {
-		project: 'tsconfig.eslint.json',
-		tsconfigRootDir: __dirname,
-	},
+  // TypeScript support
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: 'tsconfig.eslint.json',
+    tsconfigRootDir: __dirname,
+  },
 };
 ```
 
@@ -147,12 +147,12 @@ project.
 
 ```js title="<project>/.eslintrc.js"
 module.exports = {
-	// Patterns to ignore (alongside the root .eslintignore)
-	ignorePatterns: ['build', 'lib'],
-	// Project specific rules
-	rules: {
-		'no-console': 'off',
-	},
+  // Patterns to ignore (alongside the root .eslintignore)
+  ignorePatterns: ['build', 'lib'],
+  // Project specific rules
+  rules: {
+    'no-console': 'off',
+  },
 };
 ```
 
@@ -178,7 +178,7 @@ following content.
 
 ```js title="packages/eslint-config-company/index.js"
 module.exports = {
-	extends: ['airbnb'],
+  extends: ['airbnb'],
 };
 ```
 
@@ -186,7 +186,7 @@ Within your root-level ESLint config, you can extend this package to inherit the
 
 ```js title=".eslintrc.js"
 module.exports = {
-	extends: 'eslint-config-company',
+  extends: 'eslint-config-company',
 };
 ```
 
@@ -215,15 +215,15 @@ are a viable option. Otherwise, we highly encourage project-level configs.
 
 ```js title=".eslintrc.js"
 module.exports = {
-	// ...
-	overrides: [
-		// Only apply to apps "foo" and "bar", but not others
-		{
-			files: ['apps/foo/**/*', 'apps/bar/**/*'],
-			rules: {
-				'no-magic-numbers': 'off',
-			},
-		},
-	],
+  // ...
+  overrides: [
+    // Only apply to apps "foo" and "bar", but not others
+    {
+      files: ['apps/foo/**/*', 'apps/bar/**/*'],
+      rules: {
+        'no-magic-numbers': 'off',
+      },
+    },
+  ],
 };
 ```

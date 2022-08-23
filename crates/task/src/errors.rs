@@ -98,7 +98,7 @@ pub enum TokenError {
     #[error("Token <symbol>{0}</symbol> cannot be used within <id>{1}</id>.")]
     InvalidTokenContext(String, String), // token, context
 
-    #[error("Unknown file group <id>{1}</> used in token <symbol>{0}</symbol>.")]
+    #[error("Unknown file group <id>{1}</id> used in token <symbol>{0}</symbol>.")]
     UnknownFileGroup(String, String), // token, file group
 
     #[error("Unknown token function <symbol>{0}</symbol>.")]

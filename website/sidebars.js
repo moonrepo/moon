@@ -8,6 +8,8 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Getting started',
+			collapsed: false,
+			collapsible: true,
 			items: [
 				'install',
 				'setup-workspace',
@@ -20,6 +22,8 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Guides',
+			collapsed: false,
+			collapsible: true,
 			items: [
 				'guides/ci',
 				'guides/open-source',
@@ -29,9 +33,10 @@ const sidebars = {
 				{
 					type: 'category',
 					label: 'Examples',
-					collapsed: false,
+					collapsed: true,
 					collapsible: true,
 					items: [
+						'guides/examples/astro',
 						'guides/examples/eslint',
 						'guides/examples/jest',
 						'guides/examples/next',

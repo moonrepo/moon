@@ -1,0 +1,161 @@
+---
+title: Astro example
+sidebar_label: Astro
+---
+
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+import CreateDepTabs from '@site/src/components/CreateDepTabs';
+
+> Astro has been prototyped in our
+> [examples repository](https://github.com/moonrepo/examples/tree/master/apps/astro-app), check it
+> out!
+
+In this guide, you'll learn how to integrate [Astro](https://docs.astro.build).
+
+Begin by creating a new Astro project in the root of an existing moon project (this should not be
+created in the workspace root, unless a polyrepo).
+
+```shell
+cd apps && npm create astro@latest
+```
+
+## Setup
+
+Since Astro is per-project, the associated moon tasks should be defined in each project's `moon.yml`
+file.
+
+```yaml title="<project>/moon.yml"
+fileGroups:
+	astro:
+		- 'src/**/*'
+		- 'astro.config.*'
+
+tasks:
+	astro:
+		command: 'astro'
+		local: true
+
+	# Development server
+	dev:
+		command: 'astro dev'
+		inputs:
+			- '@group(astro)'
+		local: true
+
+	# Production build
+	build:
+		command: 'astro build'
+		inputs:
+			- '@group(astro)'
+		outputs:
+			- 'dist'
+
+	# Check .astro files
+	check:
+		command: 'astro'
+		args: 'check'
+		inputs:
+			- '@group(astro)'
+		deps:
+			- '~:typecheck'
+
+	# Preview production build locally
+	preview:
+		command: 'astro preview'
+		inputs:
+			- '@group(astro)'
+		deps:
+			- '~:build'
+		local: true
+
+workspace:
+	# Disable project references
+	typescript: false
+```
+
+### ESLint integration
+
+When using a [`lint`](./eslint) task, the
+[`eslint-plugin-astro`](https://ota-meshi.github.io/eslint-plugin-astro/user-guide/) package must be
+installed to lint `.astro` files.
+
+<AddDepsTabs dev dep="eslint-plugin-astro" package="<app>" />
+
+Once the dependency has been installed in the application's `package.json`. We can then enable this
+configuration by creating an `.eslintrc.js` file in the project root. Be sure this file is listed in
+your lint task's inputs!
+
+```js title="<project>/.eslintrc.js"
+module.exports = {
+  extends: ['plugin:astro/recommended'],
+  overrides: [
+    {
+      files: ['*.astro'],
+      parser: 'astro-eslint-parser',
+      // If using TypeScript
+      parserOptions: {
+        parser: '@typescript-eslint/parser',
+        extraFileExtensions: ['.astro'],
+        project: 'tsconfig.json',
+        tsconfigRootDir: __dirname,
+      },
+    },
+  ],
+};
+```
+
+And lastly, when linting through moon's command line, you'll need to include the `.astro` extension
+within the `lint` task. This can be done by extending the top-level task within the project (below),
+or by adding it to the top-level entirely.
+
+```yaml title="<project>/moon.yml"
+tasks:
+	lint:
+		args:
+			- '--ext'
+			- '.ts,.tsx,.astro'
+```
+
+### Prettier integration
+
+When using a [`format`](./prettier) task, the `prettier-plugin-astro` package must be installed to
+format `.astro` files. View the official
+[Astro docs](https://docs.astro.build/en/editor-setup/#prettier) for more information.
+
+<AddDepsTabs dev dep="prettier-plugin-astro" package="<app>" />
+
+### TypeScript integration
+
+Since Astro utilizes custom `.astro` files, it requires a specialized TypeScript integration, and
+luckily Astro provides an [in-depth guide](https://docs.astro.build/en/guides/typescript/). With
+that being said, we do have a few requirements and pointers!
+
+- Use the official [Astro `tsconfig.json`](https://docs.astro.build/en/guides/typescript/#setup) as
+  a basis.
+- From our internal testing, the `astro check` command (that typechecks `.astro` files) _does not
+  support project references_. If the `composite` compiler option is enabled, the checker will fail
+  to find `.astro` files. To work around this, we disable `workspace.typescript` in our moon config
+  above.
+- Since typechecking requires 2 commands, one for `.astro` files, and the other for `.ts`, `.tsx`
+  files, we've added the [`typecheck`](./typescript) task as a dependency for the `check` task. This
+  will run both commands through a single task!
+
+## Configuration
+
+### Root-level
+
+We suggest _against_ root-level configuration, as Astro should be installed per-project, and the
+`astro` command expects the configuration to live relative to the project root.
+
+### Project-level
+
+When creating a new Astro project, a
+[`astro.config.mjs`](https://docs.astro.build/en/reference/configuration-reference/) is created, and
+_must_ exist in the project root. This allows each project to configure Astro for their needs.
+
+```js title="<project>/astro.config.mjs"
+import { defineConfig } from 'astro/config';
+
+// https://astro.build/config
+export default defineConfig({});
+```

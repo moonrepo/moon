@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[8498],{2106:function(e){e.exports=JSON.parse('{"title":"Guides","keywords":["guides"],"slug":"/guides","permalink":"/docs/guides","navigation":{"previous":{"title":"Migrate to moon","permalink":"/docs/migrate-to-moon"},"next":{"title":"Continuous integration (CI)","permalink":"/docs/guides/ci"}}}')}}]);

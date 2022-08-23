@@ -143,6 +143,10 @@
       "properties": {
         "inheritedTasks": {
           "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
+        },
+        "typescript": {
+          "default": true,
+          "type": "boolean"
         }
       }
     },
@@ -178,27 +182,40 @@
         }
       }
     },
+    "TaskCommandArgs": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "TaskConfig": {
       "type": "object",
       "properties": {
         "args": {
-          "title": "ArgsField",
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/TaskCommandArgs"
             },
             {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "type": "null"
             }
           ]
         },
         "command": {
-          "type": [
-            "string",
-            "null"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskCommandArgs"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "deps": {
@@ -376,7 +393,10 @@
     "TaskOutputStyle": {
       "type": "string",
       "enum": [
-        "on-exit",
+        "buffer",
+        "buffer-only-failure",
+        "hash",
+        "none",
         "stream"
       ]
     }

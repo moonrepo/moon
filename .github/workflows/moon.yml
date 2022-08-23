@@ -60,4 +60,12 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: run
+          args: -- --color --log trace query projects
+      - uses: actions-rs/cargo@v1
+        with:
+          command: run
+          args: -- --color --log trace run website:build
+      - uses: actions-rs/cargo@v1
+        with:
+          command: run
           args: -- --color --log trace ci --base ${{ github.base_ref || 'master' }}

@@ -7,10 +7,14 @@ tasks:
     args: 'build'
     outputs:
       - 'build'
+    options:
+      envFile: true
+
   start:
     command: 'docusaurus'
     args: 'start'
     local: true
+
   typecheck:
     command: 'tsc'
     args:

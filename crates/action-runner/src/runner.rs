@@ -37,7 +37,9 @@ async fn run_action(
         ActionNode::RunTarget(target_id) => {
             actions::run_target(action, context, workspace, target_id).await
         }
-        ActionNode::SetupToolchain => actions::setup_toolchain(action, context, workspace).await,
+        ActionNode::SetupToolchain(lang) => {
+            actions::setup_toolchain(action, context, workspace).await
+        }
         ActionNode::SyncProject(lang, project_id) => match lang {
             SupportedLanguage::Node => {
                 node_actions::sync_project(action, context, workspace, project_id)
@@ -56,7 +58,7 @@ async fn run_action(
             action.fail(error.to_string());
 
             // If these fail, we should abort instead of trying to continue
-            if matches!(node, ActionNode::SetupToolchain)
+            if matches!(node, ActionNode::SetupToolchain(_))
                 || matches!(node, ActionNode::InstallDeps(_))
             {
                 action.abort();

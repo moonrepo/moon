@@ -40,12 +40,9 @@ impl DepGraph {
     pub fn default() -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
-        let mut graph: DepGraphType = Graph::new();
-        let setup_toolchain_index = graph.add_node(ActionNode::SetupToolchain);
-
         DepGraph {
-            graph,
-            indices: HashMap::from([(ActionNode::SetupToolchain, setup_toolchain_index)]),
+            graph: Graph::new(),
+            indices: HashMap::new(),
         }
     }
 
@@ -82,7 +79,7 @@ impl DepGraph {
             lang.label()
         );
 
-        let setup_toolchain_index = self.get_or_insert_node(ActionNode::SetupToolchain);
+        let setup_toolchain_index = self.setup_tool(lang);
         let install_deps_index = self.get_or_insert_node(node);
 
         self.graph
@@ -210,6 +207,18 @@ impl DepGraph {
         Ok((qualified_targets, inserted_count))
     }
 
+    pub fn setup_tool(&mut self, lang: SupportedLanguage) -> NodeIndex {
+        let node = ActionNode::SetupToolchain(lang.clone());
+
+        if let Some(index) = self.get_index_from_node(&node) {
+            return *index;
+        }
+
+        trace!(target: LOG_TARGET, "Setting up {} toolchain", lang.label());
+
+        self.get_or_insert_node(node)
+    }
+
     pub fn sort_topological(&self) -> Result<Vec<NodeIndex>, DepGraphError> {
         let list = match toposort(&self.graph, None) {
             Ok(nodes) => nodes,
@@ -287,7 +296,7 @@ impl DepGraph {
     ) -> Result<NodeIndex, DepGraphError> {
         let project = projects.load(project_id)?;
         let lang = get_lang_from_project(&project);
-        let node = ActionNode::SyncProject(lang, project.id.clone());
+        let node = ActionNode::SyncProject(lang.clone(), project.id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(*index);
@@ -300,7 +309,7 @@ impl DepGraph {
         );
 
         // Sync can be run in parallel while deps are installing
-        let setup_toolchain_index = self.get_or_insert_node(ActionNode::SetupToolchain);
+        let setup_toolchain_index = self.setup_tool(lang);
         let sync_project_index = self.get_or_insert_node(node);
 
         self.graph
@@ -333,17 +342,10 @@ impl DepGraph {
             &|_, n| {
                 let id = n.1;
 
-                if id == &ActionNode::SetupToolchain.label() {
-                    format!(
-                        "label=\"{}\" style=filled, shape=oval, fillcolor=black, fontcolor=white",
-                        id
-                    )
-                } else {
-                    format!(
-                        "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
-                        id
-                    )
-                }
+                format!(
+                    "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
+                    id
+                )
             },
         );
 

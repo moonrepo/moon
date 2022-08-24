@@ -7,7 +7,7 @@ use std::hash::{Hash, Hasher};
 pub enum ActionNode {
     InstallDeps(SupportedLanguage),
     RunTarget(TargetID),
-    SetupToolchain,
+    SetupToolchain(SupportedLanguage),
     SyncProject(SupportedLanguage, ProjectID),
 }
 
@@ -16,7 +16,7 @@ impl ActionNode {
         match self {
             ActionNode::InstallDeps(lang) => format!("Install{}Deps", lang),
             ActionNode::RunTarget(id) => format!("RunTarget({})", id),
-            ActionNode::SetupToolchain => "SetupToolchain".into(),
+            ActionNode::SetupToolchain(lang) => format!("Setup{}Toolchain", lang),
             ActionNode::SyncProject(lang, id) => format!("Sync{}Project({})", lang, id),
         }
     }

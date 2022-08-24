@@ -53,7 +53,7 @@ impl Platform for NodePlatform {
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
-        let alias_format = match &workspace_config.node.alias_package_names {
+        let alias_format = match &workspace_config.node.as_ref().unwrap().alias_package_names {
             Some(f) => f,
             None => {
                 return Ok(());
@@ -119,7 +119,11 @@ impl Platform for NodePlatform {
         let mut tasks = BTreeMap::new();
 
         if !project_config.language.is_node_platform()
-            || !workspace_config.node.infer_tasks_from_scripts
+            || !workspace_config
+                .node
+                .as_ref()
+                .unwrap()
+                .infer_tasks_from_scripts
         {
             return Ok(tasks);
         }

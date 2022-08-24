@@ -74,7 +74,9 @@ impl Toolchain {
             node: None,
         };
 
-        toolchain.node = Some(NodeTool::new(&toolchain, &workspace_config.node)?);
+        if let Some(node_config) = &workspace_config.node {
+            toolchain.node = Some(NodeTool::new(&toolchain, node_config)?);
+        }
 
         Ok(toolchain)
     }

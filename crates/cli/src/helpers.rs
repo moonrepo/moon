@@ -17,9 +17,11 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
         .projects
         .register_platform(Box::new(SystemPlatform::default()))?;
 
-    workspace
-        .projects
-        .register_platform(Box::new(NodePlatform::default()))?;
+    if workspace.config.node.is_some() {
+        workspace
+            .projects
+            .register_platform(Box::new(NodePlatform::default()))?;
+    }
 
     Ok(workspace)
 }

@@ -1,5 +1,5 @@
 use moon_action::{Action, ActionContext, ActionStatus};
-use moon_config::NodePackageManager;
+use moon_config::{NodeConfig, NodePackageManager};
 use moon_error::map_io_to_fs_error;
 use moon_lang::has_vendor_installed_dependencies;
 use moon_lang_node::{package::PackageJson, NODE, NPM};
@@ -13,12 +13,16 @@ use tokio::sync::RwLock;
 const LOG_TARGET: &str = "moon:platform-node:install-deps";
 
 /// Add `packageManager` to root `package.json`.
-fn add_package_manager(workspace: &Workspace, package_json: &mut PackageJson) -> bool {
-    let manager_version = match workspace.config.node.package_manager {
-        NodePackageManager::Npm => format!("npm@{}", workspace.config.node.npm.version),
+fn add_package_manager(
+    workspace: &Workspace,
+    node_config: &NodeConfig,
+    package_json: &mut PackageJson,
+) -> bool {
+    let manager_version = match node_config.package_manager {
+        NodePackageManager::Npm => format!("npm@{}", node_config.npm.version),
         NodePackageManager::Pnpm => format!(
             "pnpm@{}",
-            match &workspace.config.node.pnpm {
+            match &node_config.pnpm {
                 Some(pnpm) => pnpm.version.clone(),
                 None => {
                     return false;
@@ -27,7 +31,7 @@ fn add_package_manager(workspace: &Workspace, package_json: &mut PackageJson) ->
         ),
         NodePackageManager::Yarn => format!(
             "yarn@{}",
-            match &workspace.config.node.yarn {
+            match &node_config.yarn {
                 Some(yarn) => yarn.version.clone(),
                 None => {
                     return false;
@@ -53,10 +57,8 @@ fn add_package_manager(workspace: &Workspace, package_json: &mut PackageJson) ->
 }
 
 /// Add `engines` constraint to root `package.json`.
-fn add_engines_constraint(workspace: &Workspace, package_json: &mut PackageJson) -> bool {
-    if workspace.config.node.add_engines_constraint
-        && package_json.add_engine("node", &workspace.config.node.version)
-    {
+fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
+    if node_config.add_engines_constraint && package_json.add_engine("node", &node_config.version) {
         debug!(
             target: LOG_TARGET,
             "Adding engines version constraint to root {}",
@@ -69,19 +71,24 @@ fn add_engines_constraint(workspace: &Workspace, package_json: &mut PackageJson)
     false
 }
 
+#[track_caller]
 pub async fn install_deps(
     _action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
-    let node_config = &workspace.config.node;
+    let node_config = workspace
+        .config
+        .node
+        .as_ref()
+        .expect("node must be configured");
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
     // Sync values to root `package.json`
     PackageJson::sync(&workspace.root, |package_json| {
-        add_package_manager(&workspace, package_json);
-        add_engines_constraint(&workspace, package_json);
+        add_package_manager(&workspace, node_config, package_json);
+        add_engines_constraint(node_config, package_json);
 
         Ok(())
     })?;
@@ -150,7 +157,7 @@ pub async fn install_deps(
             return Ok(ActionStatus::Skipped);
         }
 
-        let install_command = match workspace.config.node.package_manager {
+        let install_command = match node_config.package_manager {
             NodePackageManager::Npm => "npm install",
             NodePackageManager::Pnpm => "pnpm install",
             NodePackageManager::Yarn => "yarn install",

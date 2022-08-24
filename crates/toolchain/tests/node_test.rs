@@ -1,4 +1,4 @@
-use moon_config::WorkspaceConfig;
+use moon_config::{NodeConfig, WorkspaceConfig};
 use moon_lang_node::node;
 use moon_toolchain::{Downloadable, Executable, Installable, Toolchain};
 use predicates::prelude::*;
@@ -8,9 +8,13 @@ use std::path::PathBuf;
 async fn create_node_tool() -> (Toolchain, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
-    let mut config = WorkspaceConfig::default();
-
-    config.node.version = String::from("1.0.0");
+    let config = WorkspaceConfig {
+        node: Some(NodeConfig {
+            version: String::from("1.0.0"),
+            ..NodeConfig::default()
+        }),
+        ..WorkspaceConfig::default()
+    };
 
     let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
         .await

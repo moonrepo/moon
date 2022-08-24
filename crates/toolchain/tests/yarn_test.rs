@@ -1,4 +1,4 @@
-use moon_config::{NodePackageManager, WorkspaceConfig, YarnConfig};
+use moon_config::{NodeConfig, NodePackageManager, WorkspaceConfig, YarnConfig};
 use moon_lang_node::node;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
@@ -8,13 +8,17 @@ use std::path::PathBuf;
 async fn create_yarn_tool() -> (Toolchain, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
-    let mut config = WorkspaceConfig::default();
-
-    config.node.version = String::from("1.0.0");
-    config.node.package_manager = NodePackageManager::Yarn;
-    config.node.yarn = Some(YarnConfig {
-        version: String::from("6.0.0"),
-    });
+    let config = WorkspaceConfig {
+        node: Some(NodeConfig {
+            version: String::from("1.0.0"),
+            package_manager: NodePackageManager::Yarn,
+            yarn: Some(YarnConfig {
+                version: String::from("6.0.0"),
+            }),
+            ..NodeConfig::default()
+        }),
+        ..WorkspaceConfig::default()
+    };
 
     let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
         .await

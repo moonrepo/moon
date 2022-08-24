@@ -34,7 +34,7 @@ fn create_shasums(hash: &str) -> String {
 #[tokio::test]
 async fn generates_paths() {
     let (toolchain, temp_dir) = create_node_tool().await;
-    let node = toolchain.get_node();
+    let node = toolchain.get_node().unwrap();
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")
@@ -75,7 +75,7 @@ mod download {
     #[tokio::test]
     async fn is_downloaded_checks() {
         let (toolchain, temp_dir) = create_node_tool().await;
-        let node = toolchain.get_node();
+        let node = toolchain.get_node().unwrap();
 
         assert!(!node.is_downloaded().await.unwrap());
 
@@ -94,7 +94,7 @@ mod download {
     #[tokio::test]
     async fn downloads_to_temp_dir() {
         let (toolchain, temp_dir) = create_node_tool().await;
-        let node = toolchain.get_node();
+        let node = toolchain.get_node().unwrap();
 
         assert!(!node.get_download_path().unwrap().exists());
 
@@ -127,7 +127,7 @@ mod download {
     #[should_panic(expected = "InvalidShasum")]
     async fn fails_on_invalid_shasum() {
         let (toolchain, temp_dir) = create_node_tool().await;
-        let node = toolchain.get_node();
+        let node = toolchain.get_node().unwrap();
 
         let archive = mock(
             "GET",

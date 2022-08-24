@@ -156,11 +156,17 @@ pub async fn create_target_command(
     Ok(command)
 }
 
+#[track_caller]
 pub fn create_target_hasher(
     workspace: &Workspace,
     project: &Project,
 ) -> Result<NodeTargetHasher, WorkspaceError> {
-    let mut hasher = NodeTargetHasher::new(workspace.config.node.version.clone());
+    let node_config = workspace
+        .config
+        .node
+        .as_ref()
+        .expect("node must be configured");
+    let mut hasher = NodeTargetHasher::new(node_config.version.clone());
 
     if let Some(root_package) = PackageJson::read(&workspace.root)? {
         hasher.hash_package_json(&root_package);

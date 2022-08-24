@@ -70,6 +70,7 @@ fn sync_root_tsconfig(
     false
 }
 
+#[track_caller]
 pub async fn sync_project(
     _action: &mut Action,
     _context: &ActionContext,
@@ -78,7 +79,11 @@ pub async fn sync_project(
 ) -> Result<ActionStatus, WorkspaceError> {
     let mut mutated_files = false;
     let workspace = workspace.read().await;
-    let node_config = &workspace.config.node;
+    let node_config = workspace
+        .config
+        .node
+        .as_ref()
+        .expect("node must be configured");
     let project = workspace.projects.load(project_id)?;
     let is_project_typescript_enabled = project.config.workspace.typescript;
 

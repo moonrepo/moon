@@ -34,12 +34,18 @@ async fn run_action(
                 .map_err(ActionRunnerError::Workspace),
             _ => Ok(ActionStatus::Passed),
         },
+
         ActionNode::RunTarget(target_id) => {
             actions::run_target(action, context, workspace, target_id).await
         }
-        ActionNode::SetupToolchain(lang) => {
-            actions::setup_toolchain(action, context, workspace).await
-        }
+
+        ActionNode::SetupToolchain(lang) => match lang {
+            SupportedLanguage::Node => node_actions::setup_toolchain(action, context, workspace)
+                .await
+                .map_err(ActionRunnerError::Workspace),
+            _ => Ok(ActionStatus::Passed),
+        },
+
         ActionNode::SyncProject(lang, project_id) => match lang {
             SupportedLanguage::Node => {
                 node_actions::sync_project(action, context, workspace, project_id)

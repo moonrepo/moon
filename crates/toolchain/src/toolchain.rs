@@ -31,6 +31,9 @@ pub struct Toolchain {
     /// This is typically ~/.moon.
     pub dir: PathBuf,
 
+    /// Node.js!
+    pub node: Option<NodeTool>,
+
     /// The directory where temporary files are stored.
     /// This is typically ~/.moon/temp.
     pub temp_dir: PathBuf,
@@ -41,9 +44,6 @@ pub struct Toolchain {
 
     /// The workspace root directory.
     pub workspace_root: PathBuf,
-
-    // Tool instances are private, as we want to lazy load them.
-    node: Option<NodeTool>,
 }
 
 impl Toolchain {
@@ -95,19 +95,19 @@ impl Toolchain {
 
     /// Download and install all tools into the toolchain.
     /// Return a count of how many tools were installed.
-    pub async fn setup(&mut self, check_versions: bool) -> Result<u8, ToolchainError> {
-        debug!(target: LOG_TARGET, "Downloading and installing tools",);
+    // pub async fn setup(&mut self, check_versions: bool) -> Result<u8, ToolchainError> {
+    //     debug!(target: LOG_TARGET, "Downloading and installing tools",);
 
-        let mut installed = 0;
+    //     let mut installed = 0;
 
-        if self.node.is_some() {
-            let mut node = self.node.take().unwrap();
-            installed += node.run_setup(self, check_versions).await?;
-            self.node = Some(node);
-        }
+    //     if self.node.is_some() {
+    //         let mut node = self.node.take().unwrap();
+    //         installed += node.run_setup(self, check_versions).await?;
+    //         self.node = Some(node);
+    //     }
 
-        Ok(installed)
-    }
+    //     Ok(installed)
+    // }
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&mut self) -> Result<(), ToolchainError> {

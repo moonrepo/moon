@@ -125,7 +125,11 @@ impl Toolchain {
     }
 
     /// Return the Node.js tool.
-    pub fn get_node(&self) -> &NodeTool {
-        self.node.as_ref().unwrap()
+    pub fn get_node(&self) -> Result<&NodeTool, ToolchainError> {
+        if self.node.is_none() {
+            return Err(ToolchainError::RequiresNode);
+        }
+
+        Ok(self.node.as_ref().unwrap())
     }
 }

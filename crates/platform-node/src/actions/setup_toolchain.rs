@@ -5,7 +5,7 @@ use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:platform-node:install-deps";
+const LOG_TARGET: &str = "moon:platform-node:setup-toolchain";
 const SECOND: u128 = 1000;
 const MINUTE: u128 = SECOND * 60;
 const HOUR: u128 = MINUTE * 60;

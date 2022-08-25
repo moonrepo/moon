@@ -245,8 +245,13 @@ pub async fn remove_dir_stale_contents<P: AsRef<Path>>(
             if let Ok(metadata) = entry.metadata().await {
                 bytes = metadata.len();
 
-                // Not stale yet
-                if metadata.created()? > threshold {
+                if let Ok(filetime) = metadata.accessed().or_else(|_| metadata.created()) {
+                    if filetime > threshold {
+                        // Not stale yet
+                        continue;
+                    }
+                } else {
+                    // Not supported in environment
                     continue;
                 }
             }

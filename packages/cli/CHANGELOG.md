@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed `init` templates being populated with the wrong default values.
+- Fixed the "creation time is not available for the filesystem" error when running in Docker.
 
 ## 0.12.0
 

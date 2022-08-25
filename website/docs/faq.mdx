@@ -46,13 +46,14 @@ everything in sync, and modifying project/language configuration to operate effe
 
 ## Action runner
 
-### What is `SetupToolchain`, `InstallNodeDeps`, `RunTarget`, etc?
+### What is `SetupNodeToolchain`, `InstallNodeDeps`, `RunTarget`, etc?
 
 When we run a [task](./concepts/task), we generate a dependency graph of nodes, known as actions.
 These labels are the actions in the graph, and break down as follows:
 
-- `SetupToolchain` - Sets up the [toolchain](./concepts/toolchain). Required for all other actions,
-  so acts as the root node.
+- `SetupNodeToolchain` - Sets up the Node.js [toolchain](./concepts/toolchain). Required for all
+  other actions, so acts like a root node.
+- `SetupSystemToolchain` - Currently a no operation.
 - `InstallNodeDeps` - Installs Node.js dependencies (`node_modules`) in the workspace root.
 - `InstallSystemDeps` - Currently a no operation.
 - `SyncNodeProject` - When a project's [`language`](./config/project#language) is "javascript" or

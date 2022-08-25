@@ -1,0 +1,156 @@
+/* eslint-disable promise/prefer-await-to-then */
+
+import React, { ChangeEvent, useCallback, useState } from 'react';
+import cx from 'clsx';
+import Text from '../../../ui/typography/Text';
+
+interface NextButtonProps {
+	disabled?: boolean;
+	label?: string;
+	onClick: () => void;
+}
+
+function NextButton({ disabled, label = 'Next', onClick }: NextButtonProps) {
+	return (
+		<button
+			type="button"
+			className={cx(
+				'w-1/4 border border-transparent rounded-md px-2 py-1 flex items-center justify-center text-base font-bold text-white bg-blurple-400 dark:bg-purple-600',
+				disabled
+					? 'opacity-60'
+					: 'hover:text-white hover:bg-blurple-500 dark:hover:bg-purple-500 cursor-pointer',
+			)}
+			disabled={disabled}
+			onClick={onClick}
+		>
+			{label}
+		</button>
+	);
+}
+
+export default function ContactForm() {
+	const [step, setStep] = useState(1);
+	const [subject, setSubject] = useState('Consultation');
+	const [email, setEmail] = useState('');
+	const [message, setMessage] = useState('');
+	const [sending, setSending] = useState(false);
+	const [failed, setFailed] = useState(false);
+
+	const handleNext = useCallback(() => {
+		setStep((prev) => prev + 1);
+	}, []);
+
+	const handleSubject = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+		setSubject(event.target.value);
+	}, []);
+
+	const handleEmail = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+		setEmail(event.target.value);
+	}, []);
+
+	const handleMessage = useCallback((event: ChangeEvent<HTMLTextAreaElement>) => {
+		setMessage(event.target.value);
+	}, []);
+
+	const handleSubmit = useCallback(() => {
+		setSending(true);
+
+		void fetch('https://formspree.io/f/xnqrnvgw', {
+			body: JSON.stringify({ email, message, subject }),
+			headers: {
+				Accept: 'application/json',
+			},
+			method: 'post',
+		})
+			.then((res) => {
+				setFailed(!res.ok);
+			})
+			.catch(() => {
+				setFailed(true);
+			})
+			.finally(() => {
+				setSending(false);
+				handleNext();
+			});
+	}, [email, message, subject, handleNext]);
+
+	const isEmailValid = !!email.match(/^.+@.+$/);
+	const isMessageValid = message.length > 10;
+
+	return (
+		<div className="mt-2">
+			{step === 1 && (
+				<div className="flex justify-between gap-x-1">
+					<div className="w-3/4">
+						<label htmlFor="subject" className="sr-only">
+							Subject
+						</label>
+
+						<select
+							id="subject"
+							name="subject"
+							required
+							className="outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans"
+							onChange={handleSubject}
+						>
+							<option value="Consultation">Consultation</option>
+							<option value="Partnership">Partnership</option>
+						</select>
+					</div>
+
+					<NextButton onClick={handleNext} />
+				</div>
+			)}
+
+			{step === 2 && (
+				<div className="flex justify-between gap-x-1">
+					<div className="w-3/4">
+						<label htmlFor="email" className="sr-only">
+							Email address
+						</label>
+
+						<input
+							type="email"
+							name="email"
+							id="email"
+							autoComplete="email"
+							required
+							className="appearance-none outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans"
+							placeholder="Email address"
+							onChange={handleEmail}
+						/>
+					</div>
+
+					<NextButton disabled={!isEmailValid} onClick={handleNext} />
+				</div>
+			)}
+
+			{step === 3 && (
+				<div>
+					<textarea
+						id="message"
+						name="message"
+						required
+						className="appearance-none outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 font-sans"
+						placeholder="Message..."
+						onChange={handleMessage}
+					/>
+
+					<div className="flex justify-end">
+						<NextButton disabled={!isMessageValid || sending} label="Send" onClick={handleSubmit} />
+					</div>
+				</div>
+			)}
+
+			{step === 4 && (
+				<div>
+					<Text>
+						{failed
+							? 'Failed to send message. Please try again.'
+							: "Thanks for contacting us! We'll get back to you as soon as possible."}
+					</Text>
+				</div>
+			)}
+		</div>
+	);
+}

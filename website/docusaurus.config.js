@@ -172,7 +172,7 @@ const config = {
 								to: 'https://github.com/moonrepo/moon/discussions',
 							},
 							{
-								label: 'Tooling configurations',
+								label: 'Configurations',
 								href: 'https://github.com/moonrepo/dev',
 							},
 						],

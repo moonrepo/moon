@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `init` templates being populated with the wrong default values.
+
 ## 0.12.0
 
 #### 💥 Breaking

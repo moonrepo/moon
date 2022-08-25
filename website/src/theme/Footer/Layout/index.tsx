@@ -15,7 +15,7 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 
 			<div className="max-w-7xl mx-auto py-3 px-2 sm:px-3 md:py-4 md:px-4 lg:px-6">
 				<div className="lg:grid lg:grid-cols-5 lg:gap-3">
-					{links}
+					<div className="grid grid-cols-3 gap-3 lg:col-span-3">{links}</div>
 
 					<div className="mt-4 lg:mt-0 col-span-2">
 						<Heading level={6} transform="uppercase">

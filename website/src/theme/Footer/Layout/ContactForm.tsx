@@ -30,7 +30,7 @@ function NextButton({ disabled, label = 'Next', onClick }: NextButtonProps) {
 
 export default function ContactForm() {
 	const [step, setStep] = useState(1);
-	const [subject, setSubject] = useState('consultation');
+	const [subject, setSubject] = useState('Consultation');
 	const [email, setEmail] = useState('');
 	const [message, setMessage] = useState('');
 	const [sending, setSending] = useState(false);
@@ -93,8 +93,8 @@ export default function ContactForm() {
 							className="outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans"
 							onChange={handleSubject}
 						>
-							<option value="consultation">Consultation</option>
-							<option value="partnership">Partnership</option>
+							<option value="Consultation">Consultation</option>
+							<option value="Partnership">Partnership</option>
 						</select>
 					</div>
 

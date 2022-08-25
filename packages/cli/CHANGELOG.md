@@ -10,8 +10,8 @@
 
 #### ⚙️ Internal
 
-- The `SetupToolchain` action has been updated to be language/platform aware, and now supports
-  `SetupNodeToolchain` and `SetupSystemToolchain`.
+- The `SetupToolchain` action has been updated to be language/platform aware, and as such, was split
+  into `SetupNodeToolchain` and `SetupSystemToolchain`.
 
 ## 0.12.0
 

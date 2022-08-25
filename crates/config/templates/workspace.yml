@@ -37,14 +37,17 @@ node:
   # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true
 
+  # Use the `package.json` name as an alias for the respective moon project.
+  # Do note that this requires eager loading all `package.json`s in the repo.
+  aliasPackageNames: false
+
   # Dedupe dependencies after the lockfile has changed.
   dedupeOnLockfileChange: true
 
   # Infer and automatically create moon tasks from `package.json` scripts, per project.
-  # BEWARE that this may reduce performance, as `package.json`s will need to be
-  # eager loaded during project graph creation. Furthermore, tasks and scripts are
-  # not a 1:1 in functionality, so please refer to the documentation.
-  inferTasksFromScripts: true
+  # Do note that this requires eager loading all `package.json`s in the repo.
+  # BEWARE: Tasks and scripts are not 1:1 in functionality, so please refer to the documentation.
+  inferTasksFromScripts: false
 
   # Sync a project's `dependsOn` as dependencies within the project's `package.json`.
   syncProjectWorkspaceDependencies: true

@@ -5,8 +5,8 @@ use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_cache::RunReport;
+use moon_contract::SupportedPlatform;
 use moon_error::MoonError;
-use moon_lang::SupportedLanguage;
 use moon_logger::{color, debug, error, trace};
 use moon_platform_node::actions as node_actions;
 use moon_terminal::{replace_style_tokens, ExtendedTerm};
@@ -28,8 +28,8 @@ async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<(), ActionRunnerError> {
     let result = match node {
-        ActionNode::InstallDeps(lang) => match lang {
-            SupportedLanguage::Node => node_actions::install_deps(action, context, workspace)
+        ActionNode::InstallDeps(platform) => match platform {
+            SupportedPlatform::Node => node_actions::install_deps(action, context, workspace)
                 .await
                 .map_err(ActionRunnerError::Workspace),
             _ => Ok(ActionStatus::Passed),
@@ -39,15 +39,15 @@ async fn run_action(
             actions::run_target(action, context, workspace, target_id).await
         }
 
-        ActionNode::SetupToolchain(lang) => match lang {
-            SupportedLanguage::Node => node_actions::setup_toolchain(action, context, workspace)
+        ActionNode::SetupToolchain(platform) => match platform {
+            SupportedPlatform::Node => node_actions::setup_toolchain(action, context, workspace)
                 .await
                 .map_err(ActionRunnerError::Workspace),
             _ => Ok(ActionStatus::Passed),
         },
 
-        ActionNode::SyncProject(lang, project_id) => match lang {
-            SupportedLanguage::Node => {
+        ActionNode::SyncProject(platform, project_id) => match platform {
+            SupportedPlatform::Node => {
                 node_actions::sync_project(action, context, workspace, project_id)
                     .await
                     .map_err(ActionRunnerError::Workspace)

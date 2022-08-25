@@ -1,14 +1,14 @@
-use moon_lang::SupportedLanguage;
+use moon_contract::SupportedPlatform;
 use moon_project::ProjectID;
 use moon_task::TargetID;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Eq)]
 pub enum ActionNode {
-    InstallDeps(SupportedLanguage),
+    InstallDeps(SupportedPlatform),
     RunTarget(TargetID),
-    SetupToolchain(SupportedLanguage),
-    SyncProject(SupportedLanguage, ProjectID),
+    SetupToolchain(SupportedPlatform),
+    SyncProject(SupportedPlatform, ProjectID),
 }
 
 impl ActionNode {

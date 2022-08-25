@@ -1,18 +1,19 @@
 ---
 source: crates/action-runner/tests/dep_graph_test.rs
-assertion_line: 401
+assertion_line: 412
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label="SetupToolchain" style=filled, shape=oval, fillcolor=black, fontcolor=white]
+    0 [ label="SetupNodeToolchain" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 [ label="SyncNodeProject(advanced)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     2 [ label="SyncNodeProject(basic)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    3 [ label="SyncSystemProject(noConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    4 [ label="SyncSystemProject(emptyConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="SetupSystemToolchain" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="SyncSystemProject(noConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    5 [ label="SyncSystemProject(emptyConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 -> 0 [ arrowhead=box, arrowtail=box]
     2 -> 0 [ arrowhead=box, arrowtail=box]
-    3 -> 0 [ arrowhead=box, arrowtail=box]
-    2 -> 3 [ arrowhead=box, arrowtail=box]
-    4 -> 0 [ arrowhead=box, arrowtail=box]
+    4 -> 3 [ arrowhead=box, arrowtail=box]
+    2 -> 4 [ arrowhead=box, arrowtail=box]
+    5 -> 3 [ arrowhead=box, arrowtail=box]
 }
 

@@ -5,12 +5,14 @@ use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
-use moon_lang_node::{node, NPM};
+use moon_error::MoonError;
+use moon_lang_node::{node, npm, NPM};
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
-use moon_utils::process::Command;
+use moon_utils::process::{output_to_string, Command};
+use std::collections::HashMap;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct NpmTool {
     bin_path: PathBuf,
@@ -250,6 +252,21 @@ impl PackageManager<NodeTool> for NpmTool {
 
     fn get_manifest_filename(&self) -> String {
         String::from(NPM.manifest_filename)
+    }
+
+    async fn get_resolved_depenencies(
+        &self,
+        path: &Path,
+    ) -> Result<HashMap<String, String>, ToolchainError> {
+        let output = self
+            .create_command()
+            .args(["list", "--depth", "0", "--json"])
+            .cwd(path)
+            .exec_capture_output()
+            .await?;
+
+        Ok(npm::parse_npm_list(output_to_string(&output.stdout))
+            .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)))?)
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {

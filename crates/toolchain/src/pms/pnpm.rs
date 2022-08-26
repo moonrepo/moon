@@ -8,8 +8,9 @@ use moon_config::PnpmConfig;
 use moon_lang_node::{node, PNPM};
 use moon_logger::{color, debug, Logable};
 use moon_utils::is_ci;
+use std::collections::HashMap;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct PnpmTool {
     bin_path: PathBuf,
@@ -177,6 +178,13 @@ impl PackageManager<NodeTool> for PnpmTool {
 
     fn get_manifest_filename(&self) -> String {
         String::from(PNPM.manifest_filename)
+    }
+
+    async fn get_resolved_depenencies(
+        &self,
+        path: &Path,
+    ) -> Result<HashMap<String, String>, ToolchainError> {
+        Ok(HashMap::new())
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {

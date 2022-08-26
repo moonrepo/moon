@@ -24,6 +24,9 @@ pub enum TaskError {
     )]
     NoParentOutput(String, String),
 
+    #[error("Target <target>{0}</target> defines the output <file>{1}</file>, but this output does not exist after being ran.")]
+    MissingOutput(String, String),
+
     #[error(transparent)]
     ArgsParse(#[from] ArgsParseError),
 

@@ -49,3 +49,10 @@ tasks:
       - 'esm'
     options:
       cache: false
+  missingOutput:
+    command: node
+    args: generate.js both
+    inputs:
+      - '*.js'
+    outputs:
+      - 'unknown'

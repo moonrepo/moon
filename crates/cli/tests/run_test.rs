@@ -652,6 +652,20 @@ mod outputs {
     use super::*;
 
     #[tokio::test]
+    async fn errors_if_output_missing() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputs:missingOutput")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("Target outputs:missingOutput defines the output unknown, but this output does not exist after being ran.").eval(&output));
+    }
+
+    #[tokio::test]
     async fn doesnt_cache_if_cache_disabled() {
         let fixture = create_sandbox_with_git("cases");
 

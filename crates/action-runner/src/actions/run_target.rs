@@ -8,8 +8,7 @@ use moon_logger::{color, debug, warn};
 use moon_platform_node::actions as node_actions;
 use moon_platform_system::actions as system_actions;
 use moon_project::Project;
-use moon_task::Target;
-use moon_task::Task;
+use moon_task::{Target, Task, TaskError};
 use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
 use moon_utils::{
@@ -59,14 +58,27 @@ impl<'a> TargetRunner<'a> {
     /// Cache outputs to the `.moon/cache/out` folder and to the cloud,
     /// so that subsequent builds are faster, and any local outputs
     /// can be rehydrated easily.
-    pub async fn cache_outputs(&self) -> Result<(), MoonError> {
+    pub async fn cache_outputs(&self) -> Result<(), ActionRunnerError> {
         let hash = &self.cache.item.hash;
 
-        if !hash.is_empty() && !self.task.outputs.is_empty() {
-            self.workspace
-                .cache
-                .create_hash_archive(hash, &self.project.root, &self.task.outputs)
-                .await?;
+        if !self.task.outputs.is_empty() {
+            // Check that outputs actually exist
+            for (i, output) in self.task.output_paths.iter().enumerate() {
+                if !output.exists() {
+                    return Err(ActionRunnerError::Task(TaskError::MissingOutput(
+                        self.task.target.clone(),
+                        self.task.outputs.get(i).unwrap().to_owned(),
+                    )));
+                }
+            }
+
+            // If so, then cache the archive
+            if !hash.is_empty() {
+                self.workspace
+                    .cache
+                    .create_hash_archive(hash, &self.project.root, &self.task.outputs)
+                    .await?;
+            }
         }
 
         Ok(())
@@ -74,7 +86,7 @@ impl<'a> TargetRunner<'a> {
 
     /// If we are cached (hash match), hydrate the project with the
     /// cached task outputs found in the hashed archive.
-    pub async fn hydrate_outputs(&self) -> Result<(), MoonError> {
+    pub async fn hydrate_outputs(&self) -> Result<(), ActionRunnerError> {
         let hash = &self.cache.item.hash;
 
         if hash.is_empty() {

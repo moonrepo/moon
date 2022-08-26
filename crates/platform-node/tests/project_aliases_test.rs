@@ -17,7 +17,7 @@ async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
             ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
             ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),
         ])),
-        node: node_config,
+        node: Some(node_config),
         ..WorkspaceConfig::default()
     };
 

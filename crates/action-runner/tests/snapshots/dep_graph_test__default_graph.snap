@@ -1,9 +1,8 @@
 ---
 source: crates/action-runner/tests/dep_graph_test.rs
-assertion_line: 78
+assertion_line: 87
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label="SetupToolchain" style=filled, shape=oval, fillcolor=black, fontcolor=white]
 }
 

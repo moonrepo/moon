@@ -1,23 +1,23 @@
-use moon_lang::SupportedLanguage;
+use moon_contract::SupportedPlatform;
 use moon_project::ProjectID;
 use moon_task::TargetID;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Eq)]
 pub enum ActionNode {
-    InstallDeps(SupportedLanguage),
+    InstallDeps(SupportedPlatform),
     RunTarget(TargetID),
-    SetupToolchain,
-    SyncProject(SupportedLanguage, ProjectID),
+    SetupToolchain(SupportedPlatform),
+    SyncProject(SupportedPlatform, ProjectID),
 }
 
 impl ActionNode {
     pub fn label(&self) -> String {
         match self {
-            ActionNode::InstallDeps(lang) => format!("Install{}Deps", lang),
+            ActionNode::InstallDeps(platform) => format!("Install{}Deps", platform),
             ActionNode::RunTarget(id) => format!("RunTarget({})", id),
-            ActionNode::SetupToolchain => "SetupToolchain".into(),
-            ActionNode::SyncProject(lang, id) => format!("Sync{}Project({})", lang, id),
+            ActionNode::SetupToolchain(platform) => format!("Setup{}Toolchain", platform),
+            ActionNode::SyncProject(platform, id) => format!("Sync{}Project({})", platform, id),
         }
     }
 }

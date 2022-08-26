@@ -88,8 +88,7 @@ pub async fn create_target_command(
     project: &Project,
     task: &Task,
 ) -> Result<Command, WorkspaceError> {
-    let toolchain = &workspace.toolchain;
-    let node = toolchain.get_node();
+    let node = workspace.toolchain.get_node()?;
     let mut cmd = node.get_bin_path().clone();
     let mut args = vec![];
 
@@ -160,7 +159,8 @@ pub fn create_target_hasher(
     workspace: &Workspace,
     project: &Project,
 ) -> Result<NodeTargetHasher, WorkspaceError> {
-    let mut hasher = NodeTargetHasher::new(workspace.config.node.version.clone());
+    let node = workspace.toolchain.get_node()?;
+    let mut hasher = NodeTargetHasher::new(node.config.version.clone());
 
     if let Some(root_package) = PackageJson::read(&workspace.root)? {
         hasher.hash_package_json(&root_package);

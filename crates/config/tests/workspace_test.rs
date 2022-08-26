@@ -29,7 +29,7 @@ fn loads_defaults() {
             WorkspaceConfig {
                 action_runner: ActionRunnerConfig::default(),
                 extends: None,
-                node: NodeConfig::default(),
+                node: None,
                 projects: WorkspaceProjects::default(),
                 typescript: None,
                 vcs: VcsConfig::default(),
@@ -60,7 +60,7 @@ mod extends {
                     log_running_command: false,
                     ..ActionRunnerConfig::default()
                 },
-                node: NodeConfig {
+                node: Some(NodeConfig {
                     version: "4.5.6".into(),
                     add_engines_constraint: true,
                     dedupe_on_lockfile_change: false,
@@ -69,7 +69,7 @@ mod extends {
                         version: "3.0.0".into()
                     }),
                     ..NodeConfig::default()
-                },
+                }),
                 vcs: VcsConfig {
                     manager: VcsManager::Svn,
                     ..VcsConfig::default()
@@ -201,13 +201,16 @@ node:
             let config: WorkspaceConfig = super::load_jailed_config(jail.directory())?;
 
             // Inherits from extended file
-            assert!(!config.node.add_engines_constraint);
+            assert!(!config.node.as_ref().unwrap().add_engines_constraint);
             assert!(!config.typescript.unwrap().sync_project_references);
             assert_eq!(config.vcs.manager, VcsManager::Svn);
 
             // Ensure we can override the extended config
-            assert_eq!(config.node.version, "18.0.0".to_owned());
-            assert_eq!(config.node.npm.version, "8.0.0".to_owned());
+            assert_eq!(config.node.as_ref().unwrap().version, "18.0.0".to_owned());
+            assert_eq!(
+                config.node.as_ref().unwrap().npm.version,
+                "8.0.0".to_owned()
+            );
 
             Ok(())
         });
@@ -231,13 +234,16 @@ node:
             let config: WorkspaceConfig = super::load_jailed_config(jail.directory())?;
 
             // Inherits from extended file
-            assert!(!config.node.add_engines_constraint);
+            assert!(!config.node.as_ref().unwrap().add_engines_constraint);
             assert!(!config.typescript.unwrap().sync_project_references);
             assert_eq!(config.vcs.manager, VcsManager::Svn);
 
             // Ensure we can override the extended config
-            assert_eq!(config.node.version, "18.0.0".to_owned());
-            assert_eq!(config.node.npm.version, "8.0.0".to_owned());
+            assert_eq!(config.node.as_ref().unwrap().version, "18.0.0".to_owned());
+            assert_eq!(
+                config.node.as_ref().unwrap().npm.version,
+                "8.0.0".to_owned()
+            );
 
             Ok(())
         });
@@ -281,10 +287,10 @@ node:
                 WorkspaceConfig {
                     action_runner: ActionRunnerConfig::default(),
                     extends: None,
-                    node: NodeConfig {
+                    node: Some(NodeConfig {
                         package_manager: NodePackageManager::Yarn,
                         ..NodeConfig::default()
-                    },
+                    }),
                     projects: WorkspaceProjects::default(),
                     typescript: None,
                     vcs: VcsConfig::default(),
@@ -430,7 +436,7 @@ projects: {}
 
             let config = super::load_jailed_config(jail.directory())?;
 
-            assert_eq!(config.node.version, String::from("4.5.6"));
+            assert_eq!(config.node.unwrap().version, String::from("4.5.6"));
 
             Ok(())
         });
@@ -500,7 +506,7 @@ projects: {}
 
             let config = super::load_jailed_config(jail.directory())?;
 
-            assert_eq!(config.node.npm.version, String::from("4.5.6"));
+            assert_eq!(config.node.unwrap().npm.version, String::from("4.5.6"));
 
             Ok(())
         });
@@ -571,7 +577,10 @@ projects: {}
 
             let config = super::load_jailed_config(jail.directory())?;
 
-            assert_eq!(config.node.pnpm.unwrap().version, String::from("4.5.6"));
+            assert_eq!(
+                config.node.unwrap().pnpm.unwrap().version,
+                String::from("4.5.6")
+            );
 
             Ok(())
         });
@@ -642,7 +651,10 @@ projects: {}
 
             let config = super::load_jailed_config(jail.directory())?;
 
-            assert_eq!(config.node.yarn.unwrap().version, String::from("4.5.6"));
+            assert_eq!(
+                config.node.unwrap().yarn.unwrap().version,
+                String::from("4.5.6")
+            );
 
             Ok(())
         });
@@ -774,7 +786,7 @@ vcs:
                 WorkspaceConfig {
                     action_runner: ActionRunnerConfig::default(),
                     extends: None,
-                    node: NodeConfig::default(),
+                    node: None, // NodeConfig::default(),
                     projects: WorkspaceProjects::default(),
                     typescript: None,
                     vcs: VcsConfig {

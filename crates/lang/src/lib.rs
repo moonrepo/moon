@@ -2,7 +2,6 @@ mod config;
 mod errors;
 
 pub use errors::LangError;
-use std::fmt;
 use std::fs;
 use std::path::Path;
 
@@ -85,28 +84,4 @@ pub fn is_using_version_manager<T: AsRef<Path>>(base_dir: T, vm: &VersionManager
     }
 
     false
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub enum SupportedLanguage {
-    Node,
-    System,
-}
-
-impl SupportedLanguage {
-    pub fn label(&self) -> String {
-        match self {
-            SupportedLanguage::Node => "Node.js".into(),
-            SupportedLanguage::System => "system".into(),
-        }
-    }
-}
-
-impl fmt::Display for SupportedLanguage {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            SupportedLanguage::Node => write!(f, "Node"),
-            SupportedLanguage::System => write!(f, "System"),
-        }
-    }
 }

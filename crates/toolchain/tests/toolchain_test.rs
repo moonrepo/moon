@@ -1,13 +1,17 @@
-use moon_config::WorkspaceConfig;
+use moon_config::{NodeConfig, WorkspaceConfig};
 use moon_toolchain::Toolchain;
 use predicates::prelude::*;
 use std::env;
 use std::path::{Path, PathBuf};
 
 async fn create_toolchain(base_dir: &Path) -> Toolchain {
-    let mut config = WorkspaceConfig::default();
-
-    config.node.version = String::from("1.0.0");
+    let config = WorkspaceConfig {
+        node: Some(NodeConfig {
+            version: String::from("1.0.0"),
+            ..NodeConfig::default()
+        }),
+        ..WorkspaceConfig::default()
+    };
 
     Toolchain::create_from_dir(base_dir, &env::temp_dir(), &config)
         .await

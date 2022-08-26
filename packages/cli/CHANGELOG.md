@@ -8,6 +8,11 @@
   support (in preparation for future languages support). This shouldn't affect you if the setting is
   already explicitly defined.
 
+#### 🚀 Updates
+
+- Updated the action runner to fail when an output is defined and the output does not exist after
+  being ran.
+
 #### ⚙️ Internal
 
 - The `SetupToolchain` action has been updated to be language/platform aware, and as such, was split

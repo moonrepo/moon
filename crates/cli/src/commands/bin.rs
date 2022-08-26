@@ -38,13 +38,13 @@ pub async fn bin(tool_type: &BinTools) -> Result<(), Box<dyn std::error::Error>>
 
     match tool_type {
         BinTools::Node => {
-            let node = toolchain.get_node();
+            let node = toolchain.get_node()?;
 
             is_installed(node, toolchain).await;
             log_bin_path(node);
         }
         BinTools::Npm | BinTools::Pnpm | BinTools::Yarn => {
-            let node = toolchain.get_node();
+            let node = toolchain.get_node()?;
 
             match tool_type {
                 BinTools::Pnpm => match node.get_pnpm() {

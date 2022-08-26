@@ -78,7 +78,7 @@ pub async fn sync_project(
 ) -> Result<ActionStatus, WorkspaceError> {
     let mut mutated_files = false;
     let workspace = workspace.read().await;
-    let node_config = &workspace.config.node;
+    let node = workspace.toolchain.get_node()?;
     let project = workspace.projects.load(project_id)?;
     let is_project_typescript_enabled = project.config.workspace.typescript;
 
@@ -98,8 +98,8 @@ pub async fn sync_project(
         // Update dependencies within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
         // and this `package.json` has not already declared the dep.
-        if node_config.sync_project_workspace_dependencies {
-            let format = &node_config.dependency_version_format;
+        if node.config.sync_project_workspace_dependencies {
+            let format = &node.config.dependency_version_format;
 
             if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
                 if let Some(dep_package_name) = &dep_package_json.name {

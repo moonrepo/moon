@@ -69,7 +69,7 @@ pub struct WorkspaceConfig {
     pub extends: Option<String>,
 
     #[validate]
-    pub node: NodeConfig,
+    pub node: Option<NodeConfig>,
 
     #[validate(custom = "validate_projects")]
     pub projects: WorkspaceProjects,
@@ -102,24 +102,26 @@ impl WorkspaceConfig {
         let mut config = WorkspaceConfig::load_config(figment.select(&profile_name))?;
         config.extends = None;
 
-        // Versions from env vars should take precedence
-        if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
-            config.node.version = node_version;
-        }
-
-        if let Ok(npm_version) = env::var("MOON_NPM_VERSION") {
-            config.node.npm.version = npm_version;
-        }
-
-        if let Ok(pnpm_version) = env::var("MOON_PNPM_VERSION") {
-            if let Some(pnpm_config) = &mut config.node.pnpm {
-                pnpm_config.version = pnpm_version;
+        if let Some(node_config) = &mut config.node {
+            // Versions from env vars should take precedence
+            if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
+                node_config.version = node_version;
             }
-        }
 
-        if let Ok(yarn_version) = env::var("MOON_YARN_VERSION") {
-            if let Some(yarn_config) = &mut config.node.yarn {
-                yarn_config.version = yarn_version;
+            if let Ok(npm_version) = env::var("MOON_NPM_VERSION") {
+                node_config.npm.version = npm_version;
+            }
+
+            if let Ok(pnpm_version) = env::var("MOON_PNPM_VERSION") {
+                if let Some(pnpm_config) = &mut node_config.pnpm {
+                    pnpm_config.version = pnpm_version;
+                }
+            }
+
+            if let Ok(yarn_version) = env::var("MOON_YARN_VERSION") {
+                if let Some(yarn_config) = &mut node_config.yarn {
+                    yarn_config.version = yarn_version;
+                }
             }
         }
 

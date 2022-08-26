@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- The `node` setting in `.moon/workspace.yml` is now optional, allowing repos to opt-out of Node.js
+  support (in preparation for future languages support). This shouldn't affect you if the setting is
+  already explicitly defined.
+
+#### ⚙️ Internal
+
+- The `SetupToolchain` action has been updated to be language/platform aware, and as such, was split
+  into `SetupNodeToolchain` and `SetupSystemToolchain`.
+
 ## 0.12.1
 
 #### 🐞 Fixes

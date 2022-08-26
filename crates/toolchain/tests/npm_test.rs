@@ -1,4 +1,4 @@
-use moon_config::WorkspaceConfig;
+use moon_config::{NodeConfig, NpmConfig, WorkspaceConfig};
 use moon_lang_node::node;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
@@ -8,10 +8,16 @@ use std::path::PathBuf;
 async fn create_npm_tool() -> (Toolchain, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
-    let mut config = WorkspaceConfig::default();
-
-    config.node.version = String::from("1.0.0");
-    config.node.npm.version = String::from("6.0.0");
+    let config = WorkspaceConfig {
+        node: Some(NodeConfig {
+            version: String::from("1.0.0"),
+            npm: NpmConfig {
+                version: String::from("6.0.0"),
+            },
+            ..NodeConfig::default()
+        }),
+        ..WorkspaceConfig::default()
+    };
 
     let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
         .await
@@ -23,7 +29,7 @@ async fn create_npm_tool() -> (Toolchain, assert_fs::TempDir) {
 #[tokio::test]
 async fn generates_paths() {
     let (toolchain, temp_dir) = create_npm_tool().await;
-    let npm = toolchain.get_node().get_npm();
+    let npm = toolchain.get_node().unwrap().get_npm();
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")

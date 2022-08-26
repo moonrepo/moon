@@ -150,7 +150,8 @@ impl Default for YarnConfig {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+// `default` is required since the parent field is `Option`
+#[serde(default, rename_all = "camelCase")]
 pub struct NodeConfig {
     pub add_engines_constraint: bool,
 

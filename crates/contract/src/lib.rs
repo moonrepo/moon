@@ -5,6 +5,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use std::collections::BTreeMap;
+use std::fmt;
 use std::path::Path;
 
 pub trait Platform: Send + Sync {
@@ -38,4 +39,28 @@ pub type RegisteredPlatforms = Vec<Box<dyn Platform>>;
 
 pub trait Platformable {
     fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError>;
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub enum SupportedPlatform {
+    Node,
+    System,
+}
+
+impl SupportedPlatform {
+    pub fn label(&self) -> String {
+        match self {
+            SupportedPlatform::Node => "Node.js".into(),
+            SupportedPlatform::System => "system".into(),
+        }
+    }
+}
+
+impl fmt::Display for SupportedPlatform {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SupportedPlatform::Node => write!(f, "Node"),
+            SupportedPlatform::System => write!(f, "System"),
+        }
+    }
 }

@@ -610,7 +610,7 @@ pub async fn run_target(
                 runner
                     .is_cached(
                         common_hasher,
-                        node_actions::create_target_hasher(&workspace, &project)?,
+                        node_actions::create_target_hasher(&workspace, &project).await?,
                     )
                     .await?
             }

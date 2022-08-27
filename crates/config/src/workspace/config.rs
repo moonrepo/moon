@@ -6,6 +6,7 @@ use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
 use crate::workspace::action_runner::ActionRunnerConfig;
+use crate::workspace::hasher::HasherConfig;
 use crate::workspace::node::NodeConfig;
 use crate::workspace::typescript::TypeScriptConfig;
 use crate::workspace::vcs::VcsConfig;
@@ -67,6 +68,9 @@ pub struct WorkspaceConfig {
 
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
+
+    #[validate]
+    pub hasher: HasherConfig,
 
     #[validate]
     pub node: Option<NodeConfig>,

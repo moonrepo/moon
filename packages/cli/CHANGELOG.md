@@ -10,6 +10,7 @@
 
 #### 🚀 Updates
 
+- Added a `hasher` setting to `.moon/workspace.yml`, for controlling aspects of smart hashing.
 - Updated the action runner to fail when an output is defined and the output does not exist after
   being ran.
 

@@ -5,9 +5,10 @@ use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
-use moon_lang_node::{node, PNPM};
+use moon_error::MoonError;
+use moon_lang_node::{node, pnpm, PNPM};
 use moon_logger::{color, debug, Logable};
-use moon_utils::is_ci;
+use moon_utils::{is_ci, process::output_to_string};
 use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -184,7 +185,15 @@ impl PackageManager<NodeTool> for PnpmTool {
         &self,
         path: &Path,
     ) -> Result<HashMap<String, String>, ToolchainError> {
-        Ok(HashMap::new())
+        let output = self
+            .create_command()
+            .args(["list", "--depth", "0", "--json"])
+            .cwd(path)
+            .exec_capture_output()
+            .await?;
+
+        Ok(pnpm::parse_pnpm_list(output_to_string(&output.stdout))
+            .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)))?)
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {

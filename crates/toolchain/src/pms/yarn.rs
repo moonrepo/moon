@@ -6,7 +6,7 @@ use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_error::MoonError;
-use moon_lang_node::{node, yarn_classic, YARN};
+use moon_lang_node::{node, yarn, yarn_classic, YARN};
 use moon_logger::{color, debug, Logable};
 use moon_utils::{is_ci, process::output_to_string};
 use std::collections::HashMap;
@@ -249,8 +249,6 @@ impl PackageManager<NodeTool> for YarnTool {
         &self,
         path: &Path,
     ) -> Result<HashMap<String, String>, ToolchainError> {
-        let mut resolved = HashMap::new();
-
         if self.is_v1() {
             let output = self
                 .create_command()
@@ -259,13 +257,19 @@ impl PackageManager<NodeTool> for YarnTool {
                 .exec_capture_output()
                 .await?;
 
-            resolved.extend(
-                yarn_classic::parse_yarn_list(output_to_string(&output.stdout))
-                    .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)))?,
-            );
+            return yarn_classic::parse_yarn_list(output_to_string(&output.stdout))
+                .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)));
         }
 
-        Ok(resolved)
+        let output = self
+            .create_command()
+            .args(["info", "--name-only", "--json"])
+            .cwd(path)
+            .exec_capture_output()
+            .await?;
+
+        yarn::parse_yarn_info(output_to_string(&output.stdout))
+            .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)))
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {

@@ -263,7 +263,7 @@ impl PackageManager<NodeTool> for YarnTool {
 
         let output = self
             .create_command()
-            .args(["info", "--name-only", "--json"])
+            .args(["info", "--json"])
             .cwd(path)
             .exec_capture_output()
             .await?;

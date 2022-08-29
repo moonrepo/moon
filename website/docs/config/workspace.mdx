@@ -11,74 +11,6 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 The `.moon/workspace.yml` file configures available projects and their locations, the toolchain, and
 the workspace development environment.
 
-## `actionRunner`
-
-> `ActionRunnerConfig`
-
-Configures aspects of the action runner.
-
-### `cacheLifetime`<VersionLabel updated version="0.11" />
-
-> `string`
-
-The maximum lifetime of cached artifacts before they're marked as stale and automatically removed by
-the action runner. Defaults to "7 days". This field requires an integer and a timeframe unit that
-can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
-
-```yaml title=".moon/workspace.yml" {2}
-actionRunner:
-  cacheLifetime: '24 hours'
-```
-
-### `implicitInputs`<VersionLabel updated version="0.9" />
-
-> `string[]`
-
-Defines task [`inputs`](./project#inputs) that are implicit inherited by _all_ tasks within the
-workspace. This is extremely useful for the "changes to these files should always trigger a task"
-scenario.
-
-Like `inputs`, file paths/globs defined here are relative from the inheriting project.
-[Project and workspace relative file patterns](../concepts/file-pattern#project-relative) are
-supported and encouraged.
-
-```yaml title=".moon/workspace.yml" {2-5}
-actionRunner:
-  implicitInputs:
-    - 'package.json'
-    - '/.moon/project.yml'
-    - '/.moon/workspace.yml'
-```
-
-> When not defined, this setting defaults to the list in the example above. When this setting _is
-> defined_, that list will be overwritten, so be sure to explicitly define them if you would like to
-> retain that functionality.
-
-### `inheritColorsForPipedTasks`<VersionLabel version="0.3" />
-
-> `boolean`
-
-Force colors to be inherited from the current terminal for all tasks that are ran as a child process
-and their output is piped to the action runner. Defaults to `true`.
-[View more about color handling in moon](../commands/overview#colors).
-
-```yaml title=".moon/workspace.yml" {2}
-actionRunner:
-  inheritColorsForPipedTasks: true
-```
-
-### `logRunningCommand`<VersionLabel version="0.4" />
-
-> `boolean`
-
-When enabled, will log the task's command, resolved arguments, and working directory when a target
-is ran. Defaults to `false`.
-
-```yaml title=".moon/workspace.yml" {2}
-actionRunner:
-  logRunningCommand: true
-```
-
 ## `extends`<VersionLabel version="0.4" />
 
 > `string`
@@ -153,6 +85,8 @@ projects:
 
 > Unlike packages in the JavaScript ecosystem, a moon project _does not_ require a `package.json`,
 > and is not coupled to Yarn workspaces (or similar architectures).
+
+## Languages
 
 ## `node`
 
@@ -486,6 +420,96 @@ Would result in the following `references` within both `tsconfig.json`s.
     { "path": "../../react-hooks" }
   ]
 }
+```
+
+## Features
+
+## `actionRunner`
+
+> `ActionRunnerConfig`
+
+Configures aspects of the action runner.
+
+### `cacheLifetime`<VersionLabel updated version="0.11" />
+
+> `string`
+
+The maximum lifetime of cached artifacts before they're marked as stale and automatically removed by
+the action runner. Defaults to "7 days". This field requires an integer and a timeframe unit that
+can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
+
+```yaml title=".moon/workspace.yml" {2}
+actionRunner:
+  cacheLifetime: '24 hours'
+```
+
+### `implicitInputs`<VersionLabel updated version="0.9" />
+
+> `string[]`
+
+Defines task [`inputs`](./project#inputs) that are implicit inherited by _all_ tasks within the
+workspace. This is extremely useful for the "changes to these files should always trigger a task"
+scenario.
+
+Like `inputs`, file paths/globs defined here are relative from the inheriting project.
+[Project and workspace relative file patterns](../concepts/file-pattern#project-relative) are
+supported and encouraged.
+
+```yaml title=".moon/workspace.yml" {2-5}
+actionRunner:
+  implicitInputs:
+    - 'package.json'
+    - '/.moon/project.yml'
+    - '/.moon/workspace.yml'
+```
+
+> When not defined, this setting defaults to the list in the example above. When this setting _is
+> defined_, that list will be overwritten, so be sure to explicitly define them if you would like to
+> retain that functionality.
+
+### `inheritColorsForPipedTasks`<VersionLabel version="0.3" />
+
+> `boolean`
+
+Force colors to be inherited from the current terminal for all tasks that are ran as a child process
+and their output is piped to the action runner. Defaults to `true`.
+[View more about color handling in moon](../commands/overview#colors).
+
+```yaml title=".moon/workspace.yml" {2}
+actionRunner:
+  inheritColorsForPipedTasks: true
+```
+
+### `logRunningCommand`<VersionLabel version="0.4" />
+
+> `boolean`
+
+When enabled, will log the task's command, resolved arguments, and working directory when a target
+is ran. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+actionRunner:
+  logRunningCommand: true
+```
+
+## `hasher`<VersionLabel version="0.13" />
+
+> `HasherConfig`
+
+Configures aspects of smart hashing layer.
+
+### `optimization`<VersionLabel version="0.13" />
+
+Determines the optimization level to utilize when hashing content before running targets.
+
+- `accuracy` (default) - When hashing dependency versions, utilize the resolved value in the
+  lockfile. This requires parsing the lockfile, which may reduce performance.
+- `performance` - When hashing dependency versions, utilize the value defined in the manifest. This
+  is typically a version range or requirement.
+
+```yaml title=".moon/workspace.yml" {2}
+hasher:
+  optimization: 'performance'
 ```
 
 ## `vcs`

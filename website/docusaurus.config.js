@@ -42,12 +42,10 @@ const config = {
 					sidebarPath: require.resolve('./sidebars.js'),
 					editUrl: 'https://github.com/moonrepo/moon/tree/master/website',
 				},
-				// blog: {
-				// 	showReadingTime: true,
-				// 	// Please change this to your repo.
-				// 	editUrl:
-				// 		'https://github.com/moonrepo/moon/tree/master/website',
-				// },
+				blog: {
+					showReadingTime: true,
+					editUrl: 'https://github.com/moonrepo/moon/tree/master/website',
+				},
 				theme: {
 					customCss: [
 						require.resolve('./src/css/theme.css'),
@@ -90,11 +88,11 @@ const config = {
 						position: 'left',
 						label: 'Docs',
 					},
-					// {
-					// 	to: '/blog',
-					// 	label: 'Blog',
-					// 	position: 'left',
-					// },
+					{
+						to: '/blog',
+						label: 'Blog',
+						position: 'left',
+					},
 					// {
 					// 	to: 'api',
 					// 	label: 'Packages',

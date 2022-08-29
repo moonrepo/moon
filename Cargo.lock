@@ -1460,6 +1460,7 @@ version = "0.1.0"
 dependencies = [
  "regex",
  "serde_json",
+ "serde_yaml 0.9.4",
  "thiserror",
 ]
 
@@ -1494,9 +1495,11 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_utils",
+ "pretty_assertions",
  "regex",
  "serde",
  "serde_json",
+ "serde_yaml 0.9.4",
  "serial_test",
  "tokio",
 ]

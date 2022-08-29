@@ -2,10 +2,11 @@ use crate::errors::ToolchainError;
 use crate::helpers::get_path_env_var;
 use crate::Toolchain;
 use async_trait::async_trait;
+use moon_lang::LockfileDependencyVersions;
 use moon_logger::{debug, Logable};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_offline};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[async_trait]
 pub trait Downloadable<T: Send + Sync>: Send + Sync + Logable {
@@ -245,6 +246,13 @@ pub trait PackageManager<T: Send + Sync>:
 
     /// Return the name of the manifest.
     fn get_manifest_filename(&self) -> String;
+
+    /// Return a list of dependencies resolved to their latest version from the lockfile.
+    /// Dependencies are based on a manifest at the provided path.
+    async fn get_resolved_depenencies(
+        &self,
+        project_root: &Path,
+    ) -> Result<LockfileDependencyVersions, ToolchainError>;
 
     /// Install dependencies for a defined manifest.
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;

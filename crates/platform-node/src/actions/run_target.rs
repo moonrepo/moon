@@ -1,6 +1,6 @@
 use crate::hasher::NodeTargetHasher;
 use moon_action::{ActionContext, ProfileType};
-use moon_config::NodePackageManager;
+use moon_config::{HasherOptimization, NodePackageManager};
 use moon_error::MoonError;
 use moon_lang_node::{
     node::{self, BinFile},
@@ -14,6 +14,7 @@ use moon_toolchain::{get_path_env_var, Executable};
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};
+use std::collections::HashMap;
 
 const LOG_TARGET: &str = "moon:platform-node:run-target";
 
@@ -155,19 +156,30 @@ pub async fn create_target_command(
     Ok(command)
 }
 
-pub fn create_target_hasher(
+pub async fn create_target_hasher(
     workspace: &Workspace,
     project: &Project,
 ) -> Result<NodeTargetHasher, WorkspaceError> {
     let node = workspace.toolchain.get_node()?;
     let mut hasher = NodeTargetHasher::new(node.config.version.clone());
 
+    let resolved_dependencies = if matches!(
+        workspace.config.hasher.optimization,
+        HasherOptimization::Accuracy
+    ) {
+        node.get_package_manager()
+            .get_resolved_depenencies(&project.root)
+            .await?
+    } else {
+        HashMap::new()
+    };
+
     if let Some(root_package) = PackageJson::read(&workspace.root)? {
-        hasher.hash_package_json(&root_package);
+        hasher.hash_package_json(&root_package, &resolved_dependencies);
     }
 
     if let Some(package) = PackageJson::read(&project.root)? {
-        hasher.hash_package_json(&package);
+        hasher.hash_package_json(&package, &resolved_dependencies);
     }
 
     if let Some(typescript_config) = &workspace.config.typescript {

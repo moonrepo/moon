@@ -424,13 +424,33 @@ Would result in the following `references` within both `tsconfig.json`s.
 
 ## Features
 
-## `actionRunner`
+## `hasher`<VersionLabel version="0.13" />
 
-> `ActionRunnerConfig`
+> `HasherConfig`
+
+Configures aspects of smart hashing layer.
+
+### `optimization`<VersionLabel version="0.13" />
+
+Determines the optimization level to utilize when hashing content before running targets.
+
+- `accuracy` (default) - When hashing dependency versions, utilize the resolved value in the
+  lockfile. This requires parsing the lockfile, which may reduce performance.
+- `performance` - When hashing dependency versions, utilize the value defined in the manifest. This
+  is typically a version range or requirement.
+
+```yaml title=".moon/workspace.yml" {2}
+hasher:
+  optimization: 'performance'
+```
+
+## `runner`<VersionLabel updated version="0.13" />
+
+> `RunnerConfig`
 
 Configures aspects of the action runner.
 
-### `cacheLifetime`<VersionLabel updated version="0.11" />
+### `cacheLifetime`<VersionLabel version="0.11" />
 
 > `string`
 
@@ -439,11 +459,11 @@ the action runner. Defaults to "7 days". This field requires an integer and a ti
 can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
 
 ```yaml title=".moon/workspace.yml" {2}
-actionRunner:
+runner:
   cacheLifetime: '24 hours'
 ```
 
-### `implicitInputs`<VersionLabel updated version="0.9" />
+### `implicitInputs`<VersionLabel version="0.9" />
 
 > `string[]`
 
@@ -456,7 +476,7 @@ Like `inputs`, file paths/globs defined here are relative from the inheriting pr
 supported and encouraged.
 
 ```yaml title=".moon/workspace.yml" {2-5}
-actionRunner:
+runner:
   implicitInputs:
     - 'package.json'
     - '/.moon/project.yml'
@@ -476,7 +496,7 @@ and their output is piped to the action runner. Defaults to `true`.
 [View more about color handling in moon](../commands/overview#colors).
 
 ```yaml title=".moon/workspace.yml" {2}
-actionRunner:
+runner:
   inheritColorsForPipedTasks: true
 ```
 
@@ -488,28 +508,8 @@ When enabled, will log the task's command, resolved arguments, and working direc
 is ran. Defaults to `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
-actionRunner:
+runner:
   logRunningCommand: true
-```
-
-## `hasher`<VersionLabel version="0.13" />
-
-> `HasherConfig`
-
-Configures aspects of smart hashing layer.
-
-### `optimization`<VersionLabel version="0.13" />
-
-Determines the optimization level to utilize when hashing content before running targets.
-
-- `accuracy` (default) - When hashing dependency versions, utilize the resolved value in the
-  lockfile. This requires parsing the lockfile, which may reduce performance.
-- `performance` - When hashing dependency versions, utilize the value defined in the manifest. This
-  is typically a version range or requirement.
-
-```yaml title=".moon/workspace.yml" {2}
-hasher:
-  optimization: 'performance'
 ```
 
 ## `vcs`

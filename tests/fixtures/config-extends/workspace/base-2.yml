@@ -1,6 +1,6 @@
 extends: './base-1.yml'
 
-actionRunner:
+runner:
   logRunningCommand: false
 
 node:

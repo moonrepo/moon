@@ -1,5 +1,6 @@
 use regex::Error as RegexError;
 use serde_json::Error as JsonError;
+use serde_yaml::Error as YamlError;
 use std::io::{Error as IoError, ErrorKind as IoErrorKind};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -39,6 +40,9 @@ pub enum MoonError {
 
     #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code.\n<muted>{2}</muted>")]
     ProcessNonZeroWithOutput(String, i32, String),
+
+    #[error("Failed to parse <path>{0}</path>: {1}")]
+    Yaml(PathBuf, #[source] YamlError),
 
     #[error(transparent)]
     Io(#[from] IoError),

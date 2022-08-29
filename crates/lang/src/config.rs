@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! config_cache {
     ($struct:ident, $file:expr, $reader:ident, $writer:ident) => {
-        fn load_json(path: &Path) -> Result<$struct, MoonError> {
+        fn load_config_internal(path: &Path) -> Result<$struct, MoonError> {
             use moon_logger::{color, trace};
 
             trace!(
@@ -19,7 +19,7 @@ macro_rules! config_cache {
         // This merely exists to create the global cache!
         #[cached(sync_writes = true, result = true)]
         fn load_config(path: PathBuf) -> Result<$struct, MoonError> {
-            load_json(&path)
+            load_config_internal(&path)
         }
 
         impl $struct {
@@ -90,7 +90,7 @@ macro_rules! config_cache {
                 if let Some(item) = cache.cache_get(&path) {
                     cfg = item.clone();
                 } else {
-                    cfg = load_json(&path)?;
+                    cfg = load_config_internal(&path)?;
                 }
 
                 func(&mut cfg)?;

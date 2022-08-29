@@ -1,6 +1,6 @@
 use moon_config::{
-    ActionRunnerConfig, ConfigError, NodeConfig, VcsConfig, VcsManager, WorkspaceConfig,
-    WorkspaceProjects,
+    ActionRunnerConfig, ConfigError, HasherConfig, NodeConfig, VcsConfig, VcsManager,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_constants::CONFIG_WORKSPACE_FILENAME;
 use moon_utils::test::get_fixtures_dir;
@@ -29,6 +29,7 @@ fn loads_defaults() {
             WorkspaceConfig {
                 action_runner: ActionRunnerConfig::default(),
                 extends: None,
+                hasher: HasherConfig::default(),
                 node: None,
                 projects: WorkspaceProjects::default(),
                 typescript: None,
@@ -287,6 +288,7 @@ node:
                 WorkspaceConfig {
                     action_runner: ActionRunnerConfig::default(),
                     extends: None,
+                    hasher: HasherConfig::default(),
                     node: Some(NodeConfig {
                         package_manager: NodePackageManager::Yarn,
                         ..NodeConfig::default()
@@ -786,6 +788,7 @@ vcs:
                 WorkspaceConfig {
                     action_runner: ActionRunnerConfig::default(),
                     extends: None,
+                    hasher: HasherConfig::default(),
                     node: None, // NodeConfig::default(),
                     projects: WorkspaceProjects::default(),
                     typescript: None,

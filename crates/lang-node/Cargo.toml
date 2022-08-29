@@ -15,8 +15,10 @@ lazy_static = "1.4.0"
 regex = "1.6.0"
 serde = { version = "1.0.140", features = ["derive"] }
 serde_json = { version = "1.0.82", features = ["preserve_order"] }
+serde_yaml = "0.9.4"
 
 [dev-dependencies]
 assert_fs = "1.0.7"
+pretty_assertions = "1.2.1"
 serial_test = "0.8.0"
 tokio = { version = "1.20.0", features = ["test-util"] }

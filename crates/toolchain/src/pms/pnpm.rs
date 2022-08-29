@@ -5,11 +5,13 @@ use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
-use moon_lang_node::{node, PNPM};
+use moon_lang::LockfileDependencyVersions;
+use moon_lang_node::{node, pnpm, PNPM};
 use moon_logger::{color, debug, Logable};
-use moon_utils::is_ci;
+use moon_utils::{fs, is_ci};
+use std::collections::HashMap;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct PnpmTool {
     bin_path: PathBuf,
@@ -177,6 +179,20 @@ impl PackageManager<NodeTool> for PnpmTool {
 
     fn get_manifest_filename(&self) -> String {
         String::from(PNPM.manifest_filename)
+    }
+
+    async fn get_resolved_depenencies(
+        &self,
+        project_root: &Path,
+    ) -> Result<LockfileDependencyVersions, ToolchainError> {
+        let lockfile_path = match fs::find_upwards(PNPM.lock_filenames[0], project_root) {
+            Some(path) => path,
+            None => {
+                return Ok(HashMap::new());
+            }
+        };
+
+        Ok(pnpm::load_lockfile_dependencies(lockfile_path)?)
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {

@@ -15,11 +15,11 @@ config_cache!(YarnLock, "yarn.lock", load_lockfile, write_lockfile);
 pub struct YarnLockDependency {
     pub bin: Option<HashMap<String, String>>,
     pub checksum: Option<String>,
-    pub dependencies: Option<HashMap<String, String>>,
+    pub dependencies: Option<HashMap<String, Value>>,
     pub language_name: String,
     pub link_type: String,
-    pub peer_dependencies: Option<HashMap<String, String>>,
-    pub peer_dependencies_meta: Option<serde_yaml::Value>,
+    pub peer_dependencies: Option<HashMap<String, Value>>,
+    pub peer_dependencies_meta: Option<Value>,
     pub resolution: String,
     pub version: String,
 
@@ -51,10 +51,11 @@ pub struct YarnLock {
 
 fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
     let path = path.as_ref();
-    let lockfile: YarnLock = serde_yaml::from_str(
-        &fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?,
-    )
-    .map_err(|e| MoonError::Yaml(path.to_path_buf(), e))?;
+    let content =
+        fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    let lockfile: YarnLock =
+        serde_yaml::from_str(&content).map_err(|e| MoonError::Yaml(path.to_path_buf(), e))?;
 
     Ok(lockfile)
 }
@@ -131,7 +132,7 @@ __metadata:
   resolution: "eslint-scope@npm:5.1.1"
   dependencies:
     esrecurse: ^4.3.0
-    estraverse: ^4.1.1
+    estraverse: 4
   checksum: 47e4b6a3f0cc29c7feedee6c67b225a2da7e155802c6ea13bbef4ac6b9e10c66cd2dcb987867ef176292bf4e64eccc680a49e35e9e9c669f4a02bac17e86abdb
   languageName: node
   linkType: hard
@@ -151,7 +152,7 @@ __metadata:
                     ("@algolia/autocomplete-core@npm:1.5.2".to_owned(), YarnLockDependency {
                         checksum: Some("a8ab49c689c7fe7782980af167dfd9bea0feb9fe9809d003da509096550852f48abff27b59e0bc9909a455fb998ff4b8a7ce45b7dd42cef42f675c81340a47e9".into()),
                         dependencies: Some(HashMap::from([
-                            ("@algolia/autocomplete-shared".to_owned(), "1.5.2".to_owned())
+                            ("@algolia/autocomplete-shared".to_owned(), Value::String("1.5.2".to_owned()))
                         ])),
                         language_name: "node".into(),
                         link_type: "hard".into(),
@@ -162,12 +163,12 @@ __metadata:
                     ("@babel/plugin-syntax-logical-assignment-operators@npm:^7.10.4, @babel/plugin-syntax-logical-assignment-operators@npm:^7.8.3".to_owned(), YarnLockDependency {
                         checksum: Some("aff33577037e34e515911255cdbb1fd39efee33658aa00b8a5fd3a4b903585112d037cce1cc9e4632f0487dc554486106b79ccd5ea63a2e00df4363f6d4ff886".into()),
                         dependencies: Some(HashMap::from([
-                            ("@babel/helper-plugin-utils".to_owned(), "^7.10.4".to_owned())
+                            ("@babel/helper-plugin-utils".to_owned(), Value::String("^7.10.4".to_owned()))
                         ])),
                         language_name: "node".into(),
                         link_type: "hard".into(),
                         peer_dependencies: Some(HashMap::from([
-                            ("@babel/core".to_owned(), "^7.0.0-0".to_owned())
+                            ("@babel/core".to_owned(), Value::String("^7.0.0-0".to_owned()))
                         ])),
                         resolution: "@babel/plugin-syntax-logical-assignment-operators@npm:7.10.4".into(),
                         version: "7.10.4".into(),
@@ -176,8 +177,8 @@ __metadata:
                     ("eslint-scope@npm:5.1.1, eslint-scope@npm:^5.1.1".to_owned(), YarnLockDependency {
                         checksum: Some("47e4b6a3f0cc29c7feedee6c67b225a2da7e155802c6ea13bbef4ac6b9e10c66cd2dcb987867ef176292bf4e64eccc680a49e35e9e9c669f4a02bac17e86abdb".into()),
                         dependencies: Some(HashMap::from([
-                            ("estraverse".to_owned(), "^4.1.1".to_owned()),
-                            ("esrecurse".to_owned(), "^4.3.0".to_owned())
+                            ("estraverse".to_owned(), Value::Number(Number::from(4))),
+                            ("esrecurse".to_owned(), Value::String("^4.3.0".to_owned()))
                         ])),
                         language_name: "node".into(),
                         link_type: "hard".into(),

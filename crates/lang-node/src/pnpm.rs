@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 config_cache!(PnpmLock, "pnpm-lock.yaml", load_lockfile, write_lockfile);
 
-type DependencyMap = HashMap<String, String>;
+type DependencyMap = HashMap<String, Value>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -134,7 +134,7 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
-      '@babel/core': 7.18.9
+      '@babel/core': 7
       '@babel/helper-plugin-utils': 7.18.9
     dev: true
 
@@ -171,8 +171,8 @@ packages:
                     PnpmLockPackage {
                         dev: Some(true),
                         dependencies: Some(HashMap::from([
-                            ("@jridgewell/gen-mapping".to_owned(), "0.1.1".to_owned()),
-                            ("@jridgewell/trace-mapping".to_owned(), "0.3.14".to_owned())
+                            ("@jridgewell/gen-mapping".to_owned(), Value::String("0.1.1".to_owned())),
+                            ("@jridgewell/trace-mapping".to_owned(), Value::String("0.3.14".to_owned()))
                         ])),
                         engines: Some(HashMap::from([
                             ("node".to_owned(), ">=6.0.0".to_owned())
@@ -187,12 +187,12 @@ packages:
                     PnpmLockPackage {
                         dev: Some(true),
                         dependencies: Some(HashMap::from([
-                            ("@babel/core".to_owned(), "7.18.9".to_owned()),
-                            ("@babel/helper-plugin-utils".to_owned(), "7.18.9".to_owned())
+                            ("@babel/core".to_owned(), Value::Number(Number::from(7))),
+                            ("@babel/helper-plugin-utils".to_owned(), Value::String("7.18.9".to_owned()))
                         ])),
                         peer_dependencies: Some(HashMap::from([(
                             "@babel/core".to_owned(),
-                            "^7.0.0-0".to_owned()
+                            Value::String("^7.0.0-0".to_owned())
                         )])),
                         resolution: Some(HashMap::from([
                             ("integrity".to_owned(), "sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw==".to_owned())
@@ -216,13 +216,13 @@ packages:
                     PnpmLockPackage {
                         dev: Some(true),
                         dependencies: Some(HashMap::from([
-                            ("babel-jest".to_owned(), "27.5.1_@babel+core@7.18.9".to_owned()),
-                            ("@babel/preset-env".to_owned(), "7.18.9_@babel+core@7.18.9".to_owned()),
-                            ("enhanced-resolve-jest".to_owned(), "1.1.0".to_owned())
+                            ("babel-jest".to_owned(), Value::String("27.5.1_@babel+core@7.18.9".to_owned())),
+                            ("@babel/preset-env".to_owned(), Value::String("7.18.9_@babel+core@7.18.9".to_owned())),
+                            ("enhanced-resolve-jest".to_owned(), Value::String("1.1.0".to_owned()))
                         ])),
                         peer_dependencies: Some(HashMap::from([(
                             "babel-preset-solid".to_owned(),
-                            "^1.0.0".to_owned()
+                            Value::String("^1.0.0".to_owned())
                         )])),
                         transitive_peer_dependencies: Some(string_vec!["@babel/core", "supports-color"]),
                         resolution: Some(HashMap::from([

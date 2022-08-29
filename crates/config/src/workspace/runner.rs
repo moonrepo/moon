@@ -19,7 +19,7 @@ fn validate_cache_lifetime(value: &str) -> Result<(), ValidationError> {
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
-pub struct ActionRunnerConfig {
+pub struct RunnerConfig {
     #[validate(custom = "validate_cache_lifetime")]
     pub cache_lifetime: String,
 
@@ -30,9 +30,9 @@ pub struct ActionRunnerConfig {
     pub log_running_command: bool,
 }
 
-impl Default for ActionRunnerConfig {
+impl Default for RunnerConfig {
     fn default() -> Self {
-        ActionRunnerConfig {
+        RunnerConfig {
             cache_lifetime: "7 days".to_owned(),
             implicit_inputs: string_vec![
                 // When a project changes
@@ -57,12 +57,12 @@ mod tests {
     };
     use std::path::PathBuf;
 
-    const CONFIG_FILENAME: &str = "action-runner.yml";
+    const CONFIG_FILENAME: &str = "runner.yml";
 
-    fn load_jailed_config() -> Result<ActionRunnerConfig, figment::Error> {
-        let figment = Figment::from(Serialized::defaults(ActionRunnerConfig::default()))
+    fn load_jailed_config() -> Result<RunnerConfig, figment::Error> {
+        let figment = Figment::from(Serialized::defaults(RunnerConfig::default()))
             .merge(Yaml::file(&PathBuf::from(CONFIG_FILENAME)));
-        let config: ActionRunnerConfig = figment.extract()?;
+        let config: RunnerConfig = figment.extract()?;
 
         config
             .validate()

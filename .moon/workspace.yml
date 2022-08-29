@@ -16,7 +16,7 @@ projects:
   - '!packages/core-*'
   - 'website'
 
-actionRunner:
+runner:
   logRunningCommand: true
 
 vcs:

@@ -1,6 +1,6 @@
 use moon_config::{
-    ActionRunnerConfig, ConfigError, HasherConfig, NodeConfig, VcsConfig, VcsManager,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigError, HasherConfig, NodeConfig, RunnerConfig, VcsConfig, VcsManager, WorkspaceConfig,
+    WorkspaceProjects,
 };
 use moon_constants::CONFIG_WORKSPACE_FILENAME;
 use moon_utils::test::get_fixtures_dir;
@@ -27,7 +27,7 @@ fn loads_defaults() {
         assert_eq!(
             config,
             WorkspaceConfig {
-                action_runner: ActionRunnerConfig::default(),
+                runner: RunnerConfig::default(),
                 extends: None,
                 hasher: HasherConfig::default(),
                 node: None,
@@ -56,10 +56,10 @@ mod extends {
         assert_eq!(
             config,
             WorkspaceConfig {
-                action_runner: ActionRunnerConfig {
+                runner: RunnerConfig {
                     cache_lifetime: "3 hours".into(),
                     log_running_command: false,
-                    ..ActionRunnerConfig::default()
+                    ..RunnerConfig::default()
                 },
                 node: Some(NodeConfig {
                     version: "4.5.6".into(),
@@ -286,7 +286,7 @@ node:
             assert_eq!(
                 config,
                 WorkspaceConfig {
-                    action_runner: ActionRunnerConfig::default(),
+                    runner: RunnerConfig::default(),
                     extends: None,
                     hasher: HasherConfig::default(),
                     node: Some(NodeConfig {
@@ -786,7 +786,7 @@ vcs:
             assert_eq!(
                 config,
                 WorkspaceConfig {
-                    action_runner: ActionRunnerConfig::default(),
+                    runner: RunnerConfig::default(),
                     extends: None,
                     hasher: HasherConfig::default(),
                     node: None, // NodeConfig::default(),

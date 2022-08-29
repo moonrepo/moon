@@ -1495,6 +1495,7 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_utils",
+ "pretty_assertions",
  "regex",
  "serde",
  "serde_json",

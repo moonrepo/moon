@@ -843,13 +843,11 @@ mod non_js_bins {
     fn works_with_esbuild() {
         let fixture = create_sandbox_with_git("node");
 
-        let assert = create_moon_command(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("esbuild:build")
             .assert()
             .success();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert_eq!(
             fs::read_to_string(fixture.path().join("esbuild/out.js")).unwrap(),
@@ -861,13 +859,11 @@ mod non_js_bins {
     fn works_with_swc() {
         let fixture = create_sandbox_with_git("node");
 
-        let assert = create_moon_command(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("swc:build")
             .assert()
             .success();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert_eq!(
             fs::read_to_string(fixture.path().join("swc/out.js")).unwrap(),

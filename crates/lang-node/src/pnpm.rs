@@ -12,7 +12,7 @@ config_cache!(PnpmLock, "pnpm-lock.yaml", load_lockfile, write_lockfile);
 
 type DependencyMap = HashMap<String, Value>;
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PnpmLockPackage {
     pub cpu: Option<Vec<String>>,
@@ -32,7 +32,7 @@ pub struct PnpmLockPackage {
     pub unknown: HashMap<String, Value>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PnpmLock {
     pub lockfile_version: Value,

@@ -17,10 +17,6 @@ pub fn satisfies_range(version: &str, range: &str) -> bool {
 
 pub fn satisfies_requirement(version: &str, req: &VersionReq) -> bool {
     if let Ok(ver) = Version::parse(version) {
-        // println!("{:#?}", ver);
-        // println!("{:#?}", req);
-        // println!("{}", req.matches(&ver));
-
         return req.matches(&ver);
     }
 

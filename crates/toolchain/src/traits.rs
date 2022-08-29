@@ -251,7 +251,7 @@ pub trait PackageManager<T: Send + Sync>:
     /// Dependencies are based on a manifest at the provided path.
     async fn get_resolved_depenencies(
         &self,
-        path: &Path,
+        project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError>;
 
     /// Install dependencies for a defined manifest.

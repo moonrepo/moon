@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 config_cache!(YarnLock, "yarn.lock", load_lockfile, write_lockfile);
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct YarnLockDependency {
     pub bin: Option<HashMap<String, String>>,
@@ -27,7 +27,7 @@ pub struct YarnLockDependency {
     pub unknown: HashMap<String, Value>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct YarnLockMetadata {
     pub cache_key: Value,
@@ -37,7 +37,7 @@ pub struct YarnLockMetadata {
     pub unknown: HashMap<String, Value>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct YarnLock {
     #[serde(rename = "__metadata")]
     pub metadata: YarnLockMetadata,

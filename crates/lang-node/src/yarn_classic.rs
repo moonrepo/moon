@@ -10,12 +10,12 @@ use std::path::{Path, PathBuf};
 
 config_cache!(YarnLock, "yarn.lock", load_lockfile, write_lockfile);
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct YarnLockDependency {
     pub version: String,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct YarnLock {
     pub dependencies: HashMap<String, YarnLockDependency>,
 
@@ -111,7 +111,6 @@ mod tests {
     use assert_fs::prelude::*;
     use moon_utils::string_vec;
     use pretty_assertions::assert_eq;
-    use serde_yaml::Number;
 
     #[test]
     fn parses_lockfile() {

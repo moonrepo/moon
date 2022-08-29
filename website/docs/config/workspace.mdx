@@ -503,12 +503,13 @@ Configures aspects of smart hashing layer.
 Determines the optimization level to utilize when hashing content before running targets.
 
 - `accuracy` (default) - When hashing dependency versions, utilize the resolved value in the
-  lockfile. This requires communicating with the package manager, which may reduce performance.
-- `speed` - When hashing dependency versions, utilize the value defined in the manifest.
+  lockfile. This requires parsing the lockfile, which may reduce performance.
+- `performance` - When hashing dependency versions, utilize the value defined in the manifest. This
+  is typically a version range or requirement.
 
 ```yaml title=".moon/workspace.yml" {2}
 hasher:
-  optimization: 'speed'
+  optimization: 'performance'
 ```
 
 ## `vcs`

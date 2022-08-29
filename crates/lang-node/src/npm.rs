@@ -15,7 +15,7 @@ config_cache!(
     write_lockfile
 );
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageLockDependency {
     pub dependencies: Option<HashMap<String, PackageLockDependency>>,
@@ -29,7 +29,7 @@ pub struct PackageLockDependency {
     pub unknown: HashMap<String, Value>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageLock {
     pub lockfile_version: Value,

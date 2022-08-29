@@ -9,6 +9,7 @@ use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{node, yarn, yarn_classic, YARN};
 use moon_logger::{color, debug, Logable};
 use moon_utils::{fs, is_ci};
+use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -248,8 +249,12 @@ impl PackageManager<NodeTool> for YarnTool {
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let lockfile_path =
-            fs::find_upwards(YARN.lock_filenames[0], project_root).expect("missing lockfile");
+        let lockfile_path = match fs::find_upwards(YARN.lock_filenames[0], project_root) {
+            Some(path) => path,
+            None => {
+                return Ok(HashMap::new());
+            }
+        };
 
         if self.is_v1() {
             return Ok(yarn_classic::load_lockfile_dependencies(lockfile_path)?);

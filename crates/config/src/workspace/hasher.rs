@@ -7,7 +7,7 @@ use validator::Validate;
 pub enum HasherOptimization {
     #[default]
     Accuracy,
-    Speed,
+    Performance,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]

@@ -1,42 +1,64 @@
+use cached::proc_macro::cached;
+use moon_error::MoonError;
+use moon_lang::config_cache;
+use moon_lang::LockfileDependencyVersions;
+use moon_utils::fs::sync_read_json;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
-#[derive(Deserialize, Serialize)]
-pub struct NpmListDependency {
-    pub dependencies: Option<HashMap<String, NpmListDependency>>,
+config_cache!(
+    PackageLock,
+    "package-lock.json",
+    sync_read_json,
+    write_lockfile
+);
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackageLockDependency {
+    pub dependencies: Option<HashMap<String, PackageLockDependency>>,
+    pub dev: Option<bool>,
+    pub integrity: Option<String>,
+    pub requires: Option<HashMap<String, String>>,
     pub resolved: Option<String>,
-    pub version: Option<String>,
+    pub version: String,
+
+    #[serde(flatten)]
+    pub unknown: HashMap<String, Value>,
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct NpmList {
-    pub dependencies: Option<HashMap<String, NpmListDependency>>,
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackageLock {
+    pub lockfile_version: i32,
     pub name: String,
-    pub version: Option<String>,
+    pub dependencies: HashMap<String, PackageLockDependency>,
+    pub packages: Option<HashMap<String, Value>>,
+    pub requires: Option<bool>,
+
+    #[serde(flatten)]
+    pub unknown: HashMap<String, Value>,
+
+    #[serde(skip)]
+    pub path: PathBuf,
 }
 
-pub fn parse_npm_list<T: AsRef<str>>(
-    json: T,
-) -> Result<HashMap<String, String>, serde_json::Error> {
-    let mut deps = HashMap::new();
-    let json = json.as_ref();
+fn write_lockfile(_path: &Path, _lockfile: &PackageLock) -> Result<(), MoonError> {
+    Ok(()) // Do nothing
+}
 
-    if json.is_empty() {
-        return Ok(deps);
-    }
+#[cached(result)]
+pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
+    let mut deps: LockfileDependencyVersions = HashMap::new();
 
-    let data: NpmList = serde_json::from_str(json)?;
-
-    if let Some(packages) = &data.dependencies {
-        // This is the package at the defined path
-        for package_meta in packages.values() {
-            if let Some(dependencies) = &package_meta.dependencies {
-                // These are all its dependencies
-                for (dependency, dep_meta) in dependencies {
-                    if let Some(version) = &dep_meta.version {
-                        deps.insert(dependency.to_owned(), version.to_owned());
-                    }
-                }
+    if let Some(lockfile) = PackageLock::read(path)? {
+        for (name, dep) in lockfile.dependencies {
+            if let Some(versions) = deps.get_mut(&name) {
+                versions.push(dep.version.clone());
+            } else {
+                deps.insert(name, vec![dep.version.clone()]);
             }
         }
     }

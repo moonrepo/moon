@@ -372,7 +372,7 @@ impl ActionRunner {
 
         workspace
             .cache
-            .clean_stale_cache(&workspace.config.action_runner.cache_lifetime)
+            .clean_stale_cache(&workspace.config.runner.cache_lifetime)
             .await?;
 
         Ok(())

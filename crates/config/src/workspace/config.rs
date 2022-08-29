@@ -5,9 +5,9 @@ use crate::helpers::gather_extended_sources;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
-use crate::workspace::action_runner::ActionRunnerConfig;
 use crate::workspace::hasher::HasherConfig;
 use crate::workspace::node::NodeConfig;
+use crate::workspace::runner::RunnerConfig;
 use crate::workspace::typescript::TypeScriptConfig;
 use crate::workspace::vcs::VcsConfig;
 use crate::ConfigError;
@@ -63,9 +63,6 @@ impl Default for WorkspaceProjects {
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceConfig {
-    #[validate]
-    pub action_runner: ActionRunnerConfig,
-
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 
@@ -77,6 +74,9 @@ pub struct WorkspaceConfig {
 
     #[validate(custom = "validate_projects")]
     pub projects: WorkspaceProjects,
+
+    #[validate]
+    pub runner: RunnerConfig,
 
     #[validate]
     pub typescript: Option<TypeScriptConfig>,

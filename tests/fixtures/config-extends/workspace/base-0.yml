@@ -1,4 +1,4 @@
-actionRunner:
+runner:
   cacheLifetime: '3 hours'
 
 node:

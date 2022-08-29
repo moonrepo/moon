@@ -7,6 +7,7 @@
 - The `node` setting in `.moon/workspace.yml` is now optional, allowing repos to opt-out of Node.js
   support (in preparation for future languages support). This shouldn't affect you if the setting is
   already explicitly defined.
+- Renamed `actionRunner` setting to `runner` in `.moon/workspace.yml`.
 
 #### 🚀 Updates
 

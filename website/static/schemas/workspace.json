@@ -4,7 +4,43 @@
   "description": "Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
   "properties": {
-    "actionRunner": {
+    "extends": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "hasher": {
+      "default": {
+        "optimization": "accuracy"
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/HasherConfig"
+        }
+      ]
+    },
+    "node": {
+      "default": null,
+      "anyOf": [
+        {
+          "$ref": "#/definitions/NodeConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "projects": {
+      "default": {},
+      "allOf": [
+        {
+          "$ref": "#/definitions/WorkspaceProjects"
+        }
+      ]
+    },
+    "runner": {
       "default": {
         "cacheLifetime": "7 days",
         "implicitInputs": [
@@ -17,45 +53,7 @@
       },
       "allOf": [
         {
-          "$ref": "#/definitions/ActionRunnerConfig"
-        }
-      ]
-    },
-    "extends": {
-      "default": null,
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "node": {
-      "default": {
-        "addEnginesConstraint": true,
-        "aliasPackageNames": null,
-        "dedupeOnLockfileChange": true,
-        "dependencyVersionFormat": "workspace-caret",
-        "inferTasksFromScripts": false,
-        "npm": {
-          "version": "inherit"
-        },
-        "packageManager": "npm",
-        "pnpm": null,
-        "syncProjectWorkspaceDependencies": true,
-        "syncVersionManagerConfig": null,
-        "version": "16.16.0",
-        "yarn": null
-      },
-      "allOf": [
-        {
-          "$ref": "#/definitions/NodeConfig"
-        }
-      ]
-    },
-    "projects": {
-      "default": {},
-      "allOf": [
-        {
-          "$ref": "#/definitions/WorkspaceProjects"
+          "$ref": "#/definitions/RunnerConfig"
         }
       ]
     },
@@ -83,33 +81,25 @@
     }
   },
   "definitions": {
-    "ActionRunnerConfig": {
+    "HasherConfig": {
       "type": "object",
       "properties": {
-        "cacheLifetime": {
-          "default": "7 days",
-          "type": "string"
-        },
-        "implicitInputs": {
-          "default": [
-            "package.json",
-            "/.moon/project.yml",
-            "/.moon/workspace.yml"
-          ],
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "inheritColorsForPipedTasks": {
-          "default": true,
-          "type": "boolean"
-        },
-        "logRunningCommand": {
-          "default": false,
-          "type": "boolean"
+        "optimization": {
+          "default": "accuracy",
+          "allOf": [
+            {
+              "$ref": "#/definitions/HasherOptimization"
+            }
+          ]
         }
       }
+    },
+    "HasherOptimization": {
+      "type": "string",
+      "enum": [
+        "accuracy",
+        "performance"
+      ]
     },
     "NodeConfig": {
       "type": "object",
@@ -259,6 +249,34 @@
       "properties": {
         "version": {
           "type": "string"
+        }
+      }
+    },
+    "RunnerConfig": {
+      "type": "object",
+      "properties": {
+        "cacheLifetime": {
+          "default": "7 days",
+          "type": "string"
+        },
+        "implicitInputs": {
+          "default": [
+            "package.json",
+            "/.moon/project.yml",
+            "/.moon/workspace.yml"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inheritColorsForPipedTasks": {
+          "default": true,
+          "type": "boolean"
+        },
+        "logRunningCommand": {
+          "default": false,
+          "type": "boolean"
         }
       }
     },

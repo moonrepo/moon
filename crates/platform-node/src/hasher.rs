@@ -1,4 +1,5 @@
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
+use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
@@ -39,14 +40,14 @@ impl NodeTargetHasher {
     pub fn hash_package_json(
         &mut self,
         package: &PackageJson,
-        resolved_deps: &HashMap<String, String>,
+        resolved_deps: &LockfileDependencyVersions,
     ) {
         let copy_deps = |deps: &BTreeMap<String, String>, hashed: &mut BTreeMap<String, String>| {
             for (name, version) in deps {
-                hashed.insert(
-                    name.to_owned(),
-                    resolved_deps.get(name).unwrap_or(version).to_owned(),
-                );
+                // hashed.insert(
+                //     name.to_owned(),
+                //     resolved_deps.get(name).unwrap_or(version).to_owned(),
+                // );
             }
         };
 
@@ -227,7 +228,7 @@ mod tests {
 
         #[test]
         fn uses_version_from_resolved_deps() {
-            let resolved_deps = HashMap::from([("prettier".to_owned(), "2.1.3".to_owned())]);
+            let resolved_deps = HashMap::from([("prettier".to_owned(), vec!["2.1.3".to_owned()])]);
 
             let mut package = PackageJson::default();
             package.add_dependency("prettier", "^2.0.0", true);

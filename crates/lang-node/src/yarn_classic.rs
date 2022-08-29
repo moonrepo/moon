@@ -1,68 +1,105 @@
+use cached::proc_macro::cached;
+use moon_error::MoonError;
+use moon_lang::config_cache;
+use moon_lang::LockfileDependencyVersions;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{prelude::*, BufReader};
+use std::path::{Path, PathBuf};
 
-#[derive(Deserialize, Serialize)]
-pub struct YarnListItemActivity {
-    pub id: i32,
-    pub name: Option<String>,
+config_cache!(YarnLock, "yarn.lock", load_lockfile, write_lockfile);
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct YarnLockDependency {
+    pub version: String,
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct YarnListItemTreeNode {
-    pub name: String,
+#[derive(Clone, Deserialize, Serialize)]
+pub struct YarnLock {
+    pub dependencies: HashMap<String, YarnLockDependency>,
 
-    #[serde(flatten)]
-    pub other: HashMap<String, Value>,
+    #[serde(skip)]
+    pub path: PathBuf,
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct YarnListItemTree {
-    pub trees: Vec<YarnListItemTreeNode>,
+// Package names are separated by commas in the following formats:
+// "@babel/core@7.12.9":
+// "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.10.4", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.16.0", "@babel/code-frame@^7.18.6", "@babel/code-frame@^7.8.3":
+fn extract_package_name(line: &str) -> Option<String> {
+    // Remove trailing colon
+    let names = &line[0..(line.len() - 1)];
 
-    #[serde(rename = "type")]
-    pub type_of: String,
-}
+    for name in names.split(", ") {
+        let unquoted_name = if name.starts_with('"') {
+            &name[1..(name.len() - 1)]
+        } else {
+            name
+        };
 
-#[derive(Deserialize, Serialize)]
-#[serde(tag = "type")]
-pub enum YarnListItem {
-    #[serde(rename = "activityEnd")]
-    ActivityEnd { data: YarnListItemActivity },
-
-    #[serde(rename = "activityTick")]
-    ActivityTick { data: YarnListItemActivity },
-
-    #[serde(rename = "tree")]
-    Tree { data: YarnListItemTree },
-}
-
-// `yarn list` is a stream of JSON objects, so they need to be parsed separately
-// and combined into a new result.
-pub fn parse_yarn_list<T: AsRef<str>>(
-    json: T,
-) -> Result<HashMap<String, String>, serde_json::Error> {
-    let mut deps = HashMap::new();
-    let json = json.as_ref();
-
-    if json.is_empty() {
-        return Ok(deps);
+        if let Some(at_index) = unquoted_name.rfind('@') {
+            return Some(unquoted_name[0..at_index].to_owned());
+        }
     }
 
-    for item in json.split('\n') {
-        if item.is_empty() {
-            continue;
+    None
+}
+
+fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
+    let path = path.as_ref();
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    let mut current_package = None;
+    let mut lockfile = YarnLock {
+        dependencies: HashMap::new(),
+        path: path.to_path_buf(),
+    };
+
+    for line in reader.lines() {
+        if let Ok(line) = line {
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+
+            // Package name is the only line fully left aligned
+            if line.starts_with('"') {
+                current_package = Some(line.clone());
+
+                // Extract only the version and skip other fields
+            } else if line.starts_with("  version:") {
+                if let Some(names) = current_package {
+                    let version = line[10..(line.len() - 1)].to_owned();
+
+                    lockfile
+                        .dependencies
+                        .insert(names, YarnLockDependency { version });
+
+                    current_package = None;
+                }
+            }
         }
+    }
 
-        let data: YarnListItem = serde_json::from_str(item)?;
+    Ok(lockfile)
+}
 
-        if let YarnListItem::Tree { data } = data {
-            for node in data.trees {
-                if let Some(at_index) = node.name.rfind('@') {
-                    deps.insert(
-                        node.name[0..at_index].to_owned(),
-                        node.name[(at_index + 1)..].to_owned(),
-                    );
+fn write_lockfile(_path: &Path, _lockfile: &YarnLock) -> Result<(), MoonError> {
+    Ok(()) // Do nothing
+}
+
+#[cached(result)]
+pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
+    let mut deps: LockfileDependencyVersions = HashMap::new();
+
+    if let Some(lockfile) = YarnLock::read(path)? {
+        for (names, dep) in lockfile.dependencies {
+            if let Some(name) = extract_package_name(&names) {
+                if let Some(versions) = deps.get_mut(&name) {
+                    versions.push(dep.version.clone());
+                } else {
+                    deps.insert(name, vec![dep.version.clone()]);
                 }
             }
         }

@@ -3,6 +3,7 @@ use moon_error::{map_io_to_fs_error, MoonError};
 use moon_lang::config_cache;
 use moon_lang::LockfileDependencyVersions;
 use serde::{Deserialize, Serialize};
+use serde_yaml::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -21,6 +22,9 @@ pub struct YarnLockDependency {
     pub peer_dependencies_meta: Option<serde_yaml::Value>,
     pub resolution: String,
     pub version: String,
+
+    #[serde(flatten)]
+    pub unknown: HashMap<String, Value>,
 }
 
 #[derive(Clone, Deserialize, Serialize)]

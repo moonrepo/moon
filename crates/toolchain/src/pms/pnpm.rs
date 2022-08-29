@@ -5,11 +5,10 @@ use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
-use moon_error::MoonError;
+use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{node, pnpm, PNPM};
-use moon_logger::{color, debug, warn, Logable};
-use moon_utils::{is_ci, process::output_to_string};
-use std::collections::HashMap;
+use moon_logger::{color, debug, Logable};
+use moon_utils::{fs, is_ci};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -183,31 +182,12 @@ impl PackageManager<NodeTool> for PnpmTool {
 
     async fn get_resolved_depenencies(
         &self,
-        path: &Path,
-    ) -> Result<HashMap<String, String>, ToolchainError> {
-        let output = match self
-            .create_command()
-            .args(["list", "--depth", "0", "--json"])
-            .cwd(path)
-            .exec_capture_output()
-            .await
-        {
-            Ok(out) => out,
-            Err(error) => {
-                if let MoonError::ProcessNonZeroWithOutput(_, _, message) = error {
-                    warn!(
-                        target: self.get_log_target(),
-                        "Failed to run `pnpm list`, continuing without resolved dependencies.\n{}",
-                        message
-                    );
-                }
+        project_root: &Path,
+    ) -> Result<LockfileDependencyVersions, ToolchainError> {
+        let lockfile_path =
+            fs::find_upwards(PNPM.lock_filenames[0], project_root).expect("missing lockfile");
 
-                return Ok(HashMap::new());
-            }
-        };
-
-        Ok(pnpm::parse_pnpm_list(output_to_string(&output.stdout))
-            .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)))?)
+        Ok(pnpm::load_lockfile_dependencies(lockfile_path)?)
     }
 
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {

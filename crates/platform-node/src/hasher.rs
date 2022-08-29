@@ -1,8 +1,9 @@
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
 use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
+use moon_utils::semver;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -43,11 +44,18 @@ impl NodeTargetHasher {
         resolved_deps: &LockfileDependencyVersions,
     ) {
         let copy_deps = |deps: &BTreeMap<String, String>, hashed: &mut BTreeMap<String, String>| {
-            for (name, version) in deps {
-                // hashed.insert(
-                //     name.to_owned(),
-                //     resolved_deps.get(name).unwrap_or(version).to_owned(),
-                // );
+            for (name, version_range) in deps {
+                if let Some(resolved_versions) = resolved_deps.get(name) {
+                    if let Ok(version_req) = semver::VersionReq::parse(version_range) {
+                        for resolved_version in resolved_versions {
+                            if semver::satisfies_requirement(resolved_version, &version_req) {
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                hashed.insert(name.to_owned(), version_range.to_owned());
             }
         };
 
@@ -103,6 +111,7 @@ impl Hasher for NodeTargetHasher {
 mod tests {
     use super::*;
     use moon_hasher::to_hash_only;
+    use std::collections::HashMap;
 
     #[test]
     fn returns_default_hash() {

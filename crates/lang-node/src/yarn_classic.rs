@@ -57,27 +57,25 @@ fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
         path: path.to_path_buf(),
     };
 
-    for line in reader.lines() {
-        if let Ok(line) = line {
-            if line.is_empty() || line.starts_with('#') {
-                continue;
-            }
+    for line in reader.lines().flatten() {
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
 
-            // Package name is the only line fully left aligned
-            if line.starts_with('"') {
-                current_package = Some(line.clone());
+        // Package name is the only line fully left aligned
+        if line.starts_with('"') {
+            current_package = Some(line.clone());
 
-                // Extract only the version and skip other fields
-            } else if line.starts_with("  version:") {
-                if let Some(names) = current_package {
-                    let version = line[10..(line.len() - 1)].to_owned();
+            // Extract only the version and skip other fields
+        } else if line.starts_with("  version:") {
+            if let Some(names) = current_package {
+                let version = line[10..(line.len() - 1)].to_owned();
 
-                    lockfile
-                        .dependencies
-                        .insert(names, YarnLockDependency { version });
+                lockfile
+                    .dependencies
+                    .insert(names, YarnLockDependency { version });
 
-                    current_package = None;
-                }
+                current_package = None;
             }
         }
     }

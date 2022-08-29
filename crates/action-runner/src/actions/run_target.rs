@@ -306,12 +306,7 @@ impl<'a> TargetRunner<'a> {
             command.args(&context.passthrough_args);
         }
 
-        if self
-            .workspace
-            .config
-            .action_runner
-            .inherit_colors_for_piped_tasks
-        {
+        if self.workspace.config.runner.inherit_colors_for_piped_tasks {
             command.inherit_colors();
         }
 
@@ -470,7 +465,7 @@ impl<'a> TargetRunner<'a> {
     }
 
     pub fn print_target_command(&self, passthrough_args: &[String]) {
-        if !self.workspace.config.action_runner.log_running_command {
+        if !self.workspace.config.runner.log_running_command {
             return;
         }
 

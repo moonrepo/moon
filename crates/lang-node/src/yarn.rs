@@ -32,6 +32,9 @@ pub struct YarnLockDependency {
 pub struct YarnLockMetadata {
     pub cache_key: Value,
     pub version: Value,
+
+    #[serde(flatten)]
+    pub unknown: HashMap<String, Value>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -141,7 +144,8 @@ __metadata:
             YarnLock {
                 metadata: YarnLockMetadata {
                     cache_key: Value::Number(Number::from(8)),
-                    version: Value::Number(Number::from(6))
+                    version: Value::Number(Number::from(6)),
+                    ..YarnLockMetadata::default()
                 },
                 dependencies: HashMap::from([
                     ("@algolia/autocomplete-core@npm:1.5.2".to_owned(), YarnLockDependency {

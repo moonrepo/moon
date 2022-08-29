@@ -32,9 +32,9 @@ pub struct PackageLockDependency {
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageLock {
-    pub lockfile_version: i32,
+    pub lockfile_version: Value,
     pub name: String,
-    pub dependencies: HashMap<String, PackageLockDependency>,
+    pub dependencies: Option<HashMap<String, PackageLockDependency>>,
     pub packages: Option<HashMap<String, Value>>,
     pub requires: Option<bool>,
 
@@ -54,7 +54,7 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
     let mut deps: LockfileDependencyVersions = HashMap::new();
 
     if let Some(lockfile) = PackageLock::read(path)? {
-        for (name, dep) in lockfile.dependencies {
+        for (name, dep) in lockfile.dependencies.unwrap_or_default() {
             if let Some(versions) = deps.get_mut(&name) {
                 versions.push(dep.version.clone());
             } else {

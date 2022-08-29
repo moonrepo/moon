@@ -44,17 +44,20 @@ impl NodeTargetHasher {
         resolved_deps: &LockfileDependencyVersions,
     ) {
         let copy_deps = |deps: &BTreeMap<String, String>, hashed: &mut BTreeMap<String, String>| {
-            for (name, version_range) in deps {
+            'outer: for (name, version_range) in deps {
                 if let Some(resolved_versions) = resolved_deps.get(name) {
                     if let Ok(version_req) = semver::VersionReq::parse(version_range) {
                         for resolved_version in resolved_versions {
                             if semver::satisfies_requirement(resolved_version, &version_req) {
-                                continue;
+                                hashed.insert(name.to_owned(), resolved_version.to_owned());
+
+                                continue 'outer;
                             }
                         }
                     }
                 }
 
+                // No match, just use the range itself
                 hashed.insert(name.to_owned(), version_range.to_owned());
             }
         };

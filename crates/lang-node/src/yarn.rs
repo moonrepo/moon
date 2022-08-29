@@ -65,19 +65,13 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
     let mut deps: LockfileDependencyVersions = HashMap::new();
 
     if let Some(lockfile) = YarnLock::read(path)? {
-        // for entry in lockfile.entries.values() {
-        //     if let YarnLockEntry::Dependency(dep) = entry {
-        //         if let Some(at_index) = dep.resolution.rfind('@') {
-        //             let name = dep.resolution[0..at_index].to_owned();
-
-        //             if let Some(versions) = deps.get_mut(&name) {
-        //                 versions.push(dep.version.clone());
-        //             } else {
-        //                 deps.insert(name, vec![dep.version.clone()]);
-        //             }
-        //         }
-        //     }
-        // }
+        for (name, dep) in lockfile.dependencies {
+            if let Some(versions) = deps.get_mut(&name) {
+                versions.push(dep.version.clone());
+            } else {
+                deps.insert(name, vec![dep.version.clone()]);
+            }
+        }
     }
 
     Ok(deps)

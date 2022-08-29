@@ -35,7 +35,7 @@ pub struct PnpmLockPackage {
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PnpmLock {
-    pub lockfile_version: i32,
+    pub lockfile_version: Value,
     pub importers: HashMap<String, Value>,
     pub packages: HashMap<String, PnpmLockPackage>,
 

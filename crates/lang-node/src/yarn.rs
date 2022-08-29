@@ -1,68 +1,61 @@
+use cached::proc_macro::cached;
+use moon_lang::LockfileDependencyVersions;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 
-#[derive(Deserialize, Serialize)]
-pub struct YarnInfoDependency {
-    pub descriptor: String,
-    pub locator: String,
-
-    #[serde(flatten)]
-    pub other: HashMap<String, Value>,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct YarnInfoChildren {
-    #[serde(rename = "Dependencies")]
-    pub dependencies: Option<Vec<YarnInfoDependency>>,
-
-    #[serde(rename = "Exported Binaries")]
-    pub exported_binaries: Option<Vec<String>>,
-
-    #[serde(rename = "Instances")]
-    pub instances: Option<i32>,
-
-    #[serde(rename = "Version")]
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct YarnLockDependency {
+    pub bin: Option<HashMap<String, String>>,
+    pub checksum: Option<String>,
+    pub dependencies: Option<HashMap<String, String>>,
+    pub language_name: String,
+    pub link_type: String,
+    pub peer_dependencies: Option<HashMap<String, String>>,
+    pub peer_dependencies_meta: Option<serde_yaml::Value>,
+    pub resolution: String,
     pub version: String,
-
-    #[serde(flatten)]
-    pub other: HashMap<String, Value>,
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct YarnInfoItem {
-    pub children: YarnInfoChildren,
-
-    pub value: String,
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct YarnLockMetadata {
+    pub cache_key: i8,
+    pub version: i8,
 }
 
-// Values are in the format of `<pkg>@<version>` or `<pkg>@<locator>`, and both
-// the package name and locator may contain "@", which makes this complicated.
-// However, the value we need to split on is always the 2nd "@".
-fn extract_package_name(value: &str) -> String {
-    // Slice the string and remove the first char incase its an npm scope
-    let name = &value[1..];
-
-    // Then find the next @ and slice up until it
-    if let Some(at_index) = name.find('@') {
-        return value[0..at_index].to_owned();
-    }
-
-    // Unknown, so just use the whole thing
-    value.to_owned()
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum YarnLockEntry {
+    Dependency(YarnLockDependency),
+    Metadata(YarnLockMetadata),
 }
 
-// `yarn info` is a stream of JSON objects, so they need to be parsed separately
-// and combined into a new result.
-pub fn parse_yarn_info<T: AsRef<str>>(
-    json: T,
-) -> Result<HashMap<String, String>, serde_json::Error> {
-    let mut deps = HashMap::new();
+#[cached(result)]
+pub fn load_lockfile(path: PathBuf) -> Result<HashMap<String, YarnLockEntry>, serde_yaml::Error> {
+    serde_yaml::from_str(&fs::read_to_string(path).unwrap())
+}
 
-    for item in json.as_ref().split('\n') {
-        let data: YarnInfoItem = serde_json::from_str(item)?;
+#[cached(result)]
+pub fn load_lockfile_dependencies(
+    path: PathBuf,
+) -> Result<LockfileDependencyVersions, serde_yaml::Error> {
+    let mut deps: LockfileDependencyVersions = HashMap::new();
 
-        deps.insert(extract_package_name(&data.value), data.children.version);
+    for entry in load_lockfile(path)?.values() {
+        if let YarnLockEntry::Dependency(dep) = entry {
+            if let Some(at_index) = dep.resolution.rfind('@') {
+                let name = dep.resolution[0..at_index].to_owned();
+
+                if let Some(versions) = deps.get_mut(&name) {
+                    versions.push(dep.version.clone());
+                } else {
+                    deps.insert(name, vec![dep.version.clone()]);
+                }
+            }
+        }
     }
 
     Ok(deps)

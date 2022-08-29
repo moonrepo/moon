@@ -43,8 +43,17 @@ pub fn parse_yarn_list<T: AsRef<str>>(
     json: T,
 ) -> Result<HashMap<String, String>, serde_json::Error> {
     let mut deps = HashMap::new();
+    let json = json.as_ref();
 
-    for item in json.as_ref().split('\n') {
+    if json.is_empty() {
+        return Ok(deps);
+    }
+
+    for item in json.split('\n') {
+        if item.is_empty() {
+            continue;
+        }
+
         let data: YarnListItem = serde_json::from_str(item)?;
 
         if let YarnListItem::Tree { data } = data {

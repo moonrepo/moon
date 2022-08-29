@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_error::MoonError;
 use moon_lang_node::{node, pnpm, PNPM};
-use moon_logger::{color, debug, Logable};
+use moon_logger::{color, debug, warn, Logable};
 use moon_utils::{is_ci, process::output_to_string};
 use std::collections::HashMap;
 use std::env;
@@ -185,12 +185,26 @@ impl PackageManager<NodeTool> for PnpmTool {
         &self,
         path: &Path,
     ) -> Result<HashMap<String, String>, ToolchainError> {
-        let output = self
+        let output = match self
             .create_command()
             .args(["list", "--depth", "0", "--json"])
             .cwd(path)
             .exec_capture_output()
-            .await?;
+            .await
+        {
+            Ok(out) => out,
+            Err(error) => {
+                if let MoonError::ProcessNonZeroWithOutput(_, _, message) = error {
+                    warn!(
+                        target: self.get_log_target(),
+                        "Failed to run `pnpm list`, continuing without resolved dependencies.\n{}",
+                        message
+                    );
+                }
+
+                return Ok(HashMap::new());
+            }
+        };
 
         Ok(pnpm::parse_pnpm_list(output_to_string(&output.stdout))
             .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)))?)

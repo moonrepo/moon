@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_error::MoonError;
 use moon_lang_node::{node, yarn, yarn_classic, YARN};
-use moon_logger::{color, debug, Logable};
+use moon_logger::{color, debug, warn, Logable};
 use moon_utils::{is_ci, process::output_to_string};
 use std::collections::HashMap;
 use std::env;
@@ -250,23 +250,51 @@ impl PackageManager<NodeTool> for YarnTool {
         path: &Path,
     ) -> Result<HashMap<String, String>, ToolchainError> {
         if self.is_v1() {
-            let output = self
+            let output = match self
                 .create_command()
                 .args(["list", "--depth", "0", "--json"])
                 .cwd(path)
                 .exec_capture_output()
-                .await?;
+                .await
+            {
+                Ok(out) => out,
+                Err(error) => {
+                    if let MoonError::ProcessNonZeroWithOutput(_, _, message) = error {
+                        warn!(
+                            target: self.get_log_target(),
+                            "Failed to run `yarn list`, continuing without resolved dependencies.\n{}",
+                            message
+                        );
+                    }
+
+                    return Ok(HashMap::new());
+                }
+            };
 
             return yarn_classic::parse_yarn_list(output_to_string(&output.stdout))
                 .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)));
         }
 
-        let output = self
+        let output = match self
             .create_command()
             .args(["info", "--json"])
             .cwd(path)
             .exec_capture_output()
-            .await?;
+            .await
+        {
+            Ok(out) => out,
+            Err(error) => {
+                if let MoonError::ProcessNonZeroWithOutput(_, _, message) = error {
+                    warn!(
+                        target: self.get_log_target(),
+                        "Failed to run `yarn info`, continuing without resolved dependencies.\n{}",
+                        message
+                    );
+                }
+
+                return Ok(HashMap::new());
+            }
+        };
 
         yarn::parse_yarn_info(output_to_string(&output.stdout))
             .map_err(|e| ToolchainError::Moon(MoonError::Json(path.to_path_buf(), e)))

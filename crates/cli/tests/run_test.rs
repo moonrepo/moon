@@ -294,6 +294,8 @@ mod dependencies {
             .arg("dependsOn:serialDeps")
             .assert();
 
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
         assert_snapshot!(get_assert_output(&assert));
     }
 }

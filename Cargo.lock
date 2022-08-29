@@ -1497,6 +1497,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "serde_yaml 0.9.4",
  "serial_test",
  "tokio",
 ]

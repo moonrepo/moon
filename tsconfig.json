@@ -9,6 +9,9 @@
       "path": "packages/runtime"
     },
     {
+      "path": "packages/types"
+    },
+    {
       "path": "website"
     }
   ]

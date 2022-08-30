@@ -11,10 +11,5 @@
     "src/**/*",
     "tests/**/*",
     "types/**/*"
-  ],
-  "references": [
-    {
-      "path": "../types"
-    }
   ]
 }

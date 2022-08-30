@@ -1,7 +1,7 @@
 /* eslint-disable sort-keys */
 // @ts-check
 
-// const path = require('path');
+const path = require('path');
 const prismTheme = require('./prism.config');
 
 const social = [
@@ -93,11 +93,11 @@ const config = {
 						label: 'Blog',
 						position: 'left',
 					},
-					// {
-					// 	to: 'api',
-					// 	label: 'Packages',
-					// 	position: 'left',
-					// },
+					{
+						to: '/api',
+						label: 'API',
+						position: 'left',
+					},
 					{
 						type: 'dropdown',
 						label: 'Packages',
@@ -148,10 +148,10 @@ const config = {
 								label: 'Documentation',
 								to: '/docs',
 							},
-							// {
-							// 	label: 'Packages',
-							// 	to: '/api',
-							// },
+							{
+								label: 'API',
+								to: '/api',
+							},
 							{
 								label: 'Examples repository',
 								href: 'https://github.com/moonrepo/examples',
@@ -189,15 +189,15 @@ const config = {
 		}),
 
 	plugins: [
-		// [
-		// 	'docusaurus-plugin-typedoc-api',
-		// 	{
-		// 		projectRoot: path.join(__dirname, '..'),
-		// 		packages: ['packages/runtime'],
-		// 		minimal: true,
-		// 		readme: true,
-		// 	},
-		// ],
+		[
+			'docusaurus-plugin-typedoc-api',
+			{
+				projectRoot: path.join(__dirname, '..'),
+				packages: ['packages/runtime', 'packages/types'],
+				minimal: true,
+				readme: true,
+			},
+		],
 		function tailwind() {
 			return {
 				name: 'docusaurus-tailwindcss',

@@ -2,7 +2,7 @@
   "name": "@moonrepo/types",
   "version": "0.0.0",
   "type": "commonjs",
-  "description": "TypeScript types.",
+  "description": "TypeScript types for moon.",
   "keywords": [
     "moon",
     "repo",

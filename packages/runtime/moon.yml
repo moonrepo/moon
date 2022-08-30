@@ -1,2 +1,4 @@
 language: typescript
 type: library
+
+dependsOn: [types]

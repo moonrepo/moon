@@ -164,4 +164,16 @@ mod tests {
 
         temp.close().unwrap();
     }
+
+    #[test]
+    fn parses_complex_lockfile() {
+        let content = reqwest::blocking::get(
+            "https://raw.githubusercontent.com/moonrepo/examples/master/package-lock.json",
+        )
+        .unwrap()
+        .text()
+        .unwrap();
+
+        let _: PackageLock = serde_json::from_str(&content).unwrap();
+    }
 }

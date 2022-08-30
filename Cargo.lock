@@ -1497,6 +1497,7 @@ dependencies = [
  "moon_utils",
  "pretty_assertions",
  "regex",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_yaml 0.9.4",

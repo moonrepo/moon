@@ -1,11 +1,10 @@
 use cached::proc_macro::cached;
-use moon_error::MoonError;
+use moon_error::{map_io_to_fs_error, MoonError};
 use moon_lang::config_cache;
 use moon_lang::LockfileDependencyVersions;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{prelude::*, BufReader};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 config_cache!(YarnLock, "yarn.lock", load_lockfile, write_lockfile);
@@ -45,18 +44,14 @@ fn extract_package_name(line: &str) -> Option<String> {
     None
 }
 
-fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
-    let path = path.as_ref();
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-
+fn parse_lockfile(content: String) -> Result<YarnLock, MoonError> {
     let mut current_package = None;
     let mut lockfile = YarnLock {
         dependencies: HashMap::new(),
         path: PathBuf::new(),
     };
 
-    for line in reader.lines().flatten() {
+    for line in content.split('\n') {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
@@ -80,6 +75,12 @@ fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
     }
 
     Ok(lockfile)
+}
+
+fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
+    let path = path.as_ref();
+
+    parse_lockfile(fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?)
 }
 
 fn write_lockfile(_path: &Path, _lockfile: &YarnLock) -> Result<(), MoonError> {
@@ -189,5 +190,18 @@ repeat-string@^1.0.0, repeat-string@^1.5.4, repeat-string@^1.6.1:
         );
 
         temp.close().unwrap();
+    }
+
+    #[test]
+    fn parses_complex_lockfile() {
+        let content = reqwest::blocking::get(
+            // TODO: this may change upstream
+            "https://raw.githubusercontent.com/facebook/docusaurus/main/yarn.lock",
+        )
+        .unwrap()
+        .text()
+        .unwrap();
+
+        let _: YarnLock = parse_lockfile(content).unwrap();
     }
 }

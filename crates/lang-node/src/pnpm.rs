@@ -250,4 +250,17 @@ packages:
 
         temp.close().unwrap();
     }
+
+    #[test]
+    fn parses_complex_lockfile() {
+        let content = reqwest::blocking::get(
+            // TODO: this may change upstream
+            "https://raw.githubusercontent.com/solidjs/solid/main/pnpm-lock.yaml",
+        )
+        .unwrap()
+        .text()
+        .unwrap();
+
+        let _: PnpmLock = serde_yaml::from_str(&content).unwrap();
+    }
 }

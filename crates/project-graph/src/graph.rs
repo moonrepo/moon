@@ -8,6 +8,7 @@ use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
 use moon_project::{detect_projects_with_globs, Project, ProjectError};
 use moon_task::{Target, Task};
+use moon_utils::path;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -192,6 +193,48 @@ impl ProjectGraph {
         }
 
         Ok(())
+    }
+
+    /// Find and return a project based on the initial path location.
+    /// This will attempt to find the closest matching project source.
+    #[track_caller]
+    pub fn load_from_path<P: AsRef<Path>>(&self, file: P) -> Result<Project, ProjectError> {
+        let mut file = file.as_ref();
+
+        if file.starts_with(&self.workspace_root) {
+            file = file.strip_prefix(&self.workspace_root).unwrap();
+        }
+
+        // Find the deepest matching path in case sub-projects are being used
+        let mut remaining_length = 1000; // Start with a really fake number
+        let mut possible_id = String::new();
+
+        for (id, source) in &self.projects_map {
+            if !file.starts_with(source) {
+                continue;
+            }
+
+            if let Some(diff) = path::relative_from(file, source) {
+                let diff_string = path::to_string(diff)?;
+
+                // Exact match, abort
+                if diff_string.is_empty() {
+                    possible_id = id.clone();
+                    break;
+                }
+
+                if diff_string.len() < remaining_length {
+                    remaining_length = diff_string.len();
+                    possible_id = id.clone();
+                }
+            }
+        }
+
+        if possible_id.is_empty() {
+            return Err(ProjectError::MissingProjectFromPath(file.to_path_buf()));
+        }
+
+        self.load(&possible_id)
     }
 
     /// Return a list of direct project IDs that the defined project depends on.

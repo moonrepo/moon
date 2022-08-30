@@ -11,10 +11,10 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
+moon_utils = { path = "../utils" }
 petgraph = "0.6.2"
 thiserror = "1.0.31"
 
 [dev-dependencies]
-moon_utils = { path = "../utils" }
 insta = "1.16.0"
 tokio = { version = "1.20.0", features = ["test-util"] }

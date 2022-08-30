@@ -2,6 +2,7 @@ use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_task::{TargetError, TaskError};
 use moon_utils::glob::GlobError;
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -14,6 +15,9 @@ pub enum ProjectError {
 
     #[error("No project exists at path <file>{0}</file>.")]
     MissingProject(String),
+
+    #[error("No project could be located starting from path <path>{0}</path>.")]
+    MissingProjectFromPath(PathBuf),
 
     #[error("No project has been configured with the ID <id>{0}</id>.")]
     UnconfiguredID(String),
@@ -32,6 +36,4 @@ pub enum ProjectError {
 
     #[error(transparent)]
     Task(#[from] TaskError),
-    // #[error(transparent)]
-    // Token(#[from] TokenError),
 }

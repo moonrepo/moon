@@ -24,7 +24,7 @@ lazy_static! {
 
     // This isn't exhaustive but captures very popular tools
     pub static ref DEV_COMMAND: regex::Regex =
-        regex::create_regex(r#"(concurrently)|(gatsby (new|dev|develop|serve|repl))|(next (dev|start))|(packemon watch)|(parcel [^build])|(react-scripts start)|(snowpack dev)|(vite (dev|preview|serve))|(vue-cli-service serve)|(webpack (s|serve|server|w|watch|-))"#)
+        regex::create_regex(r#"(astro (dev|preview))|(concurrently)|(gatsby (new|dev|develop|serve|repl))|(next (dev|start))|(packemon watch)|(parcel [^build])|(react-scripts start)|(snowpack dev)|(vite (dev|preview|serve))|(vue-cli-service serve)|(webpack (s|serve|server|w|watch|-))"#)
             .unwrap();
 
     pub static ref DEV_COMMAND_SOLO: regex::Regex =

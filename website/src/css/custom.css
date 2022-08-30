@@ -162,3 +162,9 @@ ul ul {
 .markdown {
 	position: relative;
 }
+
+/* Fix TypeDoc issues */
+
+.tsd-index-list li + li {
+	margin-top: 0;
+}

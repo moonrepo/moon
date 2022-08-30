@@ -2,6 +2,12 @@
 
 $schema: '../schemas/workspace.json'
 
+projects:
+  - 'packages/*'
+  - '!packages/cli'
+  - '!packages/core-*'
+  - 'website'
+
 node:
   version: '16.15.0'
   packageManager: 'yarn'
@@ -10,11 +16,8 @@ node:
   addEnginesConstraint: false
   inferTasksFromScripts: false
 
-projects:
-  - 'packages/*'
-  - '!packages/cli'
-  - '!packages/core-*'
-  - 'website'
+typescript:
+  syncProjectReferences: true
 
 runner:
   logRunningCommand: true

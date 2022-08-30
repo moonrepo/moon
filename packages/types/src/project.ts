@@ -1,13 +1,10 @@
-export type Platform = 'node' | 'system' | 'unknown';
+import type { Platform } from './common';
+import type { DependencyConfig, ProjectConfig, TaskMergeStrategy, TaskOutputStyle } from './config';
 
 export interface FileGroup {
 	files: string[];
 	id: string;
 }
-
-export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
-
-export type TaskOutputStyle = 'buffer-only-failure' | 'buffer' | 'hash' | 'none' | 'stream';
 
 export interface TaskOptions {
 	cache: boolean;

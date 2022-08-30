@@ -94,7 +94,7 @@ const config = {
 						position: 'left',
 					},
 					{
-						to: 'api',
+						to: '/api',
 						label: 'API',
 						position: 'left',
 					},

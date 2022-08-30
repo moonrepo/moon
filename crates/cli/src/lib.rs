@@ -78,7 +78,7 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::Check { id } => check(id).await,
+        Commands::Check { ids } => check(ids).await,
         Commands::Clean { lifetime } => {
             clean(CleanOptions {
                 cache_liftime: lifetime.to_owned(),

@@ -232,8 +232,8 @@ pub enum Commands {
         alias = "c"
     )]
     Check {
-        #[clap(help = "ID of project to explicitly check")]
-        id: Option<ProjectID>,
+        #[clap(help = "List of project IDs to explicitly check")]
+        ids: Vec<ProjectID>,
     },
 
     // moon ci

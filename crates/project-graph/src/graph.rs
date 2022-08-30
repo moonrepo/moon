@@ -238,7 +238,7 @@ impl ProjectGraph {
         }
 
         if possible_id.is_empty() {
-            return Err(ProjectError::MissingProjectFromPath(file.to_path_buf()));
+            return Err(ProjectError::MissingProjectFromPath(file));
         }
 
         self.load(&possible_id)

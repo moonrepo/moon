@@ -198,12 +198,19 @@ impl ProjectGraph {
     /// Find and return a project based on the initial path location.
     /// This will attempt to find the closest matching project source.
     #[track_caller]
-    pub fn load_from_path<P: AsRef<Path>>(&self, file: P) -> Result<Project, ProjectError> {
-        let mut file = file.as_ref();
+    pub fn load_from_path<P: AsRef<Path>>(&self, current_file: P) -> Result<Project, ProjectError> {
+        let current_file = current_file.as_ref();
 
-        if file.starts_with(&self.workspace_root) {
-            file = file.strip_prefix(&self.workspace_root).unwrap();
-        }
+        let file = if current_file == self.workspace_root {
+            PathBuf::from(".")
+        } else if current_file.starts_with(&self.workspace_root) {
+            current_file
+                .strip_prefix(&self.workspace_root)
+                .unwrap()
+                .to_path_buf()
+        } else {
+            current_file.to_path_buf()
+        };
 
         // Find the deepest matching path in case sub-projects are being used
         let mut remaining_length = 1000; // Start with a really fake number
@@ -214,7 +221,7 @@ impl ProjectGraph {
                 continue;
             }
 
-            if let Some(diff) = path::relative_from(file, source) {
+            if let Some(diff) = path::relative_from(&file, source) {
                 let diff_string = path::to_string(diff)?;
 
                 // Exact match, abort

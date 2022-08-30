@@ -30,7 +30,7 @@
     "bundle": true
   },
   "dependencies": {
-    "@boost/common": "^3.2.1",
+    "@boost/common": "^4.0.0",
     "@moonrepo/types": "^0.0.0"
   },
   "engines": {

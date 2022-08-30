@@ -11,8 +11,7 @@ fileGroups:
 
 tasks:
   build:
-    command: 'packemon'
-    args: 'build --addFiles --declaration'
+    command: 'packemon build --addFiles --addExports --declaration'
     env:
       NODE_ENV: 'production'
     inputs:
@@ -22,6 +21,7 @@ tasks:
       - '/tsconfig.options.json'
     outputs:
       - 'cjs'
+      - 'dts'
 
   format:
     command: 'prettier'
@@ -80,10 +80,7 @@ tasks:
       - 'jest.config.js'
 
   typecheck:
-    command: 'tsc'
-    args:
-      - '--build'
-      - '--verbose'
+    command: 'tsc --build --verbose'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'

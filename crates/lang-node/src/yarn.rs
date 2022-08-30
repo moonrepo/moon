@@ -208,4 +208,16 @@ __metadata:
 
         temp.close().unwrap();
     }
+
+    #[test]
+    fn parses_complex_lockfile() {
+        let content = reqwest::blocking::get(
+            "https://raw.githubusercontent.com/moonrepo/moon/master/yarn.lock",
+        )
+        .unwrap()
+        .text()
+        .unwrap();
+
+        let _: YarnLock = serde_yaml::from_str(&content).unwrap();
+    }
 }

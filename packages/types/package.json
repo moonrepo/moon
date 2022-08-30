@@ -1,0 +1,45 @@
+{
+  "name": "@moonrepo/types",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "description": "TypeScript types.",
+  "keywords": [
+    "moon",
+    "repo",
+    "typescript",
+    "types"
+  ],
+  "author": "Miles Johnson",
+  "license": "MIT",
+  "main": "./cjs/index.cjs",
+  "types": "./dts/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moonrepo/moon",
+    "directory": "packages/types"
+  },
+  "files": [
+    "cjs/**/*.{cjs,mjs,map}",
+    "dts/**/*.d.ts",
+    "src/**/*.{ts,tsx,json}"
+  ],
+  "packemon": {
+    "format": "cjs",
+    "platform": "node",
+    "bundle": true
+  },
+  "engines": {
+    "node": ">=14.15.0",
+    "npm": ">=6.14.0"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dts/index.d.ts",
+      "node": {
+        "import": "./cjs/index-wrapper.mjs",
+        "require": "./cjs/index.cjs"
+      }
+    }
+  }
+}

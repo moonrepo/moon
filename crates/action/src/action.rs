@@ -16,6 +16,7 @@ pub enum ActionStatus {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Attempt {
     pub duration: Option<Duration>,
 
@@ -54,6 +55,7 @@ impl Attempt {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Action {
     pub attempts: Option<Vec<Attempt>>,
 

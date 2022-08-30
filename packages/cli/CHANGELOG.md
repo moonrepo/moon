@@ -15,6 +15,7 @@
 - Updated hashing to utilize the resolved version from the lockfile when applicable.
 - Updated the action runner to fail when an output is defined and the output does not exist after
   being ran.
+- Released a new `@moonrepo/types` npm package.
 
 #### ⚙️ Internal
 

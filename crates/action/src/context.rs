@@ -10,6 +10,7 @@ pub enum ProfileType {
 }
 
 #[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ActionContext {
     pub passthrough_args: Vec<String>,
 

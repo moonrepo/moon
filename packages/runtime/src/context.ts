@@ -1,13 +1,12 @@
 import fs from 'fs';
 import { json, Path } from '@boost/common';
-import { Project } from './types';
+import { Project } from '@moonrepo/types';
 
 export interface RuntimeContext {
 	project: Project;
+	projectRoot: Path;
 	target: string;
-	workspace: {
-		root: Path;
-	};
+	workspaceRoot: Path;
 }
 
 export async function getContext(): Promise<RuntimeContext> {
@@ -20,13 +19,9 @@ export async function getContext(): Promise<RuntimeContext> {
 	const project = json.parse<Project>(await fs.promises.readFile(env.MOON_PROJECT_RUNFILE, 'utf8'));
 
 	return {
-		project: {
-			...project,
-			root: Path.create(project.root),
-		},
+		project,
+		projectRoot: Path.create(project.root),
 		target: env.MOON_TARGET!,
-		workspace: {
-			root: Path.create(env.MOON_WORKSPACE_ROOT ?? process.cwd()),
-		},
+		workspaceRoot: Path.create(env.MOON_WORKSPACE_ROOT ?? process.cwd()),
 	};
 }

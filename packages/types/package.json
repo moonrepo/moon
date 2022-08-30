@@ -1,14 +1,13 @@
 {
-  "name": "@moonrepo/runtime",
-  "version": "0.0.7",
+  "name": "@moonrepo/types",
+  "version": "0.0.0",
   "type": "commonjs",
-  "description": "Action runner and runtime utilities.",
+  "description": "TypeScript types for moon.",
   "keywords": [
     "moon",
     "repo",
-    "task",
-    "runner",
-    "runtime"
+    "typescript",
+    "types"
   ],
   "author": "Miles Johnson",
   "license": "MIT",
@@ -17,7 +16,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/moonrepo/moon",
-    "directory": "packages/runtime"
+    "directory": "packages/types"
   },
   "files": [
     "cjs/**/*.{cjs,mjs,map}",
@@ -28,10 +27,6 @@
     "format": "cjs",
     "platform": "node",
     "bundle": true
-  },
-  "dependencies": {
-    "@boost/common": "^4.0.0",
-    "@moonrepo/types": "^0.0.0"
   },
   "engines": {
     "node": ">=14.15.0",

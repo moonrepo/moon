@@ -1,20 +1,22 @@
-import { Path } from '@boost/common';
+import type { Platform } from './common';
+import type { DependencyConfig, ProjectConfig, TaskMergeStrategy, TaskOutputStyle } from './config';
 
 export interface FileGroup {
-	files: string;
+	files: string[];
 	id: string;
 }
 
-// Keep in sync with crates/project/src/task.rs
-export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
-
 export interface TaskOptions {
+	cache: boolean;
+	envFile: string | null;
 	mergeArgs: TaskMergeStrategy;
 	mergeDeps: TaskMergeStrategy;
 	mergeEnv: TaskMergeStrategy;
 	mergeInputs: TaskMergeStrategy;
 	mergeOutputs: TaskMergeStrategy;
+	outputStyle: TaskOutputStyle | null;
 	retryCount: number;
+	runDepsInParallel: boolean;
 	runInCI: boolean;
 	runFromWorkspaceRoot: boolean;
 }
@@ -27,19 +29,21 @@ export interface Task {
 	inputs: string[];
 	inputGlobs: string[];
 	inputPaths: string[];
+	inputVars: string[];
 	options: TaskOptions;
 	outputs: string[];
 	outputPaths: string[];
+	platform: Platform;
 	target: string;
-	type: 'node' | 'system';
 }
 
-// Keep in sync with crates/project/src/project.rs
 export interface Project {
-	config: object;
+	alias: string | null;
+	config: ProjectConfig;
+	dependencies: DependencyConfig[];
 	fileGroups: Record<string, FileGroup>;
 	id: string;
-	root: Path;
+	root: string;
 	source: string;
 	tasks: Record<string, Task>;
 }

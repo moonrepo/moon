@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 import React from 'react';
-import { useHomePageRoute, useSidebarBreadcrumbs } from '@docusaurus/theme-common';
+// @ts-expect-error Not typed!
+import { useHomePageRoute, useSidebarBreadcrumbs } from '@docusaurus/theme-common/internal';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { faAngleRight, faHouseBlank } from '@fortawesome/pro-regular-svg-icons';
 import Icon from '../ui/iconography/Icon';
@@ -71,8 +74,8 @@ function HomeBreadcrumbItem() {
 }
 
 export default function DocBreadcrumbs() {
-	const breadcrumbs = useSidebarBreadcrumbs();
-	const homePageRoute = useHomePageRoute();
+	const breadcrumbs = useSidebarBreadcrumbs() as { href: string; label: string }[];
+	const homePageRoute = useHomePageRoute() as object | undefined;
 
 	if (!breadcrumbs) {
 		return null;

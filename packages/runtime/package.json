@@ -39,9 +39,6 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    "./*": {
-      "types": "./dts/*.d.ts"
-    },
     ".": {
       "types": "./dts/index.d.ts",
       "node": {

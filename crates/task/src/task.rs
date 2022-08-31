@@ -13,6 +13,15 @@ use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
 
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TaskType {
+    Build,
+    Run,
+    #[default]
+    Test,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptions {
@@ -176,6 +185,9 @@ pub struct Task {
     pub platform: PlatformType,
 
     pub target: TargetID,
+
+    #[serde(rename = "type")]
+    pub type_of: TaskType,
 }
 
 impl Logable for Task {
@@ -239,6 +251,7 @@ impl Task {
             output_paths: HashSet::new(),
             platform: cloned_config.type_of,
             target: target.clone(),
+            type_of: TaskType::Test,
         };
 
         debug!(
@@ -300,6 +313,17 @@ impl Task {
                 })
                 .collect::<Vec<String>>(),
         )?)
+    }
+
+    /// Determine the type of task after inheritance and expansion.
+    pub fn determine_type(&mut self) {
+        if !self.options.run_in_ci {
+            self.type_of = TaskType::Run;
+        } else if !self.outputs.is_empty() {
+            self.type_of = TaskType::Build;
+        } else {
+            self.type_of = TaskType::Test;
+        }
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.
@@ -537,9 +561,24 @@ impl Task {
         Ok(false)
     }
 
+    /// Return true if the task is a "build" type.
+    pub fn is_build_type(&self) -> bool {
+        matches!(self.type_of, TaskType::Build)
+    }
+
     /// Return true if the task is a "no operation" and does nothing.
     pub fn is_no_op(&self) -> bool {
         self.command == "nop" || self.command == "noop" || self.command == "no-op"
+    }
+
+    /// Return true if the task is a "run" type.
+    pub fn is_run_type(&self) -> bool {
+        matches!(self.type_of, TaskType::Run)
+    }
+
+    /// Return true if the task is a "test" type.
+    pub fn is_test_type(&self) -> bool {
+        matches!(self.type_of, TaskType::Test)
     }
 
     pub fn merge(&mut self, config: &TaskConfig) -> Result<(), TaskError> {
@@ -579,7 +618,7 @@ impl Task {
     }
 
     pub fn should_run_in_ci(&self) -> bool {
-        !self.outputs.is_empty() || self.options.run_in_ci
+        self.is_build_type() || self.is_test_type() || self.options.run_in_ci
     }
 
     fn merge_env_vars(

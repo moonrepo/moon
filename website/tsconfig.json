@@ -7,5 +7,13 @@
   ],
   "compilerOptions": {
     "baseUrl": "."
-  }
+  },
+  "references": [
+    {
+      "path": "../packages/runtime"
+    },
+    {
+      "path": "../packages/types"
+    }
+  ]
 }

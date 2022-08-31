@@ -1,16 +1,28 @@
 language: typescript
 type: application
 
+dependsOn:
+  - id: 'runtime'
+    scope: 'development'
+  - id: 'types'
+    scope: 'development'
+
 tasks:
   build:
     command: 'docusaurus'
     args: 'build'
+    deps:
+      - '^:build'
     outputs:
       - 'build'
+
   start:
     command: 'docusaurus'
     args: 'start'
+    deps:
+      - '^:build'
     local: true
+
   typecheck:
     command: 'tsc'
     args:

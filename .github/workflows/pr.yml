@@ -10,6 +10,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v3
+        with:
+          cache: yarn
       - run: yarn install --immutable
       - run: yarn version check
       - run: node scripts/version/checkBumpForRustChanges.mjs

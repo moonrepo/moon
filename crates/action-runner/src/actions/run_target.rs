@@ -1,3 +1,4 @@
+use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
 use moon_config::PlatformType;
@@ -36,6 +37,10 @@ pub struct TargetRunner<'a> {
 
     project: &'a Project,
 
+    stderr: Term,
+
+    stdout: Term,
+
     task: &'a Task,
 
     workspace: &'a Workspace,
@@ -50,6 +55,8 @@ impl<'a> TargetRunner<'a> {
         Ok(TargetRunner {
             cache: workspace.cache.cache_run_target_state(&task.target).await?,
             project,
+            stderr: Term::buffered_stderr(),
+            stdout: Term::buffered_stdout(),
             task,
             workspace,
         })
@@ -225,6 +232,13 @@ impl<'a> TargetRunner<'a> {
         Ok(env_vars)
     }
 
+    pub fn flush_output(&self) -> Result<(), MoonError> {
+        self.stdout.flush()?;
+        self.stderr.flush()?;
+
+        Ok(())
+    }
+
     /// Hash the target based on all current parameters and return early
     /// if this target hash has already been cached. Based on the state
     /// of the target and project, determine the hydration strategy as well.
@@ -345,9 +359,11 @@ impl<'a> TargetRunner<'a> {
                 },
                 &attempt,
                 attempt_total,
-            );
+            )?;
 
-            self.print_target_command(&context.passthrough_args);
+            self.print_target_command(&context.passthrough_args)?;
+
+            self.flush_output()?;
 
             let possible_output = if should_stream_output {
                 command.exec_stream_and_capture_output(stream_prefix).await
@@ -365,9 +381,9 @@ impl<'a> TargetRunner<'a> {
                     });
 
                     if should_stream_output {
-                        self.handle_streamed_output(&attempt, attempt_total, &out);
+                        self.handle_streamed_output(&attempt, attempt_total, &out)?;
                     } else {
-                        self.handle_captured_output(&attempt, attempt_total, &out);
+                        self.handle_captured_output(&attempt, attempt_total, &out)?;
                     }
 
                     attempts.push(attempt);
@@ -410,39 +426,52 @@ impl<'a> TargetRunner<'a> {
         Ok(attempts)
     }
 
-    pub fn print_cache_item(&self) {
+    pub fn print_cache_item(&self) -> Result<(), MoonError> {
         let item = &self.cache.item;
 
-        self.print_output_with_style(&item.stdout, &item.stderr, item.exit_code != 0);
+        self.print_output_with_style(&item.stdout, &item.stderr, item.exit_code != 0)?;
+
+        Ok(())
     }
 
-    pub fn print_checkpoint(&self, checkpoint: Checkpoint, comment: &str) {
-        println!(
+    pub fn print_checkpoint(&self, checkpoint: Checkpoint, comment: &str) -> Result<(), MoonError> {
+        self.stdout.write_line(&format!(
             "{} {}",
             label_checkpoint(&self.task.target, checkpoint),
             color::muted(comment)
-        );
+        ))?;
+
+        Ok(())
     }
 
-    pub fn print_output_with_style(&self, stdout: &str, stderr: &str, failed: bool) {
-        let print_stdout = || {
+    pub fn print_output_with_style(
+        &self,
+        stdout: &str,
+        stderr: &str,
+        failed: bool,
+    ) -> Result<(), MoonError> {
+        let print_stdout = || -> Result<(), MoonError> {
             if !stdout.is_empty() {
-                println!("{}", stdout);
+                self.stdout.write_line(stdout)?;
             }
+
+            Ok(())
         };
 
-        let print_stderr = || {
+        let print_stderr = || -> Result<(), MoonError> {
             if !stderr.is_empty() {
-                eprintln!("{}", stderr);
+                self.stderr.write_line(stderr)?;
             }
+
+            Ok(())
         };
 
         match self.task.options.output_style {
             // Only show output on failure
             Some(TaskOutputStyle::BufferOnlyFailure) => {
                 if failed {
-                    print_stdout();
-                    print_stderr();
+                    print_stdout()?;
+                    print_stderr()?;
                 }
             }
             // Only show the hash
@@ -451,22 +480,24 @@ impl<'a> TargetRunner<'a> {
 
                 if !hash.is_empty() {
                     // Print to stderr so it can be captured
-                    eprintln!("{}", hash);
+                    self.stderr.write_line(hash)?;
                 }
             }
             // Show nothing
             Some(TaskOutputStyle::None) => {}
             // Show output on both success and failure
             _ => {
-                print_stdout();
-                print_stderr();
+                print_stdout()?;
+                print_stderr()?;
             }
-        }
+        };
+
+        Ok(())
     }
 
-    pub fn print_target_command(&self, passthrough_args: &[String]) {
+    pub fn print_target_command(&self, passthrough_args: &[String]) -> Result<(), MoonError> {
         if !self.workspace.config.runner.log_running_command {
-            return;
+            return Ok(());
         }
 
         let project = &self.project;
@@ -500,10 +531,17 @@ impl<'a> TargetRunner<'a> {
         let suffix = format!("(in {})", working_dir);
         let message = format!("{} {}", command_line, color::muted(suffix));
 
-        println!("{}", color::muted_light(message));
+        self.stdout.write_line(&color::muted_light(message))?;
+
+        Ok(())
     }
 
-    pub fn print_target_label(&self, checkpoint: Checkpoint, attempt: &Attempt, attempt_total: u8) {
+    pub fn print_target_label(
+        &self,
+        checkpoint: Checkpoint,
+        attempt: &Attempt,
+        attempt_total: u8,
+    ) -> Result<(), MoonError> {
         let mut label = label_checkpoint(&self.task.target, checkpoint);
         let mut comments = vec![];
 
@@ -521,12 +559,19 @@ impl<'a> TargetRunner<'a> {
             label = format!("{} {}", label, metadata);
         };
 
-        println!("{}", label);
+        self.stdout.write_line(&label)?;
+
+        Ok(())
     }
 
     // Print label *after* output has been captured, so parallel tasks
     // aren't intertwined and the labels align with the output.
-    fn handle_captured_output(&self, attempt: &Attempt, attempt_total: u8, output: &Output) {
+    fn handle_captured_output(
+        &self,
+        attempt: &Attempt,
+        attempt_total: u8,
+        output: &Output,
+    ) -> Result<(), MoonError> {
         self.print_target_label(
             if output.status.success() {
                 Checkpoint::Pass
@@ -535,17 +580,26 @@ impl<'a> TargetRunner<'a> {
             },
             attempt,
             attempt_total,
-        );
+        )?;
 
         let stdout = output_to_string(&output.stdout);
         let stderr = output_to_string(&output.stderr);
 
-        self.print_output_with_style(&stdout, &stderr, !output.status.success());
+        self.print_output_with_style(&stdout, &stderr, !output.status.success())?;
+
+        self.flush_output()?;
+
+        Ok(())
     }
 
     // Only print the label when the process has failed,
     // as the actual output has already been streamed to the console.
-    fn handle_streamed_output(&self, attempt: &Attempt, attempt_total: u8, output: &Output) {
+    fn handle_streamed_output(
+        &self,
+        attempt: &Attempt,
+        attempt_total: u8,
+        output: &Output,
+    ) -> Result<(), MoonError> {
         // Transitive target finished streaming, so display the success checkpoint
         if let Some(TaskOutputStyle::Stream) = self.task.options.output_style {
             self.print_target_label(
@@ -556,12 +610,16 @@ impl<'a> TargetRunner<'a> {
                 },
                 attempt,
                 attempt_total,
-            );
+            )?;
 
             // Otherwise the primary target failed for some reason
         } else if !output.status.success() {
-            self.print_target_label(Checkpoint::Fail, attempt, attempt_total);
+            self.print_target_label(Checkpoint::Fail, attempt, attempt_total)?;
         }
+
+        self.flush_output()?;
+
+        Ok(())
     }
 }
 
@@ -591,7 +649,8 @@ pub async fn run_target(
             color::id(&task.target),
         );
 
-        runner.print_checkpoint(Checkpoint::Pass, "(no op)");
+        runner.print_checkpoint(Checkpoint::Pass, "(no op)")?;
+        runner.flush_output()?;
 
         return Ok(ActionStatus::Passed);
     }
@@ -626,8 +685,9 @@ pub async fn run_target(
                 runner.hydrate_outputs().await?;
             }
 
-            runner.print_checkpoint(Checkpoint::Pass, "(cached)");
-            runner.print_cache_item();
+            runner.print_checkpoint(Checkpoint::Pass, "(cached)")?;
+            runner.print_cache_item()?;
+            runner.flush_output()?;
 
             return Ok(ActionStatus::Cached);
         }

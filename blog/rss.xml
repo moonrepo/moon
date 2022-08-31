@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title>moon Blog</title>
+        <link>https://moonrepo.dev/blog</link>
+        <description>moon Blog</description>
+        <lastBuildDate>Thu, 01 Sep 2022 00:00:00 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <language>en</language>
+        <item>
+            <title><![CDATA[v0.13 - Hashing and toolchain improvements]]></title>
+            <link>https://moonrepo.dev/blog/v0.13</link>
+            <guid>v0.13</guid>
+            <pubDate>Thu, 01 Sep 2022 00:00:00 GMT</pubDate>
+            <description><![CDATA[This is my first post on Docusaurus 2.]]></description>
+            <content:encoded><![CDATA[<p>With this release, we've landed some improvements to our smart hashing, and paved the road for
+additional languagues and tooling.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="nodejs-is-now-optional">Node.js is now optional<a class="hash-link" href="#nodejs-is-now-optional" title="Direct link to heading">​</a></h2><p>Title may seem confusing at first, but don't worry, everything is fine! For some context, moon has
+been designed to be language agnostic as we plan to support more than JavaScript in the future.
+However, some aspects of the codebase were hard-coded for JavaScript and made the assumption that
+JavaScript will always be used, with one such aspect being the
+<a href="/docs/config/workspace#node"><code>node</code></a> setting in
+<a href="/docs/config/workspace"><code>.moon/workspace.yml</code></a>.</p><p>We've reworked this setting to be optional, which allows a repository to opt out of JavaScript.
+Right now, this basically does nothing as we do not support other languages yet, but we felt it
+necessary to report it anyways! A side-effect of this change is that actions in the runner have been
+renamed, for example, <code>SetupToolchain</code> -&gt; <code>SetupNodeToolchain</code>.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-hashing-accuracy">Improved hashing accuracy<a class="hash-link" href="#improved-hashing-accuracy" title="Direct link to heading">​</a></h2><p>Our <a href="/docs/concepts/cache#hashing">smart hashing layer</a> is pretty powerful, but was not entirely
+accurate. Up until now, when hashing a Node.js project, we'd include the <code>dependencies</code>,
+<code>devDependencies</code>, and <code>peerDependencies</code> versions located within the project's <code>package.json</code> as
+hash inputs. This was great, because if a dependency was explicitly upgraded in the <code>package.json</code>,
+it would invalidate the previous hashes as the version number changed.</p><p>However, what if the dependency was implicitly upgraded by another project, but the <code>package.json</code>
+was not modified? These kind of transitive changes were currently ignored by moon, but no longer, as
+moon will now resolve all <code>package.json</code> dependencies to the resolved version found in the root
+lockfile (<code>package-lock.json</code>, <code>yarn.lock</code>, etc)!</p><p>At moon, we believe in providing consumers with the ability to configure to their needs, and as
+such, have added a new <a href="/docs/config/workspace#hasher"><code>hasher</code></a> setting to
+<a href="/docs/config/workspace"><code>.moon/workspace.yml</code></a>. This setting will allow you to choose between the
+2 hashing patterns above!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-moon-check-command">New <code>moon check</code> command<a class="hash-link" href="#new-moon-check-command" title="Direct link to heading">​</a></h2><p>If you're like us, you're constantly testing, linting, typechecking, so on and so forth, a project
+while developing. This was rather cumbersome, as you either had to use separate run commands
+(<code>moon run project:test</code>, <code>moon run project:lint</code>, etc), or use the multi-run approach
+(<code>moon run project:test project:lint</code>). Both approaches were not ideal for rapid development.</p><p>To simplify this process, we've added a new <a href="/docs/commands/check"><code>moon check</code></a> command, that
+will automatically run <em>all</em> build and test tasks for a project (or many projects)! Local and non-CI
+tasks will <em>not</em> be ran.</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Check project at current working directory</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Check project by name</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check app</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Check multiple projects by name</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check client server</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-moonrepotypes-package">New <code>@moonrepo/types</code> package<a class="hash-link" href="#new-moonrepotypes-package" title="Direct link to heading">​</a></h2><p>We have many ideas for moon specific npm packages that we plan to release, but before we do that, we
+need to ensure all of them are built with the correct interfaces. To solve this, we are shipping a
+new package, <a href="https://www.npmjs.com/package/@moonrepo/types" target="_blank" rel="noopener noreferrer">@moonrepo/types</a>, that simply publishes
+TypeScript declarations. It contains everything from project and task shapes, configuration
+structures, runner information, and more.</p><div class="language-ts codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-ts codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token keyword" style="color:#b7a9f9">import</span><span class="token plain"> </span><span class="token keyword" style="color:#b7a9f9">type</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"> ProjectConfig </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"> </span><span class="token keyword" style="color:#b7a9f9">from</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'@moonrepo/types'</span><span class="token punctuation" style="color:#cad4e2">;</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" href="#other-changes" title="Direct link to heading">​</a></h2><p>View the
+<a href="https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.13.0" target="_blank" rel="noopener noreferrer">official release</a> for a
+full list of changes.</p><ul><li>The runner will now fail with an error if a task has defined <code>outputs</code> but an output was not
+created after the task is executed. This change was made so that artifacts are deterministic.</li><li>The <code>actionRunner</code> setting in <a href="/docs/config/workspace"><code>.moon/workspace.yml</code></a> was renamed to
+<code>runner</code>.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.14 release!</p><ul><li>A <code>moon new</code> command to generate new projects, files, scaffolding, and more from pre-defined
+templates.</li><li>Implicit dependency discovery. moon will now scan manifest files and determine project
+relationships.</li></ul>]]></content:encoded>
+            <category>hasher</category>
+            <category>toolchain</category>
+        </item>
+    </channel>
+</rss>

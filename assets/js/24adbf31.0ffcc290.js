@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[3160],{7059:e=>{e.exports=JSON.parse('{"banner":"","breadcrumbs":true,"gitRefName":"master","minimal":true,"pluginId":"default","scopes":[]}')}}]);

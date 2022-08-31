@@ -13,8 +13,8 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 petgraph = "0.6.2"
-thiserror = "1.0.31"
+thiserror = "1.0.33"
 
 [dev-dependencies]
-insta = "1.16.0"
-tokio = { version = "1.20.0", features = ["test-util"] }
+insta = "1.19.0"
+tokio = { version = "1.20.1", features = ["test-util"] }

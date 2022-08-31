@@ -13,5 +13,5 @@ moon_project_graph = { path = "../project-graph" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
-thiserror = "1.0.31"
-tokio = { version = "1.20.0", features = ["full"] }
+thiserror = "1.0.33"
+tokio = { version = "1.20.1", features = ["full"] }

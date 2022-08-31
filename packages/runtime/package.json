@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/runtime",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "type": "commonjs",
   "description": "Action runner and runtime utilities.",
   "keywords": [
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@boost/common": "^4.0.0",
-    "@moonrepo/types": "^0.0.0"
+    "@moonrepo/types": "^0.0.1"
   },
   "engines": {
     "node": ">=14.15.0",

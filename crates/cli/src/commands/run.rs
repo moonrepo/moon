@@ -8,6 +8,7 @@ use moon_task::Target;
 use std::collections::HashSet;
 use std::string::ToString;
 
+#[derive(Default)]
 pub struct RunOptions {
     pub affected: bool,
     pub dependents: bool,

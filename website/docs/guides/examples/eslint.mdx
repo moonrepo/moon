@@ -75,15 +75,12 @@ Create a `tsconfig.eslint.json` in your repository root, extend your shared comp
 
 ```json title="tsconfig.eslint.json"
 {
-	"extends": "./tsconfig.options.json",
-	"compilerOptions": {
-		"emitDeclarationOnly": false,
-		"noEmit": true
-	},
-	"include": [
-		"apps/**/*",
-		"packages/**/*"
-	]
+  "extends": "./tsconfig.options.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": false,
+    "noEmit": true
+  },
+  "include": ["apps/**/*", "packages/**/*"]
 }
 ```
 

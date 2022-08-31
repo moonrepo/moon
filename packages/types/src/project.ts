@@ -1,6 +1,8 @@
 import type { Platform } from './common';
 import type { DependencyConfig, ProjectConfig, TaskMergeStrategy, TaskOutputStyle } from './config';
 
+export type TaskType = 'build' | 'run' | 'test';
+
 export interface FileGroup {
 	files: string[];
 	id: string;
@@ -35,6 +37,7 @@ export interface Task {
 	outputPaths: string[];
 	platform: Platform;
 	target: string;
+	type: TaskType;
 }
 
 export interface Project {

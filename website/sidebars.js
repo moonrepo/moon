@@ -102,6 +102,7 @@ const sidebars = {
 				'commands/overview',
 				'commands/bin',
 				'commands/ci',
+				'commands/check',
 				'commands/clean',
 				'commands/dep-graph',
 				'commands/init',

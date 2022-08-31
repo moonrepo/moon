@@ -15,6 +15,17 @@ with a character.
 
 A task name can be paired with a project name to create a [target](./target).
 
+## Types
+
+Tasks are categorized into 1 of the following types based on their configured parameters.
+
+- **Build** - Task generates one or many artifacts, and is derived from the
+  [`outputs`](../config/project#outputs) setting.
+- **Run** - Task runs a one-off, long-running, or never-ending process, and is derived from the
+  [`local`](../config/project#local) or [`runInCI`](../config/project#runinci) settings.
+- **Test** - Task asserts code is correct and behaves as expected. This includes linting,
+  typechecking, unit tests, and any other form of testing.
+
 ## Configuration
 
 Tasks can be configured per project through [`moon.yml`](../config/project), or for all projects

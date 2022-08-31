@@ -325,6 +325,9 @@ impl Project {
 
             // Must be last as it references inputs/outputs
             task.expand_args(TokenResolver::for_args(&resolver_data))?;
+
+            // Finalize!
+            task.determine_type();
         }
 
         Ok(())

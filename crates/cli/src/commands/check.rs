@@ -21,7 +21,7 @@ pub async fn check(project_ids: &Vec<String>) -> Result<(), Box<dyn std::error::
 
     for project in projects {
         for task in project.tasks.values() {
-            if task.should_run_in_ci() {
+            if task.is_build_type() || task.is_test_type() {
                 targets.push(task.target.clone());
             }
         }

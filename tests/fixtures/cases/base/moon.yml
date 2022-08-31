@@ -11,3 +11,7 @@ tasks:
     options:
       runFromWorkspaceRoot: true
     type: system
+  localOnly:
+    command: 'echo "local only"'
+    type: system
+    local: true

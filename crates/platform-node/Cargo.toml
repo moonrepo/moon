@@ -19,11 +19,11 @@ moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 lazy_static = "1.4.0"
-serde = { version = "1.0.140", features = ["derive"] }
-tokio = { version = "1.20.0", features = ["full"] }
+serde = { version = "1.0.144", features = ["derive"] }
+tokio = { version = "1.20.1", features = ["full"] }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
 moon_project_graph = { path = "../project-graph" }
-insta = "1.16.0"
+insta = "1.19.0"
 pretty_assertions = "1.2.1"

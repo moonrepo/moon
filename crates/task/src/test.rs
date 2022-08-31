@@ -91,6 +91,7 @@ pub fn create_expanded_task(
     task.expand_inputs(TokenResolver::for_inputs(&metadata))?;
     task.expand_outputs(TokenResolver::for_outputs(&metadata))?;
     task.expand_args(TokenResolver::for_args(&metadata))?; // Must be last
+    task.determine_type();
 
     Ok(task)
 }

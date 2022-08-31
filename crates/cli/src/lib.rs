@@ -5,6 +5,7 @@ mod helpers;
 pub mod queries;
 
 use crate::commands::bin::bin;
+use crate::commands::check::check;
 use crate::commands::ci::{ci, CiOptions};
 use crate::commands::clean::{clean, CleanOptions};
 use crate::commands::dep_graph::dep_graph;
@@ -77,6 +78,7 @@ pub async fn run_cli() {
             })
             .await
         }
+        Commands::Check { ids } => check(ids).await,
         Commands::Clean { lifetime } => {
             clean(CleanOptions {
                 cache_liftime: lifetime.to_owned(),

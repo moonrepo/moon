@@ -7,6 +7,7 @@ use crate::commands::init::{InheritProjectsAs, PackageManager};
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_action::ProfileType;
+use moon_config::ProjectID;
 use moon_task::TargetID;
 use moon_terminal::label_moon;
 
@@ -24,7 +25,7 @@ pub enum MigrateCommands {
     )]
     FromPackageJson {
         #[clap(help = "ID of project to migrate")]
-        id: String,
+        id: ProjectID,
     },
 }
 
@@ -39,7 +40,7 @@ pub enum NodeCommands {
         name: String,
 
         #[clap(long, help = "ID of project to run in")]
-        project: Option<String>,
+        project: Option<ProjectID>,
     },
 }
 
@@ -199,7 +200,7 @@ pub enum Commands {
     )]
     Project {
         #[clap(help = "ID of project to display")]
-        id: String,
+        id: ProjectID,
 
         #[clap(long, help = "Print in JSON format")]
         json: bool,
@@ -213,7 +214,7 @@ pub enum Commands {
     )]
     ProjectGraph {
         #[clap(help = "ID of project to *only* graph")]
-        id: Option<String>,
+        id: Option<ProjectID>,
     },
 
     #[clap(
@@ -223,6 +224,17 @@ pub enum Commands {
     Sync,
 
     // JOBS
+
+    // moon check
+    #[clap(
+        name = "check",
+        about = "Run all build and test related tasks for the current project.",
+        alias = "c"
+    )]
+    Check {
+        #[clap(help = "List of project IDs to explicitly check")]
+        ids: Vec<ProjectID>,
+    },
 
     // moon ci
     #[clap(
@@ -305,6 +317,8 @@ pub enum Commands {
     },
 
     // OTHER
+
+    // moon clean
     #[clap(
         name = "clean",
         about = "Clean the workspace and delete any stale or invalid artifacts."

@@ -1,4 +1,5 @@
 pub mod bin;
+pub mod check;
 pub mod ci;
 pub mod clean;
 pub mod dep_graph;

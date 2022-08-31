@@ -12,13 +12,13 @@ moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-async-trait = "0.1.56"
+async-trait = "0.1.57"
 reqwest = { version = "0.11.11", features = ["native-tls-vendored"] }
-sha2 = "0.10.2"
-thiserror = "1.0.31"
+sha2 = "0.10.3"
+thiserror = "1.0.33"
 
 [dev-dependencies]
 assert_fs = "1.0.7"
 mockito = "0.31.0"
 predicates = "2.1.1"
-tokio = { version = "1.20.0", features = ["test-util"] }
+tokio = { version = "1.20.1", features = ["test-util"] }

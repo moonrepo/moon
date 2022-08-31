@@ -35,6 +35,8 @@ jobs:
           fetch-depth: 0
       # Install Node.js so we can install dependencies
       - uses: actions/setup-node@v3
+        with:
+          cache: yarn
       # Set Node.js version to use in moon
       - uses: moonrepo/tool-version-action@v1
         with:

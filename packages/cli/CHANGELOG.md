@@ -11,6 +11,7 @@
 
 #### 🚀 Updates
 
+- Added a new `moon check` command, for running all build/test tasks for a project(s).
 - Added a `hasher` setting to `.moon/workspace.yml`, for controlling aspects of smart hashing.
 - Updated hashing to utilize the resolved version from the lockfile when applicable.
 - Updated the action runner to fail when an output is defined and the output does not exist after
@@ -21,6 +22,7 @@
 
 - The `SetupToolchain` action has been updated to be language/platform aware, and as such, was split
   into `SetupNodeToolchain` and `SetupSystemToolchain`.
+- Upgraded all Cargo dependencies.
 
 ## 0.12.1
 

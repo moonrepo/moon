@@ -6,6 +6,6 @@ edition = "2021"
 [dependencies]
 moon_logger = { path = "../logger" }
 console = "0.15.1"
-dialoguer = "0.10.1"
+dialoguer = "0.10.2"
 lazy_static = "1.4.0"
 regex = "1.6.0"

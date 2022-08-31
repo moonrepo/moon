@@ -1,0 +1,24 @@
+---
+title: check
+---
+
+The `moon check [...projects]` (or `moon c`) command will run all build tasks (has
+[`outputs`](../config/project#outputs)) and test tasks (has [`runInCI`](../config/project#runinci)
+enabled) for one or many projects in parallel. This is a convenience command for checking all
+applicable tasks for a project at once, instead of running multiple [`moon run`](./run) commands.
+
+```shell
+# Check project at current working directory
+$ moon check
+
+# Check project by name
+$ moon check app
+
+# Check multiple projects by name
+$ moon check client server
+```
+
+### Arguments
+
+- `[...names]` - List of project names or aliases to explicitly check, as defined in
+  [`projects`](../config/workspace#projects).

@@ -23,3 +23,7 @@ pub fn load_global_project_config_template() -> &'static str {
 // pub fn load_project_config_template() -> &'static str {
 //     include_str!("../templates/project.yml")
 // }
+
+pub fn load_template_config_template() -> &'static str {
+    include_str!("../templates/template.yml")
+}

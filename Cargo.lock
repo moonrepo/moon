@@ -1421,6 +1421,7 @@ dependencies = [
  "moon_constants",
  "moon_contract",
  "moon_error",
+ "moon_generator",
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
@@ -1495,6 +1496,9 @@ name = "moon_generator"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "moon_constants",
+ "moon_error",
+ "moon_utils",
  "thiserror",
 ]
 

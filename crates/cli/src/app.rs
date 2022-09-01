@@ -223,7 +223,21 @@ pub enum Commands {
     )]
     Sync,
 
-    // JOBS
+    // GENERATOR
+    #[clap(
+        name = "generate",
+        about = "Generate and scaffold files from a pre-defined template.",
+        alias = "g"
+    )]
+    Generate {
+        #[clap(help = "Name of template to generate")]
+        name: String,
+
+        #[clap(long, help = "Create a new template")]
+        template: bool,
+    },
+
+    // RUNNER
 
     // moon check
     #[clap(

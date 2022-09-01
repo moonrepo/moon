@@ -9,6 +9,7 @@ use crate::commands::check::check;
 use crate::commands::ci::{ci, CiOptions};
 use crate::commands::clean::{clean, CleanOptions};
 use crate::commands::dep_graph::dep_graph;
+use crate::commands::generate::{generate, GenerateOptions};
 use crate::commands::init::{init, InitOptions};
 use crate::commands::migrate;
 use crate::commands::node;
@@ -86,6 +87,15 @@ pub async fn run_cli() {
             .await
         }
         Commands::DepGraph { target } => dep_graph(target).await,
+        Commands::Generate { name, template } => {
+            generate(
+                name,
+                GenerateOptions {
+                    template: *template,
+                },
+            )
+            .await
+        }
         Commands::Init {
             dest,
             force,

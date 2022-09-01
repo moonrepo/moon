@@ -5,4 +5,7 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_constants = { path = "../constants" }
+moon_error = { path = "../error" }
+moon_utils = { path = "../utils" }
 thiserror = "1.0.33"

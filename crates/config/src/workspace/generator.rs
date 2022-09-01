@@ -17,6 +17,7 @@ fn validate_templates(files: &[FilePath]) -> Result<(), ValidationError> {
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorConfig {
     #[validate(custom = "validate_templates")]
+    #[validate(length(min = 1))]
     pub templates: Vec<FilePath>,
 }
 

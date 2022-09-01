@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../config" }
 thiserror = "1.0.33"

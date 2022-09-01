@@ -1494,6 +1494,7 @@ dependencies = [
 name = "moon_generator"
 version = "0.1.0"
 dependencies = [
+ "moon_config",
  "thiserror",
 ]
 

@@ -1491,6 +1491,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_generator"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [

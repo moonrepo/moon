@@ -1,10 +1,20 @@
-use crate::{types::FilePath, validators::validate_child_relative_path};
+use crate::{
+    errors::create_validation_error, types::FilePath, validators::validate_child_relative_path,
+};
 use moon_utils::string_vec;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
 fn validate_templates(files: &[FilePath]) -> Result<(), ValidationError> {
+    if files.is_empty() {
+        return Err(create_validation_error(
+            "no_templates",
+            "templates",
+            "At least 1 template path is required",
+        ));
+    }
+
     for (index, file) in files.iter().enumerate() {
         validate_child_relative_path(format!("templates[{}]", index), file)?;
     }

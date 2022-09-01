@@ -1,6 +1,7 @@
 // template.yml
 
 use crate::errors::map_validation_errors_to_figment_errors;
+use crate::validators::validate_non_empty;
 use figment::{
     providers::{Format, Serialized, Yaml},
     Error as FigmentError, Figment,
@@ -8,17 +9,29 @@ use figment::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use validator::Validate;
+use validator::{Validate, ValidationError};
+
+fn validate_description(value: &str) -> Result<(), ValidationError> {
+    validate_non_empty("description", value)?;
+
+    Ok(())
+}
+
+fn validate_title(value: &str) -> Result<(), ValidationError> {
+    validate_non_empty("title", value)?;
+
+    Ok(())
+}
 
 /// Docs: https://moonrepo.dev/docs/config/template
 #[derive(Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct TemplateConfig {
-    #[validate(length(min = 1))]
+    #[validate(custom = "validate_description")]
     pub description: String,
 
-    #[validate(length(min = 1))]
+    #[validate(custom = "validate_title")]
     pub title: String,
 }
 

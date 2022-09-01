@@ -854,3 +854,36 @@ vcs:
         });
     }
 }
+
+mod generator {
+
+    #[test]
+    #[should_panic(expected = "At least 1 template path is required for key \"default.templates\"")]
+    fn empty_templates() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                "generator:\n  templates: []",
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Parent relative paths are not supported")]
+    fn no_parent_relative() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                "generator:\n  templates: ['../templates']",
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+}

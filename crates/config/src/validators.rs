@@ -175,6 +175,22 @@ pub fn validate_extends<V: AsRef<str>>(value: V) -> Result<(), ValidationError> 
     Ok(())
 }
 
+// Validate the value is a non-empty string.
+pub fn validate_non_empty<K: AsRef<str>, V: AsRef<str>>(
+    key: K,
+    value: V,
+) -> Result<(), ValidationError> {
+    if value.as_ref().is_empty() {
+        return Err(create_validation_error(
+            "non_empty",
+            key.as_ref(),
+            "Must be a non-empty string",
+        ));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

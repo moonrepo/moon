@@ -13,10 +13,6 @@ pub struct Generator {
 
 impl Generator {
     pub fn create(workspace_root: &Path, config: &GeneratorConfig) -> Result<Self, GeneratorError> {
-        if config.templates.is_empty() {
-            return Err(GeneratorError::NoTemplatePaths);
-        }
-
         Ok(Generator {
             config: config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
@@ -38,7 +34,7 @@ impl Generator {
             .join(&template_name);
 
         if template_root.exists() {
-            return Err(GeneratorError::TemplateAlreadyExists(
+            return Err(GeneratorError::ExistingTemplate(
                 template_name,
                 template_root,
             ));

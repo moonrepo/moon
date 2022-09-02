@@ -1,8 +1,8 @@
 use moon_utils::fs;
 
-mod generate_template {
+mod create_template {
     use super::*;
-    use moon_config::GeneratorConfig;
+    use moon_config::{GeneratorConfig, TemplateConfig};
     use moon_generator::{Generator, Template};
     use moon_utils::{
         string_vec,
@@ -30,7 +30,7 @@ mod generate_template {
 
         Generator::create(dir.path(), &GeneratorConfig::default())
             .unwrap()
-            .generate_template("template")
+            .create_template("template")
             .await
             .unwrap();
     }
@@ -41,7 +41,7 @@ mod generate_template {
 
         let template = Generator::create(dir.path(), &GeneratorConfig::default())
             .unwrap()
-            .generate_template("new-template")
+            .create_template("new-template")
             .await
             .unwrap();
 
@@ -51,6 +51,7 @@ mod generate_template {
         assert_eq!(
             template,
             Template {
+                config: TemplateConfig::default(),
                 name: "new-template".into(),
                 root: dir.join("templates/new-template")
             }
@@ -68,7 +69,7 @@ mod generate_template {
             },
         )
         .unwrap()
-        .generate_template("new-template")
+        .create_template("new-template")
         .await
         .unwrap();
 
@@ -78,6 +79,7 @@ mod generate_template {
         assert_eq!(
             template,
             Template {
+                config: TemplateConfig::default(),
                 name: "new-template".into(),
                 root: dir.join("scaffolding/new-template")
             }
@@ -90,7 +92,7 @@ mod generate_template {
 
         let template = Generator::create(dir.path(), &GeneratorConfig::default())
             .unwrap()
-            .generate_template("so&me temPlatE- with Ran!dom-Valu^es 123_")
+            .create_template("so&me temPlatE- with Ran!dom-Valu^es 123_")
             .await
             .unwrap();
 
@@ -104,6 +106,7 @@ mod generate_template {
         assert_eq!(
             template,
             Template {
+                config: TemplateConfig::default(),
                 name: "sometemPlatE-withRandom-Values123_".into(),
                 root: dir.join("templates/sometemPlatE-withRandom-Values123_")
             }

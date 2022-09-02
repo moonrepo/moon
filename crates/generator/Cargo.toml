@@ -8,6 +8,7 @@ moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_utils = { path = "../utils" }
+futures = "0.3.24"
 thiserror = "1.0.33"
 
 [dev-dependencies]

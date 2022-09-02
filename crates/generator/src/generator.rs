@@ -1,7 +1,9 @@
 use crate::errors::GeneratorError;
-use crate::template::Template;
+use crate::template::{Template, TemplateFile};
+use futures::stream::{FuturesUnordered, StreamExt};
 use moon_config::{load_template_config_template, GeneratorConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
+use moon_error::MoonError;
 use moon_utils::{fs, regex::clean_id};
 use std::path::{Path, PathBuf};
 
@@ -19,22 +21,9 @@ impl Generator {
         })
     }
 
-    pub async fn generate(&self, name: &str) -> Result<Template, GeneratorError> {
-        let name = clean_id(name);
-        let root = self.find_template_root(&name)?;
-        // let files = fs::read_dir_all(&root).await?;
-
-        // dbg!(&name);
-        // dbg!(&root);
-        // dbg!(&files);
-        // dbg!(dest.as_ref());
-
-        Ok(Template::new(name, root)?)
-    }
-
-    /// Generate a new template, with schema, into the first configured template path.
+    /// Create a new template with a schema, using the first configured template path.
     /// Will error if a template of the same name already exists.
-    pub async fn generate_template(&self, name: &str) -> Result<Template, GeneratorError> {
+    pub async fn create_template(&self, name: &str) -> Result<Template, GeneratorError> {
         let name = clean_id(name);
         let root = self
             .workspace_root
@@ -56,16 +45,38 @@ impl Generator {
         Ok(Template::new(name, root)?)
     }
 
-    /// Find a template with the provided name amongst the list of possible template paths.
-    fn find_template_root(&self, id: &str) -> Result<PathBuf, GeneratorError> {
-        for template_path in &self.config.templates {
-            let template_root = self.workspace_root.join(template_path).join(id);
+    /// Load the template with the provided name, using the first match amongst
+    /// the list of template paths. Will error if no match is found.
+    pub async fn load_template(&self, name: &str) -> Result<Template, GeneratorError> {
+        let name = clean_id(name);
 
-            if template_root.exists() {
-                return Ok(template_root);
+        for template_path in &self.config.templates {
+            let root = self.workspace_root.join(template_path).join(&name);
+
+            if root.exists() {
+                return Ok(Template::new(name, root)?);
             }
         }
 
-        Err(GeneratorError::MissingTemplate(id.to_owned()))
+        Err(GeneratorError::MissingTemplate(name))
+    }
+
+    pub async fn generate(&self, files: &[TemplateFile]) -> Result<(), GeneratorError> {
+        let mut futures = FuturesUnordered::new();
+
+        for file in files {
+            futures.push(file.copy());
+        }
+
+        // Copy all the files in parallel
+        loop {
+            match futures.next().await {
+                Some(Err(e)) => return Err(GeneratorError::Moon(e)),
+                Some(Ok(_)) => {}
+                None => break,
+            }
+        }
+
+        Ok(())
     }
 }

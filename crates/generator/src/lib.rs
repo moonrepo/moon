@@ -4,4 +4,4 @@ mod template;
 
 pub use errors::GeneratorError;
 pub use generator::Generator;
-pub use template::Template;
+pub use template::*;

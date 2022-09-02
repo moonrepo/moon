@@ -9,3 +9,7 @@ moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_utils = { path = "../utils" }
 thiserror = "1.0.33"
+
+[dev-dependencies]
+assert_fs = "1.0.7"
+tokio = { version = "1.20.1", features = ["test-util"] }

@@ -9,18 +9,6 @@ fn load_jailed_config() -> Result<TemplateConfig, figment::Error> {
     }
 }
 
-#[test]
-fn empty_file() {
-    figment::Jail::expect_with(|jail| {
-        // Needs a fake yaml value, otherwise the file reading panics
-        jail.create_file(CONFIG_TEMPLATE_FILENAME, "fake: value")?;
-
-        load_jailed_config()?;
-
-        Ok(())
-    });
-}
-
 mod title {
     #[test]
     #[should_panic(

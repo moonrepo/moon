@@ -1495,11 +1495,13 @@ dependencies = [
 name = "moon_generator"
 version = "0.1.0"
 dependencies = [
+ "assert_fs",
  "moon_config",
  "moon_constants",
  "moon_error",
  "moon_utils",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]

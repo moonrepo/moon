@@ -79,6 +79,7 @@ const workspaceRows: Comparison[] = [
 	{
 		feature: 'Supports scaffolding / generators',
 		support: {
+			moon: SUPPORTED,
 			nx: SUPPORTED,
 		},
 	},
@@ -200,7 +201,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Run multiple tasks with',
 		support: {
-			moon: '`moon run :task` or `moon run a:task b:task ...`',
+			moon: '`moon run :task` or `moon run a:task b:task ...` or `moon check`',
 			nx: '`nx run-many --target=target`',
 			turborepo: '`turbo run task`',
 		},
@@ -411,6 +412,87 @@ const taskRunnerRows: Comparison[] = [
 	},
 ];
 
+const generatorRows: Comparison[] = [
+	{
+		feature: 'Known as',
+		support: {
+			moon: 'generator',
+			nx: 'generator',
+			turborepo: 'n/a',
+		},
+	},
+	{
+		feature: 'Templates are configured with a schema',
+		support: {
+			moon: [SUPPORTED, 'via `template.yml`'],
+			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Creates/copies files to destination',
+		support: {
+			moon: SUPPORTED,
+			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Updates/merges with existing files',
+		support: {
+			moon: [PARTIALLY_SUPPORTED, 'JSON only'],
+			nx: [SUPPORTED, 'using JavaScript'],
+		},
+	},
+	{
+		feature: 'Renders with a template engine',
+		support: {
+			moon: [SUPPORTED, 'via tera'],
+			nx: [SUPPORTED, 'via ejs'],
+		},
+	},
+	{
+		feature: 'Variable interpolation in file content',
+		support: {
+			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Variable interpolation in file paths',
+		support: {
+			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can define variable values via interactive prompts',
+		support: {
+			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can define variable values via command line args',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Supports dry runs',
+		support: {
+			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Supports render helpers',
+		support: {
+			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Generates can compose other generators',
+		support: {
+			nx: [SUPPORTED, 'using JavaScript'],
+		},
+	},
+];
+
 const javascriptRows: Comparison[] = [
 	{
 		feature: 'Will automatically install node modules when lockfile changes',
@@ -525,6 +607,7 @@ function createTable(rows: Comparison[]) {
 	return () => <Table rows={rows} />;
 }
 
+export const GeneratorTable = createTable(generatorRows);
 export const JavaScriptTable = createTable(javascriptRows);
 export const ProjectsTable = createTable(projectsRows);
 export const TasksTable = createTable(tasksRows);

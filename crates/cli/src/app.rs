@@ -224,6 +224,8 @@ pub enum Commands {
     Sync,
 
     // GENERATOR
+
+    // moon generate
     #[clap(
         name = "generate",
         about = "Generate and scaffold files from a pre-defined template.",
@@ -232,6 +234,9 @@ pub enum Commands {
     Generate {
         #[clap(help = "Name of template to generate")]
         name: String,
+
+        #[clap(help = "Destination path, relative from the current working directory")]
+        dest: Option<String>,
 
         #[clap(long, help = "Create a new template")]
         template: bool,

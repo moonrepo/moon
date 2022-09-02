@@ -19,11 +19,17 @@ impl Generator {
         })
     }
 
-    pub fn generate(&self, name: &str) -> Result<(), GeneratorError> {
-        let template_name = clean_id(name);
-        let _template_root = self.find_template_root(&template_name);
+    pub async fn generate(&self, name: &str) -> Result<Template, GeneratorError> {
+        let name = clean_id(name);
+        let root = self.find_template_root(&name)?;
+        // let files = fs::read_dir_all(&root).await?;
 
-        Ok(())
+        // dbg!(&name);
+        // dbg!(&root);
+        // dbg!(&files);
+        // dbg!(dest.as_ref());
+
+        Ok(Template::new(name, root)?)
     }
 
     /// Generate a new template, with schema, into the first configured template path.
@@ -47,7 +53,7 @@ impl Generator {
         )
         .await?;
 
-        Ok(Template { name, root })
+        Ok(Template::new(name, root)?)
     }
 
     /// Find a template with the provided name amongst the list of possible template paths.

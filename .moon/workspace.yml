@@ -24,3 +24,7 @@ runner:
 
 vcs:
   defaultBranch: 'master'
+
+generator:
+  templates:
+    - 'tests/fixtures'

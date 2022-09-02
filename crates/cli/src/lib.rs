@@ -87,10 +87,15 @@ pub async fn run_cli() {
             .await
         }
         Commands::DepGraph { target } => dep_graph(target).await,
-        Commands::Generate { name, template } => {
+        Commands::Generate {
+            name,
+            dest,
+            template,
+        } => {
             generate(
                 name,
                 GenerateOptions {
+                    dest: dest.clone(),
                     template: *template,
                 },
             )

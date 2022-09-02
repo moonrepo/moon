@@ -1,7 +1,7 @@
 // template.yml
 
-use crate::errors::map_validation_errors_to_figment_errors;
 use crate::validators::validate_non_empty;
+use crate::{errors::map_validation_errors_to_figment_errors, ConfigError};
 use figment::{
     providers::{Format, Serialized, Yaml},
     Error as FigmentError, Figment,
@@ -37,7 +37,7 @@ pub struct TemplateConfig {
 
 impl TemplateConfig {
     #[track_caller]
-    pub fn load<T: AsRef<Path>>(path: T) -> Result<TemplateConfig, Vec<FigmentError>> {
+    pub fn load<T: AsRef<Path>>(path: T) -> Result<TemplateConfig, ConfigError> {
         let path = path.as_ref();
         let profile_name = "template";
         let figment =
@@ -45,10 +45,12 @@ impl TemplateConfig {
                 .merge(Yaml::file(path).profile(&profile_name))
                 .select(&profile_name);
 
-        let config: TemplateConfig = figment.extract().map_err(|e| vec![e])?;
+        let config: TemplateConfig = figment.extract()?; //.map_err(|e| vec![e])?;
 
         if let Err(errors) = config.validate() {
-            return Err(map_validation_errors_to_figment_errors(&figment, &errors));
+            return Err(ConfigError::FailedValidation(
+                map_validation_errors_to_figment_errors(&figment, &errors),
+            ));
         }
 
         Ok(config)

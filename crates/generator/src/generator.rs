@@ -6,7 +6,7 @@ use moon_utils::{fs, regex::clean_id};
 use std::path::{Path, PathBuf};
 
 pub struct Generator {
-    pub config: GeneratorConfig,
+    config: GeneratorConfig,
 
     workspace_root: PathBuf,
 }
@@ -26,43 +26,40 @@ impl Generator {
         Ok(())
     }
 
+    /// Generate a new template, with schema, into the first configured template path.
+    /// Will error if a template of the same name already exists.
     pub async fn generate_template(&self, name: &str) -> Result<Template, GeneratorError> {
-        let template_name = clean_id(name);
-        let template_root = self
+        let name = clean_id(name);
+        let root = self
             .workspace_root
             .join(&self.config.templates[0])
-            .join(&template_name);
+            .join(&name);
 
-        if template_root.exists() {
-            return Err(GeneratorError::ExistingTemplate(
-                template_name,
-                template_root,
-            ));
+        if root.exists() {
+            return Err(GeneratorError::ExistingTemplate(name, root));
         }
 
-        fs::create_dir_all(&template_root).await?;
+        fs::create_dir_all(&root).await?;
 
         fs::write(
-            template_root.join(CONFIG_TEMPLATE_FILENAME),
+            root.join(CONFIG_TEMPLATE_FILENAME),
             load_template_config_template(),
         )
         .await?;
 
-        Ok(Template {
-            name: template_name,
-            root: template_root,
-        })
+        Ok(Template { name, root })
     }
 
-    fn find_template_root(&self, name: &str) -> Result<PathBuf, GeneratorError> {
+    /// Find a template with the provided name amongst the list of possible template paths.
+    fn find_template_root(&self, id: &str) -> Result<PathBuf, GeneratorError> {
         for template_path in &self.config.templates {
-            let template_root = self.workspace_root.join(template_path).join(name);
+            let template_root = self.workspace_root.join(template_path).join(id);
 
             if template_root.exists() {
                 return Ok(template_root);
             }
         }
 
-        Err(GeneratorError::MissingTemplate(name.to_owned()))
+        Err(GeneratorError::MissingTemplate(id.to_owned()))
     }
 }

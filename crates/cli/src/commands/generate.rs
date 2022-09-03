@@ -1,6 +1,6 @@
 use crate::helpers::load_workspace;
-use console::{style, Term};
-use dialoguer::Input;
+use console::Term;
+use dialoguer::{Confirm, Input};
 use moon_generator::{FileState, Generator};
 use moon_logger::color;
 use moon_terminal::create_theme;
@@ -11,6 +11,8 @@ use std::path::PathBuf;
 #[derive(Debug)]
 pub struct GenerateOptions {
     pub dest: Option<String>,
+    pub dry_run: bool,
+    pub force: bool,
     pub template: bool,
 }
 
@@ -20,6 +22,7 @@ pub async fn generate(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let generator = Generator::create(&workspace.root, &workspace.config.generator)?;
+    let theme = create_theme();
     let cwd = env::current_dir()?;
 
     // This is a special case for creating a new template with the generator itself!
@@ -39,10 +42,16 @@ pub async fn generate(
     let template = generator.load_template(name).await?;
     let term = Term::buffered_stdout();
 
-    term.write_line(&color::id(format!(
-        "{}",
-        style(&template.config.title).bold()
-    )))?;
+    term.write_line("")?;
+    term.write_line(&format!(
+        "{} {}",
+        color::style(&template.config.title).bold(),
+        if options.dry_run {
+            color::muted("(dry run)")
+        } else {
+            "".into()
+        }
+    ))?;
     term.write_line(&template.config.description)?;
     term.write_line("")?;
     term.flush()?;
@@ -50,7 +59,7 @@ pub async fn generate(
     // Determine the destination path
     let relative_dest = match options.dest {
         Some(d) => d,
-        None => Input::with_theme(&create_theme())
+        None => Input::with_theme(&theme)
             .with_prompt("Where to generate code to?")
             .allow_empty(false)
             .interact_text()?,
@@ -58,10 +67,28 @@ pub async fn generate(
     let dest = path::normalize(cwd.join(&relative_dest));
 
     // Load template files and determine when to overwrite
-    let files = template.get_template_files(&dest).await?;
+    let mut files = template.get_template_files(&dest).await?;
+
+    for file in &mut files {
+        if file.dest_path.exists() {
+            if options.force
+                || Confirm::with_theme(&theme)
+                    .with_prompt(format!(
+                        "File {} already exists, overwrite?",
+                        color::path(&file.dest_path)
+                    ))
+                    .interact()?
+            {
+                file.overwrite = true;
+            }
+        }
+    }
 
     // Generate the files in the destination and print the results
-    generator.generate(&files).await?;
+    if !options.dry_run {
+        generator.generate(&files).await?;
+    }
+
     term.write_line("")?;
 
     for file in files {

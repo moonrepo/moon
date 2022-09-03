@@ -476,6 +476,7 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Supports dry runs',
 		support: {
+			moon: SUPPORTED,
 			nx: SUPPORTED,
 		},
 	},

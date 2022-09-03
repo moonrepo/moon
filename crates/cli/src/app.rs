@@ -238,6 +238,12 @@ pub enum Commands {
         #[clap(help = "Destination path, relative from the current working directory")]
         dest: Option<String>,
 
+        #[clap(long, help = "Run entire generator process without writing files")]
+        dry_run: bool,
+
+        #[clap(long, help = "Force overwrite any existing files at the destination")]
+        force: bool,
+
         #[clap(long, help = "Create a new template")]
         template: bool,
     },

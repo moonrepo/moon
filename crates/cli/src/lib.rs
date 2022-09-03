@@ -90,12 +90,16 @@ pub async fn run_cli() {
         Commands::Generate {
             name,
             dest,
+            dry_run,
+            force,
             template,
         } => {
             generate(
                 name,
                 GenerateOptions {
                     dest: dest.clone(),
+                    dry_run: *dry_run,
+                    force: *force,
                     template: *template,
                 },
             )

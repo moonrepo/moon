@@ -3,5 +3,5 @@ $schema: 'https://moonrepo.dev/schemas/template.json'
 # Name of the template in a human readable format.
 title: 'Title'
 
-# Description of what the template is for, it does, and anything else.
+# Description of what the template is for and other relevant information.
 description: 'Description of the template.'

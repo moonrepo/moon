@@ -1,43 +1,25 @@
-use moon_utils::fs;
+use moon_config::{GeneratorConfig, TemplateConfig};
+use moon_generator::{Generator, Template};
+use moon_utils::{string_vec, test::create_sandbox};
 
 mod create_template {
     use super::*;
-    use moon_config::{GeneratorConfig, TemplateConfig};
-    use moon_generator::{Generator, Template};
-    use moon_utils::{
-        string_vec,
-        test::{get_fixtures_dir, get_fixtures_root},
-    };
-
-    async fn create_templates_dirs(name: &str) -> assert_fs::TempDir {
-        let dir = assert_fs::TempDir::new().unwrap();
-
-        fs::copy_dir_all(
-            get_fixtures_root(),
-            get_fixtures_dir("template"),
-            dir.path().join(name),
-        )
-        .await
-        .unwrap();
-
-        dir
-    }
 
     #[tokio::test]
-    #[should_panic(expected = "ExistingTemplate(\"template\"")]
+    #[should_panic(expected = "ExistingTemplate(\"standard\"")]
     async fn errors_if_already_exists() {
-        let dir = create_templates_dirs("templates").await;
+        let dir = create_sandbox("generator");
 
         Generator::create(dir.path(), &GeneratorConfig::default())
             .unwrap()
-            .create_template("template")
+            .create_template("standard")
             .await
             .unwrap();
     }
 
     #[tokio::test]
     async fn creates_the_template() {
-        let dir = create_templates_dirs("templates").await;
+        let dir = create_sandbox("generator");
 
         let template = Generator::create(dir.path(), &GeneratorConfig::default())
             .unwrap()
@@ -51,7 +33,10 @@ mod create_template {
         assert_eq!(
             template,
             Template {
-                config: TemplateConfig::default(),
+                config: TemplateConfig {
+                    title: "Title".into(),
+                    description: "Description of the template.".into(),
+                },
                 name: "new-template".into(),
                 root: dir.join("templates/new-template")
             }
@@ -60,7 +45,7 @@ mod create_template {
 
     #[tokio::test]
     async fn creates_the_template_from_another_dir() {
-        let dir = create_templates_dirs("scaffolding").await;
+        let dir = create_sandbox("generator");
 
         let template = Generator::create(
             dir.path(),
@@ -79,7 +64,10 @@ mod create_template {
         assert_eq!(
             template,
             Template {
-                config: TemplateConfig::default(),
+                config: TemplateConfig {
+                    title: "Title".into(),
+                    description: "Description of the template.".into(),
+                },
                 name: "new-template".into(),
                 root: dir.join("scaffolding/new-template")
             }
@@ -88,7 +76,7 @@ mod create_template {
 
     #[tokio::test]
     async fn cleans_and_formats_the_name() {
-        let dir = create_templates_dirs("templates").await;
+        let dir = create_sandbox("generator");
 
         let template = Generator::create(dir.path(), &GeneratorConfig::default())
             .unwrap()
@@ -106,7 +94,10 @@ mod create_template {
         assert_eq!(
             template,
             Template {
-                config: TemplateConfig::default(),
+                config: TemplateConfig {
+                    title: "Title".into(),
+                    description: "Description of the template.".into(),
+                },
                 name: "sometemPlatE-withRandom-Values123_".into(),
                 root: dir.join("templates/sometemPlatE-withRandom-Values123_")
             }

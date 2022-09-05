@@ -4,7 +4,7 @@ use crate::validators::validate_non_empty;
 use crate::{errors::map_validation_errors_to_figment_errors, ConfigError};
 use figment::{
     providers::{Format, Serialized, Yaml},
-    Error as FigmentError, Figment,
+    Figment,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

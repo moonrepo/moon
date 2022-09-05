@@ -70,17 +70,16 @@ pub async fn generate(
     let mut files = template.get_template_files(&dest).await?;
 
     for file in &mut files {
-        if file.dest_path.exists() {
-            if options.force
+        if file.dest_path.exists()
+            && (options.force
                 || Confirm::with_theme(&theme)
                     .with_prompt(format!(
                         "File {} already exists, overwrite?",
                         color::path(&file.dest_path)
                     ))
-                    .interact()?
-            {
-                file.overwrite = true;
-            }
+                    .interact()?)
+        {
+            file.overwrite = true;
         }
     }
 

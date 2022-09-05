@@ -59,18 +59,18 @@ pub struct Template {
 
 impl Template {
     pub fn new(name: String, root: PathBuf) -> Result<Template, GeneratorError> {
-        let config = TemplateConfig::load(root.join(CONFIG_TEMPLATE_FILENAME)).unwrap();
-        //     Ok(cfg) => Ok(cfg),
-        //     Err(errors) => {
-        //         return Err(GeneratorError::InvalidConfigFile(
-        //             if let ConfigError::FailedValidation(valids) = errors {
-        //                 format_figment_errors(valids)
-        //             } else {
-        //                 format_error_line(errors.to_string())
-        //             },
-        //         ))
-        //     }
-        // };
+        let config = match TemplateConfig::load(root.join(CONFIG_TEMPLATE_FILENAME)) {
+            Ok(cfg) => cfg,
+            Err(errors) => {
+                return Err(GeneratorError::InvalidConfigFile(
+                    if let ConfigError::FailedValidation(valids) = errors {
+                        format_figment_errors(valids)
+                    } else {
+                        format_error_line(errors.to_string())
+                    },
+                ));
+            }
+        };
 
         Ok(Template { config, name, root })
     }

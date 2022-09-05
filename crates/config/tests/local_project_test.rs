@@ -1,5 +1,6 @@
 use moon_config::{
-    DependencyConfig, DependencyScope, ProjectConfig, ProjectDependsOn, TaskCommandArgs, TaskConfig,
+    ConfigError, DependencyConfig, DependencyScope, ProjectConfig, ProjectDependsOn,
+    TaskCommandArgs, TaskConfig,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_utils::string_vec;
@@ -9,7 +10,11 @@ use std::path::PathBuf;
 fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {
     match ProjectConfig::load(&PathBuf::from(CONFIG_PROJECT_FILENAME)) {
         Ok(cfg) => Ok(cfg),
-        Err(errors) => Err(errors.first().unwrap().clone()),
+        Err(error) => Err(match error {
+            ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
+            ConfigError::Figment(f) => f,
+            e => figment::Error::from(e.to_string()),
+        }),
     }
 }
 

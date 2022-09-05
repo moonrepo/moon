@@ -9,12 +9,12 @@ pub enum GeneratorError {
     ExistingTemplate(String, PathBuf),
 
     #[error(
-        "Failed to validate <file>{}</file> configuration file.\n\n{0}",
+        "Failed to validate <file>{}</file> schema.\n\n{0}",
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     InvalidConfigFile(String),
 
-    #[error("No template with the name <id>{0}</id> could be found at any of the configured template paths.")]
+    #[error("No template with the name <id>{0}</id> could not be found at any of the configured template paths.")]
     MissingTemplate(String),
 
     #[error(transparent)]

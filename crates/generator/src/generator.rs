@@ -3,7 +3,6 @@ use crate::template::{Template, TemplateFile};
 use futures::stream::{FuturesUnordered, StreamExt};
 use moon_config::{load_template_config_template, GeneratorConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
-use moon_error::MoonError;
 use moon_utils::{fs, regex::clean_id};
 use std::path::{Path, PathBuf};
 
@@ -42,7 +41,7 @@ impl Generator {
         )
         .await?;
 
-        Ok(Template::new(name, root)?)
+        Template::new(name, root)
     }
 
     /// Load the template with the provided name, using the first match amongst
@@ -54,7 +53,7 @@ impl Generator {
             let root = self.workspace_root.join(template_path).join(&name);
 
             if root.exists() {
-                return Ok(Template::new(name, root)?);
+                return Template::new(name, root);
             }
         }
 

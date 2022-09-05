@@ -1,7 +1,8 @@
 use crate::errors::ProjectError;
 use moon_config::{
-    format_figment_errors, DependencyConfig, FilePath, GlobalProjectConfig, PlatformType,
-    ProjectConfig, ProjectDependsOn, ProjectID, TaskConfig, TaskID,
+    format_error_line, format_figment_errors, ConfigError, DependencyConfig, FilePath,
+    GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID, TaskConfig,
+    TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
@@ -32,7 +33,14 @@ fn load_project_config(
 
     if config_path.exists() {
         return ProjectConfig::load(config_path).map_err(|e| {
-            ProjectError::InvalidConfigFile(String::from(project_source), format_figment_errors(e))
+            ProjectError::InvalidConfigFile(
+                String::from(project_source),
+                if let ConfigError::FailedValidation(valids) = e {
+                    format_figment_errors(valids)
+                } else {
+                    format_error_line(e.to_string())
+                },
+            )
         });
     }
 

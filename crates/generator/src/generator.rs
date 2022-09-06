@@ -64,7 +64,7 @@ impl Generator {
         let mut futures = FuturesUnordered::new();
 
         for file in files {
-            futures.push(file.copy());
+            futures.push(file.generate());
         }
 
         // Copy all the files in parallel

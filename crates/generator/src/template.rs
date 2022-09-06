@@ -5,13 +5,14 @@ use moon_error::MoonError;
 use moon_utils::fs;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
     Created,
     Replaced,
     Skipped,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct TemplateFile {
     /// Absolute path to destination.
     pub dest_path: PathBuf,
@@ -30,7 +31,7 @@ pub struct TemplateFile {
 }
 
 impl TemplateFile {
-    pub async fn copy(&self) -> Result<bool, MoonError> {
+    pub async fn generate(&self) -> Result<bool, MoonError> {
         if self.existed && !self.overwrite {
             return Ok(false);
         }
@@ -53,6 +54,7 @@ impl TemplateFile {
 #[derive(Debug, Eq, PartialEq)]
 pub struct Template {
     pub config: TemplateConfig,
+    pub files: Vec<TemplateFile>,
     pub name: String,
     pub root: PathBuf,
 }
@@ -72,13 +74,17 @@ impl Template {
             }
         };
 
-        Ok(Template { config, name, root })
+        Ok(Template {
+            config,
+            files: vec![],
+            name,
+            root,
+        })
     }
 
-    pub async fn get_template_files(
-        &self,
-        dest: &Path,
-    ) -> Result<Vec<TemplateFile>, GeneratorError> {
+    /// Load all template files from the source directory and return a list
+    /// of template file structs. These will later be used for rendering and generating.
+    pub async fn load_files(&mut self, dest: &Path) -> Result<(), GeneratorError> {
         let mut files = vec![];
 
         for entry in fs::read_dir_all(&self.root).await? {
@@ -101,6 +107,8 @@ impl Template {
             })
         }
 
-        Ok(files)
+        self.files = files;
+
+        Ok(())
     }
 }

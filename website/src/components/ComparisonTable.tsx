@@ -438,7 +438,7 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Updates/merges with existing files',
 		support: {
-			moon: [PARTIALLY_SUPPORTED, 'JSON only'],
+			// moon: [PARTIALLY_SUPPORTED, 'JSON only'],
 			nx: [SUPPORTED, 'using JavaScript'],
 		},
 	},
@@ -487,7 +487,7 @@ const generatorRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'Generates can compose other generators',
+		feature: 'Generators can compose other generators',
 		support: {
 			nx: [SUPPORTED, 'using JavaScript'],
 		},

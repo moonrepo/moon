@@ -858,7 +858,7 @@ vcs:
 mod generator {
 
     #[test]
-    #[should_panic(expected = "At least 1 template path is required for key \"default.templates\"")]
+    #[should_panic(expected = "At least 1 template path is required")]
     fn empty_templates() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(

@@ -45,7 +45,7 @@ impl TemplateConfig {
                 .merge(Yaml::file(path).profile(&profile_name))
                 .select(&profile_name);
 
-        let config: TemplateConfig = figment.extract()?; //.map_err(|e| vec![e])?;
+        let config: TemplateConfig = figment.extract()?;
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

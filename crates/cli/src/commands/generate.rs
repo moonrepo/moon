@@ -39,7 +39,7 @@ pub async fn generate(
     }
 
     // Create the template instance
-    let template = generator.load_template(name).await?;
+    let mut template = generator.load_template(name).await?;
     let term = Term::buffered_stdout();
 
     term.write_line("")?;
@@ -67,9 +67,9 @@ pub async fn generate(
     let dest = path::normalize(cwd.join(&relative_dest));
 
     // Load template files and determine when to overwrite
-    let mut files = template.get_template_files(&dest).await?;
+    template.load_files(&dest).await?;
 
-    for file in &mut files {
+    for file in &mut template.files {
         if file.dest_path.exists()
             && (options.force
                 || Confirm::with_theme(&theme)
@@ -85,12 +85,12 @@ pub async fn generate(
 
     // Generate the files in the destination and print the results
     if !options.dry_run {
-        generator.generate(&files).await?;
+        generator.generate(&template.files).await?;
     }
 
     term.write_line("")?;
 
-    for file in files {
+    for file in template.files {
         let file_state = file.state();
 
         term.write_line(&format!(

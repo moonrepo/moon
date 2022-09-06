@@ -37,6 +37,7 @@ mod create_template {
                     title: "Title".into(),
                     description: "Description of the template.".into(),
                 },
+                files: vec![],
                 name: "new-template".into(),
                 root: dir.join("templates/new-template")
             }
@@ -68,6 +69,7 @@ mod create_template {
                     title: "Title".into(),
                     description: "Description of the template.".into(),
                 },
+                files: vec![],
                 name: "new-template".into(),
                 root: dir.join("scaffolding/new-template")
             }
@@ -98,6 +100,7 @@ mod create_template {
                     title: "Title".into(),
                     description: "Description of the template.".into(),
                 },
+                files: vec![],
                 name: "sometemPlatE-withRandom-Values123_".into(),
                 root: dir.join("templates/sometemPlatE-withRandom-Values123_")
             }

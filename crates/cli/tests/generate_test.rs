@@ -2,6 +2,12 @@ use insta::assert_snapshot;
 use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output};
 use predicates::prelude::*;
 
+fn get_path_safe_output(assert: &assert_cmd::assert::Assert) -> String {
+    let output = get_assert_output(&assert);
+
+    output.replace('\\', "/")
+}
+
 #[test]
 fn creates_a_new_template() {
     let fixture = create_sandbox("generator");
@@ -11,7 +17,7 @@ fn creates_a_new_template() {
         .arg("new-name")
         .arg("--template")
         .assert();
-    let output = get_assert_output(&assert);
+    let output = get_path_safe_output(&assert);
 
     assert!(predicate::str::contains("Created a new template new-name at").eval(&output));
     assert!(fixture.path().join("templates/new-name").exists());
@@ -29,7 +35,7 @@ fn generates_files_from_template() {
         .arg("./test")
         .assert();
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(get_path_safe_output(&assert));
 
     assert!(fixture.path().join("test").exists());
     assert!(fixture.path().join("test/file.ts").exists());
@@ -48,7 +54,7 @@ fn doesnt_generate_files_when_dryrun() {
         .arg("--dry-run")
         .assert();
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(get_path_safe_output(&assert));
 
     assert!(!fixture.path().join("test").exists());
     assert!(!fixture.path().join("test/file.ts").exists());
@@ -73,7 +79,7 @@ fn overwrites_existing_files_when_forced() {
         .arg("--force")
         .assert();
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(get_path_safe_output(&assert));
 
     assert!(fixture.path().join("test").exists());
     assert!(fixture.path().join("test/file.ts").exists());

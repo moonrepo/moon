@@ -8,8 +8,8 @@ Template title (dry run)
 Some description of the template and its files.
 
 
-created --> ./test/folder/nested-file.ts
 created --> ./test/file.ts
+created --> ./test/folder/nested-file.ts
 
 
 

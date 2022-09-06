@@ -107,6 +107,9 @@ impl Template {
             })
         }
 
+        // Sort so files are deterministic
+        files.sort_by(|a, d| a.path.cmp(&d.path));
+
         self.files = files;
 
         Ok(())

@@ -8,8 +8,8 @@ Template title
 Some description of the template and its files.
 
 
-replaced -> ./test/folder/nested-file.ts
 replaced -> ./test/file.ts
+replaced -> ./test/folder/nested-file.ts
 
 
 

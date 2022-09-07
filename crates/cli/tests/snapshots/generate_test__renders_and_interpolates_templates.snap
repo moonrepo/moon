@@ -1,0 +1,22 @@
+---
+source: crates/cli/tests/generate_test.rs
+assertion_line: 100
+expression: "fs::read_to_string(fixture.path().join(\"./test/expressions.txt\")).unwrap()"
+---
+boolTrue = true
+boolFalse = false
+string = 
+stringNotEmpty = default
+stringReq = 
+stringReqNotEmpty = default
+number = 0
+numberNotEmpty = 123
+numberReq = 0
+numberReqNotEmpty = 123
+enum = a
+enumNotEmpty = b
+enumInvalidDefault = a
+multenum = [a]
+multenumNotEmpty = [b]
+multenumInvalidDefault = [a]
+

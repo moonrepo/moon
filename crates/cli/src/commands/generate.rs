@@ -49,38 +49,44 @@ fn gather_variables(
                     .position(|i| i == &var.default)
                     .unwrap_or_default();
 
-                if options.force {
-                    context.insert(name, &var.values[default_index]);
-                } else if var.multiple.unwrap_or_default() {
-                    let indexes = MultiSelect::with_theme(theme)
-                        .with_prompt(&var.prompt)
-                        .items(&var.values)
-                        .defaults(
-                            &var.values
+                if var.multiple.unwrap_or_default() {
+                    if options.force {
+                        context.insert(name, &[&var.values[default_index]]);
+                    } else {
+                        let indexes = MultiSelect::with_theme(theme)
+                            .with_prompt(&var.prompt)
+                            .items(&var.values)
+                            .defaults(
+                                &var.values
+                                    .iter()
+                                    .enumerate()
+                                    .map(|(i, _)| i == default_index)
+                                    .collect::<Vec<bool>>(),
+                            )
+                            .interact()
+                            .map_err(error_handler)?;
+
+                        context.insert(
+                            name,
+                            &indexes
                                 .iter()
-                                .enumerate()
-                                .map(|(i, _)| i == default_index)
-                                .collect::<Vec<bool>>(),
-                        )
-                        .interact()
-                        .map_err(error_handler)?;
-
-                    context.insert(
-                        name,
-                        &indexes
-                            .iter()
-                            .map(|i| var.values[*i].clone())
-                            .collect::<Vec<String>>(),
-                    );
+                                .map(|i| var.values[*i].clone())
+                                .collect::<Vec<String>>(),
+                        );
+                    }
                 } else {
-                    let index = Select::with_theme(theme)
-                        .with_prompt(&var.prompt)
-                        .default(default_index)
-                        .items(&var.values)
-                        .interact()
-                        .map_err(error_handler)?;
+                    if options.force {
+                        context.insert(name, &var.values[default_index]);
+                    } else {
+                        let index = Select::with_theme(theme)
+                            .with_prompt(&var.prompt)
+                            .default(default_index)
+                            .items(&var.values)
+                            .interact()
+                            .map_err(error_handler)?;
 
-                    context.insert(name, &var.values[index]);
+                        context.insert(name, &var.values[index]);
+                    }
                 }
             }
             TemplateVariable::Number(var) => {
@@ -133,6 +139,8 @@ fn gather_variables(
             }
         }
     }
+
+    dbg!(&context);
 
     Ok(context)
 }

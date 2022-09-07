@@ -1,6 +1,7 @@
 use insta::assert_snapshot;
 use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output};
 use predicates::prelude::*;
+use std::fs;
 
 fn get_path_safe_output(assert: &assert_cmd::assert::Assert) -> String {
     get_assert_output(assert).replace('\\', "/")
@@ -83,4 +84,21 @@ fn overwrites_existing_files_when_forced() {
     assert!(fixture.path().join("test/file.ts").exists());
     assert!(fixture.path().join("test/folder/nested-file.ts").exists());
     assert!(!fixture.path().join("test/template.yml").exists());
+}
+
+#[test]
+fn renders_and_interpolates_templates() {
+    let fixture = create_sandbox("generator");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--force")
+        .assert();
+
+    assert.success();
+
+    assert_snapshot!(fs::read_to_string(fixture.path().join("./test/expressions.txt")).unwrap());
+    assert_snapshot!(fs::read_to_string(fixture.path().join("./test/control.txt")).unwrap());
 }

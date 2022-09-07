@@ -1,0 +1,16 @@
+[package]
+name = "moon_generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../config" }
+moon_constants = { path = "../constants" }
+moon_error = { path = "../error" }
+moon_utils = { path = "../utils" }
+futures = "0.3.24"
+thiserror = "1.0.33"
+
+[dev-dependencies]
+assert_fs = "1.0.7"
+tokio = { version = "1.20.1", features = ["test-util"] }

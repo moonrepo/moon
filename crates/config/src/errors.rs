@@ -33,10 +33,14 @@ pub enum ConfigError {
     Moon(#[from] MoonError),
 }
 
-pub fn create_validation_error(code: &'static str, path: &str, message: String) -> ValidationError {
+pub fn create_validation_error<P: AsRef<str>, M: AsRef<str>>(
+    code: &'static str,
+    path: P,
+    message: M,
+) -> ValidationError {
     let mut error = ValidationError::new(code);
-    error.message = Some(Cow::from(message));
-    error.add_param(Cow::from("path"), &path.to_owned());
+    error.message = Some(Cow::from(message.as_ref().to_owned()));
+    error.add_param(Cow::from("path"), &path.as_ref().to_owned());
     error
 }
 

@@ -1,6 +1,6 @@
 use moon_config::{
-    ConfigError, HasherConfig, NodeConfig, RunnerConfig, VcsConfig, VcsManager, WorkspaceConfig,
-    WorkspaceProjects,
+    ConfigError, GeneratorConfig, HasherConfig, NodeConfig, RunnerConfig, VcsConfig, VcsManager,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_constants::CONFIG_WORKSPACE_FILENAME;
 use moon_utils::test::get_fixtures_dir;
@@ -28,6 +28,7 @@ fn loads_defaults() {
             config,
             WorkspaceConfig {
                 runner: RunnerConfig::default(),
+                generator: GeneratorConfig::default(),
                 extends: None,
                 hasher: HasherConfig::default(),
                 node: None,
@@ -286,17 +287,12 @@ node:
             assert_eq!(
                 config,
                 WorkspaceConfig {
-                    runner: RunnerConfig::default(),
-                    extends: None,
-                    hasher: HasherConfig::default(),
                     node: Some(NodeConfig {
                         package_manager: NodePackageManager::Yarn,
                         ..NodeConfig::default()
                     }),
                     projects: WorkspaceProjects::default(),
-                    typescript: None,
-                    vcs: VcsConfig::default(),
-                    schema: String::new(),
+                    ..WorkspaceConfig::default()
                 }
             );
 
@@ -786,17 +782,12 @@ vcs:
             assert_eq!(
                 config,
                 WorkspaceConfig {
-                    runner: RunnerConfig::default(),
-                    extends: None,
-                    hasher: HasherConfig::default(),
-                    node: None, // NodeConfig::default(),
                     projects: WorkspaceProjects::default(),
-                    typescript: None,
                     vcs: VcsConfig {
                         manager: VcsManager::Svn,
                         ..VcsConfig::default()
                     },
-                    schema: String::new(),
+                    ..WorkspaceConfig::default()
                 }
             );
 
@@ -855,6 +846,39 @@ vcs:
 projects: {}
 vcs:
     defaultBranch: 123"#,
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+}
+
+mod generator {
+
+    #[test]
+    #[should_panic(expected = "At least 1 template path is required")]
+    fn empty_templates() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                "generator:\n  templates: []",
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Parent relative paths are not supported")]
+    fn no_parent_relative() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                "generator:\n  templates: ['../templates']",
             )?;
 
             super::load_jailed_config(jail.directory())?;

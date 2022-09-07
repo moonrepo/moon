@@ -5,6 +5,7 @@ use crate::helpers::gather_extended_sources;
 use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
+use crate::workspace::generator::GeneratorConfig;
 use crate::workspace::hasher::HasherConfig;
 use crate::workspace::node::NodeConfig;
 use crate::workspace::runner::RunnerConfig;
@@ -30,7 +31,7 @@ type ProjectsMap = HashMap<String, FilePath>;
 fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidationError> {
     if let WorkspaceProjects::Map(map) = projects {
         for (key, value) in map {
-            validate_id(&format!("projects.{}", key), key)?;
+            validate_id(format!("projects.{}", key), key)?;
 
             match validate_child_relative_path("projects", value) {
                 Ok(_) => {}
@@ -65,6 +66,9 @@ impl Default for WorkspaceProjects {
 pub struct WorkspaceConfig {
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
+
+    #[validate]
+    pub generator: GeneratorConfig,
 
     #[validate]
     pub hasher: HasherConfig,

@@ -1,0 +1,35 @@
+---
+title: template.yml
+toc_max_heading_level: 6
+---
+
+import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.14" />
+
+The `template.yml` file configures metadata and variables for a template,
+[used by the generator](../guides/codegen), and must exist at the root of a named template folder.
+
+## `title`<RequiredLabel />
+
+> `string`
+
+A human readable title that will be displayed during the [`moon generate`](../commands/generate)
+process.
+
+```yaml title="template.yml"
+title: 'npm package'
+```
+
+## `description`<RequiredLabel />
+
+> `string`
+
+A description of why the template exists, what its purpose is, and any other relevant information.
+
+```yaml title="template.yml"
+description: |
+	Scaffolds the initial structure for an npm package,
+	including source and test folders, a package.json, and more.
+```

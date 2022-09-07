@@ -1,6 +1,8 @@
 // <project path>/moon.yml
 
-use crate::errors::{create_validation_error, map_validation_errors_to_figment_errors};
+use crate::errors::{
+    create_validation_error, map_validation_errors_to_figment_errors, ConfigError,
+};
 use crate::project::dep::DependencyConfig;
 use crate::project::task::TaskConfig;
 use crate::types::{FileGroups, ProjectID, TaskID};
@@ -9,7 +11,7 @@ use crate::validators::{
 };
 use figment::{
     providers::{Format, Serialized, Yaml},
-    Error as FigmentError, Figment,
+    Figment,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -20,7 +22,7 @@ use validator::{Validate, ValidationError};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     for key in map.keys() {
-        validate_id(&format!("fileGroups.{}", key), key)?;
+        validate_id(format!("fileGroups.{}", key), key)?;
     }
 
     Ok(())
@@ -28,14 +30,14 @@ fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
 
 fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
-        validate_id(&format!("tasks.{}", name), name)?;
+        validate_id(format!("tasks.{}", name), name)?;
 
         // Only fail for empty strings and not `None`
         if task.command.is_some() && task.get_command().is_empty() {
             return Err(create_validation_error(
                 "required_command",
-                &format!("tasks.{}.command", name),
-                String::from("An npm/system command is required"),
+                format!("tasks.{}.command", name),
+                "An npm/system command is required",
             ));
         }
     }
@@ -48,7 +50,7 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_channel",
             "project.channel",
-            String::from("Must start with a `#`"),
+            "Must start with a `#`",
         ));
     }
 
@@ -213,7 +215,7 @@ impl ProjectConfig {
     }
 
     #[track_caller]
-    pub fn load<T: AsRef<Path>>(path: T) -> Result<ProjectConfig, Vec<FigmentError>> {
+    pub fn load<T: AsRef<Path>>(path: T) -> Result<ProjectConfig, ConfigError> {
         let path = path.as_ref();
         let profile_name = "project";
         let figment =
@@ -221,10 +223,12 @@ impl ProjectConfig {
                 .merge(Yaml::file(path).profile(&profile_name))
                 .select(&profile_name);
 
-        let mut config: ProjectConfig = figment.extract().map_err(|e| vec![e])?;
+        let mut config: ProjectConfig = figment.extract()?;
 
         if let Err(errors) = config.validate() {
-            return Err(map_validation_errors_to_figment_errors(&figment, &errors));
+            return Err(ConfigError::FailedValidation(
+                map_validation_errors_to_figment_errors(&figment, &errors),
+            ));
         }
 
         if matches!(config.language, ProjectLanguage::Unknown) {

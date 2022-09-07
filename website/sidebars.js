@@ -26,6 +26,7 @@ const sidebars = {
 			collapsible: true,
 			items: [
 				'guides/ci',
+				'guides/codegen',
 				'guides/open-source',
 				'guides/profile',
 				'guides/root-project',
@@ -87,7 +88,7 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Config files',
-			items: ['config/workspace', 'config/global-project', 'config/project'],
+			items: ['config/workspace', 'config/global-project', 'config/project', 'config/template'],
 			link: {
 				type: 'generated-index',
 				title: 'Config files',
@@ -105,6 +106,7 @@ const sidebars = {
 				'commands/check',
 				'commands/clean',
 				'commands/dep-graph',
+				'commands/generate',
 				'commands/init',
 				{
 					type: 'category',

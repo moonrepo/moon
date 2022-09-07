@@ -421,13 +421,33 @@ Would result in the following `references` within both `tsconfig.json`s.
 
 ## Features
 
+## `generator`<VersionLabel version="0.14" />
+
+> `GeneratorConfig`
+
+Configures aspects of the template generator.
+
+### `templates`
+
+> `string[]`
+
+A list of file system paths where templates can be located, relative from the workspace root.
+Defaults to `./templates`.
+
+```yaml title=".moon/workspace.yml" {2-4}
+generator:
+  templates:
+    - './templates'
+    - './other/templates'
+```
+
 ## `hasher`<VersionLabel version="0.13" />
 
 > `HasherConfig`
 
 Configures aspects of smart hashing layer.
 
-### `optimization`<VersionLabel version="0.13" />
+### `optimization`
 
 Determines the optimization level to utilize when hashing content before running targets.
 

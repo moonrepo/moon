@@ -3,6 +3,7 @@ pub mod check;
 pub mod ci;
 pub mod clean;
 pub mod dep_graph;
+pub mod generate;
 pub mod init;
 pub mod migrate;
 pub mod node;

@@ -19,6 +19,7 @@ moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
 moon_contract = { path = "../contract" }
 moon_error = { path = "../error" }
+moon_generator = { path = "../generator" }
 moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }

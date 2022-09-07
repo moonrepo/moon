@@ -1,0 +1,30 @@
+---
+title: generate
+---
+
+The `moon generate <name>` (or `moon g`) command will generate code (files and folders) from a
+pre-defined template of the same name. Templates are located based on the
+[`generator.templates`](../config/workspace#templates) setting.
+
+```shell
+# Generate code from a template to a target directory
+$ moon generate npm-package ./packages/example
+
+# Create a new template
+$ moon generate react-app --template
+```
+
+> View the official [code generation guide](../guides/codegen) for a more in-depth example of how to
+> utilize this command.
+
+### Arguments
+
+- `<name>` - Name of the template to generate.
+- `[dest]` - Destination to write files to, relative from the current working directory. If not
+  defined, will be prompted during generation.
+
+### Options
+
+- `--dry-run` - Run entire generator process without writing files.
+- `--force` - Force overwrite any existing files at the destination.
+- `--template` - Create a new template with the provided name.

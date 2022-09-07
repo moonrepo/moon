@@ -1,0 +1,15 @@
+---
+source: crates/cli/tests/generate_test.rs
+assertion_line: 76
+expression: get_assert_output(&assert)
+---
+
+Template title 
+Some description of the template and its files.
+
+
+replaced -> ./test/file.ts
+replaced -> ./test/folder/nested-file.ts
+
+
+

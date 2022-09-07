@@ -11,6 +11,18 @@
         "null"
       ]
     },
+    "generator": {
+      "default": {
+        "templates": [
+          "./templates"
+        ]
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/GeneratorConfig"
+        }
+      ]
+    },
     "hasher": {
       "default": {
         "optimization": "accuracy"
@@ -81,6 +93,20 @@
     }
   },
   "definitions": {
+    "GeneratorConfig": {
+      "type": "object",
+      "properties": {
+        "templates": {
+          "default": [
+            "./templates"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "HasherConfig": {
       "type": "object",
       "properties": {

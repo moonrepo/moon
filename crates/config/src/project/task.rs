@@ -16,7 +16,7 @@ use validator::{Validate, ValidationError};
 
 fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        validate_target(&format!("deps[{}]", index), item)?;
+        validate_target(format!("deps[{}]", index), item)?;
     }
 
     Ok(())
@@ -25,7 +25,7 @@ fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
 fn validate_inputs(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
         if !ENV_VAR.is_match(item) {
-            validate_child_or_root_path(&format!("inputs[{}]", index), item)?;
+            validate_child_or_root_path(format!("inputs[{}]", index), item)?;
         }
     }
 
@@ -34,7 +34,7 @@ fn validate_inputs(list: &[String]) -> Result<(), ValidationError> {
 
 fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        validate_child_or_root_path(&format!("outputs[{}]", index), item)?;
+        validate_child_or_root_path(format!("outputs[{}]", index), item)?;
     }
 
     Ok(())

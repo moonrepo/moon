@@ -40,7 +40,7 @@ pub fn create_regex(value: &str) -> Result<Regex, MoonError> {
 }
 
 pub fn clean_id(id: &str) -> String {
-    ID_CLEAN.replace(id, "").to_string()
+    ID_CLEAN.replace_all(id, "").to_string()
 }
 
 pub fn matches_id(id: &str) -> bool {

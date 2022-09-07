@@ -22,12 +22,15 @@ pub fn skip_if_vec_empty<V>(list: &Vec<V>) -> bool {
 }
 
 // Validate the value is a valid semver version/range.
-pub fn validate_semver_version(key: &str, value: &str) -> Result<(), ValidationError> {
-    if Version::parse(value).is_err() {
+pub fn validate_semver_version<K: AsRef<str>, V: AsRef<str>>(
+    key: K,
+    value: V,
+) -> Result<(), ValidationError> {
+    if Version::parse(value.as_ref()).is_err() {
         return Err(create_validation_error(
             "invalid_semver",
-            key,
-            String::from("Must be a valid semantic version"),
+            key.as_ref(),
+            "Must be a valid semantic version",
         ));
     }
 
@@ -36,20 +39,24 @@ pub fn validate_semver_version(key: &str, value: &str) -> Result<(), ValidationE
 
 // Validate the value is a valid child relative file system path.
 // Will fail on absolute paths ("/"), and parent relative paths ("../").
-pub fn validate_child_relative_path(key: &str, value: &str) -> Result<(), ValidationError> {
-    let path = Path::new(value);
+pub fn validate_child_relative_path<K: AsRef<str>, V: AsRef<str>>(
+    key: K,
+    value: V,
+) -> Result<(), ValidationError> {
+    let key = key.as_ref();
+    let path = Path::new(value.as_ref());
 
     if path.has_root() || path.is_absolute() {
         return Err(create_validation_error(
             "no_absolute",
             key,
-            String::from("Absolute paths are not supported"),
+            "Absolute paths are not supported",
         ));
     } else if path.starts_with("..") {
         return Err(create_validation_error(
             "no_parent_relative",
             key,
-            String::from("Parent relative paths are not supported"),
+            "Parent relative paths are not supported",
         ));
     }
 
@@ -58,20 +65,24 @@ pub fn validate_child_relative_path(key: &str, value: &str) -> Result<(), Valida
 
 // Validate the value is a valid child relative file system path or root path.
 // Will fail on parent relative paths ("../") and absolute paths.
-pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), ValidationError> {
-    let path = Path::new(value);
+pub fn validate_child_or_root_path<K: AsRef<str>, V: AsRef<str>>(
+    key: K,
+    value: V,
+) -> Result<(), ValidationError> {
+    let key = key.as_ref();
+    let path = Path::new(value.as_ref());
 
     if (path.has_root() || path.is_absolute()) && !path.starts_with("/") {
         return Err(create_validation_error(
             "no_absolute",
             key,
-            String::from("Absolute paths are not supported (root paths must start with \"/\")"),
+            "Absolute paths are not supported (root paths must start with \"/\")",
         ));
     } else if path.starts_with("..") {
         return Err(create_validation_error(
             "no_parent_relative",
             key,
-            String::from("Parent relative paths are not supported"),
+            "Parent relative paths are not supported",
         ));
     }
 
@@ -79,12 +90,12 @@ pub fn validate_child_or_root_path(key: &str, value: &str) -> Result<(), Validat
 }
 
 // Validate the value is a project ID, task ID, file group, etc.
-pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
-    if !matches_id(id) {
+pub fn validate_id<K: AsRef<str>, V: AsRef<str>>(key: K, id: V) -> Result<(), ValidationError> {
+    if !matches_id(id.as_ref()) {
         return Err(create_validation_error(
             "invalid_id",
-            key,
-            String::from("Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)"),
+            key.as_ref(),
+            "Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)",
         ));
     }
 
@@ -92,12 +103,15 @@ pub fn validate_id(key: &str, id: &str) -> Result<(), ValidationError> {
 }
 
 // Validate the value is a target in the format of "project_id:task_id".
-pub fn validate_target(key: &str, target_id: &str) -> Result<(), ValidationError> {
-    if !matches_target(target_id) {
+pub fn validate_target<K: AsRef<str>, V: AsRef<str>>(
+    key: K,
+    target_id: V,
+) -> Result<(), ValidationError> {
+    if !matches_target(target_id.as_ref()) {
         return Err(create_validation_error(
             "invalid_target",
-            key,
-            String::from("Must be a valid target format"),
+            key.as_ref(),
+            "Must be a valid target format",
         ));
     }
 
@@ -105,12 +119,19 @@ pub fn validate_target(key: &str, target_id: &str) -> Result<(), ValidationError
 }
 
 // Validate the value is a URL, and optionally check if HTTPS.
-pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), ValidationError> {
+pub fn validate_url<K: AsRef<str>, V: AsRef<str>>(
+    key: K,
+    value: V,
+    https_only: bool,
+) -> Result<(), ValidationError> {
+    let key = key.as_ref();
+    let value = value.as_ref();
+
     if !validate_base_url(value) || !value.starts_with("http") {
         return Err(create_validation_error(
             "invalid_url",
             key,
-            String::from("Must be a valid URL"),
+            "Must be a valid URL",
         ));
     }
 
@@ -118,7 +139,7 @@ pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), Vali
         return Err(create_validation_error(
             "invalid_https_url",
             key,
-            String::from("Only HTTPS URLs are supported"),
+            "Only HTTPS URLs are supported",
         ));
     }
 
@@ -126,7 +147,9 @@ pub fn validate_url(key: &str, value: &str, https_only: bool) -> Result<(), Vali
 }
 
 // Validate the value is an acceptable URL or file path for an "extends" YAML field.
-pub fn validate_extends(value: &str) -> Result<(), ValidationError> {
+pub fn validate_extends<V: AsRef<str>>(value: V) -> Result<(), ValidationError> {
+    let value = value.as_ref();
+
     if value.starts_with("http") {
         validate_url("extends", value, true)?;
 
@@ -137,7 +160,7 @@ pub fn validate_extends(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "unknown_format",
             "extends",
-            String::from("Must be a valid URL or relative file path (starts with ./)"),
+            "Must be a valid URL or relative file path (starts with ./)",
         ));
     }
 
@@ -145,7 +168,23 @@ pub fn validate_extends(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_yaml",
             "extends",
-            String::from("Must be a YAML document"),
+            "Must be a YAML document",
+        ));
+    }
+
+    Ok(())
+}
+
+// Validate the value is a non-empty string.
+pub fn validate_non_empty<K: AsRef<str>, V: AsRef<str>>(
+    key: K,
+    value: V,
+) -> Result<(), ValidationError> {
+    if value.as_ref().is_empty() {
+        return Err(create_validation_error(
+            "non_empty",
+            key.as_ref(),
+            "Must be a non-empty string",
         ));
     }
 

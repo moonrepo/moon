@@ -223,7 +223,32 @@ pub enum Commands {
     )]
     Sync,
 
-    // JOBS
+    // GENERATOR
+
+    // moon generate
+    #[clap(
+        name = "generate",
+        about = "Generate and scaffold files from a pre-defined template.",
+        alias = "g"
+    )]
+    Generate {
+        #[clap(help = "Name of template to generate")]
+        name: String,
+
+        #[clap(help = "Destination path, relative from the current working directory")]
+        dest: Option<String>,
+
+        #[clap(long, help = "Run entire generator process without writing files")]
+        dry_run: bool,
+
+        #[clap(long, help = "Force overwrite any existing files at the destination")]
+        force: bool,
+
+        #[clap(long, help = "Create a new template")]
+        template: bool,
+    },
+
+    // RUNNER
 
     // moon check
     #[clap(

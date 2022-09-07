@@ -36,6 +36,7 @@ pub struct TemplateVariableEnumConfig {
     pub default: String,
     pub multiple: Option<bool>,
     pub prompt: String,
+    // pub required: Option<bool>,
     pub values: Vec<String>,
 }
 

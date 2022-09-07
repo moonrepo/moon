@@ -54,6 +54,7 @@ fn gather_variables(
                 } else if var.multiple.unwrap_or_default() {
                     let indexes = MultiSelect::with_theme(theme)
                         .with_prompt(&var.prompt)
+                        .items(&var.values)
                         .defaults(
                             &var.values
                                 .iter()
@@ -61,7 +62,6 @@ fn gather_variables(
                                 .map(|(i, _)| i == default_index)
                                 .collect::<Vec<bool>>(),
                         )
-                        .items(&var.values)
                         .interact()
                         .map_err(error_handler)?;
 
@@ -84,6 +84,8 @@ fn gather_variables(
                 }
             }
             TemplateVariable::Number(var) => {
+                let required = var.required.unwrap_or_default();
+
                 if options.force || var.prompt.is_none() {
                     context.insert(name, &var.default);
                 } else {
@@ -92,6 +94,13 @@ fn gather_variables(
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .allow_empty(false)
                         .show_default(true)
+                        .validate_with(|input: &i32| -> Result<(), &str> {
+                            if required && *input == 0 {
+                                Err("a non-zero value is required")
+                            } else {
+                                Ok(())
+                            }
+                        })
                         .interact_text()
                         .map_err(error_handler)?;
 
@@ -111,7 +120,7 @@ fn gather_variables(
                         .show_default(!var.default.is_empty())
                         .validate_with(|input: &String| -> Result<(), &str> {
                             if required && input.is_empty() {
-                                Err("A value is required")
+                                Err("a value is required")
                             } else {
                                 Ok(())
                             }
@@ -124,8 +133,6 @@ fn gather_variables(
             }
         }
     }
-
-    dbg!(&context);
 
     Ok(context)
 }

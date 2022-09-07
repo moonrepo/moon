@@ -1,0 +1,80 @@
+title: 'Variable testing'
+description: 'A template for testing all variable config combinations.'
+variables:
+  boolTrue:
+    type: 'boolean'
+    default: true
+    prompt: 'Bool, true default'
+  boolFalse:
+    type: 'boolean'
+    default: false
+    prompt: 'Bool, false default'
+  string:
+    type: 'string'
+    default: ''
+    prompt: 'String, not required, empty default'
+  stringNotEmpty:
+    type: 'string'
+    default: 'default'
+    prompt: 'String, not required, with default'
+  stringReq:
+    type: 'string'
+    default: ''
+    prompt: 'String, required, empty default'
+    required: true
+  stringReqNotEmpty:
+    type: 'string'
+    default: 'default'
+    prompt: 'String, required, with default'
+    required: true
+  number:
+    type: 'number'
+    default: 0
+    prompt: 'Number, not required, zero default'
+  numberNotEmpty:
+    type: 'number'
+    default: 123
+    prompt: 'Number, not required, with default'
+  numberReq:
+    type: 'number'
+    default: 0
+    prompt: 'Number, required, zero default'
+    required: true
+  numberReqNotEmpty:
+    type: 'number'
+    default: 123
+    prompt: 'Number, required, with default'
+    required: true
+  enum:
+    type: 'enum'
+    values: ['a', 'b', 'c']
+    default: ''
+    prompt: 'Enum, empty default'
+  enumNotEmpty:
+    type: 'enum'
+    values: ['a', 'b', 'c']
+    default: 'b'
+    prompt: 'Enum, with default'
+  enumInvalidDefault:
+    type: 'enum'
+    values: ['a', 'b', 'c']
+    default: 'z'
+    prompt: 'Enum, invalid default'
+  multenum:
+    type: 'enum'
+    values: ['a', 'b', 'c']
+    default: ''
+    prompt: 'Multi-enum, empty default'
+    multiple: true
+  multenumNotEmpty:
+    type: 'enum'
+    values: ['a', 'b', 'c']
+    default: 'b'
+    prompt: 'Multi-enum, with default'
+    multiple: true
+  multenumInvalidDefault:
+    type: 'enum'
+    values: ['a', 'b', 'c']
+    default: 'z'
+    prompt: 'Multi-enum, invalid default'
+    multiple: true

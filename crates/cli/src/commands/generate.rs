@@ -140,8 +140,6 @@ fn gather_variables(
         }
     }
 
-    dbg!(&context);
-
     Ok(context)
 }
 
@@ -199,7 +197,7 @@ pub async fn generate(
     let context = gather_variables(&template, &theme, &options)?;
 
     // Load template files and determine when to overwrite
-    template.load_files(&dest).await?;
+    template.load_files(&dest, &context).await?;
 
     for file in &mut template.files {
         if file.dest_path.exists()

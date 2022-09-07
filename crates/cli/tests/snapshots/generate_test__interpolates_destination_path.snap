@@ -1,0 +1,17 @@
+---
+source: crates/cli/tests/generate_test.rs
+assertion_line: 120
+expression: get_path_safe_output(&assert)
+---
+
+Variable testing 
+A template for testing all variable config combinations.
+
+
+created --> ./test/control.txt
+created --> ./test/expressions.txt
+created --> ./test/file-default-0.txt
+created --> ./test/partial.txt
+
+
+

@@ -27,7 +27,10 @@ mod load_files {
         let dest = assert_fs::TempDir::new().unwrap();
         let mut template = create_template();
 
-        template.load_files(dest.path()).await.unwrap();
+        template
+            .load_files(dest.path(), &create_context())
+            .await
+            .unwrap();
 
         let has_schema = template
             .files

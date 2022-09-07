@@ -88,17 +88,22 @@ impl Template {
 
     /// Load all template files from the source directory and return a list
     /// of template file structs. These will later be used for rendering and generating.
-    pub async fn load_files(&mut self, dest: &Path) -> Result<(), GeneratorError> {
+    pub async fn load_files(
+        &mut self,
+        dest: &Path,
+        context: &Context,
+    ) -> Result<(), GeneratorError> {
         let mut files = vec![];
 
         for entry in fs::read_dir_all(&self.root).await? {
-            // This is moons schema, so skip it
+            // This is moon's schema, so skip it
             if entry.file_name() == CONFIG_TEMPLATE_FILENAME {
                 continue;
             }
 
             let source_path = entry.path();
-            let name = path::to_virtual_string(source_path.strip_prefix(&self.root).unwrap())?;
+            let name =
+                self.interpolate_path(source_path.strip_prefix(&self.root).unwrap(), context)?;
             let dest_path = dest.join(&name);
             let existed = dest_path.exists();
 
@@ -131,8 +136,7 @@ impl Template {
         fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
 
         fs::write(
-            // Format the path and interpolate the values
-            self.interpolate_path(&file.dest_path, context)?,
+            &file.dest_path,
             // Render the template and interpolate the values
             self.engine.render(&file.name, context)?,
         )
@@ -146,12 +150,14 @@ impl Template {
     /// template rendering to handle this.
     pub fn interpolate_path(
         &self,
-        dest: &Path,
+        path: &Path,
         context: &Context,
     ) -> Result<String, GeneratorError> {
+        let name = path::to_virtual_string(path)?;
+
         // Replace $var with {{ var }} syntax
-        let dest = PATH_VAR
-            .replace_all(&path::to_string(dest)?, |caps: &regex::Captures| {
+        let name = PATH_VAR
+            .replace_all(&name, |caps: &regex::Captures| {
                 if let Some(var) = caps.get(1) {
                     let var = var.as_str();
 
@@ -165,6 +171,6 @@ impl Template {
             .to_string();
 
         // Render the path to interpolate the values
-        Ok(Tera::default().render_str(&dest, context)?)
+        Ok(Tera::default().render_str(&name, context)?)
     }
 }

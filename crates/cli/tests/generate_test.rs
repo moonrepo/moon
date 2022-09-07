@@ -102,3 +102,21 @@ fn renders_and_interpolates_templates() {
     assert_snapshot!(fs::read_to_string(fixture.path().join("./test/expressions.txt")).unwrap());
     assert_snapshot!(fs::read_to_string(fixture.path().join("./test/control.txt")).unwrap());
 }
+
+#[test]
+fn interpolates_destination_path() {
+    let fixture = create_sandbox("generator");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--force")
+        .assert();
+
+    // Verify output paths are correct
+    assert_snapshot!(get_path_safe_output(&assert));
+
+    // file-$stringNotEmpty$-$number$.txt
+    assert!(fixture.path().join("./test/file-default-0.txt").exists());
+}

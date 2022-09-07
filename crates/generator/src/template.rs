@@ -2,8 +2,9 @@ use crate::GeneratorError;
 use moon_config::{format_error_line, format_figment_errors, ConfigError, TemplateConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_error::MoonError;
-use moon_utils::fs;
+use moon_utils::{fs, path};
 use std::path::{Path, PathBuf};
+use tera::Tera;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
@@ -20,26 +21,32 @@ pub struct TemplateFile {
     /// Did the file already exist at the destination.
     pub existed: bool,
 
+    /// Relative path from templates dir. Also acts as the engine name.
+    pub name: String,
+
     /// Should we overwrite an existing file.
     pub overwrite: bool,
-
-    /// Relative path from templates dir.
-    pub path: PathBuf,
 
     /// Absolute path to source (in templates dir).
     pub source_path: PathBuf,
 }
 
 impl TemplateFile {
-    pub async fn generate(&self) -> Result<bool, MoonError> {
+    pub fn should_write(&self) -> bool {
         if self.existed && !self.overwrite {
-            return Ok(false);
+            return false;
         }
 
-        fs::create_dir_all(self.dest_path.parent().unwrap()).await?;
-        fs::copy_file(&self.source_path, &self.dest_path).await?;
+        true
+    }
 
-        Ok(true)
+    pub async fn generate(&self) -> Result<(), MoonError> {
+        if self.should_write() {
+            fs::create_dir_all(self.dest_path.parent().unwrap()).await?;
+            fs::copy_file(&self.source_path, &self.dest_path).await?;
+        }
+
+        Ok(())
     }
 
     pub fn state(&self) -> FileState {
@@ -51,9 +58,10 @@ impl TemplateFile {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct Template {
     pub config: TemplateConfig,
+    pub engine: Tera,
     pub files: Vec<TemplateFile>,
     pub name: String,
     pub root: PathBuf,
@@ -76,6 +84,7 @@ impl Template {
 
         Ok(Template {
             config,
+            engine: Tera::default(),
             files: vec![],
             name,
             root,
@@ -94,24 +103,28 @@ impl Template {
             }
 
             let source_path = entry.path();
-            let path = source_path.strip_prefix(&self.root).unwrap();
-            let dest_path = dest.join(path);
+            let name = path::to_virtual_string(source_path.strip_prefix(&self.root).unwrap())?;
+            let dest_path = dest.join(&name);
             let existed = dest_path.exists();
+
+            self.engine.add_template_file(&source_path, Some(&name))?;
 
             files.push(TemplateFile {
                 dest_path,
                 existed,
+                name,
                 overwrite: false,
-                path: path.to_path_buf(),
                 source_path,
             })
         }
 
         // Sort so files are deterministic
-        files.sort_by(|a, d| a.path.cmp(&d.path));
+        files.sort_by(|a, d| a.name.cmp(&d.name));
 
         self.files = files;
 
         Ok(())
     }
+
+    pub async fn render_file() {}
 }

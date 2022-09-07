@@ -106,7 +106,7 @@ pub async fn generate(
             },
             color::muted_light(
                 PathBuf::from(&relative_dest)
-                    .join(file.path)
+                    .join(&file.name)
                     .to_string_lossy()
             )
         ))?;

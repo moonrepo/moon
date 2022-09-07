@@ -1513,6 +1513,7 @@ dependencies = [
  "moon_constants",
  "moon_error",
  "moon_utils",
+ "tera",
  "thiserror",
  "tokio",
 ]

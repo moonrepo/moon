@@ -1,6 +1,7 @@
 use moon_constants as constants;
 use moon_error::MoonError;
 use std::path::PathBuf;
+use tera::Error as TeraError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -19,4 +20,7 @@ pub enum GeneratorError {
 
     #[error(transparent)]
     Moon(#[from] MoonError),
+
+    #[error(transparent)]
+    Tera(#[from] TeraError),
 }

@@ -3,9 +3,7 @@ use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output};
 use predicates::prelude::*;
 
 fn get_path_safe_output(assert: &assert_cmd::assert::Assert) -> String {
-    let output = get_assert_output(&assert);
-
-    output.replace('\\', "/")
+    get_assert_output(assert).replace('\\', "/")
 }
 
 #[test]

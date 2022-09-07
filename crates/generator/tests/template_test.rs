@@ -1,7 +1,7 @@
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_generator::{FileState, Template, TemplateFile};
 use moon_utils::test::get_fixtures_dir;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 mod load_files {
     use super::*;
@@ -21,7 +21,7 @@ mod load_files {
         let has_schema = template
             .files
             .iter()
-            .any(|f| f.path.ends_with(CONFIG_TEMPLATE_FILENAME));
+            .any(|f| f.name.ends_with(CONFIG_TEMPLATE_FILENAME));
 
         assert!(!has_schema);
     }
@@ -34,8 +34,8 @@ mod template_files {
         TemplateFile {
             dest_path: dest.join("folder/nested-file.ts"),
             existed: false,
+            name: "folder/nested-file.ts".into(),
             overwrite: false,
-            path: PathBuf::from("folder/nested-file.ts"),
             source_path: get_fixtures_dir("generator")
                 .join("templates/standard/folder/nested-file.ts"),
         }
@@ -46,9 +46,8 @@ mod template_files {
         let dest = assert_fs::TempDir::new().unwrap();
         let file = new_file(dest.path());
 
-        let created = file.generate().await.unwrap();
+        file.generate().await.unwrap();
 
-        assert!(created);
         assert!(file.dest_path.exists());
         assert_eq!(file.state(), FileState::Created);
     }
@@ -60,9 +59,8 @@ mod template_files {
         file.existed = true;
         file.overwrite = true;
 
-        let overwrote = file.generate().await.unwrap();
+        file.generate().await.unwrap();
 
-        assert!(overwrote);
         assert!(file.dest_path.exists());
         assert_eq!(file.state(), FileState::Replaced);
     }
@@ -74,9 +72,8 @@ mod template_files {
         file.existed = true;
         file.overwrite = false;
 
-        let overwrote = file.generate().await.unwrap();
+        file.generate().await.unwrap();
 
-        assert!(!overwrote);
         assert!(!file.dest_path.exists());
         assert_eq!(file.state(), FileState::Skipped);
     }

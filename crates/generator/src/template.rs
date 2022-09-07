@@ -1,10 +1,9 @@
 use crate::GeneratorError;
 use moon_config::{format_error_line, format_figment_errors, ConfigError, TemplateConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
-use moon_error::MoonError;
 use moon_utils::{fs, path};
 use std::path::{Path, PathBuf};
-use tera::Tera;
+use tera::{Context, Tera};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
@@ -38,15 +37,6 @@ impl TemplateFile {
         }
 
         true
-    }
-
-    pub async fn generate(&self) -> Result<(), MoonError> {
-        if self.should_write() {
-            fs::create_dir_all(self.dest_path.parent().unwrap()).await?;
-            fs::copy_file(&self.source_path, &self.dest_path).await?;
-        }
-
-        Ok(())
     }
 
     pub fn state(&self) -> FileState {
@@ -126,5 +116,17 @@ impl Template {
         Ok(())
     }
 
-    pub async fn render_file() {}
+    pub async fn render_file(
+        &self,
+        file: &TemplateFile,
+        context: &Context,
+    ) -> Result<(), GeneratorError> {
+        let content = self.engine.render(&file.name, context)?;
+
+        fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
+
+        fs::write(&file.dest_path, &content).await?;
+
+        Ok(())
+    }
 }

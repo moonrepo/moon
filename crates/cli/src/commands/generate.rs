@@ -1,7 +1,9 @@
 use crate::helpers::load_workspace;
 use console::Term;
-use dialoguer::{Confirm, Input};
-use moon_generator::{FileState, Generator};
+use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
+use moon_config::TemplateVariable;
+use moon_error::MoonError;
+use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
 use moon_logger::color;
 use moon_terminal::create_theme;
 use moon_utils::path;
@@ -14,6 +16,118 @@ pub struct GenerateOptions {
     pub dry_run: bool,
     pub force: bool,
     pub template: bool,
+}
+
+fn gather_variables(
+    template: &Template,
+    theme: &dyn Theme,
+    options: &GenerateOptions,
+) -> Result<TemplateContext, GeneratorError> {
+    let mut context = TemplateContext::new();
+    let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
+
+    for (name, config) in &template.config.variables {
+        match config {
+            TemplateVariable::Boolean(var) => {
+                if options.force || var.prompt.is_none() {
+                    context.insert(name, &var.default);
+                } else {
+                    let value = Confirm::with_theme(theme)
+                        .default(var.default.clone())
+                        .with_prompt(var.prompt.as_ref().unwrap())
+                        .show_default(true)
+                        .interact()
+                        .map_err(error_handler)?;
+
+                    context.insert(name, &value);
+                }
+            }
+            TemplateVariable::Enum(var) => {
+                let default_index = var
+                    .values
+                    .iter()
+                    .position(|i| i == &var.default)
+                    .unwrap_or_default();
+
+                if options.force {
+                    context.insert(name, &var.values[default_index]);
+                } else if var.multiple.unwrap_or_default() {
+                    let indexes = MultiSelect::with_theme(theme)
+                        .with_prompt(&var.prompt)
+                        .defaults(
+                            &var.values
+                                .iter()
+                                .enumerate()
+                                .map(|(i, _)| i == default_index)
+                                .collect::<Vec<bool>>(),
+                        )
+                        .items(&var.values)
+                        .interact()
+                        .map_err(error_handler)?;
+
+                    context.insert(
+                        name,
+                        &indexes
+                            .iter()
+                            .map(|i| var.values[*i].clone())
+                            .collect::<Vec<String>>(),
+                    );
+                } else {
+                    let index = Select::with_theme(theme)
+                        .with_prompt(&var.prompt)
+                        .default(default_index)
+                        .items(&var.values)
+                        .interact()
+                        .map_err(error_handler)?;
+
+                    context.insert(name, &var.values[index]);
+                }
+            }
+            TemplateVariable::Number(var) => {
+                if options.force || var.prompt.is_none() {
+                    context.insert(name, &var.default);
+                } else {
+                    let value: i32 = Input::with_theme(theme)
+                        .default(var.default.clone())
+                        .with_prompt(var.prompt.as_ref().unwrap())
+                        .allow_empty(false)
+                        .show_default(true)
+                        .interact_text()
+                        .map_err(error_handler)?;
+
+                    context.insert(name, &value);
+                }
+            }
+            TemplateVariable::String(var) => {
+                let required = var.required.unwrap_or_default();
+
+                if options.force || var.prompt.is_none() {
+                    context.insert(name, &var.default);
+                } else {
+                    let value: String = Input::with_theme(theme)
+                        .default(var.default.clone())
+                        .with_prompt(var.prompt.as_ref().unwrap())
+                        .allow_empty(false)
+                        .show_default(!var.default.is_empty())
+                        .validate_with(|input: &String| -> Result<(), &str> {
+                            if required && input.is_empty() {
+                                Err("A value is required")
+                            } else {
+                                Ok(())
+                            }
+                        })
+                        .interact_text()
+                        .map_err(error_handler)?;
+
+                    context.insert(name, &value);
+                }
+            }
+        }
+    }
+
+    dbg!(&context);
+
+    Ok(context)
 }
 
 pub async fn generate(
@@ -57,14 +171,17 @@ pub async fn generate(
     term.flush()?;
 
     // Determine the destination path
-    let relative_dest = match options.dest {
-        Some(d) => d,
+    let relative_dest = match &options.dest {
+        Some(d) => d.clone(),
         None => Input::with_theme(&theme)
             .with_prompt("Where to generate code to?")
             .allow_empty(false)
             .interact_text()?,
     };
     let dest = path::normalize(cwd.join(&relative_dest));
+
+    // Gather variables and build context
+    let context = gather_variables(&template, &theme, &options)?;
 
     // Load template files and determine when to overwrite
     template.load_files(&dest).await?;
@@ -85,7 +202,7 @@ pub async fn generate(
 
     // Generate the files in the destination and print the results
     if !options.dry_run {
-        generator.generate(&template.files).await?;
+        generator.generate(&template, &context).await?;
     }
 
     term.write_line("")?;

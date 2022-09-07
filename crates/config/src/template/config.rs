@@ -8,6 +8,7 @@ use figment::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::Path;
 use validator::{Validate, ValidationError};
 
@@ -23,6 +24,32 @@ fn validate_title(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+pub struct TemplateVariableConfig<T> {
+    pub default: T,
+    pub prompt: Option<String>,
+    pub required: Option<bool>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+pub struct TemplateVariableEnumConfig {
+    pub default: String,
+    pub multiple: Option<bool>,
+    pub prompt: String,
+    pub values: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+#[serde(tag = "type", rename_all = "kebab-case")]
+pub enum TemplateVariable {
+    Boolean(TemplateVariableConfig<bool>),
+    Enum(TemplateVariableEnumConfig),
+    Number(TemplateVariableConfig<i32>),
+    // NumberList(TemplateVariableConfig<Vec<i32>>),
+    String(TemplateVariableConfig<String>),
+    // StringList(TemplateVariableConfig<Vec<String>>),
+}
+
 /// Docs: https://moonrepo.dev/docs/config/template
 #[derive(Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
@@ -33,6 +60,8 @@ pub struct TemplateConfig {
 
     #[validate(custom = "validate_title")]
     pub title: String,
+
+    pub variables: HashMap<String, TemplateVariable>,
 }
 
 impl TemplateConfig {

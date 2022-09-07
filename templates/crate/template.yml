@@ -8,7 +8,7 @@ variables:
     required: true
   type:
     type: 'enum'
-    values: ['lib', 'bin']
+    values: ['lib', 'main']
     default: 'lib'
     prompt: 'Crate type?'
   edition:

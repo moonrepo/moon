@@ -1509,6 +1509,7 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "futures",
+ "lazy_static",
  "moon_config",
  "moon_constants",
  "moon_error",

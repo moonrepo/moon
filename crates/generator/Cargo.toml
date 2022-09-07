@@ -9,6 +9,7 @@ moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_utils = { path = "../utils" }
 futures = "0.3.24"
+lazy_static = "1.4.0"
 tera = { version = "1.17.0", features = ["preserve_order"] }
 thiserror = "1.0.33"
 

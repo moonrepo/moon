@@ -1,9 +1,14 @@
 use crate::GeneratorError;
+use lazy_static::lazy_static;
 use moon_config::{format_error_line, format_figment_errors, ConfigError, TemplateConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
-use moon_utils::{fs, path};
+use moon_utils::{fs, path, regex};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
+
+lazy_static! {
+    pub static ref PATH_VAR: regex::Regex = regex::create_regex("\\$([A-Za-z0-9_]+)\\$").unwrap();
+}
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
@@ -116,17 +121,50 @@ impl Template {
         Ok(())
     }
 
+    /// Render the template file with the provided context, and write it to the file
+    /// system at the defined destination path.
     pub async fn render_file(
         &self,
         file: &TemplateFile,
         context: &Context,
     ) -> Result<(), GeneratorError> {
-        let content = self.engine.render(&file.name, context)?;
-
         fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
 
-        fs::write(&file.dest_path, &content).await?;
+        fs::write(
+            // Format the path and interpolate the values
+            self.interpolate_path(&file.dest_path, context)?,
+            // Render the template and interpolate the values
+            self.engine.render(&file.name, context)?,
+        )
+        .await?;
 
         Ok(())
+    }
+
+    /// Tera *does not* support iterating over the context, so we're unable
+    /// to interpolate a path ourselves. Instead, let's use Tera and its
+    /// template rendering to handle this.
+    pub fn interpolate_path(
+        &self,
+        dest: &Path,
+        context: &Context,
+    ) -> Result<String, GeneratorError> {
+        // Replace $var with {{ var }} syntax
+        let dest = PATH_VAR
+            .replace_all(&path::to_string(dest)?, |caps: &regex::Captures| {
+                if let Some(var) = caps.get(1) {
+                    let var = var.as_str();
+
+                    if context.contains_key(var) {
+                        return format!("{{{{ {} | as_str }}}}", var);
+                    }
+                }
+
+                caps.get(0).unwrap().as_str().to_owned()
+            })
+            .to_string();
+
+        // Render the path to interpolate the values
+        Ok(Tera::default().render_str(&dest, context)?)
     }
 }

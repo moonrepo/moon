@@ -33,7 +33,7 @@ fn gather_variables(
                     context.insert(name, &var.default);
                 } else {
                     let value = Confirm::with_theme(theme)
-                        .default(var.default.clone())
+                        .default(var.default)
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .show_default(true)
                         .interact()
@@ -90,7 +90,7 @@ fn gather_variables(
                     context.insert(name, &var.default);
                 } else {
                     let value: i32 = Input::with_theme(theme)
-                        .default(var.default.clone())
+                        .default(var.default)
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .allow_empty(false)
                         .show_default(true)

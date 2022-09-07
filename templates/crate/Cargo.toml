@@ -3,7 +3,7 @@ name = "moon_{{ name | slugify }}"
 version = "0.1.0"
 edition = "{{ edition }}"
 
-{% if type == 'bin' %}
+{% if type == 'main' %}
 [[bin]]
 name = "{{ name | slugify }}"
 path = "src/main.rs"

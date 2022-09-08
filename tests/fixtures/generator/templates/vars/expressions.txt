@@ -1,0 +1,17 @@
+boolTrue = {{ boolTrue }}
+boolFalse = {{ boolFalse }}
+string = {{ string }}
+stringNotEmpty = {{ stringNotEmpty }}
+stringReq = {{ stringReq }}
+stringReqNotEmpty = {{ stringReqNotEmpty }}
+number = {{ number }}
+numberNotEmpty = {{ numberNotEmpty }}
+numberReq = {{ numberReq }}
+numberReqNotEmpty = {{ numberReqNotEmpty }}
+enum = {{ enum }}
+enumNotEmpty = {{ enumNotEmpty }}
+enumInvalidDefault = {{ enumInvalidDefault }}
+multenum = {{ multenum }}
+multenumNotEmpty = {{ multenumNotEmpty }}
+multenumInvalidDefault = {{ multenumInvalidDefault }}
+noPrompt = {{ noPrompt }}

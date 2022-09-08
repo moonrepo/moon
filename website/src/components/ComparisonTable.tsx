@@ -452,25 +452,28 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Variable interpolation in file content',
 		support: {
+			moon: SUPPORTED,
 			nx: SUPPORTED,
 		},
 	},
 	{
 		feature: 'Variable interpolation in file paths',
 		support: {
+			moon: SUPPORTED,
 			nx: SUPPORTED,
 		},
 	},
 	{
 		feature: 'Can define variable values via interactive prompts',
 		support: {
+			moon: SUPPORTED,
 			nx: SUPPORTED,
 		},
 	},
 	{
 		feature: 'Can define variable values via command line args',
 		support: {
-			moon: SUPPORTED,
+			// moon: SUPPORTED,
 		},
 	},
 	{
@@ -481,8 +484,9 @@ const generatorRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'Supports render helpers',
+		feature: 'Supports render helpers / built-ins',
 		support: {
+			moon: SUPPORTED,
 			nx: SUPPORTED,
 		},
 	},

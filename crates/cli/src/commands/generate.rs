@@ -1,7 +1,9 @@
 use crate::helpers::load_workspace;
 use console::Term;
-use dialoguer::{Confirm, Input};
-use moon_generator::{FileState, Generator};
+use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
+use moon_config::TemplateVariable;
+use moon_error::MoonError;
+use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
 use moon_logger::color;
 use moon_terminal::create_theme;
 use moon_utils::path;
@@ -10,10 +12,137 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct GenerateOptions {
+    pub defaults: bool,
     pub dest: Option<String>,
     pub dry_run: bool,
     pub force: bool,
     pub template: bool,
+}
+
+fn gather_variables(
+    template: &Template,
+    theme: &dyn Theme,
+    options: &GenerateOptions,
+) -> Result<TemplateContext, GeneratorError> {
+    let mut context = TemplateContext::new();
+    let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
+
+    for (name, config) in &template.config.variables {
+        match config {
+            TemplateVariable::Boolean(var) => {
+                if options.defaults || var.prompt.is_none() {
+                    context.insert(name, &var.default);
+                } else {
+                    let value = Confirm::with_theme(theme)
+                        .default(var.default)
+                        .with_prompt(var.prompt.as_ref().unwrap())
+                        .show_default(true)
+                        .interact()
+                        .map_err(error_handler)?;
+
+                    context.insert(name, &value);
+                }
+            }
+            TemplateVariable::Enum(var) => {
+                let default_index = var
+                    .values
+                    .iter()
+                    .position(|i| i == &var.default)
+                    .unwrap_or_default();
+
+                match (options.defaults, var.multiple.unwrap_or_default()) {
+                    (true, true) => {
+                        context.insert(name, &[&var.values[default_index]]);
+                    }
+                    (true, false) => {
+                        context.insert(name, &var.values[default_index]);
+                    }
+                    (false, true) => {
+                        let indexes = MultiSelect::with_theme(theme)
+                            .with_prompt(&var.prompt)
+                            .items(&var.values)
+                            .defaults(
+                                &var.values
+                                    .iter()
+                                    .enumerate()
+                                    .map(|(i, _)| i == default_index)
+                                    .collect::<Vec<bool>>(),
+                            )
+                            .interact()
+                            .map_err(error_handler)?;
+
+                        context.insert(
+                            name,
+                            &indexes
+                                .iter()
+                                .map(|i| var.values[*i].clone())
+                                .collect::<Vec<String>>(),
+                        );
+                    }
+                    (false, false) => {
+                        let index = Select::with_theme(theme)
+                            .with_prompt(&var.prompt)
+                            .default(default_index)
+                            .items(&var.values)
+                            .interact()
+                            .map_err(error_handler)?;
+
+                        context.insert(name, &var.values[index]);
+                    }
+                };
+            }
+            TemplateVariable::Number(var) => {
+                let required = var.required.unwrap_or_default();
+
+                if options.defaults || var.prompt.is_none() {
+                    context.insert(name, &var.default);
+                } else {
+                    let value: i32 = Input::with_theme(theme)
+                        .default(var.default)
+                        .with_prompt(var.prompt.as_ref().unwrap())
+                        .allow_empty(false)
+                        .show_default(true)
+                        .validate_with(|input: &i32| -> Result<(), &str> {
+                            if required && *input == 0 {
+                                Err("a non-zero value is required")
+                            } else {
+                                Ok(())
+                            }
+                        })
+                        .interact_text()
+                        .map_err(error_handler)?;
+
+                    context.insert(name, &value);
+                }
+            }
+            TemplateVariable::String(var) => {
+                let required = var.required.unwrap_or_default();
+
+                if options.defaults || var.prompt.is_none() {
+                    context.insert(name, &var.default);
+                } else {
+                    let value: String = Input::with_theme(theme)
+                        .default(var.default.clone())
+                        .with_prompt(var.prompt.as_ref().unwrap())
+                        .allow_empty(false)
+                        .show_default(!var.default.is_empty())
+                        .validate_with(|input: &String| -> Result<(), &str> {
+                            if required && input.is_empty() {
+                                Err("a value is required")
+                            } else {
+                                Ok(())
+                            }
+                        })
+                        .interact_text()
+                        .map_err(error_handler)?;
+
+                    context.insert(name, &value);
+                }
+            }
+        }
+    }
+
+    Ok(context)
 }
 
 pub async fn generate(
@@ -57,8 +186,8 @@ pub async fn generate(
     term.flush()?;
 
     // Determine the destination path
-    let relative_dest = match options.dest {
-        Some(d) => d,
+    let relative_dest = match &options.dest {
+        Some(d) => d.clone(),
         None => Input::with_theme(&theme)
             .with_prompt("Where to generate code to?")
             .allow_empty(false)
@@ -66,8 +195,11 @@ pub async fn generate(
     };
     let dest = path::normalize(cwd.join(&relative_dest));
 
+    // Gather variables and build context
+    let context = gather_variables(&template, &theme, &options)?;
+
     // Load template files and determine when to overwrite
-    template.load_files(&dest).await?;
+    template.load_files(&dest, &context).await?;
 
     for file in &mut template.files {
         if file.dest_path.exists()
@@ -85,7 +217,7 @@ pub async fn generate(
 
     // Generate the files in the destination and print the results
     if !options.dry_run {
-        generator.generate(&template.files).await?;
+        generator.generate(&template, &context).await?;
     }
 
     term.write_line("")?;
@@ -106,7 +238,7 @@ pub async fn generate(
             },
             color::muted_light(
                 PathBuf::from(&relative_dest)
-                    .join(file.path)
+                    .join(&file.name)
                     .to_string_lossy()
             )
         ))?;

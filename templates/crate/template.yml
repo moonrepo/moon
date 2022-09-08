@@ -1,0 +1,17 @@
+title: 'Cargo crate'
+description: 'Create a new Cargo crate, pre-setup for the moon workspace.'
+variables:
+  name:
+    type: 'string'
+    default: ''
+    prompt: 'Crate name?'
+    required: true
+  type:
+    type: 'enum'
+    values: ['lib', 'main']
+    default: 'lib'
+    prompt: 'Crate type?'
+  edition:
+    type: 'number'
+    default: 2021
+    prompt: 'Edition?'

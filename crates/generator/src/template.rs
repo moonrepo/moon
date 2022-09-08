@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
 lazy_static! {
-    pub static ref PATH_VAR: regex::Regex = regex::create_regex("\\$([A-Za-z0-9_]+)\\$").unwrap();
+    pub static ref PATH_VAR: regex::Regex = regex::create_regex(r#"\[([A-Za-z0-9_]+)\]"#).unwrap();
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -155,7 +155,7 @@ impl Template {
     ) -> Result<String, GeneratorError> {
         let name = path::to_virtual_string(path)?;
 
-        // Replace $var with {{ var }} syntax
+        // Replace [var] with {{ var }} syntax
         let name = PATH_VAR
             .replace_all(&name, |caps: &regex::Captures| {
                 if let Some(var) = caps.get(1) {

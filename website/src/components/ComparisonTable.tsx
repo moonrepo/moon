@@ -473,7 +473,7 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Can define variable values via command line args',
 		support: {
-			moon: SUPPORTED,
+			// moon: SUPPORTED,
 		},
 	},
 	{

@@ -51,19 +51,19 @@ mod interpolate_path {
 
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("folder/$string$.ts"), &context)
+                .interpolate_path(&PathBuf::from("folder/[string].ts"), &context)
                 .unwrap(),
             "folder/string.ts"
         );
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("$number$/file.ts"), &context)
+                .interpolate_path(&PathBuf::from("[number]/file.ts"), &context)
                 .unwrap(),
             "123/file.ts"
         );
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("$bool$"), &context)
+                .interpolate_path(&PathBuf::from("[bool]"), &context)
                 .unwrap(),
             "true"
         );
@@ -79,19 +79,19 @@ mod interpolate_path {
 
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("folder/$camelCase$/file.ts"), &context)
+                .interpolate_path(&PathBuf::from("folder/[camelCase]/file.ts"), &context)
                 .unwrap(),
             "folder/camelCase/file.ts"
         );
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("folder/$PascalCase$/file.ts"), &context)
+                .interpolate_path(&PathBuf::from("folder/[PascalCase]/file.ts"), &context)
                 .unwrap(),
             "folder/PascalCase/file.ts"
         );
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("folder/$snake_case$/file.ts"), &context)
+                .interpolate_path(&PathBuf::from("folder/[snake_case]/file.ts"), &context)
                 .unwrap(),
             "folder/snake_case/file.ts"
         );
@@ -104,13 +104,13 @@ mod interpolate_path {
 
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("folder/$string$-$number$.ts"), &context)
+                .interpolate_path(&PathBuf::from("folder/[string]-[number].ts"), &context)
                 .unwrap(),
             "folder/string-123.ts"
         );
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("folder/$string$$number$.ts"), &context)
+                .interpolate_path(&PathBuf::from("folder/[string][number].ts"), &context)
                 .unwrap(),
             "folder/string123.ts"
         );
@@ -123,22 +123,9 @@ mod interpolate_path {
 
         assert_eq!(
             template
-                .interpolate_path(&PathBuf::from("folder/$unknown$.ts"), &context)
+                .interpolate_path(&PathBuf::from("folder/[unknown].ts"), &context)
                 .unwrap(),
-            "folder/$unknown$.ts"
-        );
-    }
-
-    #[test]
-    fn persists_tokens() {
-        let template = create_template();
-        let context = create_context();
-
-        assert_eq!(
-            template
-                .interpolate_path(&PathBuf::from("folder/$$number$$/solo$.ts"), &context)
-                .unwrap(),
-            "folder/$123$/solo$.ts"
+            "folder/[unknown].ts"
         );
     }
 }

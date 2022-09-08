@@ -87,6 +87,31 @@ fn overwrites_existing_files_when_forced() {
 }
 
 #[test]
+fn overwrites_existing_files_when_interpolated_path() {
+    let fixture = create_sandbox("generator");
+
+    create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--defaults")
+        .assert();
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--defaults")
+        .arg("--force")
+        .assert();
+
+    assert_snapshot!(get_path_safe_output(&assert));
+
+    // file-[stringNotEmpty]-[number].txt
+    assert!(fixture.path().join("./test/file-default-0.txt").exists());
+}
+
+#[test]
 fn renders_and_interpolates_templates() {
     let fixture = create_sandbox("generator");
 
@@ -117,6 +142,6 @@ fn interpolates_destination_path() {
     // Verify output paths are correct
     assert_snapshot!(get_path_safe_output(&assert));
 
-    // file-$stringNotEmpty$-$number$.txt
+    // file-[stringNotEmpty]-[number].txt
     assert!(fixture.path().join("./test/file-default-0.txt").exists());
 }

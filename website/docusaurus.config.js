@@ -93,12 +93,12 @@ const config = {
 						position: 'left',
 						label: 'Docs',
 					},
-					// {
-					// 	type: 'doc',
-					// 	docId: 'guides/ci',
-					// 	position: 'left',
-					// 	label: 'Guides',
-					// },
+					{
+						type: 'doc',
+						docId: 'guides/ci',
+						position: 'left',
+						label: 'Guides',
+					},
 					{
 						to: '/api',
 						label: 'API',

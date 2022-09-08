@@ -9,6 +9,6 @@ releases:
   '@moonrepo/core-windows-x64-msvc': minor
   '@moonrepo/types': patch
 
-decline:
+declined:
   - '@moonrepo/runtime'
   - 'website'

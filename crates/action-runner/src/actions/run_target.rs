@@ -12,6 +12,7 @@ use moon_project::Project;
 use moon_task::{Target, Task, TaskError};
 use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
+use moon_utils::is_docker_container;
 use moon_utils::{
     fs, is_ci, is_test_env, path,
     process::{self, output_to_string, Command, Output},
@@ -655,8 +656,13 @@ pub async fn run_target(
         return Ok(ActionStatus::Passed);
     }
 
+    // Dont cache in Docker containers as we want:
+    // - To reduce the overall size of the image
+    // - Want fresh builds
+    let should_cache = task.options.cache && !is_docker_container();
+
     // Abort early if this build has already been cached/hashed
-    if task.options.cache {
+    if should_cache {
         let common_hasher = runner.create_common_hasher(context).await?;
 
         let is_cached = match task.platform {
@@ -728,7 +734,7 @@ pub async fn run_target(
     };
 
     // If successful, cache the task outputs
-    if task.options.cache {
+    if should_cache {
         runner.cache_outputs().await?;
     }
 

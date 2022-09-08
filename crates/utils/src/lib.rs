@@ -9,6 +9,7 @@ pub mod time;
 
 use cached::proc_macro::cached;
 use std::env;
+use std::path::PathBuf;
 
 #[macro_export]
 macro_rules! string_vec {
@@ -27,6 +28,10 @@ pub fn is_ci() -> bool {
         Ok(var) => var == "true",
         Err(_) => false,
     }
+}
+
+pub fn is_docker_container() -> bool {
+    PathBuf::from("/.dockerenv").exists()
 }
 
 // TODO: This doesn't work behind VPN or corporate proxies. Disabling for now

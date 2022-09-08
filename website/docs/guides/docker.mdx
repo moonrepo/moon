@@ -18,6 +18,8 @@ caching. The final 2 steps should be customized to your project's needs!
 ```docker
 FROM node:latest
 
+WORKDIR /app
+
 # Install moon binary
 RUN npm install -g @moonrepo/cli
 

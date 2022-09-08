@@ -50,10 +50,14 @@ fn gather_variables(
                     .position(|i| i == &var.default)
                     .unwrap_or_default();
 
-                if var.multiple.unwrap_or_default() {
-                    if options.defaults {
+                match (options.defaults, var.multiple.unwrap_or_default()) {
+                    (true, true) => {
                         context.insert(name, &[&var.values[default_index]]);
-                    } else {
+                    }
+                    (true, false) => {
+                        context.insert(name, &var.values[default_index]);
+                    }
+                    (false, true) => {
                         let indexes = MultiSelect::with_theme(theme)
                             .with_prompt(&var.prompt)
                             .items(&var.values)
@@ -75,10 +79,7 @@ fn gather_variables(
                                 .collect::<Vec<String>>(),
                         );
                     }
-                } else {
-                    if options.defaults {
-                        context.insert(name, &var.values[default_index]);
-                    } else {
+                    (false, false) => {
                         let index = Select::with_theme(theme)
                             .with_prompt(&var.prompt)
                             .default(default_index)
@@ -88,7 +89,7 @@ fn gather_variables(
 
                         context.insert(name, &var.values[index]);
                     }
-                }
+                };
             }
             TemplateVariable::Number(var) => {
                 let required = var.required.unwrap_or_default();

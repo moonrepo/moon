@@ -109,6 +109,11 @@ impl Template {
 
             self.engine.add_template_file(&source_path, Some(&name))?;
 
+            // Add partials to Tera, but skip copying them
+            if name.contains("partial") {
+                continue;
+            }
+
             files.push(TemplateFile {
                 dest_path,
                 existed,

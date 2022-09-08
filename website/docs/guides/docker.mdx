@@ -1,0 +1,35 @@
+---
+title: Docker usage
+---
+
+Using [Docker](https://www.docker.com/) to run your applications? Or build your artifacts? No
+worries, moon can be utilized within Docker containers! For the most part, everything should just
+work, but we have disabled caching and hashing in Docker containers for the following reasons:
+
+- Avoids having to mount a volume for the `.git` directory.
+- Reduces the overall image size as we're avoiding creating tarballs.
+- Ensures that builds are fresh.
+
+## Dockerfile
+
+This is merely an example of using moon within a `Dockerfile` while taking advantage of its layer
+caching. The final 2 steps should be customized to your project's needs!
+
+```docker
+FROM node:latest
+
+# Install moon binary
+RUN npm install -g @moonrepo/cli
+
+# Copy moon files
+COPY ./.moon ./.moon
+
+# Install toolchain
+RUN moon setup
+
+# Copy repo
+COPY . .
+
+# Run target
+CMD ["moon", "run", "project:task"]
+```

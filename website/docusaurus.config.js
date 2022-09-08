@@ -93,12 +93,12 @@ const config = {
 						position: 'left',
 						label: 'Docs',
 					},
-					{
-						type: 'doc',
-						docId: 'guides/ci',
-						position: 'left',
-						label: 'Guides',
-					},
+					// {
+					// 	type: 'doc',
+					// 	docId: 'guides/ci',
+					// 	position: 'left',
+					// 	label: 'Guides',
+					// },
 					{
 						to: '/api',
 						label: 'API',
@@ -115,6 +115,10 @@ const config = {
 							{
 								label: '@moonrepo/dev',
 								href: 'https://www.npmjs.com/package/@moonrepo/dev',
+							},
+							{
+								label: '@moonrepo/types',
+								href: 'https://www.npmjs.com/package/@moonrepo/types',
 							},
 							{
 								label: 'babel-preset-moon',

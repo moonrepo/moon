@@ -10,10 +10,17 @@
 
 #### 🚀 Updates
 
+- Added a new `moon generate` command, for code generation and scaffolding.
+- Added a `generator` setting to `.moon/workspace.yml`, for controlling aspects of the generator and
+  its templates.
 - Updated the project graph to scan and find implicit dependencies based on language specific
-  semantics. For example, will determine moon projects based on `package.json` names and
-  dependencies.
+  semantics. For example, will determine moon project relationships based on `package.json` names
+  and dependencies.
 - Updated `moon setup` to also install Node.js dependencies.
+
+#### 🐞 Fixes
+
+- Fixed an issue where project and task names were not being cleaned/formatted properly.
 
 ## 0.13.0
 
@@ -58,7 +65,8 @@
 
 - Added support for Linux ARM GNU (`aarch64-unknown-linux-gnu`).
 - Added support for Linux ARM musl (`aarch64-unknown-linux-musl`).
-- Added a `typescript` setting to `moon.yml`, allowing TypeScript support to be toggled per project.
+- Added a `workspace.typescript` setting to `moon.yml`, allowing TypeScript support to be toggled
+  per project.
 - Added a `--report` option to the `moon run` command, for generating run reports for debugging.
 - Added an `--affected` option to the `moon query projects` command.
 - Updated the task `command` to also support inline arguments. You can now merge `command` and

@@ -1,3 +1,7 @@
+export interface GeneratorConfig {
+	templates: string[];
+}
+
 export interface HasherConfig {
 	optimization: 'accuracy' | 'performance';
 }
@@ -54,6 +58,7 @@ export interface VcsConfig {
 
 export interface WorkspaceConfig {
 	extends: string | null;
+	generator: GeneratorConfig;
 	hasher: HasherConfig;
 	node: NodeConfig | null;
 	projects: Record<string, string> | string[];

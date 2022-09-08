@@ -90,6 +90,7 @@ pub async fn run_cli() {
         Commands::Generate {
             name,
             dest,
+            defaults,
             dry_run,
             force,
             template,
@@ -97,6 +98,7 @@ pub async fn run_cli() {
             generate(
                 name,
                 GenerateOptions {
+                    defaults: *defaults,
                     dest: dest.clone(),
                     dry_run: *dry_run,
                     force: *force,

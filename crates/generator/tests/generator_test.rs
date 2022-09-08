@@ -1,5 +1,5 @@
-use moon_config::{GeneratorConfig, TemplateConfig};
-use moon_generator::{Generator, Template};
+use moon_config::GeneratorConfig;
+use moon_generator::Generator;
 use moon_utils::{string_vec, test::create_sandbox};
 
 mod create_template {
@@ -30,18 +30,8 @@ mod create_template {
         assert!(dir.join("templates/new-template").exists());
         assert!(dir.join("templates/new-template/template.yml").exists());
 
-        assert_eq!(
-            template,
-            Template {
-                config: TemplateConfig {
-                    title: "Title".into(),
-                    description: "Description of the template.".into(),
-                },
-                files: vec![],
-                name: "new-template".into(),
-                root: dir.join("templates/new-template")
-            }
-        );
+        assert_eq!(template.name, "new-template".to_owned());
+        assert_eq!(template.root, dir.join("templates/new-template"));
     }
 
     #[tokio::test]
@@ -62,18 +52,8 @@ mod create_template {
         assert!(dir.join("scaffolding/new-template").exists());
         assert!(dir.join("scaffolding/new-template/template.yml").exists());
 
-        assert_eq!(
-            template,
-            Template {
-                config: TemplateConfig {
-                    title: "Title".into(),
-                    description: "Description of the template.".into(),
-                },
-                files: vec![],
-                name: "new-template".into(),
-                root: dir.join("scaffolding/new-template")
-            }
-        );
+        assert_eq!(template.name, "new-template".to_owned());
+        assert_eq!(template.root, dir.join("scaffolding/new-template"));
     }
 
     #[tokio::test]
@@ -94,16 +74,12 @@ mod create_template {
             .exists());
 
         assert_eq!(
-            template,
-            Template {
-                config: TemplateConfig {
-                    title: "Title".into(),
-                    description: "Description of the template.".into(),
-                },
-                files: vec![],
-                name: "sometemPlatE-withRandom-Values123_".into(),
-                root: dir.join("templates/sometemPlatE-withRandom-Values123_")
-            }
+            template.name,
+            "sometemPlatE-withRandom-Values123_".to_owned()
+        );
+        assert_eq!(
+            template.root,
+            dir.join("templates/sometemPlatE-withRandom-Values123_")
         );
     }
 }

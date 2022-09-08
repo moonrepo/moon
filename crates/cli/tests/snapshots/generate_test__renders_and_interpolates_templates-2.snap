@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/generate_test.rs
+assertion_line: 103
+expression: "fs::read_to_string(fixture.path().join(\"./test/control.txt\")).unwrap()"
+---
+
+Should show
+
+
+Looping multenum:
+
+1. b
+
+
+Including partial:
+THIS WAS INCLUDED
+
+
+Filters:
+DEFAULT
+246
+1
+

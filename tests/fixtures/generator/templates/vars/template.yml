@@ -78,3 +78,6 @@ variables:
     default: 'z'
     prompt: 'Multi-enum, invalid default'
     multiple: true
+  noPrompt:
+    type: 'number'
+    default: 456

@@ -14,3 +14,4 @@ enumInvalidDefault = {{ enumInvalidDefault }}
 multenum = {{ multenum }}
 multenumNotEmpty = {{ multenumNotEmpty }}
 multenumInvalidDefault = {{ multenumInvalidDefault }}
+noPrompt = {{ noPrompt }}

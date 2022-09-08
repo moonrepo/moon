@@ -238,6 +238,12 @@ pub enum Commands {
         #[clap(help = "Destination path, relative from the current working directory")]
         dest: Option<String>,
 
+        #[clap(
+            long,
+            help = "Use the default value of all variables instead of prompting"
+        )]
+        defaults: bool,
+
         #[clap(long, help = "Run entire generator process without writing files")]
         dry_run: bool,
 

@@ -33,3 +33,87 @@ description: |
 	Scaffolds the initial structure for an npm package,
 	including source and test folders, a package.json, and more.
 ```
+
+## `variables`
+
+> `Record<string, TemplateVariableConfig>`
+
+A mapping of variables that will be interpolated into all template files and file system paths when
+[rendering with Tera](https://tera.netlify.app/docs/#variables). The map key is the variable name
+(in camelCase or snake_case), while the value is a configuration object, as described with the
+settings below.
+
+```yaml title="template.yml"
+variables:
+	name:
+		type: 'string'
+		default: ''
+		required: true
+		prompt: 'Package name?'
+```
+
+### `default`<RequiredLabel />
+
+> `T`
+
+The default value of the variable. When `--defaults` is passed to
+[`moon generate`](../commands/generate) or [`prompt`](#prompt) is not defined, the default value
+will be used, otherwise the user will be prompted to enter a custom value.
+
+### `prompt`<RequiredLabel text="Required for enums" />
+
+> `string`
+
+When defined, will prompt the user with a message in the terminal to input a custom value, otherwise
+[`default`](#default) will be used.
+
+### `type`<RequiredLabel />
+
+> `boolean | enum | number | string`
+
+The type of value for the variable. Accepts `boolean`, `string`, `number`, or `enum`. Floats _are
+not supported_, use strings instead.
+
+### Numbers & strings
+
+Your basic primitives.
+
+### `required`
+
+Marks the variable as required during _prompting only_. For strings, will error for empty values
+(`''`). For numbers, will error for zero's (`0`).
+
+```yaml title="template.yml"
+variables:
+	age:
+		type: 'number'
+		default: 0
+		required: true
+		prompt: 'Age?'
+```
+
+### Enums
+
+An enum is an explicit list of string values that a user can choose from.
+
+```yaml title="template.yml"
+variables:
+	color:
+		type: 'enum'
+		values: ['red', 'green', 'blue', 'purple']
+		default: 'purple'
+		prompt: 'Favorite color?'
+```
+
+### `multiple`
+
+> `boolean`
+
+Allows multiple values to be chosen during prompting. In the template, an array or strings will be
+rendered, otherwise when not-multiple, a single string will be.
+
+### `values`<RequiredLabel />
+
+> `string[]`
+
+List of explicit values to choose from.

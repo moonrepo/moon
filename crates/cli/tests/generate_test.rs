@@ -94,7 +94,7 @@ fn renders_and_interpolates_templates() {
         .arg("generate")
         .arg("vars")
         .arg("./test")
-        .arg("--force")
+        .arg("--defaults")
         .assert();
 
     assert.success();
@@ -111,7 +111,7 @@ fn interpolates_destination_path() {
         .arg("generate")
         .arg("vars")
         .arg("./test")
-        .arg("--force")
+        .arg("--defaults")
         .assert();
 
     // Verify output paths are correct

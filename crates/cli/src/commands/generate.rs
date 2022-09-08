@@ -12,6 +12,7 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct GenerateOptions {
+    pub defaults: bool,
     pub dest: Option<String>,
     pub dry_run: bool,
     pub force: bool,
@@ -29,7 +30,7 @@ fn gather_variables(
     for (name, config) in &template.config.variables {
         match config {
             TemplateVariable::Boolean(var) => {
-                if options.force || var.prompt.is_none() {
+                if options.defaults || var.prompt.is_none() {
                     context.insert(name, &var.default);
                 } else {
                     let value = Confirm::with_theme(theme)
@@ -50,7 +51,7 @@ fn gather_variables(
                     .unwrap_or_default();
 
                 if var.multiple.unwrap_or_default() {
-                    if options.force {
+                    if options.defaults {
                         context.insert(name, &[&var.values[default_index]]);
                     } else {
                         let indexes = MultiSelect::with_theme(theme)
@@ -75,7 +76,7 @@ fn gather_variables(
                         );
                     }
                 } else {
-                    if options.force {
+                    if options.defaults {
                         context.insert(name, &var.values[default_index]);
                     } else {
                         let index = Select::with_theme(theme)
@@ -92,7 +93,7 @@ fn gather_variables(
             TemplateVariable::Number(var) => {
                 let required = var.required.unwrap_or_default();
 
-                if options.force || var.prompt.is_none() {
+                if options.defaults || var.prompt.is_none() {
                     context.insert(name, &var.default);
                 } else {
                     let value: i32 = Input::with_theme(theme)
@@ -116,7 +117,7 @@ fn gather_variables(
             TemplateVariable::String(var) => {
                 let required = var.required.unwrap_or_default();
 
-                if options.force || var.prompt.is_none() {
+                if options.defaults || var.prompt.is_none() {
                     context.insert(name, &var.default);
                 } else {
                     let value: String = Input::with_theme(theme)

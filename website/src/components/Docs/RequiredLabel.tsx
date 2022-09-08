@@ -1,6 +1,10 @@
 import React from 'react';
 import Label from '../../ui/typography/Label';
 
-export default function RequiredLabel() {
-	return <Label text="Required" variant="failure" className="ml-2" />;
+export interface RequiredLabelProps {
+	text?: string;
+}
+
+export default function RequiredLabel({ text = 'Required' }: RequiredLabelProps) {
+	return <Label text={text} variant="failure" className="ml-2" />;
 }

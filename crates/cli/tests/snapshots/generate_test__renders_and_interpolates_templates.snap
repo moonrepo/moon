@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/generate_test.rs
-assertion_line: 100
+assertion_line: 102
 expression: "fs::read_to_string(fixture.path().join(\"./test/expressions.txt\")).unwrap()"
 ---
 boolTrue = true
@@ -19,4 +19,5 @@ enumInvalidDefault = a
 multenum = [a]
 multenumNotEmpty = [b]
 multenumInvalidDefault = [a]
+noPrompt = 456
 

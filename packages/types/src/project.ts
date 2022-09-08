@@ -1,5 +1,10 @@
 import type { Platform } from './common';
-import type { DependencyConfig, ProjectConfig, TaskMergeStrategy, TaskOutputStyle } from './config';
+import type {
+	DependencyConfig,
+	ProjectConfig,
+	TaskMergeStrategy,
+	TaskOutputStyle,
+} from './project-config';
 
 export type TaskType = 'build' | 'run' | 'test';
 

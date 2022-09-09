@@ -6,7 +6,9 @@ use moon_config::{
 use moon_contract::{Platform, Platformable, RegisteredPlatforms};
 use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
-use moon_project::{detect_projects_with_globs, Project, ProjectError};
+use moon_project::{
+    detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
+};
 use moon_task::{Target, Task};
 use moon_utils::path;
 use petgraph::dot::{Config, Dot};
@@ -325,14 +327,17 @@ impl ProjectGraph {
 
         for platform in &self.platforms {
             // Determine implicit dependencies
-            let implicit_deps = platform.load_project_implicit_dependencies(
+            for dep_cfg in platform.load_project_implicit_dependencies(
                 id,
                 &project.root,
                 &project.config,
                 &self.aliases_map,
-            )?;
+            )? {
+                let mut dep = ProjectDependency::from_config(&dep_cfg);
+                dep.source = ProjectDependencySource::Implicit;
 
-            project.dependencies.extend(implicit_deps);
+                project.dependencies.push(dep);
+            }
 
             // Inherit platform specific tasks
             for (task_id, task_config) in platform.load_project_tasks(

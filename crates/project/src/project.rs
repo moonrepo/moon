@@ -1,8 +1,8 @@
 use crate::errors::ProjectError;
 use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, DependencyConfig, FilePath,
-    GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID, TaskConfig,
-    TaskID,
+    format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
+    FilePath, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID,
+    TaskConfig, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
@@ -90,7 +90,7 @@ fn create_file_groups_from_config(
 fn create_dependencies_from_config(
     log_target: &str,
     config: &ProjectConfig,
-) -> Vec<DependencyConfig> {
+) -> Vec<ProjectDependency> {
     let mut deps = vec![];
 
     debug!(target: log_target, "Creating dependencies");
@@ -98,10 +98,13 @@ fn create_dependencies_from_config(
     for dep_cfg in &config.depends_on {
         match dep_cfg {
             ProjectDependsOn::String(id) => {
-                deps.push(DependencyConfig::new(id));
+                deps.push(ProjectDependency {
+                    id: id.clone(),
+                    ..ProjectDependency::default()
+                });
             }
             ProjectDependsOn::Object(cfg) => {
-                deps.push(cfg.clone());
+                deps.push(ProjectDependency::from_config(cfg));
             }
         }
     }
@@ -219,6 +222,32 @@ fn create_tasks_from_config(
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ProjectDependencySource {
+    #[default]
+    Explicit,
+    Implicit,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct ProjectDependency {
+    pub id: ProjectID,
+    pub scope: DependencyScope,
+    pub source: ProjectDependencySource,
+    pub via: Option<String>,
+}
+
+impl ProjectDependency {
+    pub fn from_config(config: &DependencyConfig) -> ProjectDependency {
+        ProjectDependency {
+            id: config.id.clone(),
+            scope: config.scope.clone(),
+            ..ProjectDependency::default()
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     /// Unique alias of the project, alongside its official ID.
@@ -229,7 +258,7 @@ pub struct Project {
     pub config: ProjectConfig,
 
     /// List of other projects this project depends on.
-    pub dependencies: Vec<DependencyConfig>,
+    pub dependencies: Vec<ProjectDependency>,
 
     /// File groups specific to the project. Inherits all file groups from the global config.
     pub file_groups: FileGroupsMap,
@@ -316,6 +345,7 @@ impl Project {
     ) -> Result<(), ProjectError> {
         let resolver_data =
             ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
+        let depends_on = self.get_dependency_ids();
 
         for task in self.tasks.values_mut() {
             if matches!(task.platform, PlatformType::Unknown) {
@@ -327,7 +357,7 @@ impl Project {
 
             // Resolve in order!
             task.expand_env(&resolver_data)?;
-            task.expand_deps(&self.id, &self.dependencies)?;
+            task.expand_deps(&self.id, &depends_on)?;
             task.expand_inputs(TokenResolver::for_inputs(&resolver_data))?;
             task.expand_outputs(TokenResolver::for_outputs(&resolver_data))?;
 

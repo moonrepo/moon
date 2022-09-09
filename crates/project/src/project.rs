@@ -14,6 +14,8 @@ use std::path::{Path, PathBuf};
 
 type FileGroupsMap = HashMap<String, FileGroup>;
 
+type ProjectDependenciesMap = HashMap<ProjectID, ProjectDependency>;
+
 type TasksMap = BTreeMap<TaskID, Task>;
 
 // moon.yml
@@ -90,21 +92,24 @@ fn create_file_groups_from_config(
 fn create_dependencies_from_config(
     log_target: &str,
     config: &ProjectConfig,
-) -> Vec<ProjectDependency> {
-    let mut deps = vec![];
+) -> ProjectDependenciesMap {
+    let mut deps = HashMap::new();
 
     debug!(target: log_target, "Creating dependencies");
 
     for dep_cfg in &config.depends_on {
         match dep_cfg {
             ProjectDependsOn::String(id) => {
-                deps.push(ProjectDependency {
-                    id: id.clone(),
-                    ..ProjectDependency::default()
-                });
+                deps.insert(
+                    id.clone(),
+                    ProjectDependency {
+                        id: id.clone(),
+                        ..ProjectDependency::default()
+                    },
+                );
             }
             ProjectDependsOn::Object(cfg) => {
-                deps.push(ProjectDependency::from_config(cfg));
+                deps.insert(cfg.id.clone(), ProjectDependency::from_config(cfg));
             }
         }
     }
@@ -259,7 +264,7 @@ pub struct Project {
     pub config: ProjectConfig,
 
     /// List of other projects this project depends on.
-    pub dependencies: Vec<ProjectDependency>,
+    pub dependencies: ProjectDependenciesMap,
 
     /// File groups specific to the project. Inherits all file groups from the global config.
     pub file_groups: FileGroupsMap,
@@ -374,12 +379,7 @@ impl Project {
 
     /// Return a list of project IDs this project depends on.
     pub fn get_dependency_ids(&self) -> Vec<ProjectID> {
-        let mut depends_on = self
-            .dependencies
-            .iter()
-            .map(|d| d.id.clone())
-            .collect::<Vec<String>>();
-
+        let mut depends_on = self.dependencies.keys().cloned().collect::<Vec<String>>();
         depends_on.sort();
         depends_on
     }

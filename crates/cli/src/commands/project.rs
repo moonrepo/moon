@@ -46,19 +46,20 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
 
     let mut deps = vec![];
 
-    for dep_cfg in &project.dependencies {
-        match workspace.projects.load(&dep_cfg.id) {
+    for (dep_id, dep_cfg) in &project.dependencies {
+        match workspace.projects.load(dep_id) {
             Ok(dep) => {
                 deps.push(format!(
-                    "{} {}{}{}",
-                    color::id(&dep_cfg.id),
+                    "{} {}{} {}{}",
+                    color::id(dep_id),
                     color::muted_light("("),
                     color::file(&dep.source),
+                    color::muted(format!("{:?}", dep_cfg.source)),
                     color::muted_light(")"),
                 ));
             }
             Err(_) => {
-                deps.push(color::id(&dep_cfg.id));
+                deps.push(color::id(dep_id));
             }
         };
     }

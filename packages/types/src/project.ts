@@ -52,7 +52,7 @@ export interface ProjectDependency extends DependencyConfig {
 export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
-	dependencies: ProjectDependency[];
+	dependencies: Record<string, ProjectDependency>;
 	fileGroups: Record<string, FileGroup>;
 	id: string;
 	root: string;

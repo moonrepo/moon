@@ -105,6 +105,8 @@ pub struct ProjectGraph {
 
 impl Platformable for ProjectGraph {
     fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError> {
+        let mut platform = platform;
+
         platform.load_project_graph_aliases(
             &self.workspace_root,
             &self.workspace_config,
@@ -333,10 +335,13 @@ impl ProjectGraph {
                 &project.config,
                 &self.aliases_map,
             )? {
-                let mut dep = ProjectDependency::from_config(&dep_cfg);
-                dep.source = ProjectDependencySource::Implicit;
+                // Implicit deps should not override explicit deps
+                if !project.dependencies.contains_key(&dep_cfg.id) {
+                    let mut dep = ProjectDependency::from_config(&dep_cfg);
+                    dep.source = ProjectDependencySource::Implicit;
 
-                project.dependencies.push(dep);
+                    project.dependencies.insert(dep_cfg.id, dep);
+                }
             }
 
             // Inherit platform specific tasks

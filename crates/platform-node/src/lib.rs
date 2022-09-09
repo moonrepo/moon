@@ -14,7 +14,10 @@ use moon_lang_node::package::PackageJson;
 use moon_lang_node::NPM;
 use moon_logger::{color, debug, warn};
 use moon_task::TaskError;
-use std::{collections::BTreeMap, path::Path};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::Path,
+};
 use task::ScriptParser;
 
 pub const LOG_TARGET: &str = "moon:platform-node";
@@ -43,26 +46,31 @@ pub fn infer_tasks_from_scripts(
 }
 
 #[derive(Default)]
-pub struct NodePlatform;
+pub struct NodePlatform {
+    package_names: HashMap<String, String>,
+}
 
 impl Platform for NodePlatform {
     fn load_project_graph_aliases(
-        &self,
+        &mut self,
         workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
-        let alias_format = match &workspace_config.node.as_ref().unwrap().alias_package_names {
-            Some(f) => f,
-            None => {
-                return Ok(());
+        let mut map_aliases = false;
+        let mut alias_format = NodeProjectAliasFormat::NameAndScope;
+
+        if let Some(node_config) = &workspace_config.node {
+            if let Some(custom_format) = &node_config.alias_package_names {
+                map_aliases = true;
+                alias_format = custom_format.clone();
             }
-        };
+        }
 
         debug!(
             target: LOG_TARGET,
-            "Assigning project aliases from project {}s",
+            "Loading project aliases from project {}s",
             color::file(&NPM.manifest_filename)
         );
 
@@ -70,7 +78,7 @@ impl Platform for NodePlatform {
             if let Some(package_json) = PackageJson::read(workspace_root.join(project_source))? {
                 if let Some(package_name) = package_json.name {
                     let alias = match alias_format {
-                        NodeProjectAliasFormat::NameAndScope => package_name,
+                        NodeProjectAliasFormat::NameAndScope => package_name.clone(),
                         NodeProjectAliasFormat::NameOnly => parse_package_name(&package_name).1,
                     };
 
@@ -100,7 +108,14 @@ impl Platform for NodePlatform {
                         continue;
                     }
 
-                    aliases_map.insert(alias, project_id.to_owned());
+                    // Always track aliases internally so that we can discover implicit dependencies
+                    self.package_names
+                        .insert(package_name, project_id.to_owned());
+
+                    // However, consumers using aliases is opt-in, so account for that
+                    if map_aliases {
+                        aliases_map.insert(alias, project_id.to_owned());
+                    }
                 }
             }
         }
@@ -113,7 +128,7 @@ impl Platform for NodePlatform {
         project_id: &str,
         project_root: &Path,
         _project_config: &ProjectConfig,
-        aliases_map: &ProjectsAliasesMap,
+        _aliases_map: &ProjectsAliasesMap,
     ) -> Result<Vec<DependencyConfig>, MoonError> {
         let mut implicit_deps = vec![];
 
@@ -127,7 +142,7 @@ impl Platform for NodePlatform {
             let mut find_implicit_relations =
                 |package_deps: &BTreeMap<String, String>, scope: &DependencyScope| {
                     for dep_name in package_deps.keys() {
-                        if let Some(dep_project_id) = aliases_map.get(dep_name) {
+                        if let Some(dep_project_id) = self.package_names.get(dep_name) {
                             implicit_deps.push(DependencyConfig {
                                 id: dep_project_id.to_owned(),
                                 scope: scope.clone(),

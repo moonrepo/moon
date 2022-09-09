@@ -13,7 +13,7 @@ pub trait Platform: Send + Sync {
     /// During project graph creation, load project aliases for the resolved
     /// map of projects that are unique to the platform's ecosystem.
     fn load_project_graph_aliases(
-        &self,
+        &mut self,
         workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
         projects_map: &ProjectsSourcesMap,

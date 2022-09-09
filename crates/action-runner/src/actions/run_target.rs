@@ -135,6 +135,17 @@ impl<'a> TargetRunner<'a> {
         hasher.hash_task(task);
         hasher.hash_args(&context.passthrough_args);
 
+        // If the VCS root does not exist (like in a Docker image),
+        // we should avoid failing and instead log a warning.
+        if !vcs.is_enabled() {
+            warn!(
+                target: LOG_TARGET,
+                "VCS root not found, hashing will be inaccurate!"
+            );
+
+            return Ok(hasher);
+        }
+
         // For input files, hash them with the vcs layer first
         if !task.input_paths.is_empty() {
             let mut files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
@@ -656,13 +667,8 @@ pub async fn run_target(
         return Ok(ActionStatus::Passed);
     }
 
-    // Dont cache in Docker containers as we want:
-    // - To reduce the overall size of the image
-    // - Want fresh builds
-    let should_cache = task.options.cache && !is_docker_container();
-
     // Abort early if this build has already been cached/hashed
-    if should_cache {
+    if task.options.cache {
         let common_hasher = runner.create_common_hasher(context).await?;
 
         let is_cached = match task.platform {
@@ -734,7 +740,7 @@ pub async fn run_target(
     };
 
     // If successful, cache the task outputs
-    if should_cache {
+    if task.options.cache {
         runner.cache_outputs().await?;
     }
 

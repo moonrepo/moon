@@ -8,3 +8,6 @@ projects:
   node: node
   nodeNameOnly: node-name-only
   nodeNameScoped: node-name-scope
+  explicit: explicit
+  explicitAndImplicit: explicit-and-implicit
+  implicit: implicit

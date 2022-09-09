@@ -41,7 +41,8 @@ and in turn, a dependency graph for executing [tasks](./task). Project dependenc
 
 - **Explicit dependencies** - These are dependencies that are explicitly defined in a project's
   [`moon.yml`](../config/project) config file, using the [`dependsOn`](../config/project#dependson)
-  setting.
+  setting. Explicit dependencies provide more built-in functionality than implicit,
+  [like project syncing](../faq#what-should-be-considered-the-source-of-truth).
 - **Implicit dependencies** - These are dependencies that are implicitly discovered by moon when
   scanning the repository. How an implicit dependency is discovered is based on the project's
   [`language`](../config/project#language) setting, and how that language's ecosystem functions.

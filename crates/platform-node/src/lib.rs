@@ -4,8 +4,8 @@ pub mod task;
 
 pub use hasher::NodeTargetHasher;
 use moon_config::{
-    DependencyConfig, DependencyScope, NodeProjectAliasFormat, ProjectConfig, ProjectsAliasesMap,
-    ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
+    DependencyConfig, DependencyScope, NodeProjectAliasFormat, ProjectConfig, ProjectID,
+    ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
 };
 use moon_contract::Platform;
 use moon_error::MoonError;
@@ -47,7 +47,8 @@ pub fn infer_tasks_from_scripts(
 
 #[derive(Default)]
 pub struct NodePlatform {
-    package_names: HashMap<String, String>,
+    /// Maps `package.json` names to project IDs.
+    package_names: HashMap<String, ProjectID>,
 }
 
 impl Platform for NodePlatform {
@@ -70,7 +71,7 @@ impl Platform for NodePlatform {
 
         debug!(
             target: LOG_TARGET,
-            "Loading project aliases from project {}s",
+            "Loading project aliases from project {}'s",
             color::file(&NPM.manifest_filename)
         );
 
@@ -108,7 +109,7 @@ impl Platform for NodePlatform {
                         continue;
                     }
 
-                    // Always track aliases internally so that we can discover implicit dependencies
+                    // Always track package names internally so that we can discover implicit dependencies
                     self.package_names
                         .insert(package_name, project_id.to_owned());
 

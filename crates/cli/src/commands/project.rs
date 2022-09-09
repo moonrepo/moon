@@ -55,6 +55,8 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
     }
 
     if !deps.is_empty() {
+        deps.sort();
+
         term.write_line("")?;
         term.render_label(Label::Default, "Depends on")?;
         term.render_list(deps)?;

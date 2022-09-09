@@ -336,12 +336,14 @@ impl ProjectGraph {
                 &self.aliases_map,
             )? {
                 // Implicit deps should not override explicit deps
-                if !project.dependencies.contains_key(&dep_cfg.id) {
-                    let mut dep = ProjectDependency::from_config(&dep_cfg);
-                    dep.source = ProjectDependencySource::Implicit;
-
-                    project.dependencies.insert(dep_cfg.id, dep);
-                }
+                project
+                    .dependencies
+                    .entry(dep_cfg.id.clone())
+                    .or_insert_with(|| {
+                        let mut dep = ProjectDependency::from_config(&dep_cfg);
+                        dep.source = ProjectDependencySource::Implicit;
+                        dep
+                    });
             }
 
             // Inherit platform specific tasks

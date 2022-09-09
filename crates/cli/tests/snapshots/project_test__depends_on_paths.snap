@@ -13,8 +13,8 @@ Type: Application
 
  DEPENDS ON 
 
- - baz (explicit, production)
  - bar (explicit, production)
+ - baz (explicit, production)
 
  FILE GROUPS 
 

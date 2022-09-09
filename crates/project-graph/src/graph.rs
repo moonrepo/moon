@@ -341,11 +341,11 @@ impl ProjectGraph {
 
             // Inherit platform specific tasks
             for (task_id, task_config) in platform.load_project_tasks(
-                &self.workspace_root,
-                &self.workspace_config,
                 id,
                 &project.root,
                 &project.config,
+                &self.workspace_root,
+                &self.workspace_config,
             )? {
                 // Inferred tasks should not override explicit tasks
                 #[allow(clippy::map_entry)]

@@ -155,11 +155,11 @@ impl Platform for NodePlatform {
 
     fn load_project_tasks(
         &self,
-        _workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
         project_id: &str,
         project_root: &Path,
         project_config: &ProjectConfig,
+        _workspace_root: &Path,
+        workspace_config: &WorkspaceConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
         let mut tasks = BTreeMap::new();
 

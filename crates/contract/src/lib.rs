@@ -38,11 +38,11 @@ pub trait Platform: Send + Sync {
     /// load and infer any *additional* tasks for the platform.
     fn load_project_tasks(
         &self,
-        workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
         project_id: &str,
         project_root: &Path,
         project_config: &ProjectConfig,
+        workspace_root: &Path,
+        workspace_config: &WorkspaceConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
         Ok(BTreeMap::new())
     }

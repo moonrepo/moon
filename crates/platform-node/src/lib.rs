@@ -127,10 +127,14 @@ impl Platform for NodePlatform {
         &self,
         project_id: &str,
         project_root: &Path,
-        _project_config: &ProjectConfig,
+        project_config: &ProjectConfig,
         _aliases_map: &ProjectsAliasesMap,
     ) -> Result<Vec<DependencyConfig>, MoonError> {
         let mut implicit_deps = vec![];
+
+        if !project_config.language.is_node_platform() {
+            return Ok(implicit_deps);
+        }
 
         debug!(
             target: LOG_TARGET,

@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/project_test.rs
-assertion_line: 66
+assertion_line: 80
 expression: get_assert_output(&assert)
 ---
 
@@ -13,8 +13,8 @@ Type: Application
 
  DEPENDS ON 
 
- - bar (deps/bar)
- - baz (deps/baz)
+ - baz (explicit, production)
+ - bar (explicit, production)
 
  FILE GROUPS 
 

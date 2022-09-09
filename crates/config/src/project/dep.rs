@@ -1,13 +1,19 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum::Display;
 use validator::Validate;
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DependencyScope {
+    #[strum(serialize = "development")]
     Development,
+
+    #[strum(serialize = "peer")]
     Peer,
+
     #[default]
+    #[strum(serialize = "production")]
     Production,
 }
 

@@ -11,6 +11,7 @@ use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use strum::Display;
 
 type FileGroupsMap = HashMap<String, FileGroup>;
 
@@ -226,11 +227,14 @@ fn create_tasks_from_config(
     Ok(tasks)
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ProjectDependencySource {
     #[default]
+    #[strum(serialize = "explicit")]
     Explicit,
+
+    #[strum(serialize = "implicit")]
     Implicit,
 }
 

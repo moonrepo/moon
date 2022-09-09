@@ -131,6 +131,7 @@ impl Platform for NodePlatform {
                             implicit_deps.push(DependencyConfig {
                                 id: dep_project_id.to_owned(),
                                 scope: scope.clone(),
+                                via: Some(dep_name.clone()),
                             });
                         }
                     }

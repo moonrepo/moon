@@ -242,6 +242,7 @@ impl ProjectDependency {
         ProjectDependency {
             id: config.id.clone(),
             scope: config.scope.clone(),
+            via: config.via.clone(),
             ..ProjectDependency::default()
         }
     }

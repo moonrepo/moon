@@ -323,8 +323,18 @@ impl ProjectGraph {
         let mut project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
         project.alias = self.find_alias_for_id(id);
 
-        // Inherit platform specific tasks
         for platform in &self.platforms {
+            // Determine implicit dependencies
+            let implicit_deps = platform.load_project_implicit_dependencies(
+                id,
+                &project.root,
+                &project.config,
+                &self.aliases_map,
+            )?;
+
+            project.dependencies.extend(implicit_deps);
+
+            // Inherit platform specific tasks
             for (task_id, task_config) in platform.load_project_tasks(
                 &self.workspace_root,
                 &self.workspace_config,

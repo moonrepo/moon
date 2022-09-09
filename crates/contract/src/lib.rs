@@ -1,7 +1,8 @@
 #![allow(unused_variables)]
 
 use moon_config::{
-    ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
+    DependencyConfig, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
+    WorkspaceConfig,
 };
 use moon_error::MoonError;
 use std::collections::BTreeMap;
@@ -19,6 +20,18 @@ pub trait Platform: Send + Sync {
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
         Ok(())
+    }
+
+    /// During project creation (when being lazy loaded and instantiated in the graph),
+    /// scan for any implicit project dependency relations using the platforms manifest.
+    fn load_project_implicit_dependencies(
+        &self,
+        project_id: &str,
+        project_root: &Path,
+        project_config: &ProjectConfig,
+        aliases_map: &ProjectsAliasesMap,
+    ) -> Result<Vec<DependencyConfig>, MoonError> {
+        Ok(vec![])
     }
 
     /// During project creation (when being lazy loaded and instantiated in the graph),

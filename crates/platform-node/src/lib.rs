@@ -4,8 +4,8 @@ pub mod task;
 
 pub use hasher::NodeTargetHasher;
 use moon_config::{
-    NodeProjectAliasFormat, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
-    WorkspaceConfig,
+    DependencyConfig, DependencyScope, NodeProjectAliasFormat, ProjectConfig, ProjectsAliasesMap,
+    ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
 };
 use moon_contract::Platform;
 use moon_error::MoonError;
@@ -106,6 +106,50 @@ impl Platform for NodePlatform {
         }
 
         Ok(())
+    }
+
+    fn load_project_implicit_dependencies(
+        &self,
+        project_id: &str,
+        project_root: &Path,
+        _project_config: &ProjectConfig,
+        aliases_map: &ProjectsAliasesMap,
+    ) -> Result<Vec<DependencyConfig>, MoonError> {
+        let mut implicit_deps = vec![];
+
+        debug!(
+            target: LOG_TARGET,
+            "Scanning {} for implicit dependency relations",
+            color::id(project_id),
+        );
+
+        if let Some(package_json) = PackageJson::read(project_root)? {
+            let mut find_implicit_relations =
+                |package_deps: &BTreeMap<String, String>, scope: &DependencyScope| {
+                    for dep_name in package_deps.keys() {
+                        if let Some(dep_project_id) = aliases_map.get(dep_name) {
+                            implicit_deps.push(DependencyConfig {
+                                id: dep_project_id.to_owned(),
+                                scope: scope.clone(),
+                            });
+                        }
+                    }
+                };
+
+            if let Some(dependencies) = &package_json.dependencies {
+                find_implicit_relations(dependencies, &DependencyScope::Production);
+            }
+
+            if let Some(dev_dependencies) = &package_json.dev_dependencies {
+                find_implicit_relations(dev_dependencies, &DependencyScope::Development);
+            }
+
+            if let Some(peer_dependencies) = &package_json.peer_dependencies {
+                find_implicit_relations(peer_dependencies, &DependencyScope::Peer);
+            }
+        }
+
+        Ok(implicit_deps)
     }
 
     fn load_project_tasks(

@@ -130,11 +130,13 @@ mod depends_on {
                 vec![
                     ProjectDependsOn::Object(DependencyConfig {
                         id: "a".to_owned(),
-                        scope: DependencyScope::Development
+                        scope: DependencyScope::Development,
+                        via: None,
                     }),
                     ProjectDependsOn::Object(DependencyConfig {
                         id: "b".to_owned(),
-                        scope: DependencyScope::Production
+                        scope: DependencyScope::Production,
+                        via: None,
                     })
                 ]
             );
@@ -162,7 +164,8 @@ mod depends_on {
                     ProjectDependsOn::String("a".to_owned()),
                     ProjectDependsOn::Object(DependencyConfig {
                         id: "b".to_owned(),
-                        scope: DependencyScope::Production
+                        scope: DependencyScope::Production,
+                        via: None,
                     })
                 ]
             );

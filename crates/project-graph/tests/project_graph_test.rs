@@ -1,10 +1,44 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{
+    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, WorkspaceConfig, WorkspaceProjects,
+};
 use moon_project_graph::ProjectGraph;
 use moon_utils::string_vec;
 use moon_utils::test::{create_sandbox, create_sandbox_with_git, get_fixtures_dir};
 use std::collections::HashMap;
+
+async fn get_aliases_graph() -> ProjectGraph {
+    let workspace_root = get_fixtures_dir("project-graph/aliases");
+    let workspace_config = WorkspaceConfig {
+        node: Some(NodeConfig {
+            alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
+            ..NodeConfig::default()
+        }),
+        projects: WorkspaceProjects::Map(HashMap::from([
+            ("explicit".to_owned(), "explicit".to_owned()),
+            (
+                "explicitAndImplicit".to_owned(),
+                "explicit-and-implicit".to_owned(),
+            ),
+            ("implicit".to_owned(), "implicit".to_owned()),
+            ("noLang".to_owned(), "no-lang".to_owned()),
+            ("node".to_owned(), "node".to_owned()),
+            ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
+            ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),
+        ])),
+        ..WorkspaceConfig::default()
+    };
+
+    ProjectGraph::create(
+        &workspace_root,
+        &workspace_config,
+        GlobalProjectConfig::default(),
+        &CacheEngine::create(&workspace_root).await.unwrap(),
+    )
+    .await
+    .unwrap()
+}
 
 async fn get_dependencies_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependencies");
@@ -187,5 +221,126 @@ mod to_dot {
         graph.load("d").unwrap();
 
         assert_snapshot!(graph.to_dot());
+    }
+}
+
+mod implicit_explicit_deps {
+    use super::*;
+    use moon_contract::Platformable;
+    use moon_platform_node::NodePlatform;
+    use moon_project::{ProjectDependency, ProjectDependencySource};
+
+    #[tokio::test]
+    async fn loads_implicit() {
+        let mut graph = get_aliases_graph().await;
+
+        graph
+            .register_platform(Box::new(NodePlatform::default()))
+            .unwrap();
+
+        let project = graph.load("implicit").unwrap();
+
+        assert_eq!(
+            project.dependencies,
+            HashMap::from([
+                (
+                    "nodeNameScope".to_string(),
+                    ProjectDependency {
+                        id: "nodeNameScope".into(),
+                        scope: moon_config::DependencyScope::Development,
+                        source: ProjectDependencySource::Implicit,
+                        via: Some("@scope/pkg-foo".to_string())
+                    }
+                ),
+                (
+                    "node".to_string(),
+                    ProjectDependency {
+                        id: "node".into(),
+                        scope: moon_config::DependencyScope::Production,
+                        source: ProjectDependencySource::Implicit,
+                        via: Some("project-graph-aliases-node".to_string())
+                    }
+                )
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn loads_explicit() {
+        let mut graph = get_aliases_graph().await;
+
+        graph
+            .register_platform(Box::new(NodePlatform::default()))
+            .unwrap();
+
+        let project = graph.load("explicit").unwrap();
+
+        assert_eq!(
+            project.dependencies,
+            HashMap::from([
+                (
+                    "nodeNameScope".to_string(),
+                    ProjectDependency {
+                        id: "nodeNameScope".into(),
+                        scope: moon_config::DependencyScope::Production,
+                        source: ProjectDependencySource::Explicit,
+                        via: None
+                    }
+                ),
+                (
+                    "node".to_string(),
+                    ProjectDependency {
+                        id: "node".into(),
+                        scope: moon_config::DependencyScope::Development,
+                        source: ProjectDependencySource::Explicit,
+                        via: None
+                    }
+                )
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn loads_explicit_and_implicit() {
+        let mut graph = get_aliases_graph().await;
+
+        graph
+            .register_platform(Box::new(NodePlatform::default()))
+            .unwrap();
+
+        let project = graph.load("explicitAndImplicit").unwrap();
+
+        assert_eq!(
+            project.dependencies,
+            HashMap::from([
+                (
+                    "nodeNameScope".to_string(),
+                    ProjectDependency {
+                        id: "nodeNameScope".into(),
+                        scope: moon_config::DependencyScope::Production,
+                        source: ProjectDependencySource::Explicit,
+                        via: None
+                    }
+                ),
+                (
+                    "node".to_string(),
+                    ProjectDependency {
+                        id: "node".into(),
+                        scope: moon_config::DependencyScope::Development,
+                        source: ProjectDependencySource::Explicit,
+                        via: None
+                    }
+                ),
+                (
+                    "nodeNameOnly".to_string(),
+                    ProjectDependency {
+                        id: "nodeNameOnly".into(),
+                        scope: moon_config::DependencyScope::Peer,
+                        source: ProjectDependencySource::Implicit,
+                        via: Some("pkg-bar".to_string())
+                    }
+                )
+            ])
+        );
     }
 }

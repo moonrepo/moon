@@ -15,10 +15,11 @@ project-level. When used, this file must exist in a project's root, as configure
 
 > `(ProjectID | DependencyConfig)[]`
 
-Defines _other_ projects that _this_ project depends on, primarily when generating the project and
-task graphs. The most common use case for this is building those projects _before_ building this
-one, and for syncing [`package.json`](./workspace#syncprojectworkspacedependencies) dependencies and
-[`tsconfig.json`](./workspace#syncprojectreferences) project references when applicable.
+Explicitly defines _other_ projects that _this_ project depends on, primarily when generating the
+project and task graphs. The most common use case for this is building those projects _before_
+building this one, and for syncing [`package.json`](./workspace#syncprojectworkspacedependencies)
+dependencies and [`tsconfig.json`](./workspace#syncprojectreferences) project references when
+applicable.
 
 When defined, this setting requires an array of project names, which are the keys found in the
 [`projects`](./workspace#projects) map.
@@ -40,6 +41,8 @@ dependsOn:
   - id: 'designSystem'
     scope: 'peer'
 ```
+
+> Learn more about [implicit and explicit dependencies](../concepts/project#dependencies).
 
 ## `fileGroups`
 

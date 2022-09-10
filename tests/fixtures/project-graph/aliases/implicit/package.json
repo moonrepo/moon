@@ -1,0 +1,9 @@
+{
+  "name": "project-graph-aliases-implicit",
+  "dependencies": {
+    "project-graph-aliases-node": "*"
+  },
+  "devDependencies": {
+    "@scope/pkg-foo": "workspace:*"
+  }
+}

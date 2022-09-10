@@ -33,6 +33,20 @@ will use the `name` field from its `package.json` as the alias.
 Because of this, a project can either be reference by its name or alias, or both. Choose the pattern
 that makes the most sense for your company or team!
 
+## Dependencies
+
+Projects can depend on other projects within the [workspace](./workspace) to build a project graph,
+and in turn, a dependency graph for executing [tasks](./task). Project dependencies are divided into
+2 categories:
+
+- **Explicit dependencies** - These are dependencies that are explicitly defined in a project's
+  [`moon.yml`](../config/project) config file, using the [`dependsOn`](../config/project#dependson)
+  setting. Explicit dependencies provide more built-in functionality than implicit,
+  [like project syncing](../faq#what-should-be-considered-the-source-of-truth).
+- **Implicit dependencies** - These are dependencies that are implicitly discovered by moon when
+  scanning the repository. How an implicit dependency is discovered is based on the project's
+  [`language`](../config/project#language) setting, and how that language's ecosystem functions.
+
 ## Configuration
 
 Projects can be configured with an optional [`moon.yml`](../config/project) in the project root, or

@@ -5,6 +5,7 @@ export type DependencyScope = 'development' | 'peer' | 'production';
 export interface DependencyConfig {
 	id: string;
 	scope: DependencyScope;
+	via: string | null;
 }
 
 export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';

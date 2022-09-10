@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/project_test.rs
-assertion_line: 44
+assertion_line: 54
 expression: get_assert_output(&assert)
 ---
 
@@ -13,7 +13,7 @@ Type: Unknown
 
  DEPENDS ON 
 
- - noConfig (no-config)
+ - noConfig (explicit, production)
 
  FILE GROUPS 
 

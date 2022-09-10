@@ -1,0 +1,5 @@
+dependsOn:
+  - id: 'node'
+    scope: 'development'
+  - id: 'nodeNameScope'
+    scope: 'production'

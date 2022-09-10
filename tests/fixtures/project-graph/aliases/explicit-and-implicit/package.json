@@ -1,0 +1,6 @@
+{
+  "name": "project-graph-aliases-explicit-and-implicit",
+  "peerDependencies": {
+    "pkg-bar": "*"
+  }
+}

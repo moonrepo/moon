@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated the project graph to scan and find implicit dependencies based on language specific
+  semantics. For example, will determine moon projects based on `package.json` names and
+  dependencies.
+
 ## 0.13.0
 
 #### 💥 Breaking

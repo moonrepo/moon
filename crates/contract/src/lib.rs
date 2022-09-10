@@ -1,7 +1,8 @@
 #![allow(unused_variables)]
 
 use moon_config::{
-    ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
+    DependencyConfig, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
+    WorkspaceConfig,
 };
 use moon_error::MoonError;
 use std::collections::BTreeMap;
@@ -12,7 +13,7 @@ pub trait Platform: Send + Sync {
     /// During project graph creation, load project aliases for the resolved
     /// map of projects that are unique to the platform's ecosystem.
     fn load_project_graph_aliases(
-        &self,
+        &mut self,
         workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
         projects_map: &ProjectsSourcesMap,
@@ -22,14 +23,26 @@ pub trait Platform: Send + Sync {
     }
 
     /// During project creation (when being lazy loaded and instantiated in the graph),
-    /// load and infer any *additional* tasks for the platform.
-    fn load_project_tasks(
+    /// scan for any implicit project dependency relations using the platforms manifest.
+    fn load_project_implicit_dependencies(
         &self,
-        workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
         project_id: &str,
         project_root: &Path,
         project_config: &ProjectConfig,
+        aliases_map: &ProjectsAliasesMap,
+    ) -> Result<Vec<DependencyConfig>, MoonError> {
+        Ok(vec![])
+    }
+
+    /// During project creation (when being lazy loaded and instantiated in the graph),
+    /// load and infer any *additional* tasks for the platform.
+    fn load_project_tasks(
+        &self,
+        project_id: &str,
+        project_root: &Path,
+        project_config: &ProjectConfig,
+        workspace_root: &Path,
+        workspace_config: &WorkspaceConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
         Ok(BTreeMap::new())
     }

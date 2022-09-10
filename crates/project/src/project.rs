@@ -227,7 +227,7 @@ fn create_tasks_from_config(
     Ok(tasks)
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ProjectDependencySource {
     #[default]
@@ -238,7 +238,7 @@ pub enum ProjectDependencySource {
     Implicit,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ProjectDependency {
     pub id: ProjectID,
     pub scope: DependencyScope,

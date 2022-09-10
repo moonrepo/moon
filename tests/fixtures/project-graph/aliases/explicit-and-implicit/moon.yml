@@ -1,3 +1,5 @@
 dependsOn:
-  - 'node'
-  - 'nodeNameScoped'
+  - id: 'node'
+    scope: 'development'
+  - id: 'nodeNameScope'
+    scope: 'production'

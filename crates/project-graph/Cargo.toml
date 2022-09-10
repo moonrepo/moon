@@ -16,5 +16,6 @@ petgraph = "0.6.2"
 thiserror = "1.0.33"
 
 [dev-dependencies]
+moon_platform_node = { path = "../platform-node" }
 insta = "1.19.0"
 tokio = { version = "1.20.1", features = ["test-util"] }

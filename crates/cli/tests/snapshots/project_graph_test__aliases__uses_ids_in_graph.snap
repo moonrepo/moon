@@ -5,16 +5,29 @@ expression: get_assert_output(&assert)
 ---
 digraph {
     0 [ label="(workspace)" style=filled, shape=oval, fillcolor=black, fontcolor=white]
-    1 [ label="noLang" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="explicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     2 [ label="node" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    3 [ label="nodeNameScoped" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="nodeNameScope" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     4 [ label="nodeNameOnly" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    5 [ label="explicitAndImplicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    6 [ label="implicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    7 [ label="noLang" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     0 -> 1 [ arrowhead=none]
     0 -> 2 [ arrowhead=none]
     0 -> 3 [ arrowhead=none]
     2 -> 3 [ arrowhead=box, arrowtail=box]
     0 -> 4 [ arrowhead=none]
     2 -> 4 [ arrowhead=box, arrowtail=box]
+    1 -> 2 [ arrowhead=box, arrowtail=box]
+    1 -> 3 [ arrowhead=box, arrowtail=box]
+    0 -> 5 [ arrowhead=none]
+    5 -> 2 [ arrowhead=box, arrowtail=box]
+    5 -> 4 [ arrowhead=box, arrowtail=box]
+    5 -> 3 [ arrowhead=box, arrowtail=box]
+    0 -> 6 [ arrowhead=none]
+    6 -> 2 [ arrowhead=box, arrowtail=box]
+    6 -> 3 [ arrowhead=box, arrowtail=box]
+    0 -> 7 [ arrowhead=none]
 }
 
 

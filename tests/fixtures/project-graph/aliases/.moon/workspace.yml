@@ -7,7 +7,7 @@ projects:
   noLang: no-lang
   node: node
   nodeNameOnly: node-name-only
-  nodeNameScoped: node-name-scope
+  nodeNameScope: node-name-scope
   explicit: explicit
   explicitAndImplicit: explicit-and-implicit
   implicit: implicit

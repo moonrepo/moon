@@ -1637,6 +1637,7 @@ dependencies = [
  "moon_contract",
  "moon_error",
  "moon_logger",
+ "moon_platform_node",
  "moon_project",
  "moon_task",
  "moon_utils",

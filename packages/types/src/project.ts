@@ -45,10 +45,14 @@ export interface Task {
 	type: TaskType;
 }
 
+export interface ProjectDependency extends DependencyConfig {
+	source: 'explicit' | 'implicit';
+}
+
 export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
-	dependencies: DependencyConfig[];
+	dependencies: Record<string, ProjectDependency>;
 	fileGroups: Record<string, FileGroup>;
 	id: string;
 	root: string;

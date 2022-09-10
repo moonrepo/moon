@@ -6,7 +6,9 @@ use moon_config::{
 use moon_contract::{Platform, Platformable, RegisteredPlatforms};
 use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
-use moon_project::{detect_projects_with_globs, Project, ProjectError};
+use moon_project::{
+    detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
+};
 use moon_task::{Target, Task};
 use moon_utils::path;
 use petgraph::dot::{Config, Dot};
@@ -103,6 +105,8 @@ pub struct ProjectGraph {
 
 impl Platformable for ProjectGraph {
     fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError> {
+        let mut platform = platform;
+
         platform.load_project_graph_aliases(
             &self.workspace_root,
             &self.workspace_config,
@@ -323,14 +327,32 @@ impl ProjectGraph {
         let mut project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
         project.alias = self.find_alias_for_id(id);
 
-        // Inherit platform specific tasks
         for platform in &self.platforms {
-            for (task_id, task_config) in platform.load_project_tasks(
-                &self.workspace_root,
-                &self.workspace_config,
+            // Determine implicit dependencies
+            for dep_cfg in platform.load_project_implicit_dependencies(
                 id,
                 &project.root,
                 &project.config,
+                &self.aliases_map,
+            )? {
+                // Implicit deps should not override explicit deps
+                project
+                    .dependencies
+                    .entry(dep_cfg.id.clone())
+                    .or_insert_with(|| {
+                        let mut dep = ProjectDependency::from_config(&dep_cfg);
+                        dep.source = ProjectDependencySource::Implicit;
+                        dep
+                    });
+            }
+
+            // Inherit platform specific tasks
+            for (task_id, task_config) in platform.load_project_tasks(
+                id,
+                &project.root,
+                &project.config,
+                &self.workspace_root,
+                &self.workspace_config,
             )? {
                 // Inferred tasks should not override explicit tasks
                 #[allow(clippy::map_entry)]

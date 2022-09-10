@@ -39,6 +39,7 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
                         ProjectDependsOn::Object(DependencyConfig {
                             id: dep_id.to_owned(),
                             scope: scope.clone(),
+                            via: None,
                         })
                     });
             }

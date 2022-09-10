@@ -88,8 +88,8 @@ pub async fn sync_project(
     let mut package_dev_deps: BTreeMap<String, String> = BTreeMap::new();
     let mut tsconfig_project_refs: HashSet<String> = HashSet::new();
 
-    for dep_cfg in &project.dependencies {
-        let dep_project = workspace.projects.load(&dep_cfg.id)?;
+    for (dep_id, dep_cfg) in &project.dependencies {
+        let dep_project = workspace.projects.load(dep_id)?;
         let dep_relative_path = path::to_virtual_string(
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
         )?;

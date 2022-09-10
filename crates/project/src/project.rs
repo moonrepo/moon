@@ -1,8 +1,8 @@
 use crate::errors::ProjectError;
 use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, DependencyConfig, FilePath,
-    GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID, TaskConfig,
-    TaskID,
+    format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
+    FilePath, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID,
+    TaskConfig, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
@@ -11,8 +11,11 @@ use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use strum::Display;
 
 type FileGroupsMap = HashMap<String, FileGroup>;
+
+type ProjectDependenciesMap = HashMap<ProjectID, ProjectDependency>;
 
 type TasksMap = BTreeMap<TaskID, Task>;
 
@@ -90,18 +93,24 @@ fn create_file_groups_from_config(
 fn create_dependencies_from_config(
     log_target: &str,
     config: &ProjectConfig,
-) -> Vec<DependencyConfig> {
-    let mut deps = vec![];
+) -> ProjectDependenciesMap {
+    let mut deps = HashMap::new();
 
     debug!(target: log_target, "Creating dependencies");
 
     for dep_cfg in &config.depends_on {
         match dep_cfg {
             ProjectDependsOn::String(id) => {
-                deps.push(DependencyConfig::new(id));
+                deps.insert(
+                    id.clone(),
+                    ProjectDependency {
+                        id: id.clone(),
+                        ..ProjectDependency::default()
+                    },
+                );
             }
             ProjectDependsOn::Object(cfg) => {
-                deps.push(cfg.clone());
+                deps.insert(cfg.id.clone(), ProjectDependency::from_config(cfg));
             }
         }
     }
@@ -218,6 +227,36 @@ fn create_tasks_from_config(
     Ok(tasks)
 }
 
+#[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ProjectDependencySource {
+    #[default]
+    #[strum(serialize = "explicit")]
+    Explicit,
+
+    #[strum(serialize = "implicit")]
+    Implicit,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+pub struct ProjectDependency {
+    pub id: ProjectID,
+    pub scope: DependencyScope,
+    pub source: ProjectDependencySource,
+    pub via: Option<String>,
+}
+
+impl ProjectDependency {
+    pub fn from_config(config: &DependencyConfig) -> ProjectDependency {
+        ProjectDependency {
+            id: config.id.clone(),
+            scope: config.scope.clone(),
+            via: config.via.clone(),
+            ..ProjectDependency::default()
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
@@ -229,7 +268,7 @@ pub struct Project {
     pub config: ProjectConfig,
 
     /// List of other projects this project depends on.
-    pub dependencies: Vec<DependencyConfig>,
+    pub dependencies: ProjectDependenciesMap,
 
     /// File groups specific to the project. Inherits all file groups from the global config.
     pub file_groups: FileGroupsMap,
@@ -316,6 +355,7 @@ impl Project {
     ) -> Result<(), ProjectError> {
         let resolver_data =
             ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
+        let depends_on = self.get_dependency_ids();
 
         for task in self.tasks.values_mut() {
             if matches!(task.platform, PlatformType::Unknown) {
@@ -327,7 +367,7 @@ impl Project {
 
             // Resolve in order!
             task.expand_env(&resolver_data)?;
-            task.expand_deps(&self.id, &self.dependencies)?;
+            task.expand_deps(&self.id, &depends_on)?;
             task.expand_inputs(TokenResolver::for_inputs(&resolver_data))?;
             task.expand_outputs(TokenResolver::for_outputs(&resolver_data))?;
 
@@ -343,12 +383,7 @@ impl Project {
 
     /// Return a list of project IDs this project depends on.
     pub fn get_dependency_ids(&self) -> Vec<ProjectID> {
-        let mut depends_on = self
-            .dependencies
-            .iter()
-            .map(|d| d.id.clone())
-            .collect::<Vec<String>>();
-
+        let mut depends_on = self.dependencies.keys().cloned().collect::<Vec<String>>();
         depends_on.sort();
         depends_on
     }

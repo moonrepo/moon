@@ -862,7 +862,7 @@ mod tasks {
 
             assert_eq!(
                 project.tasks.get("build").unwrap().deps,
-                string_vec!["foo:build", "bar:build", "baz:build"]
+                string_vec!["bar:build", "baz:build", "foo:build"]
             );
         }
 

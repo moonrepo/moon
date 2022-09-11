@@ -229,7 +229,8 @@ pub enum Commands {
     #[clap(
         name = "generate",
         about = "Generate and scaffold files from a pre-defined template.",
-        alias = "g"
+        alias = "g",
+        rename_all = "camelCase"
     )]
     Generate {
         #[clap(help = "Name of template to generate")]
@@ -252,6 +253,10 @@ pub enum Commands {
 
         #[clap(long, help = "Create a new template")]
         template: bool,
+
+        // Variable args (after --)
+        #[clap(last = true, help = "Arguments to define as variable values")]
+        vars: Vec<String>,
     },
 
     // RUNNER

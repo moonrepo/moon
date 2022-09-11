@@ -7,6 +7,7 @@ use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateCon
 use moon_logger::color;
 use moon_terminal::create_theme;
 use moon_utils::path;
+use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 
@@ -17,6 +18,44 @@ pub struct GenerateOptions {
     pub dry_run: bool,
     pub force: bool,
     pub template: bool,
+    pub vars: Vec<String>,
+}
+
+fn process_custom_vars(vars: &[String]) -> HashMap<String, String> {
+    let mut custom_vars = HashMap::new();
+
+    let lexer = clap_lex::RawArgs::new(vars);
+    let mut cursor = lexer.cursor();
+
+    lexer.next(&mut cursor); // Skip the bin
+
+    while let Some(arg) = lexer.next(&mut cursor) {
+        // --name value
+        if let Some((long, value)) = arg.to_long() {
+            match long {
+                Ok(name) => {
+                    custom_vars.insert(
+                        name.to_owned(),
+                        match value {
+                            // Value provided
+                            Some(v) => v.to_str().unwrap_or_default().to_owned(),
+                            // No value, treat as a flag
+                            None => {
+                                if name.starts_with("no-") {
+                                    "false".to_owned()
+                                } else {
+                                    "true".to_owned()
+                                }
+                            }
+                        },
+                    );
+                }
+                _ => {}
+            }
+        }
+    }
+
+    custom_vars
 }
 
 fn gather_variables(
@@ -25,6 +64,7 @@ fn gather_variables(
     options: &GenerateOptions,
 ) -> Result<TemplateContext, GeneratorError> {
     let mut context = TemplateContext::new();
+    let custom_vars = process_custom_vars(&options.vars);
     let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
 
     for (name, config) in &template.config.variables {

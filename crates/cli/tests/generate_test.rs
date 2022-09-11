@@ -50,7 +50,7 @@ fn doesnt_generate_files_when_dryrun() {
         .arg("generate")
         .arg("standard")
         .arg("./test")
-        .arg("--dry-run")
+        .arg("--dryRun")
         .assert();
 
     assert_snapshot!(get_path_safe_output(&assert));

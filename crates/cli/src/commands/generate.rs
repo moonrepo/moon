@@ -23,6 +23,14 @@ pub struct GenerateOptions {
     pub vars: Vec<String>,
 }
 
+fn format_var_name(name: &str) -> String {
+    if name.starts_with("no-") {
+        name.strip_prefix("no-").unwrap().to_owned()
+    } else {
+        name.to_owned()
+    }
+}
+
 fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
     let mut custom_vars = HashMap::new();
 
@@ -37,22 +45,33 @@ fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
 
         // --name, --name=value
         if let Some((long, maybe_value)) = arg.to_long() {
-            // dbg!(&long, &value);
-
             match long {
                 Ok(name) => {
-                    let name = if name.starts_with("no-") {
-                        name[3..].to_owned()
-                    } else {
-                        name.to_owned()
-                    };
+                    // If we found another long arg, but one previously exists,
+                    // this must be a boolean value!
+                    if let Some(name) = &previous_name {
+                        custom_vars.insert(
+                            format_var_name(name),
+                            if name.starts_with("no-") {
+                                "false".to_owned()
+                            } else {
+                                "true".to_owned()
+                            },
+                        );
+                    }
 
+                    // Value was explicitly defined with =
                     if let Some(value) = maybe_value {
                         previous_name = None;
 
-                        custom_vars.insert(name, value.to_str().unwrap_or_default().to_owned());
+                        custom_vars.insert(
+                            format_var_name(name),
+                            value.to_str().unwrap_or_default().to_owned(),
+                        );
+
+                        // No value defined, so persist the name till the next iteration
                     } else {
-                        previous_name = Some(name);
+                        previous_name = Some(name.to_owned());
                     }
                 }
                 _ => {
@@ -65,7 +84,7 @@ fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
             }
 
             // -n
-        } else if let Some(_) = arg.to_short() {
+        } else if arg.to_short().is_some() {
             warn!(
                 target: LOG_TARGET,
                 "Short arguments are not supported, found -{}",
@@ -75,8 +94,9 @@ fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
             // value
         } else if let Some(name) = previous_name {
             previous_name = None;
+
             custom_vars.insert(
-                name,
+                format_var_name(&name),
                 arg.to_value_os().to_str().unwrap_or_default().to_owned(),
             );
         }

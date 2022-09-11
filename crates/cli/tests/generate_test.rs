@@ -176,3 +176,19 @@ fn interpolates_destination_path() {
     // file-[stringNotEmpty]-[number].txt
     assert!(fixture.path().join("./test/file-default-0.txt").exists());
 }
+
+#[test]
+fn errors_when_parsing_custom_var_types() {
+    let fixture = create_sandbox("generator");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--defaults")
+        .arg("--")
+        .arg("--number=abc")
+        .assert();
+
+    assert_snapshot!(get_path_safe_output(&assert));
+}

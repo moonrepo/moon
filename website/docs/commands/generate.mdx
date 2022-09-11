@@ -10,6 +10,9 @@ pre-defined template of the same name. Templates are located based on the
 # Generate code from a template to a target directory
 $ moon generate npm-package ./packages/example
 
+# Generate code while declaring custom variable values
+$ moon generate npm-package ./packages/example -- --name "@company/example"
+
 # Create a new template
 $ moon generate react-app --template
 ```
@@ -22,6 +25,7 @@ $ moon generate react-app --template
 - `<name>` - Name of the template to generate.
 - `[dest]` - Destination to write files to, relative from the current working directory. If not
   defined, will be prompted during generation.
+- `[-- <vars>]` - Additional arguments to override default variable values.
 
 ### Options
 

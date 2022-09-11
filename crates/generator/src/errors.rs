@@ -9,6 +9,9 @@ pub enum GeneratorError {
     #[error("A template with the name <id>{0}</id> already exists at <path>{1}</path>.")]
     ExistingTemplate(String, PathBuf),
 
+    #[error("Failed to parse variable argument --{0}: {1}")]
+    FailedToParseArgVar(String, String),
+
     #[error(
         "Failed to validate <file>{}</file> schema.\n\n{0}",
         constants::CONFIG_WORKSPACE_FILENAME

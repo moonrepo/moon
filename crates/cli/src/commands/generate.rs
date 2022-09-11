@@ -34,15 +34,11 @@ fn format_var_name(name: &str) -> String {
 fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
     let mut custom_vars = HashMap::new();
 
-    dbg!(&vars);
-
     let lexer = clap_lex::RawArgs::new(vars);
     let mut cursor = lexer.cursor();
     let mut previous_name: Option<String> = None;
 
     while let Some(arg) = lexer.next(&mut cursor) {
-        dbg!(&arg);
-
         // --name, --name=value
         if let Some((long, maybe_value)) = arg.to_long() {
             match long {
@@ -101,8 +97,6 @@ fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
             );
         }
     }
-
-    dbg!(&custom_vars);
 
     custom_vars
 }
@@ -189,7 +183,9 @@ fn gather_variables(
             TemplateVariable::Number(var) => {
                 let required = var.required.unwrap_or_default();
                 let default: i32 = match custom_vars.get(name) {
-                    Some(val) => val.parse::<i32>().unwrap_or(var.default),
+                    Some(val) => val.parse::<i32>().map_err(|e| {
+                        GeneratorError::FailedToParseArgVar(name.to_owned(), e.to_string())
+                    })?,
                     None => var.default,
                 };
 

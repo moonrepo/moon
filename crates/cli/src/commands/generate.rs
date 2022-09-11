@@ -4,12 +4,14 @@ use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use moon_config::TemplateVariable;
 use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
-use moon_logger::color;
+use moon_logger::{color, warn};
 use moon_terminal::create_theme;
 use moon_utils::path;
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
+
+const LOG_TARGET: &str = "moon:generate";
 
 #[derive(Debug)]
 pub struct GenerateOptions {
@@ -21,39 +23,66 @@ pub struct GenerateOptions {
     pub vars: Vec<String>,
 }
 
-fn process_custom_vars(vars: &[String]) -> HashMap<String, String> {
+fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
     let mut custom_vars = HashMap::new();
+
+    dbg!(&vars);
 
     let lexer = clap_lex::RawArgs::new(vars);
     let mut cursor = lexer.cursor();
-
-    lexer.next(&mut cursor); // Skip the bin
+    let mut previous_name: Option<String> = None;
 
     while let Some(arg) = lexer.next(&mut cursor) {
-        // --name value
-        if let Some((long, value)) = arg.to_long() {
+        dbg!(&arg);
+
+        // --name, --name=value
+        if let Some((long, maybe_value)) = arg.to_long() {
+            // dbg!(&long, &value);
+
             match long {
                 Ok(name) => {
-                    custom_vars.insert(
-                        name.to_owned(),
-                        match value {
-                            // Value provided
-                            Some(v) => v.to_str().unwrap_or_default().to_owned(),
-                            // No value, treat as a flag
-                            None => {
-                                if name.starts_with("no-") {
-                                    "false".to_owned()
-                                } else {
-                                    "true".to_owned()
-                                }
-                            }
-                        },
+                    let name = if name.starts_with("no-") {
+                        name[3..].to_owned()
+                    } else {
+                        name.to_owned()
+                    };
+
+                    if let Some(value) = maybe_value {
+                        previous_name = None;
+
+                        custom_vars.insert(name, value.to_str().unwrap_or_default().to_owned());
+                    } else {
+                        previous_name = Some(name);
+                    }
+                }
+                _ => {
+                    warn!(
+                        target: LOG_TARGET,
+                        "Failed to parse argument --{}",
+                        arg.display()
                     );
                 }
-                _ => {}
             }
+
+            // -n
+        } else if let Some(_) = arg.to_short() {
+            warn!(
+                target: LOG_TARGET,
+                "Short arguments are not supported, found -{}",
+                arg.display()
+            );
+
+            // value
+        } else if let Some(name) = previous_name {
+            previous_name = None;
+            custom_vars.insert(
+                name,
+                arg.to_value_os().to_str().unwrap_or_default().to_owned(),
+            );
         }
     }
+
+    dbg!(&custom_vars);
 
     custom_vars
 }
@@ -64,17 +93,22 @@ fn gather_variables(
     options: &GenerateOptions,
 ) -> Result<TemplateContext, GeneratorError> {
     let mut context = TemplateContext::new();
-    let custom_vars = process_custom_vars(&options.vars);
+    let custom_vars = parse_var_args(&options.vars);
     let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
 
     for (name, config) in &template.config.variables {
         match config {
             TemplateVariable::Boolean(var) => {
+                let default: bool = match custom_vars.get(name) {
+                    Some(val) => val == "true",
+                    None => var.default,
+                };
+
                 if options.defaults || var.prompt.is_none() {
-                    context.insert(name, &var.default);
+                    context.insert(name, &default);
                 } else {
                     let value = Confirm::with_theme(theme)
-                        .default(var.default)
+                        .default(default)
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .show_default(true)
                         .interact()
@@ -84,10 +118,11 @@ fn gather_variables(
                 }
             }
             TemplateVariable::Enum(var) => {
+                let default = custom_vars.get(name).unwrap_or(&var.default);
                 let default_index = var
                     .values
                     .iter()
-                    .position(|i| i == &var.default)
+                    .position(|i| i == default)
                     .unwrap_or_default();
 
                 match (options.defaults, var.multiple.unwrap_or_default()) {
@@ -133,12 +168,16 @@ fn gather_variables(
             }
             TemplateVariable::Number(var) => {
                 let required = var.required.unwrap_or_default();
+                let default: i32 = match custom_vars.get(name) {
+                    Some(val) => val.parse::<i32>().unwrap_or(var.default),
+                    None => var.default,
+                };
 
                 if options.defaults || var.prompt.is_none() {
-                    context.insert(name, &var.default);
+                    context.insert(name, &default);
                 } else {
                     let value: i32 = Input::with_theme(theme)
-                        .default(var.default)
+                        .default(default)
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .allow_empty(false)
                         .show_default(true)
@@ -157,15 +196,16 @@ fn gather_variables(
             }
             TemplateVariable::String(var) => {
                 let required = var.required.unwrap_or_default();
+                let default = custom_vars.get(name).unwrap_or(&var.default);
 
                 if options.defaults || var.prompt.is_none() {
-                    context.insert(name, &var.default);
+                    context.insert(name, &default);
                 } else {
                     let value: String = Input::with_theme(theme)
-                        .default(var.default.clone())
+                        .default(default.clone())
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .allow_empty(false)
-                        .show_default(!var.default.is_empty())
+                        .show_default(!default.is_empty())
                         .validate_with(|input: &String| -> Result<(), &str> {
                             if required && input.is_empty() {
                                 Err("a value is required")

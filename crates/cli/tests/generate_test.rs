@@ -129,6 +129,37 @@ fn renders_and_interpolates_templates() {
 }
 
 #[test]
+fn renders_with_custom_vars_via_args() {
+    let fixture = create_sandbox("generator");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--defaults")
+        .arg("--")
+        .args([
+            "--no-boolTrue",
+            "--boolFalse",
+            "--string=abc",
+            "--stringNotEmpty",
+            "xyz",
+            "--number=123",
+            "--numberNotEmpty",
+            "456",
+            "--enum=c",
+            "--multenumNotEmpty",
+            "a",
+        ])
+        .assert();
+
+    assert.success();
+
+    assert_snapshot!(fs::read_to_string(fixture.path().join("./test/expressions.txt")).unwrap());
+    assert_snapshot!(fs::read_to_string(fixture.path().join("./test/control.txt")).unwrap());
+}
+
+#[test]
 fn interpolates_destination_path() {
     let fixture = create_sandbox("generator");
 

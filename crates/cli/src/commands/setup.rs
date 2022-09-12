@@ -1,6 +1,7 @@
 use crate::helpers::{create_progress_bar, load_workspace};
 use moon_action_runner::{ActionRunner, DepGraph};
 use moon_contract::SupportedPlatform;
+use moon_utils::is_test_env;
 
 pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     let done = create_progress_bar("Downloading and installing tools...");
@@ -10,6 +11,10 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
 
     if workspace.config.node.is_some() {
         dep_graph.setup_tool(SupportedPlatform::Node);
+
+        if !is_test_env() {
+            dep_graph.install_deps(SupportedPlatform::Node);
+        }
     }
 
     ActionRunner::new(workspace).run(dep_graph, None).await?;

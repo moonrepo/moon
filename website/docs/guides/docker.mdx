@@ -3,8 +3,8 @@ title: Docker usage
 ---
 
 Using [Docker](https://www.docker.com/) to run your applications? Or build your artifacts? No
-worries, moon can be utilized within Docker containers! For the most part, everything should just
-work, but we have disabled caching and hashing in Docker containers for the following reasons:
+worries, moon can be utilized with Docker! For the most part, everything should just work, but we
+have disabled caching and hashing in Docker containers and images for the following reasons:
 
 - Avoids having to mount a volume for the `.git` directory.
 - Reduces the overall image size as we're avoiding creating tarballs.
@@ -13,7 +13,7 @@ work, but we have disabled caching and hashing in Docker containers for the foll
 :::success
 
 Looking to speed up your Docker builds? Want to build in the cloud?
-[Give Depot a try](https://depot.dev/)!
+[Give Depot a try](https://depot.dev?ref=moonrepo)!
 
 :::
 
@@ -33,11 +33,17 @@ RUN npm install -g @moonrepo/cli
 # Copy moon files
 COPY ./.moon ./.moon
 
-# Install toolchain
+# Copy all package.json's and lockfiles
+COPY ...
+COPY ./package.json ./package.json
+COPY ./yarn.lock ./yarn.lock
+
+# Install toolchain and dependencies
 RUN moon setup
 
-# Copy repo
-COPY . .
+# Copy project and required files
+COPY ./app/example/project ./app/example/project
+COPY ...
 
 # Run target
 CMD ["moon", "run", "project:task"]

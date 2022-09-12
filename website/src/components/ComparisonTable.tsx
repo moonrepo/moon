@@ -473,7 +473,7 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Can define variable values via command line args',
 		support: {
-			// moon: SUPPORTED,
+			moon: SUPPORTED,
 		},
 	},
 	{
@@ -484,7 +484,7 @@ const generatorRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'Supports render helpers / built-ins',
+		feature: 'Supports render helpers, filters, and built-ins',
 		support: {
 			moon: SUPPORTED,
 			nx: SUPPORTED,

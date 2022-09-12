@@ -94,6 +94,7 @@ pub async fn run_cli() {
             dry_run,
             force,
             template,
+            vars,
         } => {
             generate(
                 name,
@@ -103,6 +104,7 @@ pub async fn run_cli() {
                     dry_run: *dry_run,
                     force: *force,
                     template: *template,
+                    vars: vars.clone(),
                 },
             )
             .await

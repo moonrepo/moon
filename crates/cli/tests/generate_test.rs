@@ -50,7 +50,7 @@ fn doesnt_generate_files_when_dryrun() {
         .arg("generate")
         .arg("standard")
         .arg("./test")
-        .arg("--dry-run")
+        .arg("--dryRun")
         .assert();
 
     assert_snapshot!(get_path_safe_output(&assert));
@@ -129,6 +129,37 @@ fn renders_and_interpolates_templates() {
 }
 
 #[test]
+fn renders_with_custom_vars_via_args() {
+    let fixture = create_sandbox("generator");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--defaults")
+        .arg("--")
+        .args([
+            "--no-boolTrue",
+            "--boolFalse",
+            "--string=abc",
+            "--stringNotEmpty",
+            "xyz",
+            "--number=123",
+            "--numberNotEmpty",
+            "456",
+            "--enum=c",
+            "--multenumNotEmpty",
+            "a",
+        ])
+        .assert();
+
+    assert.success();
+
+    assert_snapshot!(fs::read_to_string(fixture.path().join("./test/expressions.txt")).unwrap());
+    assert_snapshot!(fs::read_to_string(fixture.path().join("./test/control.txt")).unwrap());
+}
+
+#[test]
 fn interpolates_destination_path() {
     let fixture = create_sandbox("generator");
 
@@ -144,4 +175,20 @@ fn interpolates_destination_path() {
 
     // file-[stringNotEmpty]-[number].txt
     assert!(fixture.path().join("./test/file-default-0.txt").exists());
+}
+
+#[test]
+fn errors_when_parsing_custom_var_types() {
+    let fixture = create_sandbox("generator");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--defaults")
+        .arg("--")
+        .arg("--number=abc")
+        .assert();
+
+    assert_snapshot!(get_path_safe_output(&assert));
 }

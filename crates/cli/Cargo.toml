@@ -33,6 +33,7 @@ moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 clap = { version = "3.2.19", features = ["derive", "env", "wrap_help"] }
+clap_lex = "0.2.4"
 console = "0.15.1"
 dialoguer = "0.10.2"
 indicatif = "0.17.0"

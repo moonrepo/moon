@@ -1,4 +1,5 @@
 mod errors;
+mod filters;
 mod generator;
 mod template;
 

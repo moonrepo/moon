@@ -192,3 +192,19 @@ fn errors_when_parsing_custom_var_types() {
 
     assert_snapshot!(get_path_safe_output(&assert));
 }
+
+#[test]
+fn supports_custom_filters() {
+    let fixture = create_sandbox("generator");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("vars")
+        .arg("./test")
+        .arg("--defaults")
+        .assert();
+
+    assert.success();
+
+    assert_snapshot!(fs::read_to_string(fixture.path().join("./test/filters.txt")).unwrap());
+}

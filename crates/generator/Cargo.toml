@@ -7,9 +7,12 @@ edition = "2021"
 moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
+moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
+convert_case = "0.6.0"
 futures = "0.3.24"
 lazy_static = "1.4.0"
+serde_json = "1.0.85"
 tera = { version = "1.17.0", features = ["preserve_order"] }
 thiserror = "1.0.33"
 

@@ -2,9 +2,13 @@
 title: generate
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.14" />
+
 The `moon generate <name>` (or `moon g`) command will generate code (files and folders) from a
-pre-defined template of the same name. Templates are located based on the
-[`generator.templates`](../config/workspace#templates) setting.
+pre-defined template of the same name, using an interactive series of prompts. Templates are located
+based on the [`generator.templates`](../config/workspace#templates) setting.
 
 ```shell
 # Generate code from a template to a target directory

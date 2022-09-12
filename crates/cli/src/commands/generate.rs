@@ -4,11 +4,12 @@ use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use moon_config::TemplateVariable;
 use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
-use moon_logger::{color, warn};
+use moon_logger::{color, debug, map_list, trace, warn};
 use moon_terminal::create_theme;
 use moon_utils::path;
 use std::collections::HashMap;
 use std::env;
+use std::fmt::Display;
 use std::path::PathBuf;
 
 const LOG_TARGET: &str = "moon:generate";
@@ -23,20 +24,44 @@ pub struct GenerateOptions {
     pub vars: Vec<String>,
 }
 
-fn format_var_name(name: &str) -> String {
-    if name.starts_with("no-") {
-        name.strip_prefix("no-").unwrap().to_owned()
-    } else {
-        name.to_owned()
-    }
+fn log_var<T: Display>(name: &str, value: &T, comment: Option<&str>) {
+    trace!(
+        target: LOG_TARGET,
+        "Setting variable {} to \"{}\" {}",
+        color::id(name),
+        value,
+        comment.unwrap_or_default(),
+    );
 }
 
 fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
     let mut custom_vars = HashMap::new();
 
+    if vars.is_empty() {
+        return custom_vars;
+    }
+
+    debug!(
+        target: LOG_TARGET,
+        "Inheriting variable values from provided command line arguments"
+    );
+
     let lexer = clap_lex::RawArgs::new(vars);
     let mut cursor = lexer.cursor();
     let mut previous_name: Option<String> = None;
+
+    let mut set_var = |name: &str, value: String| {
+        let name = if let Some(stripped_name) = name.strip_prefix("no-") {
+            stripped_name
+        } else {
+            name
+        };
+        let comment = color::muted_light(format!("(from --{})", name));
+
+        log_var(name, &value, Some(&comment));
+
+        custom_vars.insert(name.to_owned(), value);
+    };
 
     while let Some(arg) = lexer.next(&mut cursor) {
         // --name, --name=value
@@ -46,8 +71,8 @@ fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
                     // If we found another long arg, but one previously exists,
                     // this must be a boolean value!
                     if let Some(name) = &previous_name {
-                        custom_vars.insert(
-                            format_var_name(name),
+                        set_var(
+                            name,
                             if name.starts_with("no-") {
                                 "false".to_owned()
                             } else {
@@ -60,10 +85,7 @@ fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
                     if let Some(value) = maybe_value {
                         previous_name = None;
 
-                        custom_vars.insert(
-                            format_var_name(name),
-                            value.to_str().unwrap_or_default().to_owned(),
-                        );
+                        set_var(name, value.to_str().unwrap_or_default().to_owned());
 
                         // No value defined, so persist the name till the next iteration
                     } else {
@@ -91,8 +113,8 @@ fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
         } else if let Some(name) = previous_name {
             previous_name = None;
 
-            custom_vars.insert(
-                format_var_name(&name),
+            set_var(
+                &name,
                 arg.to_value_os().to_str().unwrap_or_default().to_owned(),
             );
         }
@@ -109,6 +131,12 @@ fn gather_variables(
     let mut context = TemplateContext::new();
     let custom_vars = parse_var_args(&options.vars);
     let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
+    let default_comment = color::muted_light("(defaults)");
+
+    debug!(
+        target: LOG_TARGET,
+        "Declaring variable values from defaults and user prompts"
+    );
 
     for (name, config) in &template.config.variables {
         match config {
@@ -119,6 +147,8 @@ fn gather_variables(
                 };
 
                 if options.defaults || var.prompt.is_none() {
+                    log_var(name, &default, Some(&default_comment));
+
                     context.insert(name, &default);
                 } else {
                     let value = Confirm::with_theme(theme)
@@ -127,6 +157,8 @@ fn gather_variables(
                         .show_default(true)
                         .interact()
                         .map_err(error_handler)?;
+
+                    log_var(name, &value, None);
 
                     context.insert(name, &value);
                 }
@@ -138,6 +170,10 @@ fn gather_variables(
                     .iter()
                     .position(|i| i == default)
                     .unwrap_or_default();
+
+                if options.defaults {
+                    log_var(name, &var.values[default_index], Some(&default_comment));
+                }
 
                 match (options.defaults, var.multiple.unwrap_or_default()) {
                     (true, true) => {
@@ -159,14 +195,14 @@ fn gather_variables(
                             )
                             .interact()
                             .map_err(error_handler)?;
+                        let value = indexes
+                            .iter()
+                            .map(|i| var.values[*i].clone())
+                            .collect::<Vec<String>>();
 
-                        context.insert(
-                            name,
-                            &indexes
-                                .iter()
-                                .map(|i| var.values[*i].clone())
-                                .collect::<Vec<String>>(),
-                        );
+                        log_var(name, &map_list(&value, |f| f.to_string()), None);
+
+                        context.insert(name, &value);
                     }
                     (false, false) => {
                         let index = Select::with_theme(theme)
@@ -175,6 +211,8 @@ fn gather_variables(
                             .items(&var.values)
                             .interact()
                             .map_err(error_handler)?;
+
+                        log_var(name, &var.values[index], None);
 
                         context.insert(name, &var.values[index]);
                     }
@@ -190,6 +228,8 @@ fn gather_variables(
                 };
 
                 if options.defaults || var.prompt.is_none() {
+                    log_var(name, &default, Some(&default_comment));
+
                     context.insert(name, &default);
                 } else {
                     let value: i32 = Input::with_theme(theme)
@@ -207,6 +247,8 @@ fn gather_variables(
                         .interact_text()
                         .map_err(error_handler)?;
 
+                    log_var(name, &value, None);
+
                     context.insert(name, &value);
                 }
             }
@@ -215,6 +257,8 @@ fn gather_variables(
                 let default = custom_vars.get(name).unwrap_or(&var.default);
 
                 if options.defaults || var.prompt.is_none() {
+                    log_var(name, &default, Some(&default_comment));
+
                     context.insert(name, &default);
                 } else {
                     let value: String = Input::with_theme(theme)
@@ -231,6 +275,8 @@ fn gather_variables(
                         })
                         .interact_text()
                         .map_err(error_handler)?;
+
+                    log_var(name, &value, None);
 
                     context.insert(name, &value);
                 }
@@ -263,6 +309,10 @@ pub async fn generate(
         return Ok(());
     }
 
+    if options.dry_run {
+        debug!(target: LOG_TARGET, "Running in DRY MODE");
+    }
+
     // Create the template instance
     let mut template = generator.load_template(name).await?;
     let term = Term::buffered_stdout();
@@ -284,12 +334,25 @@ pub async fn generate(
     // Determine the destination path
     let relative_dest = match &options.dest {
         Some(d) => d.clone(),
-        None => Input::with_theme(&theme)
-            .with_prompt("Where to generate code to?")
-            .allow_empty(false)
-            .interact_text()?,
+        None => {
+            trace!(
+                target: LOG_TARGET,
+                "Destination path not provided, prompting the user"
+            );
+
+            Input::with_theme(&theme)
+                .with_prompt("Where to generate code to?")
+                .allow_empty(false)
+                .interact_text()?
+        }
     };
     let dest = path::normalize(cwd.join(&relative_dest));
+
+    debug!(
+        target: LOG_TARGET,
+        "Destination path set to {}",
+        color::path(&dest)
+    );
 
     // Gather variables and build context
     let context = gather_variables(&template, &theme, &options)?;

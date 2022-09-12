@@ -1,6 +1,20 @@
 ---
 title: Generating code
+toc_max_heading_level: 6
+tags: [codegen, generator, scaffold, template]
 ---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.14" />
+
+Code generation provides an easy mechanism for automating common development workflows and file
+structures. Whether it's scaffolding a new library or application, updating configuration, or
+standardizing patterns.
+
+To accomplish this, we provide a generator, which is divided into two parts. The first being the
+templates and their files to be scaffolded. The second is our rendering engine that writes template
+files to a destination.
 
 ## Creating a new template
 
@@ -43,10 +57,22 @@ said, there are a few unique scenarios to be aware of!
   a template file `src/[type].ts`, and a variable `type` with a value of "bin", then the destination
   file path would be `src/bin.ts`.
 
+An example of the templates folder structure may look something like the following:
+
+```
+templates/
+├── npm-package/
+│   ├── src/
+│   ├── tests/
+│   ├── package.json
+│   └── template.yml
+└── react-app/
+```
+
 ### Template engine & syntax
 
 Rendering templates is powered by [Tera](https://tera.netlify.app/), a Rust based template engine
-with syntax similar to Twig, Liquid, Jinja, and more. We highly encourage everyone to read Tera's
+with syntax similar to Twig, Liquid, Django, and more. We highly encourage everyone to read Tera's
 documentation for an in-depth understanding, but as a quick reference, Tera supports the following:
 
 - [Variable interpolation](https://tera.netlify.app/docs/#variables) (defined with the
@@ -78,6 +104,67 @@ documentation for an in-depth understanding, but as a quick reference, Tera supp
 ```
 
 - And many more features, like auto-escaping, white space control, math operators!
+
+#### Filters
+
+Filters are a mechanism for transforming values during interpolation and are written using pipes
+(`|`). Tera provides many [built-in filters](https://tera.netlify.app/docs/#built-in-filters), but
+we also provide the following custom filters:
+
+- Strings - `camel_case`, `pascal_case`, `snake_case`, `upper_snake_case`, `kebab_case`,
+  `upper_kebab_case`
+
+## Generating code from a template
+
+Once a template has been created and configured, you can generate files based on it using the
+[`moon generate`][command] command! This is also know as scaffolding or code generation.
+
+This command requires the name of a template as the 1st argument. The template name is the folder
+name on the file system that houses all the template files.
+
+```shell
+$ moon generate npm-package
+```
+
+An optional destination path, relative from the current working directory, can be provided as the
+2nd argument. If not provided, you'll be prompted during generation to provide one.
+
+```shell
+$ moon generate npm-package ./packages/example
+```
+
+> This command is extremely interactive, as we'll prompt you for the destination path, variable
+> values, whether to overwrite files, and more. If you'd prefer to avoid interactions, pass
+> `--defaults`, or `--force`, or both.
+
+### Configuring template locations
+
+Templates can be located anywhere, especially when [being shared](#sharing-templates). Because of
+this, our generator will loop through all template paths configured in
+[`generator.templates`][gen-templates], in order, until a match is found (template name matches the
+folder name).
+
+```yaml title=".moon/workspace.yml"
+generator:
+	templates:
+		- './templates'
+		- './other/templates'
+```
+
+### Declaring variables with CLI arguments
+
+During generation, you'll be prompted in the terminal to provide a value for any configured
+variables. However, you can pre-fill these variable values by passing arbitray command line
+arguments after `--` to [`moon generate`][command]. Argument names must exactly match the variable
+names.
+
+Using the package template example above, we could pre-fill the `name` variable like so:
+
+```shell
+$ moon generate npm-package ./packages/example -- --name '@company/example' --private
+```
+
+> Boolean variables can be negated by prefixing the argument with `--no-<arg>`.
 
 ## Sharing templates
 

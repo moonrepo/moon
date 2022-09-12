@@ -1,3 +1,4 @@
+use crate::ActionRunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
@@ -22,8 +23,6 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-
-use crate::ActionRunnerError;
 
 const LOG_TARGET: &str = "moon:action:run-target";
 
@@ -655,8 +654,21 @@ pub async fn run_target(
         return Ok(ActionStatus::Passed);
     }
 
+    let mut should_cache = task.options.cache;
+
+    // If the VCS root does not exist (like in a Docker image),
+    // we should avoid failing and instead log a warning.
+    if !workspace.vcs.is_enabled() {
+        should_cache = false;
+
+        warn!(
+            target: LOG_TARGET,
+            "VCS root not found, caching will be disabled!"
+        );
+    }
+
     // Abort early if this build has already been cached/hashed
-    if task.options.cache {
+    if should_cache {
         let common_hasher = runner.create_common_hasher(context).await?;
 
         let is_cached = match task.platform {
@@ -728,7 +740,7 @@ pub async fn run_target(
     };
 
     // If successful, cache the task outputs
-    if task.options.cache {
+    if should_cache {
         runner.cache_outputs().await?;
     }
 

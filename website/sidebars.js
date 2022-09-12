@@ -27,6 +27,7 @@ const sidebars = {
 			items: [
 				'guides/ci',
 				'guides/codegen',
+				'guides/docker',
 				'guides/open-source',
 				'guides/profile',
 				'guides/root-project',

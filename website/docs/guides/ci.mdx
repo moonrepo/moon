@@ -73,16 +73,16 @@ on:
 jobs:
   ci:
     name: 'CI'
-    runs-on: ubuntu-latest
+    runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v3
+      - uses: 'actions/checkout@v3'
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v3
+      - uses: 'actions/setup-node@v3'
         with:
-          cache: yarn
-      - run: yarn install --immutable
-      - run: yarn moon ci
+          cache: 'yarn'
+      - run: 'yarn install --immutable'
+      - run: 'yarn moon ci'
 ```
 
 </TabItem>
@@ -92,8 +92,8 @@ jobs:
 steps:
   - label: 'CI'
     commands:
-      - yarn install --immutable
-      - yarn moon ci
+      - 'yarn install --immutable'
+      - 'yarn moon ci'
 ```
 
 </TabItem>
@@ -113,13 +113,13 @@ jobs:
           install-yarn: true
           node-version: '16.13'
       - node/install-packages:
-          check-cache: always
-          pkg-manager: yarn-berry
-      - run: yarn moon ci
+          check-cache: 'always'
+          pkg-manager: 'yarn-berry'
+      - run: 'yarn moon ci'
 workflows:
   pipeline:
     jobs:
-      - ci
+      - 'ci'
 ```
 
 </TabItem>
@@ -130,7 +130,7 @@ language: node_js
 node_js:
   - 16
 cache: yarn
-script: moon ci
+script: 'moon ci'
 ```
 
 </TabItem>
@@ -170,7 +170,7 @@ jobs:
         index: [0, 1]
     steps:
       # ...
-      - run: yarn moon ci --job ${{ matrix.index }} --jobTotal 2
+      - run: 'yarn moon ci --job ${{ matrix.index }} --jobTotal 2'
 ```
 
 - [Documentation](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs)
@@ -185,7 +185,7 @@ steps:
     parallelism: 10
     commands:
       # ...
-      - yarn moon ci --job $$BUILDKITE_PARALLEL_JOB --jobTotal $$BUILDKITE_PARALLEL_JOB_COUNT
+      - 'yarn moon ci --job $$BUILDKITE_PARALLEL_JOB --jobTotal $$BUILDKITE_PARALLEL_JOB_COUNT'
 ```
 
 - [Documentation](https://buildkite.com/docs/tutorials/parallel-builds#parallel-jobs)
@@ -201,7 +201,7 @@ jobs:
     parallelism: 10
     steps:
       # ...
-      - run: yarn moon ci --job $CIRCLE_NODE_INDEX --jobTotal $CIRCLE_NODE_TOTAL
+      - run: 'yarn moon ci --job $CIRCLE_NODE_INDEX --jobTotal $CIRCLE_NODE_TOTAL'
 ```
 
 - [Documentation](https://circleci.com/docs/2.0/parallelism-faster-jobs/)
@@ -219,7 +219,7 @@ env:
   jobs:
     - TRAVIS_JOB_INDEX=0
     - TRAVIS_JOB_INDEX=1
-script: moon ci --job $TRAVIS_JOB_INDEX --jobTotal $TRAVIS_JOB_TOTAL
+script: 'moon ci --job $TRAVIS_JOB_INDEX --jobTotal $TRAVIS_JOB_TOTAL'
 ```
 
 - [Documentation](https://docs.travis-ci.com/user/speeding-up-the-build/)

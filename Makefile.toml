@@ -30,6 +30,7 @@ args = ["clippy", "--workspace", "--all-targets"]
 [tasks.setup-test]
 command = "cargo"
 args = ["run", "--", "--log", "debug", "setup"]
+env = { MOON_TEST = "true" }
 cwd = "./tests/fixtures/cases"
 
 [tasks.run-test]

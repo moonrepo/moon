@@ -109,6 +109,8 @@ jobs:
           RUSTFLAGS: -Cinstrument-coverage
       - uses: marcopolo/cargo@master
         name: Setup moon toolchain
+        env:
+          MOON_TEST: true
         with:
           command: run
           args: -- --log debug setup

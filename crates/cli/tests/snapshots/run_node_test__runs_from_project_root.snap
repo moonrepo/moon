@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 242
+assertion_line: 210
 expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ npm install

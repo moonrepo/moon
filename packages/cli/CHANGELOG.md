@@ -2,11 +2,18 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Reworked how caching/hashing works when running in a Docker container/image. If the VCS root
+  cannot be found, we disable caching. This removes the requirement of mounting a `.git` volume for
+  Docker.
+
 #### 🚀 Updates
 
 - Updated the project graph to scan and find implicit dependencies based on language specific
   semantics. For example, will determine moon projects based on `package.json` names and
   dependencies.
+- Updated `moon setup` to also install Node.js dependencies.
 
 ## 0.13.0
 

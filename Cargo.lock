@@ -1524,6 +1524,7 @@ dependencies = [
  "moon_config",
  "moon_constants",
  "moon_error",
+ "moon_logger",
  "moon_utils",
  "serde_json",
  "tera",

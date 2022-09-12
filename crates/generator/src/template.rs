@@ -3,6 +3,7 @@ use crate::GeneratorError;
 use lazy_static::lazy_static;
 use moon_config::{format_error_line, format_figment_errors, ConfigError, TemplateConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
+use moon_logger::{color, debug, trace};
 use moon_utils::{fs, path, regex};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
@@ -10,6 +11,8 @@ use tera::{Context, Tera};
 lazy_static! {
     pub static ref PATH_VAR: regex::Regex = regex::create_regex(r#"\[([A-Za-z0-9_]+)\]"#).unwrap();
 }
+
+const LOG_TARGET: &str = "moon:generator:template";
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
@@ -65,6 +68,13 @@ pub struct Template {
 
 impl Template {
     pub fn new(name: String, root: PathBuf) -> Result<Template, GeneratorError> {
+        debug!(
+            target: LOG_TARGET,
+            "Loading template {} from {}",
+            color::id(&name),
+            color::path(&root)
+        );
+
         let config = match TemplateConfig::load(root.join(CONFIG_TEMPLATE_FILENAME)) {
             Ok(cfg) => cfg,
             Err(errors) => {
@@ -123,6 +133,13 @@ impl Template {
                 continue;
             }
 
+            trace!(
+                target: LOG_TARGET,
+                "Loading template file {} (source = {})",
+                color::file(&name),
+                color::path(&source_path),
+            );
+
             files.push(TemplateFile {
                 dest_path,
                 existed,
@@ -147,6 +164,25 @@ impl Template {
         file: &TemplateFile,
         context: &Context,
     ) -> Result<(), GeneratorError> {
+        match file.state() {
+            FileState::Replaced => {
+                trace!(
+                    target: LOG_TARGET,
+                    "Overwriting template file {} (destination = {})",
+                    color::file(&file.name),
+                    color::path(&file.dest_path)
+                );
+            }
+            _ => {
+                trace!(
+                    target: LOG_TARGET,
+                    "Writing template file {} (destination = {})",
+                    color::file(&file.name),
+                    color::path(&file.dest_path)
+                );
+            }
+        }
+
         fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
 
         fs::write(

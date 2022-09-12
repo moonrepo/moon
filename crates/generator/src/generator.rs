@@ -3,9 +3,12 @@ use crate::template::Template;
 use futures::stream::{FuturesUnordered, StreamExt};
 use moon_config::{load_template_config_template, GeneratorConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
-use moon_utils::{fs, regex::clean_id};
+use moon_logger::{color, debug, map_list, trace};
+use moon_utils::{fs, path, regex::clean_id};
 use std::path::{Path, PathBuf};
 use tera::Context;
+
+const LOG_TARGET: &str = "moon:generator";
 
 pub struct Generator {
     config: GeneratorConfig,
@@ -15,6 +18,8 @@ pub struct Generator {
 
 impl Generator {
     pub fn create(workspace_root: &Path, config: &GeneratorConfig) -> Result<Self, GeneratorError> {
+        debug!(target: LOG_TARGET, "Creating generator");
+
         Ok(Generator {
             config: config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
@@ -34,6 +39,13 @@ impl Generator {
             return Err(GeneratorError::ExistingTemplate(name, root));
         }
 
+        debug!(
+            target: LOG_TARGET,
+            "Creating new template {} at {}",
+            color::id(&name),
+            color::path(&root)
+        );
+
         fs::create_dir_all(&root).await?;
 
         fs::write(
@@ -50,10 +62,19 @@ impl Generator {
     pub async fn load_template(&self, name: &str) -> Result<Template, GeneratorError> {
         let name = clean_id(name);
 
+        trace!(
+            target: LOG_TARGET,
+            "Finding template {} from configured locations: {}",
+            color::id(&name),
+            map_list(&self.config.templates, |t| color::file(t))
+        );
+
         for template_path in &self.config.templates {
-            let root = self.workspace_root.join(template_path).join(&name);
+            let root = path::normalize(self.workspace_root.join(template_path).join(&name));
 
             if root.exists() {
+                trace!(target: LOG_TARGET, "Found at {}", color::path(&root));
+
                 return Template::new(name, root);
             }
         }
@@ -67,6 +88,12 @@ impl Generator {
         context: &Context,
     ) -> Result<(), GeneratorError> {
         let mut futures = FuturesUnordered::new();
+
+        debug!(
+            target: LOG_TARGET,
+            "Generating template {} files",
+            color::id(&template.name),
+        );
 
         for file in &template.files {
             if file.should_write() {
@@ -82,6 +109,8 @@ impl Generator {
                 None => break,
             }
         }
+
+        debug!(target: LOG_TARGET, "Generation complete!");
 
         Ok(())
     }

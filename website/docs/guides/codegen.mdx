@@ -8,6 +8,14 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel header version="0.14" />
 
+Code generation provides an easy mechanism for automating common development workflows and file
+structures. Whether it's scaffolding a new library or application, updating configuration, or
+standardizing patterns.
+
+To accomplish this, we provide a generator, which is divided into two parts. The first being the
+templates and their files to be scaffolded. The second is our rendering engine that writes template
+files to a destination.
+
 ## Creating a new template
 
 To create a new template, run [`moon generate`][command] while passing the `--template` option. This
@@ -48,6 +56,18 @@ said, there are a few unique scenarios to be aware of!
 - Variables can be interpolated into file paths using the form `[varName]`. For example, if you had
   a template file `src/[type].ts`, and a variable `type` with a value of "bin", then the destination
   file path would be `src/bin.ts`.
+
+An example of the templates folder structure may look something like the following:
+
+```
+templates/
+├── npm-package/
+│   ├── src/
+│   ├── tests/
+│   ├── package.json
+│   └── template.yml
+└── react-app/
+```
 
 ### Template engine & syntax
 
@@ -115,7 +135,7 @@ $ moon generate npm-package ./packages/example
 
 > This command is extremely interactive, as we'll prompt you for the destination path, variable
 > values, whether to overwrite files, and more. If you'd prefer to avoid interactions, pass
-> `--defaults` or `--force` or both.
+> `--defaults`, or `--force`, or both.
 
 ### Configuring template locations
 
@@ -141,8 +161,10 @@ names.
 Using the package template example above, we could pre-fill the `name` variable like so:
 
 ```shell
-$ moon generate npm-package ./packages/example -- --name '@company/example'
+$ moon generate npm-package ./packages/example -- --name '@company/example' --private
 ```
+
+> Boolean variables can be negated by prefixing the argument with `--no-<arg>`.
 
 ## Sharing templates
 

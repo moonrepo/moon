@@ -1,3 +1,4 @@
+use crate::ActionRunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
@@ -12,7 +13,6 @@ use moon_project::Project;
 use moon_task::{Target, Task, TaskError};
 use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
-use moon_utils::is_docker_container;
 use moon_utils::{
     fs, is_ci, is_test_env, path,
     process::{self, output_to_string, Command, Output},
@@ -23,8 +23,6 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-
-use crate::ActionRunnerError;
 
 const LOG_TARGET: &str = "moon:action:run-target";
 
@@ -134,17 +132,6 @@ impl<'a> TargetRunner<'a> {
         hasher.hash_project_deps(self.project.get_dependency_ids());
         hasher.hash_task(task);
         hasher.hash_args(&context.passthrough_args);
-
-        // If the VCS root does not exist (like in a Docker image),
-        // we should avoid failing and instead log a warning.
-        if !vcs.is_enabled() {
-            warn!(
-                target: LOG_TARGET,
-                "VCS root not found, hashing will be inaccurate!"
-            );
-
-            return Ok(hasher);
-        }
 
         // For input files, hash them with the vcs layer first
         if !task.input_paths.is_empty() {
@@ -667,8 +654,21 @@ pub async fn run_target(
         return Ok(ActionStatus::Passed);
     }
 
+    let mut should_cache = task.options.cache;
+
+    // If the VCS root does not exist (like in a Docker image),
+    // we should avoid failing and instead log a warning.
+    if !workspace.vcs.is_enabled() {
+        should_cache = false;
+
+        warn!(
+            target: LOG_TARGET,
+            "VCS root not found, caching will be disabled!"
+        );
+    }
+
     // Abort early if this build has already been cached/hashed
-    if task.options.cache {
+    if should_cache {
         let common_hasher = runner.create_common_hasher(context).await?;
 
         let is_cached = match task.platform {
@@ -740,7 +740,7 @@ pub async fn run_target(
     };
 
     // If successful, cache the task outputs
-    if task.options.cache {
+    if should_cache {
         runner.cache_outputs().await?;
     }
 

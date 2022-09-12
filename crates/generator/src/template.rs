@@ -1,3 +1,4 @@
+use crate::filters;
 use crate::GeneratorError;
 use lazy_static::lazy_static;
 use moon_config::{format_error_line, format_figment_errors, ConfigError, TemplateConfig};
@@ -77,9 +78,17 @@ impl Template {
             }
         };
 
+        let mut engine = Tera::default();
+        engine.register_filter("camel_case", filters::camel_case);
+        engine.register_filter("kebab_case", filters::kebab_case);
+        engine.register_filter("pascal_case", filters::pascal_case);
+        engine.register_filter("snake_case", filters::snake_case);
+        engine.register_filter("upper_kebab_case", filters::upper_kebab_case);
+        engine.register_filter("upper_snake_case", filters::upper_snake_case);
+
         Ok(Template {
             config,
-            engine: Tera::default(),
+            engine,
             files: vec![],
             name,
             root,

@@ -1,0 +1,6 @@
+camel_case = {{ "some random value" | camel_case }}
+kebab_case = {{ "some random value" | kebab_case }}
+pascal_case = {{ "some random value" | pascal_case }}
+snake_case = {{ "some random value" | snake_case }}
+upper_kebab_case = {{ "some random value" | upper_kebab_case }}
+upper_snake_case = {{ "some random value" | upper_snake_case }}

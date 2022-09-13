@@ -61,3 +61,6 @@ jobs:
         with:
           command: run
           args: -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
+      - uses: moonrepo/run-report-action@v0
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}

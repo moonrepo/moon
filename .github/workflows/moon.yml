@@ -57,11 +57,6 @@ jobs:
       - uses: moonrepo/tool-version-action@v1
         with:
           node: ${{ matrix.node-version }}
-      - run: |
-          echo "${{ env.GITHUB_ACTION }}";
-          echo "${{ env.GITHUB_ACTION_PATH }}";
-          echo "${{ env.RUNNER_NAME }}";
-          echo "${{ env.GITHUB_JOB }}";
       - uses: actions-rs/cargo@v1
         with:
           command: run
@@ -69,3 +64,4 @@ jobs:
       - uses: moonrepo/run-report-action@v0
         with:
           access-token: ${{ secrets.GITHUB_TOKEN }}
+          matrix: ${{ toJSON(matrix) }}

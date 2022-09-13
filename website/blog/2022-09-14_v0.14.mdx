@@ -1,0 +1,72 @@
+---
+slug: v0.14
+title: v0.14 - Code generation and implicit dependencies
+authors: [milesj]
+tags: [generator, project-graph, ci]
+---
+
+import Image from '@site/src/components/Image';
+
+With this release, we've landed some new features that have been requested multiple times since
+launch. A code generation and template scaffolding layer, as well as implicit dependency scanning
+for the project graph!
+
+<!--truncate-->
+
+## New `moon generate` command
+
+Code generation is the staple of any large company or repository. Want to spin up a new application?
+What about an npm package? Or maybe third-party integrations? Avoid copy-and-pasting existing code,
+and instead generate it with the new `moon generate` command, which is powered by our new generator
+system.
+
+The generator will locate a template by name on the file system ("npm-package" in the example
+below), prompt and interpolate variables, render the files with [Tera](https://tera.netlify.app/) (a
+Rust based template engine), and write the files to the target destination.
+
+```shell
+# Generate code from a template to a target directory
+$ moon generate npm-package ./packages/example
+```
+
+Learn more about [code generation in the official guide](../docs/guides/codegen)!
+
+## Implicit dependency scanning
+
+This has been a request since moon's official release, and it's finally here! Up until now, if you
+wanted project-to-project dependency relationships, you had to explicitly declare them with
+[`dependsOn`](../docs/config/project#dependson). But thanks to a
+[ton of](https://github.com/moonrepo/moon/pull/288)
+[infrastructure](https://github.com/moonrepo/moon/pull/249) and
+[platform](https://github.com/moonrepo/moon/pull/277) changes, we can now infer implicit
+dependencies automatically!
+
+We still suggest using explicit dependencies, as it provides more
+[automation like project syncing](../docs/concepts/project#dependencies), but implicit is great for
+adoption and migration purposes.
+
+## Report CI runs on pull requests
+
+We're fans of continuous and easily accessible feedback, and as such, have released a new GitHub
+action, [`moonrepo/run-report-action`](https://github.com/marketplace/actions/moon-ci-run-reports),
+which reports the results of [`moon ci`](../docs/commands/ci) as a pull request comment. The report
+looks something like the following:
+
+<Image src={require('../static/img/github/run-report.png')} width="60%" />
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.14.0) for a
+full list of changes.
+
+- When running in a Docker container, caching is disabled in an effort to greatly reduce the size of
+  the image.
+- Updated `moon setup` to also install Node.js dependencies.
+
+## What's next?
+
+Expect the following in the v0.15 release!
+
+- Webhooks! Receive messages for all events in the action runner.
+- Major Docker workflow improvements!

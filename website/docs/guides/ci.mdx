@@ -4,6 +4,7 @@ title: Continuous integration (CI)
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import Image from '@site/src/components/Image';
 
 All companies and projects rely on continuous integration (CI) to ensure high quality code and to
 avoid regressions. Because this is such a critical piece of every developer's workflow, we wanted to
@@ -228,3 +229,28 @@ script: 'moon ci --job $TRAVIS_JOB_INDEX --jobTotal $TRAVIS_JOB_TOTAL'
 </Tabs>
 
 > Your CI environment may provide environment variables for these 2 values.
+
+## Reporting run results
+
+If you're using GitHub Actions as your CI provider, we suggest using our
+[`moonrepo/run-report-action`](https://github.com/marketplace/actions/moon-ci-run-reports). This
+action will report the results of a [`moon ci`](../commands/ci) run to a pull request as a comment
+and workflow summary.
+
+```yaml title=".github/workflows/ci.yml"
+# ...
+jobs:
+  ci:
+    name: 'CI'
+    runs-on: 'ubuntu-latest'
+    steps:
+      # ...
+      - run: 'yarn moon ci'
+      - uses: 'moonrepo/run-report-action@v1'
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The report looks something like the following:
+
+<Image src={require('../../static/img/github/run-report.png')} width="60%" />

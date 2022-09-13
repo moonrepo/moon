@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🎉 Release
+
+- Released a new GitHub action,
+  [`moonrepo/run-report-action`](https://github.com/marketplace/actions/moon-ci-run-reports)!
+
 #### 💥 Breaking
 
 - Reworked how caching/hashing works when running in a Docker container/image. If the VCS root

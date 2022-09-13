@@ -2,10 +2,12 @@
 slug: v0.14
 title: v0.14 - Code generation and implicit dependencies
 authors: [milesj]
-tags: [generator, project-graph]
+tags: [generator, project-graph, ci]
 ---
 
-With this release, we've landed some new features that has been requested multiple times since
+import Image from '@site/src/components/Image';
+
+With this release, we've landed some new features that have been requested multiple times since
 launch. A code generation and template scaffolding layer, as well as implicit dependency scanning
 for the project graph!
 
@@ -43,6 +45,15 @@ We still suggest using explicit dependencies, as it provides more
 [automation like project syncing](../docs/concepts/project#dependencies), but implicit is great for
 adoption and migration purposes.
 
+## Report CI runs on pull requests
+
+We're fans of continuous and easily accessible feedback, and as such, have released a new GitHub
+action, [`moonrepo/run-report-action`](https://github.com/marketplace/actions/moon-ci-run-reports),
+which reports the results of [`moon ci`](../docs/commands/ci) as a pull request comment. The report
+looks something like the following:
+
+<Image src={require('../static/img/github/run-report.png')} width="60%" />
+
 ## Other changes
 
 View the
@@ -51,6 +62,7 @@ full list of changes.
 
 - When running in a Docker container, caching is disabled in an effort to greatly reduce the size of
   the image.
+- Updated `moon setup` to also install Node.js dependencies.
 
 ## What's next?
 

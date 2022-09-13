@@ -1,5 +1,5 @@
 ---
-title: Generating code
+title: Code generation
 toc_max_heading_level: 6
 tags: [codegen, generator, scaffold, template]
 ---
@@ -80,8 +80,8 @@ documentation for an in-depth understanding, but as a quick reference, Tera supp
   [built-in filters](https://tera.netlify.app/docs/#built-ins).
 
 ```twig
-{{ varName }} # foo
-{{ varName | upper }} # FOO
+{{ varName }} -> foo
+{{ varName | upper }} -> FOO
 ```
 
 - [Conditional blocks](https://tera.netlify.app/docs/#if) and
@@ -103,7 +103,7 @@ documentation for an in-depth understanding, but as a quick reference, Tera supp
 {% endfor %}
 ```
 
-- And many more features, like auto-escaping, white space control, math operators!
+- And many more features, like auto-escaping, white space control, and math operators!
 
 #### Filters
 
@@ -177,7 +177,7 @@ share templates across repositories? Why not try...
 
 - git submodules
 - npm packages
-- other packaging system
+- another packaging system
 
 Regardless of the choice, simply configure [`generator.templates`][gen-templates] to point to these
 locations:

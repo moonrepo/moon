@@ -9,26 +9,20 @@ dependsOn:
 
 tasks:
   build:
-    command: 'docusaurus'
-    args: 'build'
+    command: 'docusaurus build'
     deps:
       - '^:build'
     outputs:
       - 'build'
 
   start:
-    command: 'docusaurus'
-    args: 'start'
+    command: 'docusaurus start'
     deps:
       - '^:build'
     local: true
 
   typecheck:
-    command: 'tsc'
-    args:
-      - '--build'
-      - '--pretty'
-      - '--verbose'
+    command: 'tsc --build --pretty --verbose'
     inputs:
       - '@globs(sources)'
       - '*.js'

@@ -83,15 +83,21 @@ const config = {
 				},
 				items: [
 					{
+						to: '/blog',
+						label: 'Blog',
+						position: 'left',
+					},
+					{
 						type: 'doc',
 						docId: 'intro',
 						position: 'left',
 						label: 'Docs',
 					},
 					{
-						to: '/blog',
-						label: 'Blog',
+						type: 'doc',
+						docId: 'guides/ci',
 						position: 'left',
+						label: 'Guides',
 					},
 					{
 						to: '/api',
@@ -109,6 +115,10 @@ const config = {
 							{
 								label: '@moonrepo/dev',
 								href: 'https://www.npmjs.com/package/@moonrepo/dev',
+							},
+							{
+								label: '@moonrepo/types',
+								href: 'https://www.npmjs.com/package/@moonrepo/types',
 							},
 							{
 								label: 'babel-preset-moon',
@@ -145,16 +155,20 @@ const config = {
 						title: 'Learn',
 						items: [
 							{
-								label: 'Documentation',
+								label: 'Blog',
+								to: '/blog',
+							},
+							{
+								label: 'Docs',
 								to: '/docs',
+							},
+							{
+								label: 'Guides',
+								to: '/docs/guides/ci',
 							},
 							{
 								label: 'API',
 								to: '/api',
-							},
-							{
-								label: 'Examples repository',
-								href: 'https://github.com/moonrepo/examples',
 							},
 						],
 					},
@@ -170,8 +184,12 @@ const config = {
 								to: 'https://github.com/moonrepo/moon/discussions',
 							},
 							{
-								label: 'Configurations',
+								label: 'Tooling configs',
 								href: 'https://github.com/moonrepo/dev',
+							},
+							{
+								label: 'Examples repository',
+								href: 'https://github.com/moonrepo/examples',
 							},
 						],
 					},

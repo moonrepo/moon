@@ -9,5 +9,5 @@ moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 flate2 = "1.0.24"
 tar = "0.4.38"
-thiserror = "1.0.33"
+thiserror = "1.0.35"
 zip = "0.6.2"

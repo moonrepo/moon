@@ -11,4 +11,4 @@ moon_utils = { path = "../utils" }
 common-path = "1.0.0"
 dotenvy = "0.15.3"
 serde = { version = "1.0.144", features = ["derive"] }
-thiserror = "1.0.33"
+thiserror = "1.0.35"

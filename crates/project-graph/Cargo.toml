@@ -13,9 +13,9 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 petgraph = "0.6.2"
-thiserror = "1.0.33"
+thiserror = "1.0.35"
 
 [dev-dependencies]
 moon_platform_node = { path = "../platform-node" }
-insta = "1.19.0"
-tokio = { version = "1.20.1", features = ["test-util"] }
+insta = "1.19.1"
+tokio = { version = "1.21.1", features = ["test-util"] }

@@ -6,10 +6,13 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
 
     let workspace = load_workspace().await?;
     let mut project_count = 0;
-    let mut graph = DepGraph::default();
+    let mut graph = DepGraph::default(&workspace.config);
 
     for project_id in workspace.projects.ids() {
-        graph.sync_project(&workspace.projects.load(&project_id)?, &workspace.projects)?;
+        let project = workspace.projects.load(&project_id)?;
+        let platform = graph.get_platform_from_project(&project);
+
+        graph.sync_project(&platform, &project, &workspace.projects)?;
         project_count += 1;
     }
 

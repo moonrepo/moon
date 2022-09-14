@@ -7,7 +7,7 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     let done = create_progress_bar("Downloading and installing tools...");
 
     let workspace = load_workspace().await?;
-    let mut dep_graph = DepGraph::default();
+    let mut dep_graph = DepGraph::default(&workspace.config);
 
     if let Some(node) = &workspace.config.node {
         let platform = SupportedPlatform::Node(node.version.to_owned());

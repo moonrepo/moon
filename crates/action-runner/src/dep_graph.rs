@@ -1,6 +1,6 @@
 use crate::errors::DepGraphError;
 use crate::node::ActionNode;
-use moon_config::ProjectLanguage;
+use moon_config::{ProjectLanguage, WorkspaceConfig};
 use moon_contract::SupportedPlatform;
 use moon_logger::{color, debug, map_list, trace};
 use moon_project::Project;
@@ -17,15 +17,6 @@ pub use petgraph::graph::NodeIndex;
 
 const LOG_TARGET: &str = "moon:dep-graph";
 
-fn get_platform_from_project(project: &Project) -> SupportedPlatform {
-    match &project.config.language {
-        ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
-            SupportedPlatform::Node("0.0.0".into())
-        }
-        _ => SupportedPlatform::System,
-    }
-}
-
 pub type DepGraphType = DiGraph<ActionNode, ()>;
 pub type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 
@@ -36,15 +27,18 @@ pub struct DepGraph {
     pub graph: DepGraphType,
 
     indices: HashMap<ActionNode, NodeIndex>,
+
+    workspace_config: WorkspaceConfig,
 }
 
 impl DepGraph {
-    pub fn default() -> Self {
+    pub fn default(workspace_config: &WorkspaceConfig) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         DepGraph {
             graph: Graph::new(),
             indices: HashMap::new(),
+            workspace_config: workspace_config.clone(),
         }
     }
 
@@ -68,6 +62,21 @@ impl DepGraph {
         index
     }
 
+    #[track_caller]
+    pub fn get_platform_from_project(&self, project: &Project) -> SupportedPlatform {
+        match &project.config.language {
+            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => SupportedPlatform::Node(
+                self.workspace_config
+                    .node
+                    .as_ref()
+                    .unwrap()
+                    .version
+                    .to_owned(),
+            ),
+            _ => SupportedPlatform::System,
+        }
+    }
+
     pub fn install_deps(&mut self, platform: &SupportedPlatform) -> NodeIndex {
         let node = ActionNode::InstallDeps(platform.clone());
 
@@ -88,16 +97,6 @@ impl DepGraph {
             .add_edge(install_deps_index, setup_toolchain_index, ());
 
         install_deps_index
-    }
-
-    pub fn install_project_deps(
-        &mut self,
-        project: &Project,
-        project_graph: &ProjectGraph,
-    ) -> Result<NodeIndex, DepGraphError> {
-        let platform = get_platform_from_project(&project);
-
-        Ok(self.install_deps(&platform))
     }
 
     pub fn run_target<T: AsRef<Target>>(
@@ -296,10 +295,10 @@ impl DepGraph {
 
     pub fn sync_project(
         &mut self,
+        platform: &SupportedPlatform,
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
-        let platform = get_platform_from_project(&project);
         let node = ActionNode::SyncProject(platform.clone(), project.id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -321,8 +320,8 @@ impl DepGraph {
 
         // But we need to wait on all dependent nodes
         for dep_id in project_graph.get_dependencies_of(&project)? {
-            let dep_project = project_graph.load(&dep_id)?;
-            let sync_dep_project_index = self.sync_project(&dep_project, project_graph)?;
+            let sync_dep_project_index =
+                self.sync_project(platform, &project_graph.load(&dep_id)?, project_graph)?;
 
             self.graph
                 .add_edge(sync_project_index, sync_dep_project_index, ());
@@ -408,8 +407,9 @@ impl DepGraph {
         );
 
         // We should install deps & sync projects *before* running targets
-        let install_deps_index = self.install_project_deps(&project, project_graph)?;
-        let sync_project_index = self.sync_project(&project, project_graph)?;
+        let platform = self.get_platform_from_project(&project);
+        let install_deps_index = self.install_deps(&platform);
+        let sync_project_index = self.sync_project(&platform, project, project_graph)?;
         let run_target_index = self.get_or_insert_node(node);
 
         self.graph

@@ -4,16 +4,48 @@
         <title>moon Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moon Blog</description>
-        <lastBuildDate>Thu, 01 Sep 2022 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 13 Sep 2022 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[v0.14 - Code generation and implicit dependencies]]></title>
+            <link>https://moonrepo.dev/blog/v0.14</link>
+            <guid>v0.14</guid>
+            <pubDate>Tue, 13 Sep 2022 00:00:00 GMT</pubDate>
+            <description><![CDATA[With this release, we've landed some new features that have been requested multiple times since]]></description>
+            <content:encoded><![CDATA[<p>With this release, we've landed some new features that have been requested multiple times since
+launch. A code generation and template scaffolding layer, as well as implicit dependency scanning
+for the project graph!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-moon-generate-command">New <code>moon generate</code> command<a class="hash-link" href="#new-moon-generate-command" title="Direct link to heading">​</a></h2><p>Code generation is the staple of any large company or repository. Want to spin up a new application?
+What about an npm package? Or maybe third-party integrations? Avoid copy-and-pasting existing code,
+and instead generate it with the new <code>moon generate</code> command, which is powered by our new generator
+system.</p><p>The generator will locate a template by name on the file system ("npm-package" in the example
+below), prompt and interpolate variables, render the files with <a href="https://tera.netlify.app/" target="_blank" rel="noopener noreferrer">Tera</a> (a
+Rust based template engine), and write the files to the target destination.</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Generate code from a template to a target directory</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon generate npm-package ./packages/example</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><p>Learn more about <a href="/docs/guides/codegen">code generation in the official guide</a>!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="implicit-dependency-scanning">Implicit dependency scanning<a class="hash-link" href="#implicit-dependency-scanning" title="Direct link to heading">​</a></h2><p>This has been a request since moon's official release, and it's finally here! Up until now, if you
+wanted project-to-project dependency relationships, you had to explicitly declare them with
+<a href="/docs/config/project#dependson"><code>dependsOn</code></a>. But thanks to a
+<a href="https://github.com/moonrepo/moon/pull/288" target="_blank" rel="noopener noreferrer">ton of</a>
+<a href="https://github.com/moonrepo/moon/pull/249" target="_blank" rel="noopener noreferrer">infrastructure</a> and
+<a href="https://github.com/moonrepo/moon/pull/277" target="_blank" rel="noopener noreferrer">platform</a> changes, we can now infer implicit
+dependencies automatically!</p><p>We still suggest using explicit dependencies, as it provides more
+<a href="/docs/concepts/project#dependencies">automation like project syncing</a>, but implicit is great for
+adoption and migration purposes.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="report-ci-runs-on-pull-requests">Report CI runs on pull requests<a class="hash-link" href="#report-ci-runs-on-pull-requests" title="Direct link to heading">​</a></h2><p>We're fans of continuous and easily accessible feedback, and as such, have released a new GitHub
+action, <a href="https://github.com/marketplace/actions/moon-ci-run-reports" target="_blank" rel="noopener noreferrer"><code>moonrepo/run-report-action</code></a>,
+which reports the results of <a href="/docs/commands/ci"><code>moon ci</code></a> as a pull request comment. The report
+looks something like the following:</p><div style="padding-bottom:1rem;padding-top:1rem;text-align:center"><img src="/assets/images/run-report-41cffa17cd530ab8cca5cef47b38dcfd.png" width="60%" alt=""></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" href="#other-changes" title="Direct link to heading">​</a></h2><p>View the
+<a href="https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.14.0" target="_blank" rel="noopener noreferrer">official release</a> for a
+full list of changes.</p><ul><li>When running in a Docker container, caching is disabled in an effort to greatly reduce the size of
+the image.</li><li>Updated <code>moon setup</code> to also install Node.js dependencies.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.15 release!</p><ul><li>Webhooks! Receive messages for all events in the action runner.</li><li>Major Docker workflow improvements!</li></ul>]]></content:encoded>
+            <category>generator</category>
+            <category>project-graph</category>
+            <category>ci</category>
+        </item>
         <item>
             <title><![CDATA[v0.13 - Hashing and toolchain improvements]]></title>
             <link>https://moonrepo.dev/blog/v0.13</link>
             <guid>v0.13</guid>
             <pubDate>Thu, 01 Sep 2022 00:00:00 GMT</pubDate>
-            <description><![CDATA[This is my first post on Docusaurus 2.]]></description>
+            <description><![CDATA[With this release, we've landed some improvements to our smart hashing, and paved the road for]]></description>
             <content:encoded><![CDATA[<p>With this release, we've landed some improvements to our smart hashing, and paved the road for
 additional languagues and tooling.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="nodejs-is-now-optional">Node.js is now optional<a class="hash-link" href="#nodejs-is-now-optional" title="Direct link to heading">​</a></h2><p>Title may seem confusing at first, but don't worry, everything is fine! For some context, moon has
 been designed to be language agnostic as we plan to support more than JavaScript in the future.
@@ -46,7 +78,7 @@ structures, runner information, and more.</p><div class="language-ts codeBlockCo
 <a href="https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.13.0" target="_blank" rel="noopener noreferrer">official release</a> for a
 full list of changes.</p><ul><li>The runner will now fail with an error if a task has defined <code>outputs</code> but an output was not
 created after the task is executed. This change was made so that artifacts are deterministic.</li><li>The <code>actionRunner</code> setting in <a href="/docs/config/workspace"><code>.moon/workspace.yml</code></a> was renamed to
-<code>runner</code>.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.14 release!</p><ul><li>A <code>moon new</code> command to generate new projects, files, scaffolding, and more from pre-defined
+<code>runner</code>.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.14 release!</p><ul><li>A <code>moon generate</code> command to generate new projects, files, scaffolding, and more from pre-defined
 templates.</li><li>Implicit dependency discovery. moon will now scan manifest files and determine project
 relationships.</li></ul>]]></content:encoded>
             <category>hasher</category>

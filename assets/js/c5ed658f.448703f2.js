@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[3131],{6744:e=>{e.exports=JSON.parse('{"title":"Concepts","keywords":["concepts"],"slug":"/concepts","permalink":"/docs/concepts","navigation":{"previous":{"title":"Vue","permalink":"/docs/guides/examples/vue"},"next":{"title":"Cache","permalink":"/docs/concepts/cache"}}}')}}]);

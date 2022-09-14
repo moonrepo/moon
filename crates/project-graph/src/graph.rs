@@ -97,7 +97,7 @@ pub struct ProjectGraph {
 
     /// The workspace configuration. Necessary for project variants.
     /// Is loaded from `.moon/workspace.yml`.
-    workspace_config: WorkspaceConfig,
+    pub workspace_config: WorkspaceConfig,
 
     /// The workspace root, in which projects are relatively loaded from.
     workspace_root: PathBuf,

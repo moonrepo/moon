@@ -90,7 +90,7 @@ impl DepGraph {
             platform.label()
         );
 
-        let setup_toolchain_index = self.setup_tool(&platform);
+        let setup_toolchain_index = self.setup_tool(platform);
         let install_deps_index = self.get_or_insert_node(node);
 
         self.graph
@@ -312,14 +312,14 @@ impl DepGraph {
         );
 
         // Sync can be run in parallel while deps are installing
-        let setup_toolchain_index = self.setup_tool(&platform);
+        let setup_toolchain_index = self.setup_tool(platform);
         let sync_project_index = self.get_or_insert_node(node);
 
         self.graph
             .add_edge(sync_project_index, setup_toolchain_index, ());
 
         // But we need to wait on all dependent nodes
-        for dep_id in project_graph.get_dependencies_of(&project)? {
+        for dep_id in project_graph.get_dependencies_of(project)? {
             let sync_dep_project_index =
                 self.sync_project(platform, &project_graph.load(&dep_id)?, project_graph)?;
 
@@ -407,7 +407,7 @@ impl DepGraph {
         );
 
         // We should install deps & sync projects *before* running targets
-        let platform = self.get_platform_from_project(&project);
+        let platform = self.get_platform_from_project(project);
         let install_deps_index = self.install_deps(&platform);
         let sync_project_index = self.sync_project(&platform, project, project_graph)?;
         let run_target_index = self.get_or_insert_node(node);

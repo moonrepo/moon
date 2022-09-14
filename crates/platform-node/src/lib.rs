@@ -71,13 +71,22 @@ impl Platform for NodePlatform {
 
         debug!(
             target: LOG_TARGET,
-            "Loading project aliases from project {}'s",
+            "Loading names (aliases) from project {}'s",
             color::file(&NPM.manifest_filename)
         );
 
         for (project_id, project_source) in projects_map {
             if let Some(package_json) = PackageJson::read(workspace_root.join(project_source))? {
                 if let Some(package_name) = package_json.name {
+                    // Always track package names internally so that we can discover implicit dependencies
+                    self.package_names
+                        .insert(package_name.clone(), project_id.to_owned());
+
+                    // However, consumers using aliases is opt-in, so account for that
+                    if !map_aliases {
+                        continue;
+                    }
+
                     let alias = match alias_format {
                         NodeProjectAliasFormat::NameAndScope => package_name.clone(),
                         NodeProjectAliasFormat::NameOnly => parse_package_name(&package_name).1,
@@ -100,7 +109,7 @@ impl Platform for NodePlatform {
                     if let Some(existing_id) = aliases_map.get(&alias) {
                         warn!(
                             target: LOG_TARGET,
-                            "A project already exists with the alias {} (for project {}), skipping conflicting alias ({})",
+                            "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
                             color::id(alias),
                             color::id(existing_id),
                             color::file(project_source)
@@ -109,14 +118,7 @@ impl Platform for NodePlatform {
                         continue;
                     }
 
-                    // Always track package names internally so that we can discover implicit dependencies
-                    self.package_names
-                        .insert(package_name, project_id.to_owned());
-
-                    // However, consumers using aliases is opt-in, so account for that
-                    if map_aliases {
-                        aliases_map.insert(alias, project_id.to_owned());
-                    }
+                    aliases_map.insert(alias, project_id.to_owned());
                 }
             }
         }

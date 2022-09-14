@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where alias warnings were logged while scanning the dependency graph.
+
 ## 0.14.0
 
 #### 🎉 Release

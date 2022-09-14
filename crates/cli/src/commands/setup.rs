@@ -9,11 +9,13 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let mut dep_graph = DepGraph::default();
 
-    if workspace.config.node.is_some() {
-        dep_graph.setup_tool(SupportedPlatform::Node);
+    if let Some(node) = &workspace.config.node {
+        let platform = SupportedPlatform::Node(node.version.to_owned());
+
+        dep_graph.setup_tool(&platform);
 
         if !is_test_env() {
-            dep_graph.install_deps(SupportedPlatform::Node);
+            dep_graph.install_deps(&platform);
         }
     }
 

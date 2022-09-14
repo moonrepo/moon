@@ -9,7 +9,7 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
     let mut graph = DepGraph::default();
 
     for project_id in workspace.projects.ids() {
-        graph.sync_project(&project_id, &workspace.projects)?;
+        graph.sync_project(&workspace.projects.load(&project_id)?, &workspace.projects)?;
         project_count += 1;
     }
 

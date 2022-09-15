@@ -17,6 +17,3 @@ COPY ./packages/types ./packages/types
 COPY ./packages/runtime ./packages/runtime
 
 RUN moon run runtime:build
-
-# Run target
-CMD ["moon", "run", "runtime:build"]

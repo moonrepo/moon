@@ -1,15 +1,21 @@
 use crate::helpers::load_workspace;
-use moon_config::NodePackageManager;
+use moon_config::{NodePackageManager, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_lang_node::{NODE, NPM, PNPM, YARN};
 use moon_utils::fs;
 use std::path::Path;
+use strum::IntoEnumIterator;
 
 // moon docker scaffold --include *.json --copy-dependencies
 
-async fn copy_files(list: &[&str], source: &Path, target: &Path) -> Result<(), MoonError> {
+async fn copy_files<T: AsRef<str>>(
+    list: &[T],
+    source: &Path,
+    target: &Path,
+) -> Result<(), MoonError> {
     for file in list {
+        let file = file.as_ref();
         let source_file = source.join(file);
 
         if source_file.exists() {
@@ -40,15 +46,26 @@ pub async fn scaffold() -> Result<(), Box<dyn std::error::Error>> {
         fs::create_dir_all(&docker_project_root).await?;
 
         // Copy manifest and config files
-        let mut files = vec![];
+        let mut files: Vec<String> = vec![];
 
-        if workspace.config.node.is_some() {
-            files.push(NPM.manifest_filename);
-            files.extend_from_slice(NODE.lifecycle_filenames);
-        }
+        for lang in ProjectLanguage::iter() {
+            match lang {
+                ProjectLanguage::JavaScript => {
+                    if workspace.config.node.is_some() {
+                        files.push(NPM.manifest_filename.to_owned());
 
-        if let Some(typescript_config) = &workspace.config.typescript {
-            files.push(&typescript_config.project_config_file_name);
+                        for ext in NODE.file_exts {
+                            files.push(format!("postinstall.{ext}"));
+                        }
+                    }
+                }
+                ProjectLanguage::TypeScript => {
+                    if let Some(typescript_config) = &workspace.config.typescript {
+                        files.push(typescript_config.project_config_file_name.to_owned());
+                    }
+                }
+                _ => {}
+            }
         }
 
         copy_files(
@@ -62,21 +79,29 @@ pub async fn scaffold() -> Result<(), Box<dyn std::error::Error>> {
     // Copy root lockfiles and configurations
     let mut files = vec![];
 
-    if let Some(node_config) = &workspace.config.node {
-        let package_manager = match &node_config.package_manager {
-            NodePackageManager::Npm => NPM,
-            NodePackageManager::Pnpm => PNPM,
-            NodePackageManager::Yarn => YARN,
-        };
+    for lang in ProjectLanguage::iter() {
+        match lang {
+            ProjectLanguage::JavaScript => {
+                if let Some(node_config) = &workspace.config.node {
+                    let package_manager = match &node_config.package_manager {
+                        NodePackageManager::Npm => NPM,
+                        NodePackageManager::Pnpm => PNPM,
+                        NodePackageManager::Yarn => YARN,
+                    };
 
-        files.extend_from_slice(package_manager.config_filenames);
-        files.extend_from_slice(package_manager.lock_filenames);
-        files.push(package_manager.manifest_filename);
-    }
-
-    if let Some(typescript_config) = &workspace.config.typescript {
-        files.push(&typescript_config.root_config_file_name);
-        files.push(&typescript_config.root_options_config_file_name);
+                    files.push(package_manager.manifest_filename);
+                    files.extend_from_slice(package_manager.config_filenames);
+                    files.extend_from_slice(package_manager.lock_filenames);
+                }
+            }
+            ProjectLanguage::TypeScript => {
+                if let Some(typescript_config) = &workspace.config.typescript {
+                    files.push(&typescript_config.root_config_file_name);
+                    files.push(&typescript_config.root_options_config_file_name);
+                }
+            }
+            _ => {}
+        }
     }
 
     copy_files(&files, &workspace.root, &docker_root).await?;

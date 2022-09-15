@@ -31,7 +31,7 @@ WORKDIR /app
 RUN npm install -g @moonrepo/cli
 
 # Copy moon files
-COPY ./.moon ./.moon
+COPY ./.moon/project.yml ./.moon/workspace.yml ./.moon/
 
 # Copy all package.json's and lockfiles
 COPY ...

@@ -1433,6 +1433,7 @@ dependencies = [
  "clap_lex",
  "console",
  "dialoguer",
+ "futures",
  "indicatif",
  "insta",
  "itertools",

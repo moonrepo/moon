@@ -323,7 +323,8 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
         file,
         r#"
 # Moon
-.moon/cache"#
+.moon/cache
+.moon/docker"#
     )?;
 
     println!(

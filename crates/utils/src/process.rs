@@ -21,9 +21,7 @@ fn is_program_on_path(program_name: String) -> bool {
     };
 
     for path_dir in env::split_paths(&system_path) {
-        let path = path_dir.join(&program_name);
-
-        if path.exists() {
+        if path_dir.join(&program_name).exists() {
             return true;
         }
     }
@@ -35,11 +33,11 @@ fn is_program_on_path(program_name: String) -> bool {
 // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
 fn create_windows_cmd(shell: Option<&str>) -> (String, TokioCommand) {
     let shell = match shell {
-        Some(s) => {
-            if s.ends_with(".exe") {
-                s.to_owned()
+        Some(sh) => {
+            if sh.ends_with(".exe") {
+                sh.to_owned()
             } else {
-                format!("{}.exe", s)
+                format!("{}.exe", sh)
             }
         }
         None => {

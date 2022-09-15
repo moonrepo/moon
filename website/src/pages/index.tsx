@@ -30,8 +30,6 @@ import Features, { Feature } from '@site/src/components/Home/Features';
 import Hero from '@site/src/components/Home/Hero';
 import Layout from '@theme/Layout';
 
-console.log('Trigger build!');
-
 const managementFeatures: Feature[] = [
 	{
 		title: 'Smart hashing',

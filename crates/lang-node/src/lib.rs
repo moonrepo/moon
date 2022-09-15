@@ -11,9 +11,9 @@ use moon_lang::{Language, PackageManager, VersionManager};
 pub const NODE: Language = Language {
     binary: "node",
     default_version: "16.16.0",
+    lifecycle_filenames: &["postinstall.js", "postinstall.cjs", "postinstall.mjs"],
     vendor_bins_dir: "node_modules/.bin",
     vendor_dir: "node_modules",
-    lifecycle_scripts: &[],
 };
 
 // Package managers

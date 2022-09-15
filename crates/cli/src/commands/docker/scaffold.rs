@@ -1,12 +1,12 @@
 use crate::helpers::load_workspace;
-use moon_config::{NodePackageManager, ProjectLanguage};
+use moon_config::NodePackageManager;
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
-use moon_lang_node::{package::PackageJson, NODE, NPM, PNPM, YARN};
+use moon_lang_node::{NODE, NPM, PNPM, YARN};
 use moon_utils::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-// moon docker scaffold --include *.json
+// moon docker scaffold --include *.json --copy-dependencies
 
 async fn copy_files(list: &[&str], source: &Path, target: &Path) -> Result<(), MoonError> {
     for file in list {
@@ -28,35 +28,35 @@ pub async fn scaffold() -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
+    // Delete the docker skeleton to remove any stale files
+    fs::remove_dir_all(&docker_root).await?;
     fs::create_dir_all(&docker_root).await?;
 
-    // Copy the manifest for every project and mimic the folder structure
-    for project_id in workspace.projects.ids() {
-        let project = workspace.projects.load(&project_id)?;
-        let docker_project_root = docker_root.join(&project.source);
+    // Copy each project and mimic the folder structure
+    for project_source in workspace.projects.projects_map.values() {
+        let docker_project_root = docker_root.join(&project_source);
 
         // Create the project root
         fs::create_dir_all(&docker_project_root).await?;
 
-        // Copy manifest files
-        match project.config.language {
-            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
-                let mut files = vec![
-                    NPM.manifest_filename,
-                    // Copy and arbitrary postinstall scripts
-                    "postinstall.js",
-                    "postinstall.cjs",
-                    "postinstall.mjs",
-                ];
+        // Copy manifest and config files
+        let mut files = vec![];
 
-                if let Some(typescript_config) = &workspace.config.typescript {
-                    files.push(&typescript_config.project_config_file_name);
-                }
-
-                copy_files(&files, &project.root, &docker_project_root).await?;
-            }
-            _ => {}
+        if workspace.config.node.is_some() {
+            files.push(NPM.manifest_filename);
+            files.extend_from_slice(NODE.lifecycle_filenames);
         }
+
+        if let Some(typescript_config) = &workspace.config.typescript {
+            files.push(&typescript_config.project_config_file_name);
+        }
+
+        copy_files(
+            &files,
+            &workspace.root.join(project_source),
+            &docker_project_root,
+        )
+        .await?;
     }
 
     // Copy root lockfiles and configurations

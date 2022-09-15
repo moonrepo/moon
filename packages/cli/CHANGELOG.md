@@ -5,6 +5,9 @@
 #### 🐞 Fixes
 
 - Fixed an issue where alias warnings were logged while scanning the dependency graph.
+- Windows:
+  - Updated `*.cmd` executions to run with PowerShell when available. This resolves issues around
+    file paths with special characters or spaces.
 
 ## 0.14.0
 

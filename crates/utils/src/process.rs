@@ -1,4 +1,5 @@
 use crate::path;
+use cached::proc_macro::cached;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, trace};
 use std::env;
@@ -12,21 +13,54 @@ use tokio::task;
 pub use shell_words::{join as join_args, split as split_args, ParseError as ArgsParseError};
 pub use std::process::{ExitStatus, Output, Stdio};
 
+#[cached]
+fn is_program_on_path(program_name: String) -> bool {
+    let system_path = match env::var_os("PATH") {
+        Some(x) => x,
+        None => return false,
+    };
+
+    for path_dir in env::split_paths(&system_path) {
+        if path_dir.join(&program_name).exists() {
+            return true;
+        }
+    }
+
+    false
+}
+
 // Based on how Node.js executes Windows commands:
 // https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
 fn create_windows_cmd(shell: Option<&str>) -> (String, TokioCommand) {
     let shell = match shell {
-        Some(s) => s.to_owned(),
-        None => env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".into()),
+        Some(sh) => {
+            if sh.ends_with(".exe") {
+                sh.to_owned()
+            } else {
+                format!("{}.exe", sh)
+            }
+        }
+        None => {
+            // https://thinkpowershell.com/decision-to-switch-to-powershell-core-pwsh/
+            if is_program_on_path("pwsh.exe".into()) {
+                "pwsh.exe".into()
+            } else if is_program_on_path("powershell.exe".into()) {
+                "powershell.exe".into()
+            } else {
+                env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".into())
+            }
+        }
     };
 
     let mut cmd = TokioCommand::new(&shell);
 
-    if shell.contains("cmd.exe") {
+    if shell.contains("cmd") {
         cmd.arg("/d");
         cmd.arg("/s");
         cmd.arg("/q"); // Hide the script from echoing in the output
         cmd.arg("/c");
+    } else if shell.contains("power") || shell.contains("pwsh") {
+        cmd.arg("-Command");
     } else {
         cmd.arg("-c");
     }
@@ -35,14 +69,6 @@ fn create_windows_cmd(shell: Option<&str>) -> (String, TokioCommand) {
         String::from(PathBuf::from(shell).file_name().unwrap().to_string_lossy()),
         cmd,
     )
-}
-
-fn detect_windows_cmd(bin: &str) -> (String, TokioCommand) {
-    if bin.ends_with(".ps1") {
-        create_windows_cmd(Some("powershell.exe"))
-    } else {
-        create_windows_cmd(None)
-    }
 }
 
 pub fn is_windows_script(bin: &str) -> bool {
@@ -73,17 +99,19 @@ impl Command {
         let mut bin_name = String::from(bin.as_ref().to_string_lossy());
         let mut cmd;
 
-        // Referencing cmd.exe directly
-        if bin_name == "cmd" || bin_name == "cmd.exe" {
-            (bin_name, cmd) = create_windows_cmd(Some("cmd.exe"));
+        // Referencing cmd or powershell directly
+        if bin_name == "cmd"
+            || bin_name == "cmd.exe"
+            || bin_name == "powershell"
+            || bin_name == "powershell.exe"
+            || bin_name == "pwsh"
+            || bin_name == "pwsh.exe"
+        {
+            (bin_name, cmd) = create_windows_cmd(Some(&bin_name));
 
-            // Referencing powershell.exe directly
-        } else if bin_name == "powershell" || bin_name == "powershell.exe" {
-            (bin_name, cmd) = create_windows_cmd(Some("powershell.exe"));
-
-        // Referencing a batch script that needs to be ran with cmd.exe
+        // Referencing a batch script that needs to be ran with a shell
         } else if is_windows_script(&bin_name) {
-            (bin_name, cmd) = detect_windows_cmd(&bin_name);
+            (bin_name, cmd) = create_windows_cmd(None);
             cmd.arg(bin);
 
         // Assume a command exists on the system

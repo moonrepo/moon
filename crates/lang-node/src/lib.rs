@@ -13,6 +13,7 @@ pub const NODE: Language = Language {
     default_version: "16.16.0",
     vendor_bins_dir: "node_modules/.bin",
     vendor_dir: "node_modules",
+    lifecycle_scripts: &[],
 };
 
 // Package managers

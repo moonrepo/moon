@@ -49,7 +49,7 @@ try {
 	console.error(`Failed to find "${binary}" binary.`);
 
 	if (!isMoonLocal) {
-		process.exit(1);
+		// process.exit(1);
 	}
 }
 

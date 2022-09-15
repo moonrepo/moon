@@ -9,6 +9,7 @@ use crate::commands::check::check;
 use crate::commands::ci::{ci, CiOptions};
 use crate::commands::clean::{clean, CleanOptions};
 use crate::commands::dep_graph::dep_graph;
+use crate::commands::docker;
 use crate::commands::generate::{generate, GenerateOptions};
 use crate::commands::init::{init, InitOptions};
 use crate::commands::migrate;
@@ -21,7 +22,7 @@ use crate::commands::setup::setup;
 use crate::commands::sync::sync;
 use crate::commands::teardown::teardown;
 use crate::helpers::setup_colors;
-use app::{App, Commands, MigrateCommands, NodeCommands, QueryCommands};
+use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
 use console::Term;
 use enums::LogLevel;
@@ -87,6 +88,9 @@ pub async fn run_cli() {
             .await
         }
         Commands::DepGraph { target } => dep_graph(target).await,
+        Commands::Docker { command } => match command {
+            DockerCommands::Scaffold => docker::scaffold().await,
+        },
         Commands::Generate {
             name,
             dest,

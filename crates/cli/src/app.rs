@@ -18,6 +18,15 @@ const HEADING_DEBUGGING: &str = "Debugging";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Debug, Subcommand)]
+pub enum DockerCommands {
+    #[clap(
+        name = "scaffold",
+        about = "Scaffold a repository skeleton for use within Dockerfile COPY commands."
+    )]
+    Scaffold,
+}
+
+#[derive(Debug, Subcommand)]
 pub enum MigrateCommands {
     #[clap(
         name = "from-package-json",
@@ -362,6 +371,13 @@ pub enum Commands {
     Clean {
         #[clap(long, default_value = "7 days", help = "Lifetime of cached artifacts")]
         lifetime: String,
+    },
+
+    // moon docker <operation>
+    #[clap(name = "docker", about = "Operations for integrating with Docker.")]
+    Docker {
+        #[clap(subcommand)]
+        command: DockerCommands,
     },
 
     // moon migrate <operation>

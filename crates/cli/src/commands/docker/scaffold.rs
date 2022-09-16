@@ -135,17 +135,33 @@ async fn scaffold_sources(
     workspace: &Workspace,
     docker_root: &Path,
     project_ids: &[String],
+    include: &[String],
 ) -> Result<(), ProjectError> {
     let docker_sources_root = docker_root.join("sources");
 
+    // Copy all projects
     for project_id in project_ids {
         scaffold_sources_project(workspace, &docker_sources_root, project_id).await?;
+    }
+
+    // Include via globs
+    if !include.is_empty() {
+        let files = glob::walk(&workspace.root, include)?;
+        let files = files
+            .iter()
+            .map(|f| f.strip_prefix(&workspace.root).unwrap().to_str().unwrap())
+            .collect::<Vec<&str>>();
+
+        copy_files(&files, &workspace.root, &docker_sources_root).await?;
     }
 
     Ok(())
 }
 
-pub async fn scaffold(project_ids: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn scaffold(
+    project_ids: &[String],
+    include: &[String],
+) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
@@ -155,7 +171,7 @@ pub async fn scaffold(project_ids: &[String]) -> Result<(), Box<dyn std::error::
 
     // Create the workspace skeleton
     scaffold_workspace(&workspace, &docker_root).await?;
-    scaffold_sources(&workspace, &docker_root, project_ids).await?;
+    scaffold_sources(&workspace, &docker_root, project_ids, include).await?;
 
     Ok(())
 }

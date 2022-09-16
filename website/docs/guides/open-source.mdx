@@ -2,6 +2,8 @@
 title: Open source usage
 ---
 
+import Image from '@site/src/components/Image';
+
 Although moon was designed for large monorepos, it can also be used for open source projects,
 especially when coupled with our [built-in continuous integration support](./ci).
 
@@ -53,3 +55,29 @@ Currently, we only have a solution for GitHub actions, but the same mechanism ca
 other CI environments by setting the `MOON_NODE_VERSION` environment variable.
 
 :::
+
+## Reporting run results
+
+We also suggest using our
+[`moonrepo/run-report-action`](https://github.com/marketplace/actions/moon-ci-run-reports) GitHub
+action. This action will report the results of a [`moon ci`](../commands/ci) run to a pull request
+as a comment and workflow summary.
+
+```yaml title=".github/workflows/ci.yml"
+# ...
+jobs:
+  ci:
+    name: 'CI'
+    runs-on: 'ubuntu-latest'
+    steps:
+      # ...
+      - run: 'yarn moon ci'
+      - uses: 'moonrepo/run-report-action@v1'
+        if: success() || failure()
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The report looks something like the following:
+
+<Image src={require('../../static/img/github/run-report.png')} width="60%" />

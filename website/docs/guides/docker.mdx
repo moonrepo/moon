@@ -4,9 +4,12 @@ title: Docker usage
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.15" />
 
 Using [Docker](https://www.docker.com/) to run your applications? Or build your artifacts? No
-worries, moon can be utilized with Docker!
+worries, moon can be utilized with Docker, and supports a robust integration layer.
 
 :::success
 
@@ -34,7 +37,8 @@ With that being said, there's many approaches you can utilize, depending on your
 document them below):
 
 - Running `moon docker` commands _before_ running `docker run|build` commands.
-- Running `moon docker` commands _within_ the `Dockerfile`, using staged builds.
+- Running `moon docker` commands _within_ the `Dockerfile`.
+- Using multi-staged or standard builds.
 - Something else unique to your setup!
 
 ### What we're trying to avoid
@@ -134,14 +138,14 @@ RUN moon setup
 <TabItem value="staged">
 
 ```docker
-### BASE
+#### BASE
 FROM node:latest AS base
 WORKDIR /app
 
 # Install moon binary
 RUN npm install -g @moonrepo/cli
 
-### WORKSPACE
+#### WORKSPACE
 FROM base AS workspace
 WORKDIR /app
 
@@ -149,7 +153,7 @@ WORKDIR /app
 COPY . .
 RUN moon docker scaffold <project>
 
-### BUILD
+#### BUILD
 FROM base AS build
 WORKDIR /app
 
@@ -216,10 +220,83 @@ pass `--include` to the scaffold command.
 
 ### Pruning extraneous files
 
-TODO
+Coming soon!
 
 ### Final result
 
-TODO
+And with this moon integration, we've reduced the original `Dockerfile` of 35 lines to 16 lines, a
+reduction of almost 50%. The original file can also be seen as `O(n)`, as each new manifest requires
+cascading updates, while the moon approach is `O(1)`!
+
+<Tabs
+  groupId="dockerfile"
+  defaultValue="standard"
+  values={[
+    { label: 'Standard', value: 'standard' },
+    { label: 'Multi-staged', value: 'staged' },
+  ]}
+>
+<TabItem value="standard">
+
+```docker
+FROM node:latest
+WORKDIR /app
+
+# Install moon binary
+RUN npm install -g @moonrepo/cli
+
+# Copy workspace skeleton
+COPY ./.moon/docker/workspace .
+
+# Install toolchain and dependencies
+RUN moon setup
+
+# Copy source files
+COPY ./.moon/docker/sources .
+
+# Run something
+RUN moon run <project>:<task>
+# Or CMD
+```
+
+</TabItem>
+<TabItem value="staged">
+
+```docker
+#### BASE
+FROM node:latest AS base
+WORKDIR /app
+
+# Install moon binary
+RUN npm install -g @moonrepo/cli
+
+#### WORKSPACE
+FROM base AS workspace
+WORKDIR /app
+
+# Copy entire repository and scaffold
+COPY . .
+RUN moon docker scaffold <project>
+
+#### BUILD
+FROM base AS build
+WORKDIR /app
+
+# Copy workspace skeleton
+COPY --from=workspace /app/.moon/docker/workspace .
+
+# Install toolchain and dependencies
+RUN moon setup
+
+# Copy source files
+COPY --from=workspace /app/.moon/docker/sources .
+
+# Run something
+RUN moon run <project>:<task>
+# Or CMD
+```
+
+</TabItem>
+</Tabs>
 
 [command]: ../commands/docker/scaffold

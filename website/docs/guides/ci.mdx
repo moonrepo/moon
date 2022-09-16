@@ -247,6 +247,7 @@ jobs:
       # ...
       - run: 'yarn moon ci'
       - uses: 'moonrepo/run-report-action@v1'
+        if: success() || failure()
         with:
           access-token: ${{ secrets.GITHUB_TOKEN }}
 ```

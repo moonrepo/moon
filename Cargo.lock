@@ -1429,6 +1429,7 @@ name = "moon_cli"
 version = "0.14.0"
 dependencies = [
  "assert_cmd",
+ "async-recursion",
  "clap",
  "clap_lex",
  "console",

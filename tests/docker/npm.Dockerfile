@@ -13,7 +13,6 @@ COPY ./.moon/docker/workspace .
 RUN moon setup
 
 # Copy project and required files
-COPY ./packages/types ./packages/types
-COPY ./packages/runtime ./packages/runtime
+COPY ./.moon/docker/sources .
 
 RUN moon run runtime:build

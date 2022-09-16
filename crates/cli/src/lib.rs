@@ -89,7 +89,7 @@ pub async fn run_cli() {
         }
         Commands::DepGraph { target } => dep_graph(target).await,
         Commands::Docker { command } => match command {
-            DockerCommands::Scaffold => docker::scaffold().await,
+            DockerCommands::Scaffold { ids } => docker::scaffold(ids).await,
         },
         Commands::Generate {
             name,

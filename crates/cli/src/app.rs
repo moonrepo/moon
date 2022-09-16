@@ -23,7 +23,10 @@ pub enum DockerCommands {
         name = "scaffold",
         about = "Scaffold a repository skeleton for use within Dockerfile COPY commands."
     )]
-    Scaffold,
+    Scaffold {
+        #[clap(required = true, help = "List of project IDs to copy sources for")]
+        ids: Vec<ProjectID>,
+    },
 }
 
 #[derive(Debug, Subcommand)]

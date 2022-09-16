@@ -1,8 +1,10 @@
 use crate::helpers::load_workspace;
+use async_recursion::async_recursion;
 use moon_config::{NodePackageManager, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_lang_node::{NODE, NPM, PNPM, YARN};
+use moon_project::ProjectError;
 use moon_utils::fs;
 use moon_workspace::Workspace;
 use std::path::Path;
@@ -105,7 +107,38 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
     Ok(())
 }
 
-pub async fn scaffold() -> Result<(), Box<dyn std::error::Error>> {
+#[async_recursion]
+async fn scaffold_sources_project(
+    workspace: &Workspace,
+    docker_sources_root: &Path,
+    project_id: &str,
+) -> Result<(), ProjectError> {
+    let project = workspace.projects.load(project_id)?;
+
+    copy_files(&[&project.source], &workspace.root, &docker_sources_root).await?;
+
+    for dep_id in project.get_dependency_ids() {
+        scaffold_sources_project(workspace, docker_sources_root, &dep_id).await?;
+    }
+
+    Ok(())
+}
+
+async fn scaffold_sources(
+    workspace: &Workspace,
+    docker_root: &Path,
+    project_ids: &[String],
+) -> Result<(), ProjectError> {
+    let docker_sources_root = docker_root.join("sources");
+
+    for project_id in project_ids {
+        scaffold_sources_project(workspace, &docker_sources_root, project_id).await?;
+    }
+
+    Ok(())
+}
+
+pub async fn scaffold(project_ids: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
@@ -115,6 +148,7 @@ pub async fn scaffold() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create the workspace skeleton
     scaffold_workspace(&workspace, &docker_root).await?;
+    scaffold_sources(&workspace, &docker_root, project_ids).await?;
 
     Ok(())
 }

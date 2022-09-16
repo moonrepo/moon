@@ -32,6 +32,7 @@ moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
+async-recursion = "1.0.0"
 clap = { version = "3.2.21", features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.2.4"
 console = "0.15.1"

@@ -25,6 +25,7 @@ export interface Action {
 	createdAt: string;
 	duration: Duration | null;
 	error: string | null;
+	flaky: boolean;
 	label: string | null;
 	nodeIndex: number;
 	status: ActionStatus;
@@ -40,4 +41,7 @@ export interface ActionContext {
 export interface RunReport {
 	actions: Action[];
 	context: ActionContext;
+	duration: Duration;
+	estimatedSavings: Duration | null;
+	projectedDuration: Duration;
 }

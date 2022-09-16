@@ -388,7 +388,14 @@ impl ActionRunner {
 
             workspace
                 .cache
-                .create_json_report(name, RunReport { actions, context })
+                .create_json_report(
+                    name,
+                    RunReport {
+                        actions,
+                        context,
+                        total_duration: self.duration.unwrap(),
+                    },
+                )
                 .await?;
         }
 

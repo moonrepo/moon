@@ -7,7 +7,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 const LOG_TARGET: &str = "moon:cache:item";
 
@@ -85,10 +85,13 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
 }
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RunReport<'a> {
     pub actions: &'a Vec<Action>,
 
     pub context: &'a ActionContext,
+
+    pub total_duration: Duration,
 }
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]

@@ -4,6 +4,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_lang_node::{NODE, NPM, PNPM, YARN};
 use moon_utils::fs;
+use moon_workspace::Workspace;
 use std::path::Path;
 use strum::IntoEnumIterator;
 
@@ -30,17 +31,12 @@ async fn copy_files<T: AsRef<str>>(
     Ok(())
 }
 
-pub async fn scaffold() -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
-    let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
-
-    // Delete the docker skeleton to remove any stale files
-    fs::remove_dir_all(&docker_root).await?;
-    fs::create_dir_all(&docker_root).await?;
+async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result<(), MoonError> {
+    let docker_workspace_root = docker_root.join("workspace");
 
     // Copy each project and mimic the folder structure
     for project_source in workspace.projects.projects_map.values() {
-        let docker_project_root = docker_root.join(&project_source);
+        let docker_project_root = docker_workspace_root.join(&project_source);
 
         // Create the project root
         fs::create_dir_all(&docker_project_root).await?;
@@ -104,7 +100,21 @@ pub async fn scaffold() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    copy_files(&files, &workspace.root, &docker_root).await?;
+    copy_files(&files, &workspace.root, &docker_workspace_root).await?;
+
+    Ok(())
+}
+
+pub async fn scaffold() -> Result<(), Box<dyn std::error::Error>> {
+    let workspace = load_workspace().await?;
+    let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
+
+    // Delete the docker skeleton to remove any stale files
+    fs::remove_dir_all(&docker_root).await?;
+    fs::create_dir_all(&docker_root).await?;
+
+    // Create the workspace skeleton
+    scaffold_workspace(&workspace, &docker_root).await?;
 
     Ok(())
 }

@@ -7,7 +7,7 @@ RUN npm install -g @moonrepo/cli
 
 # Copy moon files
 COPY ./.moon/project.yml ./.moon/workspace.yml ./.moon/
-COPY ./.moon/docker .
+COPY ./.moon/docker/workspace .
 
 # Install toolchain and dependencies
 RUN moon setup

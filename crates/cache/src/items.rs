@@ -1,5 +1,4 @@
 use crate::helpers::{is_readable, is_writable, to_millis};
-use moon_action::{Action, ActionContext};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_utils::fs;
@@ -7,7 +6,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 const LOG_TARGET: &str = "moon:cache:item";
 
@@ -82,23 +81,6 @@ impl<T: DeserializeOwned + Serialize> CacheItem<T> {
     pub fn to_millis(&self, time: SystemTime) -> u128 {
         to_millis(time)
     }
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RunReport<'a> {
-    pub actions: &'a Vec<Action>,
-
-    pub context: &'a ActionContext,
-
-    /// How long the runner took to execute all actions.
-    pub duration: Duration,
-
-    /// How much time was saved using the runner.
-    pub estimated_savings: Option<Duration>,
-
-    /// How long the actions would have taken to execute outside of the runner.
-    pub projected_duration: Duration,
 }
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]

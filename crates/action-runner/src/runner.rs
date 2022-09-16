@@ -386,33 +386,10 @@ impl ActionRunner {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();
-            let mut projected_duration = Duration::new(0, 0);
-
-            for action in actions {
-                if let Some(action_duration) = action.duration {
-                    projected_duration += action_duration;
-                }
-            }
-
-            let mut estimated_savings = None;
-
-            // Avoid "overflow when subtracting durations"
-            if duration < projected_duration {
-                estimated_savings = Some(projected_duration - duration);
-            }
 
             workspace
                 .cache
-                .create_json_report(
-                    name,
-                    RunReport {
-                        actions,
-                        context,
-                        duration,
-                        estimated_savings,
-                        projected_duration,
-                    },
-                )
+                .create_json_report(name, RunReport::new(actions, context, duration))
                 .await?;
         }
 

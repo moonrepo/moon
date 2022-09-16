@@ -91,7 +91,14 @@ pub struct RunReport<'a> {
 
     pub context: &'a ActionContext,
 
-    pub total_duration: Duration,
+    /// How long the runner took to execute all actions.
+    pub duration: Duration,
+
+    /// How much time was saved using the runner.
+    pub estimated_savings: Duration,
+
+    /// How long the actions would have taken to execute outside of the runner.
+    pub projected_duration: Duration,
 }
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]

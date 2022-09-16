@@ -385,6 +385,17 @@ impl ActionRunner {
     ) -> Result<(), ActionRunnerError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
+            let duration = self.duration.unwrap();
+            let mut projected_duration = Duration::new(0, 0);
+
+            for action in actions {
+                if let Some(action_duration) = action.duration {
+                    projected_duration += action_duration;
+                }
+            }
+
+            let mut estimated_savings = projected_duration;
+            estimated_savings -= duration;
 
             workspace
                 .cache
@@ -393,7 +404,9 @@ impl ActionRunner {
                     RunReport {
                         actions,
                         context,
-                        total_duration: self.duration.unwrap(),
+                        duration,
+                        estimated_savings,
+                        projected_duration,
                     },
                 )
                 .await?;

@@ -2,6 +2,10 @@ use moon_utils::time::chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 
+fn has_failed(status: &ActionStatus) -> bool {
+    matches!(status, ActionStatus::Failed) || matches!(status, ActionStatus::FailedAndAbort)
+}
+
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ActionStatus {
@@ -65,6 +69,8 @@ pub struct Action {
 
     pub error: Option<String>,
 
+    pub flaky: bool,
+
     pub label: Option<String>,
 
     pub node_index: usize,
@@ -82,6 +88,7 @@ impl Action {
             created_at: Utc::now(),
             duration: None,
             error: None,
+            flaky: false,
             label,
             node_index,
             start_time: Some(Instant::now()),
@@ -107,16 +114,18 @@ impl Action {
     }
 
     pub fn has_failed(&self) -> bool {
-        matches!(self.status, ActionStatus::Failed)
-            || matches!(self.status, ActionStatus::FailedAndAbort)
+        has_failed(&self.status)
     }
 
     pub fn set_attempts(&mut self, attempts: Vec<Attempt>) -> bool {
-        let passed = attempts
-            .iter()
-            .all(|a| matches!(a.status, ActionStatus::Passed));
+        let some_failed = attempts.iter().any(|a| has_failed(&a.status));
+        let passed = match attempts.last() {
+            Some(a) => matches!(a.status, ActionStatus::Passed),
+            None => true,
+        };
 
         self.attempts = Some(attempts);
+        self.flaky = some_failed && passed;
 
         passed
     }

@@ -21,13 +21,13 @@ const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 pub enum DockerCommands {
     #[clap(
         name = "scaffold",
-        about = "Scaffold a repository skeleton for use within Dockerfile COPY commands."
+        about = "Scaffold a repository skeleton for use within Dockerfiles."
     )]
     Scaffold {
         #[clap(required = true, help = "List of project IDs to copy sources for")]
         ids: Vec<ProjectID>,
 
-        #[clap(long, help = "Additional file globs to include in the sources")]
+        #[clap(long, help = "Additional file globs to include in sources")]
         include: Vec<FileGlob>,
     },
 }
@@ -380,7 +380,10 @@ pub enum Commands {
     },
 
     // moon docker <operation>
-    #[clap(name = "docker", about = "Operations for integrating with Docker.")]
+    #[clap(
+        name = "docker",
+        about = "Operations for integrating with Docker and Dockerfiles."
+    )]
     Docker {
         #[clap(subcommand)]
         command: DockerCommands,

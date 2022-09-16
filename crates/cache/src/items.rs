@@ -95,7 +95,7 @@ pub struct RunReport<'a> {
     pub duration: Duration,
 
     /// How much time was saved using the runner.
-    pub estimated_savings: Duration,
+    pub estimated_savings: Option<Duration>,
 
     /// How long the actions would have taken to execute outside of the runner.
     pub projected_duration: Duration,

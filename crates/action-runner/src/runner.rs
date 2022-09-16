@@ -394,8 +394,12 @@ impl ActionRunner {
                 }
             }
 
-            let mut estimated_savings = projected_duration;
-            estimated_savings -= duration;
+            let mut estimated_savings = None;
+
+            // Avoid "overflow when subtracting durations"
+            if duration < projected_duration {
+                estimated_savings = Some(projected_duration - duration);
+            }
 
             workspace
                 .cache

@@ -42,6 +42,6 @@ export interface RunReport {
 	actions: Action[];
 	context: ActionContext;
 	duration: Duration;
-	estimatedSavings: Duration;
+	estimatedSavings: Duration | null;
 	projectedDuration: Duration;
 }

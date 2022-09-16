@@ -385,10 +385,11 @@ impl ActionRunner {
     ) -> Result<(), ActionRunnerError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
+            let duration = self.duration.unwrap();
 
             workspace
                 .cache
-                .create_json_report(name, RunReport { actions, context })
+                .create_json_report(name, RunReport::new(actions, context, duration))
                 .await?;
         }
 

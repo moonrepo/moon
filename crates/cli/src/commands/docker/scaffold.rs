@@ -5,12 +5,10 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_lang_node::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
-use moon_utils::fs;
+use moon_utils::{fs, glob};
 use moon_workspace::Workspace;
 use std::path::Path;
 use strum::IntoEnumIterator;
-
-// moon docker scaffold --include *.json --copy-dependencies
 
 async fn copy_files<T: AsRef<str>>(
     list: &[T],
@@ -33,7 +31,7 @@ async fn copy_files<T: AsRef<str>>(
     Ok(())
 }
 
-async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result<(), MoonError> {
+async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result<(), ProjectError> {
     let docker_workspace_root = docker_root.join("workspace");
 
     // Copy each project and mimic the folder structure
@@ -102,6 +100,15 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
         }
     }
 
+    // Copy moon configuration
+    let moon_configs = glob::walk(&workspace.root.join(CONFIG_DIRNAME), &["*.yml"])?;
+    let moon_configs = moon_configs
+        .iter()
+        .map(|f| f.strip_prefix(&workspace.root).unwrap().to_str().unwrap())
+        .collect::<Vec<&str>>();
+
+    files.extend(&moon_configs);
+
     copy_files(&files, &workspace.root, &docker_workspace_root).await?;
 
     Ok(())
@@ -115,7 +122,7 @@ async fn scaffold_sources_project(
 ) -> Result<(), ProjectError> {
     let project = workspace.projects.load(project_id)?;
 
-    copy_files(&[&project.source], &workspace.root, &docker_sources_root).await?;
+    copy_files(&[&project.source], &workspace.root, docker_sources_root).await?;
 
     for dep_id in project.get_dependency_ids() {
         scaffold_sources_project(workspace, docker_sources_root, &dep_id).await?;

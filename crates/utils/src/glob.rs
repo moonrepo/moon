@@ -111,6 +111,10 @@ pub fn split_patterns<P: AsRef<str>>(patterns: &[P]) -> Result<(Vec<Glob>, Vec<G
         }
     }
 
+    // Always ignore common directories
+    negations.push(create_glob("**/.*/**")?); // .git, .moon, .yarn, etc
+    negations.push(create_glob("**/node_modules/**")?);
+
     Ok((expressions, negations))
 }
 

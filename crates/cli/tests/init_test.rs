@@ -88,7 +88,7 @@ fn creates_gitignore_file() {
 
     assert_eq!(
         fs::read_to_string(gitignore).unwrap(),
-        "\n# Moon\n.moon/cache\n"
+        "\n# Moon\n.moon/cache\n.moon/docker\n"
     );
 }
 
@@ -109,7 +109,7 @@ fn appends_existing_gitignore_file() {
 
     assert_eq!(
         fs::read_to_string(gitignore).unwrap(),
-        "*.js\n*.log\n# Moon\n.moon/cache\n"
+        "*.js\n*.log\n# Moon\n.moon/cache\n.moon/docker\n"
     );
 }
 

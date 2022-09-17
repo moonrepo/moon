@@ -1,4 +1,4 @@
-use crate::{is_ci, path};
+use crate::{is_ci, is_test_env, path};
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
 use std::env;
@@ -335,7 +335,7 @@ impl Command {
     }
 
     pub fn set_prefix(&mut self, prefix: &str, width: Option<usize>) -> &mut Command {
-        if is_ci() {
+        if is_ci() && !is_test_env() {
             self.prefix = Some(color::muted(format!("[{}]", prefix)));
         } else {
             self.prefix = Some(format!(

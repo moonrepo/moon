@@ -1,7 +1,4 @@
-use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_assert_output};
-use predicates::prelude::*;
-
-// moon_utils::test::debug_sandbox(&fixture, &assert);
+use moon_utils::test::{create_moon_command, create_sandbox_with_git};
 
 mod scaffold_workspace {
     use super::*;
@@ -116,5 +113,79 @@ mod scaffold_workspace {
         let docker = fixture.join(".moon/docker/workspace");
 
         assert!(docker.join("yarn.lock").exists());
+    }
+}
+
+mod scaffold_sources {
+    use super::*;
+
+    #[test]
+    fn copies_project_and_deps() {
+        let fixture = create_sandbox_with_git("projects");
+
+        create_moon_command(fixture.path())
+            .arg("docker")
+            .arg("scaffold")
+            .arg("basic")
+            .assert();
+
+        let docker = fixture.join(".moon/docker/sources");
+
+        assert!(docker.join("basic/file.ts").exists());
+        assert!(docker.join("no-config/empty").exists());
+
+        // Check that some others DO NOT exist
+        assert!(!docker.join("advanced").exists());
+        assert!(!docker.join("deps").exists());
+        assert!(!docker.join("langs").exists());
+        assert!(!docker.join("tasks").exists());
+    }
+
+    #[test]
+    fn copies_multiple_projects() {
+        let fixture = create_sandbox_with_git("projects");
+
+        create_moon_command(fixture.path())
+            .arg("docker")
+            .arg("scaffold")
+            .arg("js")
+            .arg("bar")
+            .assert();
+
+        let docker = fixture.join(".moon/docker/sources");
+
+        assert!(docker.join("langs/js").exists());
+        assert!(docker.join("deps/bar").exists());
+
+        // Check that some others DO NOT exist
+        assert!(!docker.join("langs/ts").exists());
+        assert!(!docker.join("langs/bash").exists());
+        assert!(!docker.join("deps/foo").exists());
+        assert!(!docker.join("deps/baz").exists());
+    }
+
+    #[test]
+    fn can_include_more_files() {
+        let fixture = create_sandbox_with_git("cases");
+
+        create_moon_command(fixture.path())
+            .arg("docker")
+            .arg("scaffold")
+            .arg("base")
+            // Janky but works
+            .arg("--include")
+            .arg("system/*.sh")
+            .arg("--include")
+            .arg("system-windows/*.bat")
+            .assert();
+
+        let docker = fixture.join(".moon/docker/sources");
+
+        assert!(docker.join("base").exists());
+        assert!(docker.join("system/cwd.sh").exists());
+        assert!(docker.join("system-windows/cwd.bat").exists());
+
+        // Check that some others DO NOT exist
+        assert!(!docker.join("node/cwd.js").exists());
     }
 }

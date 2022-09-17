@@ -6,7 +6,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_lang_node::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
-use moon_utils::{fs, glob};
+use moon_utils::{fs, glob, path};
 use moon_workspace::Workspace;
 use std::path::Path;
 use strum::IntoEnumIterator;
@@ -105,16 +105,16 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
         }
     }
 
+    copy_files(&files, &workspace.root, &docker_workspace_root).await?;
+
     // Copy moon configuration
     let moon_configs = glob::walk(&workspace.root.join(CONFIG_DIRNAME), &["*.yml"])?;
     let moon_configs = moon_configs
         .iter()
-        .map(|f| f.strip_prefix(&workspace.root).unwrap().to_str().unwrap())
-        .collect::<Vec<&str>>();
+        .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
+        .collect::<Result<Vec<String>, MoonError>>()?;
 
-    files.extend(&moon_configs);
-
-    copy_files(&files, &workspace.root, &docker_workspace_root).await?;
+    copy_files(&moon_configs, &workspace.root, &docker_workspace_root).await?;
 
     Ok(())
 }
@@ -154,8 +154,8 @@ async fn scaffold_sources(
         let files = glob::walk(&workspace.root, include)?;
         let files = files
             .iter()
-            .map(|f| f.strip_prefix(&workspace.root).unwrap().to_str().unwrap())
-            .collect::<Vec<&str>>();
+            .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
+            .collect::<Result<Vec<String>, MoonError>>()?;
 
         copy_files(&files, &workspace.root, &docker_sources_root).await?;
     }

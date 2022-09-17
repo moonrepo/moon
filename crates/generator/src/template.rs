@@ -19,9 +19,9 @@ const LOG_TARGET: &str = "moon:generator:template";
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
-    Created,
-    Replaced,
-    Skipped,
+    Create,
+    Replace,
+    Skip,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -41,6 +41,7 @@ pub struct TemplateFile {
     /// Absolute path to source (in templates dir).
     pub source_path: PathBuf,
 
+    /// File state and operation to commit.
     pub state: FileState,
 }
 
@@ -52,7 +53,7 @@ impl TemplateFile {
             dest_path: PathBuf::new(),
             name,
             source_path,
-            state: FileState::Created,
+            state: FileState::Create,
         }
     }
 
@@ -71,10 +72,6 @@ impl TemplateFile {
     }
 
     pub fn set_content(&mut self, content: String, dest: &Path) -> Result<(), ConfigError> {
-        self.content = content.clone();
-        self.dest_path = dest.join(&self.name);
-
-        // Extract frontmatter if available
         if content.starts_with("---") {
             if let Some(fm_end) = &content[3..].find("---") {
                 let config = TemplateFrontmatterConfig::parse(&content[3..(fm_end - 1)])?;
@@ -85,14 +82,19 @@ impl TemplateFile {
 
                 self.config = Some(config);
                 self.content = content[(fm_end + 3)..].to_owned();
+
+                return Ok(());
             }
         }
+
+        self.content = content;
+        self.dest_path = dest.join(&self.name);
 
         Ok(())
     }
 
     pub fn should_write(&self) -> bool {
-        matches!(self.state, FileState::Created) || matches!(self.state, FileState::Replaced)
+        matches!(self.state, FileState::Create) || matches!(self.state, FileState::Replace)
     }
 }
 
@@ -225,7 +227,7 @@ impl Template {
     /// Write the template file to the defined destination path.
     pub async fn write_file(&self, file: &TemplateFile) -> Result<(), GeneratorError> {
         match file.state {
-            FileState::Replaced => {
+            FileState::Replace => {
                 trace!(
                     target: LOG_TARGET,
                     "Overwriting template file {} (destination = {})",

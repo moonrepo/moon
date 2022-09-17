@@ -1,6 +1,6 @@
 use crate::errors::GeneratorError;
 use crate::template::Template;
-use futures::stream::{FuturesUnordered, StreamExt};
+use futures::future::try_join_all;
 use moon_config::{load_template_config_template, GeneratorConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{color, debug, map_list, trace};
@@ -82,7 +82,7 @@ impl Generator {
     }
 
     pub async fn generate(&self, template: &Template) -> Result<(), GeneratorError> {
-        let mut futures = FuturesUnordered::new();
+        let mut futures = vec![];
 
         debug!(
             target: LOG_TARGET,
@@ -92,18 +92,11 @@ impl Generator {
 
         for file in &template.files {
             if file.should_write() {
-                futures.push(async { template.write_file(file).await });
+                futures.push(template.write_file(file));
             }
         }
 
-        // Copy all the files in parallel
-        loop {
-            match futures.next().await {
-                Some(Err(e)) => return Err(e),
-                Some(Ok(_)) => {}
-                None => break,
-            }
-        }
+        try_join_all(futures).await?;
 
         debug!(target: LOG_TARGET, "Generation complete!");
 

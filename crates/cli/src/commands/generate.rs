@@ -362,7 +362,7 @@ pub async fn generate(
 
     for file in &mut template.files {
         if file.is_skipped() {
-            file.state = FileState::Skipped;
+            file.state = FileState::Skip;
             continue;
         }
 
@@ -376,7 +376,7 @@ pub async fn generate(
                     ))
                     .interact()?)
         {
-            file.state = FileState::Replaced;
+            file.state = FileState::Replace;
         }
     }
 
@@ -391,12 +391,12 @@ pub async fn generate(
         term.write_line(&format!(
             "{} {} {}",
             match &file.state {
-                FileState::Created => color::success("created"),
-                FileState::Replaced => color::failure("replaced"),
-                FileState::Skipped => color::invalid("skipped"),
+                FileState::Create => color::success("created"),
+                FileState::Replace => color::failure("replaced"),
+                FileState::Skip => color::invalid("skipped"),
             },
             match &file.state {
-                FileState::Replaced => color::muted("->"),
+                FileState::Replace => color::muted("->"),
                 _ => color::muted("-->"),
             },
             color::muted_light(

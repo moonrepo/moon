@@ -1,5 +1,6 @@
 use crate::helpers::load_workspace;
 use async_recursion::async_recursion;
+use futures::future::try_join_all;
 use moon_config::{NodePackageManager, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
@@ -15,6 +16,8 @@ async fn copy_files<T: AsRef<str>>(
     source: &Path,
     target: &Path,
 ) -> Result<(), MoonError> {
+    let mut futures = vec![];
+
     for file in list {
         let file = file.as_ref();
         let source_file = source.join(file);
@@ -23,10 +26,12 @@ async fn copy_files<T: AsRef<str>>(
             if source_file.is_dir() {
                 fs::copy_dir_all(&source_file, &source_file, &target.join(file)).await?;
             } else {
-                fs::copy_file(source_file, target.join(file)).await?;
+                futures.push(fs::copy_file(source_file, target.join(file)));
             }
         }
     }
+
+    try_join_all(futures).await?;
 
     Ok(())
 }

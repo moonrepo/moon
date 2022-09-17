@@ -7,4 +7,5 @@ typescript:
 
 projects:
   esbuild: esbuild
+  lifecycles: lifecycles
   swc: swc

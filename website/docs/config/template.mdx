@@ -117,3 +117,59 @@ rendered, otherwise when not-multiple, a single string will be.
 > `string[]`
 
 List of explicit values to choose from.
+
+## Frontmatter<VersionLabel version="0.15" />
+
+The following settings _are not_ available in `template.yml`, but can be defined as frontmatter at
+the top of a template file. View the [code generation guide](../guides/codegen#frontmatter) for more
+information.
+
+### `force`
+
+> `boolean`
+
+When enabled, will always overwrite a file of the same name at the destination path, and will bypass
+any prompting in the terminal.
+
+```twig
+---
+force: true
+---
+
+Some template content!
+```
+
+### `to`
+
+> `string`
+
+Defines a custom file path, relative from the destination root, in which to create the file. This
+will override the file path within the template folder, and allow for conditional rendering and
+engine filters to be used.
+
+```twig
+{% set component_name = name | pascal_case %}
+
+---
+to: components/{{ component_name }}.tsx
+---
+
+export function {{ component_name }}() {
+	return null;
+}
+```
+
+### `skip`
+
+> `boolean`
+
+When enabled, the template file will be skipped while writing to the destination path. This setting
+can be used to conditionally render a file.
+
+```twig
+---
+skip: {{ name == "someCondition" }}
+---
+
+Some template content!
+```

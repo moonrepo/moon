@@ -6,7 +6,6 @@ use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{color, debug, map_list, trace};
 use moon_utils::{fs, path, regex::clean_id};
 use std::path::{Path, PathBuf};
-use tera::Context;
 
 const LOG_TARGET: &str = "moon:generator";
 
@@ -82,11 +81,7 @@ impl Generator {
         Err(GeneratorError::MissingTemplate(name))
     }
 
-    pub async fn generate(
-        &self,
-        template: &Template,
-        context: &Context,
-    ) -> Result<(), GeneratorError> {
+    pub async fn generate(&self, template: &Template) -> Result<(), GeneratorError> {
         let mut futures = FuturesUnordered::new();
 
         debug!(
@@ -97,7 +92,7 @@ impl Generator {
 
         for file in &template.files {
             if file.should_write() {
-                futures.push(async { template.render_file(file, context).await });
+                futures.push(async { template.write_file(file).await });
             }
         }
 

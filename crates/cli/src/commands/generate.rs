@@ -361,8 +361,14 @@ pub async fn generate(
     template.load_files(&dest, &context).await?;
 
     for file in &mut template.files {
+        if file.is_skipped() {
+            file.state = FileState::Skipped;
+            continue;
+        }
+
         if file.dest_path.exists()
             && (options.force
+                || file.is_forced()
                 || Confirm::with_theme(&theme)
                     .with_prompt(format!(
                         "File {} already exists, overwrite?",
@@ -370,28 +376,26 @@ pub async fn generate(
                     ))
                     .interact()?)
         {
-            file.overwrite = true;
+            file.state = FileState::Replaced;
         }
     }
 
     // Generate the files in the destination and print the results
     if !options.dry_run {
-        generator.generate(&template, &context).await?;
+        generator.generate(&template).await?;
     }
 
     term.write_line("")?;
 
     for file in template.files {
-        let file_state = file.state();
-
         term.write_line(&format!(
             "{} {} {}",
-            match &file_state {
+            match &file.state {
                 FileState::Created => color::success("created"),
                 FileState::Replaced => color::failure("replaced"),
                 FileState::Skipped => color::invalid("skipped"),
             },
-            match &file_state {
+            match &file.state {
                 FileState::Replaced => color::muted("->"),
                 _ => color::muted("-->"),
             },

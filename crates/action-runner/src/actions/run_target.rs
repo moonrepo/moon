@@ -326,6 +326,7 @@ impl<'a> TargetRunner<'a> {
         let attempt_total = self.task.options.retry_count + 1;
         let mut attempt_index = 1;
         let mut attempts = vec![];
+        let primary_longest_width = context.primary_targets.iter().map(|t| t.len()).max();
         let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
         let output;
@@ -365,7 +366,11 @@ impl<'a> TargetRunner<'a> {
             self.flush_output()?;
 
             let possible_output = if should_stream_output {
-                command.exec_stream_and_capture_output(stream_prefix).await
+                if let Some(prefix) = stream_prefix {
+                    command.set_prefix(prefix, primary_longest_width);
+                }
+
+                command.exec_stream_and_capture_output().await
             } else {
                 command.exec_capture_output().await
             };

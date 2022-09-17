@@ -1,6 +1,6 @@
-use crate::path;
+use crate::{is_ci, is_test_env, path};
 use moon_error::{map_io_to_process_error, MoonError};
-use moon_logger::{color, logging_enabled, trace};
+use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
 use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -64,6 +64,9 @@ pub struct Command {
 
     /// Convert non-zero exits to errors.
     error: bool,
+
+    /// Prefix to prepend to all log lines.
+    prefix: Option<String>,
 }
 
 // This is rather annoying that we have to re-implement all these methods,
@@ -95,6 +98,7 @@ impl Command {
             bin: bin_name,
             cmd,
             error: true,
+            prefix: None,
         }
     }
 
@@ -200,10 +204,7 @@ impl Command {
     }
 
     #[track_caller]
-    pub async fn exec_stream_and_capture_output<T: AsRef<str>>(
-        &mut self,
-        prefix: Option<T>,
-    ) -> Result<Output, MoonError> {
+    pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
         self.log_command_info(None);
 
         let mut child = self
@@ -228,10 +229,7 @@ impl Command {
         let captured_stderr_clone = Arc::clone(&captured_stderr);
         let captured_stdout_clone = Arc::clone(&captured_stdout);
 
-        let prefix: Arc<str> = prefix
-            .map(|p| color::muted(format!("[{}]", p.as_ref())))
-            .unwrap_or_default()
-            .into();
+        let prefix: Arc<str> = self.prefix.clone().unwrap_or_default().into();
         let stderr_prefix = Arc::clone(&prefix);
         let stdout_prefix = Arc::clone(&prefix);
 
@@ -333,6 +331,24 @@ impl Command {
 
     pub fn no_error_on_failure(&mut self) -> &mut Command {
         self.error = false;
+        self
+    }
+
+    pub fn set_prefix(&mut self, prefix: &str, width: Option<usize>) -> &mut Command {
+        if is_ci() && !is_test_env() {
+            self.prefix = Some(color::muted(format!("[{}]", prefix)));
+        } else {
+            self.prefix = Some(format!(
+                "{} {}",
+                color::log_target(if let Some(width) = width {
+                    pad_str(prefix, width, Alignment::Left, None).to_string()
+                } else {
+                    prefix.to_owned()
+                }),
+                color::muted("|")
+            ));
+        }
+
         self
     }
 

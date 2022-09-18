@@ -28,6 +28,7 @@ umd/
 
 # Moon
 .moon/cache
+.moon/docker
 packages/*/moon
 packages/*/moon.exe
 /moon

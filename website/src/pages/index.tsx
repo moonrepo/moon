@@ -15,6 +15,7 @@ import {
 	faDiagramSankey,
 	faFingerprint,
 	faGridDividers,
+	faLayerGroup,
 	faMerge,
 	faMessageCode,
 	faMicrochip,
@@ -63,9 +64,9 @@ const organizationFeatures: Feature[] = [
 		description: 'Generates a project graph for dependency and dependent relationships.',
 	},
 	{
-		title: 'Project boundaries',
-		icon: faChartTreeMap,
-		description: 'Enforces boundaries to eliminate cycles and reduce indirection.',
+		title: 'Code generation',
+		icon: faLayerGroup,
+		description: 'Easily scaffold new applications, libraries, tooling, and more!',
 	},
 	{
 		title: 'Dependency workspaces',

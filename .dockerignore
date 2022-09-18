@@ -10,10 +10,6 @@
 # Node.js
 node_modules/
 
-# Yarn
-/.yarn
-.pnp.*
-
 # Build folders
 coverage/
 build/

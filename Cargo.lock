@@ -1429,10 +1429,12 @@ name = "moon_cli"
 version = "0.14.0"
 dependencies = [
  "assert_cmd",
+ "async-recursion",
  "clap",
  "clap_lex",
  "console",
  "dialoguer",
+ "futures",
  "indicatif",
  "insta",
  "itertools",
@@ -1719,6 +1721,7 @@ dependencies = [
  "clean-path",
  "dirs",
  "dunce",
+ "futures",
  "humantime",
  "json_comments",
  "lazy_static",

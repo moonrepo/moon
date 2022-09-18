@@ -15,6 +15,8 @@ pub struct Language {
 
     pub default_version: StaticString,
 
+    pub file_exts: StaticStringList,
+
     pub vendor_bins_dir: StaticString,
 
     pub vendor_dir: StaticString,

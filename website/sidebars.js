@@ -61,6 +61,18 @@ const sidebars = {
 				'commands/check',
 				'commands/clean',
 				'commands/dep-graph',
+				{
+					type: 'category',
+					label: 'docker',
+					items: ['commands/docker/scaffold'],
+					link: {
+						type: 'generated-index',
+						title: 'docker',
+						description: 'Operations for integrating with Docker and Dockerfiles.',
+						slug: '/commands/docker',
+						keywords: ['cli', 'commands', 'docker'],
+					},
+				},
 				'commands/generate',
 				'commands/init',
 				{

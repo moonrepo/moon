@@ -74,7 +74,7 @@ and provide a first-class developer experience.
 #### Organization
 
 - **Project graph** - Generates a project graph for dependency and dependent relationships.
-- **Project boundaries** - Enforces boundaries to eliminate cycles and reduce indirection.
+- **Code generation** - Easily scaffold new applications, libraries, tooling, and more!
 - **Dependency workspaces** - Works alongside package manager workspaces so that projects have
   distinct dependency trees.
 - **Ownership metadata** - Declare an owner, maintainers, support channels, and more, for LDAP or

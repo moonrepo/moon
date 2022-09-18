@@ -17,7 +17,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
-use strum::Display;
+use strum::{Display, EnumIter};
 use validator::{Validate, ValidationError};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
@@ -57,7 +57,9 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
+#[derive(
+    Clone, Debug, Default, Deserialize, Display, EnumIter, Eq, JsonSchema, PartialEq, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectLanguage {
     #[strum(serialize = "bash")]

@@ -95,11 +95,13 @@ pub fn remove_drive_prefix<T: AsRef<str>>(glob: T) -> String {
 /// Wax currently doesn't support negated globs (starts with !),
 /// so we must extract them manually.
 #[track_caller]
-pub fn split_patterns(patterns: &[String]) -> Result<(Vec<Glob>, Vec<Glob>), GlobError> {
+pub fn split_patterns<P: AsRef<str>>(patterns: &[P]) -> Result<(Vec<Glob>, Vec<Glob>), GlobError> {
     let mut expressions = vec![];
     let mut negations = vec![];
 
     for pattern in patterns {
+        let pattern = pattern.as_ref();
+
         if pattern.starts_with('!') {
             negations.push(create_glob(pattern.strip_prefix('!').unwrap())?);
         } else if pattern.starts_with('/') {
@@ -109,11 +111,18 @@ pub fn split_patterns(patterns: &[String]) -> Result<(Vec<Glob>, Vec<Glob>), Glo
         }
     }
 
+    // Always ignore common directories
+    negations.push(create_glob("**/.*/**")?); // .git, .moon, .yarn, etc
+    negations.push(create_glob("**/node_modules/**")?);
+
     Ok((expressions, negations))
 }
 
 #[track_caller]
-pub fn walk<T: AsRef<Path>>(base_dir: T, patterns: &[String]) -> Result<Vec<PathBuf>, GlobError> {
+pub fn walk<T: AsRef<Path>, P: AsRef<str>>(
+    base_dir: T,
+    patterns: &[P],
+) -> Result<Vec<PathBuf>, GlobError> {
     let (globs, negations) = split_patterns(patterns)?;
     let negation = Negation::try_from_patterns(negations).unwrap();
     let mut paths = vec![];

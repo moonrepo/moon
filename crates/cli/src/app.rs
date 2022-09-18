@@ -7,7 +7,7 @@ use crate::commands::init::{InheritProjectsAs, PackageManager};
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_action::ProfileType;
-use moon_config::ProjectID;
+use moon_config::{FileGlob, ProjectID};
 use moon_task::TargetID;
 use moon_terminal::label_moon;
 
@@ -16,6 +16,21 @@ pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
 const HEADING_AFFECTED: &str = "Affected by changes";
 const HEADING_DEBUGGING: &str = "Debugging";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
+
+#[derive(Debug, Subcommand)]
+pub enum DockerCommands {
+    #[clap(
+        name = "scaffold",
+        about = "Scaffold a repository skeleton for use within Dockerfiles."
+    )]
+    Scaffold {
+        #[clap(required = true, help = "List of project IDs to copy sources for")]
+        ids: Vec<ProjectID>,
+
+        #[clap(long, help = "Additional file globs to include in sources")]
+        include: Vec<FileGlob>,
+    },
+}
 
 #[derive(Debug, Subcommand)]
 pub enum MigrateCommands {
@@ -362,6 +377,16 @@ pub enum Commands {
     Clean {
         #[clap(long, default_value = "7 days", help = "Lifetime of cached artifacts")]
         lifetime: String,
+    },
+
+    // moon docker <operation>
+    #[clap(
+        name = "docker",
+        about = "Operations for integrating with Docker and Dockerfiles."
+    )]
+    Docker {
+        #[clap(subcommand)]
+        command: DockerCommands,
     },
 
     // moon migrate <operation>

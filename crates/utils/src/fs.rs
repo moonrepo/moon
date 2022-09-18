@@ -1,4 +1,5 @@
 use async_recursion::async_recursion;
+use futures::future::try_join_all;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
@@ -51,18 +52,24 @@ pub async fn copy_dir_all<T: AsRef<Path> + Send>(
     let from = from.as_ref();
     let to_root = to_root.as_ref();
     let entries = read_dir(from).await?;
+    let mut files = vec![];
     let mut dirs = vec![];
 
-    // Copy files before dirs incase an error occurs
     for entry in entries {
         let path = entry.path();
 
         if path.is_file() {
-            copy_file(&path, to_root.join(path.strip_prefix(from_root).unwrap())).await?;
+            files.push(copy_file(
+                path.to_owned(),
+                to_root.join(path.strip_prefix(from_root).unwrap()),
+            ));
         } else {
             dirs.push(path);
         }
     }
+
+    // Copy files before dirs incase an error occurs
+    try_join_all(files).await?;
 
     // Copy dirs in sequence for the same reason
     for dir in dirs {

@@ -1,5 +1,4 @@
-use crate::shell;
-use crate::{is_ci, is_test_env, path};
+use crate::{is_ci, is_test_env, path, shell};
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
 use std::ffi::{OsStr, OsString};

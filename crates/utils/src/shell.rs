@@ -29,7 +29,7 @@ pub fn create_windows_shell() -> (String, TokioCommand) {
     let mut cmd = TokioCommand::new(&shell);
     cmd.arg("-NonInteractive");
 
-    // We'll pass the command args via stdin, so that paths weird special
+    // We'll pass the command args via stdin, so that paths with special
     // characters and spaces resolve correctly.
     // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh?view=powershell-7.2#-command---c
     cmd.arg("-Command");

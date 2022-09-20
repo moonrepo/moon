@@ -1,6 +1,6 @@
 use crate::errors::DepGraphError;
 use crate::node::ActionNode;
-use moon_config::{ProjectLanguage, WorkspaceConfig};
+use moon_config::{default_node_version, ProjectLanguage, WorkspaceConfig};
 use moon_contract::SupportedPlatform;
 use moon_logger::{color, debug, map_list, trace};
 use moon_project::Project;
@@ -38,7 +38,7 @@ impl DepGraph {
         DepGraph {
             graph: Graph::new(),
             indices: HashMap::new(),
-            workspace_config: workspace_config.clone(),
+            workspace_config: workspace_config.to_owned(),
         }
     }
 
@@ -65,14 +65,12 @@ impl DepGraph {
     #[track_caller]
     pub fn get_platform_from_project(&self, project: &Project) -> SupportedPlatform {
         match &project.config.language {
-            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => SupportedPlatform::Node(
-                self.workspace_config
-                    .node
-                    .as_ref()
-                    .unwrap()
-                    .version
-                    .to_owned(),
-            ),
+            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
+                SupportedPlatform::Node(match &self.workspace_config.node {
+                    Some(node) => node.version.to_owned(),
+                    None => default_node_version(),
+                })
+            }
             _ => SupportedPlatform::System,
         }
     }
@@ -320,8 +318,11 @@ impl DepGraph {
 
         // But we need to wait on all dependent nodes
         for dep_id in project_graph.get_dependencies_of(project)? {
+            let dep_project = project_graph.load(&dep_id)?;
+            let dep_platform = self.get_platform_from_project(&dep_project);
+
             let sync_dep_project_index =
-                self.sync_project(platform, &project_graph.load(&dep_id)?, project_graph)?;
+                self.sync_project(&dep_platform, &dep_project, project_graph)?;
 
             self.graph
                 .add_edge(sync_project_index, sync_dep_project_index, ());

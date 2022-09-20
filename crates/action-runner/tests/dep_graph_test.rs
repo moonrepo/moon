@@ -513,7 +513,7 @@ mod sync_project {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Project(UnconfiguredID(\"unknown\"))")]
+    #[should_panic(expected = "UnconfiguredID(\"unknown\")")]
     async fn errors_for_unknown_project() {
         let projects = create_project_graph().await;
         let mut graph = DepGraph::default(&projects.workspace_config);

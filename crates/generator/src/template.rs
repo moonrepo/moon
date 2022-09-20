@@ -1,7 +1,10 @@
 use crate::filters;
 use crate::GeneratorError;
 use lazy_static::lazy_static;
-use moon_config::{format_error_line, format_figment_errors, ConfigError, TemplateConfig};
+use moon_config::{
+    format_error_line, format_figment_errors, ConfigError, TemplateConfig,
+    TemplateFrontmatterConfig,
+};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, path, regex};
@@ -16,44 +19,96 @@ const LOG_TARGET: &str = "moon:generator:template";
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
-    Created,
-    Replaced,
-    Skipped,
+    Create,
+    Replace,
+    Skip,
 }
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct TemplateFile {
+    /// Frontmatter extracted into a config.
+    pub config: Option<TemplateFrontmatterConfig>,
+
+    /// Rendered and frontmatter-free file content.
+    pub content: String,
+
     /// Absolute path to destination.
     pub dest_path: PathBuf,
-
-    /// Did the file already exist at the destination.
-    pub existed: bool,
 
     /// Relative path from templates dir. Also acts as the engine name.
     pub name: String,
 
-    /// Should we overwrite an existing file.
-    pub overwrite: bool,
-
     /// Absolute path to source (in templates dir).
     pub source_path: PathBuf,
+
+    /// File state and operation to commit.
+    pub state: FileState,
 }
 
 impl TemplateFile {
-    pub fn should_write(&self) -> bool {
-        if self.existed && !self.overwrite {
-            return false;
+    pub fn load(name: String, source_path: PathBuf) -> Self {
+        TemplateFile {
+            config: None,
+            content: String::new(),
+            dest_path: PathBuf::new(),
+            name,
+            source_path,
+            state: FileState::Create,
         }
-
-        true
     }
 
-    pub fn state(&self) -> FileState {
-        match (self.existed, self.overwrite) {
-            (true, true) => FileState::Replaced,
-            (true, false) => FileState::Skipped,
-            _ => FileState::Created,
+    pub fn is_forced(&self) -> bool {
+        match &self.config {
+            Some(cfg) => cfg.force.unwrap_or_default(),
+            None => false,
         }
+    }
+
+    pub fn is_skipped(&self) -> bool {
+        match &self.config {
+            Some(cfg) => cfg.skip.unwrap_or_default(),
+            None => false,
+        }
+    }
+
+    pub fn set_content<T: AsRef<str>>(
+        &mut self,
+        content: T,
+        dest: &Path,
+    ) -> Result<(), ConfigError> {
+        let content = content.as_ref().trim_start();
+
+        self.dest_path = dest.join(&self.name);
+
+        if content.starts_with("---") {
+            trace!(
+                target: LOG_TARGET,
+                "Found frontmatter in template file {}, extracting",
+                color::file(&self.name),
+            );
+
+            if let Some(fm_end) = &content[4..].find("---") {
+                let end_index = fm_end + 4;
+                let config = TemplateFrontmatterConfig::parse(&content[4..end_index])?;
+
+                if let Some(to) = &config.to {
+                    self.dest_path = dest.join(to);
+                }
+
+                self.config = Some(config);
+                self.content = content[(end_index + 4)..].trim_start().to_owned();
+
+                return Ok(());
+            }
+        }
+
+        self.content = content.to_owned();
+
+        Ok(())
+    }
+
+    pub fn should_write(&self) -> bool {
+        matches!(self.state, FileState::Create) || matches!(self.state, FileState::Replace)
     }
 }
 
@@ -91,8 +146,10 @@ impl Template {
         let mut engine = Tera::default();
         engine.register_filter("camel_case", filters::camel_case);
         engine.register_filter("kebab_case", filters::kebab_case);
+        engine.register_filter("lower_case", filters::lower_case);
         engine.register_filter("pascal_case", filters::pascal_case);
         engine.register_filter("snake_case", filters::snake_case);
+        engine.register_filter("upper_case", filters::upper_case);
         engine.register_filter("upper_kebab_case", filters::upper_kebab_case);
         engine.register_filter("upper_snake_case", filters::upper_snake_case);
 
@@ -123,8 +180,6 @@ impl Template {
             let source_path = entry.path();
             let name =
                 self.interpolate_path(source_path.strip_prefix(&self.root).unwrap(), context)?;
-            let dest_path = dest.join(&name);
-            let existed = dest_path.exists();
 
             self.engine.add_template_file(&source_path, Some(&name))?;
 
@@ -140,57 +195,18 @@ impl Template {
                 color::path(&source_path),
             );
 
-            files.push(TemplateFile {
-                dest_path,
-                existed,
-                name,
-                overwrite: false,
-                source_path,
-            })
+            files.push(TemplateFile::load(name, source_path));
+        }
+
+        // Do a second pass and render the content
+        for file in &mut files {
+            file.set_content(self.engine.render(&file.name, context)?, dest)?;
         }
 
         // Sort so files are deterministic
         files.sort_by(|a, d| a.name.cmp(&d.name));
 
         self.files = files;
-
-        Ok(())
-    }
-
-    /// Render the template file with the provided context, and write it to the file
-    /// system at the defined destination path.
-    pub async fn render_file(
-        &self,
-        file: &TemplateFile,
-        context: &Context,
-    ) -> Result<(), GeneratorError> {
-        match file.state() {
-            FileState::Replaced => {
-                trace!(
-                    target: LOG_TARGET,
-                    "Overwriting template file {} (destination = {})",
-                    color::file(&file.name),
-                    color::path(&file.dest_path)
-                );
-            }
-            _ => {
-                trace!(
-                    target: LOG_TARGET,
-                    "Writing template file {} (destination = {})",
-                    color::file(&file.name),
-                    color::path(&file.dest_path)
-                );
-            }
-        }
-
-        fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
-
-        fs::write(
-            &file.dest_path,
-            // Render the template and interpolate the values
-            self.engine.render(&file.name, context)?,
-        )
-        .await?;
 
         Ok(())
     }
@@ -222,5 +238,32 @@ impl Template {
 
         // Render the path to interpolate the values
         Ok(Tera::default().render_str(&name, context)?)
+    }
+
+    /// Write the template file to the defined destination path.
+    pub async fn write_file(&self, file: &TemplateFile) -> Result<(), GeneratorError> {
+        match file.state {
+            FileState::Replace => {
+                trace!(
+                    target: LOG_TARGET,
+                    "Overwriting template file {} (destination = {})",
+                    color::file(&file.name),
+                    color::path(&file.dest_path)
+                );
+            }
+            _ => {
+                trace!(
+                    target: LOG_TARGET,
+                    "Writing template file {} (destination = {})",
+                    color::file(&file.name),
+                    color::path(&file.dest_path)
+                );
+            }
+        }
+
+        fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
+        fs::write(&file.dest_path, &file.content).await?;
+
+        Ok(())
     }
 }

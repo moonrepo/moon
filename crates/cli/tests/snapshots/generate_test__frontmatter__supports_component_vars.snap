@@ -1,0 +1,9 @@
+---
+source: crates/cli/tests/generate_test.rs
+assertion_line: 285
+expression: "fs::read_to_string(fixture.path().join(\"./test/components/SmallButton.tsx\")).unwrap()"
+---
+export function SmallButton() {
+	return null;
+}
+

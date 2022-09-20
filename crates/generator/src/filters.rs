@@ -32,3 +32,11 @@ pub fn snake_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
 pub fn upper_snake_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
     to_case("upper_snake_case", Case::UpperSnake, value)
 }
+
+pub fn lower_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    to_case("lower_case", Case::Lower, value)
+}
+
+pub fn upper_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
+    to_case("upper_case", Case::Upper, value)
+}

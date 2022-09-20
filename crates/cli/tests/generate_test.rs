@@ -208,3 +208,83 @@ fn supports_custom_filters() {
 
     assert_snapshot!(fs::read_to_string(fixture.path().join("./test/filters.txt")).unwrap());
 }
+
+mod frontmatter {
+    use super::*;
+
+    #[test]
+    fn changes_dest_path() {
+        let fixture = create_sandbox("generator");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("generate")
+            .arg("frontmatter")
+            .arg("./test")
+            .arg("--defaults")
+            .assert();
+
+        assert.success();
+
+        assert!(!fixture.path().join("./test/to.txt").exists());
+        assert!(fixture.path().join("./test/to-NEW.txt").exists());
+        assert_snapshot!(fs::read_to_string(fixture.path().join("./test/to-NEW.txt")).unwrap());
+    }
+
+    #[test]
+    fn force_writes_file() {
+        let fixture = create_sandbox("generator");
+
+        fs::create_dir_all(fixture.path().join("test")).unwrap();
+        fs::write(fixture.path().join("test/forced.txt"), "Original content").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("generate")
+            .arg("frontmatter")
+            .arg("./test")
+            .arg("--defaults")
+            .assert();
+
+        assert.success();
+
+        assert_snapshot!(fs::read_to_string(fixture.path().join("./test/forced.txt")).unwrap());
+    }
+
+    #[test]
+    fn skips_over_file() {
+        let fixture = create_sandbox("generator");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("generate")
+            .arg("frontmatter")
+            .arg("./test")
+            .arg("--defaults")
+            .assert();
+
+        assert.success();
+
+        assert!(!fixture.path().join("./test/skipped.txt").exists());
+    }
+
+    #[test]
+    fn supports_component_vars() {
+        let fixture = create_sandbox("generator");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("generate")
+            .arg("frontmatter")
+            .arg("./test")
+            .arg("--defaults")
+            .assert();
+
+        assert.success();
+
+        assert!(fixture
+            .path()
+            .join("./test/components/SmallButton.tsx")
+            .exists());
+        assert_snapshot!(fs::read_to_string(
+            fixture.path().join("./test/components/SmallButton.tsx")
+        )
+        .unwrap());
+    }
+}

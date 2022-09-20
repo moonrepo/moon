@@ -1,3 +1,4 @@
+use moon_config::ConfigError;
 use moon_constants as constants;
 use moon_error::MoonError;
 use std::path::PathBuf;
@@ -20,6 +21,9 @@ pub enum GeneratorError {
 
     #[error("No template with the name <id>{0}</id> could not be found at any of the configured template paths.")]
     MissingTemplate(String),
+
+    #[error(transparent)]
+    Config(#[from] ConfigError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

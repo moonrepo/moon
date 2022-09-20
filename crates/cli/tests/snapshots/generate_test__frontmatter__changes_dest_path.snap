@@ -1,0 +1,7 @@
+---
+source: crates/cli/tests/generate_test.rs
+assertion_line: 230
+expression: "fs::read_to_string(fixture.path().join(\"./test/to-NEW.txt\")).unwrap()"
+---
+Route to a new path!
+

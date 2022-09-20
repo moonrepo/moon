@@ -51,8 +51,7 @@ These files will then be scaffolded 1:1 in structure at the target destination. 
 said, there are a few unique scenarios to be aware of!
 
 - File paths that contain the word "partial" will not be scaffolded. This is to support composition
-  and inheritance between templates using
-  [`{% include ... %}`](https://tera.netlify.app/docs/#include).
+  and inheritance between templates.
 - Variables can be interpolated into file paths using the form `[varName]`. For example, if you had
   a template file `src/[type].ts`, and a variable `type` with a value of "bin", then the destination
   file path would be `src/bin.ts`.
@@ -67,6 +66,53 @@ templates/
 │   ├── package.json
 │   └── template.yml
 └── react-app/
+```
+
+#### Partials
+
+Partials are special template files that are used for
+[composition](https://tera.netlify.app/docs/#include) and
+[inheritance](https://tera.netlify.app/docs/#inheritance). Because of this, these files _should not_
+be generated into the target destination, and do not support frontmatter.
+
+To ensure they are not generated, include the word "partial" anywhere in the file path. For example,
+`partials/header.tpl` or `header.partial.tpl`.
+
+#### Frontmatter
+
+Frontmatter is a well-known concept for "per file configuration", and is achieved by inserting YAML
+at the top of the file, delimited by wrapping `---`. This is a very powerful feature that provides
+more control than the alternatives, and allows for some very cool integrations.
+
+moon's frontmatter supports functionality like file skipping, force overwriting, and destination
+path rewriting.
+[View the configuration docs for a full list of supported fields](../config/template#frontmatter).
+
+```twig title="package.json"
+---
+force: true
+---
+
+{
+  "name": "{{ name | kebab_case }}",
+  "version": "0.0.1"
+}
+```
+
+Since frontmatter exists in the file itself, you can take advantage of the rendering engine to
+populate the field values dynamically. For example, if you're scaffolding a React component, you can
+convert the component name and file name to PascalCase.
+
+```twig
+{% set component_name = name | pascal_case %}
+
+---
+to: components/{{ component_name }}.tsx
+---
+
+export function {{ component_name }}() {
+	return <div />;
+}
 ```
 
 ### Template engine & syntax
@@ -112,7 +158,7 @@ Filters are a mechanism for transforming values during interpolation and are wri
 we also provide the following custom filters:
 
 - Strings - `camel_case`, `pascal_case`, `snake_case`, `upper_snake_case`, `kebab_case`,
-  `upper_kebab_case`
+  `upper_kebab_case`, `lower_case`, `upper_case`
 
 ## Generating code from a template
 

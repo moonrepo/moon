@@ -120,7 +120,9 @@ impl CacheEngine {
         hash: &str,
         project_root: &Path,
         outputs: &[String],
-    ) -> Result<(), MoonError> {
+    ) -> Result<PathBuf, MoonError> {
+        let out_path = self.get_hash_archive_path(hash);
+
         if is_writable() && !outputs.is_empty() {
             // TODO: Remove in v1
             // Old implementation would copy files to a hashed folder,
@@ -132,16 +134,11 @@ impl CacheEngine {
             }
 
             // New implementation uses tar archives! Very cool.
-            tar(
-                project_root,
-                outputs,
-                self.get_hash_archive_path(hash),
-                None,
-            )
-            .map_err(|e| MoonError::Generic(e.to_string()))?;
+            tar(project_root, outputs, &out_path, None)
+                .map_err(|e| MoonError::Generic(e.to_string()))?;
         }
 
-        Ok(())
+        Ok(out_path)
     }
 
     pub async fn create_hash_manifest<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>

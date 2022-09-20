@@ -1,3 +1,4 @@
+use crate::events::{Emitter, RunnerEvent};
 use crate::ActionRunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
@@ -34,6 +35,8 @@ pub enum HydrateFrom {
 pub struct TargetRunner<'a> {
     pub cache: CacheItem<RunTargetState>,
 
+    emitter: &'a Emitter,
+
     project: &'a Project,
 
     stderr: Term,
@@ -50,9 +53,11 @@ impl<'a> TargetRunner<'a> {
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
+        emitter: &'a Emitter,
     ) -> Result<TargetRunner<'a>, MoonError> {
         Ok(TargetRunner {
             cache: workspace.cache.cache_run_target_state(&task.target).await?,
+            emitter,
             project,
             stderr: Term::buffered_stderr(),
             stdout: Term::buffered_stdout(),
@@ -80,10 +85,15 @@ impl<'a> TargetRunner<'a> {
 
             // If so, then cache the archive
             if !hash.is_empty() {
-                self.workspace
+                let archive_path = self
+                    .workspace
                     .cache
                     .create_hash_archive(hash, &self.project.root, &self.task.outputs)
                     .await?;
+
+                self.emitter
+                    .emit(RunnerEvent::TargetOutputArchived(hash, archive_path))
+                    .await;
             }
         }
 
@@ -109,6 +119,10 @@ impl<'a> TargetRunner<'a> {
             .cache
             .hydrate_from_hash_archive(hash, &self.project.root)
             .await?;
+
+        self.emitter
+            .emit(RunnerEvent::TargetOutputHydrated(hash))
+            .await;
 
         // Update the run state with the new hash
         self.cache.save().await?;
@@ -255,6 +269,10 @@ impl<'a> TargetRunner<'a> {
             color::id(&self.task.target)
         );
 
+        self.emitter
+            .emit(RunnerEvent::TargetCheckCache(&hash, &self.task.target))
+            .await;
+
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
         if self.cache.item.hash == hash && self.has_outputs() {
@@ -263,6 +281,10 @@ impl<'a> TargetRunner<'a> {
                 "Cache hit for hash {}, reusing previous build",
                 color::symbol(&hash),
             );
+
+            self.emitter
+                .emit(RunnerEvent::TargetCached(&hash, &self.task.target))
+                .await;
 
             return Ok(Some(HydrateFrom::PreviousOutput));
         }
@@ -283,6 +305,10 @@ impl<'a> TargetRunner<'a> {
                 color::symbol(&hash),
             );
 
+            self.emitter
+                .emit(RunnerEvent::TargetCached(&hash, &self.task.target))
+                .await;
+
             return Ok(Some(HydrateFrom::LocalCache));
         }
 
@@ -291,6 +317,10 @@ impl<'a> TargetRunner<'a> {
             "Cache miss for hash {}, continuing run",
             color::symbol(&hash),
         );
+
+        self.emitter
+            .emit(RunnerEvent::TargetNotCached(&hash, &self.task.target))
+            .await;
 
         Ok(None)
     }
@@ -631,13 +661,14 @@ pub async fn run_target(
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
+    emitter: &Arc<Emitter>,
     target_id: &str,
 ) -> Result<ActionStatus, ActionRunnerError> {
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let workspace = workspace.read().await;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
-    let mut runner = TargetRunner::new(&workspace, &project, task).await?;
+    let mut runner = TargetRunner::new(&workspace, &project, task, &emitter).await?;
 
     debug!(
         target: LOG_TARGET,

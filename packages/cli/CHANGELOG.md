@@ -10,6 +10,12 @@
 - Updated run reports (via `--report`) to include additional information, like the total duration,
   and estimated time savings.
 
+#### ⚙️ Internal
+
+- Windows:
+  - Will always use PowerShell and avoids `cmd.exe` entirely.
+  - Reworked commands that run through PowerShell to pass arguments via stdin.
+
 ## 0.14.1
 
 #### 🐞 Fixes

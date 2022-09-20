@@ -1,10 +1,9 @@
+use crate::shell;
 use crate::{is_ci, is_test_env, path};
-use cached::proc_macro::cached;
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
-use std::env;
-use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
+use std::ffi::{OsStr, OsString};
+use std::path::Path;
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command as TokioCommand;
@@ -12,64 +11,6 @@ use tokio::task;
 
 pub use shell_words::{join as join_args, split as split_args, ParseError as ArgsParseError};
 pub use std::process::{ExitStatus, Output, Stdio};
-
-#[cached]
-fn is_program_on_path(program_name: String) -> bool {
-    let system_path = match env::var_os("PATH") {
-        Some(x) => x,
-        None => return false,
-    };
-
-    for path_dir in env::split_paths(&system_path) {
-        if path_dir.join(&program_name).exists() {
-            return true;
-        }
-    }
-
-    false
-}
-
-// Based on how Node.js executes Windows commands:
-// https://github.com/nodejs/node/blob/master/lib/child_process.js#L572
-fn create_windows_cmd(shell: Option<&str>) -> (String, TokioCommand) {
-    let shell = match shell {
-        Some(sh) => {
-            if sh.ends_with(".exe") {
-                sh.to_owned()
-            } else {
-                format!("{}.exe", sh)
-            }
-        }
-        None => {
-            // https://thinkpowershell.com/decision-to-switch-to-powershell-core-pwsh/
-            if is_program_on_path("pwsh.exe".into()) {
-                "pwsh.exe".into()
-            } else if is_program_on_path("powershell.exe".into()) {
-                "powershell.exe".into()
-            } else {
-                env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".into())
-            }
-        }
-    };
-
-    let mut cmd = TokioCommand::new(&shell);
-
-    if shell.contains("cmd") {
-        cmd.arg("/d");
-        cmd.arg("/s");
-        cmd.arg("/q"); // Hide the script from echoing in the output
-        cmd.arg("/c");
-    } else if shell.contains("power") || shell.contains("pwsh") {
-        cmd.arg("-Command");
-    } else {
-        cmd.arg("-c");
-    }
-
-    (
-        String::from(PathBuf::from(shell).file_name().unwrap().to_string_lossy()),
-        cmd,
-    )
-}
 
 pub fn is_windows_script(bin: &str) -> bool {
     bin.ends_with(".cmd") || bin.ends_with(".bat") || bin.ends_with(".ps1")
@@ -89,7 +30,13 @@ pub struct Command {
     cmd: TokioCommand,
 
     /// Convert non-zero exits to errors.
-    error: bool,
+    error_on_nonzero: bool,
+
+    /// Values to pass to stdin.
+    input: Vec<OsString>,
+
+    /// Arguments will be passed via stdin to the command.
+    pass_args_stdin: bool,
 
     /// Prefix to prepend to all log lines.
     prefix: Option<String>,
@@ -101,20 +48,13 @@ impl Command {
     pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
         let mut bin_name = String::from(bin.as_ref().to_string_lossy());
         let mut cmd;
-
-        // Referencing cmd or powershell directly
-        if bin_name == "cmd"
-            || bin_name == "cmd.exe"
-            || bin_name == "powershell"
-            || bin_name == "powershell.exe"
-            || bin_name == "pwsh"
-            || bin_name == "pwsh.exe"
-        {
-            (bin_name, cmd) = create_windows_cmd(Some(&bin_name));
+        let mut pass_args_stdin = false;
 
         // Referencing a batch script that needs to be ran with a shell
-        } else if is_windows_script(&bin_name) {
-            (bin_name, cmd) = create_windows_cmd(None);
+        if is_windows_script(&bin_name) {
+            pass_args_stdin = true;
+
+            (bin_name, cmd) = shell::create_windows_shell();
             cmd.arg(bin);
 
         // Assume a command exists on the system
@@ -125,13 +65,20 @@ impl Command {
         Command {
             bin: bin_name,
             cmd,
-            error: true,
+            error_on_nonzero: true,
+            input: vec![],
+            pass_args_stdin,
             prefix: None,
         }
     }
 
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {
-        self.cmd.arg(arg);
+        if self.pass_args_stdin {
+            self.input.push(arg.as_ref().into());
+        } else {
+            self.cmd.arg(arg);
+        }
+
         self
     }
 
@@ -140,7 +87,14 @@ impl Command {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        self.cmd.args(args);
+        if self.pass_args_stdin {
+            for arg in args {
+                self.arg(arg);
+            }
+        } else {
+            self.cmd.args(args);
+        }
+
         self
     }
 
@@ -169,6 +123,19 @@ impl Command {
     }
 
     pub async fn exec_capture_output(&mut self) -> Result<Output, MoonError> {
+        // If we have buffered input, execute the process with stdin
+        if !self.input.is_empty() {
+            let input = self
+                .input
+                .iter()
+                .map(|i| i.to_str().unwrap_or_default())
+                .collect::<Vec<_>>()
+                .join(" ");
+
+            return self.exec_capture_output_with_input(&input).await;
+        }
+
+        // Otherwise just execute as-is
         self.log_command_info(None);
 
         let output = self.cmd.output();
@@ -221,7 +188,7 @@ impl Command {
             .await
             .map_err(|e| map_io_to_process_error(e, &self.bin))?;
 
-        if self.error && !status.success() {
+        if self.error_on_nonzero && !status.success() {
             return Err(MoonError::ProcessNonZero(
                 self.bin.clone(),
                 status.code().unwrap_or(-1),
@@ -358,7 +325,7 @@ impl Command {
     }
 
     pub fn no_error_on_failure(&mut self) -> &mut Command {
-        self.error = false;
+        self.error_on_nonzero = false;
         self
     }
 
@@ -397,7 +364,7 @@ impl Command {
     }
 
     fn handle_nonzero_status(&self, output: &Output) -> Result<(), MoonError> {
-        if self.error && !output.status.success() {
+        if self.error_on_nonzero && !output.status.success() {
             return Err(self.output_to_error(output, true));
         }
 
@@ -414,8 +381,8 @@ impl Command {
         let cmd = &self.cmd.as_std();
         let (mut command_line, working_dir) = self.get_command_line();
 
-        if input.is_some() {
-            command_line = format!("{} > {}", input.unwrap().replace('\n', " "), command_line);
+        if let Some(input) = input {
+            command_line = format!("{} - {}", command_line, input.replace('\n', " "));
         }
 
         let mut envs_list = vec![];

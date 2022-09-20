@@ -1,7 +1,11 @@
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
-use moon_generator::{FileState, Template, TemplateContext, TemplateFile};
+use moon_generator::{Template, TemplateContext, TemplateFile};
 use moon_utils::test::get_fixtures_dir;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+fn create_template_file() -> TemplateFile {
+    TemplateFile::load("standard".into(), PathBuf::from("."))
+}
 
 fn create_template() -> Template {
     Template::new(
@@ -130,50 +134,72 @@ mod interpolate_path {
     }
 }
 
-// mod template_files {
-//     use super::*;
+mod set_content {
+    use moon_config::TemplateFrontmatterConfig;
 
-//     fn new_file(dest: &Path) -> TemplateFile {
-//         TemplateFile {
-//             config: None,
-//             content: String::new(),
-//             dest_path: dest.join("folder/nested-file.ts"),
-//             name: "folder/nested-file.ts".into(),
-//             overwrite: false,
-//             source_path: get_fixtures_dir("generator")
-//                 .join("templates/standard/folder/nested-file.ts"),
-//             state: FileState::Created,
-//         }
-//     }
+    use super::*;
 
-//     #[tokio::test]
-//     async fn creates_file() {
-//         let dest = assert_fs::TempDir::new().unwrap();
-//         let file = new_file(dest.path());
+    #[test]
+    fn works_without_frontmatter() {
+        let mut file = create_template_file();
+        file.set_content("Content", &PathBuf::from(".")).unwrap();
 
-//         assert!(file.should_write());
-//         assert_eq!(file.state(), FileState::Created);
-//     }
+        assert_eq!(file.config, None);
+        assert_eq!(file.content, "Content".to_owned());
+    }
 
-//     #[tokio::test]
-//     async fn overwrites_existing_file() {
-//         let dest = assert_fs::TempDir::new().unwrap();
-//         let mut file = new_file(dest.path());
-//         file.existed = true;
-//         file.overwrite = true;
+    #[test]
+    fn works_with_empty_frontmatter() {
+        let mut file = create_template_file();
+        file.set_content("---\n---\nContent", &PathBuf::from("."))
+            .unwrap();
 
-//         assert!(file.should_write());
-//         assert_eq!(file.state(), FileState::Replaced);
-//     }
+        assert_eq!(file.config, Some(TemplateFrontmatterConfig::default()));
+        assert_eq!(file.content, "Content".to_owned());
+    }
 
-//     #[tokio::test]
-//     async fn doesnt_overwrite_existing_file() {
-//         let dest = assert_fs::TempDir::new().unwrap();
-//         let mut file = new_file(dest.path());
-//         file.existed = true;
-//         file.overwrite = false;
+    #[test]
+    fn to_field() {
+        let mut file = create_template_file();
+        file.set_content("---\nto: some/path.txt\n---\n Content", &PathBuf::from("."))
+            .unwrap();
 
-//         assert!(!file.should_write());
-//         assert_eq!(file.state(), FileState::Skipped);
-//     }
-// }
+        assert_eq!(file.config.unwrap().to, Some("some/path.txt".into()));
+        assert_eq!(file.content, "Content".to_owned());
+    }
+
+    #[test]
+    fn to_joins_with_dest() {
+        let mut file = create_template_file();
+        file.set_content(
+            "---\nto: some/path.txt\n---\n  Content",
+            &PathBuf::from("/foo"),
+        )
+        .unwrap();
+
+        assert_eq!(file.dest_path, PathBuf::from("/foo/some/path.txt"));
+        assert_eq!(file.content, "Content".to_owned());
+    }
+
+    #[test]
+    fn force_field() {
+        let mut file = create_template_file();
+        file.set_content("---\nforce: false\n---\nContent", &PathBuf::from("."))
+            .unwrap();
+
+        assert!(!file.is_forced());
+        assert_eq!(file.config.unwrap().force, Some(false));
+        assert_eq!(file.content, "Content".to_owned());
+    }
+
+    #[test]
+    fn skip_field() {
+        let mut file = create_template_file();
+        file.set_content("---\nskip: true\n---\n Content", &PathBuf::from("."))
+            .unwrap();
+
+        assert!(file.is_skipped());
+        assert_eq!(file.config.unwrap().skip, Some(true));
+        assert_eq!(file.content, "Content".to_owned());
+    }
+}

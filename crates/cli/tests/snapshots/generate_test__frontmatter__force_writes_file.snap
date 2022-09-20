@@ -1,0 +1,7 @@
+---
+source: crates/cli/tests/generate_test.rs
+assertion_line: 249
+expression: "fs::read_to_string(fixture.path().join(\"./test/forced.txt\")).unwrap()"
+---
+Always write!
+

@@ -71,24 +71,38 @@ impl TemplateFile {
         }
     }
 
-    pub fn set_content(&mut self, content: String, dest: &Path) -> Result<(), ConfigError> {
+    pub fn set_content<T: AsRef<str>>(
+        &mut self,
+        content: T,
+        dest: &Path,
+    ) -> Result<(), ConfigError> {
+        let content = content.as_ref().trim_start();
+
+        self.dest_path = dest.join(&self.name);
+
         if content.starts_with("---") {
-            if let Some(fm_end) = &content[3..].find("---") {
-                let config = TemplateFrontmatterConfig::parse(&content[3..(fm_end - 1)])?;
+            trace!(
+                target: LOG_TARGET,
+                "Found frontmatter in template file {}, extracting",
+                color::file(&self.name),
+            );
+
+            if let Some(fm_end) = &content[4..].find("---") {
+                let end_index = fm_end + 4;
+                let config = TemplateFrontmatterConfig::parse(&content[4..end_index])?;
 
                 if let Some(to) = &config.to {
                     self.dest_path = dest.join(to);
                 }
 
                 self.config = Some(config);
-                self.content = content[(fm_end + 3)..].to_owned();
+                self.content = content[(end_index + 4)..].trim_start().to_owned();
 
                 return Ok(());
             }
         }
 
-        self.content = content;
-        self.dest_path = dest.join(&self.name);
+        self.content = content.to_owned();
 
         Ok(())
     }
@@ -132,8 +146,10 @@ impl Template {
         let mut engine = Tera::default();
         engine.register_filter("camel_case", filters::camel_case);
         engine.register_filter("kebab_case", filters::kebab_case);
+        engine.register_filter("lower_case", filters::lower_case);
         engine.register_filter("pascal_case", filters::pascal_case);
         engine.register_filter("snake_case", filters::snake_case);
+        engine.register_filter("upper_case", filters::upper_case);
         engine.register_filter("upper_kebab_case", filters::upper_kebab_case);
         engine.register_filter("upper_snake_case", filters::upper_snake_case);
 
@@ -184,7 +200,7 @@ impl Template {
 
         // Do a second pass and render the content
         for file in &mut files {
-            file.set_content(self.engine.render(&file.name, context)?, &dest)?;
+            file.set_content(self.engine.render(&file.name, context)?, dest)?;
         }
 
         // Sort so files are deterministic

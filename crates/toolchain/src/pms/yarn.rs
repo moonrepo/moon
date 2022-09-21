@@ -315,4 +315,28 @@ impl PackageManager<NodeTool> for YarnTool {
 
         Ok(())
     }
+
+    async fn install_focused_dependencies(
+        &self,
+        toolchain: &Toolchain,
+        package_name: &str,
+        production_only: bool,
+    ) -> Result<(), ToolchainError> {
+        let mut cmd = if self.is_v1() {
+            self.create_command().arg("install")
+        } else {
+            self.create_command()
+                .args(["workspaces", "focus", package_name])
+        };
+
+        if production_only {
+            cmd.arg("--production");
+        }
+
+        cmd.cwd(&toolchain.workspace_root)
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
+    }
 }

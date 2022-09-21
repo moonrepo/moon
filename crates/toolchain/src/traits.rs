@@ -257,6 +257,14 @@ pub trait PackageManager<T: Send + Sync>:
     /// Install dependencies for a defined manifest.
     async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
 
+    /// Install dependencies for a single package in the workspace.
+    async fn install_focused_dependencies(
+        &self,
+        toolchain: &Toolchain,
+        package_name: &str,
+        production_only: bool,
+    ) -> Result<(), ToolchainError>;
+
     /// Install the package manager within the tool. Once complete,
     /// trigger the setup hook, and return a count
     /// of how many sub-tools were installed.

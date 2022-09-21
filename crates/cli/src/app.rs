@@ -20,6 +20,12 @@ const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 #[derive(Debug, Subcommand)]
 pub enum DockerCommands {
     #[clap(
+        name = "prune",
+        about = "Remove extraneous files and folders within Dockerfiles."
+    )]
+    Prune,
+
+    #[clap(
         name = "scaffold",
         about = "Scaffold a repository skeleton for use within Dockerfiles."
     )]

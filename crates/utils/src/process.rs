@@ -45,30 +45,29 @@ pub struct Command {
 // but the encapsulation this struct provides is necessary.
 impl Command {
     pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
-        let mut bin_name = String::from(bin.as_ref().to_string_lossy());
-        let mut cmd;
-        let mut pass_args_stdin = false;
+        let bin = bin.as_ref();
+        let bin_name = String::from(bin.to_string_lossy());
+
+        let mut command = Command {
+            bin: bin_name.clone(),
+            cmd: TokioCommand::new(&bin),
+            error_on_nonzero: true,
+            input: vec![],
+            pass_args_stdin: false,
+            prefix: None,
+        };
 
         // Referencing a batch script that needs to be ran with a shell
         if is_windows_script(&bin_name) {
-            pass_args_stdin = true;
+            let (shell_name, cmd) = shell::create_windows_shell();
 
-            (bin_name, cmd) = shell::create_windows_shell();
-            cmd.arg(bin);
-
-        // Assume a command exists on the system
-        } else {
-            cmd = TokioCommand::new(bin);
+            command.bin = shell_name;
+            command.cmd = cmd;
+            command.pass_args_stdin = true;
+            command.arg(bin);
         }
 
-        Command {
-            bin: bin_name,
-            cmd,
-            error_on_nonzero: true,
-            input: vec![],
-            pass_args_stdin,
-            prefix: None,
-        }
+        command
     }
 
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {

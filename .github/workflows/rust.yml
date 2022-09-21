@@ -80,6 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
+        if: ${{ matrix.os != 'windows-latest' }}
         name: Cache cargo
         with:
           path: |

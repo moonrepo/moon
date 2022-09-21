@@ -140,14 +140,16 @@ jobs:
           path: ./report.txt
           if-no-files-found: error
       # Windows is running out of disk space, so this is an attempt to fix that...
-      - name: Cleanup moon toolchain
-        uses: JesseTG/rm@v1.0.3
-        with:
-          path: ${{ env.HOME }}/.moon
-      - name: Cleanup build target
-        uses: JesseTG/rm@v1.0.3
-        with:
-          path: ./target
+      - name: Cleanup environment
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          rm -rf "$HOME/.moon"
+          rm -rf ./target
+      - name: Cleanup environment
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          rmdir /s /q "%homedrive%%homepath%\.moon"
+          rmdir /s /q .\target
   coverage:
     if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
     name: Code coverage

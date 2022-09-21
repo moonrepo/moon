@@ -41,3 +41,4 @@ tests/fixtures/*/.yarn
 # Debug and profiling cruft
 *.profraw
 *profdata
+dockerManifest.json

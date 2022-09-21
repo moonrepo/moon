@@ -261,7 +261,7 @@ pub trait PackageManager<T: Send + Sync>:
     async fn install_focused_dependencies(
         &self,
         toolchain: &Toolchain,
-        package_name: &str,
+        package_names: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError>;
 

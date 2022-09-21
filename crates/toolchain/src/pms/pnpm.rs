@@ -218,4 +218,30 @@ impl PackageManager<NodeTool> for PnpmTool {
 
         Ok(())
     }
+
+    async fn install_focused_dependencies(
+        &self,
+        toolchain: &Toolchain,
+        package_names: &[String],
+        production_only: bool,
+    ) -> Result<(), ToolchainError> {
+        let mut cmd = self.create_command();
+
+        for package_name in package_names {
+            cmd.arg(if production_only {
+                "--filter-prod"
+            } else {
+                "--filter"
+            });
+
+            // https://pnpm.io/filtering#--filter-package_name-1
+            cmd.arg(format!("{}...", package_name));
+        }
+
+        cmd.cwd(&toolchain.workspace_root)
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
+    }
 }

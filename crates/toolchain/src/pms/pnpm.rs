@@ -226,6 +226,7 @@ impl PackageManager<NodeTool> for PnpmTool {
         production_only: bool,
     ) -> Result<(), ToolchainError> {
         let mut cmd = self.create_command();
+        cmd.args(["install"]);
 
         for package_name in package_names {
             cmd.arg(if production_only {

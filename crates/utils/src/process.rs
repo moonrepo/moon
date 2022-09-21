@@ -1,11 +1,11 @@
 use crate::{is_ci, is_test_env, path, shell};
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command as TokioCommand;
+use tokio::process::{Child, Command as TokioCommand};
 use tokio::task;
 
 pub use shell_words::{join as join_args, split as split_args, ParseError as ArgsParseError};
@@ -23,6 +23,7 @@ pub fn output_to_trimmed_string(data: &[u8]) -> String {
     output_to_string(data).trim().to_owned()
 }
 
+#[derive(Debug)]
 pub struct Command {
     bin: String,
 
@@ -32,7 +33,7 @@ pub struct Command {
     error_on_nonzero: bool,
 
     /// Values to pass to stdin.
-    input: Vec<OsString>,
+    input: Vec<u8>,
 
     /// Arguments will be passed via stdin to the command.
     pass_args_stdin: bool,
@@ -46,10 +47,9 @@ pub struct Command {
 impl Command {
     pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
         let bin = bin.as_ref();
-        let bin_name = String::from(bin.to_string_lossy());
 
         let mut command = Command {
-            bin: bin_name.clone(),
+            bin: String::from(bin.to_string_lossy()),
             cmd: TokioCommand::new(&bin),
             error_on_nonzero: true,
             input: vec![],
@@ -57,11 +57,11 @@ impl Command {
             prefix: None,
         };
 
-        // Referencing a batch script that needs to be ran with a shell
-        if is_windows_script(&bin_name) {
-            let (shell_name, cmd) = shell::create_windows_shell();
+        // Referencing a batch script needs to be ran with a shell
+        if is_windows_script(&command.bin) {
+            let (bin_name, cmd) = shell::create_windows_shell();
 
-            command.bin = shell_name;
+            command.bin = bin_name;
             command.cmd = cmd;
             command.pass_args_stdin = true;
             command.arg(bin);
@@ -72,7 +72,9 @@ impl Command {
 
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {
         if self.pass_args_stdin {
-            self.input.push(arg.as_ref().into());
+            self.input
+                .extend(arg.as_ref().to_str().unwrap_or_default().as_bytes());
+            self.input.extend(b" "); // Space between args
         } else {
             self.cmd.arg(arg);
         }
@@ -120,55 +122,32 @@ impl Command {
         self
     }
 
-    pub async fn exec_capture_output(&mut self) -> Result<Output, MoonError> {
-        // If we have buffered input, execute the process with stdin
-        if !self.input.is_empty() {
-            let input = self
-                .input
-                .iter()
-                .map(|i| i.to_str().unwrap_or_default())
-                .collect::<Vec<_>>()
-                .join(" ");
-
-            return self.exec_capture_output_with_input(&input).await;
-        }
-
-        // Otherwise just execute as-is
-        self.log_command_info(None);
-
-        let output = self.cmd.output();
-        let output = output
-            .await
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
-
-        self.handle_nonzero_status(&output)?;
-
-        Ok(output)
+    pub fn input(&mut self, input: &[u8]) -> &mut Command {
+        self.input.extend(input);
+        self
     }
 
-    #[track_caller]
-    pub async fn exec_capture_output_with_input(
-        &mut self,
-        input: &str,
-    ) -> Result<Output, MoonError> {
-        self.log_command_info(Some(input));
+    pub async fn exec_capture_output(&mut self) -> Result<Output, MoonError> {
+        self.log_command_info();
 
-        let mut child = self
-            .cmd
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+        let error_handler = |e| map_io_to_process_error(e, &self.bin);
+        let output: Output;
 
-        let mut stdin = child.stdin.take().unwrap();
-        stdin.write_all(input.as_bytes()).await.unwrap();
-        drop(stdin);
+        if self.input.is_empty() {
+            output = self.cmd.output().await.map_err(error_handler)?;
+        } else {
+            let mut child = self
+                .cmd
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(error_handler)?;
 
-        let output = child
-            .wait_with_output()
-            .await
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+            self.write_input_to_child(&mut child).await?;
+
+            output = child.wait_with_output().await.map_err(error_handler)?;
+        }
 
         self.handle_nonzero_status(&output)?;
 
@@ -176,15 +155,24 @@ impl Command {
     }
 
     pub async fn exec_stream_output(&mut self) -> Result<ExitStatus, MoonError> {
-        self.log_command_info(None);
+        self.log_command_info();
 
-        let status = self
-            .cmd
-            .spawn()
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?
-            .wait()
-            .await
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+        let error_handler = |e| map_io_to_process_error(e, &self.bin);
+        let mut child: Child;
+
+        if self.input.is_empty() {
+            child = self.cmd.spawn().map_err(error_handler)?;
+        } else {
+            child = self
+                .cmd
+                .stdin(Stdio::piped())
+                .spawn()
+                .map_err(error_handler)?;
+
+            self.write_input_to_child(&mut child).await?;
+        };
+
+        let status = child.wait().await.map_err(error_handler)?;
 
         if self.error_on_nonzero && !status.success() {
             return Err(MoonError::ProcessNonZero(
@@ -198,14 +186,21 @@ impl Command {
 
     #[track_caller]
     pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
-        self.log_command_info(None);
+        self.log_command_info();
+
+        let error_handler = |e| map_io_to_process_error(e, &self.bin);
 
         let mut child = self
             .cmd
+            .stdin(Stdio::piped())
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+            .map_err(error_handler)?;
+
+        if !self.input.is_empty() {
+            self.write_input_to_child(&mut child).await?;
+        }
 
         // We need to log the child process output to the parent terminal
         // AND capture stdout/stderr so that we can cache it for future runs.
@@ -271,10 +266,7 @@ impl Command {
         }
 
         // Attempt to capture the child output
-        let mut output = child
-            .wait_with_output()
-            .await
-            .map_err(|e| map_io_to_process_error(e, &self.bin))?;
+        let mut output = child.wait_with_output().await.map_err(error_handler)?;
 
         if output.stderr.is_empty() {
             output.stderr = captured_stderr.read().unwrap().join("\n").into_bytes();
@@ -305,6 +297,12 @@ impl Command {
         };
 
         (path::replace_home_dir(line), cmd.get_current_dir())
+    }
+
+    pub fn get_input_line(&self) -> String {
+        String::from_utf8(self.input.clone())
+                .unwrap_or_default()
+                .replace('\n', " ")
     }
 
     pub fn inherit_colors(&mut self) -> &mut Command {
@@ -370,7 +368,7 @@ impl Command {
     }
 
     #[track_caller]
-    fn log_command_info(&self, input: Option<&str>) {
+    fn log_command_info(&self) {
         // Avoid all this overhead if we're not logging
         if !logging_enabled() {
             return;
@@ -379,8 +377,12 @@ impl Command {
         let cmd = &self.cmd.as_std();
         let (mut command_line, working_dir) = self.get_command_line();
 
-        if let Some(input) = input {
-            command_line = format!("{} - {}", command_line, input.replace('\n', " "));
+        if !self.input.is_empty() {
+            if command_line.ends_with("-") {
+                command_line = format!("{} {}", command_line, self.get_input_line());
+            } else {
+                command_line = format!("{} - {}", command_line, self.get_input_line());
+            }
         }
 
         let mut envs_list = vec![];
@@ -411,5 +413,17 @@ impl Command {
             },
             envs_list.join("")
         );
+    }
+
+    async fn write_input_to_child(&self, child: &mut Child) -> Result<(), MoonError> {
+        let mut stdin = child.stdin.take().unwrap_or_else(|| {
+            panic!("Unable to write stdin: {}", self.get_input_line());
+        });
+
+        stdin.write_all(&self.input).await?;
+
+        drop(stdin);
+
+        Ok(())
     }
 }

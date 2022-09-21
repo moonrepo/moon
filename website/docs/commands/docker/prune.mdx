@@ -1,0 +1,26 @@
+---
+title: prune
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.15" />
+
+The `moon docker prune` command will reduce the overall filesize of the Docker environment by:
+
+- Installing production only dependencies for projects that were scaffolded.
+- Removing extraneous dependencies (`node_modules`, etc) for unfocused projects.
+
+```shell
+$ moon docker prune
+```
+
+> View the official [Docker usage guide](../../guides/docker) for a more in-depth example of how to
+> utilize this command.
+
+:::caution
+
+This command _must be_ ran after [`moon docker scaffold`](./scaffold) and is typically ran within a
+`Dockerfile`!
+
+:::

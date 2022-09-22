@@ -14,9 +14,15 @@ pub enum ActionNode {
 impl ActionNode {
     pub fn label(&self) -> String {
         match self {
-            ActionNode::InstallDeps(platform) => format!("Install{}Deps", platform),
+            ActionNode::InstallDeps(platform) => match platform {
+                SupportedPlatform::Node(version) => format!("InstallNodeDeps({})", version),
+                _ => format!("Install{}Deps", platform),
+            },
             ActionNode::RunTarget(id) => format!("RunTarget({})", id),
-            ActionNode::SetupToolchain(platform) => format!("Setup{}Toolchain", platform),
+            ActionNode::SetupToolchain(platform) => match platform {
+                SupportedPlatform::Node(version) => format!("SetupNodeToolchain({})", version),
+                _ => format!("Setup{}Toolchain", platform),
+            },
             ActionNode::SyncProject(platform, id) => format!("Sync{}Project({})", platform, id),
         }
     }

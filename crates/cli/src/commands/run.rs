@@ -26,7 +26,7 @@ pub async fn run(
     let workspace = load_workspace().await?;
 
     // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_graph = DepGraph::default();
+    let mut dep_graph = DepGraph::default(&workspace.config);
     let touched_files = if options.affected {
         Some(
             query_touched_files(

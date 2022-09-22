@@ -5,7 +5,7 @@ use moon_task::Target;
 pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let projects = workspace.projects;
-    let mut graph = DepGraph::default();
+    let mut graph = DepGraph::default(&workspace.config);
 
     // Preload all projects
     projects.load_all()?;

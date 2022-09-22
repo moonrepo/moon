@@ -1,6 +1,6 @@
 use crate::errors::DepGraphError;
 use crate::node::ActionNode;
-use moon_config::ProjectLanguage;
+use moon_config::{default_node_version, ProjectLanguage, WorkspaceConfig};
 use moon_contract::SupportedPlatform;
 use moon_logger::{color, debug, map_list, trace};
 use moon_project::Project;
@@ -17,13 +17,6 @@ pub use petgraph::graph::NodeIndex;
 
 const LOG_TARGET: &str = "moon:dep-graph";
 
-fn get_platform_from_project(project: &Project) -> SupportedPlatform {
-    match &project.config.language {
-        ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => SupportedPlatform::Node,
-        _ => SupportedPlatform::System,
-    }
-}
-
 pub type DepGraphType = DiGraph<ActionNode, ()>;
 pub type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 
@@ -34,15 +27,18 @@ pub struct DepGraph {
     pub graph: DepGraphType,
 
     indices: HashMap<ActionNode, NodeIndex>,
+
+    workspace_config: WorkspaceConfig,
 }
 
 impl DepGraph {
-    pub fn default() -> Self {
+    pub fn default(workspace_config: &WorkspaceConfig) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         DepGraph {
             graph: Graph::new(),
             indices: HashMap::new(),
+            workspace_config: workspace_config.to_owned(),
         }
     }
 
@@ -66,7 +62,20 @@ impl DepGraph {
         index
     }
 
-    pub fn install_deps(&mut self, platform: SupportedPlatform) -> NodeIndex {
+    #[track_caller]
+    pub fn get_platform_from_project(&self, project: &Project) -> SupportedPlatform {
+        match &project.config.language {
+            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
+                SupportedPlatform::Node(match &self.workspace_config.node {
+                    Some(node) => node.version.to_owned(),
+                    None => default_node_version(),
+                })
+            }
+            _ => SupportedPlatform::System,
+        }
+    }
+
+    pub fn install_deps(&mut self, platform: &SupportedPlatform) -> NodeIndex {
         let node = ActionNode::InstallDeps(platform.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -88,21 +97,10 @@ impl DepGraph {
         install_deps_index
     }
 
-    pub fn install_project_deps(
-        &mut self,
-        project_id: &str,
-        projects: &ProjectGraph,
-    ) -> Result<NodeIndex, DepGraphError> {
-        let project = projects.load(project_id)?;
-        let platform = get_platform_from_project(&project);
-
-        Ok(self.install_deps(platform))
-    }
-
     pub fn run_target<T: AsRef<Target>>(
         &mut self,
         target: T,
-        projects: &ProjectGraph,
+        project_graph: &ProjectGraph,
         touched_files: &Option<TouchedFilePaths>,
     ) -> Result<usize, DepGraphError> {
         let target = target.as_ref();
@@ -112,12 +110,12 @@ impl DepGraph {
         match &target.project {
             // :task
             TargetProjectScope::All => {
-                for project_id in projects.ids() {
-                    let project = projects.load(&project_id)?;
+                for project_id in project_graph.ids() {
+                    let project = project_graph.load(&project_id)?;
 
                     if project.tasks.contains_key(task_id)
                         && self
-                            .insert_target(&project.id, task_id, projects, touched_files)?
+                            .insert_target(task_id, &project, project_graph, touched_files)?
                             .is_some()
                     {
                         inserted_count += 1;
@@ -130,10 +128,10 @@ impl DepGraph {
             }
             // project:task
             TargetProjectScope::Id(project_id) => {
-                let project = projects.load(project_id)?;
+                let project = project_graph.load(project_id)?;
 
                 if self
-                    .insert_target(&project.id, task_id, projects, touched_files)?
+                    .insert_target(task_id, &project, project_graph, touched_files)?
                     .is_some()
                 {
                     inserted_count += 1;
@@ -151,7 +149,7 @@ impl DepGraph {
     pub fn run_target_dependents<T: AsRef<Target>>(
         &mut self,
         target: T,
-        projects: &ProjectGraph,
+        project_graph: &ProjectGraph,
     ) -> Result<(), DepGraphError> {
         let target = target.as_ref();
 
@@ -162,14 +160,14 @@ impl DepGraph {
         );
 
         let (project_id, task_id) = target.ids()?;
-        let project = projects.load(&project_id)?;
-        let dependents = projects.get_dependents_of(&project)?;
+        let project = project_graph.load(&project_id)?;
+        let dependents = project_graph.get_dependents_of(&project)?;
 
         for dependent_id in dependents {
-            let dependent = projects.load(&dependent_id)?;
+            let dependent = project_graph.load(&dependent_id)?;
 
             if dependent.tasks.contains_key(&task_id) {
-                self.run_target(Target::new(&dependent_id, &task_id)?, projects, &None)?;
+                self.run_target(Target::new(&dependent_id, &task_id)?, project_graph, &None)?;
             }
         }
 
@@ -179,7 +177,7 @@ impl DepGraph {
     pub fn run_targets_by_id(
         &mut self,
         target_ids: &[String],
-        projects: &ProjectGraph,
+        project_graph: &ProjectGraph,
         touched_files: &Option<TouchedFilePaths>,
     ) -> Result<(Vec<String>, usize), DepGraphError> {
         let mut qualified_targets = vec![];
@@ -192,7 +190,7 @@ impl DepGraph {
             // We do this to resolve any project aliases being used.
             if let Some(project_id) = &target.project_id {
                 qualified_targets.push(
-                    projects
+                    project_graph
                         .load(project_id)?
                         .get_task(&target.task_id)?
                         .target
@@ -201,13 +199,13 @@ impl DepGraph {
             }
 
             // Keep track of how many transitive targets were inserted!
-            inserted_count += self.run_target(target, projects, touched_files)?;
+            inserted_count += self.run_target(target, project_graph, touched_files)?;
         }
 
         Ok((qualified_targets, inserted_count))
     }
 
-    pub fn setup_tool(&mut self, platform: SupportedPlatform) -> NodeIndex {
+    pub fn setup_tool(&mut self, platform: &SupportedPlatform) -> NodeIndex {
         let node = ActionNode::SetupToolchain(platform.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -295,11 +293,10 @@ impl DepGraph {
 
     pub fn sync_project(
         &mut self,
-        project_id: &str,
-        projects: &ProjectGraph,
+        platform: &SupportedPlatform,
+        project: &Project,
+        project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
-        let project = projects.load(project_id)?;
-        let platform = get_platform_from_project(&project);
         let node = ActionNode::SyncProject(platform.clone(), project.id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -320,8 +317,12 @@ impl DepGraph {
             .add_edge(sync_project_index, setup_toolchain_index, ());
 
         // But we need to wait on all dependent nodes
-        for dep_id in projects.get_dependencies_of(&project)? {
-            let sync_dep_project_index = self.sync_project(&dep_id, projects)?;
+        for dep_id in project_graph.get_dependencies_of(project)? {
+            let dep_project = project_graph.load(&dep_id)?;
+            let dep_platform = self.get_platform_from_project(&dep_project);
+
+            let sync_dep_project_index =
+                self.sync_project(&dep_platform, &dep_project, project_graph)?;
 
             self.graph
                 .add_edge(sync_project_index, sync_dep_project_index, ());
@@ -374,12 +375,11 @@ impl DepGraph {
 
     fn insert_target(
         &mut self,
-        project_id: &str,
         task_id: &str,
-        projects: &ProjectGraph,
+        project: &Project,
+        project_graph: &ProjectGraph,
         touched_files: &Option<TouchedFilePaths>,
     ) -> Result<Option<NodeIndex>, DepGraphError> {
-        let project = projects.load(project_id)?;
         let target_id = Target::format(&project.id, task_id)?;
         let node = ActionNode::RunTarget(target_id.clone());
 
@@ -408,8 +408,9 @@ impl DepGraph {
         );
 
         // We should install deps & sync projects *before* running targets
-        let install_deps_index = self.install_project_deps(&project.id, projects)?;
-        let sync_project_index = self.sync_project(&project.id, projects)?;
+        let platform = self.get_platform_from_project(project);
+        let install_deps_index = self.install_deps(&platform);
+        let sync_project_index = self.sync_project(&platform, project, project_graph)?;
         let run_target_index = self.get_or_insert_node(node);
 
         self.graph
@@ -433,11 +434,12 @@ impl DepGraph {
 
             for dep_target_id in &task.deps {
                 let dep_target = Target::parse(dep_target_id)?;
+                let dep_project = project_graph.load(&dep_target.project_id.unwrap())?;
 
                 if let Some(run_dep_target_index) = self.insert_target(
-                    &dep_target.project_id.unwrap(),
                     &dep_target.task_id,
-                    projects,
+                    &dep_project,
+                    project_graph,
                     touched_files,
                 )? {
                     // When parallel, parent depends on child

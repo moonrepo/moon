@@ -56,14 +56,14 @@ pub trait Platformable {
 
 #[derive(Clone, Eq, PartialEq)]
 pub enum SupportedPlatform {
-    Node,
+    Node(String),
     System,
 }
 
 impl SupportedPlatform {
     pub fn label(&self) -> String {
         match self {
-            SupportedPlatform::Node => "Node.js".into(),
+            SupportedPlatform::Node(version) => format!("Node.js v{}", version),
             SupportedPlatform::System => "system".into(),
         }
     }
@@ -72,7 +72,7 @@ impl SupportedPlatform {
 impl fmt::Display for SupportedPlatform {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SupportedPlatform::Node => write!(f, "Node"),
+            SupportedPlatform::Node(_) => write!(f, "Node"),
             SupportedPlatform::System => write!(f, "System"),
         }
     }

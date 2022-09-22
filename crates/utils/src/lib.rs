@@ -4,6 +4,7 @@ pub mod path;
 pub mod process;
 pub mod regex;
 pub mod semver;
+pub mod shell;
 pub mod test;
 pub mod time;
 

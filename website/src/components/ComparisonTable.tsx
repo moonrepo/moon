@@ -126,9 +126,9 @@ const projectsRows: Comparison[] = [
 	{
 		feature: 'Dependencies on other projects',
 		support: {
-			moon: [SUPPORTED, 'explicitly defined or migrated from `package.json`'],
-			nx: [SUPPORTED, 'inferred from `package.json` or via `implicitDependencies`'],
-			turborepo: [SUPPORTED, 'inferred from `package.json`'],
+			moon: [SUPPORTED, 'implicit from `package.json` or explicit in `moon.yml`'],
+			nx: [SUPPORTED, 'implicit from `package.json` or explicit in `project.json`'],
+			turborepo: [SUPPORTED, 'implicit from `package.json`'],
 		},
 	},
 	{
@@ -426,6 +426,12 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: [SUPPORTED, 'via `template.yml`'],
 			nx: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Template files support frontmatter',
+		support: {
+			moon: SUPPORTED,
 		},
 	},
 	{

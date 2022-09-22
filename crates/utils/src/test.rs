@@ -24,10 +24,10 @@ where
     }
 }
 
-pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> assert_fs::fixture::TempDir {
+pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> assert_fs::TempDir {
     use assert_fs::prelude::*;
 
-    let temp_dir = assert_fs::fixture::TempDir::new().unwrap();
+    let temp_dir = assert_fs::TempDir::new().unwrap();
 
     temp_dir
         .copy_from(get_fixtures_dir(fixture), &["**/*"])
@@ -40,8 +40,15 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> assert_fs::fixture::TempDir 
     temp_dir
 }
 
-pub fn create_sandbox_with_git<T: AsRef<str>>(fixture: T) -> assert_fs::fixture::TempDir {
+pub fn create_sandbox_with_git<T: AsRef<str>>(fixture: T) -> assert_fs::TempDir {
+    use assert_fs::prelude::*;
+
     let temp_dir = create_sandbox(fixture);
+
+    temp_dir
+        .child(".gitignore")
+        .write_str("node_modules")
+        .unwrap();
 
     // Initialize a git repo so that VCS commands work
     run_git_command(temp_dir.path(), |cmd| {
@@ -147,7 +154,7 @@ pub fn debug_sandbox_files(dir: &Path) {
     }
 }
 
-pub fn debug_sandbox(fixture: &assert_fs::fixture::TempDir, assert: &assert_cmd::assert::Assert) {
+pub fn debug_sandbox(fixture: &assert_fs::TempDir, assert: &assert_cmd::assert::Assert) {
     // List all files in the sandbox
     println!("sandbox:");
     debug_sandbox_files(fixture.path());

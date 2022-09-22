@@ -26,7 +26,7 @@ reqwest = { version = "0.11.11", features = [
 schemars = "0.8.10"
 serde = { version = "1.0.144", features = ["derive"] }
 serde_json = { version = "1.0.85", features = ["preserve_order"] }
-serde_yaml = "0.9.11"
+serde_yaml = "0.9.13"
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = { workspace = true }
 validator = { version = "0.16.0", features = ["derive"] }

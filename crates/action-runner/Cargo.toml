@@ -30,4 +30,4 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
-insta = "1.19.1"
+insta = "1.20.0"

@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 regex = "1.6.0"
 serde_json = { version = "1.0.85", default-features = false }
-serde_yaml = { version = "0.9.11", default-features = false }
+serde_yaml = { version = "0.9.13", default-features = false }
 thiserror = { workspace = true }

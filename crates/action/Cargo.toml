@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 moon_utils = { path = "../utils" }
-clap = { version = "3.2.21", features = ["derive"] }
+clap = { version = "3.2.22", features = ["derive"] }
 serde = { version = "1.0.144", features = ["derive"] }

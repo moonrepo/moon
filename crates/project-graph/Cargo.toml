@@ -17,5 +17,5 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 moon_platform_node = { path = "../platform-node" }
-insta = "1.19.1"
+insta = "1.20.0"
 tokio = { workspace = true, features = ["test-util"] }

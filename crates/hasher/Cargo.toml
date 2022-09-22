@@ -8,4 +8,4 @@ moon_error = { path = "../error" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 serde = { version = "1.0.144", features = ["derive"] }
-sha2 = "0.10.5"
+sha2 = "0.10.6"

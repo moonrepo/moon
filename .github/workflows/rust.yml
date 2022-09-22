@@ -93,18 +93,24 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
           toolchain: 1.63.0
           profile: minimal
           components: llvm-tools-preview
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
       - uses: actions-rs/cargo@v1
         if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Install grcov
         with:
           command: install
           args: --force grcov
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
       - uses: actions-rs/cargo@v1
         if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Build debug binary
@@ -112,6 +118,8 @@ jobs:
           command: build
         env:
           RUSTFLAGS: -Cinstrument-coverage
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
       - uses: marcopolo/cargo@master
         name: Setup moon toolchain
         env:
@@ -120,6 +128,8 @@ jobs:
           command: run
           args: -- --log debug setup
           working-directory: ./tests/fixtures/cases
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
       - uses: actions-rs/cargo@v1
         if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Run tests with coverage
@@ -135,10 +145,14 @@ jobs:
         with:
           command: test
           args: --workspace
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
       - name: Generate code coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: |
           grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
       - uses: actions/upload-artifact@v2
         if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Upload coverage report
@@ -146,6 +160,8 @@ jobs:
           name: coverage-${{ matrix.os }}
           path: ./report.txt
           if-no-files-found: error
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
   coverage:
     if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
     name: Code coverage

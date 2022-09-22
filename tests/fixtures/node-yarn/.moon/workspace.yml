@@ -8,3 +8,4 @@ node:
 
 projects:
   yarn: yarn
+  other: other

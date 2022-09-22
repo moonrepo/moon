@@ -329,6 +329,14 @@ impl PackageManager<NodeTool> for YarnTool {
         } else {
             cmd.args(["workspaces", "focus"]);
             cmd.args(package_names);
+
+            let workspace_plugin = toolchain
+                .workspace_root
+                .join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
+
+            if !workspace_plugin.exists() {
+                return Err(ToolchainError::RequiresYarnWorkspacesPlugin);
+            }
         };
 
         if production_only {

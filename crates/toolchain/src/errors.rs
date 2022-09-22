@@ -17,6 +17,9 @@ pub enum ToolchainError {
     #[error("Node.js has not been configured or installed, unable to proceed.")]
     RequiresNode,
 
+    #[error("This functionality requires workspace tools. Install it with <shell>yarn plugin import workspace-tools</shell>.")]
+    RequiresYarnWorkspacesPlugin,
+
     #[error(transparent)]
     Archive(#[from] ArchiveError),
 

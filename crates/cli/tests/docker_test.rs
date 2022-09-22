@@ -1,4 +1,21 @@
-use moon_utils::test::{create_moon_command, create_sandbox_with_git};
+use moon_cli::commands::docker::DockerManifest;
+use moon_utils::test::{
+    create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
+};
+use predicates::prelude::*;
+use std::{collections::HashSet, fs, path::Path};
+
+fn write_manifest(path: &Path, id: &str) {
+    fs::write(
+        path.join("dockerManifest.json"),
+        serde_json::to_string(&DockerManifest {
+            focused_projects: HashSet::from([id.to_owned()]),
+            unfocused_projects: HashSet::new(),
+        })
+        .unwrap(),
+    )
+    .unwrap()
+}
 
 mod scaffold_workspace {
     use super::*;
@@ -187,5 +204,127 @@ mod scaffold_sources {
 
         // Check that some others DO NOT exist
         assert!(!docker.join("node/cwd.js").exists());
+    }
+}
+
+mod prune {
+    use super::*;
+
+    #[test]
+    fn errors_missing_manifest() {
+        let fixture = create_sandbox("node");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("docker")
+            .arg("prune")
+            .assert();
+
+        assert!(
+            predicate::str::contains("Unable to prune, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?")
+                .eval(&get_assert_output(&assert))
+        );
+    }
+}
+
+mod prune_node {
+    use super::*;
+
+    #[test]
+    fn focuses_for_npm() {
+        let fixture = create_sandbox("node-npm");
+
+        write_manifest(fixture.path(), "other");
+
+        create_moon_command(fixture.path())
+            .arg("docker")
+            .arg("prune")
+            .assert();
+
+        // should exist
+        assert!(fixture.path().join("node_modules/solid-js").exists());
+
+        // should not exist
+        assert!(!fixture.path().join("npm/node_modules").exists());
+        assert!(!fixture
+            .path()
+            .join("node_modules/babel-preset-solid")
+            .exists());
+
+        // npm installs prod deps for unfocused
+        // assert!(!fixture.path().join("node_modules/react").exists());
+    }
+
+    #[test]
+    fn focuses_for_pnpm() {
+        let fixture = create_sandbox("node-pnpm");
+
+        write_manifest(fixture.path(), "other");
+
+        create_moon_command(fixture.path())
+            .arg("docker")
+            .arg("prune")
+            .assert();
+
+        // should exist
+        assert!(fixture.path().join("other/node_modules/solid-js").exists());
+
+        // should not exist
+        assert!(!fixture.path().join("pnpm/node_modules").exists());
+        assert!(!fixture
+            .path()
+            .join("node_modules/babel-preset-solid")
+            .exists());
+        assert!(!fixture.path().join("node_modules/react").exists());
+    }
+
+    #[test]
+    fn focuses_for_yarn() {
+        let fixture = create_sandbox("node-yarn");
+
+        write_manifest(fixture.path(), "other");
+
+        // Need to install deps
+        create_moon_command(fixture.path()).arg("setup").assert();
+
+        create_moon_command(fixture.path())
+            .arg("docker")
+            .arg("prune")
+            .assert();
+
+        // should exist
+        assert!(fixture.path().join("node_modules/solid-js").exists());
+
+        // should not exist
+        assert!(!fixture.path().join("npm/node_modules").exists());
+        assert!(!fixture
+            .path()
+            .join("node_modules/babel-preset-solid")
+            .exists());
+        assert!(!fixture.path().join("node_modules/react").exists());
+    }
+
+    #[test]
+    fn focuses_for_yarn1() {
+        let fixture = create_sandbox("node-yarn1");
+
+        write_manifest(fixture.path(), "other");
+
+        create_moon_command(fixture.path())
+            .arg("docker")
+            .arg("prune")
+            .assert();
+
+        // should exist
+        assert!(fixture.path().join("node_modules/solid-js").exists());
+
+        // should not exist
+        assert!(!fixture.path().join("yarn/node_modules").exists());
+        assert!(!fixture
+            .path()
+            .join("node_modules/babel-preset-solid")
+            .exists());
+
+        // yarn 1 does not support focusing
+        // assert!(!fixture.path().join("node_modules/react").exists());
     }
 }

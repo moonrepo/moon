@@ -12,7 +12,6 @@ pub async fn prune_node(
     manifest: &DockerManifest,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let toolchain = &workspace.toolchain;
-    let mut futures = vec![];
     let mut package_names = vec![];
 
     for project_id in &manifest.focused_projects {
@@ -25,6 +24,17 @@ pub async fn prune_node(
         }
     }
 
+    // Some package managers do not delete stale node modules
+    let mut futures = vec![fs::remove_dir_all(workspace.root.join(NODE.vendor_dir))];
+
+    for project_source in workspace.projects.projects_map.values() {
+        futures.push(fs::remove_dir_all(
+            workspace.root.join(project_source).join(NODE.vendor_dir),
+        ));
+    }
+
+    try_join_all(futures).await?;
+
     // Install production only dependencies for focused projects
     toolchain
         .get_node()?
@@ -33,6 +43,8 @@ pub async fn prune_node(
         .await?;
 
     // Remove extraneous node module folders for unfocused projects
+    let mut futures = vec![];
+
     for project_id in &manifest.unfocused_projects {
         if let Some(project_source) = workspace.projects.projects_map.get(project_id) {
             futures.push(fs::remove_dir_all(

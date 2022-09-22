@@ -17,7 +17,7 @@ on:
       - rust-toolchain.toml
 env:
   # Windows fails to compile right now...
-  WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+  WITH_COVERAGE: 'true'
 jobs:
   format:
     name: Format
@@ -81,6 +81,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: false
     steps:
+      - if: ${{ runner.os == 'Windows' }}
+        run: Get-PSDrive
       - uses: actions/checkout@v3
       - uses: actions/cache@v3
         name: Cache cargo
@@ -98,13 +100,13 @@ jobs:
           profile: minimal
           components: llvm-tools-preview
       - uses: actions-rs/cargo@v1
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Install grcov
         with:
           command: install
           args: --force grcov
       - uses: actions-rs/cargo@v1
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Build debug binary
         with:
           command: build
@@ -119,7 +121,7 @@ jobs:
           args: -- --log debug setup
           working-directory: ./tests/fixtures/cases
       - uses: actions-rs/cargo@v1
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Run tests with coverage
         with:
           command: test
@@ -128,17 +130,17 @@ jobs:
           RUSTFLAGS: -Cinstrument-coverage
           LLVM_PROFILE_FILE: ${{ github.workspace }}/moon-%p-%m.profraw
       - uses: actions-rs/cargo@v1
-        if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
+        if: ${{ env.WITH_COVERAGE == 'false' }}
         name: Run tests
         with:
           command: test
           args: --workspace
       - name: Generate code coverage
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         run: |
           grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
       - uses: actions/upload-artifact@v2
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}

@@ -7,4 +7,4 @@ edition = "2021"
 regex = "1.6.0"
 serde_json = { version = "1.0.85", default-features = false }
 serde_yaml = { version = "0.9.11", default-features = false }
-thiserror = "1.0.35"
+thiserror = { workspace = true }

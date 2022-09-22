@@ -45,7 +45,7 @@ serde_json = "1.0.85"
 serde_yaml = "0.9.11"
 strum = { version = "0.24.1", features = ["derive"] }
 tera = { version = "1.17.0", features = ["preserve_order"] }
-tokio = { version = "1.21.1", features = ["full"] }
+tokio = { workspace = true }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }

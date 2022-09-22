@@ -12,6 +12,7 @@
 
 #### ⚙️ Internal
 
+- Updated Rust to v1.64.
 - Windows:
   - Will always use PowerShell and avoids `cmd.exe` entirely.
   - Reworked commands that run through PowerShell to pass arguments via stdin.

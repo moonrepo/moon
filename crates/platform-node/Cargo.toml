@@ -20,7 +20,7 @@ moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 lazy_static = "1.4.0"
 serde = { version = "1.0.144", features = ["derive"] }
-tokio = { version = "1.21.1", features = ["full"] }
+tokio = { workspace = true }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }

@@ -10,4 +10,4 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-serde = { version = "1.0.144", features = ["derive"] }
+serde = { workspace = true }

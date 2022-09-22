@@ -19,7 +19,7 @@ moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 lazy_static = "1.4.0"
-serde = { version = "1.0.144", features = ["derive"] }
+serde = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]

@@ -68,6 +68,7 @@ mod extends {
                     dedupe_on_lockfile_change: false,
                     package_manager: NodePackageManager::Yarn,
                     yarn: Some(YarnConfig {
+                        plugins: None,
                         version: "3.0.0".into()
                     }),
                     ..NodeConfig::default()

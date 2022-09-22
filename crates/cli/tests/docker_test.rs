@@ -235,6 +235,9 @@ mod prune_node {
 
         write_manifest(fixture.path(), "other");
 
+        // Need to install deps
+        create_moon_command(fixture.path()).arg("setup").assert();
+
         create_moon_command(fixture.path())
             .arg("docker")
             .arg("prune")
@@ -259,6 +262,9 @@ mod prune_node {
         let fixture = create_sandbox("node-pnpm");
 
         write_manifest(fixture.path(), "other");
+
+        // Need to install deps
+        create_moon_command(fixture.path()).arg("setup").assert();
 
         create_moon_command(fixture.path())
             .arg("docker")
@@ -308,6 +314,9 @@ mod prune_node {
         let fixture = create_sandbox("node-yarn1");
 
         write_manifest(fixture.path(), "other");
+
+        // Need to install deps
+        create_moon_command(fixture.path()).arg("setup").assert();
 
         create_moon_command(fixture.path())
             .arg("docker")

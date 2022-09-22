@@ -4,7 +4,7 @@ assertion_line: 512
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label="SetupNodeToolchain(16.16.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    0 [ label="SetupNodeToolchain(16.17.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 [ label="SyncNodeProject(advanced)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 -> 0 [ arrowhead=box, arrowtail=box]
 }

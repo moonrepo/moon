@@ -300,8 +300,8 @@ impl Command {
 
     pub fn get_input_line(&self) -> String {
         String::from_utf8(self.input.clone())
-                .unwrap_or_default()
-                .replace('\n', " ")
+            .unwrap_or_default()
+            .replace('\n', " ")
     }
 
     pub fn inherit_colors(&mut self) -> &mut Command {
@@ -377,7 +377,7 @@ impl Command {
         let (mut command_line, working_dir) = self.get_command_line();
 
         if !self.input.is_empty() {
-            if command_line.ends_with("-") {
+            if command_line.ends_with('-') {
                 command_line = format!("{} {}", command_line, self.get_input_line());
             } else {
                 command_line = format!("{} - {}", command_line, self.get_input_line());

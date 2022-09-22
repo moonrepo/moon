@@ -78,6 +78,15 @@ impl Lifecycle<NodeTool> for YarnTool {
                 .args(["set", "version", &self.config.version])
                 .exec_capture_output()
                 .await?;
+
+            if let Some(plugins) = &self.config.plugins {
+                for plugin in plugins {
+                    self.create_command()
+                        .args(["plugin", "import", plugin])
+                        .exec_capture_output()
+                        .await?;
+                }
+            }
         }
 
         Ok(1)

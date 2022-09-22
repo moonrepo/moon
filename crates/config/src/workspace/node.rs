@@ -136,6 +136,8 @@ impl Default for PnpmConfig {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct YarnConfig {
+    pub plugins: Option<Vec<String>>,
+
     #[validate(custom = "validate_yarn_version")]
     pub version: String,
 }
@@ -143,6 +145,7 @@ pub struct YarnConfig {
 impl Default for YarnConfig {
     fn default() -> Self {
         YarnConfig {
+            plugins: None,
             version: default_yarn_version(),
         }
     }

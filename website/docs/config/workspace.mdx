@@ -149,6 +149,25 @@ node:
 > Version can be overridden with the `MOON_NPM_VERSION`, `MOON_PNPM_VERSION`, or `MOON_YARN_VERSION`
 > environment variables.
 
+### `yarn`
+
+#### `plugins`
+
+> `string[]`
+
+A list of plugins that will automatically be imported using `yarn plugin import` (Yarn 2+ only). For
+performance reasons, plugins will only be imported when the Yarn version changes.
+
+```yaml title=".moon/workspace.yml" {4}
+node:
+  packageManager: 'yarn'
+  yarn:
+    version: '3.1.0'
+    plugins:
+      - 'interactive-tools'
+      - 'workspace-tools'
+```
+
 ### `addEnginesConstraint`
 
 > `boolean`

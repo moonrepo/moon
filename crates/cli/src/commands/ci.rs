@@ -137,7 +137,7 @@ fn generate_dep_graph(
 ) -> Result<DepGraph, DepGraphError> {
     print_header("Generating dependency graph");
 
-    let mut dep_graph = DepGraph::default();
+    let mut dep_graph = DepGraph::default(&workspace.config);
 
     for target in targets {
         // Run the target and its dependencies

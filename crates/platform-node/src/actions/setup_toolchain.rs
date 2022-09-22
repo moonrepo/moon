@@ -14,8 +14,12 @@ pub async fn setup_toolchain(
     _action: &mut Action,
     _context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
+    version: &str,
 ) -> Result<ActionStatus, WorkspaceError> {
-    debug!(target: LOG_TARGET, "Setting up Node.js toolchain",);
+    debug!(
+        target: LOG_TARGET,
+        "Setting up Node.js v{} toolchain", version
+    );
 
     let mut workspace = workspace.write().await;
     let mut cache = workspace.cache.cache_workspace_state().await?;

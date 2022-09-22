@@ -29,7 +29,7 @@ async fn run_action(
 ) -> Result<(), ActionRunnerError> {
     let result = match node {
         ActionNode::InstallDeps(platform) => match platform {
-            SupportedPlatform::Node => node_actions::install_deps(action, context, workspace)
+            SupportedPlatform::Node(_) => node_actions::install_deps(action, context, workspace)
                 .await
                 .map_err(ActionRunnerError::Workspace),
             _ => Ok(ActionStatus::Passed),
@@ -40,14 +40,16 @@ async fn run_action(
         }
 
         ActionNode::SetupToolchain(platform) => match platform {
-            SupportedPlatform::Node => node_actions::setup_toolchain(action, context, workspace)
-                .await
-                .map_err(ActionRunnerError::Workspace),
+            SupportedPlatform::Node(version) => {
+                node_actions::setup_toolchain(action, context, workspace, version)
+                    .await
+                    .map_err(ActionRunnerError::Workspace)
+            }
             _ => Ok(ActionStatus::Passed),
         },
 
         ActionNode::SyncProject(platform, project_id) => match platform {
-            SupportedPlatform::Node => {
+            SupportedPlatform::Node(_) => {
                 node_actions::sync_project(action, context, workspace, project_id)
                     .await
                     .map_err(ActionRunnerError::Workspace)

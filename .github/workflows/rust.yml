@@ -36,7 +36,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
-          toolchain: 1.63.0
+          toolchain: 1.64.0
           profile: minimal
           components: rustfmt
       - uses: actions-rs/cargo@v1
@@ -65,7 +65,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
-          toolchain: 1.63.0
+          toolchain: 1.64.0
           profile: minimal
           components: clippy
       - uses: actions-rs/cargo@v1
@@ -94,7 +94,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
-          toolchain: 1.63.0
+          toolchain: 1.64.0
           profile: minimal
           components: llvm-tools-preview
       - uses: actions-rs/cargo@v1

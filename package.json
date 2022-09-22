@@ -1,7 +1,7 @@
 {
   "name": "moon",
   "private": true,
-  "packageManager": "yarn@3.2.0",
+  "packageManager": "yarn@3.2.3",
   "scripts": {
     "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration",
     "docs": "cargo run -- run website:start",

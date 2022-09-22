@@ -6,7 +6,7 @@ expression: graph.to_dot()
 digraph {
     0 [ label="SetupSystemToolchain" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 [ label="SyncSystemProject(noConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    2 [ label="SetupNodeToolchain(16.16.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="SetupNodeToolchain(16.17.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     3 [ label="SyncNodeProject(tasks)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 -> 0 [ arrowhead=box, arrowtail=box]
     3 -> 2 [ arrowhead=box, arrowtail=box]

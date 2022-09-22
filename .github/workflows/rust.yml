@@ -15,6 +15,11 @@ on:
       - Cargo.toml
       - Makefile.toml
       - rust-toolchain.toml
+env:
+  # Windows fails to compile right now...
+  WITH_COVERAGE:
+    ${{ runner.os != 'Windows' && (contains(github.head_ref, 'develop-') || endsWith(github.ref,
+    'master')) }}
 jobs:
   format:
     name: Format
@@ -95,13 +100,13 @@ jobs:
           profile: minimal
           components: llvm-tools-preview
       - uses: actions-rs/cargo@v1
-        if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Install grcov
         with:
           command: install
           args: --force grcov
       - uses: actions-rs/cargo@v1
-        if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Build debug binary
         with:
           command: build
@@ -116,42 +121,33 @@ jobs:
           args: -- --log debug setup
           working-directory: ./tests/fixtures/cases
       - uses: actions-rs/cargo@v1
-        name: Run tests
+        if: ${{ env.WITH_COVERAGE == 'true' }}
+        name: Run tests with coverage
         with:
           command: test
           args: --workspace
         env:
           RUSTFLAGS: -Cinstrument-coverage
           LLVM_PROFILE_FILE: ${{ github.workspace }}/moon-%p-%m.profraw
-      # Windows fails to compile right now...
+      - uses: actions-rs/cargo@v1
+        if: ${{ env.WITH_COVERAGE == 'false' }}
+        name: Run tests
+        with:
+          command: test
+          args: --workspace
       - name: Generate code coverage
-        if:
-          ${{ matrix.os != 'windows-latest' && (contains(github.head_ref, 'develop-') ||
-          endsWith(github.ref, 'master')) }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         run: |
           grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
       - uses: actions/upload-artifact@v2
-        if:
-          ${{ matrix.os != 'windows-latest' && (contains(github.head_ref, 'develop-') ||
-          endsWith(github.ref, 'master')) }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}
           path: ./report.txt
           if-no-files-found: error
-      # Windows is running out of disk space, so this is an attempt to fix that...
-      - name: Cleanup environment
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: |
-          rm -rf "$HOME/.moon"
-          rm -rf ./target
-      - name: Cleanup environment
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: |
-          rmdir /s /q "%homedrive%%homepath%\.moon"
-          rmdir /s /q .\target
   coverage:
-    if: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+    if: ${{ env.WITH_COVERAGE == 'true' }}
     name: Code coverage
     runs-on: ubuntu-latest
     needs:

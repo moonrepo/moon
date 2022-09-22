@@ -13,6 +13,10 @@ node:
   packageManager: 'yarn'
   yarn:
     version: '3.2.3'
+    plugins:
+      - 'interactive-tools'
+      - 'version'
+      - 'workspace-tools'
   addEnginesConstraint: false
   inferTasksFromScripts: false
 

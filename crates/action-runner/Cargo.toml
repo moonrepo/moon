@@ -24,10 +24,10 @@ moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 console = "0.15.1"
 petgraph = "0.6.2"
-serde = { version = "1.0.144", features = ["derive"] }
+serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
-insta = "1.19.1"
+insta = "1.20.0"

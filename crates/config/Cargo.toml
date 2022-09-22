@@ -19,14 +19,14 @@ moon_lang_node = { path = "../lang-node" }
 moon_utils = { path = "../utils" }
 figment = { version = "0.10.7", features = ["test", "yaml"] }
 json = "0.12.4"
-reqwest = { version = "0.11.11", features = [
+reqwest = { version = "0.11.12", features = [
   "blocking",
   "native-tls-vendored",
 ] }
 schemars = "0.8.10"
-serde = { version = "1.0.144", features = ["derive"] }
+serde = { workspace = true }
 serde_json = { version = "1.0.85", features = ["preserve_order"] }
-serde_yaml = "0.9.11"
+serde_yaml = "0.9.13"
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = { workspace = true }
 validator = { version = "0.16.0", features = ["derive"] }

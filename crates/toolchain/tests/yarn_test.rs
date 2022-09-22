@@ -13,6 +13,7 @@ async fn create_yarn_tool() -> (Toolchain, assert_fs::TempDir) {
             version: String::from("1.0.0"),
             package_manager: NodePackageManager::Yarn,
             yarn: Some(YarnConfig {
+                plugins: None,
                 version: String::from("6.0.0"),
             }),
             ..NodeConfig::default()

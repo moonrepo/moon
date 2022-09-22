@@ -7,6 +7,7 @@
 - When running multiple targets in parallel, we've reworked the output prefix to be uniform amongst
   all targets, and to be colored to uniquely identify each target.
 - Added frontmatter support to all template files.
+- Added a `node.yarn.plugins` setting to `.moon/workspace.yml`.
 - Updated run reports (via `--report`) to include additional information, like the total duration,
   and estimated time savings.
 - Updated default versions of tools:

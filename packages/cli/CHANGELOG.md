@@ -9,6 +9,11 @@
 - Added frontmatter support to all template files.
 - Updated run reports (via `--report`) to include additional information, like the total duration,
   and estimated time savings.
+- Updated default versions of tools:
+  - node 16.16.0 -> 16.17.0
+  - npm 8.16.0 -> 8.19.2
+  - pnpm 7.9.0 -> 7.12.1
+  - yarn 3.2.2 -> 3.2.3
 
 #### ⚙️ Internal
 

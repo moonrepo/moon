@@ -61,10 +61,24 @@ impl Lifecycle<NodeTool> for YarnTool {
             color::shell(format!("yarn set version {}", self.config.version))
         );
 
-        self.create_command()
-            .args(["set", "version", &self.config.version])
-            .exec_capture_output()
-            .await?;
+        // We also dont want to *always* run this, so only run it when
+        // we detect different yarn version files in the repo. Also note, we don't
+        // have access to the workspace root here...
+        let root = match env::var("MOON_WORKSPACE_ROOT") {
+            Ok(root) => PathBuf::from(root),
+            Err(_) => env::current_dir().unwrap_or_default(),
+        };
+
+        let yarn_bin = root
+            .join(".yarn/releases")
+            .join(format!("yarn-{}.cjs", self.config.version));
+
+        if !yarn_bin.exists() {
+            self.create_command()
+                .args(["set", "version", &self.config.version])
+                .exec_capture_output()
+                .await?;
+        }
 
         Ok(1)
     }

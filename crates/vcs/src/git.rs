@@ -165,7 +165,8 @@ impl Vcs for Git {
 
         let output = self
             .create_command(vec!["hash-object", "--stdin-paths"])
-            .exec_capture_output_with_input(&objects.join("\n"))
+            .input(objects.join("\n").as_bytes())
+            .exec_capture_output()
             .await?;
         let output = output_to_trimmed_string(&output.stdout);
 

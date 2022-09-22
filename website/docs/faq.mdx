@@ -25,10 +25,11 @@ acronym, as it embraces what moon is trying to solve:
 ### Will moon support other languages besides JavaScript?
 
 Yes! Although we're focusing right now on JavaScript (and TypeScript, Node.js), we've designed moon
-to be language agnostic and easily pluggable in the future.
+to be language agnostic and easily pluggable in the future. If we're to guess which language would
+be next, it would most likely be Ruby to support React Native based applications.
 
-If we're to guess which language would be next, it would most likely be Ruby to support React Native
-based applications.
+With that being said, for languages not supported in our toolchain, you can still execute them
+within at task by setting the [type to system](./config/project#type).
 
 ### Will moon support continuous deployment?
 
@@ -126,6 +127,27 @@ alternatives:
 - Create a task for each command, and run them concurrently with [`moon run`](./commands/run).
 - Wrap all commands in an external file, and execute that file instead. Refer to the
   [piping question](#how-to-pipe-or-redirect-tasks) above for an example.
+
+### How to run tasks in a shell?
+
+By default, all tasks _do not_ run in a shell, as we interact with and execute a tool's binary
+directly within the toolchain. We also provide no built-in support for shells, but that doesn't mean
+you can't use them. Since tasks can execute any commands available on your system, you can implement
+the shell manually like so:
+
+```yaml title="moon.yml"
+tasks:
+  bash:
+    command: 'bash -c some-command'
+    type: 'system'
+  # Windows
+  cmd:
+    command: 'cmd.exe /d /s /c some-command'
+    type: 'system'
+  pwsh:
+    command: 'pwsh.exe -c some-command'
+    type: 'system'
+```
 
 ## JavaScript ecosystem
 

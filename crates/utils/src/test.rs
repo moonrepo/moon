@@ -45,10 +45,12 @@ pub fn create_sandbox_with_git<T: AsRef<str>>(fixture: T) -> assert_fs::TempDir 
 
     let temp_dir = create_sandbox(fixture);
 
-    temp_dir
-        .child(".gitignore")
-        .write_str("node_modules")
-        .unwrap();
+    if !temp_dir.path().join(".gitignore").exists() {
+        temp_dir
+            .child(".gitignore")
+            .write_str("node_modules")
+            .unwrap();
+    }
 
     // Initialize a git repo so that VCS commands work
     run_git_command(temp_dir.path(), |cmd| {

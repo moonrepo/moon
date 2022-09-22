@@ -2,3 +2,7 @@
 resolver = "2"
 members = ["crates/*"]
 default-members = ["crates/cli"]
+
+[workspace.dependencies]
+thiserror = "1.0.35"
+tokio = { version = "1.21.1", features = ["full"] }

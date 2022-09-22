@@ -25,8 +25,8 @@ moon_workspace = { path = "../workspace" }
 console = "0.15.1"
 petgraph = "0.6.2"
 serde = { version = "1.0.144", features = ["derive"] }
-thiserror = "1.0.35"
-tokio = { version = "1.21.1", features = ["full"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }

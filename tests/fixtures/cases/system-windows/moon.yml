@@ -2,46 +2,37 @@ language: bash
 
 tasks:
   bat:
-    command: cmd
-    args: ./standard.bat
+    command: cmd.exe /q /c ./standard.bat
     type: system
   exitNonZero:
-    command: cmd
-    args: ./exitNonZero.bat
+    command: cmd.exe /q /c ./exitNonZero.bat
     type: system
   exitZero:
-    command: cmd.exe
-    args: ./exitZero.bat
+    command: cmd.exe /q /c ./exitZero.bat
     type: system
   passthroughArgs:
-    command: cmd
-    args: ./passthroughArgs.bat
+    command: cmd /q /c ./passthroughArgs.bat
     type: system
   envVars:
-    command: cmd
-    args: ./envVars.bat
+    command: cmd.exe /q /c ./envVars.bat
     env:
       MOON_FOO: abc
       MOON_BAR: '123'
       MOON_BAZ: 'true'
     type: system
   envVarsMoon:
-    command: cmd.exe
-    args: ./envVarsMoon.bat
+    command: cmd /q /c ./envVarsMoon.bat
     type: system
   runFromProject:
-    command: cmd
-    args: ./cwd.bat
+    command: cmd.exe /q /c ./cwd.bat
     type: system
   runFromWorkspace:
-    command: cmd.exe
-    args: ./system-windows/cwd.bat
+    command: cmd /q /c ./system-windows/cwd.bat
     type: system
     options:
       runFromWorkspaceRoot: true
   retryCount:
-    command: cmd
-    args: ./exitNonZero.bat
+    command: cmd.exe /q /c ./exitNonZero.bat
     type: system
     options:
       retryCount: 3

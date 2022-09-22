@@ -23,7 +23,6 @@ pub fn output_to_trimmed_string(data: &[u8]) -> String {
     output_to_string(data).trim().to_owned()
 }
 
-#[derive(Debug)]
 pub struct Command {
     bin: String,
 

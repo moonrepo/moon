@@ -29,17 +29,6 @@ async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<RunnerEmitter>>,
 ) -> Result<(), ActionRunnerError> {
-    {
-        emitter
-            .read()
-            .await
-            .emit(Event::ActionStarted {
-                action: &action,
-                node: &node,
-            })
-            .await?;
-    }
-
     let result = match node {
         ActionNode::InstallDeps(platform) => match platform {
             SupportedPlatform::Node(_) => node_actions::install_deps(action, context, workspace)
@@ -49,7 +38,7 @@ async fn run_action(
         },
 
         ActionNode::RunTarget(target_id) => {
-            actions::run_target(action, context, workspace, Arc::clone(&emitter), target_id).await
+            actions::run_target(action, context, workspace, emitter, target_id).await
         }
 
         ActionNode::SetupToolchain(platform) => match platform {
@@ -87,26 +76,19 @@ async fn run_action(
         }
     }
 
-    {
-        emitter
-            .read()
-            .await
-            .emit(Event::ActionFinished {
-                action: &action,
-                node: &node,
-            })
-            .await?;
-    }
-
     Ok(())
 }
 
 pub struct ActionRunner {
     bail: bool,
 
+    cached_count: u16,
+
     duration: Option<Duration>,
 
-    error_count: u8,
+    failed_count: u16,
+
+    passed_count: u16,
 
     report_name: Option<String>,
 
@@ -119,8 +101,10 @@ impl ActionRunner {
 
         ActionRunner {
             bail: false,
+            cached_count: 0,
             duration: None,
-            error_count: 0,
+            failed_count: 0,
+            passed_count: 0,
             report_name: None,
             workspace: Arc::new(RwLock::new(workspace)),
         }
@@ -142,7 +126,7 @@ impl ActionRunner {
     }
 
     pub fn has_failed(&self) -> bool {
-        self.error_count > 0
+        self.failed_count > 0
     }
 
     pub async fn run(
@@ -165,7 +149,7 @@ impl ActionRunner {
         );
 
         local_emitter
-            .emit(Event::WorkflowStarted {
+            .emit(Event::RunStarted {
                 actions_count: node_count,
             })
             .await?;
@@ -195,14 +179,11 @@ impl ActionRunner {
                 action_handles.push(task::spawn(async move {
                     let mut action = Action::new(node_index.index(), None);
                     let own_graph = graph_clone.read().await;
+                    let own_emitter = emitter_clone.read().await;
 
-                    {
-                        emitter_clone
-                            .read()
-                            .await
-                            .emit(Event::ActionCreated { action: &action })
-                            .await?;
-                    }
+                    own_emitter
+                        .emit(Event::ActionStarted { action: &action })
+                        .await?;
 
                     if let Some(node) = own_graph.get_node_from_index(&node_index) {
                         action.label = Some(node.label());
@@ -222,7 +203,7 @@ impl ActionRunner {
                             &mut action,
                             &context_clone,
                             workspace_clone,
-                            emitter_clone,
+                            Arc::clone(&emitter_clone),
                         )
                         .await?;
 
@@ -241,12 +222,17 @@ impl ActionRunner {
                                 action.duration.unwrap()
                             );
                         }
+
+                        own_emitter
+                            .emit(Event::ActionFinished {
+                                action: &action,
+                                node: &node,
+                            })
+                            .await?;
                     } else {
                         action.status = ActionStatus::Invalid;
 
-                        emitter_clone
-                            .read()
-                            .await
+                        own_emitter
                             .emit(Event::ActionAborted { action: &action })
                             .await?;
 
@@ -272,11 +258,15 @@ impl ActionRunner {
                         }
 
                         if result.has_failed() {
-                            self.error_count += 1;
+                            self.failed_count += 1;
+                        } else if result.was_cached() {
+                            self.cached_count += 1;
+                        } else {
+                            self.passed_count += 1;
                         }
 
                         if self.bail && result.has_failed() || result.should_abort() {
-                            local_emitter.emit(Event::WorkflowAborted).await?;
+                            local_emitter.emit(Event::RunAborted).await?;
 
                             return Err(ActionRunnerError::Failure(result.error.unwrap()));
                         }
@@ -284,12 +274,12 @@ impl ActionRunner {
                         results.push(result);
                     }
                     Ok(Err(e)) => {
-                        local_emitter.emit(Event::WorkflowAborted).await?;
+                        local_emitter.emit(Event::RunAborted).await?;
 
                         return Err(e);
                     }
                     Err(e) => {
-                        local_emitter.emit(Event::WorkflowAborted).await?;
+                        local_emitter.emit(Event::RunAborted).await?;
 
                         return Err(ActionRunnerError::Failure(e.to_string()));
                     }
@@ -305,8 +295,11 @@ impl ActionRunner {
         );
 
         local_emitter
-            .emit(Event::WorkflowFinished {
+            .emit(Event::RunFinished {
                 duration: &duration,
+                cached_count: self.cached_count,
+                failed_count: self.failed_count,
+                passed_count: self.passed_count,
             })
             .await?;
 

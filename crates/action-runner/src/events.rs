@@ -1,11 +1,11 @@
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::ActionNode;
 use moon_action::Action;
-use moon_contract::{Emitter, EventFlow};
+use moon_contract::EventFlow;
 use moon_error::MoonError;
 use moon_workspace::Workspace;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tokio::sync::RwLock;
 
 macro_rules! handle_flow {
@@ -19,32 +19,31 @@ macro_rules! handle_flow {
 }
 
 #[derive(Debug)]
-pub enum Event<'a> {
+pub enum Event<'e> {
     ActionAborted {
-        action: &'a Action,
-    },
-    ActionCreated {
-        action: &'a Action,
+        action: &'e Action,
     },
     ActionStarted {
-        action: &'a Action,
-        node: &'a ActionNode,
+        action: &'e Action,
     },
     ActionFinished {
-        action: &'a Action,
-        node: &'a ActionNode,
+        action: &'e Action,
+        node: &'e ActionNode,
     },
 
     TargetOutputArchive,
     TargetOutputHydrate,
-    TargetOutputCheckCache(&'a str),
+    TargetOutputCheckCache(&'e str),
 
-    WorkflowAborted,
-    WorkflowStarted {
+    RunAborted,
+    RunStarted {
         actions_count: usize,
     },
-    WorkflowFinished {
-        duration: &'a Duration,
+    RunFinished {
+        duration: &'e Duration,
+        cached_count: u16,
+        failed_count: u16,
+        passed_count: u16,
     },
 }
 

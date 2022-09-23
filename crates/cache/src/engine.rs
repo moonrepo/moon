@@ -132,13 +132,12 @@ impl CacheEngine {
             }
 
             // New implementation uses tar archives! Very cool.
-            tar(
-                project_root,
-                outputs,
-                self.get_hash_archive_path(hash),
-                None,
-            )
-            .map_err(|e| MoonError::Generic(e.to_string()))?;
+            let archive_path = self.get_hash_archive_path(hash);
+
+            if !archive_path.exists() {
+                tar(project_root, outputs, archive_path, None)
+                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+            }
         }
 
         Ok(())

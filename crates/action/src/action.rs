@@ -133,4 +133,8 @@ impl Action {
     pub fn should_abort(&self) -> bool {
         matches!(self.status, ActionStatus::FailedAndAbort)
     }
+
+    pub fn was_cached(&self) -> bool {
+        matches!(self.status, ActionStatus::Cached)
+    }
 }

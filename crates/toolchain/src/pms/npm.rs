@@ -297,4 +297,28 @@ impl PackageManager<NodeTool> for NpmTool {
 
         Ok(())
     }
+
+    async fn install_focused_dependencies(
+        &self,
+        toolchain: &Toolchain,
+        package_names: &[String],
+        production_only: bool,
+    ) -> Result<(), ToolchainError> {
+        let mut cmd = self.create_command();
+        cmd.args(["install"]);
+
+        if production_only {
+            cmd.arg("--production");
+        }
+
+        for package_name in package_names {
+            cmd.args(["--workspace", package_name]);
+        }
+
+        cmd.cwd(&toolchain.workspace_root)
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
+    }
 }

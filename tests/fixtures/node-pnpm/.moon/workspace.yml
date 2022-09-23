@@ -8,3 +8,4 @@ node:
 
 projects:
   pnpm: pnpm
+  other: other

@@ -104,7 +104,7 @@ The first step in this process is to only copy the bare minimum of files necessa
 dependencies (Node.js modules, etc). This is typically manifests (`package.json`), lockfiles
 (`yarn.lock`, etc), and any configuration (`.yarnrc.yml`, etc).
 
-This can all be achieved by the [`moon docker scaffold`][command] command, which scaffolds a
+This can all be achieved by the [`moon docker scaffold`][scaffold] command, which scaffolds a
 skeleton of the repository structure, with only necessary files (the above). Let's update our
 `Dockerfile` usage.
 
@@ -118,7 +118,7 @@ skeleton of the repository structure, with only necessary files (the above). Let
 >
 <TabItem value="standard">
 
-This assumes [`moon docker scaffold <project>`][command] is ran outside of the `Dockerfile`.
+This assumes [`moon docker scaffold <project>`][scaffold] is ran outside of the `Dockerfile`.
 
 ```docker
 FROM node:latest
@@ -176,7 +176,7 @@ The next step is to copy all source files necessary for `CMD` or any `RUN` comma
 correctly. This typically requires copying all source files for the project _and_ all source files
 of the project's dependencies... NOT the entire repository!
 
-Luckily our [`moon docker scaffold <project>`][command] command has already done this for us! Let's
+Luckily our [`moon docker scaffold <project>`][scaffold] command has already done this for us! Let's
 continue updating our `Dockerfile` to account for this, by appending the following:
 
 <Tabs
@@ -220,11 +220,23 @@ pass `--include` to the scaffold command.
 
 ### Pruning extraneous files
 
-Coming soon!
+Now that we've ran a command or built an artifact, we should prune the Docker environment to remove
+unneeded files and folders. We can do this with the [`moon docker prune`][prune] command, which
+_must be ran_ within the context of a `Dockerfile`!
+
+```docker
+# Prune workspace
+RUN moon docker prune
+```
+
+When ran, this command will do the following:
+
+- Install production only dependencies for the projects that were scaffolded.
+- Remove extraneous dependencies (`node_modules`) for unfocused projects.
 
 ### Final result
 
-And with this moon integration, we've reduced the original `Dockerfile` of 35 lines to 16 lines, a
+And with this moon integration, we've reduced the original `Dockerfile` of 35 lines to 18 lines, a
 reduction of almost 50%. The original file can also be seen as `O(n)`, as each new manifest requires
 cascading updates, while the moon approach is `O(1)`!
 
@@ -256,6 +268,10 @@ COPY ./.moon/docker/sources .
 
 # Run something
 RUN moon run <project>:<task>
+
+# Prune workspace
+RUN moon docker prune
+
 # Or CMD
 ```
 
@@ -293,10 +309,15 @@ COPY --from=workspace /app/.moon/docker/sources .
 
 # Run something
 RUN moon run <project>:<task>
+
+# Prune workspace
+RUN moon docker prune
+
 # Or CMD
 ```
 
 </TabItem>
 </Tabs>
 
-[command]: ../commands/docker/scaffold
+[prune]: ../commands/docker/prune
+[scaffold]: ../commands/docker/scaffold

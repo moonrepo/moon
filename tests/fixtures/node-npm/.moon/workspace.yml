@@ -8,3 +8,4 @@ node:
 
 projects:
   npm: npm
+  other: other

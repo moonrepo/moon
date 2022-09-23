@@ -1,15 +1,24 @@
 use crate::helpers::load_workspace;
 use async_recursion::async_recursion;
 use futures::future::try_join_all;
-use moon_config::{NodePackageManager, ProjectLanguage};
+use moon_config::{NodePackageManager, ProjectID, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_lang_node::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
 use moon_utils::{fs, glob, path};
 use moon_workspace::Workspace;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::path::Path;
 use strum::IntoEnumIterator;
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DockerManifest {
+    pub focused_projects: HashSet<ProjectID>,
+    pub unfocused_projects: HashSet<ProjectID>,
+}
 
 async fn copy_files<T: AsRef<str>>(
     list: &[T],
@@ -124,13 +133,16 @@ async fn scaffold_sources_project(
     workspace: &Workspace,
     docker_sources_root: &Path,
     project_id: &str,
+    manifest: &mut DockerManifest,
 ) -> Result<(), ProjectError> {
     let project = workspace.projects.load(project_id)?;
+
+    manifest.focused_projects.insert(project_id.to_owned());
 
     copy_files(&[&project.source], &workspace.root, docker_sources_root).await?;
 
     for dep_id in project.get_dependency_ids() {
-        scaffold_sources_project(workspace, docker_sources_root, &dep_id).await?;
+        scaffold_sources_project(workspace, docker_sources_root, &dep_id, manifest).await?;
     }
 
     Ok(())
@@ -143,10 +155,22 @@ async fn scaffold_sources(
     include: &[String],
 ) -> Result<(), ProjectError> {
     let docker_sources_root = docker_root.join("sources");
+    let mut manifest = DockerManifest {
+        focused_projects: HashSet::new(),
+        unfocused_projects: HashSet::new(),
+    };
 
     // Copy all projects
     for project_id in project_ids {
-        scaffold_sources_project(workspace, &docker_sources_root, project_id).await?;
+        scaffold_sources_project(workspace, &docker_sources_root, project_id, &mut manifest)
+            .await?;
+    }
+
+    // Include non-focused projects in the manifest
+    for project_id in workspace.projects.projects_map.keys() {
+        if !manifest.focused_projects.contains(project_id) {
+            manifest.unfocused_projects.insert(project_id.to_owned());
+        }
     }
 
     // Include via globs
@@ -159,6 +183,13 @@ async fn scaffold_sources(
 
         copy_files(&files, &workspace.root, &docker_sources_root).await?;
     }
+
+    fs::write_json(
+        docker_sources_root.join("dockerManifest.json"),
+        &manifest,
+        true,
+    )
+    .await?;
 
     Ok(())
 }

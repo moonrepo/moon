@@ -15,3 +15,5 @@ RUN moon setup
 COPY ./.moon/docker/sources .
 
 RUN moon run runtime:build
+
+RUN moon docker prune

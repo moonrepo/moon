@@ -1,0 +1,10 @@
+{
+  "name": "test-node-npm-other",
+  "version": "1.0.0",
+  "dependencies": {
+    "solid-js": "1.5.6"
+  },
+  "devDependencies": {
+    "babel-preset-solid": "1.5.6"
+  }
+}

@@ -6,6 +6,9 @@
 
 - When running multiple targets in parallel, we've reworked the output prefix to be uniform amongst
   all targets, and to be colored to uniquely identify each target.
+- Added a new `moon docker scaffold` command for scaffolding a skeleton workspace for use within
+  `Dockerfile`s.
+- Added a new `moon docker prune` command for pruning the Docker environment for a build/deply.
 - Added frontmatter support to all template files.
 - Added a `node.yarn.plugins` setting to `.moon/workspace.yml`.
 - Updated run reports (via `--report`) to include additional information, like the total duration,
@@ -15,6 +18,10 @@
   - npm 8.16.0 -> 8.19.2
   - pnpm 7.9.0 -> 7.12.1
   - yarn 3.2.2 -> 3.2.3
+
+#### 🐞 Fixes
+
+- Added missing `.npmrc` to the list of pnpm config files.
 
 #### ⚙️ Internal
 

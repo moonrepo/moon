@@ -315,4 +315,38 @@ impl PackageManager<NodeTool> for YarnTool {
 
         Ok(())
     }
+
+    async fn install_focused_dependencies(
+        &self,
+        toolchain: &Toolchain,
+        package_names: &[String],
+        production_only: bool,
+    ) -> Result<(), ToolchainError> {
+        let mut cmd = self.create_command();
+
+        if self.is_v1() {
+            cmd.arg("install");
+        } else {
+            cmd.args(["workspaces", "focus"]);
+            cmd.args(package_names);
+
+            let workspace_plugin = toolchain
+                .workspace_root
+                .join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
+
+            if !workspace_plugin.exists() {
+                return Err(ToolchainError::RequiresYarnWorkspacesPlugin);
+            }
+        };
+
+        if production_only {
+            cmd.arg("--production");
+        }
+
+        cmd.cwd(&toolchain.workspace_root)
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
+    }
 }

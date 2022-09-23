@@ -4,7 +4,10 @@ node:
   packageManager: 'yarn'
   yarn:
     version: '3.0.0'
+    plugins:
+      - 'workspace-tools'
   addEnginesConstraint: false
 
 projects:
   yarn: yarn
+  other: other

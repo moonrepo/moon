@@ -54,7 +54,7 @@ pub trait Platformable {
     fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError>;
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SupportedPlatform {
     Node(String),
     System,

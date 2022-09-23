@@ -250,7 +250,6 @@ impl<'a> TargetRunner<'a> {
         platform_hasher: impl Hasher + Serialize,
     ) -> Result<Option<HydrateFrom>, MoonError> {
         let hash = to_hash(&common_hasher, &platform_hasher);
-        let mut emitter = RunnerEmitter::new();
 
         debug!(
             target: LOG_TARGET,
@@ -280,23 +279,21 @@ impl<'a> TargetRunner<'a> {
             .await?;
 
         // Check if that hash exists in the cache
-        if let EventFlow::Return(value) = emitter
-            .emit(Event::TargetOutputCheckCache(&self.workspace, &hash))
-            .await?
-        {
-            match value.as_ref() {
-                "local-cache" => {
-                    debug!(
-                        target: LOG_TARGET,
-                        "Cache hit for hash {}, hydrating from local cache",
-                        color::symbol(&hash),
-                    );
+        // if let EventFlow::Return(value) = emitter.emit(Event::TargetOutputCheckCache(&hash)).await?
+        // {
+        //     match value.as_ref() {
+        //         "local-cache" => {
+        //             debug!(
+        //                 target: LOG_TARGET,
+        //                 "Cache hit for hash {}, hydrating from local cache",
+        //                 color::symbol(&hash),
+        //             );
 
-                    return Ok(Some(HydrateFrom::LocalCache));
-                }
-                _ => {}
-            }
-        }
+        //             return Ok(Some(HydrateFrom::LocalCache));
+        //         }
+        //         _ => {}
+        //     }
+        // }
 
         debug!(
             target: LOG_TARGET,
@@ -643,10 +640,12 @@ pub async fn run_target(
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
+    emitter: Arc<RwLock<RunnerEmitter>>,
     target_id: &str,
 ) -> Result<ActionStatus, ActionRunnerError> {
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let workspace = workspace.read().await;
+    let emitter = emitter.read().await;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
     let mut runner = TargetRunner::new(&workspace, &project, task).await?;

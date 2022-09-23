@@ -1,7 +1,12 @@
 use crate::subscribers::local_cache::LocalCacheSubscriber;
+use crate::ActionNode;
+use moon_action::Action;
 use moon_contract::{Emitter, EventFlow};
 use moon_error::MoonError;
 use moon_workspace::Workspace;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::sync::RwLock;
 
 macro_rules! handle_flow {
     ($result:expr) => {
@@ -13,25 +18,62 @@ macro_rules! handle_flow {
     };
 }
 
+#[derive(Debug)]
 pub enum Event<'a> {
+    ActionAborted {
+        action: &'a Action,
+    },
+    ActionCreated {
+        action: &'a Action,
+    },
+    ActionStarted {
+        action: &'a Action,
+        node: &'a ActionNode,
+    },
+    ActionFinished {
+        action: &'a Action,
+        node: &'a ActionNode,
+    },
+
     TargetOutputArchive,
     TargetOutputHydrate,
-    TargetOutputCheckCache(&'a Workspace, &'a str),
+    TargetOutputCheckCache(&'a str),
+
+    WorkflowAborted,
+    WorkflowStarted {
+        actions_count: usize,
+    },
+    WorkflowFinished {
+        duration: &'a Duration,
+    },
 }
 
 pub struct RunnerEmitter {
-    local_cache: LocalCacheSubscriber,
+    local_cache: Arc<RwLock<LocalCacheSubscriber>>,
+
+    workspace: Arc<RwLock<Workspace>>,
 }
 
 impl RunnerEmitter {
-    pub fn new() -> Self {
+    pub fn new(workspace: Arc<RwLock<Workspace>>) -> Self {
         RunnerEmitter {
-            local_cache: LocalCacheSubscriber::new(),
+            local_cache: Arc::new(RwLock::new(LocalCacheSubscriber::new())),
+            workspace,
         }
     }
 
-    pub async fn emit<'e>(&mut self, event: Event<'e>) -> Result<EventFlow, MoonError> {
-        handle_flow!(self.local_cache.on_emit(&event).await);
+    pub async fn emit<'e>(&self, event: Event<'e>) -> Result<EventFlow, MoonError> {
+        let workspace = self.workspace.read().await;
+
+        dbg!(&event);
+
+        handle_flow!(
+            self.local_cache
+                .write()
+                .await
+                .on_emit(&event, &workspace)
+                .await
+        );
 
         Ok(EventFlow::Continue)
     }

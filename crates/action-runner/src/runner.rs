@@ -1,6 +1,7 @@
 use crate::actions;
 use crate::dep_graph::DepGraph;
 use crate::errors::{ActionRunnerError, DepGraphError};
+use crate::events::{Event, RunnerEmitter};
 use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};
@@ -26,7 +27,19 @@ async fn run_action(
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
+    emitter: Arc<RwLock<RunnerEmitter>>,
 ) -> Result<(), ActionRunnerError> {
+    {
+        emitter
+            .read()
+            .await
+            .emit(Event::ActionStarted {
+                action: &action,
+                node: &node,
+            })
+            .await?;
+    }
+
     let result = match node {
         ActionNode::InstallDeps(platform) => match platform {
             SupportedPlatform::Node(_) => node_actions::install_deps(action, context, workspace)
@@ -36,7 +49,7 @@ async fn run_action(
         },
 
         ActionNode::RunTarget(target_id) => {
-            actions::run_target(action, context, workspace, target_id).await
+            actions::run_target(action, context, workspace, Arc::clone(&emitter), target_id).await
         }
 
         ActionNode::SetupToolchain(platform) => match platform {
@@ -72,6 +85,17 @@ async fn run_action(
                 action.abort();
             }
         }
+    }
+
+    {
+        emitter
+            .read()
+            .await
+            .emit(Event::ActionFinished {
+                action: &action,
+                node: &node,
+            })
+            .await?;
     }
 
     Ok(())
@@ -132,11 +156,19 @@ impl ActionRunner {
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
         let context = Arc::new(context.unwrap_or_default());
+        let emitter = Arc::new(RwLock::new(RunnerEmitter::new(Arc::clone(&self.workspace))));
+        let local_emitter = emitter.read().await;
 
         debug!(
             target: LOG_TARGET,
             "Running {} actions across {} batches", node_count, batches_count
         );
+
+        local_emitter
+            .emit(Event::WorkflowStarted {
+                actions_count: node_count,
+            })
+            .await?;
 
         let mut results: ActionResults = vec![];
 
@@ -158,10 +190,19 @@ impl ActionRunner {
                 let graph_clone = Arc::clone(&graph);
                 let context_clone = Arc::clone(&context);
                 let workspace_clone = Arc::clone(&self.workspace);
+                let emitter_clone = Arc::clone(&emitter);
 
                 action_handles.push(task::spawn(async move {
                     let mut action = Action::new(node_index.index(), None);
                     let own_graph = graph_clone.read().await;
+
+                    {
+                        emitter_clone
+                            .read()
+                            .await
+                            .emit(Event::ActionCreated { action: &action })
+                            .await?;
+                    }
 
                     if let Some(node) = own_graph.get_node_from_index(&node_index) {
                         action.label = Some(node.label());
@@ -176,7 +217,14 @@ impl ActionRunner {
                             log_action_label
                         );
 
-                        run_action(node, &mut action, &context_clone, workspace_clone).await?;
+                        run_action(
+                            node,
+                            &mut action,
+                            &context_clone,
+                            workspace_clone,
+                            emitter_clone,
+                        )
+                        .await?;
 
                         if action.has_failed() {
                             trace!(
@@ -195,6 +243,12 @@ impl ActionRunner {
                         }
                     } else {
                         action.status = ActionStatus::Invalid;
+
+                        emitter_clone
+                            .read()
+                            .await
+                            .emit(Event::ActionAborted { action: &action })
+                            .await?;
 
                         return Err(ActionRunnerError::DepGraph(DepGraphError::UnknownNode(
                             node_index.index(),
@@ -222,30 +276,41 @@ impl ActionRunner {
                         }
 
                         if self.bail && result.has_failed() || result.should_abort() {
+                            local_emitter.emit(Event::WorkflowAborted).await?;
+
                             return Err(ActionRunnerError::Failure(result.error.unwrap()));
                         }
 
                         results.push(result);
                     }
                     Ok(Err(e)) => {
+                        local_emitter.emit(Event::WorkflowAborted).await?;
+
                         return Err(e);
                     }
                     Err(e) => {
+                        local_emitter.emit(Event::WorkflowAborted).await?;
+
                         return Err(ActionRunnerError::Failure(e.to_string()));
                     }
                 }
             }
         }
 
-        self.duration = Some(start.elapsed());
+        let duration = start.elapsed();
 
         debug!(
             target: LOG_TARGET,
-            "Finished running {} actions in {:?}",
-            node_count,
-            self.duration.unwrap()
+            "Finished running {} actions in {:?}", node_count, &duration
         );
 
+        local_emitter
+            .emit(Event::WorkflowFinished {
+                duration: &duration,
+            })
+            .await?;
+
+        self.duration = Some(duration);
         self.clean_stale_cache().await?;
         self.create_run_report(&results, &context).await?;
 

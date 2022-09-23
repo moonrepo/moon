@@ -1,4 +1,5 @@
 use crate::events::Event;
+use crate::events::RunnerEmitter;
 use crate::ActionRunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
@@ -249,7 +250,7 @@ impl<'a> TargetRunner<'a> {
         platform_hasher: impl Hasher + Serialize,
     ) -> Result<Option<HydrateFrom>, MoonError> {
         let hash = to_hash(&common_hasher, &platform_hasher);
-        let mut emitter = Emitter::<Event>::new();
+        let mut emitter = RunnerEmitter::new();
 
         debug!(
             target: LOG_TARGET,

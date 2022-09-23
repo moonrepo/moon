@@ -11,7 +11,7 @@ pub enum EventFlow {
 
 #[async_trait]
 pub trait Subscriber<T>: Send + Sync {
-    async fn on_emit<'a>(&mut self, event: &T) -> Result<EventFlow, MoonError>;
+    async fn on_emit(&mut self, event: &T) -> Result<EventFlow, MoonError>;
 }
 
 pub struct Emitter<T> {
@@ -25,7 +25,7 @@ impl<T> Emitter<T> {
         }
     }
 
-    pub async fn emit(&mut self, event: T) -> Result<EventFlow, MoonError> {
+    pub async fn emit(&mut self, event: &T) -> Result<EventFlow, MoonError> {
         for subscriber in &mut self.subscribers {
             let mut sub = subscriber.write().await;
 
@@ -33,7 +33,7 @@ impl<T> Emitter<T> {
                 EventFlow::Break => return Ok(EventFlow::Break),
                 EventFlow::Return(value) => return Ok(EventFlow::Return(value)),
                 EventFlow::Continue => {}
-            };
+            }
         }
 
         Ok(EventFlow::Continue)

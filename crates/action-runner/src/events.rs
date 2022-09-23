@@ -1,7 +1,7 @@
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::ActionNode;
 use moon_action::Action;
-use moon_contract::{handle_flow, EventFlow};
+use moon_contract::{handle_flow, EventFlow, SupportedPlatform};
 use moon_error::MoonError;
 use moon_workspace::Workspace;
 use std::sync::Arc;
@@ -10,21 +10,35 @@ use tokio::sync::RwLock;
 
 #[derive(Debug)]
 pub enum Event<'e> {
-    ActionAborted {
-        action: &'e Action,
-    },
+    // Actions
     ActionStarted {
         action: &'e Action,
+        node: &'e ActionNode,
     },
     ActionFinished {
         action: &'e Action,
         node: &'e ActionNode,
     },
 
-    TargetOutputArchive,
-    TargetOutputHydrate,
-    TargetOutputCheckCache(&'e str),
+    // Installing deps
+    DependenciesInstalling {
+        platform: &'e SupportedPlatform,
+    },
+    DependenciesInstalled {
+        platform: &'e SupportedPlatform,
+    },
 
+    // Syncing projects
+    ProjectSyncing {
+        platform: &'e SupportedPlatform,
+        project_id: &'e str,
+    },
+    ProjectSynced {
+        platform: &'e SupportedPlatform,
+        project_id: &'e str,
+    },
+
+    // Runner
     RunAborted,
     RunStarted {
         actions_count: usize,
@@ -34,6 +48,25 @@ pub enum Event<'e> {
         cached_count: u16,
         failed_count: u16,
         passed_count: u16,
+    },
+
+    // Running targets
+    TargetRunning {
+        target_id: &'e str,
+    },
+    TargetRan {
+        target_id: &'e str,
+    },
+    TargetOutputArchive,
+    TargetOutputHydrate,
+    TargetOutputCheckCache(&'e str),
+
+    // Installing a tool
+    ToolInstalling {
+        platform: &'e SupportedPlatform,
+    },
+    ToolInstalled {
+        platform: &'e SupportedPlatform,
     },
 }
 

@@ -29,35 +29,95 @@ async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<RunnerEmitter>>,
 ) -> Result<(), ActionRunnerError> {
-    let result = match node {
-        ActionNode::InstallDeps(platform) => match platform {
-            SupportedPlatform::Node(_) => node_actions::install_deps(action, context, workspace)
-                .await
-                .map_err(ActionRunnerError::Workspace),
-            _ => Ok(ActionStatus::Passed),
-        },
+    let local_emitter = Arc::clone(&emitter);
+    let local_emitter = local_emitter.read().await;
 
-        ActionNode::RunTarget(target_id) => {
-            actions::run_target(action, context, workspace, emitter, target_id).await
+    let result = match node {
+        // Install dependencies for a specific tool
+        ActionNode::InstallDeps(platform) => {
+            local_emitter
+                .emit(Event::DependenciesInstalling { platform })
+                .await?;
+
+            let install_result = match platform {
+                SupportedPlatform::Node(_) => {
+                    node_actions::install_deps(action, context, workspace)
+                        .await
+                        .map_err(ActionRunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::DependenciesInstalled { platform })
+                .await?;
+
+            install_result
         }
 
-        ActionNode::SetupToolchain(platform) => match platform {
-            SupportedPlatform::Node(version) => {
-                node_actions::setup_toolchain(action, context, workspace, version)
-                    .await
-                    .map_err(ActionRunnerError::Workspace)
-            }
-            _ => Ok(ActionStatus::Passed),
-        },
+        // Run a task within a project
+        ActionNode::RunTarget(target_id) => {
+            local_emitter
+                .emit(Event::TargetRunning { target_id })
+                .await?;
 
-        ActionNode::SyncProject(platform, project_id) => match platform {
-            SupportedPlatform::Node(_) => {
-                node_actions::sync_project(action, context, workspace, project_id)
-                    .await
-                    .map_err(ActionRunnerError::Workspace)
-            }
-            _ => Ok(ActionStatus::Passed),
-        },
+            let run_result =
+                actions::run_target(action, context, workspace, emitter, target_id).await;
+
+            local_emitter.emit(Event::TargetRan { target_id }).await?;
+
+            run_result
+        }
+
+        // Setup and install the specific tool
+        ActionNode::SetupToolchain(platform) => {
+            local_emitter
+                .emit(Event::ToolInstalling { platform })
+                .await?;
+
+            let tool_result = match platform {
+                SupportedPlatform::Node(version) => {
+                    node_actions::setup_toolchain(action, context, workspace, version)
+                        .await
+                        .map_err(ActionRunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::ToolInstalled { platform })
+                .await?;
+
+            tool_result
+        }
+
+        // Sync a project within the graph
+        ActionNode::SyncProject(platform, project_id) => {
+            local_emitter
+                .emit(Event::ProjectSyncing {
+                    platform,
+                    project_id,
+                })
+                .await?;
+
+            let sync_result = match platform {
+                SupportedPlatform::Node(_) => {
+                    node_actions::sync_project(action, context, workspace, project_id)
+                        .await
+                        .map_err(ActionRunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::ProjectSynced {
+                    platform,
+                    project_id,
+                })
+                .await?;
+
+            sync_result
+        }
     };
 
     match result {
@@ -181,12 +241,15 @@ impl ActionRunner {
                     let own_graph = graph_clone.read().await;
                     let own_emitter = emitter_clone.read().await;
 
-                    own_emitter
-                        .emit(Event::ActionStarted { action: &action })
-                        .await?;
-
                     if let Some(node) = own_graph.get_node_from_index(&node_index) {
                         action.label = Some(node.label());
+
+                        own_emitter
+                            .emit(Event::ActionStarted {
+                                action: &action,
+                                node,
+                            })
+                            .await?;
 
                         let log_target_name =
                             format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
@@ -231,10 +294,6 @@ impl ActionRunner {
                             .await?;
                     } else {
                         action.status = ActionStatus::Invalid;
-
-                        own_emitter
-                            .emit(Event::ActionAborted { action: &action })
-                            .await?;
 
                         return Err(ActionRunnerError::DepGraph(DepGraphError::UnknownNode(
                             node_index.index(),

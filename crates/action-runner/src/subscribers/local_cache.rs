@@ -17,9 +17,15 @@ impl LocalCacheSubscriber {
     ) -> Result<EventFlow, MoonError> {
         match event {
             Event::TargetOutputCheckCache(hash) => {
-                if workspace.cache.is_hash_cached(&hash) {
+                if workspace.cache.is_hash_cached(hash) {
                     return Ok(EventFlow::Return("local-cache".into()));
                 }
+            }
+            Event::RunFinished { .. } => {
+                workspace
+                    .cache
+                    .clean_stale_cache(&workspace.config.runner.cache_lifetime)
+                    .await?;
             }
             _ => {}
         }

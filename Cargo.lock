@@ -1478,10 +1478,8 @@ version = "0.1.0"
 name = "moon_contract"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "moon_config",
  "moon_error",
- "tokio",
 ]
 
 [[package]]

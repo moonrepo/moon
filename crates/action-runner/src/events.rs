@@ -1,22 +1,12 @@
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::ActionNode;
 use moon_action::Action;
-use moon_contract::EventFlow;
+use moon_contract::{handle_flow, EventFlow};
 use moon_error::MoonError;
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
-
-macro_rules! handle_flow {
-    ($result:expr) => {
-        match $result? {
-            EventFlow::Break => return Ok(EventFlow::Break),
-            EventFlow::Return(value) => return Ok(EventFlow::Return(value)),
-            EventFlow::Continue => {}
-        };
-    };
-}
 
 #[derive(Debug)]
 pub enum Event<'e> {

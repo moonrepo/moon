@@ -1,4 +1,3 @@
-use crate::events::Event;
 use crate::events::RunnerEmitter;
 use crate::ActionRunnerError;
 use console::Term;
@@ -6,7 +5,6 @@ use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
 use moon_config::PlatformType;
 use moon_config::TaskOutputStyle;
-use moon_contract::{Emitter, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};

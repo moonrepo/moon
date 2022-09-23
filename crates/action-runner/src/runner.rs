@@ -226,7 +226,7 @@ impl ActionRunner {
                         own_emitter
                             .emit(Event::ActionFinished {
                                 action: &action,
-                                node: &node,
+                                node,
                             })
                             .await?;
                     } else {
@@ -274,11 +274,13 @@ impl ActionRunner {
                         results.push(result);
                     }
                     Ok(Err(e)) => {
+                        self.failed_count += 1;
                         local_emitter.emit(Event::RunAborted).await?;
 
                         return Err(e);
                     }
                     Err(e) => {
+                        self.failed_count += 1;
                         local_emitter.emit(Event::RunAborted).await?;
 
                         return Err(ActionRunnerError::Failure(e.to_string()));
@@ -304,7 +306,6 @@ impl ActionRunner {
             .await?;
 
         self.duration = Some(duration);
-        self.clean_stale_cache().await?;
         self.create_run_report(&results, &context).await?;
 
         Ok(results)
@@ -423,17 +424,6 @@ impl ActionRunner {
 
         term.write_line("")?;
         term.flush()?;
-
-        Ok(())
-    }
-
-    async fn clean_stale_cache(&self) -> Result<(), ActionRunnerError> {
-        let workspace = self.workspace.read().await;
-
-        workspace
-            .cache
-            .clean_stale_cache(&workspace.config.runner.cache_lifetime)
-            .await?;
 
         Ok(())
     }

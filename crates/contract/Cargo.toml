@@ -6,5 +6,3 @@ edition = "2021"
 [dependencies]
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
-async-trait = "0.1.57"
-tokio = { workspace = true }

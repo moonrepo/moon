@@ -1,6 +1,7 @@
 mod actions;
 mod dep_graph;
 mod errors;
+mod events;
 mod node;
 mod runner;
 

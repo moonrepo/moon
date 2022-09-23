@@ -1,9 +1,11 @@
+use crate::events::Event;
 use crate::ActionRunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
 use moon_config::PlatformType;
 use moon_config::TaskOutputStyle;
+use moon_contract::{Emitter, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};
@@ -247,6 +249,7 @@ impl<'a> TargetRunner<'a> {
         platform_hasher: impl Hasher + Serialize,
     ) -> Result<Option<HydrateFrom>, MoonError> {
         let hash = to_hash(&common_hasher, &platform_hasher);
+        let mut emitter = Emitter::<Event>::new();
 
         debug!(
             target: LOG_TARGET,
@@ -275,15 +278,23 @@ impl<'a> TargetRunner<'a> {
             .create_hash_manifest(&hash, &(common_hasher, platform_hasher))
             .await?;
 
-        // Hash exists in the cache, so hydrate from it
-        if self.workspace.cache.is_hash_cached(&hash) {
-            debug!(
-                target: LOG_TARGET,
-                "Cache hit for hash {}, hydrating from local cache",
-                color::symbol(&hash),
-            );
+        // Check if that hash exists in the cache
+        if let EventFlow::Return(value) = emitter
+            .emit(Event::TargetOutputCheckCache(&self.workspace, &hash))
+            .await?
+        {
+            match value.as_ref() {
+                "local-cache" => {
+                    debug!(
+                        target: LOG_TARGET,
+                        "Cache hit for hash {}, hydrating from local cache",
+                        color::symbol(&hash),
+                    );
 
-            return Ok(Some(HydrateFrom::LocalCache));
+                    return Ok(Some(HydrateFrom::LocalCache));
+                }
+                _ => {}
+            }
         }
 
         debug!(

@@ -7,3 +7,4 @@ edition = "2021"
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 async-trait = "0.1.57"
+tokio = { workspace = true }

@@ -1,9 +1,9 @@
-pub enum Event {
-    TargetOutputIsCached,
-}
+use moon_workspace::Workspace;
 
-struct Emitter {}
+type OutputHash = String;
 
-impl Emitter {
-    pub fn test() {}
+pub enum Event<'a> {
+    TargetOutputArchive,
+    TargetOutputHydrate,
+    TargetOutputCheckCache(&'a Workspace, &'a OutputHash),
 }

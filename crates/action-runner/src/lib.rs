@@ -4,6 +4,7 @@ mod errors;
 mod events;
 mod node;
 mod runner;
+mod subscribers;
 
 pub use dep_graph::*;
 pub use errors::*;

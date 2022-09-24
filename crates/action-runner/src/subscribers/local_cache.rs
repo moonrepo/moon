@@ -4,6 +4,13 @@ use moon_error::MoonError;
 use moon_utils::path;
 use moon_workspace::Workspace;
 
+/// The local cache subscriber is in charge of managing archives
+/// (task output's archived as tarballs), by reading and writing them
+/// to the `.moon/cache/{out,hashes}` directories.
+///
+/// This is the last subscriber amongst all subscribers, as local
+/// cache is the last line of defense. However, other subscribers
+/// will piggyback off of it, like remote cache.
 pub struct LocalCacheSubscriber {}
 
 impl LocalCacheSubscriber {
@@ -18,7 +25,7 @@ impl LocalCacheSubscriber {
     ) -> Result<EventFlow, MoonError> {
         match event {
             // Check if the archive exists on the local file system
-            Event::TargetOutputCheckCache { hash, .. } => {
+            Event::TargetOutputCacheCheck { hash, .. } => {
                 if workspace.cache.is_hash_cached(hash) {
                     return Ok(EventFlow::Return("local-cache".into()));
                 }

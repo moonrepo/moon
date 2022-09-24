@@ -50,9 +50,9 @@ pub enum Event<'e> {
     },
     RunFinished {
         duration: &'e Duration,
-        cached_count: u16,
-        failed_count: u16,
-        passed_count: u16,
+        cached_count: usize,
+        failed_count: usize,
+        passed_count: usize,
     },
 
     // Running targets
@@ -84,7 +84,7 @@ pub enum Event<'e> {
         project: &'e Project,
         task: &'e Task,
     },
-    TargetOutputCheckCache {
+    TargetOutputCacheCheck {
         hash: &'e str,
         task: &'e Task,
     },

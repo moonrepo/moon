@@ -20,7 +20,7 @@ impl RemoteCacheSubscriber {
     ) -> Result<EventFlow, MoonError> {
         match event {
             // Check if archive exists in moonbase
-            Event::TargetOutputCheckCache { hash, .. } => {
+            Event::TargetOutputCacheCheck { hash, .. } => {
                 // if workspace.cache.is_hash_cached(hash) {
                 //     return Ok(EventFlow::Return("remote-cache".into()));
                 // }

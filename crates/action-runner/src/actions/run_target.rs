@@ -312,7 +312,7 @@ impl<'a> TargetRunner<'a> {
         // Check if that hash exists in the cache
         if let EventFlow::Return(value) = self
             .emitter
-            .emit(Event::TargetOutputCheckCache {
+            .emit(Event::TargetOutputCacheCheck {
                 hash: &hash,
                 task: self.task,
             })

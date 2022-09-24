@@ -142,13 +142,13 @@ async fn run_action(
 pub struct ActionRunner {
     bail: bool,
 
-    cached_count: u16,
+    cached_count: usize,
 
     duration: Option<Duration>,
 
-    failed_count: u16,
+    failed_count: usize,
 
-    passed_count: u16,
+    passed_count: usize,
 
     report_name: Option<String>,
 

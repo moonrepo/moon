@@ -1,7 +1,7 @@
 mod actions;
 mod dep_graph;
+mod emitter;
 mod errors;
-mod events;
 mod node;
 mod runner;
 mod subscribers;

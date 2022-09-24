@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::events::Event;
+use crate::emitter::Event;
 use moon_contract::EventFlow;
 use moon_error::MoonError;
 use moon_workspace::Workspace;

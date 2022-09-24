@@ -1,7 +1,7 @@
 use crate::actions;
 use crate::dep_graph::DepGraph;
+use crate::emitter::{Event, RunnerEmitter};
 use crate::errors::{ActionRunnerError, DepGraphError};
-use crate::events::{Event, RunnerEmitter};
 use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};

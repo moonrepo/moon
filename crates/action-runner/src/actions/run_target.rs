@@ -1,4 +1,4 @@
-use crate::events::{Event, EventFlow, RunnerEmitter};
+use crate::emitter::{Event, EventFlow, RunnerEmitter};
 use crate::ActionRunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};

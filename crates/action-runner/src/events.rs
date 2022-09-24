@@ -1,12 +1,17 @@
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::ActionNode;
 use moon_action::Action;
-use moon_contract::{handle_flow, EventFlow, SupportedPlatform};
+use moon_contract::{handle_flow, SupportedPlatform};
 use moon_error::MoonError;
+use moon_project::Project;
+use moon_task::Task;
 use moon_workspace::Workspace;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
+
+pub use moon_contract::EventFlow;
 
 #[derive(Debug)]
 pub enum Event<'e> {
@@ -57,9 +62,32 @@ pub enum Event<'e> {
     TargetRan {
         target_id: &'e str,
     },
-    TargetOutputArchive,
-    TargetOutputHydrate,
-    TargetOutputCheckCache(&'e str),
+    TargetOutputArchiving {
+        hash: &'e str,
+        project: &'e Project,
+        task: &'e Task,
+    },
+    TargetOutputArchived {
+        archive_path: PathBuf,
+        hash: &'e str,
+        project: &'e Project,
+        task: &'e Task,
+    },
+    TargetOutputHydrating {
+        hash: &'e str,
+        project: &'e Project,
+        task: &'e Task,
+    },
+    TargetOutputHydrated {
+        archive_path: PathBuf,
+        hash: &'e str,
+        project: &'e Project,
+        task: &'e Task,
+    },
+    TargetOutputCheckCache {
+        hash: &'e str,
+        task: &'e Task,
+    },
 
     // Installing a tool
     ToolInstalling {
@@ -86,8 +114,6 @@ impl RunnerEmitter {
 
     pub async fn emit<'e>(&self, event: Event<'e>) -> Result<EventFlow, MoonError> {
         let workspace = self.workspace.read().await;
-
-        dbg!(&event);
 
         handle_flow!(
             self.local_cache

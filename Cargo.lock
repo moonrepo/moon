@@ -1344,7 +1344,6 @@ dependencies = [
 name = "moon_action_runner"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "console",
  "insta",
  "moon_action",

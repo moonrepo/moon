@@ -1,5 +1,6 @@
 use crate::actions;
 use crate::dep_graph::DepGraph;
+use crate::emitter::{Event, RunnerEmitter};
 use crate::errors::{ActionRunnerError, DepGraphError};
 use crate::node::ActionNode;
 use console::Term;
@@ -26,36 +27,97 @@ async fn run_action(
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
+    emitter: Arc<RwLock<RunnerEmitter>>,
 ) -> Result<(), ActionRunnerError> {
-    let result = match node {
-        ActionNode::InstallDeps(platform) => match platform {
-            SupportedPlatform::Node(_) => node_actions::install_deps(action, context, workspace)
-                .await
-                .map_err(ActionRunnerError::Workspace),
-            _ => Ok(ActionStatus::Passed),
-        },
+    let local_emitter = Arc::clone(&emitter);
+    let local_emitter = local_emitter.read().await;
 
-        ActionNode::RunTarget(target_id) => {
-            actions::run_target(action, context, workspace, target_id).await
+    let result = match node {
+        // Install dependencies for a specific tool
+        ActionNode::InstallDeps(platform) => {
+            local_emitter
+                .emit(Event::DependenciesInstalling { platform })
+                .await?;
+
+            let install_result = match platform {
+                SupportedPlatform::Node(_) => {
+                    node_actions::install_deps(action, context, workspace)
+                        .await
+                        .map_err(ActionRunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::DependenciesInstalled { platform })
+                .await?;
+
+            install_result
         }
 
-        ActionNode::SetupToolchain(platform) => match platform {
-            SupportedPlatform::Node(version) => {
-                node_actions::setup_toolchain(action, context, workspace, version)
-                    .await
-                    .map_err(ActionRunnerError::Workspace)
-            }
-            _ => Ok(ActionStatus::Passed),
-        },
+        // Run a task within a project
+        ActionNode::RunTarget(target_id) => {
+            local_emitter
+                .emit(Event::TargetRunning { target_id })
+                .await?;
 
-        ActionNode::SyncProject(platform, project_id) => match platform {
-            SupportedPlatform::Node(_) => {
-                node_actions::sync_project(action, context, workspace, project_id)
-                    .await
-                    .map_err(ActionRunnerError::Workspace)
-            }
-            _ => Ok(ActionStatus::Passed),
-        },
+            let run_result =
+                actions::run_target(action, context, workspace, emitter, target_id).await;
+
+            local_emitter.emit(Event::TargetRan { target_id }).await?;
+
+            run_result
+        }
+
+        // Setup and install the specific tool
+        ActionNode::SetupToolchain(platform) => {
+            local_emitter
+                .emit(Event::ToolInstalling { platform })
+                .await?;
+
+            let tool_result = match platform {
+                SupportedPlatform::Node(version) => {
+                    node_actions::setup_toolchain(action, context, workspace, version)
+                        .await
+                        .map_err(ActionRunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::ToolInstalled { platform })
+                .await?;
+
+            tool_result
+        }
+
+        // Sync a project within the graph
+        ActionNode::SyncProject(platform, project_id) => {
+            local_emitter
+                .emit(Event::ProjectSyncing {
+                    platform,
+                    project_id,
+                })
+                .await?;
+
+            let sync_result = match platform {
+                SupportedPlatform::Node(_) => {
+                    node_actions::sync_project(action, context, workspace, project_id)
+                        .await
+                        .map_err(ActionRunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::ProjectSynced {
+                    platform,
+                    project_id,
+                })
+                .await?;
+
+            sync_result
+        }
     };
 
     match result {
@@ -80,9 +142,13 @@ async fn run_action(
 pub struct ActionRunner {
     bail: bool,
 
+    cached_count: usize,
+
     duration: Option<Duration>,
 
-    error_count: u8,
+    failed_count: usize,
+
+    passed_count: usize,
 
     report_name: Option<String>,
 
@@ -95,8 +161,10 @@ impl ActionRunner {
 
         ActionRunner {
             bail: false,
+            cached_count: 0,
             duration: None,
-            error_count: 0,
+            failed_count: 0,
+            passed_count: 0,
             report_name: None,
             workspace: Arc::new(RwLock::new(workspace)),
         }
@@ -118,7 +186,7 @@ impl ActionRunner {
     }
 
     pub fn has_failed(&self) -> bool {
-        self.error_count > 0
+        self.failed_count > 0
     }
 
     pub async fn run(
@@ -132,11 +200,19 @@ impl ActionRunner {
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
         let context = Arc::new(context.unwrap_or_default());
+        let emitter = Arc::new(RwLock::new(RunnerEmitter::new(Arc::clone(&self.workspace))));
+        let local_emitter = emitter.read().await;
 
         debug!(
             target: LOG_TARGET,
             "Running {} actions across {} batches", node_count, batches_count
         );
+
+        local_emitter
+            .emit(Event::RunStarted {
+                actions_count: node_count,
+            })
+            .await?;
 
         let mut results: ActionResults = vec![];
 
@@ -158,13 +234,22 @@ impl ActionRunner {
                 let graph_clone = Arc::clone(&graph);
                 let context_clone = Arc::clone(&context);
                 let workspace_clone = Arc::clone(&self.workspace);
+                let emitter_clone = Arc::clone(&emitter);
 
                 action_handles.push(task::spawn(async move {
                     let mut action = Action::new(node_index.index(), None);
                     let own_graph = graph_clone.read().await;
+                    let own_emitter = emitter_clone.read().await;
 
                     if let Some(node) = own_graph.get_node_from_index(&node_index) {
                         action.label = Some(node.label());
+
+                        own_emitter
+                            .emit(Event::ActionStarted {
+                                action: &action,
+                                node,
+                            })
+                            .await?;
 
                         let log_target_name =
                             format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
@@ -176,7 +261,14 @@ impl ActionRunner {
                             log_action_label
                         );
 
-                        run_action(node, &mut action, &context_clone, workspace_clone).await?;
+                        run_action(
+                            node,
+                            &mut action,
+                            &context_clone,
+                            workspace_clone,
+                            Arc::clone(&emitter_clone),
+                        )
+                        .await?;
 
                         if action.has_failed() {
                             trace!(
@@ -193,6 +285,13 @@ impl ActionRunner {
                                 action.duration.unwrap()
                             );
                         }
+
+                        own_emitter
+                            .emit(Event::ActionFinished {
+                                action: &action,
+                                node,
+                            })
+                            .await?;
                     } else {
                         action.status = ActionStatus::Invalid;
 
@@ -218,35 +317,54 @@ impl ActionRunner {
                         }
 
                         if result.has_failed() {
-                            self.error_count += 1;
+                            self.failed_count += 1;
+                        } else if result.was_cached() {
+                            self.cached_count += 1;
+                        } else {
+                            self.passed_count += 1;
                         }
 
                         if self.bail && result.has_failed() || result.should_abort() {
+                            local_emitter.emit(Event::RunAborted).await?;
+
                             return Err(ActionRunnerError::Failure(result.error.unwrap()));
                         }
 
                         results.push(result);
                     }
                     Ok(Err(e)) => {
+                        self.failed_count += 1;
+                        local_emitter.emit(Event::RunAborted).await?;
+
                         return Err(e);
                     }
                     Err(e) => {
+                        self.failed_count += 1;
+                        local_emitter.emit(Event::RunAborted).await?;
+
                         return Err(ActionRunnerError::Failure(e.to_string()));
                     }
                 }
             }
         }
 
-        self.duration = Some(start.elapsed());
+        let duration = start.elapsed();
 
         debug!(
             target: LOG_TARGET,
-            "Finished running {} actions in {:?}",
-            node_count,
-            self.duration.unwrap()
+            "Finished running {} actions in {:?}", node_count, &duration
         );
 
-        self.clean_stale_cache().await?;
+        local_emitter
+            .emit(Event::RunFinished {
+                duration: &duration,
+                cached_count: self.cached_count,
+                failed_count: self.failed_count,
+                passed_count: self.passed_count,
+            })
+            .await?;
+
+        self.duration = Some(duration);
         self.create_run_report(&results, &context).await?;
 
         Ok(results)
@@ -365,17 +483,6 @@ impl ActionRunner {
 
         term.write_line("")?;
         term.flush()?;
-
-        Ok(())
-    }
-
-    async fn clean_stale_cache(&self) -> Result<(), ActionRunnerError> {
-        let workspace = self.workspace.read().await;
-
-        workspace
-            .cache
-            .clean_stale_cache(&workspace.config.runner.cache_lifetime)
-            .await?;
 
         Ok(())
     }

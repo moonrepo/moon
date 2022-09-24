@@ -6,7 +6,7 @@ fn has_failed(status: &ActionStatus) -> bool {
     matches!(status, ActionStatus::Failed) || matches!(status, ActionStatus::FailedAndAbort)
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ActionStatus {
     Cached,
@@ -19,7 +19,7 @@ pub enum ActionStatus {
     Skipped, // When nothing happened
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Attempt {
     pub duration: Option<Duration>,
@@ -58,7 +58,7 @@ impl Attempt {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Action {
     pub attempts: Option<Vec<Attempt>>,
@@ -132,5 +132,9 @@ impl Action {
 
     pub fn should_abort(&self) -> bool {
         matches!(self.status, ActionStatus::FailedAndAbort)
+    }
+
+    pub fn was_cached(&self) -> bool {
+        matches!(self.status, ActionStatus::Cached)
     }
 }

@@ -1,3 +1,4 @@
+use crate::emitter::{Event, EventFlow, RunnerEmitter};
 use crate::ActionRunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
@@ -29,10 +30,13 @@ const LOG_TARGET: &str = "moon:action:run-target";
 pub enum HydrateFrom {
     LocalCache,
     PreviousOutput,
+    RemoteCache,
 }
 
 pub struct TargetRunner<'a> {
     pub cache: CacheItem<RunTargetState>,
+
+    emitter: &'a RunnerEmitter,
 
     project: &'a Project,
 
@@ -47,12 +51,14 @@ pub struct TargetRunner<'a> {
 
 impl<'a> TargetRunner<'a> {
     pub async fn new(
+        emitter: &'a RunnerEmitter,
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
     ) -> Result<TargetRunner<'a>, MoonError> {
         Ok(TargetRunner {
             cache: workspace.cache.cache_run_target_state(&task.target).await?,
+            emitter,
             project,
             stderr: Term::buffered_stderr(),
             stdout: Term::buffered_stdout(),
@@ -64,27 +70,41 @@ impl<'a> TargetRunner<'a> {
     /// Cache outputs to the `.moon/cache/out` folder and to the cloud,
     /// so that subsequent builds are faster, and any local outputs
     /// can be rehydrated easily.
-    pub async fn cache_outputs(&self) -> Result<(), ActionRunnerError> {
+    pub async fn archive_outputs(&self) -> Result<(), ActionRunnerError> {
         let hash = &self.cache.item.hash;
 
-        if !self.task.outputs.is_empty() {
-            // Check that outputs actually exist
-            for (i, output) in self.task.output_paths.iter().enumerate() {
-                if !output.exists() {
-                    return Err(ActionRunnerError::Task(TaskError::MissingOutput(
-                        self.task.target.clone(),
-                        self.task.outputs.get(i).unwrap().to_owned(),
-                    )));
-                }
-            }
+        if self.task.outputs.is_empty() || hash.is_empty() {
+            return Ok(());
+        }
 
-            // If so, then cache the archive
-            if !hash.is_empty() {
-                self.workspace
-                    .cache
-                    .create_hash_archive(hash, &self.project.root, &self.task.outputs)
-                    .await?;
+        // Check that outputs actually exist
+        for (i, output) in self.task.output_paths.iter().enumerate() {
+            if !output.exists() {
+                return Err(ActionRunnerError::Task(TaskError::MissingOutput(
+                    self.task.target.clone(),
+                    self.task.outputs.get(i).unwrap().to_owned(),
+                )));
             }
+        }
+
+        // If so, then cache the archive
+        if let EventFlow::Return(archive_path) = self
+            .emitter
+            .emit(Event::TargetOutputArchiving {
+                hash,
+                project: self.project,
+                task: self.task,
+            })
+            .await?
+        {
+            self.emitter
+                .emit(Event::TargetOutputArchived {
+                    archive_path: archive_path.into(),
+                    hash,
+                    project: self.project,
+                    task: self.task,
+                })
+                .await?;
         }
 
         Ok(())
@@ -105,10 +125,24 @@ impl<'a> TargetRunner<'a> {
         }
 
         // Hydrate outputs from the cache
-        self.workspace
-            .cache
-            .hydrate_from_hash_archive(hash, &self.project.root)
-            .await?;
+        if let EventFlow::Return(archive_path) = self
+            .emitter
+            .emit(Event::TargetOutputHydrating {
+                hash,
+                project: self.project,
+                task: self.task,
+            })
+            .await?
+        {
+            self.emitter
+                .emit(Event::TargetOutputHydrated {
+                    archive_path: archive_path.into(),
+                    hash,
+                    project: self.project,
+                    task: self.task,
+                })
+                .await?;
+        }
 
         // Update the run state with the new hash
         self.cache.save().await?;
@@ -275,15 +309,36 @@ impl<'a> TargetRunner<'a> {
             .create_hash_manifest(&hash, &(common_hasher, platform_hasher))
             .await?;
 
-        // Hash exists in the cache, so hydrate from it
-        if self.workspace.cache.is_hash_cached(&hash) {
-            debug!(
-                target: LOG_TARGET,
-                "Cache hit for hash {}, hydrating from local cache",
-                color::symbol(&hash),
-            );
+        // Check if that hash exists in the cache
+        if let EventFlow::Return(value) = self
+            .emitter
+            .emit(Event::TargetOutputCacheCheck {
+                hash: &hash,
+                task: self.task,
+            })
+            .await?
+        {
+            match value.as_ref() {
+                "local-cache" => {
+                    debug!(
+                        target: LOG_TARGET,
+                        "Cache hit for hash {}, hydrating from local cache",
+                        color::symbol(&hash),
+                    );
 
-            return Ok(Some(HydrateFrom::LocalCache));
+                    return Ok(Some(HydrateFrom::LocalCache));
+                }
+                "remote-cache" => {
+                    debug!(
+                        target: LOG_TARGET,
+                        "Cache hit for hash {}, hydrating from remote cache",
+                        color::symbol(&hash),
+                    );
+
+                    return Ok(Some(HydrateFrom::RemoteCache));
+                }
+                _ => {}
+            }
         }
 
         debug!(
@@ -631,13 +686,15 @@ pub async fn run_target(
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
+    emitter: Arc<RwLock<RunnerEmitter>>,
     target_id: &str,
 ) -> Result<ActionStatus, ActionRunnerError> {
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let workspace = workspace.read().await;
+    let emitter = emitter.read().await;
     let project = workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
-    let mut runner = TargetRunner::new(&workspace, &project, task).await?;
+    let mut runner = TargetRunner::new(&emitter, &workspace, &project, task).await?;
 
     debug!(
         target: LOG_TARGET,
@@ -698,11 +755,20 @@ pub async fn run_target(
         if let Some(cache_location) = is_cached {
             // Only hydrate when the hash is different from the previous build,
             // as we can assume the outputs from the previous build still exist?
-            if matches!(cache_location, HydrateFrom::LocalCache) {
+            if matches!(cache_location, HydrateFrom::LocalCache)
+                || matches!(cache_location, HydrateFrom::RemoteCache)
+            {
                 runner.hydrate_outputs().await?;
             }
 
-            runner.print_checkpoint(Checkpoint::Pass, "(cached)")?;
+            runner.print_checkpoint(
+                Checkpoint::Pass,
+                match cache_location {
+                    HydrateFrom::RemoteCache => "(cached from remote)",
+                    _ => "(cached)",
+                },
+            )?;
+
             runner.print_cache_item()?;
             runner.flush_output()?;
 
@@ -746,7 +812,7 @@ pub async fn run_target(
 
     // If successful, cache the task outputs
     if should_cache {
-        runner.cache_outputs().await?;
+        runner.archive_outputs().await?;
     }
 
     Ok(status)

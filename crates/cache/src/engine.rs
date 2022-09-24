@@ -120,7 +120,9 @@ impl CacheEngine {
         hash: &str,
         project_root: &Path,
         outputs: &[String],
-    ) -> Result<(), MoonError> {
+    ) -> Result<PathBuf, MoonError> {
+        let archive_path = self.get_hash_archive_path(hash);
+
         if is_writable() && !outputs.is_empty() {
             // TODO: Remove in v1
             // Old implementation would copy files to a hashed folder,
@@ -132,16 +134,13 @@ impl CacheEngine {
             }
 
             // New implementation uses tar archives! Very cool.
-            tar(
-                project_root,
-                outputs,
-                self.get_hash_archive_path(hash),
-                None,
-            )
-            .map_err(|e| MoonError::Generic(e.to_string()))?;
+            if !archive_path.exists() {
+                tar(project_root, outputs, &archive_path, None)
+                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+            }
         }
 
-        Ok(())
+        Ok(archive_path)
     }
 
     pub async fn create_hash_manifest<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>
@@ -232,16 +231,14 @@ impl CacheEngine {
         &self,
         hash: &str,
         project_root: &Path,
-    ) -> Result<(), MoonError> {
-        if is_readable() {
-            let archive_path = self.get_hash_archive_path(hash);
+    ) -> Result<PathBuf, MoonError> {
+        let archive_path = self.get_hash_archive_path(hash);
 
-            if archive_path.exists() {
-                untar(archive_path, project_root, None)
-                    .map_err(|e| MoonError::Generic(e.to_string()))?;
-            }
+        if is_readable() && archive_path.exists() {
+            untar(&archive_path, project_root, None)
+                .map_err(|e| MoonError::Generic(e.to_string()))?;
         }
 
-        Ok(())
+        Ok(archive_path)
     }
 }

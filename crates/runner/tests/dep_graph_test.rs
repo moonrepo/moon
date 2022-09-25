@@ -1,8 +1,8 @@
 use insta::assert_snapshot;
-use moon_action_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_cache::CacheEngine;
 use moon_config::{GlobalProjectConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project_graph::ProjectGraph;
+use moon_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_task::Target;
 use moon_utils::test::get_fixtures_dir;
 use std::collections::{HashMap, HashSet};

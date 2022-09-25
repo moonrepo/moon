@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tokio::task;
 
-const LOG_TARGET: &str = "moon:action-runner";
+const LOG_TARGET: &str = "moon:runner";
 
 pub type ActionResults = Vec<Action>;
 

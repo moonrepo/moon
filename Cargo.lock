@@ -1341,36 +1341,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_action_runner"
-version = "0.1.0"
-dependencies = [
- "console",
- "insta",
- "moon_action",
- "moon_cache",
- "moon_config",
- "moon_contract",
- "moon_error",
- "moon_hasher",
- "moon_lang",
- "moon_logger",
- "moon_platform_node",
- "moon_platform_system",
- "moon_project",
- "moon_project_graph",
- "moon_task",
- "moon_terminal",
- "moon_toolchain",
- "moon_utils",
- "moon_vcs",
- "moon_workspace",
- "petgraph",
- "serde",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "moon_archive"
 version = "0.1.0"
 dependencies = [
@@ -1415,7 +1385,6 @@ dependencies = [
  "insta",
  "itertools",
  "moon_action",
- "moon_action_runner",
  "moon_cache",
  "moon_config",
  "moon_constants",
@@ -1428,6 +1397,7 @@ dependencies = [
  "moon_platform_node",
  "moon_platform_system",
  "moon_project",
+ "moon_runner",
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
@@ -1633,6 +1603,36 @@ dependencies = [
  "moon_task",
  "moon_utils",
  "petgraph",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "moon_runner"
+version = "0.1.0"
+dependencies = [
+ "console",
+ "insta",
+ "moon_action",
+ "moon_cache",
+ "moon_config",
+ "moon_contract",
+ "moon_error",
+ "moon_hasher",
+ "moon_lang",
+ "moon_logger",
+ "moon_platform_node",
+ "moon_platform_system",
+ "moon_project",
+ "moon_project_graph",
+ "moon_task",
+ "moon_terminal",
+ "moon_toolchain",
+ "moon_utils",
+ "moon_vcs",
+ "moon_workspace",
+ "petgraph",
+ "serde",
  "thiserror",
  "tokio",
 ]

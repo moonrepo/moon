@@ -1,5 +1,5 @@
 use crate::helpers::load_workspace;
-use moon_action_runner::DepGraph;
+use moon_runner::DepGraph;
 use moon_task::Target;
 
 pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {

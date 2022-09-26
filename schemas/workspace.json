@@ -206,7 +206,7 @@
           ]
         },
         "version": {
-          "default": "16.16.0",
+          "default": "16.17.0",
           "type": "string"
         },
         "yarn": {
@@ -377,6 +377,15 @@
         "version"
       ],
       "properties": {
+        "plugins": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "version": {
           "type": "string"
         }

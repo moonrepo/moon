@@ -555,6 +555,29 @@ const javascriptRows: Comparison[] = [
 	},
 ];
 
+const dockerRows: Comparison[] = [
+	{
+		feature: 'Efficient scaffolding for Dockerfile layer caching',
+		support: {
+			moon: SUPPORTED,
+			turborepo: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Automatic production-only dependency installation',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Environment pruning to reduce image/container sizes',
+		support: {
+			moon: SUPPORTED,
+			turborepo: SUPPORTED,
+		},
+	},
+];
+
 function isSupported(data?: string[] | string): boolean {
 	if (!data) {
 		return false;
@@ -618,6 +641,7 @@ function createTable(rows: Comparison[]) {
 	return () => <Table rows={rows} />;
 }
 
+export const DockerTable = createTable(dockerRows);
 export const GeneratorTable = createTable(generatorRows);
 export const JavaScriptTable = createTable(javascriptRows);
 export const ProjectsTable = createTable(projectsRows);

@@ -73,7 +73,7 @@ templates/
 Partials are special template files that are used for
 [composition](https://tera.netlify.app/docs/#include) and
 [inheritance](https://tera.netlify.app/docs/#inheritance). Because of this, these files _should not_
-be generated into the target destination, and do not support frontmatter.
+be generated into the target destination, and _do not_ support frontmatter.
 
 To ensure they are not generated, include the word "partial" anywhere in the file path. For example,
 `partials/header.tpl` or `header.partial.tpl`.

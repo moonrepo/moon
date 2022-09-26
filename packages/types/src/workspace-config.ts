@@ -21,6 +21,10 @@ export interface NodePackageManagerConfig {
 	version: string;
 }
 
+export interface YarnConfig extends NodePackageManagerConfig {
+	plugins: string[];
+}
+
 export interface NodeConfig {
 	addEnginesConstraint: boolean;
 	aliasPackageNames: 'name-and-scope' | 'name-only' | null;
@@ -33,7 +37,7 @@ export interface NodeConfig {
 	syncProjectWorkspaceDependencies: boolean;
 	syncVersionManagerConfig: 'nodenv' | 'nvm' | null;
 	version: string;
-	yarn: NodePackageManagerConfig | null;
+	yarn: YarnConfig | null;
 }
 
 export interface RunnerConfig {

@@ -1,0 +1,177 @@
+---
+slug: v0.15
+title: v0.15 - Enhanced Docker support and 1,000 stars!
+authors: [milesj]
+tags: [generator, docker]
+image: ./img/v0.15.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Image from '@site/src/components/Image';
+
+With this release, we've focused heavily on Docker integration and enhancing the `Dockerfile`
+workflow, as well as some minor quality of life improvements for template files and run reports.
+
+<!--truncate-->
+
+## 1,000 ⭐️🌟⭐️!
+
+Before we dive into the release, we want to thank everyone for the initial support, as we passed
+[1,000 stars on GitHub](https://github.com/moonrepo/moon) earlier this week! moon was announced back
+in June, and to reach this milestone in roughly 3 months is very exciting. We greatly appreciate the
+support, and to everyone that is using moon and providing feedback, we thank you from the bottom of
+our hearts!
+
+We have a very long roadmap ahead of us, but are very excited to bring all of these features to you,
+and to improve the overall developer experience for your monorepos! Here's to 10,000 stars!
+
+## First-class Docker support
+
+[Docker](https://www.docker.com/) is a very popular tool that is typically a part of a developers
+workflow, but is also a very tedious one, as `Dockerfile`s have to be manually curated for every
+project. We aim to mitigate this problem by supporting Docker as a first-class feature, and by
+introducing 2 new commands, [`moon docker scaffold`](../docs/commands/docker/scaffold) and
+[`moon docker prune`](../docs/commands/docker/prune).
+
+These commands will automate a `Dockerfile` as much as possible to effectively take advantage of
+Docker's layer caching, multi-staged builds, to reduce the amount of manual `COPY` commands, to
+reduce the overall size of the container or image, and much more. To demonstrate this, compare the
+before and after `Dockerfile`s below!
+
+<Tabs
+  groupId="dockerfile"
+  defaultValue="before"
+  values={[
+    { label: 'Before', value: 'before' },
+    { label: 'After', value: 'after' },
+  ]}
+>
+<TabItem value="before">
+
+```docker
+FROM node:latest
+
+WORKDIR /app
+
+# Install moon binary
+RUN npm install -g @moonrepo/cli
+
+# Copy moon files
+COPY ./.moon ./.moon
+
+# Copy all package.json's and lockfiles
+COPY ./packages/cli/package.json ./packages/cli/package.json
+COPY ./packages/core-linux-arm64-gnu/package.json ./packages/core-linux-arm64-gnu/package.json
+COPY ./packages/core-linux-arm64-musl/package.json ./packages/core-linux-arm64-musl/package.json
+COPY ./packages/core-linux-x64-gnu/package.json ./packages/core-linux-x64-gnu/package.json
+COPY ./packages/core-linux-x64-musl/package.json ./packages/core-linux-x64-musl/package.json
+COPY ./packages/core-macos-arm64/package.json ./packages/core-macos-arm64/package.json
+COPY ./packages/core-macos-x64/package.json ./packages/core-macos-x64/package.json
+COPY ./packages/core-windows-x64-msvc/package.json ./packages/core-windows-x64-msvc/package.json
+COPY ./packages/runtime/package.json ./packages/runtime/package.json
+COPY ./packages/types/package.json ./packages/types/package.json
+COPY ./package.json ./package.json
+COPY ./yarn.lock ./yarn.lock
+COPY ./.yarn ./.yarn
+COPY ./.yarnrc.yml ./yarnrc.yml
+
+# Install toolchain and dependencies
+RUN moon setup
+
+# Copy project and required files
+COPY ./packages/types ./packages/types
+COPY ./packages/runtime ./packages/runtime
+# COPY . .
+
+# Build the target
+RUN moon run runtime:build
+```
+
+</TabItem>
+<TabItem value="after">
+
+```docker
+#### BASE
+FROM node:latest AS base
+WORKDIR /app
+
+# Install moon binary
+RUN npm install -g @moonrepo/cli
+
+#### WORKSPACE
+FROM base AS workspace
+WORKDIR /app
+
+# Copy entire repository and scaffold
+COPY . .
+RUN moon docker scaffold runtime
+
+#### BUILD
+FROM base AS build
+WORKDIR /app
+
+# Copy workspace skeleton
+COPY --from=workspace /app/.moon/docker/workspace .
+
+# Install toolchain and dependencies
+RUN moon setup
+
+# Copy source files
+COPY --from=workspace /app/.moon/docker/sources .
+
+# Build the target
+RUN moon run runtime:build
+
+# Prune workspace
+RUN moon docker prune
+```
+
+</TabItem>
+</Tabs>
+
+> View the official [Docker usage guide](../docs/guides/docker) for an in-depth walkthrough of all
+> these new features!
+
+## Frontmatter for template files
+
+We released [templates and the generator in v0.14](./v0.14) for quick and easy code generation.
+Since it was the initial release, it provided the bare minimum of features for common workflows.
+We'll continually improve this system over each release, and have done just that for this release,
+as all template files now support [frontmatter](../docs/guides/codegen#frontmatter)! Frontmatter is
+a mechanism for declaring _per-file configuration_, and is denoted by `---` delimiters at the top of
+the file.
+
+This allows you to do some really cool stuff, like overriding the destination path of the file using
+the `to` field, as well as taking full advantage of Tera's filters and conditional rendering!
+
+```twig title="templates/react/components/base.tsx"
+{% set component_name = name | pascal_case %}
+
+---
+to: components/{{ component_name }}.tsx
+---
+
+export function {{ component_name }}() {
+	return <div />;
+}
+```
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.15.0) for a
+full list of changes.
+
+- Run reports (via `--report`) now include additional information, like the total duration, and
+  estimated time savings.
+  - The [moonrepo/run-report-action](https://github.com/marketplace/actions/moon-ci-run-reports) has
+    been updated with this information.
+- Improved pnpm integration for Go/Rust binaries shipped in node modules.
+
+## What's next?
+
+Expect the following in the v0.16 release!
+
+- Quality of life improvements for TypeScript.
+- Per-project overrides for language/tool versions.

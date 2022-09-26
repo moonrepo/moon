@@ -22,6 +22,7 @@
 #### 🐞 Fixes
 
 - Added missing `.npmrc` to the list of pnpm config files.
+- Improved the handling of Rust/Go binaries shipped in pnpm node modules.
 
 #### ⚙️ Internal
 

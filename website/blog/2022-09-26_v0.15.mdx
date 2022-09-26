@@ -11,9 +11,42 @@ TODO
 
 <!--truncate-->
 
+## 1,000 ⭐️🌟⭐️!
+
+Before we dive into the release, we want to thank everyone for the initial support, as we passed
+[1,000 stars on GitHub](https://github.com/moonrepo/moon) earlier this week! moon was announced back
+in June, and to reach this milestone in roughly 3 months is very exciting. We greatly appreciate the
+support, and to everyone that is using moon and providing feedback, we thank you from the bottom of
+our hearts!
+
+We have a very long roadmap ahead of us, but are very excited to bring all of these features to you,
+and to improve the overall developer experience for your monorepos!
+
 ## First-class Docker support
 
 ## Frontmatter for template files
+
+We released [templates and the generator in v0.14](./v0.14) for quick and easy code generation.
+Since it was the initial release, it provided the bare minimum of features for common workflows.
+We'll continually improve this system over each release, and have done just that for this release,
+as all template files now support [frontmatter](../docs/guides/codegen#frontmatter)! Frontmatter is
+a mechanism for declaring _per-file configuration_, and is denoted by `---` delimiters at the top of
+the file.
+
+This allows you to do some really cool stuff, like overriding the destination path of the file using
+the `to` field, as well as taking full advantage of Tera's filters and conditional rendering!
+
+```twig
+{% set component_name = name | pascal_case %}
+
+---
+to: components/{{ component_name }}.tsx
+---
+
+export function {{ component_name }}() {
+	return <div />;
+}
+```
 
 ## Other changes
 
@@ -23,7 +56,9 @@ full list of changes.
 
 - Run reports (via `--report`) now include additional information, like the total duration, and
   estimated time savings.
-- Improved pnpm integration.
+  - The [moonrepo/run-report-action](https://github.com/marketplace/actions/moon-ci-run-reports) has
+    been updated with this information.
+- Improved pnpm integration for Go/Rust binaries shipped in node modules.
 
 ## What's next?
 

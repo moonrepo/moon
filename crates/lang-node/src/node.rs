@@ -41,12 +41,27 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
     PathBuf::from(captures.get(0).unwrap().as_str())
 }
 
+pub fn has_shebang(contents: &str, command: &str) -> bool {
+    contents.starts_with(&format!("#!/usr/bin/env {command}"))
+        || contents.starts_with(&format!("#!/usr/bin/{command}"))
+        || contents.starts_with(&format!("#!/bin/{command}"))
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BinFile {
     Binary(PathBuf), // Rust, Go
     Script(PathBuf), // JavaScript
 }
 
+/// Bin files may be JavaScript, Bash, Go, or Rust.
+///
+/// npm:
+///     - Unix: Symlinks to the bin file in node_modules.
+/// pnpm:
+///     - Unix: Creates a wrapping shell script that executes the bin file.
+/// Yarn:
+///     - Unix: Symlinks to the bin file in node_modules.
+///     - Windows: Creates a wrapping shell script AND .cmd that executes the bin file.
 #[cached(result)]
 #[track_caller]
 pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> Result<BinFile, MoonError> {
@@ -67,18 +82,26 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> Result<BinFile, M
     }
 
     let contents = String::from_utf8(buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
+    let is_cmd_file = match bin_path.extension() {
+        Some(ext) => ext.to_str().unwrap_or_default().ends_with(".cmd"),
+        None => false,
+    };
 
     // Found a JavaScript file, use as-is
-    if contents.starts_with("#!/usr/bin/env node") || contents.starts_with("#!/usr/bin/node") {
+    if has_shebang(&contents, "node") {
         return Ok(BinFile::Script(bin_path));
     }
 
     // Found a bash/batch script, extract the relative bin path from it
-    let extracted_path = parse_bin_file(&bin_path, contents);
+    if is_cmd_file || has_shebang(&contents, "bash") || has_shebang(&contents, "sh") {
+        let extracted_path = parse_bin_file(&bin_path, contents);
+        let extracted_bin = path::normalize(bin_path.parent().unwrap().join(extracted_path));
 
-    Ok(BinFile::Script(path::normalize(
-        bin_path.parent().unwrap().join(extracted_path),
-    )))
+        // Do another pass, as the extracted file may be a binary
+        return extract_canonical_node_module_bin(extracted_bin);
+    }
+
+    return Ok(BinFile::Script(bin_path));
 }
 
 pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {

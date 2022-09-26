@@ -149,6 +149,34 @@ tasks:
     type: 'system'
 ```
 
+### Can we run other languages?
+
+Yes! Although our toolchain only supports JavaScript/Node.js at this time, you can still run other
+languages within tasks by setting their [`type`](./config/project#type) to "system". System tasks
+are an escape hatch that will use any command available on the current machine.
+
+```yaml title="moon.yml"
+tasks:
+  # Ruby
+  lint:
+    command: 'rubocop'
+    type: 'system'
+  # PHP
+  test:
+    command: 'phpunit tests'
+    type: 'system'
+```
+
+However, because these languages are not supported directly within our toolchain, they will not
+receive the benefits of the toolchain. Some of which are:
+
+- Automatic installation of the language. System tasks expect the command to already exist in the
+  environment, which requires the user to manually install.
+- Consistent language version across all machines.
+- Built-in cpu and heap profiling (language specific).
+- Automatic dependency installs when the lockfile changes.
+- And many more.
+
 ## JavaScript ecosystem
 
 ### Can we use `package.json` scripts?

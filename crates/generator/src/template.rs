@@ -219,10 +219,19 @@ impl Template {
         path: &Path,
         context: &Context,
     ) -> Result<String, GeneratorError> {
-        let name = path::to_virtual_string(path)?;
+        let mut name = path::to_virtual_string(path)?;
+
+        // Remove template file extensions
+        if name.ends_with(".tera") {
+            name = name.strip_suffix(".tera").unwrap().to_owned();
+        }
+
+        if name.ends_with(".twig") {
+            name = name.strip_suffix(".twig").unwrap().to_owned();
+        }
 
         // Replace [var] with {{ var }} syntax
-        let name = PATH_VAR
+        name = PATH_VAR
             .replace_all(&name, |caps: &regex::Captures| {
                 if let Some(var) = caps.get(1) {
                     let var = var.as_str();

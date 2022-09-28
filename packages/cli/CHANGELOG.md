@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Generator
+  - Template files can now be suffixed with `.tera` or `.twig` for syntax highlighting.
+
 ## 0.15.0
 
 #### 🚀 Updates

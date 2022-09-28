@@ -209,6 +209,35 @@ fn supports_custom_filters() {
     assert_snapshot!(fs::read_to_string(fixture.path().join("./test/filters.txt")).unwrap());
 }
 
+#[test]
+fn supports_tera_twig_exts() {
+    let fixture = create_sandbox("generator");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("generate")
+        .arg("extensions")
+        .arg("./test")
+        .arg("--defaults")
+        .assert();
+
+    assert.success();
+
+    let tera = fixture.path().join("./test/file.ts");
+    let twig = fixture.path().join("./test/file.tsx");
+
+    assert!(tera.exists());
+    assert!(twig.exists());
+
+    assert_eq!(
+        fs::read_to_string(tera).unwrap(),
+        "export type FooBar = true;\n"
+    );
+    assert_eq!(
+        fs::read_to_string(twig).unwrap(),
+        "export type FooBar = true;\n"
+    );
+}
+
 mod frontmatter {
     use super::*;
 

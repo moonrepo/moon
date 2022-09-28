@@ -40,3 +40,9 @@ export interface TemplateConfig {
 	tite: string;
 	variables: Record<string, TemplateVariable>;
 }
+
+export interface TemplateFrontmatterConfig {
+	force: boolean | null;
+	to: string | null;
+	skip: boolean | null;
+}

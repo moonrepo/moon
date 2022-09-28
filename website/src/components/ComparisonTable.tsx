@@ -429,6 +429,12 @@ const generatorRows: Comparison[] = [
 		},
 	},
 	{
+		feature: 'Template file extensions (optional)',
+		support: {
+			moon: [SUPPORTED, '.tera, .twig'],
+		},
+	},
+	{
 		feature: 'Template files support frontmatter',
 		support: {
 			moon: SUPPORTED,
@@ -451,8 +457,8 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Renders with a template engine',
 		support: {
-			moon: [SUPPORTED, 'via tera'],
-			nx: [SUPPORTED, 'via ejs'],
+			moon: [SUPPORTED, 'via Tera'],
+			nx: [SUPPORTED, 'via EJS'],
 		},
 	},
 	{

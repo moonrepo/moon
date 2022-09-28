@@ -65,7 +65,7 @@ templates/
 > a template file `src/[type].ts`, and a variable `type` with a value of "bin", then the destination
 > file path would be `src/bin.ts`.
 
-#### File extensions
+#### File extensions<VersionLabel version="0.16" />
 
 To enable syntax highlighting for template engine syntax, you may use the `.tera` (preferred) or
 `.twig` file extensions. These extensions are optional, but will be removed when the files are
@@ -79,6 +79,8 @@ configured based on file type.
   - [Twig extension](https://marketplace.visualstudio.com/items?itemName=mblode.twig-language-2)
 - **Atom**
   - [Twig package](https://atom.io/packages/atom-twig)
+- **Webstorm**
+  - [Twig plugin](https://plugins.jetbrains.com/plugin/7303-twig)
 
 #### Partials
 
@@ -90,7 +92,7 @@ be generated into the target destination, and _do not_ support frontmatter.
 To ensure they are not generated, include the word "partial" anywhere in the file path. For example,
 `partials/header.tpl` or `header.partial.tpl`.
 
-#### Frontmatter
+#### Frontmatter<VersionLabel version="0.15" />
 
 Frontmatter is a well-known concept for "per file configuration", and is achieved by inserting YAML
 at the top of the file, delimited by wrapping `---`. This is a very powerful feature that provides

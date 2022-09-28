@@ -1,0 +1,7 @@
+title: 'Template title'
+description: 'Some description of the template and its files.'
+variables:
+  name:
+    type: 'string'
+    default: 'foo bar'
+    prompt: 'A name to use for variables'

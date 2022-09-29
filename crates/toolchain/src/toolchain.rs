@@ -4,6 +4,7 @@ use crate::manager::ToolManager;
 use crate::tools::node::NodeTool;
 use moon_config::WorkspaceConfig;
 use moon_constants::CONFIG_DIRNAME;
+use moon_contract::SupportedPlatform;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, path};
 use std::path::{Path, PathBuf};
@@ -40,27 +41,17 @@ pub struct Toolchain {
     /// Node.js!
     pub node: ToolManager<NodeTool>,
 
-    /// The directory where temporary files are stored.
-    /// This is typically ~/.moon/temp.
-    pub temp_dir: PathBuf,
-
-    /// The directory where tools are installed by version.
-    /// This is typically ~/.moon/tools.
-    pub tools_dir: PathBuf,
-
     /// The workspace root directory.
     pub workspace_root: PathBuf,
 }
 
 impl Toolchain {
-    pub async fn create_from_dir(
-        base_dir: &Path,
-        root_dir: &Path,
+    pub async fn create_from<P: AsRef<Path>>(
+        base_dir: P,
+        workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
-        let dir = base_dir.join(CONFIG_DIRNAME);
-        let temp_dir = dir.join("temp");
-        let tools_dir = dir.join("tools");
+        let dir = base_dir.as_ref().join(CONFIG_DIRNAME);
 
         debug!(
             target: LOG_TARGET,
@@ -69,34 +60,32 @@ impl Toolchain {
         );
 
         create_dir(&dir).await?;
-        create_dir(&temp_dir).await?;
-        create_dir(&tools_dir).await?;
 
         let mut toolchain = Toolchain {
             dir,
-            temp_dir,
-            tools_dir,
-            workspace_root: root_dir.to_path_buf(),
+            workspace_root: workspace_root.to_path_buf(),
             // Tools
-            node: ToolManager::default(),
+            node: ToolManager::new(SupportedPlatform::Node("latest".into())),
         };
 
         let paths = toolchain.get_paths();
 
         if let Some(node_config) = &workspace_config.node {
-            toolchain.node = ToolManager::from(NodeTool::new(&paths, node_config)?);
+            toolchain
+                .node
+                .register(NodeTool::new(&paths, node_config)?, true);
         }
 
         Ok(toolchain)
     }
 
     pub async fn create(
-        root_dir: &Path,
+        workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
-        Toolchain::create_from_dir(
-            &path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
-            root_dir,
+        Toolchain::create_from(
+            path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
+            workspace_root,
             workspace_config,
         )
         .await
@@ -104,8 +93,12 @@ impl Toolchain {
 
     pub fn get_paths(&self) -> ToolchainPaths {
         ToolchainPaths {
-            temp: self.temp_dir.clone(),
-            tools: self.tools_dir.clone(),
+            /// The directory where temporary files are stored.
+            /// This is typically ~/.moon/temp.
+            temp: self.dir.join("temp"),
+            /// The directory where tools are installed by version.
+            /// This is typically ~/.moon/tools.
+            tools: self.dir.join("tools"),
         }
     }
 

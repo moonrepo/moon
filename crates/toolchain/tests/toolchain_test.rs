@@ -13,7 +13,7 @@ async fn create_toolchain(base_dir: &Path) -> Toolchain {
         ..WorkspaceConfig::default()
     };
 
-    Toolchain::create_from_dir(base_dir, &env::temp_dir(), &config)
+    Toolchain::create_from(base_dir, &env::temp_dir(), &config)
         .await
         .unwrap()
 }
@@ -22,15 +22,16 @@ async fn create_toolchain(base_dir: &Path) -> Toolchain {
 async fn generates_paths() {
     let base_dir = assert_fs::TempDir::new().unwrap();
     let toolchain = create_toolchain(&base_dir).await;
+    let paths = toolchain.get_paths();
 
     assert!(predicates::str::ends_with(".moon").eval(toolchain.dir.to_str().unwrap()));
     assert!(
         predicates::str::ends_with(PathBuf::from(".moon").join("temp").to_str().unwrap())
-            .eval(toolchain.temp_dir.to_str().unwrap())
+            .eval(paths.temp.to_str().unwrap())
     );
     assert!(
         predicates::str::ends_with(PathBuf::from(".moon").join("tools").to_str().unwrap())
-            .eval(toolchain.tools_dir.to_str().unwrap())
+            .eval(paths.tools.to_str().unwrap())
     );
 
     base_dir.close().unwrap();

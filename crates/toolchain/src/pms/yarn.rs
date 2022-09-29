@@ -54,14 +54,6 @@ impl Lifecycle<NodeTool> for YarnTool {
             return Ok(0);
         }
 
-        // We must do this here instead of `install`, because the bin path
-        // isn't available yet during installation, only after!
-        debug!(
-            target: self.get_log_target(),
-            "Updating package manager version with {}",
-            color::shell(format!("yarn set version {}", self.config.version))
-        );
-
         // We also dont want to *always* run this, so only run it when
         // we detect different yarn version files in the repo. Also note, we don't
         // have access to the workspace root here...
@@ -75,6 +67,14 @@ impl Lifecycle<NodeTool> for YarnTool {
             .join(format!("yarn-{}.cjs", self.config.version));
 
         if !yarn_bin.exists() {
+            // We must do this here instead of `install`, because the bin path
+            // isn't available yet during installation, only after!
+            debug!(
+                target: self.get_log_target(),
+                "Updating package manager version with {}",
+                color::shell(format!("yarn set version {}", self.config.version))
+            );
+
             self.create_command()
                 .args(["set", "version", &self.config.version])
                 .exec_capture_output()

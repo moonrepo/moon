@@ -42,13 +42,16 @@ pub async fn setup_toolchain(
             // is created, so any missing version must be an override at
             // the project-level. If so, use config defaults.
             if !node.has(version) {
-                node.register(NodeTool::new(
-                    &toolchain_paths,
-                    &NodeConfig {
-                        version: version.to_owned(),
-                        ..NodeConfig::default()
-                    },
-                )?);
+                node.register(
+                    NodeTool::new(
+                        &toolchain_paths,
+                        &NodeConfig {
+                            version: version.to_owned(),
+                            ..NodeConfig::default()
+                        },
+                    )?,
+                    false,
+                );
             }
 
             node.setup(version, check_versions).await?

@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct YarnTool {
     bin_path: PathBuf,
 
@@ -53,14 +54,6 @@ impl Lifecycle<NodeTool> for YarnTool {
             return Ok(0);
         }
 
-        // We must do this here instead of `install`, because the bin path
-        // isn't available yet during installation, only after!
-        debug!(
-            target: self.get_log_target(),
-            "Updating package manager version with {}",
-            color::shell(format!("yarn set version {}", self.config.version))
-        );
-
         // We also dont want to *always* run this, so only run it when
         // we detect different yarn version files in the repo. Also note, we don't
         // have access to the workspace root here...
@@ -74,6 +67,14 @@ impl Lifecycle<NodeTool> for YarnTool {
             .join(format!("yarn-{}.cjs", self.config.version));
 
         if !yarn_bin.exists() {
+            // We must do this here instead of `install`, because the bin path
+            // isn't available yet during installation, only after!
+            debug!(
+                target: self.get_log_target(),
+                "Updating package manager version with {}",
+                color::shell(format!("yarn set version {}", self.config.version))
+            );
+
             self.create_command()
                 .args(["set", "version", &self.config.version])
                 .exec_capture_output()
@@ -219,12 +220,13 @@ impl PackageManager<NodeTool> for YarnTool {
             {
                 // Will error if the lockfile does not exist!
                 toolchain
-                    .get_node()?
+                    .node
+                    .get()?
                     .get_npm()
                     .exec_package(
                         toolchain,
                         "yarn-deduplicate",
-                        vec!["yarn-deduplicate", YARN.lock_filenames[0]],
+                        vec!["yarn-deduplicate", YARN.lock_filename],
                     )
                     .await?;
             }
@@ -261,7 +263,7 @@ impl PackageManager<NodeTool> for YarnTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(YARN.lock_filenames[0])
+        String::from(YARN.lock_filename)
     }
 
     fn get_manifest_filename(&self) -> String {
@@ -272,7 +274,7 @@ impl PackageManager<NodeTool> for YarnTool {
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let lockfile_path = match fs::find_upwards(YARN.lock_filenames[0], project_root) {
+        let lockfile_path = match fs::find_upwards(YARN.lock_filename, project_root) {
             Some(path) => path,
             None => {
                 return Ok(HashMap::new());

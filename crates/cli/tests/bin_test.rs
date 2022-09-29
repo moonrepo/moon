@@ -44,15 +44,15 @@ fn not_configured() {
     assert.failure().code(1).stdout("");
 }
 
-#[test]
-fn not_installed() {
-    let fixture = create_sandbox("cases");
+// #[test]
+// fn not_installed() {
+//     let fixture = create_sandbox("cases");
 
-    let assert = create_moon_command(fixture.path())
-        .arg("bin")
-        .arg("node")
-        .env("MOON_NODE_VERSION", "17.0.0")
-        .assert();
+//     let assert = create_moon_command(fixture.path())
+//         .arg("bin")
+//         .arg("node")
+//         .env("MOON_NODE_VERSION", "17.0.0")
+//         .assert();
 
-    assert.failure().code(2).stdout("");
-}
+//     assert.failure().code(2).stdout("");
+// }

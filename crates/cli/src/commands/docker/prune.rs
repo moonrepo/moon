@@ -37,7 +37,8 @@ pub async fn prune_node(
 
     // Install production only dependencies for focused projects
     toolchain
-        .get_node()?
+        .node
+        .get()?
         .get_package_manager()
         .install_focused_dependencies(toolchain, &package_names, true)
         .await?;

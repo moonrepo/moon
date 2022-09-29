@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct NpmTool {
     bin_path: PathBuf,
 
@@ -233,13 +234,12 @@ impl PackageManager<NodeTool> for NpmTool {
 
         exec_args.extend(args);
 
-        let install_dir = toolchain.get_node()?.get_install_dir()?;
-        let npx_path = node::find_package_manager_bin(install_dir, "npx");
+        let npx_path = node::find_package_manager_bin(&self.install_dir, "npx");
 
         Command::new(&npx_path)
             .args(exec_args)
             .cwd(&toolchain.workspace_root)
-            .env("PATH", get_path_env_var(install_dir))
+            .env("PATH", get_path_env_var(&self.install_dir))
             .exec_stream_output()
             .await?;
 
@@ -247,7 +247,7 @@ impl PackageManager<NodeTool> for NpmTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(NPM.lock_filenames[0])
+        String::from(NPM.lock_filename)
     }
 
     fn get_manifest_filename(&self) -> String {
@@ -258,7 +258,7 @@ impl PackageManager<NodeTool> for NpmTool {
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let lockfile_path = match fs::find_upwards(NPM.lock_filenames[0], project_root) {
+        let lockfile_path = match fs::find_upwards(NPM.lock_filename, project_root) {
             Some(path) => path,
             None => {
                 return Ok(HashMap::new());

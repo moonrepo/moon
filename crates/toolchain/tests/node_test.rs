@@ -1,11 +1,12 @@
 use moon_config::{NodeConfig, WorkspaceConfig};
 use moon_lang_node::node;
+use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Downloadable, Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
 use std::path::PathBuf;
 
-async fn create_node_tool() -> (Toolchain, assert_fs::TempDir) {
+async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
     let config = WorkspaceConfig {
@@ -16,11 +17,14 @@ async fn create_node_tool() -> (Toolchain, assert_fs::TempDir) {
         ..WorkspaceConfig::default()
     };
 
-    let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
+    let toolchain = Toolchain::create_from(base_dir.path(), &env::temp_dir(), &config)
         .await
         .unwrap();
 
-    (toolchain, base_dir)
+    (
+        NodeTool::new(&toolchain.get_paths(), config.node.as_ref().unwrap()).unwrap(),
+        base_dir,
+    )
 }
 
 fn get_download_file() -> String {
@@ -33,8 +37,7 @@ fn create_shasums(hash: &str) -> String {
 
 #[tokio::test]
 async fn generates_paths() {
-    let (toolchain, temp_dir) = create_node_tool().await;
-    let node = toolchain.get_node().unwrap();
+    let (node, temp_dir) = create_node_tool().await;
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")
@@ -74,8 +77,7 @@ mod download {
 
     #[tokio::test]
     async fn is_downloaded_checks() {
-        let (toolchain, temp_dir) = create_node_tool().await;
-        let node = toolchain.get_node().unwrap();
+        let (node, temp_dir) = create_node_tool().await;
 
         assert!(!node.is_downloaded().await.unwrap());
 
@@ -93,8 +95,7 @@ mod download {
 
     #[tokio::test]
     async fn downloads_to_temp_dir() {
-        let (toolchain, temp_dir) = create_node_tool().await;
-        let node = toolchain.get_node().unwrap();
+        let (node, temp_dir) = create_node_tool().await;
 
         assert!(!node.get_download_path().unwrap().exists());
 
@@ -111,7 +112,7 @@ mod download {
             ))
             .create();
 
-        node.download(&toolchain, Some(&mockito::server_url()))
+        node.download(&(), Some(&mockito::server_url()))
             .await
             .unwrap();
 
@@ -126,8 +127,7 @@ mod download {
     #[tokio::test]
     #[should_panic(expected = "InvalidShasum")]
     async fn fails_on_invalid_shasum() {
-        let (toolchain, temp_dir) = create_node_tool().await;
-        let node = toolchain.get_node().unwrap();
+        let (node, temp_dir) = create_node_tool().await;
 
         let archive = mock(
             "GET",
@@ -140,7 +140,7 @@ mod download {
             .with_body(create_shasums("fakehash"))
             .create();
 
-        node.download(&toolchain, Some(&mockito::server_url()))
+        node.download(&(), Some(&mockito::server_url()))
             .await
             .unwrap();
 

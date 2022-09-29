@@ -22,7 +22,7 @@ pub const NPM: PackageManager = PackageManager {
     binary: "npm",
     config_filenames: &[".npmrc"],
     default_version: "8.19.2",
-    lock_filenames: &["package-lock.json", "npm-shrinkwrap.json"],
+    lock_filename: "package-lock.json",
     manifest_filename: "package.json",
 };
 
@@ -30,7 +30,7 @@ pub const PNPM: PackageManager = PackageManager {
     binary: "pnpm",
     config_filenames: &[".npmrc", "pnpm-workspace.yaml", ".pnpmfile.cjs"],
     default_version: "7.12.1",
-    lock_filenames: &["pnpm-lock.yaml"],
+    lock_filename: "pnpm-lock.yaml",
     manifest_filename: "package.json",
 };
 
@@ -38,7 +38,7 @@ pub const YARN: PackageManager = PackageManager {
     binary: "yarn",
     config_filenames: &[".yarn", ".yarnrc", ".yarnrc.yml"],
     default_version: "3.2.3",
-    lock_filenames: &["yarn.lock"],
+    lock_filename: "yarn.lock",
     manifest_filename: "package.json",
 };
 

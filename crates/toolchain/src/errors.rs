@@ -14,8 +14,8 @@ pub enum ToolchainError {
     #[error("Unable to find a node module binary for <symbol>{0}</symbol>. Have you installed the corresponding package?")]
     MissingNodeModuleBin(String), // bin name
 
-    #[error("Node.js has not been configured or installed, unable to proceed.")]
-    RequiresNode,
+    #[error("{0} has not been configured or installed, unable to proceed.")]
+    MissingTool(String),
 
     #[error("This functionality requires workspace tools. Install it with <shell>yarn plugin import workspace-tools</shell>.")]
     RequiresYarnWorkspacesPlugin,

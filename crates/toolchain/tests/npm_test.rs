@@ -1,11 +1,12 @@
 use moon_config::{NodeConfig, NpmConfig, WorkspaceConfig};
 use moon_lang_node::node;
+use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
 use std::path::PathBuf;
 
-async fn create_npm_tool() -> (Toolchain, assert_fs::TempDir) {
+async fn create_npm_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
 
     let config = WorkspaceConfig {
@@ -19,17 +20,20 @@ async fn create_npm_tool() -> (Toolchain, assert_fs::TempDir) {
         ..WorkspaceConfig::default()
     };
 
-    let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
+    let toolchain = Toolchain::create_from(base_dir.path(), &env::temp_dir(), &config)
         .await
         .unwrap();
 
-    (toolchain, base_dir)
+    (
+        NodeTool::new(&toolchain.get_paths(), config.node.as_ref().unwrap()).unwrap(),
+        base_dir,
+    )
 }
 
 #[tokio::test]
 async fn generates_paths() {
-    let (toolchain, temp_dir) = create_npm_tool().await;
-    let npm = toolchain.get_node().unwrap().get_npm();
+    let (node, temp_dir) = create_npm_tool().await;
+    let npm = node.get_npm();
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")

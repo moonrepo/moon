@@ -41,18 +41,18 @@ async fn generates_paths() {
 async fn creates_dirs() {
     let base_dir = assert_fs::TempDir::new().unwrap();
     let home_dir = base_dir.join(".moon");
-    let temp_dir = base_dir.join(".moon/temp");
-    let tools_dir = base_dir.join(".moon/tools");
+    // let temp_dir = base_dir.join(".moon/temp");
+    // let tools_dir = base_dir.join(".moon/tools");
 
     assert!(!home_dir.exists());
-    assert!(!temp_dir.exists());
-    assert!(!tools_dir.exists());
+    // assert!(!temp_dir.exists());
+    // assert!(!tools_dir.exists());
 
     create_toolchain(&base_dir).await;
 
     assert!(home_dir.exists());
-    assert!(temp_dir.exists());
-    assert!(tools_dir.exists());
+    // assert!(temp_dir.exists());
+    // assert!(tools_dir.exists());
 
     base_dir.close().unwrap();
 }

@@ -219,7 +219,8 @@ impl PackageManager<NodeTool> for YarnTool {
             {
                 // Will error if the lockfile does not exist!
                 toolchain
-                    .get_node()?
+                    .node
+                    .get()?
                     .get_npm()
                     .exec_package(
                         toolchain,

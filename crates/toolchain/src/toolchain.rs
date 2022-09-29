@@ -1,13 +1,11 @@
 use crate::errors::ToolchainError;
 use crate::helpers::LOG_TARGET;
+use crate::manager::ToolManager;
 use crate::tools::node::NodeTool;
 use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, path};
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     trace!(
@@ -44,7 +42,7 @@ pub struct Toolchain {
     pub workspace_root: PathBuf,
 
     /// Node.js!
-    pub node_cache: HashMap<String, NodeTool>,
+    pub node: ToolManager<NodeTool>,
 }
 
 impl Toolchain {
@@ -72,7 +70,7 @@ impl Toolchain {
             tools_dir,
             workspace_root: root_dir.to_path_buf(),
             // Tools
-            node_cache: HashMap::new(),
+            node: ToolManager::new("todo"),
         })
     }
 
@@ -84,22 +82,6 @@ impl Toolchain {
         .await
     }
 
-    /// Download and install all tools into the toolchain.
-    /// Return a count of how many tools were installed.
-    // pub async fn setup(&mut self, check_versions: bool) -> Result<u8, ToolchainError> {
-    //     debug!(target: LOG_TARGET, "Downloading and installing tools",);
-
-    //     let mut installed = 0;
-
-    //     if self.node.is_some() {
-    //         let mut node = self.node.take().unwrap();
-    //         installed += node.run_setup(self, check_versions).await?;
-    //         self.node = Some(node);
-    //     }
-
-    //     Ok(installed)
-    // }
-
     /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&mut self) -> Result<(), ToolchainError> {
         debug!(
@@ -107,22 +89,8 @@ impl Toolchain {
             "Tearing down toolchain, uninstalling tools",
         );
 
-        // if self.node.is_some() {
-        //     let mut node = self.node.take().unwrap();
-        //     node.run_teardown(self).await?;
-        // }
+        self.node.teardown().await?;
 
         Ok(())
-    }
-
-    /// Return the Node.js tool.
-    pub fn get_node(&self) -> Result<&NodeTool, ToolchainError> {
-        let version = "";
-
-        if !self.node_cache.contains_key(version) {
-            return Err(ToolchainError::RequiresNode);
-        }
-
-        Ok(self.node_cache.get(version).unwrap())
     }
 }

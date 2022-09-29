@@ -152,45 +152,36 @@ pub trait Lifecycle<T: Send + Sync>: Send + Sync {
 
 #[async_trait]
 pub trait Tool:
-    Send
-    + Sync
-    + Logable
-    + Downloadable<Toolchain>
-    + Installable<Toolchain>
-    + Executable<Toolchain>
-    + Lifecycle<Toolchain>
+    Send + Sync + Logable + Downloadable<()> + Installable<()> + Executable<()> + Lifecycle<()>
 {
     /// Download and install the tool within the toolchain.
     /// Once complete, trigger the setup hook, and return a count
     /// of how many sub-tools were installed.
-    async fn run_setup(
-        &mut self,
-        toolchain: &Toolchain,
-        check_version: bool,
-    ) -> Result<u8, ToolchainError> {
+    async fn run_setup(&mut self, check_version: bool) -> Result<u8, ToolchainError> {
         let mut installed = 0;
+        let parent = ();
 
-        self.run_download(toolchain).await?;
+        self.run_download(&parent).await?;
 
-        if self.run_install(toolchain, check_version).await? {
+        if self.run_install(&parent, check_version).await? {
             installed += 1;
         }
 
-        self.find_bin_path(toolchain).await?;
+        self.find_bin_path(&parent).await?;
 
-        installed += self
-            .setup(toolchain, installed > 0 || check_version)
-            .await?;
+        installed += self.setup(&parent, installed > 0 || check_version).await?;
 
         Ok(installed)
     }
 
     /// Teardown the tool by removing any downloaded/installed artifacts.
     /// This can be ran manually, or automatically during a failed load.
-    async fn run_teardown(&mut self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
-        self.run_undownload(toolchain).await?;
-        self.run_uninstall(toolchain).await?;
-        self.teardown(toolchain).await?;
+    async fn run_teardown(&mut self) -> Result<(), ToolchainError> {
+        let parent = ();
+
+        self.run_undownload(&parent).await?;
+        self.run_uninstall(&parent).await?;
+        self.teardown(&parent).await?;
 
         Ok(())
     }

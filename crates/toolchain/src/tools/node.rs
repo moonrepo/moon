@@ -173,7 +173,7 @@ impl Logable for NodeTool {
 }
 
 #[async_trait]
-impl Downloadable<Toolchain> for NodeTool {
+impl Downloadable<()> for NodeTool {
     fn get_download_path(&self) -> Result<&PathBuf, ToolchainError> {
         Ok(&self.download_path)
     }
@@ -182,11 +182,7 @@ impl Downloadable<Toolchain> for NodeTool {
         Ok(self.get_download_path()?.exists())
     }
 
-    async fn download(
-        &self,
-        _toolchain: &Toolchain,
-        base_host: Option<&str>,
-    ) -> Result<(), ToolchainError> {
+    async fn download(&self, _parent: &(), base_host: Option<&str>) -> Result<(), ToolchainError> {
         let version = &self.config.version;
         let host = base_host.unwrap_or("https://nodejs.org");
         let log_target = self.get_log_target();
@@ -229,7 +225,7 @@ impl Downloadable<Toolchain> for NodeTool {
 }
 
 #[async_trait]
-impl Installable<Toolchain> for NodeTool {
+impl Installable<()> for NodeTool {
     fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError> {
         Ok(&self.install_dir)
     }
@@ -240,13 +236,13 @@ impl Installable<Toolchain> for NodeTool {
 
     async fn is_installed(
         &self,
-        _toolchain: &Toolchain,
+        _parent: &(),
         _check_version: bool,
     ) -> Result<bool, ToolchainError> {
         Ok(self.get_install_dir()?.exists())
     }
 
-    async fn install(&self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install(&self, _parent: &()) -> Result<(), ToolchainError> {
         let download_path = self.get_download_path()?;
         let install_dir = self.get_install_dir()?;
         let prefix = node::get_download_file_name(&self.config.version)?;
@@ -264,8 +260,8 @@ impl Installable<Toolchain> for NodeTool {
 }
 
 #[async_trait]
-impl Executable<Toolchain> for NodeTool {
-    async fn find_bin_path(&mut self, _toolchain: &Toolchain) -> Result<(), ToolchainError> {
+impl Executable<()> for NodeTool {
+    async fn find_bin_path(&mut self, _parent: &()) -> Result<(), ToolchainError> {
         Ok(())
     }
 
@@ -279,12 +275,8 @@ impl Executable<Toolchain> for NodeTool {
 }
 
 #[async_trait]
-impl Lifecycle<Toolchain> for NodeTool {
-    async fn setup(
-        &mut self,
-        _toolchain: &Toolchain,
-        check_version: bool,
-    ) -> Result<u8, ToolchainError> {
+impl Lifecycle<()> for NodeTool {
+    async fn setup(&mut self, _parent: &(), check_version: bool) -> Result<u8, ToolchainError> {
         if self.is_corepack_aware() && check_version {
             debug!(
                 target: self.get_log_target(),

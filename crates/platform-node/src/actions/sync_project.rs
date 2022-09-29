@@ -78,7 +78,7 @@ pub async fn sync_project(
 ) -> Result<ActionStatus, WorkspaceError> {
     let mut mutated_files = false;
     let workspace = workspace.read().await;
-    let node = workspace.toolchain.get_node()?;
+    let node = workspace.toolchain.node.get()?;
     let project = workspace.projects.load(project_id)?;
     let is_project_typescript_enabled = project.config.workspace.typescript;
 

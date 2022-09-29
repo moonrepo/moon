@@ -29,7 +29,7 @@ async fn create_npm_tool() -> (Toolchain, assert_fs::TempDir) {
 #[tokio::test]
 async fn generates_paths() {
     let (toolchain, temp_dir) = create_npm_tool().await;
-    let npm = toolchain.get_node().unwrap().get_npm();
+    let npm = toolchain.node.get().unwrap().get_npm();
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")

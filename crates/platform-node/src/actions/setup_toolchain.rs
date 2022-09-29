@@ -1,7 +1,6 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_logger::debug;
 use moon_toolchain::tools::node::NodeTool;
-use moon_toolchain::Tool;
 use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -32,21 +31,15 @@ pub async fn setup_toolchain(
     let check_versions = cache.item.last_version_check_time == 0
         || (cache.item.last_version_check_time + HOUR * 12) <= now;
 
-    // Extract the tool from the toolchain or create a new instance
-    let mut node = match workspace.toolchain.node_cache.remove(version) {
-        Some(tool) => tool,
-        None => NodeTool::new(
-            &workspace.toolchain,
-            workspace.config.node.as_ref().unwrap(),
-        )?,
-    };
-
-    let installed = node.run_setup(&workspace.toolchain, check_versions).await?;
-
-    workspace
+    let toolchain_paths = workspace.toolchain.get_paths();
+    let node_config = workspace.config.node.as_ref().unwrap().clone();
+    let installed = workspace
         .toolchain
-        .node_cache
-        .insert(version.to_owned(), node);
+        .node
+        .setup(version, check_versions, || {
+            NodeTool::new(toolchain_paths, &node_config)
+        })
+        .await?;
 
     // Update the cache with the timestamp
     if check_versions {

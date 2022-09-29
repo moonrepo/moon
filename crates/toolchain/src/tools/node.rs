@@ -6,7 +6,7 @@ use crate::pms::npm::NpmTool;
 use crate::pms::pnpm::PnpmTool;
 use crate::pms::yarn::YarnTool;
 use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageManager, Tool};
-use crate::Toolchain;
+use crate::ToolchainPaths;
 use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_error::map_io_to_fs_error;
@@ -65,14 +65,14 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(toolchain: &Toolchain, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
-        let install_dir = toolchain.tools_dir.join("node").join(&config.version);
+    pub fn new(paths: ToolchainPaths, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
+        let install_dir = paths.tools.join("node").join(&config.version);
 
         let mut node = NodeTool {
             bin_path: install_dir.join(node::get_bin_name_suffix("node", "exe", false)),
             config: config.to_owned(),
-            download_path: toolchain
-                .temp_dir
+            download_path: paths
+                .temp
                 .join("node")
                 .join(node::get_download_file(&config.version)?),
             install_dir,
@@ -131,18 +131,12 @@ impl NodeTool {
 
     /// Return the `pnpm` package manager.
     pub fn get_pnpm(&self) -> Option<&PnpmTool> {
-        match &self.pnpm {
-            Some(tool) => Some(tool),
-            None => None,
-        }
+        self.pnpm.as_ref()
     }
 
     /// Return the `yarn` package manager.
     pub fn get_yarn(&self) -> Option<&YarnTool> {
-        match &self.yarn {
-            Some(tool) => Some(tool),
-            None => None,
-        }
+        self.yarn.as_ref()
     }
 
     pub fn get_package_manager(&self) -> &(dyn PackageManager<Self> + Send + Sync) {

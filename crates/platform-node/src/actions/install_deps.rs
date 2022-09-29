@@ -74,7 +74,7 @@ pub async fn install_deps(
     workspace: Arc<RwLock<Workspace>>,
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
-    let node = workspace.toolchain.get_node()?;
+    let node = workspace.toolchain.node.get()?;
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
     // Sync values to root `package.json`

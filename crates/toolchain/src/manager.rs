@@ -33,11 +33,11 @@ impl<T: Tool> ToolManager<T> {
         factory: F,
     ) -> Result<u8, ToolchainError>
     where
-        F: FnOnce() -> T,
+        F: FnOnce() -> Result<T, ToolchainError>,
     {
         let mut tool = match self.cache.remove(version) {
             Some(tool) => tool,
-            None => factory(),
+            None => factory()?,
         };
 
         let installed = tool.run_setup(check_versions).await?;

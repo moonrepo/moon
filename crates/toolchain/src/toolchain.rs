@@ -25,6 +25,11 @@ async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     Ok(())
 }
 
+pub struct ToolchainPaths {
+    pub temp: PathBuf,
+    pub tools: PathBuf,
+}
+
 pub struct Toolchain {
     /// The directory where toolchain artifacts are stored.
     /// This is typically ~/.moon.
@@ -80,6 +85,13 @@ impl Toolchain {
             root_dir,
         )
         .await
+    }
+
+    pub fn get_paths(&self) -> ToolchainPaths {
+        ToolchainPaths {
+            temp: self.temp_dir.clone(),
+            tools: self.tools_dir.clone(),
+        }
     }
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.

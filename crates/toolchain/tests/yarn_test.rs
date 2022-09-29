@@ -31,7 +31,7 @@ async fn create_yarn_tool() -> (Toolchain, assert_fs::TempDir) {
 #[tokio::test]
 async fn generates_paths() {
     let (toolchain, temp_dir) = create_yarn_tool().await;
-    let yarn = toolchain.get_node().unwrap().get_yarn().unwrap();
+    let yarn = toolchain.node.get().unwrap().get_yarn().unwrap();
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")

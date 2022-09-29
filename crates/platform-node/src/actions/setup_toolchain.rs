@@ -33,6 +33,9 @@ pub async fn setup_toolchain(
 
     let toolchain_paths = workspace.toolchain.get_paths();
     let node_config = workspace.config.node.as_ref().unwrap().clone();
+
+    workspace.toolchain.node.version = node_config.version.clone();
+
     let installed = workspace
         .toolchain
         .node

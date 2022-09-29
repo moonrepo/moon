@@ -1,36 +1,38 @@
-use moon_config::{NodeConfig, NodePackageManager, PnpmConfig, WorkspaceConfig};
+use moon_config::{NodeConfig, NodePackageManager, PnpmConfig};
 use moon_lang_node::node;
+use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
 use std::env;
 use std::path::PathBuf;
 
-async fn create_pnpm_tool() -> (Toolchain, assert_fs::TempDir) {
+async fn create_pnpm_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
-
-    let config = WorkspaceConfig {
-        node: Some(NodeConfig {
-            version: String::from("1.0.0"),
-            package_manager: NodePackageManager::Pnpm,
-            pnpm: Some(PnpmConfig {
-                version: String::from("6.0.0"),
-            }),
-            ..NodeConfig::default()
-        }),
-        ..WorkspaceConfig::default()
-    };
-
-    let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir(), &config)
+    let toolchain = Toolchain::create_from_dir(base_dir.path(), &env::temp_dir())
         .await
         .unwrap();
 
-    (toolchain, base_dir)
+    (
+        NodeTool::new(
+            toolchain.get_paths(),
+            &NodeConfig {
+                version: String::from("1.0.0"),
+                package_manager: NodePackageManager::Pnpm,
+                pnpm: Some(PnpmConfig {
+                    version: String::from("6.0.0"),
+                }),
+                ..NodeConfig::default()
+            },
+        )
+        .unwrap(),
+        base_dir,
+    )
 }
 
 #[tokio::test]
 async fn generates_paths() {
-    let (toolchain, temp_dir) = create_pnpm_tool().await;
-    let pnpm = toolchain.node.get().unwrap().get_pnpm().unwrap();
+    let (node, temp_dir) = create_pnpm_tool().await;
+    let pnpm = node.get_pnpm().unwrap();
 
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")

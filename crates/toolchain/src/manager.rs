@@ -2,8 +2,8 @@ use crate::{Tool, ToolchainError};
 use std::collections::HashMap;
 
 pub struct ToolManager<T: Tool> {
-    cache: HashMap<String, T>,
-    version: String, // Default workspace version
+    pub cache: HashMap<String, T>,
+    pub version: String, // Default workspace version
 }
 
 impl<T: Tool> ToolManager<T> {

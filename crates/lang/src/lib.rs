@@ -29,7 +29,7 @@ pub struct PackageManager {
 
     pub default_version: StaticString,
 
-    pub lock_filenames: StaticStringList,
+    pub lock_filename: StaticString,
 
     pub manifest_filename: StaticString,
 }
@@ -60,10 +60,8 @@ pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language
 pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &PackageManager) -> bool {
     let base_dir = base_dir.as_ref();
 
-    for lockfile in pm.lock_filenames {
-        if base_dir.join(lockfile).exists() {
-            return true;
-        }
+    if base_dir.join(pm.lock_filename).exists() {
+        return true;
     }
 
     for config in pm.config_filenames {

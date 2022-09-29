@@ -1,5 +1,6 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_logger::debug;
+use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::Tool;
 use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
@@ -24,9 +25,6 @@ pub async fn setup_toolchain(
     let mut workspace = workspace.write().await;
     let mut cache = workspace.cache.cache_workspace_state().await?;
 
-    // Check that the tool has been configured
-    workspace.toolchain.get_node()?;
-
     // Only check the versions every 12 hours, as checking every
     // run has considerable overhead spawning all the child processes.
     // Revisit the threshold if need be.
@@ -34,11 +32,21 @@ pub async fn setup_toolchain(
     let check_versions = cache.item.last_version_check_time == 0
         || (cache.item.last_version_check_time + HOUR * 12) <= now;
 
-    // Install Node.js tooling
-    let mut node = workspace.toolchain.node.take().unwrap();
+    // Extract the tool from the toolchain or create a new instance
+    let mut node = match workspace.toolchain.node_cache.remove(version) {
+        Some(tool) => tool,
+        None => NodeTool::new(
+            &workspace.toolchain,
+            workspace.config.node.as_ref().unwrap(),
+        )?,
+    };
+
     let installed = node.run_setup(&workspace.toolchain, check_versions).await?;
 
-    workspace.toolchain.node = Some(node);
+    workspace
+        .toolchain
+        .node_cache
+        .insert(version.to_owned(), node);
 
     // Update the cache with the timestamp
     if check_versions {

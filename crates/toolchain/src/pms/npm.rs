@@ -247,7 +247,7 @@ impl PackageManager<NodeTool> for NpmTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(NPM.lock_filenames[0])
+        String::from(NPM.lock_filename)
     }
 
     fn get_manifest_filename(&self) -> String {
@@ -258,7 +258,7 @@ impl PackageManager<NodeTool> for NpmTool {
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let lockfile_path = match fs::find_upwards(NPM.lock_filenames[0], project_root) {
+        let lockfile_path = match fs::find_upwards(NPM.lock_filename, project_root) {
             Some(path) => path,
             None => {
                 return Ok(HashMap::new());

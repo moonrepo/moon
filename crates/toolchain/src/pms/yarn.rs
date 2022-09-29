@@ -224,7 +224,7 @@ impl PackageManager<NodeTool> for YarnTool {
                     .exec_package(
                         toolchain,
                         "yarn-deduplicate",
-                        vec!["yarn-deduplicate", YARN.lock_filenames[0]],
+                        vec!["yarn-deduplicate", YARN.lock_filename],
                     )
                     .await?;
             }
@@ -261,7 +261,7 @@ impl PackageManager<NodeTool> for YarnTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(YARN.lock_filenames[0])
+        String::from(YARN.lock_filename)
     }
 
     fn get_manifest_filename(&self) -> String {
@@ -272,7 +272,7 @@ impl PackageManager<NodeTool> for YarnTool {
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let lockfile_path = match fs::find_upwards(YARN.lock_filenames[0], project_root) {
+        let lockfile_path = match fs::find_upwards(YARN.lock_filename, project_root) {
             Some(path) => path,
             None => {
                 return Ok(HashMap::new());

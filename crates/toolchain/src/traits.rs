@@ -37,15 +37,9 @@ pub trait Downloadable<T: Send + Sync>: Send + Sync + Logable {
         let log_target = self.get_log_target();
 
         if self.is_downloaded().await? {
-            debug!(
-                target: log_target,
-                "Tool has already been downloaded, continuing"
-            );
+            debug!(target: log_target, "Tool has already been downloaded");
         } else {
-            debug!(
-                target: log_target,
-                "Tool has not been downloaded, attempting"
-            );
+            debug!(target: log_target, "Tool has not been downloaded");
 
             if is_offline() {
                 return Err(ToolchainError::InternetConnectionRequired);
@@ -101,15 +95,9 @@ pub trait Installable<T: Send + Sync>: Send + Sync + Logable {
         let log_target = self.get_log_target();
 
         if self.is_installed(parent, check_version).await? {
-            debug!(
-                target: log_target,
-                "Tool has already been installed, continuing"
-            );
+            debug!(target: log_target, "Tool has already been installed");
         } else {
-            debug!(
-                target: log_target,
-                "Tool has not been installed, attempting"
-            );
+            debug!(target: log_target, "Tool has not been installed");
 
             if is_offline() {
                 return Err(ToolchainError::InternetConnectionRequired);

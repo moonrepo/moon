@@ -1,9 +1,10 @@
 use crate::errors::ToolchainError;
 use crate::helpers::LOG_TARGET;
+use crate::manager::ToolManager;
 use crate::tools::node::NodeTool;
-use crate::traits::Tool;
 use moon_config::WorkspaceConfig;
 use moon_constants::CONFIG_DIRNAME;
+use moon_contract::SupportedPlatform;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, path};
 use std::path::{Path, PathBuf};
@@ -26,35 +27,31 @@ async fn create_dir(dir: &Path) -> Result<(), ToolchainError> {
     Ok(())
 }
 
+pub struct ToolchainPaths {
+    pub temp: PathBuf,
+    pub tools: PathBuf,
+}
+
+#[derive(Debug)]
 pub struct Toolchain {
     /// The directory where toolchain artifacts are stored.
     /// This is typically ~/.moon.
     pub dir: PathBuf,
 
     /// Node.js!
-    pub node: Option<NodeTool>,
-
-    /// The directory where temporary files are stored.
-    /// This is typically ~/.moon/temp.
-    pub temp_dir: PathBuf,
-
-    /// The directory where tools are installed by version.
-    /// This is typically ~/.moon/tools.
-    pub tools_dir: PathBuf,
+    pub node: ToolManager<NodeTool>,
 
     /// The workspace root directory.
     pub workspace_root: PathBuf,
 }
 
 impl Toolchain {
-    pub async fn create_from_dir(
-        base_dir: &Path,
-        root_dir: &Path,
+    pub async fn create_from<P: AsRef<Path>>(
+        base_dir: P,
+        workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
-        let dir = base_dir.join(CONFIG_DIRNAME);
-        let temp_dir = dir.join("temp");
-        let tools_dir = dir.join("tools");
+        let dir = base_dir.as_ref().join(CONFIG_DIRNAME);
 
         debug!(
             target: LOG_TARGET,
@@ -63,51 +60,47 @@ impl Toolchain {
         );
 
         create_dir(&dir).await?;
-        create_dir(&temp_dir).await?;
-        create_dir(&tools_dir).await?;
 
         let mut toolchain = Toolchain {
             dir,
-            temp_dir,
-            tools_dir,
-            workspace_root: root_dir.to_path_buf(),
-            node: None,
+            workspace_root: workspace_root.to_path_buf(),
+            // Tools
+            node: ToolManager::new(SupportedPlatform::Node("latest".into())),
         };
 
+        let paths = toolchain.get_paths();
+
         if let Some(node_config) = &workspace_config.node {
-            toolchain.node = Some(NodeTool::new(&toolchain, node_config)?);
+            toolchain
+                .node
+                .register(NodeTool::new(&paths, node_config)?, true);
         }
 
         Ok(toolchain)
     }
 
     pub async fn create(
-        root_dir: &Path,
+        workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
-        Toolchain::create_from_dir(
-            &path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
-            root_dir,
+        Toolchain::create_from(
+            path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
+            workspace_root,
             workspace_config,
         )
         .await
     }
 
-    /// Download and install all tools into the toolchain.
-    /// Return a count of how many tools were installed.
-    // pub async fn setup(&mut self, check_versions: bool) -> Result<u8, ToolchainError> {
-    //     debug!(target: LOG_TARGET, "Downloading and installing tools",);
-
-    //     let mut installed = 0;
-
-    //     if self.node.is_some() {
-    //         let mut node = self.node.take().unwrap();
-    //         installed += node.run_setup(self, check_versions).await?;
-    //         self.node = Some(node);
-    //     }
-
-    //     Ok(installed)
-    // }
+    pub fn get_paths(&self) -> ToolchainPaths {
+        ToolchainPaths {
+            /// The directory where temporary files are stored.
+            /// This is typically ~/.moon/temp.
+            temp: self.dir.join("temp"),
+            /// The directory where tools are installed by version.
+            /// This is typically ~/.moon/tools.
+            tools: self.dir.join("tools"),
+        }
+    }
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&mut self) -> Result<(), ToolchainError> {
@@ -116,20 +109,8 @@ impl Toolchain {
             "Tearing down toolchain, uninstalling tools",
         );
 
-        if self.node.is_some() {
-            let mut node = self.node.take().unwrap();
-            node.run_teardown(self).await?;
-        }
+        self.node.teardown_all().await?;
 
         Ok(())
-    }
-
-    /// Return the Node.js tool.
-    pub fn get_node(&self) -> Result<&NodeTool, ToolchainError> {
-        if self.node.is_none() {
-            return Err(ToolchainError::RequiresNode);
-        }
-
-        Ok(self.node.as_ref().unwrap())
     }
 }

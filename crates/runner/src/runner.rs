@@ -75,14 +75,9 @@ async fn run_action(
                 .emit(Event::ToolInstalling { platform })
                 .await?;
 
-            let tool_result = match platform {
-                SupportedPlatform::Node(version) => {
-                    node_actions::setup_toolchain(action, context, workspace, version)
-                        .await
-                        .map_err(ActionRunnerError::Workspace)
-                }
-                _ => Ok(ActionStatus::Passed),
-            };
+            let tool_result = actions::setup_toolchain(action, context, workspace, platform)
+                .await
+                .map_err(ActionRunnerError::Workspace);
 
             local_emitter
                 .emit(Event::ToolInstalled { platform })

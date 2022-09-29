@@ -11,7 +11,8 @@ pub async fn run_script(
     let mut command = Command::new(
         workspace
             .toolchain
-            .get_node()?
+            .node
+            .get()?
             .get_package_manager()
             .get_bin_path(),
     );

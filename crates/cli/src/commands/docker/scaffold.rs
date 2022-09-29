@@ -100,8 +100,8 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
                     };
 
                     files.push(package_manager.manifest_filename);
+                    files.push(package_manager.lock_filename);
                     files.extend_from_slice(package_manager.config_filenames);
-                    files.extend_from_slice(package_manager.lock_filenames);
                 }
             }
             ProjectLanguage::TypeScript => {

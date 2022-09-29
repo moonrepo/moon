@@ -37,6 +37,9 @@ pub struct Toolchain {
     /// This is typically ~/.moon.
     pub dir: PathBuf,
 
+    /// Node.js!
+    pub node: ToolManager<NodeTool>,
+
     /// The directory where temporary files are stored.
     /// This is typically ~/.moon/temp.
     pub temp_dir: PathBuf,
@@ -47,9 +50,6 @@ pub struct Toolchain {
 
     /// The workspace root directory.
     pub workspace_root: PathBuf,
-
-    /// Node.js!
-    pub node: ToolManager<NodeTool>,
 }
 
 impl Toolchain {
@@ -78,14 +78,13 @@ impl Toolchain {
             tools_dir,
             workspace_root: root_dir.to_path_buf(),
             // Tools
-            node: ToolManager::new(),
+            node: ToolManager::default(),
         };
 
         let paths = toolchain.get_paths();
 
         if let Some(node_config) = &workspace_config.node {
-            toolchain.node =
-                ToolManager::new_with(&node_config.version, NodeTool::new(&paths, &node_config)?);
+            toolchain.node = ToolManager::from(NodeTool::new(&paths, node_config)?);
         }
 
         Ok(toolchain)
@@ -117,7 +116,7 @@ impl Toolchain {
             "Tearing down toolchain, uninstalling tools",
         );
 
-        self.node.teardown().await?;
+        self.node.teardown_all().await?;
 
         Ok(())
     }

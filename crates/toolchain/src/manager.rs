@@ -7,18 +7,22 @@ pub struct ToolManager<T: Tool> {
     version: String, // Default workspace version
 }
 
-impl<T: Tool> ToolManager<T> {
-    pub fn new() -> Self {
+impl<T: Tool> Default for ToolManager<T> {
+    fn default() -> Self {
         ToolManager {
             cache: HashMap::new(),
             version: "latest".into(),
         }
     }
+}
 
-    pub fn new_with(version: &str, tool: T) -> Self {
+impl<T: Tool> ToolManager<T> {
+    pub fn from(tool: T) -> Self {
+        let version = tool.get_version();
+
         ToolManager {
-            cache: HashMap::from([(version.to_owned(), tool)]),
-            version: version.into(),
+            cache: HashMap::from([(tool.get_version(), tool)]),
+            version,
         }
     }
 
@@ -27,35 +31,42 @@ impl<T: Tool> ToolManager<T> {
     }
 
     pub fn get_version(&self, version: &str) -> Result<&T, ToolchainError> {
-        if !self.cache.contains_key(version) {
+        if !self.has(version) {
             return Err(ToolchainError::RequiresNode);
         }
 
         Ok(self.cache.get(version).unwrap())
     }
 
-    pub async fn setup<F>(
+    pub fn has(&self, version: &str) -> bool {
+        self.cache.contains_key(version)
+    }
+
+    pub fn register(&mut self, tool: T) {
+        self.cache.insert(tool.get_version(), tool);
+    }
+
+    pub async fn setup(
         &mut self,
         version: &str,
         check_versions: bool,
-        factory: F,
-    ) -> Result<u8, ToolchainError>
-    where
-        F: FnOnce() -> Result<T, ToolchainError>,
-    {
-        let mut tool = match self.cache.remove(version) {
-            Some(tool) => tool,
-            None => factory()?,
-        };
-
-        let installed = tool.run_setup(check_versions).await?;
-
-        self.cache.insert(version.to_owned(), tool);
-
-        Ok(installed)
+    ) -> Result<u8, ToolchainError> {
+        self.cache
+            .get_mut(version)
+            .expect("Missing tool")
+            .run_setup(check_versions)
+            .await
     }
 
-    pub async fn teardown(&mut self) -> Result<(), ToolchainError> {
+    pub async fn teardown(&mut self, version: &str) -> Result<(), ToolchainError> {
+        if let Some(mut tool) = self.cache.remove(version) {
+            tool.run_teardown().await?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn teardown_all(&mut self) -> Result<(), ToolchainError> {
         for (_, mut tool) in self.cache.drain() {
             tool.run_teardown().await?;
         }

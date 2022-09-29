@@ -305,4 +305,8 @@ impl Lifecycle<()> for NodeTool {
     }
 }
 
-impl Tool for NodeTool {}
+impl Tool for NodeTool {
+    fn get_version(&self) -> String {
+        self.config.version.clone()
+    }
+}

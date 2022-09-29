@@ -154,6 +154,9 @@ pub trait Lifecycle<T: Send + Sync>: Send + Sync {
 pub trait Tool:
     Send + Sync + Logable + Downloadable<()> + Installable<()> + Executable<()> + Lifecycle<()>
 {
+    /// Return the version of the current tool.
+    fn get_version(&self) -> String;
+
     /// Download and install the tool within the toolchain.
     /// Once complete, trigger the setup hook, and return a count
     /// of how many sub-tools were installed.

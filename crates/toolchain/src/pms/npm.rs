@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct NpmTool {
     bin_path: PathBuf,
 

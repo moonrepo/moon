@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct PnpmTool {
     bin_path: PathBuf,
 

@@ -2,6 +2,7 @@ use crate::errors::ToolchainError;
 use crate::helpers::LOG_TARGET;
 use crate::manager::ToolManager;
 use crate::tools::node::NodeTool;
+use moon_config::WorkspaceConfig;
 use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, path};
@@ -30,6 +31,7 @@ pub struct ToolchainPaths {
     pub tools: PathBuf,
 }
 
+#[derive(Debug)]
 pub struct Toolchain {
     /// The directory where toolchain artifacts are stored.
     /// This is typically ~/.moon.
@@ -54,6 +56,7 @@ impl Toolchain {
     pub async fn create_from_dir(
         base_dir: &Path,
         root_dir: &Path,
+        workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
         let dir = base_dir.join(CONFIG_DIRNAME);
         let temp_dir = dir.join("temp");
@@ -69,20 +72,33 @@ impl Toolchain {
         create_dir(&temp_dir).await?;
         create_dir(&tools_dir).await?;
 
-        Ok(Toolchain {
+        let mut toolchain = Toolchain {
             dir,
             temp_dir,
             tools_dir,
             workspace_root: root_dir.to_path_buf(),
             // Tools
-            node: ToolManager::new("todo"),
-        })
+            node: ToolManager::new(),
+        };
+
+        let paths = toolchain.get_paths();
+
+        if let Some(node_config) = &workspace_config.node {
+            toolchain.node =
+                ToolManager::new_with(&node_config.version, NodeTool::new(&paths, &node_config)?);
+        }
+
+        Ok(toolchain)
     }
 
-    pub async fn create(root_dir: &Path) -> Result<Toolchain, ToolchainError> {
+    pub async fn create(
+        root_dir: &Path,
+        workspace_config: &WorkspaceConfig,
+    ) -> Result<Toolchain, ToolchainError> {
         Toolchain::create_from_dir(
             &path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             root_dir,
+            workspace_config,
         )
         .await
     }

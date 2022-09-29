@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct YarnTool {
     bin_path: PathBuf,
 

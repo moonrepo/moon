@@ -46,6 +46,7 @@ fn verify_shasum(
     )))
 }
 
+#[derive(Debug)]
 pub struct NodeTool {
     bin_path: PathBuf,
 
@@ -65,7 +66,7 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(paths: ToolchainPaths, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
+    pub fn new(paths: &ToolchainPaths, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
         let install_dir = paths.tools.join("node").join(&config.version);
 
         let mut node = NodeTool {

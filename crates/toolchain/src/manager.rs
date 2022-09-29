@@ -1,16 +1,24 @@
 use crate::{Tool, ToolchainError};
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct ToolManager<T: Tool> {
-    pub cache: HashMap<String, T>,
-    pub version: String, // Default workspace version
+    cache: HashMap<String, T>,
+    version: String, // Default workspace version
 }
 
 impl<T: Tool> ToolManager<T> {
-    pub fn new(version: &str) -> Self {
+    pub fn new() -> Self {
         ToolManager {
             cache: HashMap::new(),
-            version: version.to_owned(),
+            version: "latest".into(),
+        }
+    }
+
+    pub fn new_with(version: &str, tool: T) -> Self {
+        ToolManager {
+            cache: HashMap::from([(version.to_owned(), tool)]),
+            version: version.into(),
         }
     }
 

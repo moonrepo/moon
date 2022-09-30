@@ -1,4 +1,5 @@
-import type { Platform } from './common';
+import type { Nullable, Platform } from './common';
+import type { NodeConfig } from './workspace-config';
 
 export type DependencyScope = 'development' | 'peer' | 'production';
 
@@ -51,12 +52,15 @@ export interface ProjectMetadataConfig {
 	channel: string;
 }
 
+export type ProjectWorkspaceNodeConfig = Nullable<Pick<NodeConfig, 'version'>>;
+
 export interface ProjectWorkspaceConfig {
 	inheritedTasks: {
 		exclude: string[] | null;
 		include: string[] | null;
 		rename: Record<string, string> | null;
 	};
+	node: ProjectWorkspaceNodeConfig | null;
 	typescript: boolean;
 }
 

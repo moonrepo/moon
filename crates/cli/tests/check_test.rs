@@ -44,8 +44,6 @@ fn runs_tasks_from_multiple_project() {
         .arg("noop")
         .assert();
 
-    moon_utils::test::debug_sandbox(&fixture, &assert);
-
     let output = get_assert_output(&assert);
 
     assert!(predicate::str::contains("base:base").eval(&output));

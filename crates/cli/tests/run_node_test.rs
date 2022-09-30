@@ -785,12 +785,7 @@ mod profile {
 
         let profile = fixture
             .path()
-            .join(".moon")
-            .join("cache")
-            .join("runs")
-            .join("node")
-            .join("standard")
-            .join("snapshot.cpuprofile");
+            .join(".moon/cache/projects/node/standard/snapshot.cpuprofile");
 
         assert!(profile.exists());
     }
@@ -808,12 +803,7 @@ mod profile {
 
         let profile = fixture
             .path()
-            .join(".moon")
-            .join("cache")
-            .join("runs")
-            .join("node")
-            .join("standard")
-            .join("snapshot.heapprofile");
+            .join(".moon/cache/projects/node/standard/snapshot.heapprofile");
 
         assert!(profile.exists());
     }

@@ -22,8 +22,8 @@ pub struct CacheEngine {
     /// The `.moon/cache/out` directory. Stores task outputs as hashed archives.
     pub outputs_dir: PathBuf,
 
-    /// The `.moon/cache/runs` directory. Stores run states and runfiles.
-    pub runs_dir: PathBuf,
+    /// The `.moon/cache/projects` directory. Stores run target states and project runfiles.
+    pub projects_dir: PathBuf,
 
     /// The `.moon/cache/tools` directory. Stores tool installation states.
     pub tools_dir: PathBuf,
@@ -34,7 +34,7 @@ impl CacheEngine {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
         let outputs_dir = dir.join("out");
-        let runs_dir = dir.join("runs");
+        let projects_dir = dir.join("projects");
         let tools_dir = dir.join("tools");
 
         debug!(
@@ -46,14 +46,14 @@ impl CacheEngine {
         // Do this once instead of each time we are writing cache items
         fs::create_dir_all(&hashes_dir).await?;
         fs::create_dir_all(&outputs_dir).await?;
-        fs::create_dir_all(&runs_dir).await?;
+        fs::create_dir_all(&projects_dir).await?;
         fs::create_dir_all(&tools_dir).await?;
 
         Ok(CacheEngine {
             dir,
             hashes_dir,
             outputs_dir,
-            runs_dir,
+            projects_dir,
             tools_dir,
         })
     }
@@ -180,11 +180,7 @@ impl CacheEngine {
     ) -> Result<(), MoonError> {
         let path = self.dir.join(name);
 
-        trace!(
-            target: LOG_TARGET,
-            "Writing run report {}",
-            color::path(&path)
-        );
+        trace!(target: LOG_TARGET, "Writing report {}", color::path(&path));
 
         fs::write_json(path, &data, true).await?;
 
@@ -219,13 +215,13 @@ impl CacheEngine {
     }
 
     pub fn get_project_dir(&self, project_id: &str) -> PathBuf {
-        self.runs_dir.join(project_id)
+        self.projects_dir.join(project_id)
     }
 
     pub fn get_target_dir(&self, target_id: &str) -> PathBuf {
         let path: PathBuf = [&target_id.replace(':', "/")].iter().collect();
 
-        self.runs_dir.join(path)
+        self.projects_dir.join(path)
     }
 
     /// Check to see if a build with the provided hash has been cached.

@@ -185,7 +185,7 @@ mod scaffold_sources {
     fn can_include_more_files() {
         let fixture = create_sandbox_with_git("cases");
 
-        create_moon_command(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("docker")
             .arg("scaffold")
             .arg("base")
@@ -195,6 +195,8 @@ mod scaffold_sources {
             .arg("--include")
             .arg("system-windows/*.bat")
             .assert();
+
+        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         let docker = fixture.join(".moon/docker/sources");
 

@@ -28,7 +28,7 @@ pub async fn check(project_ids: &Vec<String>) -> Result<(), Box<dyn std::error::
     }
 
     // Run targets using our run command
-    run(&targets, RunOptions::default()).await?;
+    run(&targets, RunOptions::default(), Some(workspace)).await?;
 
     Ok(())
 }

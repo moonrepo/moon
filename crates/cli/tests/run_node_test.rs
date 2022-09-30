@@ -280,7 +280,7 @@ mod install_deps {
     }
 
     #[test]
-    fn creates_workspace_state_cache() {
+    fn creates_tool_state_cache() {
         let fixture = create_sandbox_with_git("cases");
 
         create_moon_command(fixture.path())
@@ -290,7 +290,7 @@ mod install_deps {
 
         assert!(fixture
             .path()
-            .join(".moon/cache/workspaceState.json")
+            .join(".moon/cache/tools/node-v16.0.0.json")
             .exists());
     }
 }
@@ -785,12 +785,7 @@ mod profile {
 
         let profile = fixture
             .path()
-            .join(".moon")
-            .join("cache")
-            .join("runs")
-            .join("node")
-            .join("standard")
-            .join("snapshot.cpuprofile");
+            .join(".moon/cache/projects/node/standard/snapshot.cpuprofile");
 
         assert!(profile.exists());
     }
@@ -808,12 +803,7 @@ mod profile {
 
         let profile = fixture
             .path()
-            .join(".moon")
-            .join("cache")
-            .join("runs")
-            .join("node")
-            .join("standard")
-            .join("snapshot.heapprofile");
+            .join(".moon/cache/projects/node/standard/snapshot.heapprofile");
 
         assert!(profile.exists());
     }

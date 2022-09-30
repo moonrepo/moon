@@ -195,6 +195,12 @@ fn create_tasks_from_config(
 
             renamed_task_id
         } else {
+            trace!(
+                target: log_target,
+                "Inheriting global task {}",
+                color::id(task_id)
+            );
+
             task_id
         };
 

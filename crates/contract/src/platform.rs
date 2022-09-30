@@ -61,6 +61,13 @@ pub enum SupportedPlatform {
 }
 
 impl SupportedPlatform {
+    pub fn id(&self) -> String {
+        match self {
+            SupportedPlatform::Node(version) => format!("node-v{}", version),
+            SupportedPlatform::System => "system".into(),
+        }
+    }
+
     pub fn label(&self) -> String {
         match self {
             SupportedPlatform::Node(version) => format!("Node.js v{}", version),

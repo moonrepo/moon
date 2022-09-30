@@ -7,6 +7,7 @@ edition = "2021"
 moon_action = { path = "../action" }
 moon_archive = { path = "../archive" }
 moon_constants = { path = "../constants" }
+moon_contract = { path = "../contract" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }

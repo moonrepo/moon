@@ -111,9 +111,9 @@ pub struct ProjectsState {
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct WorkspaceState {
+pub struct ToolState {
     #[serde(default)]
-    pub last_node_install_time: u128,
+    pub last_deps_install_time: u128,
 
     #[serde(default)]
     pub last_version_check_time: u128,

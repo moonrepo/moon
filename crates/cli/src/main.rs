@@ -76,6 +76,8 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
 
 #[tokio::main]
 async fn main() {
+    // console_subscriber::init();
+
     let mut run = true;
 
     // Detect if we've been installed globally

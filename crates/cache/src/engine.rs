@@ -1,8 +1,9 @@
 use crate::helpers::{is_readable, is_writable, LOG_TARGET};
-use crate::items::{CacheItem, ProjectsState, RunTargetState, WorkspaceState};
+use crate::items::{CacheItem, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::CacheRunfile;
 use moon_archive::{tar, untar};
 use moon_constants::CONFIG_DIRNAME;
+use moon_contract::SupportedPlatform;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, time};
@@ -21,16 +22,20 @@ pub struct CacheEngine {
     /// The `.moon/cache/out` directory. Stores task outputs as hashed archives.
     pub outputs_dir: PathBuf,
 
-    /// The `.moon/cache/runs` directory. Stores run states and runfiles.
-    pub runs_dir: PathBuf,
+    /// The `.moon/cache/projects` directory. Stores run target states and project runfiles.
+    pub projects_dir: PathBuf,
+
+    /// The `.moon/cache/tools` directory. Stores tool installation states.
+    pub tools_dir: PathBuf,
 }
 
 impl CacheEngine {
     pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
-        let runs_dir = dir.join("runs");
         let outputs_dir = dir.join("out");
+        let projects_dir = dir.join("projects");
+        let tools_dir = dir.join("tools");
 
         debug!(
             target: LOG_TARGET,
@@ -38,15 +43,18 @@ impl CacheEngine {
             color::path(&dir)
         );
 
+        // Do this once instead of each time we are writing cache items
         fs::create_dir_all(&hashes_dir).await?;
-        fs::create_dir_all(&runs_dir).await?;
         fs::create_dir_all(&outputs_dir).await?;
+        fs::create_dir_all(&projects_dir).await?;
+        fs::create_dir_all(&tools_dir).await?;
 
         Ok(CacheEngine {
             dir,
             hashes_dir,
-            runs_dir,
             outputs_dir,
+            projects_dir,
+            tools_dir,
         })
     }
 
@@ -74,10 +82,13 @@ impl CacheEngine {
         .await
     }
 
-    pub async fn cache_workspace_state(&self) -> Result<CacheItem<WorkspaceState>, MoonError> {
+    pub async fn cache_tool_state(
+        &self,
+        platform: &SupportedPlatform,
+    ) -> Result<CacheItem<ToolState>, MoonError> {
         CacheItem::load(
-            self.dir.join("workspaceState.json"),
-            WorkspaceState::default(),
+            self.tools_dir.join(format!("{}.json", platform.id())),
+            ToolState::default(),
             0,
         )
         .await
@@ -169,11 +180,7 @@ impl CacheEngine {
     ) -> Result<(), MoonError> {
         let path = self.dir.join(name);
 
-        trace!(
-            target: LOG_TARGET,
-            "Writing run report {}",
-            color::path(&path)
-        );
+        trace!(target: LOG_TARGET, "Writing report {}", color::path(&path));
 
         fs::write_json(path, &data, true).await?;
 
@@ -208,13 +215,13 @@ impl CacheEngine {
     }
 
     pub fn get_project_dir(&self, project_id: &str) -> PathBuf {
-        self.runs_dir.join(project_id)
+        self.projects_dir.join(project_id)
     }
 
     pub fn get_target_dir(&self, target_id: &str) -> PathBuf {
         let path: PathBuf = [&target_id.replace(':', "/")].iter().collect();
 
-        self.runs_dir.join(path)
+        self.projects_dir.join(path)
     }
 
     /// Check to see if a build with the provided hash has been cached.

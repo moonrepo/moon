@@ -201,6 +201,7 @@ pub async fn run_cli() {
                     report: *report,
                     upstream: *upstream,
                 },
+                None,
             )
             .await
         }

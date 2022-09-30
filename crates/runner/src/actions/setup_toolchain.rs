@@ -16,6 +16,10 @@ pub async fn setup_toolchain(
     workspace: Arc<RwLock<Workspace>>,
     platform: &SupportedPlatform,
 ) -> Result<ActionStatus, WorkspaceError> {
+    if matches!(platform, SupportedPlatform::System) {
+        return Ok(ActionStatus::Skipped);
+    }
+
     debug!(
         target: LOG_TARGET,
         "Setting up {} toolchain",
@@ -23,7 +27,7 @@ pub async fn setup_toolchain(
     );
 
     let mut workspace = workspace.write().await;
-    let mut cache = workspace.cache.cache_workspace_state().await?;
+    let mut cache = workspace.cache.cache_tool_state(platform).await?;
     let toolchain_paths = workspace.toolchain.get_paths();
 
     // Only check the versions every 12 hours, as checking every

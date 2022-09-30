@@ -36,6 +36,7 @@ async-recursion = "1.0.0"
 clap = { version = "3.2.22", features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.2.4"
 console = "0.15.1"
+console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
 futures = "0.3.24"
 indicatif = "0.17.1"

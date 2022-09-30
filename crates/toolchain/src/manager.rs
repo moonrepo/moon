@@ -25,7 +25,10 @@ impl<T: Tool> ToolManager<T> {
 
     pub fn get_version(&self, version: &str) -> Result<&T, ToolchainError> {
         if !self.has(version) {
-            return Err(ToolchainError::MissingTool(self.platform.label()));
+            return Err(ToolchainError::MissingTool(format!(
+                "{} v{}",
+                self.platform, version
+            )));
         }
 
         Ok(self.cache.get(version).unwrap())

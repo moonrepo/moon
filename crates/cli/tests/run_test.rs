@@ -219,7 +219,7 @@ mod caching {
 
         assert!(fixture
             .path()
-            .join(".moon/cache/runs/node/runfile.json")
+            .join(".moon/cache/projects/node/runfile.json")
             .exists());
     }
 
@@ -234,7 +234,7 @@ mod caching {
 
         let cache_path = fixture
             .path()
-            .join(".moon/cache/runs/node/standard/lastRunState.json");
+            .join(".moon/cache/projects/node/standard/lastRunState.json");
 
         assert!(cache_path.exists());
 

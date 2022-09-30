@@ -5,6 +5,7 @@ use moon_action::{ActionContext, ProfileType};
 use moon_logger::{color, map_list};
 use moon_runner::{ActionRunner, DepGraph};
 use moon_task::Target;
+use moon_workspace::Workspace;
 use std::collections::HashSet;
 use std::string::ToString;
 
@@ -22,8 +23,12 @@ pub struct RunOptions {
 pub async fn run(
     target_ids: &[String],
     options: RunOptions,
+    base_workspace: Option<Workspace>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
+    let workspace = match base_workspace {
+        Some(ws) => ws,
+        None => load_workspace().await?,
+    };
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default(&workspace.config);

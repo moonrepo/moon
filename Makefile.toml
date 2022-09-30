@@ -1,3 +1,5 @@
+# env = { RUSTFLAGS = "--cfg tokio_unstable" }
+
 [config]
 default_to_workspace = false
 skip_core_tasks = true

@@ -38,9 +38,6 @@ The following diagram outlines our cache folder structure and why each piece exi
 	# projects are configured using globs.
 	projectsState.json
 
-	# State of the workspace. Mainly for tracking install times.
-	workspaceState.json
-
 	# Stores hash manifests of every ran task. Exists purely for debugging purposes.
 	hashes/
 		# Contents includes all sources used to generate the hash.
@@ -50,8 +47,8 @@ The following diagram outlines our cache folder structure and why each piece exi
 	out/
 		<hash>.tar.gz
 
-	# State of targets that have been ran or are running, grouped by project and task.
-	runs/
+	# State of projects and their ran/running tasks.
+	projects/
 		<project>/
 			# Information about the project, its tasks, and its configs.
 			# Can be used at runtime by tasks that require this information.
@@ -61,4 +58,8 @@ The following diagram outlines our cache folder structure and why each piece exi
 				# Contents of the child process, including stdout, stderr, and exit code.
 				# Also contains the unique hash that is referenced above.
 				lastRunState.json
+
+	# State of tools within the toolchain. Mainly for tracking install times.
+	tools/
+		<tool>-<version>.json
 ```

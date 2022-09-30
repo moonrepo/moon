@@ -1362,6 +1362,7 @@ dependencies = [
  "moon_action",
  "moon_archive",
  "moon_constants",
+ "moon_contract",
  "moon_error",
  "moon_logger",
  "moon_utils",

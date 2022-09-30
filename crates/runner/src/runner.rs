@@ -41,7 +41,7 @@ async fn run_action(
 
             let install_result = match platform {
                 SupportedPlatform::Node(_) => {
-                    node_actions::install_deps(action, context, workspace)
+                    node_actions::install_deps(action, context, workspace, platform)
                         .await
                         .map_err(ActionRunnerError::Workspace)
                 }

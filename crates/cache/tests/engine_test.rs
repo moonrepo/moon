@@ -1,5 +1,5 @@
 use assert_fs::prelude::*;
-use moon_cache::{to_millis, CacheEngine, ProjectsState, RunTargetState, WorkspaceState};
+use moon_cache::{to_millis, CacheEngine, ProjectsState, RunTargetState, ToolState};
 use serde::Serialize;
 use serial_test::serial;
 use std::env;
@@ -331,8 +331,8 @@ mod cache_workspace_state {
 
         assert_eq!(
             item.item,
-            WorkspaceState {
-                last_node_install_time: 123,
+            ToolState {
+                last_deps_install_time: 123,
                 last_version_check_time: 0,
             }
         );
@@ -356,8 +356,8 @@ mod cache_workspace_state {
 
         assert_eq!(
             item.item,
-            WorkspaceState {
-                last_node_install_time: 123,
+            ToolState {
+                last_deps_install_time: 123,
                 last_version_check_time: 0,
             }
         );
@@ -379,7 +379,7 @@ mod cache_workspace_state {
             .await
             .unwrap();
 
-        assert_eq!(item.item, WorkspaceState::default());
+        assert_eq!(item.item, ToolState::default());
 
         dir.close().unwrap();
     }
@@ -391,7 +391,7 @@ mod cache_workspace_state {
         let cache = CacheEngine::create(dir.path()).await.unwrap();
         let mut item = cache.cache_workspace_state().await.unwrap();
 
-        item.item.last_node_install_time = 123;
+        item.item.last_install_time = 123;
 
         run_with_env("", || item.save()).await.unwrap();
 

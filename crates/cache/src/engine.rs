@@ -1,8 +1,9 @@
 use crate::helpers::{is_readable, is_writable, LOG_TARGET};
-use crate::items::{CacheItem, ProjectsState, RunTargetState, WorkspaceState};
+use crate::items::{CacheItem, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::CacheRunfile;
 use moon_archive::{tar, untar};
 use moon_constants::CONFIG_DIRNAME;
+use moon_contract::SupportedPlatform;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, time};
@@ -23,14 +24,18 @@ pub struct CacheEngine {
 
     /// The `.moon/cache/runs` directory. Stores run states and runfiles.
     pub runs_dir: PathBuf,
+
+    /// The `.moon/cache/tools` directory. Stores tool installation states.
+    pub tools_dir: PathBuf,
 }
 
 impl CacheEngine {
     pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
-        let runs_dir = dir.join("runs");
         let outputs_dir = dir.join("out");
+        let runs_dir = dir.join("runs");
+        let tools_dir = dir.join("tools");
 
         debug!(
             target: LOG_TARGET,
@@ -38,15 +43,14 @@ impl CacheEngine {
             color::path(&dir)
         );
 
-        fs::create_dir_all(&hashes_dir).await?;
-        fs::create_dir_all(&runs_dir).await?;
-        fs::create_dir_all(&outputs_dir).await?;
+        fs::create_dir_all(&dir).await?;
 
         Ok(CacheEngine {
             dir,
             hashes_dir,
-            runs_dir,
             outputs_dir,
+            runs_dir,
+            tools_dir,
         })
     }
 
@@ -74,10 +78,13 @@ impl CacheEngine {
         .await
     }
 
-    pub async fn cache_workspace_state(&self) -> Result<CacheItem<WorkspaceState>, MoonError> {
+    pub async fn cache_tool_state(
+        &self,
+        platform: &SupportedPlatform,
+    ) -> Result<CacheItem<ToolState>, MoonError> {
         CacheItem::load(
-            self.dir.join("workspaceState.json"),
-            WorkspaceState::default(),
+            self.tools_dir.join(format!("{}.json", platform.id())),
+            ToolState::default(),
             0,
         )
         .await

@@ -1,5 +1,6 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::NodePackageManager;
+use moon_contract::SupportedPlatform;
 use moon_error::map_io_to_fs_error;
 use moon_lang::has_vendor_installed_dependencies;
 use moon_lang_node::{package::PackageJson, NODE, NPM};
@@ -72,10 +73,11 @@ pub async fn install_deps(
     _action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
+    platform: &SupportedPlatform,
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
     let node = workspace.toolchain.node.get()?;
-    let mut cache = workspace.cache.cache_workspace_state().await?;
+    let mut cache = workspace.cache.cache_tool_state(platform).await?;
 
     // Sync values to root `package.json`
     PackageJson::sync(&workspace.root, |package_json| {
@@ -125,7 +127,7 @@ pub async fn install_deps(
     // since the last time dependencies were installed!
     if has_modified_manifests
         || last_modified == 0
-        || last_modified > cache.item.last_node_install_time
+        || last_modified > cache.item.last_deps_install_time
     {
         debug!(target: LOG_TARGET, "Installing Node.js dependencies");
 
@@ -166,7 +168,7 @@ pub async fn install_deps(
         }
 
         // Update the cache with the timestamp
-        cache.item.last_node_install_time = cache.now_millis();
+        cache.item.last_deps_install_time = cache.now_millis();
         cache.save().await?;
 
         return Ok(ActionStatus::Passed);

@@ -5,7 +5,8 @@ use crate::errors::{
 };
 use crate::project::dep::DependencyConfig;
 use crate::project::task::TaskConfig;
-use crate::types::{FileGroups, ProjectID, TaskID};
+use crate::project::workspace::ProjectWorkspaceConfig;
+use crate::types::{FileGroups, ProjectID};
 use crate::validators::{
     skip_if_btree_empty, skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id,
 };
@@ -15,7 +16,7 @@ use figment::{
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::path::Path;
 use strum::{Display, EnumIter};
 use validator::{Validate, ValidationError};
@@ -120,40 +121,6 @@ pub struct ProjectMetadataConfig {
 
     #[validate(custom = "validate_channel")]
     pub channel: String,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
-#[serde(default)]
-pub struct ProjectWorkspaceInheritedTasksConfig {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub exclude: Option<Vec<TaskID>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub include: Option<Vec<TaskID>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rename: Option<HashMap<TaskID, TaskID>>,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
-pub struct ProjectWorkspaceConfig {
-    #[serde(skip_serializing_if = "skip_if_default")]
-    #[validate]
-    pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
-
-    pub typescript: bool,
-}
-
-impl Default for ProjectWorkspaceConfig {
-    fn default() -> Self {
-        ProjectWorkspaceConfig {
-            inherited_tasks: ProjectWorkspaceInheritedTasksConfig::default(),
-            typescript: true,
-        }
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]

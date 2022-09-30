@@ -16,6 +16,10 @@ pub async fn setup_toolchain(
     workspace: Arc<RwLock<Workspace>>,
     platform: &SupportedPlatform,
 ) -> Result<ActionStatus, WorkspaceError> {
+    if matches!(platform, SupportedPlatform::System) {
+        return Ok(ActionStatus::Skipped);
+    }
+
     debug!(
         target: LOG_TARGET,
         "Setting up {} toolchain",

@@ -115,6 +115,8 @@ impl RunnerEmitter {
     pub async fn emit<'e>(&self, event: Event<'e>) -> Result<EventFlow, MoonError> {
         let workspace = self.workspace.read().await;
 
+        // dbg!(&event);
+
         handle_flow!(
             self.local_cache
                 .write()

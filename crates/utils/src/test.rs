@@ -98,7 +98,7 @@ pub fn replace_fixtures_dir<T: AsRef<str>, P: AsRef<Path>>(value: T, dir: P) -> 
 pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
     cmd.current_dir(path);
-    cmd.timeout(std::time::Duration::from_secs(60));
+    cmd.timeout(std::time::Duration::from_secs(90));
     // Let our code know were running tests
     cmd.env("MOON_TEST", "true");
     // Hide install output as it disrupts testing snapshots

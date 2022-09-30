@@ -62,7 +62,8 @@ async fn run_action(
                 .await?;
 
             let run_result =
-                actions::run_target(action, context, workspace, emitter, target_id).await;
+                actions::run_target(action, context, workspace, Arc::clone(&emitter), target_id)
+                    .await;
 
             local_emitter.emit(Event::TargetRan { target_id }).await?;
 

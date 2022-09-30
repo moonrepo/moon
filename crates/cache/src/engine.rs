@@ -43,7 +43,11 @@ impl CacheEngine {
             color::path(&dir)
         );
 
-        fs::create_dir_all(&dir).await?;
+        // Do this once instead of each time we are writing cache items
+        fs::create_dir_all(&hashes_dir).await?;
+        fs::create_dir_all(&outputs_dir).await?;
+        fs::create_dir_all(&runs_dir).await?;
+        fs::create_dir_all(&tools_dir).await?;
 
         Ok(CacheEngine {
             dir,

@@ -37,6 +37,7 @@ mod create {
         assert!(dir.path().join(".moon/cache/hashes").exists());
         assert!(dir.path().join(".moon/cache/runs").exists());
         assert!(dir.path().join(".moon/cache/out").exists());
+        assert!(dir.path().join(".moon/cache/tools").exists());
 
         dir.close().unwrap();
     }
@@ -301,15 +302,19 @@ mod cache_run_target_state {
     }
 }
 
-mod cache_workspace_state {
+mod cache_tool_state {
     use super::*;
+    use moon_contract::SupportedPlatform;
 
     #[tokio::test]
     #[serial]
     async fn creates_parent_dir_on_call() {
         let dir = assert_fs::TempDir::new().unwrap();
         let cache = CacheEngine::create(dir.path()).await.unwrap();
-        let item = cache.cache_workspace_state().await.unwrap();
+        let item = cache
+            .cache_tool_state(&SupportedPlatform::Node("1.2.3".into()))
+            .await
+            .unwrap();
 
         assert!(!item.path.exists());
         assert!(item.path.parent().unwrap().exists());
@@ -322,12 +327,15 @@ mod cache_workspace_state {
     async fn loads_cache_if_it_exists() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/workspaceState.json")
-            .write_str(r#"{"lastNodeInstallTime":123}"#)
+        dir.child(".moon/cache/tools/node-v1.2.3.json")
+            .write_str(r#"{"lastDepsInstallTime":123}"#)
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
-        let item = cache.cache_workspace_state().await.unwrap();
+        let item = cache
+            .cache_tool_state(&SupportedPlatform::Node("1.2.3".into()))
+            .await
+            .unwrap();
 
         assert_eq!(
             item.item,
@@ -345,12 +353,13 @@ mod cache_workspace_state {
     async fn loads_cache_if_it_exists_and_cache_is_readonly() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/workspaceState.json")
-            .write_str(r#"{"lastNodeInstallTime":123}"#)
+        dir.child(".moon/cache/tools/node-v4.5.6.json")
+            .write_str(r#"{"lastDepsInstallTime":123}"#)
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
-        let item = run_with_env("read", || cache.cache_workspace_state())
+        let platform = SupportedPlatform::Node("4.5.6".into());
+        let item = run_with_env("read", || cache.cache_tool_state(&platform))
             .await
             .unwrap();
 
@@ -370,12 +379,12 @@ mod cache_workspace_state {
     async fn doesnt_load_if_it_exists_but_cache_is_off() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/workspaceState.json")
-            .write_str(r#"{"lastNodeInstallTime":123}"#)
+        dir.child(".moon/cache/tools/system.json")
+            .write_str(r#"{"lastDepsInstallTime":123}"#)
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
-        let item = run_with_env("off", || cache.cache_workspace_state())
+        let item = run_with_env("off", || cache.cache_tool_state(&SupportedPlatform::System))
             .await
             .unwrap();
 
@@ -389,15 +398,18 @@ mod cache_workspace_state {
     async fn saves_to_cache() {
         let dir = assert_fs::TempDir::new().unwrap();
         let cache = CacheEngine::create(dir.path()).await.unwrap();
-        let mut item = cache.cache_workspace_state().await.unwrap();
+        let mut item = cache
+            .cache_tool_state(&SupportedPlatform::Node("7.8.9".into()))
+            .await
+            .unwrap();
 
-        item.item.last_install_time = 123;
+        item.item.last_deps_install_time = 123;
 
         run_with_env("", || item.save()).await.unwrap();
 
         assert_eq!(
             fs::read_to_string(item.path).unwrap(),
-            r#"{"lastNodeInstallTime":123,"lastVersionCheckTime":0}"#
+            r#"{"lastDepsInstallTime":123,"lastVersionCheckTime":0}"#
         );
 
         dir.close().unwrap();

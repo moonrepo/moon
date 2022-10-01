@@ -216,17 +216,13 @@ impl DepGraph {
     }
 
     pub fn setup_tool(&mut self, platform: &SupportedPlatform) -> NodeIndex {
-        let node = ActionNode::SetupToolchain(platform.clone());
+        let node = ActionNode::SetupTool(platform.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return *index;
         }
 
-        trace!(
-            target: LOG_TARGET,
-            "Setting up {} toolchain",
-            platform.label()
-        );
+        trace!(target: LOG_TARGET, "Setting up {} tool", platform.label());
 
         self.get_or_insert_node(node)
     }

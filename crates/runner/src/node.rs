@@ -6,8 +6,14 @@ use std::hash::{Hash, Hasher};
 #[derive(Clone, Debug, Eq)]
 pub enum ActionNode {
     InstallDeps(SupportedPlatform),
+
+    /// Run a target (project task).
     RunTarget(TargetID),
-    SetupToolchain(SupportedPlatform),
+
+    /// Setup a tool + version for the provided platform.
+    SetupTool(SupportedPlatform),
+
+    /// Sync a project with language specific semantics.
     SyncProject(SupportedPlatform, ProjectID),
 }
 
@@ -19,9 +25,9 @@ impl ActionNode {
                 _ => format!("Install{}Deps", platform),
             },
             ActionNode::RunTarget(id) => format!("RunTarget({})", id),
-            ActionNode::SetupToolchain(platform) => match platform {
-                SupportedPlatform::Node(version) => format!("SetupNodeToolchain({})", version),
-                _ => format!("Setup{}Toolchain", platform),
+            ActionNode::SetupTool(platform) => match platform {
+                SupportedPlatform::Node(version) => format!("SetupNodeTool({})", version),
+                _ => format!("Setup{}Tool", platform),
             },
             ActionNode::SyncProject(platform, id) => format!("Sync{}Project({})", platform, id),
         }

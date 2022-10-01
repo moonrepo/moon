@@ -99,7 +99,7 @@
 #### ⚙️ Internal
 
 - The `SetupToolchain` action has been updated to be language/platform aware, and as such, was split
-  into `SetupNodeToolchain` and `SetupSystemToolchain`.
+  into `SetupNodeTool` and `SetupSystemTool`.
 - Output is now buffered when running a target. This should reduce tearing and increase performance.
 - Upgraded all Cargo dependencies.
 

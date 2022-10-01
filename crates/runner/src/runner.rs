@@ -71,7 +71,7 @@ async fn run_action(
         }
 
         // Setup and install the specific tool
-        ActionNode::SetupToolchain(platform) => {
+        ActionNode::SetupTool(platform) => {
             local_emitter
                 .emit(Event::ToolInstalling { platform })
                 .await?;
@@ -124,7 +124,7 @@ async fn run_action(
             action.fail(error.to_string());
 
             // If these fail, we should abort instead of trying to continue
-            if matches!(node, ActionNode::SetupToolchain(_))
+            if matches!(node, ActionNode::SetupTool(_))
                 || matches!(node, ActionNode::InstallDeps(_))
             {
                 action.abort();

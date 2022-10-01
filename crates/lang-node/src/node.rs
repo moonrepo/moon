@@ -2,7 +2,7 @@ use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_lang::LangError;
+use moon_lang::{has_shebang, is_cmd_file, LangError};
 use moon_utils::path;
 use regex::Regex;
 use std::env::{self, consts};
@@ -27,40 +27,13 @@ pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
     }
 }
 
-#[track_caller]
-pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
-    let captures = BIN_PATH_PATTERN.captures(&contents).unwrap_or_else(|| {
-        // This should ideally never happen!
-        panic!(
-            "Unable to extract binary path from {}:\n\n{}",
-            bin_path.to_string_lossy(),
-            contents
-        )
-    });
-
-    PathBuf::from(captures.get(0).unwrap().as_str())
-}
-
-pub fn has_shebang(contents: &str, command: &str) -> bool {
-    contents.starts_with(&format!("#!/usr/bin/env {command}"))
-        || contents.starts_with(&format!("#!/usr/bin/{command}"))
-        || contents.starts_with(&format!("#!/bin/{command}"))
-}
-
-pub fn is_cmd_file(contents: &str) -> bool {
-    contents.contains("%~dp0")
-        || contents.contains("%dp0%")
-        || contents.contains("@SETLOCAL")
-        || contents.contains("@ECHO")
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BinFile {
     Binary(PathBuf), // Rust, Go
     Script(PathBuf), // JavaScript
 }
 
-/// Bin files may be JavaScript, Bash, Go, or Rust.
+/// Node module ".bin" files may be JavaScript, Bash, Go, or Rust.
 ///
 /// npm:
 ///     - Unix: Symlinks to the bin file in node_modules.
@@ -124,9 +97,9 @@ pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Opti
 }
 
 #[track_caller]
-pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
+pub fn find_package_bin<P: AsRef<Path>, B: AsRef<str>>(
     starting_dir: P,
-    bin_name: T,
+    bin_name: B,
 ) -> Result<Option<BinFile>, MoonError> {
     let starting_dir = starting_dir.as_ref();
     let bin_name = bin_name.as_ref();
@@ -144,9 +117,9 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
     })
 }
 
-pub fn find_package_manager_bin<P: AsRef<Path>, T: AsRef<str>>(
+pub fn find_package_manager_bin<P: AsRef<Path>, B: AsRef<str>>(
     install_dir: P,
-    bin_name: T,
+    bin_name: B,
 ) -> PathBuf {
     install_dir
         .as_ref()
@@ -236,6 +209,20 @@ where
         version = version.as_ref(),
         path = path.as_ref(),
     )
+}
+
+#[track_caller]
+pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
+    let captures = BIN_PATH_PATTERN.captures(&contents).unwrap_or_else(|| {
+        // This should ideally never happen!
+        panic!(
+            "Unable to extract binary path from {}:\n\n{}",
+            bin_path.to_string_lossy(),
+            contents
+        )
+    });
+
+    PathBuf::from(captures.get(0).unwrap().as_str())
 }
 
 pub fn parse_package_name(package_name: &str) -> (Option<String>, String) {

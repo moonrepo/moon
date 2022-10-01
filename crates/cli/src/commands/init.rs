@@ -207,7 +207,7 @@ async fn detect_projects(
                 Select::with_theme(&create_theme())
                     .with_prompt(format!(
                         "Inherit projects from {} workspaces?",
-                        color::file("package.json")
+                        color::file(NPM.manifest_filename)
                     ))
                     .items(&items)
                     .default(default_index)

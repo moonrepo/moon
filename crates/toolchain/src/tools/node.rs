@@ -9,13 +9,14 @@ use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageMan
 use crate::ToolchainPaths;
 use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
-use moon_error::map_io_to_fs_error;
+use moon_error::{map_io_to_fs_error, MoonError};
 use moon_lang::LangError;
-use moon_lang_node::node;
+use moon_lang_node::package::PackageJson;
+use moon_lang_node::{node, PNPM};
 use moon_logger::{color, debug, error, Logable};
-use moon_utils::fs;
 use moon_utils::process::Command;
 use moon_utils::semver::{Version, VersionReq};
+use moon_utils::{fs, get_workspace_root};
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -158,6 +159,25 @@ impl NodeTool {
 
         VersionReq::parse(">=16.9.0").unwrap().matches(&cfg_version)
             || VersionReq::parse("^14.19.0").unwrap().matches(&cfg_version)
+    }
+
+    // pub fn is_project_in_workspaces(&self, source: &str) -> Result<bool, MoonError> {}
+
+    pub fn is_workspaces_enabled(&self) -> Result<bool, MoonError> {
+        match self.config.package_manager {
+            NodePackageManager::Pnpm => {
+                if get_workspace_root().join(PNPM.config_filenames[2]).exists() {
+                    return Ok(true);
+                }
+            }
+            _ => {
+                if let Some(package_json) = PackageJson::read(get_workspace_root())? {
+                    return Ok(package_json.workspaces.is_some());
+                }
+            }
+        };
+
+        Ok(false)
     }
 }
 

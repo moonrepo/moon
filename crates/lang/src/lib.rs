@@ -88,3 +88,16 @@ pub fn is_using_version_manager<T: AsRef<Path>>(base_dir: T, vm: &VersionManager
 
     false
 }
+
+pub fn has_shebang(contents: &str, command: &str) -> bool {
+    contents.starts_with(&format!("#!/usr/bin/env {command}"))
+        || contents.starts_with(&format!("#!/usr/bin/{command}"))
+        || contents.starts_with(&format!("#!/bin/{command}"))
+}
+
+pub fn is_cmd_file(contents: &str) -> bool {
+    contents.contains("%~dp0")
+        || contents.contains("%dp0%")
+        || contents.contains("@SETLOCAL")
+        || contents.contains("@ECHO")
+}

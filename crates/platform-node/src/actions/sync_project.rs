@@ -1,6 +1,6 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
-use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
+use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson, NPM};
 use moon_logger::{color, debug};
 use moon_project::Project;
 use moon_utils::{fs, is_ci, path, semver, string_vec};
@@ -142,7 +142,7 @@ pub async fn sync_project(
                         "Syncing {} as a dependency to {}'s {}",
                         color::id(&dep_project.id),
                         color::id(&project.id),
-                        color::file("package.json")
+                        color::file(NPM.manifest_filename)
                     );
                 }
             }

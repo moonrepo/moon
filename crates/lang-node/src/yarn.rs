@@ -1,14 +1,14 @@
+use crate::YARN;
 use cached::proc_macro::cached;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_lang::config_cache;
-use moon_lang::LockfileDependencyVersions;
+use moon_lang::{config_cache, LockfileDependencyVersions};
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-config_cache!(YarnLock, "yarn.lock", load_lockfile, write_lockfile);
+config_cache!(YarnLock, YARN.lock_filename, load_lockfile);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,10 +58,6 @@ fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
         serde_yaml::from_str(&content).map_err(|e| MoonError::Yaml(path.to_path_buf(), e))?;
 
     Ok(lockfile)
-}
-
-fn write_lockfile(_path: &Path, _lockfile: &YarnLock) -> Result<(), MoonError> {
-    Ok(()) // Do nothing
 }
 
 #[cached(result)]

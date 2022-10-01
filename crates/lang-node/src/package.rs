@@ -1,5 +1,6 @@
 // package.json
 
+use crate::NPM;
 use cached::proc_macro::cached;
 use json;
 use moon_error::MoonError;
@@ -12,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 config_cache!(
     PackageJson,
-    "package.json",
+    NPM.manifest_filename,
     sync_read_json,
     write_preserved_json
 );

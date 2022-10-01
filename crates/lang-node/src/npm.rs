@@ -1,19 +1,14 @@
+use crate::NPM;
 use cached::proc_macro::cached;
 use moon_error::MoonError;
-use moon_lang::config_cache;
-use moon_lang::LockfileDependencyVersions;
+use moon_lang::{config_cache, LockfileDependencyVersions};
 use moon_utils::fs::sync_read_json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(
-    PackageLock,
-    "package-lock.json",
-    sync_read_json,
-    write_lockfile
-);
+config_cache!(PackageLock, NPM.lock_filename, sync_read_json);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -43,10 +38,6 @@ pub struct PackageLock {
 
     #[serde(skip)]
     pub path: PathBuf,
-}
-
-fn write_lockfile(_path: &Path, _lockfile: &PackageLock) -> Result<(), MoonError> {
-    Ok(()) // Do nothing
 }
 
 #[cached(result)]

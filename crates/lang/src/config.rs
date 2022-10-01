@@ -1,5 +1,8 @@
 #[macro_export]
 macro_rules! config_cache {
+    ($struct:ident, $file:expr, $reader:ident) => {
+        config_cache!($struct, $file, $reader, noop_write);
+    };
     ($struct:ident, $file:expr, $reader:ident, $writer:ident) => {
         fn load_config_internal(path: &Path) -> Result<$struct, MoonError> {
             use moon_logger::{color, trace};
@@ -20,6 +23,10 @@ macro_rules! config_cache {
         #[cached(sync_writes = true, result = true)]
         fn load_config(path: PathBuf) -> Result<$struct, MoonError> {
             load_config_internal(&path)
+        }
+
+        fn noop_write(_path: &Path, _file: &$struct) -> Result<(), MoonError> {
+            Ok(()) // Do nothing
         }
 
         impl $struct {

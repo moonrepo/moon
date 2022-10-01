@@ -28,7 +28,7 @@ pub const NPM: PackageManager = PackageManager {
 
 pub const PNPM: PackageManager = PackageManager {
     binary: "pnpm",
-    config_filenames: &[".npmrc", "pnpm-workspace.yaml", ".pnpmfile.cjs"],
+    config_filenames: &[".npmrc", ".pnpmfile.cjs", "pnpm-workspace.yaml"],
     default_version: "7.12.1",
     lock_filename: "pnpm-lock.yaml",
     manifest_filename: "package.json",

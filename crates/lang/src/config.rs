@@ -1,3 +1,5 @@
+// TODO: Improve macro so that it can be called multiple times within the same file.
+// Right now the "load_config" functions cause a name collision.
 #[macro_export]
 macro_rules! config_cache {
     ($struct:ident, $file:expr, $reader:ident) => {

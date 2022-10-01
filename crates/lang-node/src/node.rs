@@ -1,9 +1,11 @@
+use crate::package::{PackageJson, PackageWorkspaces};
+use crate::pnpm_workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;
 use moon_error::{map_io_to_fs_error, MoonError};
 use moon_lang::{has_shebang, is_cmd_file, LangError};
-use moon_utils::path;
+use moon_utils::{get_workspace_root, path};
 use regex::Regex;
 use std::env::{self, consts};
 use std::fs;
@@ -209,6 +211,30 @@ where
         version = version.as_ref(),
         path = path.as_ref(),
     )
+}
+
+/// Extract the list of `workspaces` globs from the root `package.json`.
+/// If using pnpm, extract the globs from `pnpm-workspace.yaml`.
+#[cached(result)]
+pub fn get_package_workspaces() -> Result<Option<Vec<String>>, MoonError> {
+    if let Some(pnpm_workspace) = PnpmWorkspace::read(get_workspace_root())? {
+        return Ok(Some(pnpm_workspace.packages));
+    }
+
+    if let Some(package_json) = PackageJson::read(get_workspace_root())? {
+        if let Some(workspaces) = package_json.workspaces {
+            match workspaces {
+                PackageWorkspaces::Array(globs) => return Ok(Some(globs)),
+                PackageWorkspaces::Object(config) => {
+                    if let Some(globs) = config.packages {
+                        return Ok(Some(globs));
+                    }
+                }
+            };
+        }
+    }
+
+    Ok(None)
 }
 
 #[track_caller]

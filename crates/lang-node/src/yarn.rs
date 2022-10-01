@@ -1,14 +1,14 @@
 use crate::YARN;
 use cached::proc_macro::cached;
-use moon_error::{map_io_to_fs_error, MoonError};
+use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
+use moon_utils::fs::sync::read_yaml;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 
-config_cache!(YarnLock, YARN.lock_filename, load_lockfile);
+config_cache!(YarnLock, YARN.lock_filename, read_yaml);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,17 +47,6 @@ pub struct YarnLock {
 
     #[serde(skip)]
     pub path: PathBuf,
-}
-
-fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
-    let path = path.as_ref();
-    let content =
-        fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-    let lockfile: YarnLock =
-        serde_yaml::from_str(&content).map_err(|e| MoonError::Yaml(path.to_path_buf(), e))?;
-
-    Ok(lockfile)
 }
 
 #[cached(result)]
@@ -134,7 +123,7 @@ __metadata:
   linkType: hard
 "#).unwrap();
 
-        let lockfile = load_lockfile(temp.path().join("yarn.lock")).unwrap();
+        let lockfile: YarnLock = read_yaml(temp.path().join("yarn.lock")).unwrap();
 
         assert_eq!(
             lockfile,

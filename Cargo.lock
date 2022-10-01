@@ -1876,6 +1876,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "serde_yaml",
  "shell-words",
  "tokio",
  "wax",

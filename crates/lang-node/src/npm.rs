@@ -2,13 +2,13 @@ use crate::NPM;
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
-use moon_utils::fs::sync_read_json;
+use moon_utils::fs::sync::read_json;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(PackageLock, NPM.lock_filename, sync_read_json);
+config_cache!(PackageLock, NPM.lock_filename, read_json);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,7 +102,7 @@ mod tests {
             )
             .unwrap();
 
-        let lockfile: PackageLock = sync_read_json(temp.path().join("package-lock.json")).unwrap();
+        let lockfile: PackageLock = read_json(temp.path().join("package-lock.json")).unwrap();
 
         assert_eq!(
             lockfile,

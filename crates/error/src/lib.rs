@@ -112,3 +112,7 @@ pub fn map_io_to_process_error(error: IoError, bin: &str) -> MoonError {
 pub fn map_json_to_error(error: JsonError, path: PathBuf) -> MoonError {
     MoonError::Json(path, error)
 }
+
+pub fn map_yaml_to_error(error: YamlError, path: PathBuf) -> MoonError {
+    MoonError::Yaml(path, error)
+}

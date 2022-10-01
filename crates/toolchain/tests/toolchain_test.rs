@@ -1,7 +1,6 @@
 use moon_config::{NodeConfig, WorkspaceConfig};
 use moon_toolchain::Toolchain;
 use predicates::prelude::*;
-use std::env;
 use std::path::{Path, PathBuf};
 
 async fn create_toolchain(base_dir: &Path) -> Toolchain {
@@ -13,9 +12,7 @@ async fn create_toolchain(base_dir: &Path) -> Toolchain {
         ..WorkspaceConfig::default()
     };
 
-    Toolchain::create_from(base_dir, &env::temp_dir(), &config)
-        .await
-        .unwrap()
+    Toolchain::create_from(base_dir, &config).await.unwrap()
 }
 
 #[tokio::test]

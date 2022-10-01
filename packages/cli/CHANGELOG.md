@@ -4,6 +4,10 @@
 
 #### 🚀 Updates
 
+- Projects
+  - Projects can now override the workspace configured Node.js version on a per-project basis using
+    the new `workspace.node.version` setting in `moon.yml`. However, this does not override the
+    package manager!
 - Generator
   - Template files can now be suffixed with `.tera` or `.twig` for syntax highlighting.
 

@@ -29,7 +29,7 @@ to be language agnostic and easily pluggable in the future. If we're to guess wh
 be next, it would most likely be Ruby to support React Native based applications.
 
 With that being said, for languages not supported in our toolchain, you can still execute them
-within at task by setting the [type to system](./config/project#type).
+within at task by setting the [`type` to "system"](./config/project#type-1).
 
 ### Will moon support continuous deployment?
 
@@ -152,7 +152,7 @@ tasks:
 ### Can we run other languages?
 
 Yes! Although our toolchain only supports JavaScript/Node.js at this time, you can still run other
-languages within tasks by setting their [`type`](./config/project#type) to "system". System tasks
+languages within tasks by setting their [`type`](./config/project#type-1) to "system". System tasks
 are an escape hatch that will use any command available on the current machine.
 
 ```yaml title="moon.yml"

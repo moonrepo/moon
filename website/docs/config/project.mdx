@@ -44,42 +44,7 @@ dependsOn:
 
 > Learn more about [implicit and explicit dependencies](../concepts/project#dependencies).
 
-## `fileGroups`
-
-> `Record<string, string[]>`
-
-Defines [file groups](../concepts/file-group) to be used by local tasks. By default, this setting
-_is not required_ for the following reasons:
-
-- File groups are an optional feature, and are designed for advanced use cases.
-- File groups defined in [`.moon/project.yml`](./global-project) will be inherited by all projects.
-
-When defined this setting requires a map, where the key is the file group name, and the value is a
-list of [globs or paths](../concepts/file-pattern). Globs and paths are
-[relative to a project](../concepts/file-pattern#project-relative) (even when defined
-[globally](./global-project)).
-
-```yaml title="moon.yml"
-fileGroups:
-  configs:
-    - '*.config.{js,cjs,mjs}'
-    - '*.json'
-  sources:
-    - 'src/**/*'
-    - 'types/**/*'
-  tests:
-    - 'tests/**/*'
-    - '**/__tests__/**/*'
-  assets:
-    - 'assets/**/*'
-    - 'images/**/*'
-    - 'static/**/*'
-    - '**/*.{scss,css}'
-```
-
-> The code snippet above is merely an example of file groups. Feel free to use those groups as-is,
-> modify the glob lists, add and remove groups, or implement completely new groups. The choice is
-> yours!
+## Metadata
 
 ## `language`<VersionLabel version="0.3" />
 
@@ -158,6 +123,60 @@ A human readable name of the project. This is _different_ from the unique projec
 The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
 suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
 
+## `type`
+
+> `ProjectType`
+
+The type of project. Supports the following values:
+
+- `application` - A backend or frontend application that communicates over HTTP, TCP, RPC, etc.
+- `library` - A self-contained, shareable, and publishable set of code.
+- `tool` - An internal tool, command line program, one-off script, etc.
+- `unknown` (default) - When not configured.
+
+```yaml title="moon.yml"
+type: 'application'
+```
+
+## Tasks
+
+## `fileGroups`
+
+> `Record<string, string[]>`
+
+Defines [file groups](../concepts/file-group) to be used by local tasks. By default, this setting
+_is not required_ for the following reasons:
+
+- File groups are an optional feature, and are designed for advanced use cases.
+- File groups defined in [`.moon/project.yml`](./global-project) will be inherited by all projects.
+
+When defined this setting requires a map, where the key is the file group name, and the value is a
+list of [globs or paths](../concepts/file-pattern). Globs and paths are
+[relative to a project](../concepts/file-pattern#project-relative) (even when defined
+[globally](./global-project)).
+
+```yaml title="moon.yml"
+fileGroups:
+  configs:
+    - '*.config.{js,cjs,mjs}'
+    - '*.json'
+  sources:
+    - 'src/**/*'
+    - 'types/**/*'
+  tests:
+    - 'tests/**/*'
+    - '**/__tests__/**/*'
+  assets:
+    - 'assets/**/*'
+    - 'images/**/*'
+    - 'static/**/*'
+    - '**/*.{scss,css}'
+```
+
+> The code snippet above is merely an example of file groups. Feel free to use those groups as-is,
+> modify the glob lists, add and remove groups, or implement completely new groups. The choice is
+> yours!
+
 ## `tasks`
 
 > `Record<string, TaskConfig>`
@@ -199,8 +218,8 @@ tasks:
 ```
 
 By default a task assumes the command name is an npm binary, and if you'd like to reference a system
-command, you'll also need to set the [`type`](#type) to "system". We do our best to automatically
-detect this, but it's not perfect.
+command, you'll also need to set the [`type`](#type-1) to "system". We do our best to automatically
+detect this, but it's not accurate in all scenarios.
 
 ```yaml title="moon.yml"
 tasks:
@@ -572,24 +591,11 @@ tasks:
 > This field exists because of our [toolchain](../concepts/toolchain), and moon ensuring the correct
 > command is ran.
 
-## `type`
-
-> `ProjectType`
-
-The type of project. Supports the following values:
-
-- `application` - A backend or frontend application that communicates over HTTP, TCP, RPC, etc.
-- `library` - A self-contained, shareable, and publishable set of code.
-- `tool` - An internal tool, command line program, one-off script, etc.
-- `unknown` (default) - When not configured.
-
-```yaml title="moon.yml"
-type: 'application'
-```
-
-## `workspace`
+## Workspace overrides
 
 Dictates how a project interacts with settings defined at the workspace-level.
+
+## `workspace`
 
 ### `inheritedTasks`
 
@@ -656,12 +662,33 @@ workspace:
 
 > Renaming occurs after inclusion and exclusion.
 
+### `node`<VersionLabel version="0.16" />
+
+> `PackageWorkspaceNodeConfig`
+
+Configures Node.js for this project and overrides the workspace-level [`node`](./workspace#node)
+setting. Currently, only the Node.js version can be overridden per-project, not the package manager.
+Dependencies (`node_modules`) ignore this setting and will continue to install at the workspace root
+using the workspace configured Node.js version and package manager.
+
+#### `version`
+
+> `string`
+
+Defines the explicit Node.js version to use when _running tasks_ for this project.
+
+```yaml title="moon.yml" {2}
+workspace:
+  node:
+    version: '12.12.0'
+```
+
 ### `typescript`<VersionLabel version="0.12" />
 
 > `boolean`
 
-Enables or disables [TypeScript support](./workspace#typescript) for this specific project.
-Currently controls project reference syncing and `tsconfig.json` creation. Defaults to `true`.
+Enables or disables [TypeScript support](./workspace#typescript) for this project. Currently
+controls project reference syncing and `tsconfig.json` creation. Defaults to `true`.
 
 ```yaml title="moon.yml" {2}
 workspace:

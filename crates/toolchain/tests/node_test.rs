@@ -3,7 +3,6 @@ use moon_lang_node::node;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Downloadable, Executable, Installable, Toolchain};
 use predicates::prelude::*;
-use std::env;
 use std::path::PathBuf;
 
 async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
@@ -17,7 +16,7 @@ async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
         ..WorkspaceConfig::default()
     };
 
-    let toolchain = Toolchain::create_from(base_dir.path(), &env::temp_dir(), &config)
+    let toolchain = Toolchain::create_from(base_dir.path(), &config)
         .await
         .unwrap();
 

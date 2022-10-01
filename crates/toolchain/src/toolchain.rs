@@ -45,7 +45,6 @@ pub struct Toolchain {
 impl Toolchain {
     pub async fn create_from<P: AsRef<Path>>(
         base_dir: P,
-        workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
         let dir = base_dir.as_ref().join(CONFIG_DIRNAME);
@@ -75,13 +74,9 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub async fn create(
-        workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
-    ) -> Result<Toolchain, ToolchainError> {
+    pub async fn create(workspace_config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
         Toolchain::create_from(
             path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
-            workspace_root,
             workspace_config,
         )
         .await

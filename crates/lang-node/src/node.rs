@@ -213,21 +213,30 @@ where
     )
 }
 
-/// Extract the list of `workspaces` globs from the root `package.json`.
-/// If using pnpm, extract the globs from `pnpm-workspace.yaml`.
+/// Extract the list of `workspaces` globs from the root `package.json`,
+/// or if using pnpm, extract the globs from `pnpm-workspace.yaml`.
+/// Furthermore, if the list is found, but is empty, return none.
 #[cached(result)]
 pub fn get_package_workspaces() -> Result<Option<Vec<String>>, MoonError> {
     if let Some(pnpm_workspace) = PnpmWorkspace::read(get_workspace_root())? {
-        return Ok(Some(pnpm_workspace.packages));
+        if !pnpm_workspace.packages.is_empty() {
+            return Ok(Some(pnpm_workspace.packages));
+        }
     }
 
     if let Some(package_json) = PackageJson::read(get_workspace_root())? {
         if let Some(workspaces) = package_json.workspaces {
             match workspaces {
-                PackageWorkspaces::Array(globs) => return Ok(Some(globs)),
+                PackageWorkspaces::Array(globs) => {
+                    if !globs.is_empty() {
+                        return Ok(Some(globs));
+                    }
+                }
                 PackageWorkspaces::Object(config) => {
                     if let Some(globs) = config.packages {
-                        return Ok(Some(globs));
+                        if !globs.is_empty() {
+                            return Ok(Some(globs));
+                        }
                     }
                 }
             };

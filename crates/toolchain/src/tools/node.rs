@@ -14,6 +14,7 @@ use moon_lang::LangError;
 use moon_lang_node::node;
 use moon_logger::{color, debug, error, Logable};
 use moon_utils::fs;
+use moon_utils::glob::GlobSet;
 use moon_utils::process::Command;
 use moon_utils::semver::{Version, VersionReq};
 use std::ffi::OsStr;
@@ -160,13 +161,23 @@ impl NodeTool {
             || VersionReq::parse("^14.19.0").unwrap().matches(&cfg_version)
     }
 
-    // pub fn is_project_in_workspaces(&self, source: &str) -> Result<bool, MoonError> {}
+    pub fn is_project_in_workspaces(&self, source: &str) -> Result<bool, MoonError> {
+        // Root package is always considered within the workspace
+        if source.is_empty() || source == "." {
+            return Ok(true);
+        }
+
+        if let Some(globs) = node::get_package_workspaces()? {
+            return Ok(GlobSet::new(globs)
+                .map_err(|e| MoonError::Generic(e.to_string()))?
+                .matches(source)?);
+        }
+
+        Ok(false)
+    }
 
     pub fn is_workspaces_enabled(&self) -> Result<bool, MoonError> {
-        match node::get_package_workspaces()? {
-            Some(globs) => Ok(!globs.is_empty()),
-            None => Ok(false),
-        }
+        Ok(node::get_package_workspaces()?.is_some())
     }
 }
 

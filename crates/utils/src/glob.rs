@@ -2,7 +2,10 @@ use crate::path;
 use lazy_static::lazy_static;
 use moon_error::MoonError;
 use regex::Regex;
-use std::path::{Path, PathBuf};
+use std::{
+    ffi::OsStr,
+    path::{Path, PathBuf},
+};
 pub use wax::Glob;
 use wax::{Any, GlobError as WaxGlobError, LinkBehavior, Negation, Pattern};
 
@@ -30,8 +33,8 @@ impl<'t> GlobSet<'t> {
         })
     }
 
-    pub fn matches(&self, path: &Path) -> Result<bool, MoonError> {
-        Ok(self.any.is_match(path))
+    pub fn matches<P: AsRef<OsStr>>(&self, path: P) -> Result<bool, MoonError> {
+        Ok(self.any.is_match(path.as_ref()))
     }
 }
 

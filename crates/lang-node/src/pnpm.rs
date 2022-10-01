@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 config_cache!(PnpmLock, PNPM.lock_filename, read_yaml);
-// config_cache!(PnpmWorkspace, PNPM.config_filenames[2], sync_read_yaml);
 
 type DependencyMap = HashMap<String, Value>;
 

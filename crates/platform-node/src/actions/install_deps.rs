@@ -77,6 +77,20 @@ pub async fn install_deps(
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
     let node = workspace.toolchain.node.get()?;
+
+    // When the platform version does not match the configured workspace version,
+    // we can assume this is a project-level override, and in this case, we
+    // can entirely skip dependency installs and everything else!
+    if node.config.version != platform.version() {
+        debug!(
+            target: LOG_TARGET,
+            "Skipping install of {} dependencies, as this is not the workspace version",
+            platform.label()
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
+
     let mut cache = workspace.cache.cache_tool_state(platform).await?;
 
     // Sync values to root `package.json`
@@ -129,7 +143,11 @@ pub async fn install_deps(
         || last_modified == 0
         || last_modified > cache.item.last_deps_install_time
     {
-        debug!(target: LOG_TARGET, "Installing Node.js dependencies");
+        debug!(
+            target: LOG_TARGET,
+            "Installing {} dependencies",
+            platform.label()
+        );
 
         // When in CI, we can avoid installing dependencies because
         // we can assume they've already been installed before moon runs!

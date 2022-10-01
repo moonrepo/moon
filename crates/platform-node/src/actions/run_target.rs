@@ -93,6 +93,18 @@ pub async fn create_target_command(
     let mut cmd = node.get_bin_path().clone();
     let mut args = vec![];
 
+    // If a version override exists, use it for the cmmand
+    if let Some(node_config) = &project.config.workspace.node {
+        if let Some(version_override) = &node_config.version {
+            cmd = workspace
+                .toolchain
+                .node
+                .get_version(version_override)?
+                .get_bin_path()
+                .clone();
+        }
+    }
+
     match task.command.as_str() {
         "node" => {
             args.extend(create_node_options(context, workspace, task)?);

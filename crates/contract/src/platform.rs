@@ -74,6 +74,13 @@ impl SupportedPlatform {
             SupportedPlatform::System => "system".into(),
         }
     }
+
+    pub fn version(&self) -> String {
+        match self {
+            SupportedPlatform::Node(version) => version.into(),
+            SupportedPlatform::System => "latest".into(),
+        }
+    }
 }
 
 impl fmt::Display for SupportedPlatform {

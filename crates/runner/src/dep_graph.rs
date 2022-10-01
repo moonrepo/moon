@@ -1,6 +1,8 @@
 use crate::errors::DepGraphError;
 use crate::node::ActionNode;
-use moon_config::{default_node_version, ProjectLanguage, WorkspaceConfig};
+use moon_config::{
+    default_node_version, ProjectLanguage, ProjectWorkspaceNodeConfig, WorkspaceConfig,
+};
 use moon_contract::SupportedPlatform;
 use moon_logger::{color, debug, map_list, trace};
 use moon_project::Project;
@@ -66,10 +68,18 @@ impl DepGraph {
     pub fn get_platform_from_project(&self, project: &Project) -> SupportedPlatform {
         match &project.config.language {
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
-                SupportedPlatform::Node(match &self.workspace_config.node {
-                    Some(node) => node.version.to_owned(),
-                    None => default_node_version(),
-                })
+                let version = match &project.config.workspace.node {
+                    Some(ProjectWorkspaceNodeConfig {
+                        version: Some(version),
+                        ..
+                    }) => version.to_owned(),
+                    _ => match &self.workspace_config.node {
+                        Some(node) => node.version.to_owned(),
+                        None => default_node_version(),
+                    },
+                };
+
+                SupportedPlatform::Node(version)
             }
             _ => SupportedPlatform::System,
         }

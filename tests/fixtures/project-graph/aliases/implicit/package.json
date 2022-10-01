@@ -4,6 +4,6 @@
     "project-graph-aliases-node": "*"
   },
   "devDependencies": {
-    "@scope/pkg-foo": "workspace:*"
+    "@scope/pkg-foo": "*"
   }
 }

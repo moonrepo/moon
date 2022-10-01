@@ -10,6 +10,21 @@ use std::fmt;
 use std::path::Path;
 
 pub trait Platform: Send + Sync {
+    /// Return true if the current platform instance is for the supported platform enum.
+    fn is(&self, platform: &SupportedPlatform) -> bool;
+
+    /// Determine if the provided project is within the platform's package manager
+    /// workspace (not to be confused with moon's workspace).
+    fn is_project_in_package_manager_workspace(
+        &self,
+        project_id: &str,
+        project_root: &Path,
+        workspace_root: &Path,
+        workspace_config: &WorkspaceConfig,
+    ) -> Result<bool, MoonError> {
+        Ok(true)
+    }
+
     /// During project graph creation, load project aliases for the resolved
     /// map of projects that are unique to the platform's ecosystem.
     fn load_project_graph_aliases(
@@ -62,10 +77,7 @@ pub enum SupportedPlatform {
 
 impl SupportedPlatform {
     pub fn id(&self) -> String {
-        match self {
-            SupportedPlatform::Node(version) => format!("node-v{}", version),
-            SupportedPlatform::System => "system".into(),
-        }
+        format!("{}-v{}", self, self.version()).to_lowercase()
     }
 
     pub fn label(&self) -> String {

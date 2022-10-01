@@ -5,7 +5,11 @@ use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, Eq)]
 pub enum ActionNode {
+    /// Install tool dependencies in the workspace root.
     InstallDeps(SupportedPlatform),
+
+    /// Install tool dependencies in the project's root.
+    InstallProjectDeps(SupportedPlatform, ProjectID),
 
     /// Run a target (project task).
     RunTarget(TargetID),
@@ -21,12 +25,18 @@ impl ActionNode {
     pub fn label(&self) -> String {
         match self {
             ActionNode::InstallDeps(platform) => match platform {
-                SupportedPlatform::Node(version) => format!("InstallNodeDeps({})", version),
+                SupportedPlatform::Node(version) => format!("Install{}Deps({})", platform, version),
                 _ => format!("Install{}Deps", platform),
+            },
+            ActionNode::InstallProjectDeps(platform, id) => match platform {
+                SupportedPlatform::Node(version) => {
+                    format!("Install{}DepsInProject({}, {})", platform, version, id)
+                }
+                _ => format!("Install{}DepsInProject({})", platform, id),
             },
             ActionNode::RunTarget(id) => format!("RunTarget({})", id),
             ActionNode::SetupTool(platform) => match platform {
-                SupportedPlatform::Node(version) => format!("SetupNodeTool({})", version),
+                SupportedPlatform::Node(version) => format!("Setup{}Tool({})", platform, version),
                 _ => format!("Setup{}Tool", platform),
             },
             ActionNode::SyncProject(platform, id) => format!("Sync{}Project({})", platform, id),

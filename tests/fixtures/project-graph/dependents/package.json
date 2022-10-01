@@ -1,4 +1,5 @@
 {
   "name": "project-graph-dependents",
-  "private": true
+  "private": true,
+  "workspaces": ["*"]
 }

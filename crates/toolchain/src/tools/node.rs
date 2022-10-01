@@ -9,12 +9,11 @@ use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageMan
 use crate::ToolchainPaths;
 use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
-use moon_error::{map_io_to_fs_error, MoonError};
+use moon_error::map_io_to_fs_error;
 use moon_lang::LangError;
 use moon_lang_node::node;
 use moon_logger::{color, debug, error, Logable};
 use moon_utils::fs;
-use moon_utils::glob::GlobSet;
 use moon_utils::process::Command;
 use moon_utils::semver::{Version, VersionReq};
 use std::ffi::OsStr;
@@ -159,25 +158,6 @@ impl NodeTool {
 
         VersionReq::parse(">=16.9.0").unwrap().matches(&cfg_version)
             || VersionReq::parse("^14.19.0").unwrap().matches(&cfg_version)
-    }
-
-    pub fn is_project_in_workspaces(&self, source: &str) -> Result<bool, MoonError> {
-        // Root package is always considered within the workspace
-        if source.is_empty() || source == "." {
-            return Ok(true);
-        }
-
-        if let Some(globs) = node::get_package_workspaces()? {
-            return Ok(GlobSet::new(globs)
-                .map_err(|e| MoonError::Generic(e.to_string()))?
-                .matches(source)?);
-        }
-
-        Ok(false)
-    }
-
-    pub fn is_workspaces_enabled(&self) -> Result<bool, MoonError> {
-        Ok(node::get_package_workspaces()?.is_some())
     }
 }
 

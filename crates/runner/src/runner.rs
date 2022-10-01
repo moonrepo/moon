@@ -33,10 +33,13 @@ async fn run_action(
     let local_emitter = local_emitter.read().await;
 
     let result = match node {
-        // Install dependencies for a specific tool
+        // Install dependencies in the workspace root
         ActionNode::InstallDeps(platform) => {
             local_emitter
-                .emit(Event::DependenciesInstalling { platform })
+                .emit(Event::DependenciesInstalling {
+                    platform,
+                    project_id: None,
+                })
                 .await?;
 
             let install_result = match platform {
@@ -49,7 +52,31 @@ async fn run_action(
             };
 
             local_emitter
-                .emit(Event::DependenciesInstalled { platform })
+                .emit(Event::DependenciesInstalled {
+                    platform,
+                    project_id: None,
+                })
+                .await?;
+
+            install_result
+        }
+
+        // Install dependencies in the project root
+        ActionNode::InstallProjectDeps(platform, project_id) => {
+            local_emitter
+                .emit(Event::DependenciesInstalling {
+                    platform,
+                    project_id: Some(project_id),
+                })
+                .await?;
+
+            let install_result = Ok(ActionStatus::Passed);
+
+            local_emitter
+                .emit(Event::DependenciesInstalled {
+                    platform,
+                    project_id: Some(project_id),
+                })
                 .await?;
 
             install_result

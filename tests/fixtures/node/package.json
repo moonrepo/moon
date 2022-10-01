@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "esbuild",
+    "lifecycles",
     "swc"
   ]
 }

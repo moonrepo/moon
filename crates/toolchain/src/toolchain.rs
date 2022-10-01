@@ -40,9 +40,6 @@ pub struct Toolchain {
 
     /// Node.js!
     pub node: ToolManager<NodeTool>,
-
-    /// The workspace root directory.
-    pub workspace_root: PathBuf,
 }
 
 impl Toolchain {
@@ -63,7 +60,6 @@ impl Toolchain {
 
         let mut toolchain = Toolchain {
             dir,
-            workspace_root: workspace_root.to_path_buf(),
             // Tools
             node: ToolManager::new(SupportedPlatform::Node("latest".into())),
         };

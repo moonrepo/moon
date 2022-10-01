@@ -2,13 +2,12 @@ use crate::errors::ToolchainError;
 use crate::helpers::get_bin_version;
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
-use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{node, pnpm, PNPM};
 use moon_logger::{color, debug, Logable};
-use moon_utils::{fs, is_ci};
+use moon_utils::{fs, get_workspace_root, is_ci};
 use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -143,31 +142,24 @@ impl Executable<NodeTool> for PnpmTool {
 
 #[async_trait]
 impl PackageManager<NodeTool> for PnpmTool {
-    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn dedupe_dependencies(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune
         self.create_command()
             .arg("prune")
-            .cwd(&toolchain.workspace_root)
             .exec_capture_output()
             .await?;
 
         Ok(())
     }
 
-    async fn exec_package(
-        &self,
-        toolchain: &Toolchain,
-        package: &str,
-        args: Vec<&str>,
-    ) -> Result<(), ToolchainError> {
+    async fn exec_package(&self, package: &str, args: Vec<&str>) -> Result<(), ToolchainError> {
         // https://pnpm.io/cli/dlx
         let mut exec_args = vec!["--package", package, "dlx"];
         exec_args.extend(args);
 
         self.create_command()
             .args(exec_args)
-            .cwd(&toolchain.workspace_root)
             .exec_stream_output()
             .await?;
 
@@ -196,11 +188,12 @@ impl PackageManager<NodeTool> for PnpmTool {
         Ok(pnpm::load_lockfile_dependencies(lockfile_path)?)
     }
 
-    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install_dependencies(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
-        let lockfile = toolchain.workspace_root.join(self.get_lock_filename());
 
         if is_ci() {
+            let lockfile = get_workspace_root().join(self.get_lock_filename());
+
             // Will fail with "Headless installation requires a pnpm-lock.yaml file"
             if lockfile.exists() {
                 args.push("--frozen-lockfile");
@@ -209,7 +202,7 @@ impl PackageManager<NodeTool> for PnpmTool {
 
         let mut cmd = self.create_command();
 
-        cmd.args(args).cwd(&toolchain.workspace_root);
+        cmd.args(args);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
@@ -222,8 +215,8 @@ impl PackageManager<NodeTool> for PnpmTool {
 
     async fn install_focused_dependencies(
         &self,
-        toolchain: &Toolchain,
-        package_names: &[String],
+        _node: &NodeTool,
+        packages: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError> {
         let mut cmd = self.create_command();
@@ -233,7 +226,7 @@ impl PackageManager<NodeTool> for PnpmTool {
             cmd.arg("--prod");
         }
 
-        for package_name in package_names {
+        for package in packages {
             cmd.arg(if production_only {
                 "--filter-prod"
             } else {
@@ -241,12 +234,10 @@ impl PackageManager<NodeTool> for PnpmTool {
             });
 
             // https://pnpm.io/filtering#--filter-package_name-1
-            cmd.arg(format!("{}...", package_name));
+            cmd.arg(format!("{}...", package));
         }
 
-        cmd.cwd(&toolchain.workspace_root)
-            .exec_stream_output()
-            .await?;
+        cmd.exec_stream_output().await?;
 
         Ok(())
     }

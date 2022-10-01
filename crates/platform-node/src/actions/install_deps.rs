@@ -116,8 +116,8 @@ pub async fn install_deps(
     }
 
     // Get the last modified time of the root lockfile
-    let manager = node.get_package_manager();
-    let lockfile_name = manager.get_lock_filename();
+    let pm = node.get_package_manager();
+    let lockfile_name = pm.get_lock_filename();
     let lockfile = workspace.root.join(&lockfile_name);
     let mut last_modified = 0;
 
@@ -177,12 +177,12 @@ pub async fn install_deps(
 
         println!("{}", label_checkpoint(install_command, Checkpoint::Pass));
 
-        manager.install_dependencies(&workspace.toolchain).await?;
+        pm.install_dependencies(node).await?;
 
         if !is_ci() && node.config.dedupe_on_lockfile_change {
             debug!(target: LOG_TARGET, "Dedupeing dependencies");
 
-            manager.dedupe_dependencies(&workspace.toolchain).await?;
+            pm.dedupe_dependencies(node).await?;
         }
 
         // Update the cache with the timestamp

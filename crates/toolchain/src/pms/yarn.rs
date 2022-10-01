@@ -2,13 +2,12 @@ use crate::errors::ToolchainError;
 use crate::helpers::get_bin_version;
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
-use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{node, yarn, yarn_classic, YARN};
 use moon_logger::{color, debug, Logable};
-use moon_utils::{fs, is_ci};
+use moon_utils::{fs, get_workspace_root, is_ci};
 use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -209,22 +208,14 @@ impl Executable<NodeTool> for YarnTool {
 
 #[async_trait]
 impl PackageManager<NodeTool> for YarnTool {
-    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn dedupe_dependencies(&self, node: &NodeTool) -> Result<(), ToolchainError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {
-            if toolchain
-                .workspace_root
-                .join(self.get_lock_filename())
-                .exists()
-            {
-                // Will error if the lockfile does not exist!
-                toolchain
-                    .node
-                    .get()?
-                    .get_npm()
+            // Will error if the lockfile does not exist!
+            if get_workspace_root().join(self.get_lock_filename()).exists() {
+                node.get_npm()
                     .exec_package(
-                        toolchain,
                         "yarn-deduplicate",
                         vec!["yarn-deduplicate", YARN.lock_filename],
                     )
@@ -235,7 +226,6 @@ impl PackageManager<NodeTool> for YarnTool {
         } else {
             self.create_command()
                 .arg("dedupe")
-                .cwd(&toolchain.workspace_root)
                 .exec_capture_output()
                 .await?;
         }
@@ -243,19 +233,13 @@ impl PackageManager<NodeTool> for YarnTool {
         Ok(())
     }
 
-    async fn exec_package(
-        &self,
-        toolchain: &Toolchain,
-        package: &str,
-        args: Vec<&str>,
-    ) -> Result<(), ToolchainError> {
+    async fn exec_package(&self, package: &str, args: Vec<&str>) -> Result<(), ToolchainError> {
         // https://yarnpkg.com/cli/dlx
         let mut exec_args = vec!["dlx", "--package", package];
         exec_args.extend(args);
 
         self.create_command()
             .args(exec_args)
-            .cwd(&toolchain.workspace_root)
             .exec_stream_output()
             .await?;
 
@@ -288,7 +272,7 @@ impl PackageManager<NodeTool> for YarnTool {
         Ok(yarn::load_lockfile_dependencies(lockfile_path)?)
     }
 
-    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install_dependencies(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
         if self.is_v1() {
@@ -306,8 +290,7 @@ impl PackageManager<NodeTool> for YarnTool {
         }
 
         let mut cmd = self.create_command();
-
-        cmd.args(args).cwd(&toolchain.workspace_root);
+        cmd.args(args);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
@@ -320,8 +303,8 @@ impl PackageManager<NodeTool> for YarnTool {
 
     async fn install_focused_dependencies(
         &self,
-        toolchain: &Toolchain,
-        package_names: &[String],
+        _node: &NodeTool,
+        packages: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError> {
         let mut cmd = self.create_command();
@@ -330,11 +313,10 @@ impl PackageManager<NodeTool> for YarnTool {
             cmd.arg("install");
         } else {
             cmd.args(["workspaces", "focus"]);
-            cmd.args(package_names);
+            cmd.args(packages);
 
-            let workspace_plugin = toolchain
-                .workspace_root
-                .join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
+            let workspace_plugin =
+                get_workspace_root().join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
 
             if !workspace_plugin.exists() {
                 return Err(ToolchainError::RequiresYarnWorkspacesPlugin);
@@ -345,9 +327,7 @@ impl PackageManager<NodeTool> for YarnTool {
             cmd.arg("--production");
         }
 
-        cmd.cwd(&toolchain.workspace_root)
-            .exec_stream_output()
-            .await?;
+        cmd.exec_stream_output().await?;
 
         Ok(())
     }

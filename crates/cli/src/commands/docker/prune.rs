@@ -36,11 +36,10 @@ pub async fn prune_node(
     try_join_all(futures).await?;
 
     // Install production only dependencies for focused projects
-    toolchain
-        .node
-        .get()?
-        .get_package_manager()
-        .install_focused_dependencies(toolchain, &package_names, true)
+    let node = toolchain.node.get()?;
+
+    node.get_package_manager()
+        .install_focused_dependencies(node, &package_names, true)
         .await?;
 
     // Remove extraneous node module folders for unfocused projects

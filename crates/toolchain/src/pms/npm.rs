@@ -2,14 +2,13 @@ use crate::errors::ToolchainError;
 use crate::helpers::{get_bin_version, get_path_env_var};
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
-use crate::Toolchain;
 use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{node, npm, NPM};
 use moon_logger::{color, debug, Logable};
 use moon_utils::process::Command;
-use moon_utils::{fs, is_ci};
+use moon_utils::{fs, get_workspace_root, is_ci};
 use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -214,22 +213,16 @@ impl Executable<NodeTool> for NpmTool {
 
 #[async_trait]
 impl PackageManager<NodeTool> for NpmTool {
-    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn dedupe_dependencies(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
         self.create_command()
             .args(["dedupe"])
-            .cwd(&toolchain.workspace_root)
             .exec_capture_output()
             .await?;
 
         Ok(())
     }
 
-    async fn exec_package(
-        &self,
-        toolchain: &Toolchain,
-        package: &str,
-        args: Vec<&str>,
-    ) -> Result<(), ToolchainError> {
+    async fn exec_package(&self, package: &str, args: Vec<&str>) -> Result<(), ToolchainError> {
         let mut exec_args = vec!["--silent", "--package", package, "--"];
 
         exec_args.extend(args);
@@ -238,7 +231,6 @@ impl PackageManager<NodeTool> for NpmTool {
 
         Command::new(&npx_path)
             .args(exec_args)
-            .cwd(&toolchain.workspace_root)
             .env("PATH", get_path_env_var(&self.install_dir))
             .exec_stream_output()
             .await?;
@@ -268,11 +260,11 @@ impl PackageManager<NodeTool> for NpmTool {
         Ok(npm::load_lockfile_dependencies(lockfile_path)?)
     }
 
-    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError> {
+    async fn install_dependencies(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
         if is_ci() {
-            let lockfile = toolchain.workspace_root.join(self.get_lock_filename());
+            let lockfile = get_workspace_root().join(self.get_lock_filename());
 
             // npm will error if using `ci` and a lockfile does not exist!
             if lockfile.exists() {
@@ -286,8 +278,7 @@ impl PackageManager<NodeTool> for NpmTool {
         args.push("--no-fund");
 
         let mut cmd = self.create_command();
-
-        cmd.args(args).cwd(&toolchain.workspace_root);
+        cmd.args(args);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
@@ -300,7 +291,7 @@ impl PackageManager<NodeTool> for NpmTool {
 
     async fn install_focused_dependencies(
         &self,
-        toolchain: &Toolchain,
+        _node: &NodeTool,
         package_names: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError> {
@@ -315,9 +306,7 @@ impl PackageManager<NodeTool> for NpmTool {
             cmd.args(["--workspace", package_name]);
         }
 
-        cmd.cwd(&toolchain.workspace_root)
-            .exec_stream_output()
-            .await?;
+        cmd.exec_stream_output().await?;
 
         Ok(())
     }

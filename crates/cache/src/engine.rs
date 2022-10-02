@@ -42,7 +42,7 @@ impl CacheEngine {
             color::path(&dir)
         );
 
-        // TODO: Remove in v1. This was renamed from out -> output,
+        // TODO: Remove in v1. This was renamed from out -> outputs,
         // but we didn't want to lose existing cache.
         if out_dir.exists() {
             let _ = std::fs::rename(out_dir, &outputs_dir);

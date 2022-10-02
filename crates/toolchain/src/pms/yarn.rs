@@ -217,7 +217,7 @@ impl PackageManager<NodeTool> for YarnTool {
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {
             // Will error if the lockfile does not exist!
-            if get_workspace_root().join(self.get_lock_filename()).exists() {
+            if working_dir.join(self.get_lock_filename()).exists() {
                 node.get_npm()
                     .exec_package(
                         "yarn-deduplicate",

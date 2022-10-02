@@ -8,7 +8,7 @@ use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{node, npm, NPM};
 use moon_logger::{color, debug, Logable};
 use moon_utils::process::Command;
-use moon_utils::{fs, get_workspace_root, is_ci};
+use moon_utils::{fs, is_ci};
 use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -279,7 +279,7 @@ impl PackageManager<NodeTool> for NpmTool {
         let mut args = vec!["install"];
 
         if is_ci() {
-            let lockfile = get_workspace_root().join(self.get_lock_filename());
+            let lockfile = working_dir.join(self.get_lock_filename());
 
             // npm will error if using `ci` and a lockfile does not exist!
             if lockfile.exists() {

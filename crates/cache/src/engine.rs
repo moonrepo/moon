@@ -20,7 +20,7 @@ pub struct CacheEngine {
     /// The `.moon/cache/hashes` directory. Stores hash manifests.
     pub hashes_dir: PathBuf,
 
-    /// The `.moon/cache/out` directory. Stores task outputs as hashed archives.
+    /// The `.moon/cache/outputs` directory. Stores task outputs as hashed archives.
     pub outputs_dir: PathBuf,
 
     /// The `.moon/cache/states` directory. Stores state information about anything...
@@ -32,7 +32,8 @@ impl CacheEngine {
     pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
-        let outputs_dir = dir.join("out");
+        let out_dir = dir.join("out");
+        let outputs_dir = dir.join("outputs");
         let states_dir = dir.join("states");
 
         debug!(
@@ -40,6 +41,12 @@ impl CacheEngine {
             "Creating cache engine at {}",
             color::path(&dir)
         );
+
+        // TODO: Remove in v1. This was renamed from out -> output,
+        // but we didn't want to lose existing cache.
+        if out_dir.exists() {
+            let _ = std::fs::rename(out_dir, &outputs_dir);
+        }
 
         // Do this once instead of each time we are writing cache items
         fs::create_dir_all(&hashes_dir).await?;

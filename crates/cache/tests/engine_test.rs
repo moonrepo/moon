@@ -35,7 +35,7 @@ mod create {
 
         assert!(dir.path().join(".moon/cache").exists());
         assert!(dir.path().join(".moon/cache/hashes").exists());
-        assert!(dir.path().join(".moon/cache/out").exists());
+        assert!(dir.path().join(".moon/cache/outputs").exists());
         assert!(dir.path().join(".moon/cache/states").exists());
 
         dir.close().unwrap();
@@ -55,7 +55,7 @@ mod delete_hash {
             .write_str("{}")
             .unwrap();
 
-        dir.child(".moon/cache/out/abc123.tar.gz")
+        dir.child(".moon/cache/outputs/abc123.tar.gz")
             .write_str("")
             .unwrap();
 
@@ -83,7 +83,7 @@ mod delete_hash {
             .write_str("{}")
             .unwrap();
 
-        dir.child(".moon/cache/out/abc123.tar.gz")
+        dir.child(".moon/cache/outputs/abc123.tar.gz")
             .write_str("")
             .unwrap();
 
@@ -113,7 +113,7 @@ mod delete_hash {
             .write_str("{}")
             .unwrap();
 
-        dir.child(".moon/cache/out/abc123.tar.gz")
+        dir.child(".moon/cache/outputs/abc123.tar.gz")
             .write_str("")
             .unwrap();
 

@@ -702,7 +702,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }
@@ -728,7 +728,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }
@@ -754,7 +754,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }
@@ -780,7 +780,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }
@@ -806,7 +806,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }

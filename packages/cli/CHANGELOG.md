@@ -11,6 +11,11 @@
 - Generator
   - Template files can now be suffixed with `.tera` or `.twig` for syntax highlighting.
 
+#### ⚙️ Internal
+
+- We've renamed and restructured the `.moon/cache` directory. If you were relying on any of these
+  files, you'll need to update your implementation.
+
 ## 0.15.0
 
 #### 🚀 Updates
@@ -237,7 +242,7 @@ previous builds are no longer valid and can be removed.
 
 #### ⚙️ Internal
 
-- Outputs are now copied to `.moon/cache/out` instead of being hardlinked.
+- Outputs are now copied to `.moon/cache/outputs` instead of being hardlinked.
 - Package binaries are now resolved to their canonical path when a symlink.
 
 ### 0.8.1

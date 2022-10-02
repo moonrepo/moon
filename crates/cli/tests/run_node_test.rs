@@ -290,7 +290,7 @@ mod install_deps {
 
         assert!(fixture
             .path()
-            .join(".moon/cache/states/tool-node-v16.0.0.json")
+            .join(".moon/cache/states/toolNode-16.0.0.json")
             .exists());
     }
 }
@@ -795,7 +795,7 @@ mod profile {
 
         let profile = fixture
             .path()
-            .join(".moon/cache/projects/node/standard/snapshot.cpuprofile");
+            .join(".moon/cache/states/node/standard/snapshot.cpuprofile");
 
         assert!(profile.exists());
     }
@@ -813,7 +813,7 @@ mod profile {
 
         let profile = fixture
             .path()
-            .join(".moon/cache/projects/node/standard/snapshot.heapprofile");
+            .join(".moon/cache/states/node/standard/snapshot.heapprofile");
 
         assert!(profile.exists());
     }

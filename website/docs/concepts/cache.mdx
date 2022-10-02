@@ -43,8 +43,13 @@ The following diagram outlines our cache folder structure and why each piece exi
 	out/
 		<hash>.tar.gz
 
-	# State of projects and their ran/running tasks.
-	projects/
+	# State information about anything and everything within moon. Toolchain,
+	# dependencies, projects, running targets, etc.
+	states/
+		# Files at the root pertain to the entire workspace.
+		<state>.json
+
+		# Files for a project are nested within a folder by the project name.
 		<project>/
 			# Information about the project, its tasks, and its configs.
 			# Can be used at runtime by tasks that require this information.
@@ -53,9 +58,5 @@ The following diagram outlines our cache folder structure and why each piece exi
 			<task>/
 				# Contents of the child process, including stdout, stderr, and exit code.
 				# Also contains the unique hash that is referenced above.
-				lastRunState.json
-
-	# State of tools, dependencies, projects, and the overall workspace.
-	states/
-		<name>.json
+				lastRun.json
 ```

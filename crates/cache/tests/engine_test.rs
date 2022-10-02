@@ -36,7 +36,6 @@ mod create {
         assert!(dir.path().join(".moon/cache").exists());
         assert!(dir.path().join(".moon/cache/hashes").exists());
         assert!(dir.path().join(".moon/cache/out").exists());
-        assert!(dir.path().join(".moon/cache/projects").exists());
         assert!(dir.path().join(".moon/cache/states").exists());
 
         dir.close().unwrap();
@@ -151,7 +150,7 @@ mod create_runfile {
         assert!(runfile.path.exists());
 
         assert_eq!(
-            fs::read_to_string(dir.path().join(".moon/cache/projects/123/runfile.json")).unwrap(),
+            fs::read_to_string(dir.path().join(".moon/cache/states/123/runfile.json")).unwrap(),
             "\"content\""
         );
 
@@ -180,7 +179,7 @@ mod cache_run_target_state {
     async fn loads_cache_if_it_exists() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/projects/foo/bar/lastRunState.json")
+        dir.child(".moon/cache/states/foo/bar/lastRun.json")
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
                 .unwrap();
 
@@ -204,7 +203,7 @@ mod cache_run_target_state {
     async fn loads_cache_if_it_exists_and_cache_is_readonly() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/projects/foo/bar/lastRunState.json")
+        dir.child(".moon/cache/states/foo/bar/lastRun.json")
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
                 .unwrap();
 
@@ -230,7 +229,7 @@ mod cache_run_target_state {
     async fn doesnt_load_if_it_exists_but_cache_is_off() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/projects/foo/bar/lastRunState.json")
+        dir.child(".moon/cache/states/foo/bar/lastRun.json")
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
                 .unwrap();
 
@@ -327,7 +326,7 @@ mod cache_tool_state {
     async fn loads_cache_if_it_exists() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/states/tool-node-v1.2.3.json")
+        dir.child(".moon/cache/states/toolNode-1.2.3.json")
             .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 
@@ -352,7 +351,7 @@ mod cache_tool_state {
     async fn loads_cache_if_it_exists_and_cache_is_readonly() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/states/tool-node-v4.5.6.json")
+        dir.child(".moon/cache/states/toolNode-4.5.6.json")
             .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 

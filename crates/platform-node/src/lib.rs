@@ -59,7 +59,7 @@ impl Platform for NodePlatform {
 
     fn is_project_in_package_manager_workspace(
         &self,
-        _project_id: &str,
+        project_id: &str,
         project_root: &Path,
         workspace_root: &Path,
         _workspace_config: &WorkspaceConfig,
@@ -74,6 +74,13 @@ impl Platform for NodePlatform {
                 .map_err(|e| MoonError::Generic(e.to_string()))?
                 .matches(project_root.strip_prefix(workspace_root).unwrap());
         }
+
+        debug!(
+            target: LOG_TARGET,
+            "Project {} not within root {} workspaces, will be handled externally",
+            color::id(project_id),
+            color::file(&NPM.manifest_filename)
+        );
 
         Ok(false)
     }

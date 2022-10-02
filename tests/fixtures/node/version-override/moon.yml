@@ -1,0 +1,5 @@
+language: javascript
+
+workspace:
+  node:
+    version: '14.0.0'

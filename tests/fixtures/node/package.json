@@ -2,8 +2,10 @@
   "name": "test-node",
   "private": true,
   "workspaces": [
+    "base",
     "esbuild",
     "lifecycles",
-    "swc"
+    "swc",
+    "version-override"
   ]
 }

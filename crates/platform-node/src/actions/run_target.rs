@@ -28,8 +28,6 @@ fn create_node_options(
         // "--preserve-symlinks", // Add an option in a follow-up
         "--title",
         &task.target,
-        "--unhandled-rejections",
-        "throw",
     ];
 
     if let Some(profile) = &context.profile {
@@ -89,21 +87,17 @@ pub async fn create_target_command(
     project: &Project,
     task: &Task,
 ) -> Result<Command, WorkspaceError> {
-    let node = workspace.toolchain.node.get()?;
-    let mut cmd = node.get_bin_path().clone();
-    let mut args = vec![];
+    let mut node = workspace.toolchain.node.get()?;
 
     // If a version override exists, use it for the cmmand
     if let Some(node_config) = &project.config.workspace.node {
         if let Some(version_override) = &node_config.version {
-            cmd = workspace
-                .toolchain
-                .node
-                .get_version(version_override)?
-                .get_bin_path()
-                .clone();
+            node = workspace.toolchain.node.get_version(version_override)?;
         }
     }
+
+    let mut cmd = node.get_bin_path().clone();
+    let mut args = vec![];
 
     match task.command.as_str() {
         "node" => {

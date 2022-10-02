@@ -1,13 +1,11 @@
+use crate::deps::install_node_modules;
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::NodePackageManager;
 use moon_contract::SupportedPlatform;
-use moon_error::map_io_to_fs_error;
-use moon_lang::has_vendor_installed_dependencies;
-use moon_lang_node::{package::PackageJson, NODE, NPM};
-use moon_logger::{color, debug, warn};
-use moon_terminal::{label_checkpoint, Checkpoint};
+use moon_lang_node::{package::PackageJson, NPM};
+use moon_logger::{color, debug};
 use moon_toolchain::tools::node::NodeTool;
-use moon_utils::{fs, is_ci, is_offline};
+use moon_utils::fs;
 use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -77,21 +75,7 @@ pub async fn install_deps(
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
     let node = workspace.toolchain.node.get()?;
-
-    // When the platform version does not match the configured workspace version,
-    // we can assume this is a project-level override, and in this case, we
-    // can entirely skip dependency installs and everything else!
-    if node.config.version != platform.version() {
-        debug!(
-            target: LOG_TARGET,
-            "Skipping install of {} dependencies, as this is not the workspace version",
-            platform.label()
-        );
-
-        return Ok(ActionStatus::Skipped);
-    }
-
-    let mut cache = workspace.cache.cache_tool_state(platform).await?;
+    let pm = node.get_package_manager();
 
     // Sync values to root `package.json`
     PackageJson::sync(&workspace.root, |package_json| {
@@ -115,87 +99,22 @@ pub async fn install_deps(
         );
     }
 
-    // Get the last modified time of the root lockfile
-    let pm = node.get_package_manager();
-    let lockfile_name = pm.get_lock_filename();
-    let lockfile = workspace.root.join(&lockfile_name);
-    let mut last_modified = 0;
-
-    if lockfile.exists() {
-        let lockfile_metadata = fs::metadata(&lockfile).await?;
-
-        last_modified = cache.to_millis(
-            lockfile_metadata
-                .modified()
-                .map_err(|e| map_io_to_fs_error(e, lockfile.clone()))?,
-        );
-    }
-
-    // If a `package.json` has been modified manually, we should account for that
-    let has_modified_manifests = context
+    // Check if the lockfile or manifest has been modified anywhere in the workspace
+    let lock_filename = pm.get_lock_filename();
+    let manifest_filename = pm.get_manifest_filename();
+    let has_modified_files = context
         .touched_files
         .iter()
-        .any(|f| f.ends_with(&NPM.manifest_filename) || f.ends_with(&lockfile_name));
+        .any(|f| f.ends_with(&manifest_filename) || f.ends_with(&lock_filename));
 
-    // Install deps if the lockfile has been modified
-    // since the last time dependencies were installed!
-    if has_modified_manifests
-        || last_modified == 0
-        || last_modified > cache.item.last_deps_install_time
-    {
-        debug!(
-            target: LOG_TARGET,
-            "Installing {} dependencies",
-            platform.label()
-        );
-
-        // When in CI, we can avoid installing dependencies because
-        // we can assume they've already been installed before moon runs!
-        if is_ci() && has_vendor_installed_dependencies(&workspace.root, &NODE) {
-            warn!(
-                target: LOG_TARGET,
-                "In a CI environment and dependencies already exist, skipping install"
-            );
-
-            return Ok(ActionStatus::Skipped);
-        }
-
-        if is_offline() {
-            warn!(
-                target: LOG_TARGET,
-                "No internet connection, assuming offline and skipping install"
-            );
-
-            return Ok(ActionStatus::Skipped);
-        }
-
-        let install_command = match node.config.package_manager {
-            NodePackageManager::Npm => "npm install",
-            NodePackageManager::Pnpm => "pnpm install",
-            NodePackageManager::Yarn => "yarn install",
-        };
-
-        println!("{}", label_checkpoint(install_command, Checkpoint::Pass));
-
-        pm.install_dependencies(node).await?;
-
-        if !is_ci() && node.config.dedupe_on_lockfile_change {
-            debug!(target: LOG_TARGET, "Dedupeing dependencies");
-
-            pm.dedupe_dependencies(node).await?;
-        }
-
-        // Update the cache with the timestamp
-        cache.item.last_deps_install_time = cache.now_millis();
-        cache.save().await?;
-
-        return Ok(ActionStatus::Passed);
-    }
-
-    debug!(
-        target: LOG_TARGET,
-        "Lockfile has not changed since last install, skipping Node.js dependencies",
-    );
-
-    Ok(ActionStatus::Skipped)
+    install_node_modules(
+        &workspace,
+        platform,
+        node,
+        &workspace.root,
+        None,
+        LOG_TARGET,
+        has_modified_files,
+    )
+    .await
 }

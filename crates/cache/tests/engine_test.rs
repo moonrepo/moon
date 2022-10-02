@@ -37,7 +37,7 @@ mod create {
         assert!(dir.path().join(".moon/cache/hashes").exists());
         assert!(dir.path().join(".moon/cache/out").exists());
         assert!(dir.path().join(".moon/cache/projects").exists());
-        assert!(dir.path().join(".moon/cache/tools").exists());
+        assert!(dir.path().join(".moon/cache/states").exists());
 
         dir.close().unwrap();
     }
@@ -327,8 +327,8 @@ mod cache_tool_state {
     async fn loads_cache_if_it_exists() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/tools/node-v1.2.3.json")
-            .write_str(r#"{"lastDepsInstallTime":123}"#)
+        dir.child(".moon/cache/states/tool-node-v1.2.3.json")
+            .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -340,8 +340,7 @@ mod cache_tool_state {
         assert_eq!(
             item.item,
             ToolState {
-                last_deps_install_time: 123,
-                last_version_check_time: 0,
+                last_version_check_time: 123,
             }
         );
 
@@ -353,8 +352,8 @@ mod cache_tool_state {
     async fn loads_cache_if_it_exists_and_cache_is_readonly() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/tools/node-v4.5.6.json")
-            .write_str(r#"{"lastDepsInstallTime":123}"#)
+        dir.child(".moon/cache/states/tool-node-v4.5.6.json")
+            .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -366,8 +365,7 @@ mod cache_tool_state {
         assert_eq!(
             item.item,
             ToolState {
-                last_deps_install_time: 123,
-                last_version_check_time: 0,
+                last_version_check_time: 123,
             }
         );
 
@@ -379,8 +377,8 @@ mod cache_tool_state {
     async fn doesnt_load_if_it_exists_but_cache_is_off() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/tools/system.json")
-            .write_str(r#"{"lastDepsInstallTime":123}"#)
+        dir.child(".moon/cache/states/tool-system.json")
+            .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
@@ -403,13 +401,13 @@ mod cache_tool_state {
             .await
             .unwrap();
 
-        item.item.last_deps_install_time = 123;
+        item.item.last_version_check_time = 123;
 
         run_with_env("", || item.save()).await.unwrap();
 
         assert_eq!(
             fs::read_to_string(item.path).unwrap(),
-            r#"{"lastDepsInstallTime":123,"lastVersionCheckTime":0}"#
+            r#"{"lastVersionCheckTime":123}"#
         );
 
         dir.close().unwrap();
@@ -441,7 +439,7 @@ mod cache_projects_state {
     async fn loads_cache_if_it_exists() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/projectsState.json")
+        dir.child(".moon/cache/states/projects.json")
             .write_str(r#"{"globs":["**/*"],"projects":{"foo":"bar"}}"#)
             .unwrap();
 
@@ -464,7 +462,7 @@ mod cache_projects_state {
     async fn loads_cache_if_it_exists_and_cache_is_readonly() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/projectsState.json")
+        dir.child(".moon/cache/states/projects.json")
             .write_str(r#"{"globs":["**/*"],"projects":{"foo":"bar"}}"#)
             .unwrap();
 
@@ -489,7 +487,7 @@ mod cache_projects_state {
     async fn doesnt_load_if_it_exists_but_cache_is_off() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/projectsState.json")
+        dir.child(".moon/cache/states/projects.json")
             .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
             .unwrap();
 
@@ -508,14 +506,14 @@ mod cache_projects_state {
     async fn doesnt_load_if_it_exists_but_cache_is_stale() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/projectsState.json")
+        dir.child(".moon/cache/states/projects.json")
             .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
             .unwrap();
 
         let now = to_millis(SystemTime::now()) - 100000;
 
         set_file_mtime(
-            dir.path().join(".moon/cache/projectsState.json"),
+            dir.path().join(".moon/cache/states/projects.json"),
             FileTime::from_unix_time((now / 1000) as i64, 0),
         )
         .unwrap();

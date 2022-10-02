@@ -290,7 +290,7 @@ mod install_deps {
 
         assert!(fixture
             .path()
-            .join(".moon/cache/tools/node-v16.0.0.json")
+            .join(".moon/cache/states/tool-node-v16.0.0.json")
             .exists());
     }
 }
@@ -552,6 +552,16 @@ mod npm {
 
         assert.success();
     }
+
+    // #[test]
+    // fn installs_deps_in_non_workspace_project() {
+    //     let fixture = create_sandbox_with_git("node-npm");
+
+    //     let assert = create_moon_command(fixture.path())
+    //         .arg("run")
+    //         .arg("npm:runDep")
+    //         .assert();
+    // }
 }
 
 mod pnpm {

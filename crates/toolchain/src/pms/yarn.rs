@@ -208,7 +208,11 @@ impl Executable<NodeTool> for YarnTool {
 
 #[async_trait]
 impl PackageManager<NodeTool> for YarnTool {
-    async fn dedupe_dependencies(&self, node: &NodeTool) -> Result<(), ToolchainError> {
+    async fn dedupe_dependencies(
+        &self,
+        node: &NodeTool,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {
@@ -218,6 +222,7 @@ impl PackageManager<NodeTool> for YarnTool {
                     .exec_package(
                         "yarn-deduplicate",
                         vec!["yarn-deduplicate", YARN.lock_filename],
+                        working_dir,
                     )
                     .await?;
             }
@@ -226,6 +231,7 @@ impl PackageManager<NodeTool> for YarnTool {
         } else {
             self.create_command()
                 .arg("dedupe")
+                .cwd(working_dir)
                 .exec_capture_output()
                 .await?;
         }
@@ -233,13 +239,19 @@ impl PackageManager<NodeTool> for YarnTool {
         Ok(())
     }
 
-    async fn exec_package(&self, package: &str, args: Vec<&str>) -> Result<(), ToolchainError> {
+    async fn exec_package(
+        &self,
+        package: &str,
+        args: Vec<&str>,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError> {
         // https://yarnpkg.com/cli/dlx
         let mut exec_args = vec!["dlx", "--package", package];
         exec_args.extend(args);
 
         self.create_command()
             .args(exec_args)
+            .cwd(working_dir)
             .exec_stream_output()
             .await?;
 
@@ -272,7 +284,11 @@ impl PackageManager<NodeTool> for YarnTool {
         Ok(yarn::load_lockfile_dependencies(lockfile_path)?)
     }
 
-    async fn install_dependencies(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
+    async fn install_dependencies(
+        &self,
+        _node: &NodeTool,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
         if self.is_v1() {
@@ -290,7 +306,8 @@ impl PackageManager<NodeTool> for YarnTool {
         }
 
         let mut cmd = self.create_command();
-        cmd.args(args);
+
+        cmd.args(args).cwd(working_dir);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;

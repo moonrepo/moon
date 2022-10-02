@@ -203,10 +203,19 @@ pub trait PackageManager<T: Send + Sync>:
     }
 
     /// Dedupe dependencies after they have been installed.
-    async fn dedupe_dependencies(&self, parent: &T) -> Result<(), ToolchainError>;
+    async fn dedupe_dependencies(
+        &self,
+        parent: &T,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError>;
 
     /// Download and execute a one-off package.
-    async fn exec_package(&self, package: &str, args: Vec<&str>) -> Result<(), ToolchainError>;
+    async fn exec_package(
+        &self,
+        package: &str,
+        args: Vec<&str>,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError>;
 
     /// Return the name of the lockfile.
     fn get_lock_filename(&self) -> String;
@@ -222,7 +231,11 @@ pub trait PackageManager<T: Send + Sync>:
     ) -> Result<LockfileDependencyVersions, ToolchainError>;
 
     /// Install dependencies for a defined manifest.
-    async fn install_dependencies(&self, parent: &T) -> Result<(), ToolchainError>;
+    async fn install_dependencies(
+        &self,
+        parent: &T,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError>;
 
     /// Install dependencies for a single package in the workspace.
     async fn install_focused_dependencies(

@@ -4,7 +4,7 @@ use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_lang::{has_shebang, is_cmd_file, LangError};
+use moon_lang::LangError;
 use moon_utils::path;
 use regex::Regex;
 use std::env::{self, consts};
@@ -246,6 +246,19 @@ pub fn get_package_manager_workspaces(
     }
 
     Ok(None)
+}
+
+pub fn has_shebang(contents: &str, command: &str) -> bool {
+    contents.starts_with(&format!("#!/usr/bin/env {command}"))
+        || contents.starts_with(&format!("#!/usr/bin/{command}"))
+        || contents.starts_with(&format!("#!/bin/{command}"))
+}
+
+pub fn is_cmd_file(contents: &str) -> bool {
+    contents.contains("%~dp0")
+        || contents.contains("%dp0%")
+        || contents.contains("@SETLOCAL")
+        || contents.contains("@ECHO")
 }
 
 #[track_caller]

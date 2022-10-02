@@ -70,7 +70,14 @@ async fn run_action(
                 })
                 .await?;
 
-            let install_result = Ok(ActionStatus::Passed);
+            let install_result = match platform {
+                SupportedPlatform::Node(_) => node_actions::install_project_deps(
+                    action, context, workspace, platform, project_id,
+                )
+                .await
+                .map_err(ActionRunnerError::Workspace),
+                _ => Ok(ActionStatus::Passed),
+            };
 
             local_emitter
                 .emit(Event::DependenciesInstalled {

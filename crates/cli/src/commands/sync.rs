@@ -23,7 +23,7 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
         done("Failed to sync projects", false);
     } else {
         done(
-            &format!("Successfully synced {} projects", project_count),
+            format!("Successfully synced {} projects", project_count).as_ref(),
             true,
         );
     }

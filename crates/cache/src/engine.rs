@@ -1,6 +1,7 @@
 use crate::helpers::{is_readable, is_writable, LOG_TARGET};
 use crate::items::{CacheItem, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::CacheRunfile;
+use crate::DependenciesState;
 use moon_archive::{tar, untar};
 use moon_constants::CONFIG_DIRNAME;
 use moon_contract::SupportedPlatform;
@@ -25,8 +26,8 @@ pub struct CacheEngine {
     /// The `.moon/cache/projects` directory. Stores run target states and project runfiles.
     pub projects_dir: PathBuf,
 
-    /// The `.moon/cache/tools` directory. Stores tool installation states.
-    pub tools_dir: PathBuf,
+    /// The `.moon/cache/states` directory. Stores tool and dependency installation states.
+    pub states_dir: PathBuf,
 }
 
 impl CacheEngine {
@@ -35,7 +36,7 @@ impl CacheEngine {
         let hashes_dir = dir.join("hashes");
         let outputs_dir = dir.join("out");
         let projects_dir = dir.join("projects");
-        let tools_dir = dir.join("tools");
+        let states_dir = dir.join("states");
 
         debug!(
             target: LOG_TARGET,
@@ -47,15 +48,32 @@ impl CacheEngine {
         fs::create_dir_all(&hashes_dir).await?;
         fs::create_dir_all(&outputs_dir).await?;
         fs::create_dir_all(&projects_dir).await?;
-        fs::create_dir_all(&tools_dir).await?;
+        fs::create_dir_all(&states_dir).await?;
 
         Ok(CacheEngine {
             dir,
             hashes_dir,
             outputs_dir,
             projects_dir,
-            tools_dir,
+            states_dir,
         })
+    }
+
+    pub async fn cache_deps_state(
+        &self,
+        platform: &SupportedPlatform,
+        project_id: Option<&str>,
+    ) -> Result<CacheItem<DependenciesState>, MoonError> {
+        CacheItem::load(
+            self.states_dir.join(if let Some(id) = project_id {
+                format!("deps-{}-{}.json", platform.id(), id)
+            } else {
+                format!("deps-{}.json", platform.id())
+            }),
+            DependenciesState::default(),
+            0,
+        )
+        .await
     }
 
     pub async fn cache_run_target_state(
@@ -75,7 +93,7 @@ impl CacheEngine {
 
     pub async fn cache_projects_state(&self) -> Result<CacheItem<ProjectsState>, MoonError> {
         CacheItem::load(
-            self.dir.join("projectsState.json"),
+            self.states_dir.join("projects.json"),
             ProjectsState::default(),
             90000, // Cache for 3 minutes
         )
@@ -87,7 +105,7 @@ impl CacheEngine {
         platform: &SupportedPlatform,
     ) -> Result<CacheItem<ToolState>, MoonError> {
         CacheItem::load(
-            self.tools_dir.join(format!("{}.json", platform.id())),
+            self.states_dir.join(format!("tool-{}.json", platform.id())),
             ToolState::default(),
             0,
         )

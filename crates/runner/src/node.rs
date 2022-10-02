@@ -8,7 +8,7 @@ pub enum ActionNode {
     /// Install tool dependencies in the workspace root.
     InstallDeps(SupportedPlatform),
 
-    /// Install tool dependencies in the project's root.
+    /// Install tool dependencies in the project root.
     InstallProjectDeps(SupportedPlatform, ProjectID),
 
     /// Run a target (project task).

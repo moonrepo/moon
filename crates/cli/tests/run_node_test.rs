@@ -553,15 +553,33 @@ mod npm {
         assert.success();
     }
 
-    // #[test]
-    // fn installs_deps_in_non_workspace_project() {
-    //     let fixture = create_sandbox_with_git("node-npm");
+    #[test]
+    fn installs_deps_in_non_workspace_project() {
+        let fixture = create_sandbox_with_git("node-npm");
 
-    //     let assert = create_moon_command(fixture.path())
-    //         .arg("run")
-    //         .arg("npm:runDep")
-    //         .assert();
-    // }
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("notInWorkspace:noop")
+            // Run other package so we can see both working
+            .arg("npm:noop")
+            .assert();
+
+        assert!(predicate::str::contains("npm install")
+            .count(2)
+            .eval(&get_assert_output(&assert)));
+
+        assert!(fixture.path().join("package-lock.json").exists());
+        assert!(fixture
+            .path()
+            .join("not-in-workspace/package-lock.json")
+            .exists());
+        assert!(fixture
+            .path()
+            .join("not-in-workspace/node_modules")
+            .exists());
+
+        assert.success();
+    }
 }
 
 mod pnpm {
@@ -649,6 +667,35 @@ mod pnpm {
 
         assert.success();
     }
+
+    // NOTE: pnpm does not support nested lockfiles.
+    // #[test]
+    // fn installs_deps_in_non_workspace_project() {
+    //     let fixture = create_sandbox_with_git("node-pnpm");
+
+    //     let assert = create_moon_command(fixture.path())
+    //         .arg("run")
+    //         .arg("notInWorkspace:noop")
+    //         // Run other package so we can see both working
+    //         .arg("pnpm:noop")
+    //         .assert();
+
+    //     // moon_utils::test::debug_sandbox(&fixture, &assert);
+
+    //     assert_snapshot!(get_assert_output(&assert));
+
+    //     assert!(fixture.path().join("pnpm-lock.yaml").exists());
+    //     assert!(fixture
+    //         .path()
+    //         .join("not-in-workspace/pnpm-lock.yaml")
+    //         .exists());
+    //     assert!(fixture
+    //         .path()
+    //         .join("not-in-workspace/node_modules")
+    //         .exists());
+
+    //     assert.success();
+    // }
 }
 
 mod yarn1 {
@@ -713,6 +760,31 @@ mod yarn1 {
 
         assert.success();
     }
+
+    #[test]
+    fn installs_deps_in_non_workspace_project() {
+        let fixture = create_sandbox_with_git("node-yarn1");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("notInWorkspace:noop")
+            // Run other package so we can see both working
+            .arg("yarn:noop")
+            .assert();
+
+        assert!(predicate::str::contains("yarn install")
+            .count(2)
+            .eval(&get_assert_output(&assert)));
+
+        assert!(fixture.path().join("yarn.lock").exists());
+        assert!(fixture.path().join("not-in-workspace/yarn.lock").exists());
+        assert!(fixture
+            .path()
+            .join("not-in-workspace/node_modules")
+            .exists());
+
+        assert.success();
+    }
 }
 
 mod yarn {
@@ -774,6 +846,34 @@ mod yarn {
             predicate::str::contains("All matched files use Prettier code style!")
                 .eval(&get_assert_output(&assert))
         );
+
+        assert.success();
+    }
+
+    #[test]
+    fn installs_deps_in_non_workspace_project() {
+        let fixture = create_sandbox_with_git("node-yarn");
+
+        // Yarn requires the lockfile to determine the correct root
+        std::fs::write(fixture.path().join("not-in-workspace/yarn.lock"), "").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("notInWorkspace:noop")
+            // Run other package so we can see both working
+            .arg("yarn:noop")
+            .assert();
+
+        assert!(predicate::str::contains("yarn install")
+            .count(2)
+            .eval(&get_assert_output(&assert)));
+
+        assert!(fixture.path().join("yarn.lock").exists());
+        assert!(fixture.path().join("not-in-workspace/yarn.lock").exists());
+        assert!(fixture
+            .path()
+            .join("not-in-workspace/node_modules")
+            .exists());
 
         assert.success();
     }

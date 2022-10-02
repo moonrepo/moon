@@ -64,25 +64,29 @@ impl Platform for NodePlatform {
         workspace_root: &Path,
         _workspace_config: &WorkspaceConfig,
     ) -> Result<bool, MoonError> {
+        let mut in_workspace = false;
+
         // Root package is always considered within the workspace
         if project_root == workspace_root {
             return Ok(true);
         }
 
         if let Some(globs) = get_package_manager_workspaces(workspace_root.to_owned())? {
-            return GlobSet::new(globs)
+            in_workspace = GlobSet::new(globs)
                 .map_err(|e| MoonError::Generic(e.to_string()))?
-                .matches(project_root.strip_prefix(workspace_root).unwrap());
+                .matches(project_root.strip_prefix(workspace_root).unwrap())?;
         }
 
-        debug!(
-            target: LOG_TARGET,
-            "Project {} not within root {} workspaces, will be handled externally",
-            color::id(project_id),
-            color::file(&NPM.manifest_filename)
-        );
+        if !in_workspace {
+            debug!(
+                target: LOG_TARGET,
+                "Project {} not within root {} workspaces, will be handled externally",
+                color::id(project_id),
+                color::file(&NPM.manifest_filename)
+            );
+        }
 
-        Ok(false)
+        Ok(in_workspace)
     }
 
     fn load_project_graph_aliases(

@@ -858,9 +858,6 @@ mod yarn {
     fn installs_deps_in_non_workspace_project() {
         let fixture = create_sandbox_with_git("node-yarn");
 
-        // Yarn requires the lockfile to determine the correct root
-        std::fs::write(fixture.path().join("not-in-workspace/yarn.lock"), "").unwrap();
-
         let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("notInWorkspace:noop")

@@ -16,7 +16,7 @@ use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
 use moon_utils::{
     fs, is_ci, is_test_env, path,
-    process::{self, output_to_string, Command, Output},
+    process::{self, format_running_command, output_to_string, Command, Output},
     time,
 };
 use moon_workspace::Workspace;
@@ -559,9 +559,7 @@ impl<'a> TargetRunner<'a> {
             return Ok(());
         }
 
-        let project = &self.project;
         let task = &self.task;
-
         let mut args = vec![];
         args.extend(&task.args);
         args.extend(passthrough_args);
@@ -572,25 +570,17 @@ impl<'a> TargetRunner<'a> {
             format!("{} {}", task.command, process::join_args(args))
         };
 
-        let working_dir =
-            if task.options.run_from_workspace_root || project.root == self.workspace.root {
-                String::from("workspace")
+        let message = format_running_command(
+            &command_line,
+            Some(if task.options.run_from_workspace_root {
+                &self.workspace.root
             } else {
-                format!(
-                    ".{}{}",
-                    std::path::MAIN_SEPARATOR,
-                    project
-                        .root
-                        .strip_prefix(&self.workspace.root)
-                        .unwrap()
-                        .to_string_lossy(),
-                )
-            };
+                &self.project.root
+            }),
+            Some(&self.workspace.root),
+        );
 
-        let suffix = format!("(in {})", working_dir);
-        let message = format!("{} {}", command_line, color::muted(suffix));
-
-        self.stdout.write_line(&color::muted_light(message))?;
+        self.stdout.write_line(&message)?;
 
         Ok(())
     }

@@ -207,6 +207,7 @@ pub trait PackageManager<T: Send + Sync>:
         &self,
         parent: &T,
         working_dir: &Path,
+        log: bool,
     ) -> Result<(), ToolchainError>;
 
     /// Download and execute a one-off package.
@@ -235,6 +236,7 @@ pub trait PackageManager<T: Send + Sync>:
         &self,
         parent: &T,
         working_dir: &Path,
+        log: bool,
     ) -> Result<(), ToolchainError>;
 
     /// Install dependencies for a single package in the workspace.

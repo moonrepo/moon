@@ -217,10 +217,12 @@ impl PackageManager<NodeTool> for NpmTool {
         &self,
         _node: &NodeTool,
         working_dir: &Path,
+        log: bool,
     ) -> Result<(), ToolchainError> {
         self.create_command()
             .args(["dedupe"])
             .cwd(working_dir)
+            .log_running_command(log)
             .exec_capture_output()
             .await?;
 
@@ -275,6 +277,7 @@ impl PackageManager<NodeTool> for NpmTool {
         &self,
         _node: &NodeTool,
         working_dir: &Path,
+        log: bool,
     ) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
@@ -294,7 +297,7 @@ impl PackageManager<NodeTool> for NpmTool {
 
         let mut cmd = self.create_command();
 
-        cmd.args(args).cwd(working_dir);
+        cmd.args(args).cwd(working_dir).log_running_command(log);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;

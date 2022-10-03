@@ -146,12 +146,14 @@ impl PackageManager<NodeTool> for PnpmTool {
         &self,
         _node: &NodeTool,
         working_dir: &Path,
+        log: bool,
     ) -> Result<(), ToolchainError> {
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune
         self.create_command()
             .arg("prune")
             .cwd(working_dir)
+            .log_running_command(log)
             .exec_capture_output()
             .await?;
 
@@ -203,6 +205,7 @@ impl PackageManager<NodeTool> for PnpmTool {
         &self,
         _node: &NodeTool,
         working_dir: &Path,
+        log: bool,
     ) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
@@ -217,7 +220,7 @@ impl PackageManager<NodeTool> for PnpmTool {
 
         let mut cmd = self.create_command();
 
-        cmd.args(args).cwd(working_dir);
+        cmd.args(args).cwd(working_dir).log_running_command(log);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;

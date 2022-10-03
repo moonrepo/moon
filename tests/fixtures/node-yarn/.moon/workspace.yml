@@ -1,3 +1,5 @@
+extends: '../shared-workspace.yml'
+
 node:
   # Use a unique version as to not collide with other tests because of corepack
   version: '16.4.0'

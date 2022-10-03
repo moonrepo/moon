@@ -1,4 +1,4 @@
-use crate::{is_ci, is_test_env, path, shell};
+use crate::{get_workspace_root, is_ci, is_test_env, path, shell};
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
 use std::ffi::OsStr;
@@ -23,6 +23,37 @@ pub fn output_to_trimmed_string(data: &[u8]) -> String {
     output_to_string(data).trim().to_owned()
 }
 
+pub fn format_running_command(
+    command_line: &str,
+    working_dir: Option<&Path>,
+    workspace_root: Option<&Path>,
+) -> String {
+    let workspace_root = match workspace_root {
+        Some(root) => root.to_owned(),
+        None => get_workspace_root(),
+    };
+
+    let working_dir = working_dir.unwrap_or(&workspace_root);
+
+    let target_dir = if working_dir == workspace_root {
+        String::from("workspace")
+    } else {
+        format!(
+            ".{}{}",
+            std::path::MAIN_SEPARATOR,
+            working_dir
+                .strip_prefix(&workspace_root)
+                .unwrap()
+                .to_string_lossy(),
+        )
+    };
+
+    let suffix = format!("(in {})", target_dir);
+    let message = format!("{} {}", command_line, color::muted(suffix));
+
+    color::muted_light(message)
+}
+
 pub struct Command {
     bin: String,
 
@@ -33,6 +64,9 @@ pub struct Command {
 
     /// Values to pass to stdin.
     input: Vec<u8>,
+
+    /// Log the command to the terminal before running.
+    log_command: bool,
 
     /// Arguments will be passed via stdin to the command.
     pass_args_stdin: bool,
@@ -52,6 +86,7 @@ impl Command {
             cmd: TokioCommand::new(&bin),
             error_on_nonzero: true,
             input: vec![],
+            log_command: false,
             pass_args_stdin: false,
             prefix: None,
         };
@@ -289,10 +324,19 @@ impl Command {
             .map(|a| a.to_str().unwrap_or("<unknown>"))
             .collect::<Vec<_>>();
 
-        let line = if args.is_empty() {
-            self.bin.to_owned()
+        // When explicitly logging, only display the bin name instead of the full path
+        let bin = if self.log_command {
+            let parts = self.bin.split(std::path::MAIN_SEPARATOR);
+
+            parts.last().unwrap_or_default().to_owned()
         } else {
-            format!("{} {}", self.bin, join_args(args))
+            self.bin.to_owned()
+        };
+
+        let line = if args.is_empty() {
+            bin
+        } else {
+            format!("{} {}", bin, join_args(args))
         };
 
         (path::replace_home_dir(line), cmd.get_current_dir())
@@ -316,6 +360,11 @@ impl Command {
         self.env("COLUMNS", "80");
         self.env("LINES", "24");
 
+        self
+    }
+
+    pub fn log_running_command(&mut self, state: bool) -> &mut Command {
+        self.log_command = state;
         self
     }
 
@@ -368,13 +417,20 @@ impl Command {
 
     #[track_caller]
     fn log_command_info(&self) {
+        let cmd = &self.cmd.as_std();
+        let (mut command_line, working_dir) = self.get_command_line();
+
+        if self.log_command {
+            println!(
+                "{}",
+                format_running_command(&command_line, working_dir, None)
+            );
+        }
+
         // Avoid all this overhead if we're not logging
         if !logging_enabled() {
             return;
         }
-
-        let cmd = &self.cmd.as_std();
-        let (mut command_line, working_dir) = self.get_command_line();
 
         if !self.input.is_empty() {
             if command_line.ends_with('-') {

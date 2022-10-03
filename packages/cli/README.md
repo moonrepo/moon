@@ -68,7 +68,7 @@ and provide a first-class developer experience.
   reproducible.
 - **Remote caching** - Persists builds, hashes, and caches between teammates and CI/CD environments.
 - **Integrated toolchain** - Automatically downloads and installs explicit versions of Node.js and
-  other tools for consistency.
+  other tools for consistency across the entire workspace or per project.
 - **Multi-platform** - Runs on common development platforms: Linux, macOS, and Windows.
 
 #### Organization

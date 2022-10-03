@@ -48,7 +48,7 @@ const managementFeatures: Feature[] = [
 		title: 'Integrated toolchain',
 		icon: faToolbox,
 		description:
-			'Automatically downloads and installs explicit versions of Node.js and other tools for consistency.',
+			'Automatically downloads and installs explicit versions of Node.js and other tools for consistency across the entire workspace or per project.',
 	},
 	{
 		title: 'Multi-platform',

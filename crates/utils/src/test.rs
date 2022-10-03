@@ -4,6 +4,8 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+pub use assert_fs::TempDir;
+
 pub fn run_git_command<P, F>(dir: P, handler: F)
 where
     P: AsRef<Path>,

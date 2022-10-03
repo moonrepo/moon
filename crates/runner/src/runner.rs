@@ -33,15 +33,18 @@ async fn run_action(
     let local_emitter = local_emitter.read().await;
 
     let result = match node {
-        // Install dependencies for a specific tool
+        // Install dependencies in the workspace root
         ActionNode::InstallDeps(platform) => {
             local_emitter
-                .emit(Event::DependenciesInstalling { platform })
+                .emit(Event::DependenciesInstalling {
+                    platform,
+                    project_id: None,
+                })
                 .await?;
 
             let install_result = match platform {
                 SupportedPlatform::Node(_) => {
-                    node_actions::install_deps(action, context, workspace, platform)
+                    node_actions::install_deps(action, context, workspace, platform, None)
                         .await
                         .map_err(ActionRunnerError::Workspace)
                 }
@@ -49,7 +52,42 @@ async fn run_action(
             };
 
             local_emitter
-                .emit(Event::DependenciesInstalled { platform })
+                .emit(Event::DependenciesInstalled {
+                    platform,
+                    project_id: None,
+                })
+                .await?;
+
+            install_result
+        }
+
+        // Install dependencies in the project root
+        ActionNode::InstallProjectDeps(platform, project_id) => {
+            local_emitter
+                .emit(Event::DependenciesInstalling {
+                    platform,
+                    project_id: Some(project_id),
+                })
+                .await?;
+
+            let install_result = match platform {
+                SupportedPlatform::Node(_) => node_actions::install_deps(
+                    action,
+                    context,
+                    workspace,
+                    platform,
+                    Some(project_id),
+                )
+                .await
+                .map_err(ActionRunnerError::Workspace),
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::DependenciesInstalled {
+                    platform,
+                    project_id: Some(project_id),
+                })
                 .await?;
 
             install_result
@@ -71,7 +109,7 @@ async fn run_action(
         }
 
         // Setup and install the specific tool
-        ActionNode::SetupToolchain(platform) => {
+        ActionNode::SetupTool(platform) => {
             local_emitter
                 .emit(Event::ToolInstalling { platform })
                 .await?;
@@ -124,7 +162,7 @@ async fn run_action(
             action.fail(error.to_string());
 
             // If these fail, we should abort instead of trying to continue
-            if matches!(node, ActionNode::SetupToolchain(_))
+            if matches!(node, ActionNode::SetupTool(_))
                 || matches!(node, ActionNode::InstallDeps(_))
             {
                 action.abort();

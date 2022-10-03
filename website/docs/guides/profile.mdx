@@ -24,7 +24,7 @@ libraries, optimization, and garbage collection.
 
 To record a CPU profile, pass `--profile cpu` to the [`moon run`](../commands/run) command. When
 successful, the profile will be written to
-`.moon/cache/projects/<project>/<task>/snapshot.cpuprofile`.
+`.moon/cache/states/<project>/<task>/snapshot.cpuprofile`.
 
 ```shell
 $ moon run --profile cpu app:lint
@@ -67,7 +67,7 @@ code that caused them.
 
 To record a heap profile, pass `--profile heap` to the [`moon run`](../commands/run) command. When
 successful, the profile will be written to
-`.moon/cache/projects/<project>/<task>/snapshot.heapprofile`.
+`.moon/cache/states/<project>/<task>/snapshot.heapprofile`.
 
 ```shell
 $ moon run --profile heap app:lint

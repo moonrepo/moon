@@ -1,0 +1,3 @@
+tasks:
+  noop:
+    command: noop

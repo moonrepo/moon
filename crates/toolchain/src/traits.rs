@@ -1,6 +1,5 @@
 use crate::errors::ToolchainError;
 use crate::helpers::get_path_env_var;
-use crate::Toolchain;
 use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_logger::{debug, Logable};
@@ -204,24 +203,19 @@ pub trait PackageManager<T: Send + Sync>:
     }
 
     /// Dedupe dependencies after they have been installed.
-    async fn dedupe_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
+    async fn dedupe_dependencies(
+        &self,
+        parent: &T,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError>;
 
     /// Download and execute a one-off package.
     async fn exec_package(
         &self,
-        toolchain: &Toolchain,
         package: &str,
         args: Vec<&str>,
+        working_dir: &Path,
     ) -> Result<(), ToolchainError>;
-
-    /// Find a canonical path to a package's binary file.
-    /// This is typically in "node_modules/.bin".
-    // async fn find_package_bin(
-    //     &self,
-    //     toolchain: &Toolchain,
-    //     starting_dir: &Path,
-    //     bin_name: &str,
-    // ) -> Result<PathBuf, ToolchainError>;
 
     /// Return the name of the lockfile.
     fn get_lock_filename(&self) -> String;
@@ -237,13 +231,17 @@ pub trait PackageManager<T: Send + Sync>:
     ) -> Result<LockfileDependencyVersions, ToolchainError>;
 
     /// Install dependencies for a defined manifest.
-    async fn install_dependencies(&self, toolchain: &Toolchain) -> Result<(), ToolchainError>;
+    async fn install_dependencies(
+        &self,
+        parent: &T,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError>;
 
     /// Install dependencies for a single package in the workspace.
     async fn install_focused_dependencies(
         &self,
-        toolchain: &Toolchain,
-        package_names: &[String],
+        parent: &T,
+        packages: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError>;
 

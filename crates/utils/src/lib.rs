@@ -9,6 +9,7 @@ pub mod test;
 pub mod time;
 
 use cached::proc_macro::cached;
+use moon_constants as constants;
 use std::env;
 use std::path::PathBuf;
 
@@ -22,6 +23,17 @@ macro_rules! string_vec {
             $( String::from($item), )*
         ]
     }};
+}
+
+#[cached]
+pub fn get_workspace_root() -> PathBuf {
+    match fs::find_upwards(
+        constants::CONFIG_DIRNAME,
+        env::current_dir().expect("Invalid working directory."),
+    ) {
+        Some(dir) => dir.parent().unwrap().to_path_buf(),
+        None => panic!("Unable to get workspace root. Is moon running?"),
+    }
 }
 
 pub fn is_ci() -> bool {

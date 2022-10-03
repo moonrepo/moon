@@ -7,13 +7,14 @@ use moon_config::{
     DependencyConfig, DependencyScope, NodeProjectAliasFormat, ProjectConfig, ProjectID,
     ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
 };
-use moon_contract::Platform;
+use moon_contract::{Platform, SupportedPlatform};
 use moon_error::MoonError;
-use moon_lang_node::node::parse_package_name;
+use moon_lang_node::node::{get_package_manager_workspaces, parse_package_name};
 use moon_lang_node::package::PackageJson;
 use moon_lang_node::NPM;
 use moon_logger::{color, debug, warn};
 use moon_task::TaskError;
+use moon_utils::glob::GlobSet;
 use std::{
     collections::{BTreeMap, HashMap},
     path::Path,
@@ -52,6 +53,42 @@ pub struct NodePlatform {
 }
 
 impl Platform for NodePlatform {
+    fn is(&self, platform: &SupportedPlatform) -> bool {
+        matches!(platform, SupportedPlatform::Node(_))
+    }
+
+    fn is_project_in_package_manager_workspace(
+        &self,
+        project_id: &str,
+        project_root: &Path,
+        workspace_root: &Path,
+        _workspace_config: &WorkspaceConfig,
+    ) -> Result<bool, MoonError> {
+        let mut in_workspace = false;
+
+        // Root package is always considered within the workspace
+        if project_root == workspace_root {
+            return Ok(true);
+        }
+
+        if let Some(globs) = get_package_manager_workspaces(workspace_root.to_owned())? {
+            in_workspace = GlobSet::new(globs)
+                .map_err(|e| MoonError::Generic(e.to_string()))?
+                .matches(project_root.strip_prefix(workspace_root).unwrap())?;
+        }
+
+        if !in_workspace {
+            debug!(
+                target: LOG_TARGET,
+                "Project {} not within root {} workspaces, will be handled externally",
+                color::id(project_id),
+                color::file(&NPM.manifest_filename)
+            );
+        }
+
+        Ok(in_workspace)
+    }
+
     fn load_project_graph_aliases(
         &mut self,
         workspace_root: &Path,

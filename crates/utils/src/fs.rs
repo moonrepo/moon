@@ -1,7 +1,7 @@
 use async_recursion::async_recursion;
 use futures::future::try_join_all;
 use json_comments::StripComments;
-use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
+use moon_error::{map_io_to_fs_error, map_json_to_error, map_yaml_to_error, MoonError};
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -152,20 +152,6 @@ pub async fn read_dir_all<T: AsRef<Path> + Send>(path: T) -> Result<Vec<fs::DirE
     Ok(results)
 }
 
-pub fn sync_read_json<P, D>(path: P) -> Result<D, MoonError>
-where
-    P: AsRef<Path>,
-    D: DeserializeOwned,
-{
-    let path = path.as_ref();
-    let contents = sync_read_json_string(path)?;
-
-    let json: D =
-        serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
-
-    Ok(json)
-}
-
 pub async fn read_json<P, D>(path: P) -> Result<D, MoonError>
 where
     P: AsRef<Path>,
@@ -180,14 +166,6 @@ where
     Ok(json)
 }
 
-pub fn sync_read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
-    let path = path.as_ref();
-    let json =
-        std::fs::read_to_string(&path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-    clean_json(json)
-}
-
 pub async fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     let path = path.as_ref();
     let json = fs::read_to_string(path)
@@ -195,6 +173,22 @@ pub async fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonErr
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
     clean_json(json)
+}
+
+pub async fn read_yaml<P, D>(path: P) -> Result<D, MoonError>
+where
+    P: AsRef<Path>,
+    D: DeserializeOwned,
+{
+    let path = path.as_ref();
+    let contents = fs::read_to_string(path)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    let json: D =
+        serde_yaml::from_str(&contents).map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
+
+    Ok(json)
 }
 
 pub async fn remove<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
@@ -300,4 +294,61 @@ where
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
     Ok(())
+}
+
+pub async fn write_yaml<P, D>(path: P, yaml: &D) -> Result<(), MoonError>
+where
+    P: AsRef<Path>,
+    D: ?Sized + Serialize,
+{
+    let path = path.as_ref();
+    let data =
+        serde_yaml::to_string(&yaml).map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
+
+    fs::write(path, data)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    Ok(())
+}
+
+pub mod sync {
+    use super::*;
+    use std::fs::read_to_string;
+
+    pub fn read_json<P, D>(path: P) -> Result<D, MoonError>
+    where
+        P: AsRef<Path>,
+        D: DeserializeOwned,
+    {
+        let path = path.as_ref();
+        let contents = read_json_string(path)?;
+
+        let json: D = serde_json::from_str(&contents)
+            .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+
+        Ok(json)
+    }
+
+    pub fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+        let path = path.as_ref();
+        let json = read_to_string(&path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+        clean_json(json)
+    }
+
+    pub fn read_yaml<P, D>(path: P) -> Result<D, MoonError>
+    where
+        P: AsRef<Path>,
+        D: DeserializeOwned,
+    {
+        let path = path.as_ref();
+        let contents =
+            read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+        let json: D = serde_yaml::from_str(&contents)
+            .map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
+
+        Ok(json)
+    }
 }

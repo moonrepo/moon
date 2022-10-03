@@ -290,8 +290,28 @@ mod install_deps {
 
         assert!(fixture
             .path()
-            .join(".moon/cache/tools/node-v16.0.0.json")
+            .join(".moon/cache/states/toolNode-16.0.0.json")
             .exists());
+    }
+
+    #[test]
+    fn installs_deps_into_each_project_when_not_using_workspaces() {
+        let fixture = create_sandbox_with_git("node-non-workspaces");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("foo:noop")
+            .arg("bar:noop")
+            .arg("baz:noop")
+            .assert();
+
+        assert!(predicate::str::contains("npm install")
+            .count(3)
+            .eval(&get_assert_output(&assert)));
+
+        assert!(fixture.path().join("foo/package-lock.json").exists());
+        assert!(fixture.path().join("bar/package-lock.json").exists());
+        assert!(fixture.path().join("baz/package-lock.json").exists());
     }
 }
 
@@ -552,6 +572,35 @@ mod npm {
 
         assert.success();
     }
+
+    #[test]
+    #[serial]
+    fn installs_deps_in_non_workspace_project() {
+        let fixture = create_sandbox_with_git("node-npm");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("notInWorkspace:noop")
+            // Run other package so we can see both working
+            .arg("npm:noop")
+            .assert();
+
+        assert!(predicate::str::contains("npm install")
+            .count(2)
+            .eval(&get_assert_output(&assert)));
+
+        assert!(fixture.path().join("package-lock.json").exists());
+        assert!(fixture
+            .path()
+            .join("not-in-workspace/package-lock.json")
+            .exists());
+        assert!(fixture
+            .path()
+            .join("not-in-workspace/node_modules")
+            .exists());
+
+        assert.success();
+    }
 }
 
 mod pnpm {
@@ -639,6 +688,34 @@ mod pnpm {
 
         assert.success();
     }
+
+    // NOTE: pnpm does not support nested lockfiles.
+    // #[test]
+    // #[serial]
+    // fn installs_deps_in_non_workspace_project() {
+    //     let fixture = create_sandbox_with_git("node-pnpm");
+
+    //     let assert = create_moon_command(fixture.path())
+    //         .arg("run")
+    //         .arg("notInWorkspace:noop")
+    //         // Run other package so we can see both working
+    //         .arg("pnpm:noop")
+    //         .assert();
+
+    //     assert_snapshot!(get_assert_output(&assert));
+
+    //     assert!(fixture.path().join("pnpm-lock.yaml").exists());
+    //     assert!(fixture
+    //         .path()
+    //         .join("not-in-workspace/pnpm-lock.yaml")
+    //         .exists());
+    //     assert!(fixture
+    //         .path()
+    //         .join("not-in-workspace/node_modules")
+    //         .exists());
+
+    //     assert.success();
+    // }
 }
 
 mod yarn1 {
@@ -700,6 +777,32 @@ mod yarn1 {
             predicate::str::contains("All matched files use Prettier code style!")
                 .eval(&get_assert_output(&assert))
         );
+
+        assert.success();
+    }
+
+    #[test]
+    #[serial]
+    fn installs_deps_in_non_workspace_project() {
+        let fixture = create_sandbox_with_git("node-yarn1");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("notInWorkspace:noop")
+            // Run other package so we can see both working
+            .arg("yarn:noop")
+            .assert();
+
+        assert!(predicate::str::contains("yarn install")
+            .count(2)
+            .eval(&get_assert_output(&assert)));
+
+        assert!(fixture.path().join("yarn.lock").exists());
+        assert!(fixture.path().join("not-in-workspace/yarn.lock").exists());
+        assert!(fixture
+            .path()
+            .join("not-in-workspace/node_modules")
+            .exists());
 
         assert.success();
     }
@@ -767,6 +870,32 @@ mod yarn {
 
         assert.success();
     }
+
+    #[test]
+    #[serial]
+    fn installs_deps_in_non_workspace_project() {
+        let fixture = create_sandbox_with_git("node-yarn");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("notInWorkspace:noop")
+            // Run other package so we can see both working
+            .arg("yarn:noop")
+            .assert();
+
+        assert!(predicate::str::contains("yarn install")
+            .count(2)
+            .eval(&get_assert_output(&assert)));
+
+        assert!(fixture.path().join("yarn.lock").exists());
+        assert!(fixture.path().join("not-in-workspace/yarn.lock").exists());
+        assert!(fixture
+            .path()
+            .join("not-in-workspace/node_modules")
+            .exists());
+
+        assert.success();
+    }
 }
 
 mod profile {
@@ -785,7 +914,7 @@ mod profile {
 
         let profile = fixture
             .path()
-            .join(".moon/cache/projects/node/standard/snapshot.cpuprofile");
+            .join(".moon/cache/states/node/standard/snapshot.cpuprofile");
 
         assert!(profile.exists());
     }
@@ -803,7 +932,7 @@ mod profile {
 
         let profile = fixture
             .path()
-            .join(".moon/cache/projects/node/standard/snapshot.heapprofile");
+            .join(".moon/cache/states/node/standard/snapshot.heapprofile");
 
         assert!(profile.exists());
     }
@@ -975,5 +1104,28 @@ mod typescript {
         assert_snapshot!(
             read_to_string(fixture.path().join("syncs-deps-refs/tsconfig.json")).unwrap()
         );
+    }
+}
+
+mod workspace_overrides {
+    use super::*;
+
+    #[test]
+    #[serial]
+    fn can_override_version() {
+        let fixture = create_sandbox_with_git("node");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("base:version")
+            .arg("versionOverride:version")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("v14.0.0").eval(&output));
+        assert!(predicate::str::contains("v16.1.0").eval(&output));
+
+        assert.success();
     }
 }

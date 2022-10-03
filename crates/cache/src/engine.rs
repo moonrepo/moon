@@ -1,6 +1,7 @@
 use crate::helpers::{is_readable, is_writable, LOG_TARGET};
 use crate::items::{CacheItem, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::CacheRunfile;
+use crate::DependenciesState;
 use moon_archive::{tar, untar};
 use moon_constants::CONFIG_DIRNAME;
 use moon_contract::SupportedPlatform;
@@ -19,23 +20,21 @@ pub struct CacheEngine {
     /// The `.moon/cache/hashes` directory. Stores hash manifests.
     pub hashes_dir: PathBuf,
 
-    /// The `.moon/cache/out` directory. Stores task outputs as hashed archives.
+    /// The `.moon/cache/outputs` directory. Stores task outputs as hashed archives.
     pub outputs_dir: PathBuf,
 
-    /// The `.moon/cache/projects` directory. Stores run target states and project runfiles.
-    pub projects_dir: PathBuf,
-
-    /// The `.moon/cache/tools` directory. Stores tool installation states.
-    pub tools_dir: PathBuf,
+    /// The `.moon/cache/states` directory. Stores state information about anything...
+    /// tools, dependencies, projects, tasks, etc.
+    pub states_dir: PathBuf,
 }
 
 impl CacheEngine {
     pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
-        let outputs_dir = dir.join("out");
-        let projects_dir = dir.join("projects");
-        let tools_dir = dir.join("tools");
+        let out_dir = dir.join("out");
+        let outputs_dir = dir.join("outputs");
+        let states_dir = dir.join("states");
 
         debug!(
             target: LOG_TARGET,
@@ -43,19 +42,42 @@ impl CacheEngine {
             color::path(&dir)
         );
 
+        // TODO: Remove in v1. This was renamed from out -> outputs,
+        // but we didn't want to lose existing cache.
+        if out_dir.exists() {
+            let _ = std::fs::rename(out_dir, &outputs_dir);
+        }
+
         // Do this once instead of each time we are writing cache items
         fs::create_dir_all(&hashes_dir).await?;
         fs::create_dir_all(&outputs_dir).await?;
-        fs::create_dir_all(&projects_dir).await?;
-        fs::create_dir_all(&tools_dir).await?;
+        fs::create_dir_all(&states_dir).await?;
 
         Ok(CacheEngine {
             dir,
             hashes_dir,
             outputs_dir,
-            projects_dir,
-            tools_dir,
+            states_dir,
         })
+    }
+
+    pub async fn cache_deps_state(
+        &self,
+        platform: &SupportedPlatform,
+        project_id: Option<&str>,
+    ) -> Result<CacheItem<DependenciesState>, MoonError> {
+        let name = format!("deps{}.json", platform);
+
+        CacheItem::load(
+            self.states_dir.join(if let Some(id) = project_id {
+                format!("{}/{}", id, name)
+            } else {
+                name
+            }),
+            DependenciesState::default(),
+            0,
+        )
+        .await
     }
 
     pub async fn cache_run_target_state(
@@ -63,7 +85,7 @@ impl CacheEngine {
         target_id: &str,
     ) -> Result<CacheItem<RunTargetState>, MoonError> {
         CacheItem::load(
-            self.get_target_dir(target_id).join("lastRunState.json"),
+            self.get_target_dir(target_id).join("lastRun.json"),
             RunTargetState {
                 target: String::from(target_id),
                 ..RunTargetState::default()
@@ -75,7 +97,7 @@ impl CacheEngine {
 
     pub async fn cache_projects_state(&self) -> Result<CacheItem<ProjectsState>, MoonError> {
         CacheItem::load(
-            self.dir.join("projectsState.json"),
+            self.states_dir.join("projects.json"),
             ProjectsState::default(),
             90000, // Cache for 3 minutes
         )
@@ -87,7 +109,8 @@ impl CacheEngine {
         platform: &SupportedPlatform,
     ) -> Result<CacheItem<ToolState>, MoonError> {
         CacheItem::load(
-            self.tools_dir.join(format!("{}.json", platform.id())),
+            self.states_dir
+                .join(format!("tool{}-{}.json", platform, platform.version())),
             ToolState::default(),
             0,
         )
@@ -215,13 +238,11 @@ impl CacheEngine {
     }
 
     pub fn get_project_dir(&self, project_id: &str) -> PathBuf {
-        self.projects_dir.join(project_id)
+        self.states_dir.join(project_id)
     }
 
     pub fn get_target_dir(&self, target_id: &str) -> PathBuf {
-        let path: PathBuf = [&target_id.replace(':', "/")].iter().collect();
-
-        self.projects_dir.join(path)
+        self.states_dir.join(target_id.replace(':', "/"))
     }
 
     /// Check to see if a build with the provided hash has been cached.

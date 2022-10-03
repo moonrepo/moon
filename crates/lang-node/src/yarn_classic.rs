@@ -1,13 +1,13 @@
+use crate::YARN;
 use cached::proc_macro::cached;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_lang::config_cache;
-use moon_lang::LockfileDependencyVersions;
+use moon_lang::{config_cache, LockfileDependencyVersions};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-config_cache!(YarnLock, "yarn.lock", load_lockfile, write_lockfile);
+config_cache!(YarnLock, YARN.lock_filename, load_lockfile);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct YarnLockDependency {
@@ -81,10 +81,6 @@ fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<YarnLock, MoonError> {
     let path = path.as_ref();
 
     parse_lockfile(fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?)
-}
-
-fn write_lockfile(_path: &Path, _lockfile: &YarnLock) -> Result<(), MoonError> {
-    Ok(()) // Do nothing
 }
 
 #[cached(result)]

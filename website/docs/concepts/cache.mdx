@@ -34,21 +34,22 @@ The following diagram outlines our cache folder structure and why each piece exi
 
 ```shell
 .moon/cache/
-	# List of projects located on the file system. Will only exists when
-	# projects are configured using globs.
-	projectsState.json
-
 	# Stores hash manifests of every ran task. Exists purely for debugging purposes.
 	hashes/
 		# Contents includes all sources used to generate the hash.
 		<hash>.json
 
 	# Stores `tar.gz` archives of a task's outputs based on its generated hash.
-	out/
+	outputs/
 		<hash>.tar.gz
 
-	# State of projects and their ran/running tasks.
-	projects/
+	# State information about anything and everything within moon. Toolchain,
+	# dependencies, projects, running targets, etc.
+	states/
+		# Files at the root pertain to the entire workspace.
+		<state>.json
+
+		# Files for a project are nested within a folder by the project name.
 		<project>/
 			# Information about the project, its tasks, and its configs.
 			# Can be used at runtime by tasks that require this information.
@@ -57,9 +58,5 @@ The following diagram outlines our cache folder structure and why each piece exi
 			<task>/
 				# Contents of the child process, including stdout, stderr, and exit code.
 				# Also contains the unique hash that is referenced above.
-				lastRunState.json
-
-	# State of tools within the toolchain. Mainly for tracking install times.
-	tools/
-		<tool>-<version>.json
+				lastRun.json
 ```

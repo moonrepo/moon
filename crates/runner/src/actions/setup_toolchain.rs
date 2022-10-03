@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:setup-toolchain";
-const HOUR: u128 = 3600;
+const HOUR_MILLIS: u128 = 36000;
 
 pub async fn setup_toolchain(
     _action: &mut Action,
@@ -35,7 +35,7 @@ pub async fn setup_toolchain(
     // Revisit the threshold if need be.
     let now = cache.now_millis();
     let check_versions = cache.item.last_version_check_time == 0
-        || (cache.item.last_version_check_time + HOUR * 12) <= now;
+        || (cache.item.last_version_check_time + HOUR_MILLIS * 12) <= now;
 
     // Install and setup the specific tool + version in the toolchain!
     let installed = match platform {

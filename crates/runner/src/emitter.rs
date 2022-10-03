@@ -28,9 +28,11 @@ pub enum Event<'e> {
     // Installing deps
     DependenciesInstalling {
         platform: &'e SupportedPlatform,
+        project_id: Option<&'e str>,
     },
     DependenciesInstalled {
         platform: &'e SupportedPlatform,
+        project_id: Option<&'e str>,
     },
 
     // Syncing projects

@@ -29,7 +29,7 @@ to be language agnostic and easily pluggable in the future. If we're to guess wh
 be next, it would most likely be Ruby to support React Native based applications.
 
 With that being said, for languages not supported in our toolchain, you can still execute them
-within at task by setting the [type to system](./config/project#type).
+within at task by setting the [`type` to "system"](./config/project#type-1).
 
 ### Will moon support continuous deployment?
 
@@ -79,14 +79,13 @@ utilizing language specific functionality, instead of migrating entirely to moon
 
 ## Action runner
 
-### What is `SetupNodeToolchain`, `InstallNodeDeps`, `RunTarget`, etc?
+### What is `SetupNodeTool`, `InstallNodeDeps`, `RunTarget`, etc?
 
 When we run a [task](./concepts/task), we generate a dependency graph of nodes, known as actions.
 These labels are the actions in the graph, and break down as follows:
 
-- `SetupNodeToolchain` - Sets up the Node.js [toolchain](./concepts/toolchain). Required for all
-  other actions, so acts like a root node.
-- `SetupSystemToolchain` - Currently a no operation.
+- `SetupNodeTool` - Sets up the Node.js [toolchain](./concepts/toolchain).
+- `SetupSystemTool` - Currently a no operation.
 - `InstallNodeDeps` - Installs Node.js dependencies (`node_modules`) in the workspace root.
 - `InstallSystemDeps` - Currently a no operation.
 - `SyncNodeProject` - When a project's [`language`](./config/project#language) is "javascript" or
@@ -152,7 +151,7 @@ tasks:
 ### Can we run other languages?
 
 Yes! Although our toolchain only supports JavaScript/Node.js at this time, you can still run other
-languages within tasks by setting their [`type`](./config/project#type) to "system". System tasks
+languages within tasks by setting their [`type`](./config/project#type-1) to "system". System tasks
 are an escape hatch that will use any command available on the current machine.
 
 ```yaml title="moon.yml"

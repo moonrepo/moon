@@ -1,3 +1,5 @@
+use crate::package::{PackageJson, PackageWorkspaces};
+use crate::pnpm_workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;
@@ -27,40 +29,13 @@ pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
     }
 }
 
-#[track_caller]
-pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
-    let captures = BIN_PATH_PATTERN.captures(&contents).unwrap_or_else(|| {
-        // This should ideally never happen!
-        panic!(
-            "Unable to extract binary path from {}:\n\n{}",
-            bin_path.to_string_lossy(),
-            contents
-        )
-    });
-
-    PathBuf::from(captures.get(0).unwrap().as_str())
-}
-
-pub fn has_shebang(contents: &str, command: &str) -> bool {
-    contents.starts_with(&format!("#!/usr/bin/env {command}"))
-        || contents.starts_with(&format!("#!/usr/bin/{command}"))
-        || contents.starts_with(&format!("#!/bin/{command}"))
-}
-
-pub fn is_cmd_file(contents: &str) -> bool {
-    contents.contains("%~dp0")
-        || contents.contains("%dp0%")
-        || contents.contains("@SETLOCAL")
-        || contents.contains("@ECHO")
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BinFile {
     Binary(PathBuf), // Rust, Go
     Script(PathBuf), // JavaScript
 }
 
-/// Bin files may be JavaScript, Bash, Go, or Rust.
+/// Node module ".bin" files may be JavaScript, Bash, Go, or Rust.
 ///
 /// npm:
 ///     - Unix: Symlinks to the bin file in node_modules.
@@ -124,9 +99,9 @@ pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Opti
 }
 
 #[track_caller]
-pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
+pub fn find_package_bin<P: AsRef<Path>, B: AsRef<str>>(
     starting_dir: P,
-    bin_name: T,
+    bin_name: B,
 ) -> Result<Option<BinFile>, MoonError> {
     let starting_dir = starting_dir.as_ref();
     let bin_name = bin_name.as_ref();
@@ -144,9 +119,9 @@ pub fn find_package_bin<P: AsRef<Path>, T: AsRef<str>>(
     })
 }
 
-pub fn find_package_manager_bin<P: AsRef<Path>, T: AsRef<str>>(
+pub fn find_package_manager_bin<P: AsRef<Path>, B: AsRef<str>>(
     install_dir: P,
-    bin_name: T,
+    bin_name: B,
 ) -> PathBuf {
     install_dir
         .as_ref()
@@ -236,6 +211,68 @@ where
         version = version.as_ref(),
         path = path.as_ref(),
     )
+}
+
+/// Extract the list of `workspaces` globs from the root `package.json`,
+/// or if using pnpm, extract the globs from `pnpm-workspace.yaml`.
+/// Furthermore, if the list is found, but is empty, return none.
+#[cached(result)]
+pub fn get_package_manager_workspaces(
+    workspace_root: PathBuf,
+) -> Result<Option<Vec<String>>, MoonError> {
+    if let Some(pnpm_workspace) = PnpmWorkspace::read(workspace_root.clone())? {
+        if !pnpm_workspace.packages.is_empty() {
+            return Ok(Some(pnpm_workspace.packages));
+        }
+    }
+
+    if let Some(package_json) = PackageJson::read(workspace_root)? {
+        if let Some(workspaces) = package_json.workspaces {
+            match workspaces {
+                PackageWorkspaces::Array(globs) => {
+                    if !globs.is_empty() {
+                        return Ok(Some(globs));
+                    }
+                }
+                PackageWorkspaces::Object(config) => {
+                    if let Some(globs) = config.packages {
+                        if !globs.is_empty() {
+                            return Ok(Some(globs));
+                        }
+                    }
+                }
+            };
+        }
+    }
+
+    Ok(None)
+}
+
+pub fn has_shebang(contents: &str, command: &str) -> bool {
+    contents.starts_with(&format!("#!/usr/bin/env {command}"))
+        || contents.starts_with(&format!("#!/usr/bin/{command}"))
+        || contents.starts_with(&format!("#!/bin/{command}"))
+}
+
+pub fn is_cmd_file(contents: &str) -> bool {
+    contents.contains("%~dp0")
+        || contents.contains("%dp0%")
+        || contents.contains("@SETLOCAL")
+        || contents.contains("@ECHO")
+}
+
+#[track_caller]
+pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
+    let captures = BIN_PATH_PATTERN.captures(&contents).unwrap_or_else(|| {
+        // This should ideally never happen!
+        panic!(
+            "Unable to extract binary path from {}:\n\n{}",
+            bin_path.to_string_lossy(),
+            contents
+        )
+    });
+
+    PathBuf::from(captures.get(0).unwrap().as_str())
 }
 
 pub fn parse_package_name(package_name: &str) -> (Option<String>, String) {

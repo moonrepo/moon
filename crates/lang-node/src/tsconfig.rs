@@ -5,7 +5,7 @@ use json;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use moon_lang::config_cache;
 use moon_utils::{
-    fs::{self, sync_read_json},
+    fs::{self, sync::read_json},
     path::standardize_separators,
 };
 use serde::{Deserialize, Deserializer, Serialize};
@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 config_cache!(
     TsConfigJson,
     "tsconfig.json",
-    sync_read_json,
+    read_json,
     write_preserved_json
 );
 
@@ -680,7 +680,7 @@ impl<'de> Deserialize<'de> for Target {
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
 fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(), MoonError> {
-    let contents = fs::sync_read_json_string(path)?;
+    let contents = fs::sync::read_json_string(path)?;
     let mut data = json::parse(&contents).expect("Unable to parse tsconfig.json");
 
     // We only need to set fields that we modify within Moon,

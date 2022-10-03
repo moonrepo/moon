@@ -1,10 +1,11 @@
 // package.json
 
+use crate::NPM;
 use cached::proc_macro::cached;
 use json;
 use moon_error::MoonError;
 use moon_lang::config_cache;
-use moon_utils::fs::{self, sync_read_json};
+use moon_utils::fs::{self, sync::read_json};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -12,8 +13,8 @@ use std::path::{Path, PathBuf};
 
 config_cache!(
     PackageJson,
-    "package.json",
-    sync_read_json,
+    NPM.manifest_filename,
+    read_json,
     write_preserved_json
 );
 
@@ -467,7 +468,7 @@ pub enum PackageWorkspaces {
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
 fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
-    let contents = fs::sync_read_json_string(path)?;
+    let contents = fs::sync::read_json_string(path)?;
     let mut data = json::parse(&contents).expect("Unable to parse package.json");
 
     // We only need to set fields that we modify within Moon,

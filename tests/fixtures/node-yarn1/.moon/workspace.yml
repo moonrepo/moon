@@ -9,3 +9,4 @@ node:
 projects:
   yarn: yarn
   other: other
+  notInWorkspace: not-in-workspace

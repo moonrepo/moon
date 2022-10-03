@@ -6,6 +6,8 @@ typescript:
   syncProjectReferences: false
 
 projects:
+  base: base
   esbuild: esbuild
   lifecycles: lifecycles
   swc: swc
+  versionOverride: version-override

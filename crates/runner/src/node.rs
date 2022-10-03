@@ -5,9 +5,19 @@ use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Debug, Eq)]
 pub enum ActionNode {
+    /// Install tool dependencies in the workspace root.
     InstallDeps(SupportedPlatform),
+
+    /// Install tool dependencies in the project root.
+    InstallProjectDeps(SupportedPlatform, ProjectID),
+
+    /// Run a target (project task).
     RunTarget(TargetID),
-    SetupToolchain(SupportedPlatform),
+
+    /// Setup a tool + version for the provided platform.
+    SetupTool(SupportedPlatform),
+
+    /// Sync a project with language specific semantics.
     SyncProject(SupportedPlatform, ProjectID),
 }
 
@@ -15,13 +25,19 @@ impl ActionNode {
     pub fn label(&self) -> String {
         match self {
             ActionNode::InstallDeps(platform) => match platform {
-                SupportedPlatform::Node(version) => format!("InstallNodeDeps({})", version),
+                SupportedPlatform::Node(version) => format!("Install{}Deps({})", platform, version),
                 _ => format!("Install{}Deps", platform),
             },
+            ActionNode::InstallProjectDeps(platform, id) => match platform {
+                SupportedPlatform::Node(version) => {
+                    format!("Install{}DepsInProject({}, {})", platform, version, id)
+                }
+                _ => format!("Install{}DepsInProject({})", platform, id),
+            },
             ActionNode::RunTarget(id) => format!("RunTarget({})", id),
-            ActionNode::SetupToolchain(platform) => match platform {
-                SupportedPlatform::Node(version) => format!("SetupNodeToolchain({})", version),
-                _ => format!("Setup{}Toolchain", platform),
+            ActionNode::SetupTool(platform) => match platform {
+                SupportedPlatform::Node(version) => format!("Setup{}Tool({})", platform, version),
+                _ => format!("Setup{}Tool", platform),
             },
             ActionNode::SyncProject(platform, id) => format!("Sync{}Project({})", platform, id),
         }

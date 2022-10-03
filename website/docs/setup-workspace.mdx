@@ -10,8 +10,7 @@ import NextSteps from '@site/src/components/NextSteps';
 <HeaderLabel text="3 min" />
 
 Once moon has been initialized, we must setup the [workspace](./concepts/workspace), which is
-denoted by the `.moon` folder and a relative `package.json` -- this is known as the workspace root.
-The workspace is in charge of:
+denoted by the `.moon` folder -- this is known as the workspace root. The workspace is in charge of:
 
 - Integrating with a version control system.
 - Defining configuration that applies to its entire tree.
@@ -37,6 +36,15 @@ node:
 
 Let's now run [`moon --log debug setup`](./commands/setup) to verify that Node.js is downloaded and
 installed correctly. Pretty cool right?
+
+:::info
+
+The Node.js version can also be customized _per project_ using the
+[`workspace.node.version`](./config/project#node) setting in [`moon.yml`](./config/project). This
+setting exists to support legacy projects that are coupled to an old version and are unable to
+upgrade. We suggest keeping all projects on the same version whenever possible.
+
+:::
 
 ## Configuring a package manager
 

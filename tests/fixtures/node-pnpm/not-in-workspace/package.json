@@ -1,0 +1,7 @@
+{
+  "name": "test-node-pnpm-not-in-workspace",
+  "version": "1.0.0",
+  "devDependencies": {
+    "typescript": "4.8.4"
+  }
+}

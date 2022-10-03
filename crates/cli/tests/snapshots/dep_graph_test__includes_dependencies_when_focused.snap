@@ -4,7 +4,7 @@ assertion_line: 38
 expression: get_assert_output(&assert)
 ---
 digraph {
-    0 [ label="SetupNodeToolchain(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    0 [ label="SetupNodeTool(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 [ label="InstallNodeDeps(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     2 [ label="SyncNodeProject(dependsOn)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     3 [ label="SyncNodeProject(depsC)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]

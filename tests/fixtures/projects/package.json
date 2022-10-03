@@ -1,4 +1,5 @@
 {
   "name": "test-projects",
-  "private": true
+  "private": true,
+  "workspaces": ["*", "deps/*", "langs/*"]
 }

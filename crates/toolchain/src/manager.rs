@@ -17,7 +17,11 @@ impl<T: Tool> ToolManager<T> {
     }
 
     pub fn get(&self) -> Result<&T, ToolchainError> {
-        match &self.platform {
+        self.get_from_platform(&self.platform)
+    }
+
+    pub fn get_from_platform(&self, platform: &SupportedPlatform) -> Result<&T, ToolchainError> {
+        match &platform {
             SupportedPlatform::Node(version) => self.get_version(version),
             _ => panic!("Unsupported toolchain platform."),
         }

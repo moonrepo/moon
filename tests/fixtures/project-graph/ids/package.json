@@ -1,4 +1,5 @@
 {
   "name": "project-graph-ids",
-  "private": true
+  "private": true,
+  "workspaces": ["*"]
 }

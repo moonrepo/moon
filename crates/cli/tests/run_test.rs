@@ -219,7 +219,7 @@ mod caching {
 
         assert!(fixture
             .path()
-            .join(".moon/cache/projects/node/runfile.json")
+            .join(".moon/cache/states/node/runfile.json")
             .exists());
     }
 
@@ -234,7 +234,7 @@ mod caching {
 
         let cache_path = fixture
             .path()
-            .join(".moon/cache/projects/node/standard/lastRunState.json");
+            .join(".moon/cache/states/node/standard/lastRun.json");
 
         assert!(cache_path.exists());
 
@@ -702,7 +702,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }
@@ -728,7 +728,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }
@@ -754,7 +754,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }
@@ -780,7 +780,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }
@@ -806,7 +806,7 @@ mod outputs {
         // outputs
         assert!(fixture
             .path()
-            .join(".moon/cache/out")
+            .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
             .exists());
     }

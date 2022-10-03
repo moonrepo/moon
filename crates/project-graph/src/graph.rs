@@ -89,7 +89,7 @@ pub struct ProjectGraph {
     indices: Arc<RwLock<IndicesType>>,
 
     /// List of platforms that provide unique functionality.
-    platforms: RegisteredPlatforms,
+    pub platforms: RegisteredPlatforms,
 
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
@@ -100,7 +100,7 @@ pub struct ProjectGraph {
     pub workspace_config: WorkspaceConfig,
 
     /// The workspace root, in which projects are relatively loaded from.
-    workspace_root: PathBuf,
+    pub workspace_root: PathBuf,
 }
 
 impl Platformable for ProjectGraph {

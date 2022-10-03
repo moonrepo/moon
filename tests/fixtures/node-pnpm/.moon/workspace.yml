@@ -9,3 +9,4 @@ node:
 projects:
   pnpm: pnpm
   other: other
+  notInWorkspace: not-in-workspace

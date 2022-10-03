@@ -1,14 +1,14 @@
+use crate::PNPM;
 use cached::proc_macro::cached;
-use moon_error::{map_io_to_fs_error, MoonError};
-use moon_lang::config_cache;
-use moon_lang::LockfileDependencyVersions;
+use moon_error::MoonError;
+use moon_lang::{config_cache, LockfileDependencyVersions};
+use moon_utils::fs::sync::read_yaml;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;
-use std::fs;
 use std::path::{Path, PathBuf};
 
-config_cache!(PnpmLock, "pnpm-lock.yaml", load_lockfile, write_lockfile);
+config_cache!(PnpmLock, PNPM.lock_filename, read_yaml);
 
 type DependencyMap = HashMap<String, Value>;
 
@@ -44,20 +44,6 @@ pub struct PnpmLock {
 
     #[serde(skip)]
     pub path: PathBuf,
-}
-
-fn load_lockfile<P: AsRef<Path>>(path: P) -> Result<PnpmLock, MoonError> {
-    let path = path.as_ref();
-    let lockfile: PnpmLock = serde_yaml::from_str(
-        &fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?,
-    )
-    .map_err(|e| MoonError::Yaml(path.to_path_buf(), e))?;
-
-    Ok(lockfile)
-}
-
-fn write_lockfile(_path: &Path, _lockfile: &PnpmLock) -> Result<(), MoonError> {
-    Ok(()) // Do nothing
 }
 
 #[cached(result)]
@@ -159,7 +145,7 @@ packages:
             )
             .unwrap();
 
-        let lockfile = load_lockfile(temp.path().join("pnpm-lock.yaml")).unwrap();
+        let lockfile: PnpmLock = read_yaml(temp.path().join("pnpm-lock.yaml")).unwrap();
 
         assert_eq!(
             lockfile,

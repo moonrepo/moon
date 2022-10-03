@@ -9,3 +9,4 @@ node:
 projects:
   npm: npm
   other: other
+  notInWorkspace: not-in-workspace

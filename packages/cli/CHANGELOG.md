@@ -4,8 +4,17 @@
 
 #### 🚀 Updates
 
+- Projects
+  - Projects can now override the workspace configured Node.js version on a per-project basis using
+    the new `workspace.node.version` setting in `moon.yml`. However, this does not override the
+    package manager!
 - Generator
   - Template files can now be suffixed with `.tera` or `.twig` for syntax highlighting.
+
+#### ⚙️ Internal
+
+- We've renamed and restructured the `.moon/cache` directory. If you were relying on any of these
+  files, you'll need to update your implementation.
 
 ## 0.15.0
 
@@ -95,7 +104,7 @@
 #### ⚙️ Internal
 
 - The `SetupToolchain` action has been updated to be language/platform aware, and as such, was split
-  into `SetupNodeToolchain` and `SetupSystemToolchain`.
+  into `SetupNodeTool` and `SetupSystemTool`.
 - Output is now buffered when running a target. This should reduce tearing and increase performance.
 - Upgraded all Cargo dependencies.
 
@@ -233,7 +242,7 @@ previous builds are no longer valid and can be removed.
 
 #### ⚙️ Internal
 
-- Outputs are now copied to `.moon/cache/out` instead of being hardlinked.
+- Outputs are now copied to `.moon/cache/outputs` instead of being hardlinked.
 - Package binaries are now resolved to their canonical path when a symlink.
 
 ### 0.8.1

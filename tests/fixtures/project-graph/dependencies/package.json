@@ -1,4 +1,5 @@
 {
   "name": "project-graph-dependencies",
-  "private": true
+  "private": true,
+  "workspaces": ["*"]
 }

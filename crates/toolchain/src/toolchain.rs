@@ -40,15 +40,11 @@ pub struct Toolchain {
 
     /// Node.js!
     pub node: ToolManager<NodeTool>,
-
-    /// The workspace root directory.
-    pub workspace_root: PathBuf,
 }
 
 impl Toolchain {
     pub async fn create_from<P: AsRef<Path>>(
         base_dir: P,
-        workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
         let dir = base_dir.as_ref().join(CONFIG_DIRNAME);
@@ -63,7 +59,6 @@ impl Toolchain {
 
         let mut toolchain = Toolchain {
             dir,
-            workspace_root: workspace_root.to_path_buf(),
             // Tools
             node: ToolManager::new(SupportedPlatform::Node("latest".into())),
         };
@@ -79,13 +74,9 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub async fn create(
-        workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
-    ) -> Result<Toolchain, ToolchainError> {
+    pub async fn create(workspace_config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
         Toolchain::create_from(
             path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
-            workspace_root,
             workspace_config,
         )
         .await

@@ -4,7 +4,7 @@ assertion_line: 10
 expression: get_assert_output(&assert)
 ---
 
-pass SetupSystemToolchain (skipped)
+pass SetupSystemTool (skipped)
 pass SyncSystemProject(c) (100ms)
 pass SyncSystemProject(b) (100ms)
 pass SyncSystemProject(a) (100ms)

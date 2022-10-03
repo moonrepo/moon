@@ -564,8 +564,6 @@ mod npm {
             .arg("npm:noop")
             .assert();
 
-        moon_utils::test::debug_sandbox(&fixture, &assert);
-
         assert!(predicate::str::contains("npm install")
             .count(2)
             .eval(&get_assert_output(&assert)));
@@ -682,8 +680,6 @@ mod pnpm {
     //         .arg("pnpm:noop")
     //         .assert();
 
-    //     // moon_utils::test::debug_sandbox(&fixture, &assert);
-
     //     assert_snapshot!(get_assert_output(&assert));
 
     //     assert!(fixture.path().join("pnpm-lock.yaml").exists());
@@ -774,8 +770,6 @@ mod yarn1 {
             .arg("yarn:noop")
             .assert();
 
-        moon_utils::test::debug_sandbox(&fixture, &assert);
-
         assert!(predicate::str::contains("yarn install")
             .count(2)
             .eval(&get_assert_output(&assert)));
@@ -864,8 +858,6 @@ mod yarn {
             // Run other package so we can see both working
             .arg("yarn:noop")
             .assert();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert!(predicate::str::contains("yarn install")
             .count(2)

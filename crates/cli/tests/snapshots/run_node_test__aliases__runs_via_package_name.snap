@@ -4,7 +4,6 @@ assertion_line: 953
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
-▪▪▪▪ npm dedupe
 ▪▪▪▪ nodeNameScope:standard
 name-only
 

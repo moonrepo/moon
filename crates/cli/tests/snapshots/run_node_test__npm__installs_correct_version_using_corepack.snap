@@ -4,7 +4,6 @@ assertion_line: 542
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
-▪▪▪▪ npm dedupe
 ▪▪▪▪ npm:version
 7.24.0
 

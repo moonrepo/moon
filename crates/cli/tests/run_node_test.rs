@@ -293,6 +293,26 @@ mod install_deps {
             .join(".moon/cache/states/toolNode-16.0.0.json")
             .exists());
     }
+
+    #[test]
+    fn installs_deps_into_each_project_when_not_using_workspaces() {
+        let fixture = create_sandbox_with_git("node-non-workspaces");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("foo:noop")
+            .arg("bar:noop")
+            .arg("baz:noop")
+            .assert();
+
+        assert!(predicate::str::contains("npm install")
+            .count(3)
+            .eval(&get_assert_output(&assert)));
+
+        assert!(fixture.path().join("foo/package-lock.json").exists());
+        assert!(fixture.path().join("bar/package-lock.json").exists());
+        assert!(fixture.path().join("baz/package-lock.json").exists());
+    }
 }
 
 mod engines {

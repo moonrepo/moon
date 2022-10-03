@@ -324,10 +324,19 @@ impl Command {
             .map(|a| a.to_str().unwrap_or("<unknown>"))
             .collect::<Vec<_>>();
 
-        let line = if args.is_empty() {
-            self.bin.to_owned()
+        // When explicitly logging, only display the bin name instead of the full path
+        let bin = if self.log_command {
+            let parts = self.bin.split(std::path::MAIN_SEPARATOR);
+
+            parts.last().unwrap_or_default().to_owned()
         } else {
-            format!("{} {}", self.bin, join_args(args))
+            self.bin.to_owned()
+        };
+
+        let line = if args.is_empty() {
+            bin
+        } else {
+            format!("{} {}", bin, join_args(args))
         };
 
         (path::replace_home_dir(line), cmd.get_current_dir())

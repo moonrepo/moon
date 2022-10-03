@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 722
+assertion_line: 824
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ yarn install

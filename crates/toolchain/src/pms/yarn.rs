@@ -212,6 +212,7 @@ impl PackageManager<NodeTool> for YarnTool {
         &self,
         node: &NodeTool,
         working_dir: &Path,
+        log: bool,
     ) -> Result<(), ToolchainError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
@@ -232,6 +233,7 @@ impl PackageManager<NodeTool> for YarnTool {
             self.create_command()
                 .arg("dedupe")
                 .cwd(working_dir)
+                .log_running_command(log)
                 .exec_capture_output()
                 .await?;
         }
@@ -288,6 +290,7 @@ impl PackageManager<NodeTool> for YarnTool {
         &self,
         _node: &NodeTool,
         working_dir: &Path,
+        log: bool,
     ) -> Result<(), ToolchainError> {
         let mut args = vec!["install"];
 
@@ -307,7 +310,7 @@ impl PackageManager<NodeTool> for YarnTool {
 
         let mut cmd = self.create_command();
 
-        cmd.args(args).cwd(working_dir);
+        cmd.args(args).cwd(working_dir).log_running_command(log);
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;

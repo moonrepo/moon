@@ -180,20 +180,36 @@ pub async fn install_deps(
             return Ok(ActionStatus::Skipped);
         }
 
-        let install_command = match node.config.package_manager {
-            NodePackageManager::Npm => "npm install",
-            NodePackageManager::Pnpm => "pnpm install",
-            NodePackageManager::Yarn => "yarn install",
-        };
+        let should_log_command = workspace.config.runner.log_running_command;
 
-        println!("{}", label_checkpoint(install_command, Checkpoint::Pass));
+        // install
+        {
+            let install_command = match node.config.package_manager {
+                NodePackageManager::Npm => "npm install",
+                NodePackageManager::Pnpm => "pnpm install",
+                NodePackageManager::Yarn => "yarn install",
+            };
 
-        pm.install_dependencies(node, &working_dir).await?;
+            println!("{}", label_checkpoint(install_command, Checkpoint::Pass));
 
+            pm.install_dependencies(node, &working_dir, should_log_command)
+                .await?;
+        }
+
+        // dedupe
         if !is_ci() && node.config.dedupe_on_lockfile_change {
             debug!(target: LOG_TARGET, "Dedupeing dependencies");
 
-            pm.dedupe_dependencies(node, &working_dir).await?;
+            let dedupe_command = match node.config.package_manager {
+                NodePackageManager::Npm => "npm dedupe",
+                NodePackageManager::Pnpm => "pnpm prune",
+                NodePackageManager::Yarn => "yarn dedupe",
+            };
+
+            println!("{}", label_checkpoint(dedupe_command, Checkpoint::Pass));
+
+            pm.dedupe_dependencies(node, &working_dir, should_log_command)
+                .await?;
         }
 
         // Update the cache with the timestamp

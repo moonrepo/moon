@@ -1,7 +1,7 @@
 use crate::emitter::{Event, EventFlow, RunnerEmitter};
 use crate::ActionRunnerError;
 use console::Term;
-use moon_action::{Action, ActionContext, ActionStatus, Attempt};
+use moon_action::{format_running_command, Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
 use moon_config::PlatformType;
 use moon_config::TaskOutputStyle;
@@ -559,38 +559,23 @@ impl<'a> TargetRunner<'a> {
             return Ok(());
         }
 
-        let project = &self.project;
         let task = &self.task;
-
         let mut args = vec![];
-        args.extend(&task.args);
-        args.extend(passthrough_args);
+        args.extend(task.args.clone());
+        args.extend(passthrough_args.to_owned());
 
-        let command_line = if args.is_empty() {
-            task.command.clone()
-        } else {
-            format!("{} {}", task.command, process::join_args(args))
-        };
-
-        let working_dir =
-            if task.options.run_from_workspace_root || project.root == self.workspace.root {
-                String::from("workspace")
+        let message = format_running_command(
+            &task.command,
+            &args,
+            if task.options.run_from_workspace_root {
+                &self.workspace.root
             } else {
-                format!(
-                    ".{}{}",
-                    std::path::MAIN_SEPARATOR,
-                    project
-                        .root
-                        .strip_prefix(&self.workspace.root)
-                        .unwrap()
-                        .to_string_lossy(),
-                )
-            };
+                &self.project.root
+            },
+            &self.workspace.root,
+        );
 
-        let suffix = format!("(in {})", working_dir);
-        let message = format!("{} {}", command_line, color::muted(suffix));
-
-        self.stdout.write_line(&color::muted_light(message))?;
+        self.stdout.write_line(&message)?;
 
         Ok(())
     }

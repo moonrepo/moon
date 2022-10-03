@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 clap = { version = "3.2.22", features = ["derive"] }
 serde = { workspace = true }

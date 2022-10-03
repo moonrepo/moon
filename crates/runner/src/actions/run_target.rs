@@ -1,7 +1,7 @@
 use crate::emitter::{Event, EventFlow, RunnerEmitter};
 use crate::ActionRunnerError;
 use console::Term;
-use moon_action::{format_running_command, Action, ActionContext, ActionStatus, Attempt};
+use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
 use moon_config::PlatformType;
 use moon_config::TaskOutputStyle;
@@ -16,7 +16,7 @@ use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
 use moon_utils::{
     fs, is_ci, is_test_env, path,
-    process::{self, output_to_string, Command, Output},
+    process::{self, format_running_command, output_to_string, Command, Output},
     time,
 };
 use moon_workspace::Workspace;
@@ -561,18 +561,23 @@ impl<'a> TargetRunner<'a> {
 
         let task = &self.task;
         let mut args = vec![];
-        args.extend(task.args.clone());
-        args.extend(passthrough_args.to_owned());
+        args.extend(&task.args);
+        args.extend(passthrough_args);
+
+        let command_line = if args.is_empty() {
+            task.command.clone()
+        } else {
+            format!("{} {}", task.command, process::join_args(args))
+        };
 
         let message = format_running_command(
-            &task.command,
-            &args,
-            if task.options.run_from_workspace_root {
+            &command_line,
+            Some(if task.options.run_from_workspace_root {
                 &self.workspace.root
             } else {
                 &self.project.root
-            },
-            &self.workspace.root,
+            }),
+            Some(&self.workspace.root),
         );
 
         self.stdout.write_line(&message)?;

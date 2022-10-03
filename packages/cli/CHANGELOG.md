@@ -10,6 +10,9 @@
     package manager!
 - Generator
   - Template files can now be suffixed with `.tera` or `.twig` for syntax highlighting.
+- Runner
+  - The running command will now be displayed when installing dependencies (npm install, etc). This
+    can be toggled with the `runner.logRunningCommand` setting.
 
 #### ⚙️ Internal
 

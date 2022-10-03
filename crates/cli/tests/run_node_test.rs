@@ -554,6 +554,7 @@ mod npm {
     }
 
     #[test]
+    #[serial]
     fn installs_deps_in_non_workspace_project() {
         let fixture = create_sandbox_with_git("node-npm");
 
@@ -670,6 +671,7 @@ mod pnpm {
 
     // NOTE: pnpm does not support nested lockfiles.
     // #[test]
+    // #[serial]
     // fn installs_deps_in_non_workspace_project() {
     //     let fixture = create_sandbox_with_git("node-pnpm");
 
@@ -760,6 +762,7 @@ mod yarn1 {
     }
 
     #[test]
+    #[serial]
     fn installs_deps_in_non_workspace_project() {
         let fixture = create_sandbox_with_git("node-yarn1");
 
@@ -849,6 +852,7 @@ mod yarn {
     }
 
     #[test]
+    #[serial]
     fn installs_deps_in_non_workspace_project() {
         let fixture = create_sandbox_with_git("node-yarn");
 
@@ -1087,6 +1091,7 @@ mod workspace_overrides {
     use super::*;
 
     #[test]
+    #[serial]
     fn can_override_version() {
         let fixture = create_sandbox_with_git("node");
 

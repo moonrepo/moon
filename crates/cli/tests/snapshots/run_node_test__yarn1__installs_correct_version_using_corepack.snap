@@ -1,9 +1,10 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 618
+assertion_line: 750
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ yarn install
+▪▪▪▪ yarn dedupe
 ▪▪▪▪ yarn:version
 1.22.0
 

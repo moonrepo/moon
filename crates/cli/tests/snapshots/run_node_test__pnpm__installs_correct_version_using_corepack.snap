@@ -1,9 +1,10 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 584
+assertion_line: 636
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ pnpm install
+▪▪▪▪ pnpm prune
 ▪▪▪▪ pnpm:version
 7.5.0
 

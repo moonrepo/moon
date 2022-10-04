@@ -4,7 +4,7 @@ use crate::manager::ToolManager;
 use crate::tools::node::NodeTool;
 use moon_config::WorkspaceConfig;
 use moon_constants::CONFIG_DIRNAME;
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, path};
 use std::path::{Path, PathBuf};
@@ -60,7 +60,7 @@ impl Toolchain {
         let mut toolchain = Toolchain {
             dir,
             // Tools
-            node: ToolManager::new(SupportedPlatform::Node("latest".into())),
+            node: ToolManager::new(Runtime::Node("latest".into())),
         };
 
         let paths = toolchain.get_paths();

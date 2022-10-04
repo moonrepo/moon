@@ -1,6 +1,6 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::NodePackageManager;
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_error::map_io_to_fs_error;
 use moon_error::MoonError;
 use moon_lang::has_vendor_installed_dependencies;
@@ -100,11 +100,11 @@ pub async fn install_deps(
     _action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-    platform: &SupportedPlatform,
+    runtime: &Runtime,
     project_id: Option<&str>,
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
-    let node = workspace.toolchain.node.get_from_platform(platform)?;
+    let node = workspace.toolchain.node.get_for_runtime(runtime)?;
     let pm = node.get_package_manager();
     let lock_filename = pm.get_lock_filename();
     let manifest_filename = pm.get_manifest_filename();
@@ -139,7 +139,7 @@ pub async fn install_deps(
     let mut last_modified = 0;
     let mut cache = workspace
         .cache
-        .cache_deps_state(platform, project_id)
+        .cache_deps_state(runtime, project_id)
         .await?;
 
     if lock_filepath.exists() {
@@ -156,7 +156,7 @@ pub async fn install_deps(
         debug!(
             target: LOG_TARGET,
             "Installing {} dependencies in {}",
-            platform.label(),
+            runtime.label(),
             color::path(&working_dir)
         );
 

@@ -406,9 +406,9 @@ mod sync_project {
     fn sync_projects(graph: &mut DepGraph, projects: &ProjectGraph, ids: &[&str]) {
         for id in ids {
             let project = projects.load(id).unwrap();
-            let platform = graph.get_platform_from_project(&project, projects);
+            let runtime = graph.get_runtime_from_project(&project, projects);
 
-            graph.sync_project(&platform, &project, projects).unwrap();
+            graph.sync_project(&runtime, &project, projects).unwrap();
         }
     }
 

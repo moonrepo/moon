@@ -1,4 +1,3 @@
-use crate::actions;
 use crate::dep_graph::DepGraph;
 use crate::emitter::{Event, RunnerEmitter};
 use crate::errors::{ActionRunnerError, DepGraphError};
@@ -6,10 +5,8 @@ use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_cache::RunReport;
-use moon_contract::Runtime;
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
-use moon_platform_node::actions as node_actions;
 use moon_terminal::{replace_style_tokens, ExtendedTerm};
 use moon_utils::time;
 use moon_workspace::Workspace;
@@ -29,130 +26,7 @@ async fn run_action(
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<RunnerEmitter>>,
 ) -> Result<(), ActionRunnerError> {
-    let local_emitter = Arc::clone(&emitter);
-    let local_emitter = local_emitter.read().await;
-
-    let result = match node {
-        // Install dependencies in the workspace root
-        ActionNode::InstallDeps(runtime) => {
-            local_emitter
-                .emit(Event::DependenciesInstalling {
-                    project_id: None,
-                    runtime,
-                })
-                .await?;
-
-            let install_result = match runtime {
-                Runtime::Node(_) => {
-                    node_actions::install_deps(action, context, workspace, runtime, None)
-                        .await
-                        .map_err(ActionRunnerError::Workspace)
-                }
-                _ => Ok(ActionStatus::Passed),
-            };
-
-            local_emitter
-                .emit(Event::DependenciesInstalled {
-                    project_id: None,
-                    runtime,
-                })
-                .await?;
-
-            install_result
-        }
-
-        // Install dependencies in the project root
-        ActionNode::InstallProjectDeps(runtime, project_id) => {
-            local_emitter
-                .emit(Event::DependenciesInstalling {
-                    project_id: Some(project_id),
-                    runtime,
-                })
-                .await?;
-
-            let install_result = match runtime {
-                Runtime::Node(_) => node_actions::install_deps(
-                    action,
-                    context,
-                    workspace,
-                    runtime,
-                    Some(project_id),
-                )
-                .await
-                .map_err(ActionRunnerError::Workspace),
-                _ => Ok(ActionStatus::Passed),
-            };
-
-            local_emitter
-                .emit(Event::DependenciesInstalled {
-                    project_id: Some(project_id),
-                    runtime,
-                })
-                .await?;
-
-            install_result
-        }
-
-        // Run a task within a project
-        ActionNode::RunTarget(target_id) => {
-            local_emitter
-                .emit(Event::TargetRunning { target_id })
-                .await?;
-
-            let run_result =
-                actions::run_target(action, context, workspace, Arc::clone(&emitter), target_id)
-                    .await;
-
-            local_emitter.emit(Event::TargetRan { target_id }).await?;
-
-            run_result
-        }
-
-        // Setup and install the specific tool
-        ActionNode::SetupTool(runtime) => {
-            local_emitter
-                .emit(Event::ToolInstalling { runtime })
-                .await?;
-
-            let tool_result = actions::setup_toolchain(action, context, workspace, runtime)
-                .await
-                .map_err(ActionRunnerError::Workspace);
-
-            local_emitter.emit(Event::ToolInstalled { runtime }).await?;
-
-            tool_result
-        }
-
-        // Sync a project within the graph
-        ActionNode::SyncProject(runtime, project_id) => {
-            local_emitter
-                .emit(Event::ProjectSyncing {
-                    project_id,
-                    runtime,
-                })
-                .await?;
-
-            let sync_result = match runtime {
-                Runtime::Node(_) => {
-                    node_actions::sync_project(action, context, workspace, project_id)
-                        .await
-                        .map_err(ActionRunnerError::Workspace)
-                }
-                _ => Ok(ActionStatus::Passed),
-            };
-
-            local_emitter
-                .emit(Event::ProjectSynced {
-                    project_id,
-                    runtime,
-                })
-                .await?;
-
-            sync_result
-        }
-    };
-
-    match result {
+    match node.run(action, context, workspace, emitter).await {
         Ok(status) => {
             action.done(status);
         }

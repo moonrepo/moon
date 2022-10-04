@@ -23,6 +23,57 @@ pub fn label_moon() -> String {
     )
 }
 
+pub fn label_to_the_moon() -> String {
+    vec![
+        // style("❯").color256(238),
+        // style("❯").color256(242),
+        // style("❯").color256(246),
+        // style("❯").color256(250),
+        // style("❯").color256(255),
+        // style("❯").color256(229),
+        // style(" "),
+        // style("🆃").color256(55),
+        // style("🅾").color256(56),
+        // style(" "),
+        // style("🆃").color256(57),
+        // style("🅷").color256(57),
+        // style("🅴").color256(63),
+        // style(" "),
+        // style("🅼").color256(63),
+        // style("🅾").color256(69),
+        // style("🅾").color256(75),
+        // style("🅽").color256(81),
+        style("❯").color256(56),
+        style("❯").color256(57),
+        style("❯").color256(63),
+        style("❯").color256(69),
+        style("❯").color256(75),
+        style("❯").color256(81),
+        style(" 🌑"),
+    ]
+    .iter()
+    .map(|i| i.to_string())
+    .collect::<Vec<String>>()
+    .join("")
+
+    // ∙∙∙∙∙·▫▫ᵒᴼᵒ▫∙∙▫ᵒᴼᵒ▫∙∙▫ᵒᴼᵒ☼)===>
+    // format!(
+    //     // "{}{}{}🚀🌑",
+    //     "{}{}{}{}{}{} 🆃🅾 🆃🅷🅴 🅼🅾🅾🅽",
+    //     // "{} 🆃 🅾  {} 🆃 🅷 🅴  {} 🅼 🅾 🅾 🅽",
+    //     // "{}{}{} 🅃🄾 🅃🄷🄴 🄼🄾🄾🄽",
+    //     style("❯").color256(238),
+    //     style("❯").color256(242),
+    //     style("❯").color256(246),
+    //     style("❯").color256(250),
+    //     style("❯").color256(255),
+    //     style("❯").color256(229),
+    //     // style("··").color256(248),
+    //     // style("∙∙∙").color256(244),
+    //     // style("•••").color256(249)
+    // )
+}
+
 pub fn label_checkpoint<T: AsRef<str>>(label: T, checkpoint: Checkpoint) -> String {
     let colors = match checkpoint {
         Checkpoint::Fail => FAIL_COLORS,

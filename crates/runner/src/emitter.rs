@@ -1,7 +1,7 @@
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::ActionNode;
 use moon_action::Action;
-use moon_contract::{handle_flow, SupportedPlatform};
+use moon_contract::{handle_flow, Runtime};
 use moon_error::MoonError;
 use moon_project::Project;
 use moon_task::Task;
@@ -27,21 +27,21 @@ pub enum Event<'e> {
 
     // Installing deps
     DependenciesInstalling {
-        platform: &'e SupportedPlatform,
+        platform: &'e Runtime,
         project_id: Option<&'e str>,
     },
     DependenciesInstalled {
-        platform: &'e SupportedPlatform,
+        platform: &'e Runtime,
         project_id: Option<&'e str>,
     },
 
     // Syncing projects
     ProjectSyncing {
-        platform: &'e SupportedPlatform,
+        platform: &'e Runtime,
         project_id: &'e str,
     },
     ProjectSynced {
-        platform: &'e SupportedPlatform,
+        platform: &'e Runtime,
         project_id: &'e str,
     },
 
@@ -93,10 +93,10 @@ pub enum Event<'e> {
 
     // Installing a tool
     ToolInstalling {
-        platform: &'e SupportedPlatform,
+        platform: &'e Runtime,
     },
     ToolInstalled {
-        platform: &'e SupportedPlatform,
+        platform: &'e Runtime,
     },
 }
 

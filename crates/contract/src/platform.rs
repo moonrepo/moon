@@ -11,7 +11,7 @@ use std::path::Path;
 
 pub trait Platform: Send + Sync {
     /// Return true if the current platform instance is for the supported platform enum.
-    fn is(&self, platform: &SupportedPlatform) -> bool;
+    fn is(&self, platform: &Runtime) -> bool;
 
     /// Determine if the provided project is within the platform's package manager
     /// workspace (not to be confused with moon's workspace).
@@ -70,32 +70,33 @@ pub trait Platformable {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum SupportedPlatform {
+pub enum Runtime {
     Node(String),
     System,
 }
 
-impl SupportedPlatform {
+impl Runtime {
     pub fn label(&self) -> String {
         match self {
-            SupportedPlatform::Node(version) => format!("Node.js v{}", version),
-            SupportedPlatform::System => "system".into(),
+            Runtime::Node(version) => format!("Node.js v{}", version),
+            Runtime::System => "system".into(),
         }
     }
 
     pub fn version(&self) -> String {
         match self {
-            SupportedPlatform::Node(version) => version.into(),
-            SupportedPlatform::System => "latest".into(),
+            Runtime::Node(version) => version.into(),
+            Runtime::System => "latest".into(),
         }
     }
 }
 
-impl fmt::Display for SupportedPlatform {
+impl fmt::Display for Runtime {
+    // Primarily used in action graph node labels
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            SupportedPlatform::Node(_) => write!(f, "Node"),
-            SupportedPlatform::System => write!(f, "System"),
+            Runtime::Node(_) => write!(f, "Node"),
+            Runtime::System => write!(f, "System"),
         }
     }
 }

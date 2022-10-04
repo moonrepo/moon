@@ -1,4 +1,4 @@
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_project::ProjectID;
 use moon_task::TargetID;
 use std::hash::{Hash, Hasher};
@@ -6,37 +6,37 @@ use std::hash::{Hash, Hasher};
 #[derive(Clone, Debug, Eq)]
 pub enum ActionNode {
     /// Install tool dependencies in the workspace root.
-    InstallDeps(SupportedPlatform),
+    InstallDeps(Runtime),
 
     /// Install tool dependencies in the project root.
-    InstallProjectDeps(SupportedPlatform, ProjectID),
+    InstallProjectDeps(Runtime, ProjectID),
 
     /// Run a target (project task).
     RunTarget(TargetID),
 
     /// Setup a tool + version for the provided platform.
-    SetupTool(SupportedPlatform),
+    SetupTool(Runtime),
 
     /// Sync a project with language specific semantics.
-    SyncProject(SupportedPlatform, ProjectID),
+    SyncProject(Runtime, ProjectID),
 }
 
 impl ActionNode {
     pub fn label(&self) -> String {
         match self {
             ActionNode::InstallDeps(platform) => match platform {
-                SupportedPlatform::Node(version) => format!("Install{}Deps({})", platform, version),
+                Runtime::Node(version) => format!("Install{}Deps({})", platform, version),
                 _ => format!("Install{}Deps", platform),
             },
             ActionNode::InstallProjectDeps(platform, id) => match platform {
-                SupportedPlatform::Node(version) => {
+                Runtime::Node(version) => {
                     format!("Install{}DepsInProject({}, {})", platform, version, id)
                 }
                 _ => format!("Install{}DepsInProject({})", platform, id),
             },
             ActionNode::RunTarget(id) => format!("RunTarget({})", id),
             ActionNode::SetupTool(platform) => match platform {
-                SupportedPlatform::Node(version) => format!("Setup{}Tool({})", platform, version),
+                Runtime::Node(version) => format!("Setup{}Tool({})", platform, version),
                 _ => format!("Setup{}Tool", platform),
             },
             ActionNode::SyncProject(platform, id) => format!("Sync{}Project({})", platform, id),

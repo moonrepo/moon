@@ -6,7 +6,7 @@ use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_cache::RunReport;
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
 use moon_platform_node::actions as node_actions;
@@ -43,7 +43,7 @@ async fn run_action(
                 .await?;
 
             let install_result = match platform {
-                SupportedPlatform::Node(_) => {
+                Runtime::Node(_) => {
                     node_actions::install_deps(action, context, workspace, platform, None)
                         .await
                         .map_err(ActionRunnerError::Workspace)
@@ -71,7 +71,7 @@ async fn run_action(
                 .await?;
 
             let install_result = match platform {
-                SupportedPlatform::Node(_) => node_actions::install_deps(
+                Runtime::Node(_) => node_actions::install_deps(
                     action,
                     context,
                     workspace,
@@ -135,7 +135,7 @@ async fn run_action(
                 .await?;
 
             let sync_result = match platform {
-                SupportedPlatform::Node(_) => {
+                Runtime::Node(_) => {
                     node_actions::sync_project(action, context, workspace, project_id)
                         .await
                         .map_err(ActionRunnerError::Workspace)

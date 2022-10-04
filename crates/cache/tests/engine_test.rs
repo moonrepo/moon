@@ -303,7 +303,7 @@ mod cache_run_target_state {
 
 mod cache_tool_state {
     use super::*;
-    use moon_contract::SupportedPlatform;
+    use moon_contract::Runtime;
 
     #[tokio::test]
     #[serial]
@@ -311,7 +311,7 @@ mod cache_tool_state {
         let dir = assert_fs::TempDir::new().unwrap();
         let cache = CacheEngine::create(dir.path()).await.unwrap();
         let item = cache
-            .cache_tool_state(&SupportedPlatform::Node("1.2.3".into()))
+            .cache_tool_state(&Runtime::Node("1.2.3".into()))
             .await
             .unwrap();
 
@@ -332,7 +332,7 @@ mod cache_tool_state {
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
         let item = cache
-            .cache_tool_state(&SupportedPlatform::Node("1.2.3".into()))
+            .cache_tool_state(&Runtime::Node("1.2.3".into()))
             .await
             .unwrap();
 
@@ -356,7 +356,7 @@ mod cache_tool_state {
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
-        let platform = SupportedPlatform::Node("4.5.6".into());
+        let platform = Runtime::Node("4.5.6".into());
         let item = run_with_env("read", || cache.cache_tool_state(&platform))
             .await
             .unwrap();
@@ -381,7 +381,7 @@ mod cache_tool_state {
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
-        let item = run_with_env("off", || cache.cache_tool_state(&SupportedPlatform::System))
+        let item = run_with_env("off", || cache.cache_tool_state(&Runtime::System))
             .await
             .unwrap();
 
@@ -396,7 +396,7 @@ mod cache_tool_state {
         let dir = assert_fs::TempDir::new().unwrap();
         let cache = CacheEngine::create(dir.path()).await.unwrap();
         let mut item = cache
-            .cache_tool_state(&SupportedPlatform::Node("7.8.9".into()))
+            .cache_tool_state(&Runtime::Node("7.8.9".into()))
             .await
             .unwrap();
 

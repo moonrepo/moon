@@ -1,5 +1,5 @@
 use crate::helpers::{create_progress_bar, load_workspace};
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_runner::{ActionRunner, DepGraph};
 use moon_utils::is_test_env;
 
@@ -10,7 +10,7 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     let mut dep_graph = DepGraph::default();
 
     if let Some(node) = &workspace.config.node {
-        let platform = SupportedPlatform::Node(node.version.to_owned());
+        let platform = Runtime::Node(node.version.to_owned());
 
         dep_graph.setup_tool(&platform);
 

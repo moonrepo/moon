@@ -1,6 +1,6 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::NodeConfig;
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_logger::debug;
 use moon_toolchain::tools::node::NodeTool;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -14,9 +14,9 @@ pub async fn setup_toolchain(
     _action: &mut Action,
     _context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-    platform: &SupportedPlatform,
+    platform: &Runtime,
 ) -> Result<ActionStatus, WorkspaceError> {
-    if matches!(platform, SupportedPlatform::System) {
+    if matches!(platform, Runtime::System) {
         return Ok(ActionStatus::Skipped);
     }
 
@@ -39,7 +39,7 @@ pub async fn setup_toolchain(
 
     // Install and setup the specific tool + version in the toolchain!
     let installed = match platform {
-        SupportedPlatform::Node(version) => {
+        Runtime::Node(version) => {
             let node = &mut workspace.toolchain.node;
 
             // The workspace version is pre-registered when the toolchain

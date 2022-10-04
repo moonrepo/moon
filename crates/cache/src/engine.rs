@@ -4,7 +4,7 @@ use crate::runfiles::CacheRunfile;
 use crate::DependenciesState;
 use moon_archive::{tar, untar};
 use moon_constants::CONFIG_DIRNAME;
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
 use moon_utils::{fs, time};
@@ -63,7 +63,7 @@ impl CacheEngine {
 
     pub async fn cache_deps_state(
         &self,
-        platform: &SupportedPlatform,
+        platform: &Runtime,
         project_id: Option<&str>,
     ) -> Result<CacheItem<DependenciesState>, MoonError> {
         let name = format!("deps{}.json", platform);
@@ -106,7 +106,7 @@ impl CacheEngine {
 
     pub async fn cache_tool_state(
         &self,
-        platform: &SupportedPlatform,
+        platform: &Runtime,
     ) -> Result<CacheItem<ToolState>, MoonError> {
         CacheItem::load(
             self.states_dir

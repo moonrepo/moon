@@ -1,7 +1,7 @@
 use crate::errors::DepGraphError;
 use crate::node::ActionNode;
 use moon_config::{default_node_version, ProjectLanguage, ProjectWorkspaceNodeConfig};
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_logger::{color, debug, map_list, trace};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -64,7 +64,7 @@ impl DepGraph {
         &self,
         project: &Project,
         project_graph: &ProjectGraph,
-    ) -> SupportedPlatform {
+    ) -> Runtime {
         match &project.config.language {
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
                 let version = match &project.config.workspace.node {
@@ -78,16 +78,13 @@ impl DepGraph {
                     },
                 };
 
-                SupportedPlatform::Node(version)
+                Runtime::Node(version)
             }
-            _ => SupportedPlatform::System,
+            _ => Runtime::System,
         }
     }
 
-    pub fn install_deps(
-        &mut self,
-        platform: &SupportedPlatform,
-    ) -> Result<NodeIndex, DepGraphError> {
+    pub fn install_deps(&mut self, platform: &Runtime) -> Result<NodeIndex, DepGraphError> {
         let node = ActionNode::InstallDeps(platform.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -111,7 +108,7 @@ impl DepGraph {
 
     pub fn install_project_deps(
         &mut self,
-        platform: &SupportedPlatform,
+        platform: &Runtime,
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
@@ -261,7 +258,7 @@ impl DepGraph {
         Ok((qualified_targets, inserted_count))
     }
 
-    pub fn setup_tool(&mut self, platform: &SupportedPlatform) -> NodeIndex {
+    pub fn setup_tool(&mut self, platform: &Runtime) -> NodeIndex {
         let node = ActionNode::SetupTool(platform.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -345,7 +342,7 @@ impl DepGraph {
 
     pub fn sync_project(
         &mut self,
-        platform: &SupportedPlatform,
+        platform: &Runtime,
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {

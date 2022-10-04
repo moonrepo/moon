@@ -1,15 +1,15 @@
 use crate::{Tool, ToolchainError};
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct ToolManager<T: Tool> {
     cache: HashMap<String, T>,
-    platform: SupportedPlatform, // Default workspace version
+    platform: Runtime, // Default workspace version
 }
 
 impl<T: Tool> ToolManager<T> {
-    pub fn new(platform: SupportedPlatform) -> Self {
+    pub fn new(platform: Runtime) -> Self {
         ToolManager {
             cache: HashMap::new(),
             platform,
@@ -20,9 +20,9 @@ impl<T: Tool> ToolManager<T> {
         self.get_from_platform(&self.platform)
     }
 
-    pub fn get_from_platform(&self, platform: &SupportedPlatform) -> Result<&T, ToolchainError> {
+    pub fn get_from_platform(&self, platform: &Runtime) -> Result<&T, ToolchainError> {
         match &platform {
-            SupportedPlatform::Node(version) => self.get_version(version),
+            Runtime::Node(version) => self.get_version(version),
             _ => panic!("Unsupported toolchain platform."),
         }
     }
@@ -48,7 +48,7 @@ impl<T: Tool> ToolManager<T> {
         if self.cache.is_empty() && root {
             #[allow(clippy::single_match)]
             match &mut self.platform {
-                SupportedPlatform::Node(ref mut version) => {
+                Runtime::Node(ref mut version) => {
                     *version = tool.get_version();
                 }
                 _ => {

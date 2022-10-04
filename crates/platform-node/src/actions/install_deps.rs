@@ -1,6 +1,6 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::NodePackageManager;
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use moon_error::map_io_to_fs_error;
 use moon_error::MoonError;
 use moon_lang::has_vendor_installed_dependencies;
@@ -100,7 +100,7 @@ pub async fn install_deps(
     _action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-    platform: &SupportedPlatform,
+    platform: &Runtime,
     project_id: Option<&str>,
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;

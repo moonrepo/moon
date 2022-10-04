@@ -14,20 +14,20 @@ pub async fn setup_toolchain(
     _action: &mut Action,
     _context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-    platform: &Runtime,
+    runtime: &Runtime,
 ) -> Result<ActionStatus, WorkspaceError> {
-    if matches!(platform, Runtime::System) {
+    if matches!(runtime, Runtime::System) {
         return Ok(ActionStatus::Skipped);
     }
 
     debug!(
         target: LOG_TARGET,
         "Setting up {} toolchain",
-        platform.label()
+        runtime.label()
     );
 
     let mut workspace = workspace.write().await;
-    let mut cache = workspace.cache.cache_tool_state(platform).await?;
+    let mut cache = workspace.cache.cache_tool_state(runtime).await?;
     let toolchain_paths = workspace.toolchain.get_paths();
 
     // Only check the versions every 12 hours, as checking every
@@ -38,7 +38,7 @@ pub async fn setup_toolchain(
         || (cache.item.last_version_check_time + HOUR_MILLIS * 12) <= now;
 
     // Install and setup the specific tool + version in the toolchain!
-    let installed = match platform {
+    let installed = match runtime {
         Runtime::Node(version) => {
             let node = &mut workspace.toolchain.node;
 

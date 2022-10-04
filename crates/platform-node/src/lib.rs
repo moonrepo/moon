@@ -53,8 +53,8 @@ pub struct NodePlatform {
 }
 
 impl Platform for NodePlatform {
-    fn is(&self, platform: &Runtime) -> bool {
-        matches!(platform, Runtime::Node(_))
+    fn is(&self, runtime: &Runtime) -> bool {
+        matches!(runtime, Runtime::Node(_))
     }
 
     fn is_project_in_package_manager_workspace(

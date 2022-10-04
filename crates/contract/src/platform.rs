@@ -10,8 +10,8 @@ use std::fmt;
 use std::path::Path;
 
 pub trait Platform: Send + Sync {
-    /// Return true if the current platform instance is for the supported platform enum.
-    fn is(&self, platform: &Runtime) -> bool;
+    /// Return true if the current platform is for the provided runtime.
+    fn is(&self, runtime: &Runtime) -> bool;
 
     /// Determine if the provided project is within the platform's package manager
     /// workspace (not to be confused with moon's workspace).

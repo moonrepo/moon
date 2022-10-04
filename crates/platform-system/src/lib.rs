@@ -8,7 +8,7 @@ use moon_contract::{Platform, Runtime};
 pub struct SystemPlatform;
 
 impl Platform for SystemPlatform {
-    fn is(&self, platform: &Runtime) -> bool {
-        matches!(platform, Runtime::System)
+    fn is(&self, runtime: &Runtime) -> bool {
+        matches!(runtime, Runtime::System)
     }
 }

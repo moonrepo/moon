@@ -34,17 +34,17 @@ async fn run_action(
 
     let result = match node {
         // Install dependencies in the workspace root
-        ActionNode::InstallDeps(platform) => {
+        ActionNode::InstallDeps(runtime) => {
             local_emitter
                 .emit(Event::DependenciesInstalling {
-                    platform,
                     project_id: None,
+                    runtime,
                 })
                 .await?;
 
-            let install_result = match platform {
+            let install_result = match runtime {
                 Runtime::Node(_) => {
-                    node_actions::install_deps(action, context, workspace, platform, None)
+                    node_actions::install_deps(action, context, workspace, runtime, None)
                         .await
                         .map_err(ActionRunnerError::Workspace)
                 }
@@ -53,8 +53,8 @@ async fn run_action(
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
-                    platform,
                     project_id: None,
+                    runtime,
                 })
                 .await?;
 
@@ -62,20 +62,20 @@ async fn run_action(
         }
 
         // Install dependencies in the project root
-        ActionNode::InstallProjectDeps(platform, project_id) => {
+        ActionNode::InstallProjectDeps(runtime, project_id) => {
             local_emitter
                 .emit(Event::DependenciesInstalling {
-                    platform,
                     project_id: Some(project_id),
+                    runtime,
                 })
                 .await?;
 
-            let install_result = match platform {
+            let install_result = match runtime {
                 Runtime::Node(_) => node_actions::install_deps(
                     action,
                     context,
                     workspace,
-                    platform,
+                    runtime,
                     Some(project_id),
                 )
                 .await
@@ -85,8 +85,8 @@ async fn run_action(
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
-                    platform,
                     project_id: Some(project_id),
+                    runtime,
                 })
                 .await?;
 
@@ -109,32 +109,30 @@ async fn run_action(
         }
 
         // Setup and install the specific tool
-        ActionNode::SetupTool(platform) => {
+        ActionNode::SetupTool(runtime) => {
             local_emitter
-                .emit(Event::ToolInstalling { platform })
+                .emit(Event::ToolInstalling { runtime })
                 .await?;
 
-            let tool_result = actions::setup_toolchain(action, context, workspace, platform)
+            let tool_result = actions::setup_toolchain(action, context, workspace, runtime)
                 .await
                 .map_err(ActionRunnerError::Workspace);
 
-            local_emitter
-                .emit(Event::ToolInstalled { platform })
-                .await?;
+            local_emitter.emit(Event::ToolInstalled { runtime }).await?;
 
             tool_result
         }
 
         // Sync a project within the graph
-        ActionNode::SyncProject(platform, project_id) => {
+        ActionNode::SyncProject(runtime, project_id) => {
             local_emitter
                 .emit(Event::ProjectSyncing {
-                    platform,
                     project_id,
+                    runtime,
                 })
                 .await?;
 
-            let sync_result = match platform {
+            let sync_result = match runtime {
                 Runtime::Node(_) => {
                     node_actions::sync_project(action, context, workspace, project_id)
                         .await
@@ -145,8 +143,8 @@ async fn run_action(
 
             local_emitter
                 .emit(Event::ProjectSynced {
-                    platform,
                     project_id,
+                    runtime,
                 })
                 .await?;
 

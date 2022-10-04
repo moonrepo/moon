@@ -27,22 +27,22 @@ pub enum Event<'e> {
 
     // Installing deps
     DependenciesInstalling {
-        platform: &'e Runtime,
         project_id: Option<&'e str>,
+        runtime: &'e Runtime,
     },
     DependenciesInstalled {
-        platform: &'e Runtime,
         project_id: Option<&'e str>,
+        runtime: &'e Runtime,
     },
 
     // Syncing projects
     ProjectSyncing {
-        platform: &'e Runtime,
         project_id: &'e str,
+        runtime: &'e Runtime,
     },
     ProjectSynced {
-        platform: &'e Runtime,
         project_id: &'e str,
+        runtime: &'e Runtime,
     },
 
     // Runner
@@ -93,10 +93,10 @@ pub enum Event<'e> {
 
     // Installing a tool
     ToolInstalling {
-        platform: &'e Runtime,
+        runtime: &'e Runtime,
     },
     ToolInstalled {
-        platform: &'e Runtime,
+        runtime: &'e Runtime,
     },
 }
 

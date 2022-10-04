@@ -60,7 +60,7 @@ impl DepGraph {
     }
 
     #[track_caller]
-    pub fn get_platform_from_project(
+    pub fn get_runtime_from_project(
         &self,
         project: &Project,
         project_graph: &ProjectGraph,
@@ -84,8 +84,8 @@ impl DepGraph {
         }
     }
 
-    pub fn install_deps(&mut self, platform: &Runtime) -> Result<NodeIndex, DepGraphError> {
-        let node = ActionNode::InstallDeps(platform.clone());
+    pub fn install_deps(&mut self, runtime: &Runtime) -> Result<NodeIndex, DepGraphError> {
+        let node = ActionNode::InstallDeps(runtime.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(*index);
@@ -94,10 +94,10 @@ impl DepGraph {
         trace!(
             target: LOG_TARGET,
             "Installing {} dependencies",
-            platform.label()
+            runtime.label()
         );
 
-        let setup_toolchain_index = self.setup_tool(platform);
+        let setup_toolchain_index = self.setup_tool(runtime);
         let install_deps_index = self.get_or_insert_node(node);
 
         self.graph
@@ -108,14 +108,14 @@ impl DepGraph {
 
     pub fn install_project_deps(
         &mut self,
-        platform: &Runtime,
+        runtime: &Runtime,
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
-        let mut node = ActionNode::InstallDeps(platform.clone());
+        let mut node = ActionNode::InstallDeps(runtime.clone());
 
         for platform_service in &project_graph.platforms {
-            if platform_service.is(platform) {
+            if platform_service.is(runtime) {
                 // If project is not in the package manager workspace,
                 // update the node to install deps into the project directly!
                 if !platform_service.is_project_in_package_manager_workspace(
@@ -124,7 +124,7 @@ impl DepGraph {
                     &project_graph.workspace_root,
                     &project_graph.workspace_config,
                 )? {
-                    node = ActionNode::InstallProjectDeps(platform.clone(), project.id.clone())
+                    node = ActionNode::InstallProjectDeps(runtime.clone(), project.id.clone())
                 }
 
                 break;
@@ -138,10 +138,10 @@ impl DepGraph {
         trace!(
             target: LOG_TARGET,
             "Installing {} dependencies",
-            platform.label()
+            runtime.label()
         );
 
-        let setup_toolchain_index = self.setup_tool(platform);
+        let setup_toolchain_index = self.setup_tool(runtime);
         let install_deps_index = self.get_or_insert_node(node);
 
         self.graph
@@ -258,14 +258,14 @@ impl DepGraph {
         Ok((qualified_targets, inserted_count))
     }
 
-    pub fn setup_tool(&mut self, platform: &Runtime) -> NodeIndex {
-        let node = ActionNode::SetupTool(platform.clone());
+    pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {
+        let node = ActionNode::SetupTool(runtime.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return *index;
         }
 
-        trace!(target: LOG_TARGET, "Setting up {} tool", platform.label());
+        trace!(target: LOG_TARGET, "Setting up {} tool", runtime.label());
 
         self.get_or_insert_node(node)
     }
@@ -342,11 +342,11 @@ impl DepGraph {
 
     pub fn sync_project(
         &mut self,
-        platform: &Runtime,
+        runtime: &Runtime,
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
-        let node = ActionNode::SyncProject(platform.clone(), project.id.clone());
+        let node = ActionNode::SyncProject(runtime.clone(), project.id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(*index);
@@ -359,7 +359,7 @@ impl DepGraph {
         );
 
         // Sync can be run in parallel while deps are installing
-        let setup_toolchain_index = self.setup_tool(platform);
+        let setup_toolchain_index = self.setup_tool(runtime);
         let sync_project_index = self.get_or_insert_node(node);
 
         self.graph
@@ -368,7 +368,7 @@ impl DepGraph {
         // But we need to wait on all dependent nodes
         for dep_id in project_graph.get_dependencies_of(project)? {
             let dep_project = project_graph.load(&dep_id)?;
-            let dep_platform = self.get_platform_from_project(&dep_project, project_graph);
+            let dep_platform = self.get_runtime_from_project(&dep_project, project_graph);
 
             let sync_dep_project_index =
                 self.sync_project(&dep_platform, &dep_project, project_graph)?;
@@ -457,7 +457,7 @@ impl DepGraph {
         );
 
         // We should install deps & sync projects *before* running targets
-        let platform = self.get_platform_from_project(project, project_graph);
+        let platform = self.get_runtime_from_project(project, project_graph);
         let install_deps_index = self.install_project_deps(&platform, project, project_graph)?;
         let sync_project_index = self.sync_project(&platform, project, project_graph)?;
         let run_target_index = self.get_or_insert_node(node);

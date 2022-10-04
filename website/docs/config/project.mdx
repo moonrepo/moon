@@ -3,6 +3,7 @@ title: moon.yml
 toc_max_heading_level: 6
 ---
 
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
@@ -13,7 +14,7 @@ project-level. When used, this file must exist in a project's root, as configure
 
 ## `dependsOn`<VersionLabel updated version="0.9" />
 
-> `(ProjectID | DependencyConfig)[]`
+<HeadingApiLink to="/api/types/interface/ProjectConfig#dependsOn" />
 
 Explicitly defines _other_ projects that _this_ project depends on, primarily when generating the
 project and task graphs. The most common use case for this is building those projects _before_
@@ -48,7 +49,7 @@ dependsOn:
 
 ## `language`<VersionLabel version="0.3" />
 
-> `ProjectLanguage`
+<HeadingApiLink to="/api/types/interface/ProjectConfig#language" />
 
 The primary programming language the project is written in. Supports the following values:
 
@@ -71,7 +72,7 @@ language: 'javascript'
 
 ## `project`
 
-> `ProjectMetadataConfig`
+<HeadingApiLink to="/api/types/interface/ProjectConfig#project" />
 
 The `project` setting defines metadata about the project itself. Although this setting is optional,
 when defined, all fields within it _must_ be defined as well.
@@ -91,41 +92,41 @@ organize all projects. Feel free to build your own tooling around these settings
 
 ### `channel`
 
-> `string`
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#channel" />
 
 The Slack, Discord, Teams, IRC, etc channel name (with leading #) in which to discuss the project.
 
 ### `description`
 
-> `string`
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#description" />
 
 A description of what the project does and aims to achieve. Be as descriptive as possible, as this
 is the kind of information search engines would index on.
 
 ### `maintainers`
 
-> `string[]`
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#maintainers" />
 
 A list of people/developers that maintain the project, review code changes, and can provide support.
 Can be a name, email, LDAP name, GitHub username, etc, the choice is yours.
 
 ### `name`
 
-> `string`
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#name" />
 
 A human readable name of the project. This is _different_ from the unique project name configured in
 [`projects`](./workspace#projects).
 
 ### `owner`
 
-> `string`
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#owner" />
 
 The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
 suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
 
 ## `type`
 
-> `ProjectType`
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#type" />
 
 The type of project. Supports the following values:
 
@@ -142,7 +143,7 @@ type: 'application'
 
 ## `fileGroups`
 
-> `Record<string, string[]>`
+<HeadingApiLink to="/api/types/interface/ProjectConfig#fileGroups" />
 
 Defines [file groups](../concepts/file-group) to be used by local tasks. By default, this setting
 _is not required_ for the following reasons:
@@ -179,7 +180,7 @@ fileGroups:
 
 ## `tasks`
 
-> `Record<string, TaskConfig>`
+<HeadingApiLink to="/api/types/interface/ProjectConfig#tasks" />
 
 Tasks are actions that are ran within the context of a [project](../concepts/project), and commonly
 wrap an npm binary or system command. This setting requires a map, where the key is a unique name
@@ -199,7 +200,7 @@ tasks:
 
 ### `command`<RequiredLabel />
 
-> `string | string[]`
+<HeadingApiLink to="/api/types/interface/TaskConfig#command" />
 
 The `command` field is the command line to run for the task, including the command name (must be
 first) and any optional [arguments](#args). This field is required when _not_ inheriting a global
@@ -243,7 +244,7 @@ For interoperability reasons, the following command names have special handling.
 
 ### `args`
 
-> `string | string[]`
+<HeadingApiLink to="/api/types/interface/TaskConfig#args" />
 
 The `args` field is a collection of _additional_ arguments to pass to the command line when
 executing the task. This field exists purely to provide arguments for
@@ -284,7 +285,7 @@ tasks:
 
 ### `deps`
 
-> `Target[]`
+<HeadingApiLink to="/api/types/interface/TaskConfig#deps" />
 
 The `deps` field is a list of other tasks (known as [targets](../concepts/target)), either within
 this project or found in another project, that will be executed _before_ this task. It achieves this
@@ -301,7 +302,7 @@ tasks:
 
 ### `env`
 
-> `Record<string, string>`
+<HeadingApiLink to="/api/types/interface/TaskConfig#env" />
 
 The `env` field is map of strings that are passed as environment variables when running the command.
 Variables defined here will take precedence over those loaded with [`envFile`](#envfile).
@@ -316,7 +317,7 @@ tasks:
 
 ### `inputs`<VersionLabel updated version="0.9" />
 
-> `string[]`
+<HeadingApiLink to="/api/types/interface/TaskConfig#inputs" />
 
 The `inputs` field is a list of sources that calculate whether to execute this task based on the
 environment and files that have been touched since the last time the task has been ran. If _not_
@@ -352,7 +353,7 @@ always run and bypass the cache.
 
 ### `local`<VersionLabel version="0.11" />
 
-> `boolean`
+<HeadingApiLink to="/api/types/interface/TaskConfig#local" />
 
 Marks the task as local only. This should primarily be enabled for long-running or never-ending
 tasks, like development servers and watch mode. Defaults to `true` if the task name is "dev",
@@ -373,7 +374,7 @@ tasks:
 
 ### `outputs`
 
-> `string[]`
+<HeadingApiLink to="/api/types/interface/TaskConfig#outputs" />
 
 The `outputs` field is a list of files and folders that are _created_ as a result of executing this
 task, excluding internal cache files that are created from the underlying command (for example,
@@ -395,7 +396,7 @@ tasks:
 
 ### `options`
 
-> `TaskOptionsConfig`
+<HeadingApiLink to="/api/types/interface/TaskConfig#options" />
 
 The `options` field is an object of configurable options that can be used to modify the task and its
 execution. The following fields can be provided, with merge related fields supporting all
@@ -412,7 +413,7 @@ tasks:
 
 #### `cache`<VersionLabel version="0.9" />
 
-> `boolean`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cache" />
 
 Whether to cache the task's execution result using our [smart hashing](../concepts/cache#hashing)
 system. If disabled, _will not_ create a cache hash, and _will not_ persist a task's
@@ -431,7 +432,7 @@ tasks:
 
 #### `envFile`<VersionLabel version="0.11" />
 
-> `boolean | string`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#envFile" />
 
 A boolean or path to a project relative file (also know as dotenv file) that defines a collection of
 [environment variables](#env) for the current task. Variables will be loaded on project creation,
@@ -450,42 +451,42 @@ tasks:
 
 #### `mergeArgs`
 
-> `TaskMergeStrategy`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeArgs" />
 
 The [strategy](../concepts/task#merge-strategies) to use when merging the [`args`](#args) list with
 an inherited task. Defaults to "append".
 
 #### `mergeDeps`
 
-> `TaskMergeStrategy`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeDeps" />
 
 The [strategy](../concepts/task#merge-strategies) to use when merging the [`deps`](#deps) list with
 an inherited task. Defaults to "append".
 
 #### `mergeEnv`
 
-> `TaskMergeStrategy`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeEnv" />
 
 The [strategy](../concepts/task#merge-strategies) to use when merging the [`env`](#env) map with an
 inherited task. Defaults to "append".
 
 #### `mergeInputs`
 
-> `TaskMergeStrategy`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeInputs" />
 
 The [strategy](../concepts/task#merge-strategies) to use when merging the [`inputs`](#inputs) list
 with an inherited task. Defaults to "append".
 
 #### `mergeOutputs`
 
-> `TaskMergeStrategy`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeOutputs" />
 
 The [strategy](../concepts/task#merge-strategies) to use when merging the [`outputs`](#outputs) list
 with an inherited task. Defaults to "append".
 
 #### `outputStyle`<VersionLabel version="0.10" />
 
-> `TaskOutputStyle`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#outputStyle" />
 
 Controls how stdout/stderr is displayed when the task is ran as a _transitive target_. By default,
 this setting is not defined and defers to the action runner, but can be overridden with one of the
@@ -510,7 +511,7 @@ tasks:
 
 #### `retryCount`
 
-> `number`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#retryCount" />
 
 The number of attempts the task will retry execution before returning a failure. This is especially
 useful for flaky tasks. Defaults to `0`.
@@ -525,7 +526,7 @@ tasks:
 
 #### `runDepsInParallel`<VersionLabel version="0.10" />
 
-> boolean
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runDepsInParallel" />
 
 Whether to run the task's [`deps`](#deps) in parallel or serial (in order). Defaults to `true`.
 
@@ -542,7 +543,7 @@ tasks:
 
 #### `runInCI`
 
-> `boolean`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runInCI" />
 
 Whether to run the task automatically in a CI (continuous integration) environment when affected by
 touched files, typically through the [`moon ci`](../commands/ci) command. Defaults to `true` unless
@@ -559,7 +560,7 @@ tasks:
 
 #### `runFromWorkspaceRoot`
 
-> `boolean`
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runFromWorkspaceRoot" />
 
 Whether to use the workspace root as the working directory when executing a task. Defaults to
 `false` and runs from the task's project root.
@@ -573,6 +574,8 @@ tasks:
 ```
 
 ### `type`
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#type" />
 
 The `type` field defines the type of command to run, where to locate its executable, and which tool
 to execute it with. By default will set to a value based on the project's [`language`](#language).
@@ -597,13 +600,15 @@ Dictates how a project interacts with settings defined at the workspace-level.
 
 ## `workspace`
 
+<HeadingApiLink to="/api/types/interface/ProjectConfig#workspace" />
+
 ### `inheritedTasks`
+
+<HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#inheritedTasks" />
 
 Provides a layer of control when inheriting tasks from [`.moon/project.yml`](./global-project).
 
 #### `exclude`
-
-> `string[]`
 
 The optional `exclude` setting permits a project to exclude specific tasks from being inherited. It
 accepts a list of strings, where each string is the name of a global task to exclude.
@@ -618,8 +623,6 @@ workspace:
 > Exclusion is applied after inclusion and before renaming.
 
 #### `include`
-
-> `string[]`
 
 The optional `include` setting permits a project to _only_ include specific inherited tasks (works
 like an allow/white list). It accepts a list of strings, where each string is the name of a global
@@ -643,8 +646,6 @@ workspace:
 
 #### `rename`
 
-> `Record<string, string>`
-
 The optional `rename` setting permits a project to rename the inherited task within the current
 project. It accepts a map of strings, where the key is the original name (found in the global
 project config), and the value is the new name to use.
@@ -664,14 +665,12 @@ workspace:
 
 ### `node`<VersionLabel version="0.16" />
 
-> `ProjectWorkspaceNodeConfig`
+<HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#node" />
 
 Configures Node.js for this project and overrides the workspace-level [`node`](./workspace#node)
 setting. Currently, only the Node.js version can be overridden per-project, not the package manager.
 
 #### `version`
-
-> `string`
 
 Defines the explicit Node.js version to use when _running tasks_ for this project.
 
@@ -683,7 +682,7 @@ workspace:
 
 ### `typescript`<VersionLabel version="0.12" />
 
-> `boolean`
+<HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#typescript" />
 
 Enables or disables [TypeScript support](./workspace#typescript) for this project. Currently
 controls project reference syncing and `tsconfig.json` creation. Defaults to `true`.

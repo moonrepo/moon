@@ -1,31 +1,29 @@
 // template.yml
 
-export interface TemplateBooleanVariableConfig {
-	default: boolean;
+export interface TemplateVariableConfig<T> {
+	default: T;
 	prompt: string | null;
 	required: boolean | null;
+}
+
+export interface TemplateBooleanVariableConfig
+	extends Omit<TemplateVariableConfig<boolean>, 'required'> {
 	type: 'boolean';
 }
 
-export interface TemplateEnumVariableConfig {
-	default: string;
+export interface TemplateEnumVariableConfig
+	extends Omit<TemplateVariableConfig<string>, 'prompt' | 'required'> {
 	multiple: boolean | null;
 	prompt: string;
 	type: 'enum';
 	values: string[];
 }
 
-export interface TemplateNumberVariableConfig {
-	default: number;
-	prompt: string | null;
-	required: boolean | null;
+export interface TemplateNumberVariableConfig extends TemplateVariableConfig<number> {
 	type: 'number';
 }
 
-export interface TemplateStringVariableConfig {
-	default: string;
-	prompt: string | null;
-	required: boolean | null;
+export interface TemplateStringVariableConfig extends TemplateVariableConfig<string> {
 	type: 'string';
 }
 
@@ -37,7 +35,7 @@ export type TemplateVariable =
 
 export interface TemplateConfig {
 	description: string;
-	tite: string;
+	title: string;
 	variables: Record<string, TemplateVariable>;
 }
 

@@ -43,13 +43,22 @@ pub fn label_to_the_moon() -> String {
         // style("🅾").color256(69),
         // style("🅾").color256(75),
         // style("🅽").color256(81),
-        style("❯").color256(56),
-        style("❯").color256(57),
-        style("❯").color256(63),
-        style("❯").color256(69),
-        style("❯").color256(75),
-        style("❯").color256(81),
-        style(" 🌑"),
+        //
+        // style("❯").color256(56),
+        // style("❯").color256(57),
+        // style("❯").color256(63),
+        // style("❯").color256(69),
+        // style("❯").color256(75),
+        // style("❯").color256(81),
+        // style(" 🌑"),
+        //
+        style("❯").color256(55),
+        style("❯❯").color256(56),
+        style("❯ t").color256(57),
+        style("o t").color256(63),
+        style("he ").color256(69),
+        style("mo").color256(75),
+        style("on").color256(81),
     ]
     .iter()
     .map(|i| i.to_string())

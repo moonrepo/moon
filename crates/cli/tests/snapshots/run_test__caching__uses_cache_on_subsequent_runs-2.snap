@@ -7,7 +7,7 @@ expression: get_assert_output(&assert)
 stdout
 
 Tasks: 1 completed (1 cached)
- Time: 100ms ❯❯❯❯❯❯ 🌑
+ Time: 100ms ❯❯❯❯ to the moon
 
 stderr
 

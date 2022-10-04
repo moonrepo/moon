@@ -368,10 +368,10 @@ impl DepGraph {
         // But we need to wait on all dependent nodes
         for dep_id in project_graph.get_dependencies_of(project)? {
             let dep_project = project_graph.load(&dep_id)?;
-            let dep_platform = self.get_runtime_from_project(&dep_project, project_graph);
+            let dep_runtime = self.get_runtime_from_project(&dep_project, project_graph);
 
             let sync_dep_project_index =
-                self.sync_project(&dep_platform, &dep_project, project_graph)?;
+                self.sync_project(&dep_runtime, &dep_project, project_graph)?;
 
             self.graph
                 .add_edge(sync_project_index, sync_dep_project_index, ());
@@ -457,9 +457,9 @@ impl DepGraph {
         );
 
         // We should install deps & sync projects *before* running targets
-        let platform = self.get_runtime_from_project(project, project_graph);
-        let install_deps_index = self.install_project_deps(&platform, project, project_graph)?;
-        let sync_project_index = self.sync_project(&platform, project, project_graph)?;
+        let runtime = self.get_runtime_from_project(project, project_graph);
+        let install_deps_index = self.install_project_deps(&runtime, project, project_graph)?;
+        let sync_project_index = self.sync_project(&runtime, project, project_graph)?;
         let run_target_index = self.get_or_insert_node(node);
 
         self.graph

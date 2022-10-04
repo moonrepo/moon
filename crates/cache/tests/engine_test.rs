@@ -356,8 +356,8 @@ mod cache_tool_state {
             .unwrap();
 
         let cache = CacheEngine::create(dir.path()).await.unwrap();
-        let platform = Runtime::Node("4.5.6".into());
-        let item = run_with_env("read", || cache.cache_tool_state(&platform))
+        let runtime = Runtime::Node("4.5.6".into());
+        let item = run_with_env("read", || cache.cache_tool_state(&runtime))
             .await
             .unwrap();
 

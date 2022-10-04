@@ -10,12 +10,12 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     let mut dep_graph = DepGraph::default();
 
     if let Some(node) = &workspace.config.node {
-        let platform = Runtime::Node(node.version.to_owned());
+        let runtime = Runtime::Node(node.version.to_owned());
 
-        dep_graph.setup_tool(&platform);
+        dep_graph.setup_tool(&runtime);
 
         if !is_test_env() {
-            dep_graph.install_deps(&platform)?;
+            dep_graph.install_deps(&runtime)?;
         }
     }
 

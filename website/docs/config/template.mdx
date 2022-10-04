@@ -3,6 +3,7 @@ title: template.yml
 toc_max_heading_level: 6
 ---
 
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
@@ -13,7 +14,7 @@ The `template.yml` file configures metadata and variables for a template,
 
 ## `title`<RequiredLabel />
 
-> `string`
+<HeadingApiLink to="/api/types/interface/TemplateConfig#title" />
 
 A human readable title that will be displayed during the [`moon generate`](../commands/generate)
 process.
@@ -24,7 +25,7 @@ title: 'npm package'
 
 ## `description`<RequiredLabel />
 
-> `string`
+<HeadingApiLink to="/api/types/interface/TemplateConfig#description" />
 
 A description of why the template exists, what its purpose is, and any other relevant information.
 
@@ -36,7 +37,7 @@ description: |
 
 ## `variables`
 
-> `Record<string, TemplateVariableConfig>`
+<HeadingApiLink to="/api/types/interface/TemplateConfig#variables" />
 
 A mapping of variables that will be interpolated into all template files and file system paths when
 [rendering with Tera](https://tera.netlify.app/docs/#variables). The map key is the variable name
@@ -54,7 +55,7 @@ variables:
 
 ### `default`<RequiredLabel />
 
-> `T`
+<HeadingApiLink to="/api/types/interface/TemplateVariableConfig#default" />
 
 The default value of the variable. When `--defaults` is passed to
 [`moon generate`](../commands/generate) or [`prompt`](#prompt) is not defined, the default value
@@ -62,14 +63,12 @@ will be used, otherwise the user will be prompted to enter a custom value.
 
 ### `prompt`<RequiredLabel text="Required for enums" />
 
-> `string`
+<HeadingApiLink to="/api/types/interface/TemplateVariableConfig#prompt" />
 
 When defined, will prompt the user with a message in the terminal to input a custom value, otherwise
 [`default`](#default) will be used.
 
 ### `type`<RequiredLabel />
-
-> `boolean | enum | number | string`
 
 The type of value for the variable. Accepts `boolean`, `string`, `number`, or `enum`. Floats _are
 not supported_, use strings instead.
@@ -79,6 +78,8 @@ not supported_, use strings instead.
 Your basic primitives.
 
 ### `required`
+
+<HeadingApiLink to="/api/types/interface/TemplateVariableConfig#required" />
 
 Marks the variable as required during _prompting only_. For strings, will error for empty values
 (`''`). For numbers, will error for zero's (`0`).
@@ -107,14 +108,14 @@ variables:
 
 ### `multiple`
 
-> `boolean`
+<HeadingApiLink to="/api/types/interface/TemplateEnumVariableConfig#multiple" />
 
 Allows multiple values to be chosen during prompting. In the template, an array or strings will be
 rendered, otherwise when not-multiple, a single string will be.
 
 ### `values`<RequiredLabel />
 
-> `string[]`
+<HeadingApiLink to="/api/types/interface/TemplateEnumVariableConfig#values" />
 
 List of explicit values to choose from.
 
@@ -126,7 +127,7 @@ information.
 
 ### `force`
 
-> `boolean`
+<HeadingApiLink to="/api/types/interface/TemplateFrontmatterConfig#force" />
 
 When enabled, will always overwrite a file of the same name at the destination path, and will bypass
 any prompting in the terminal.
@@ -141,7 +142,7 @@ Some template content!
 
 ### `to`
 
-> `string`
+<HeadingApiLink to="/api/types/interface/TemplateFrontmatterConfig#to" />
 
 Defines a custom file path, relative from the destination root, in which to create the file. This
 will override the file path within the template folder, and allow for conditional rendering and
@@ -161,7 +162,7 @@ export function {{ component_name }}() {
 
 ### `skip`
 
-> `boolean`
+<HeadingApiLink to="/api/types/interface/TemplateFrontmatterConfig#skip" />
 
 When enabled, the template file will be skipped while writing to the destination path. This setting
 can be used to conditionally render a file.

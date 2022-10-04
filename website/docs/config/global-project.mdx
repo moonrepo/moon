@@ -2,6 +2,7 @@
 title: .moon/project.yml
 ---
 
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/project.yml` file configures file groups and tasks that are inherited by _every_ project
@@ -10,7 +11,7 @@ in the workspace. Projects can override or merge with these settings within thei
 
 ## `extends`<VersionLabel version="0.4" />
 
-> `string`
+<HeadingApiLink to="/api/types/interface/GlobalProjectConfig#extends" />
 
 Defines an external `.moon/project.yml` to extend and inherit settings from. Perfect for reusability
 and sharing configuration across repositories and projects. When defined, this setting must be an
@@ -30,7 +31,7 @@ values _are not_ deep merged!
 
 ## `fileGroups`
 
-> `Record<string, string[]>`
+<HeadingApiLink to="/api/types/interface/GlobalProjectConfig#fileGroups" />
 
 > For more information on file group configuration, refer to the
 > [`fileGroups`](./project#filegroups) section in the [`moon.yml`](./project) doc.
@@ -62,7 +63,7 @@ fileGroups:
 
 ## `tasks`
 
-> `Record<string, TaskConfig>`
+<HeadingApiLink to="/api/types/interface/GlobalProjectConfig#tasks" />
 
 > For more information on task configuration, refer to the [`tasks`](./project#tasks) section in the
 > [`moon.yml`](./project) doc.

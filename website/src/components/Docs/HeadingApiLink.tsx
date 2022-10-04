@@ -8,12 +8,7 @@ export interface HeadingApiLinkProps {
 
 export default function HeadingApiLink({ to }: HeadingApiLinkProps) {
 	return (
-		<a
-			href={to}
-			target="_blank"
-			className="float-right inline-block"
-			style={{ marginTop: '-3.5em' }}
-		>
+		<a href={to} target="_blank" className="float-right inline-block" style={{ marginTop: '-3em' }}>
 			<Icon icon={faCode} />
 		</a>
 	);

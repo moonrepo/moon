@@ -7,7 +7,7 @@ use moon_action::{Action, ActionContext, ActionStatus};
 use moon_cache::RunReport;
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
-use moon_terminal::{replace_style_tokens, ExtendedTerm};
+use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
 use moon_utils::time;
 use moon_workspace::Workspace;
 use std::sync::Arc;
@@ -377,7 +377,11 @@ impl ActionRunner {
         term.write_line("")?;
 
         let counts_message = counts_message.join(&color::muted(", "));
-        let elapsed_time = time::elapsed(self.get_duration());
+        let mut elapsed_time = time::elapsed(self.get_duration());
+
+        if pass_count == cached_count && fail_count == 0 {
+            elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
+        }
 
         if compact {
             term.render_entry("Tasks", &counts_message)?;

@@ -7,7 +7,7 @@ use moon_config::{
     DependencyConfig, DependencyScope, NodeProjectAliasFormat, ProjectConfig, ProjectID,
     ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
 };
-use moon_contract::{Platform, SupportedPlatform};
+use moon_contract::{Platform, Runtime};
 use moon_error::MoonError;
 use moon_lang_node::node::{get_package_manager_workspaces, parse_package_name};
 use moon_lang_node::package::PackageJson;
@@ -53,8 +53,8 @@ pub struct NodePlatform {
 }
 
 impl Platform for NodePlatform {
-    fn is(&self, platform: &SupportedPlatform) -> bool {
-        matches!(platform, SupportedPlatform::Node(_))
+    fn is(&self, runtime: &Runtime) -> bool {
+        matches!(runtime, Runtime::Node(_))
     }
 
     fn is_project_in_package_manager_workspace(

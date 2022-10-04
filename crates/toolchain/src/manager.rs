@@ -1,37 +1,37 @@
 use crate::{Tool, ToolchainError};
-use moon_contract::SupportedPlatform;
+use moon_contract::Runtime;
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct ToolManager<T: Tool> {
     cache: HashMap<String, T>,
-    platform: SupportedPlatform, // Default workspace version
+    runtime: Runtime, // Default workspace version
 }
 
 impl<T: Tool> ToolManager<T> {
-    pub fn new(platform: SupportedPlatform) -> Self {
+    pub fn new(runtime: Runtime) -> Self {
         ToolManager {
             cache: HashMap::new(),
-            platform,
+            runtime,
         }
     }
 
     pub fn get(&self) -> Result<&T, ToolchainError> {
-        self.get_from_platform(&self.platform)
+        self.get_for_runtime(&self.runtime)
     }
 
-    pub fn get_from_platform(&self, platform: &SupportedPlatform) -> Result<&T, ToolchainError> {
-        match &platform {
-            SupportedPlatform::Node(version) => self.get_version(version),
-            _ => panic!("Unsupported toolchain platform."),
+    pub fn get_for_runtime(&self, runtime: &Runtime) -> Result<&T, ToolchainError> {
+        match &runtime {
+            Runtime::Node(version) => self.get_for_version(version),
+            _ => panic!("Unsupported toolchain runtime."),
         }
     }
 
-    pub fn get_version(&self, version: &str) -> Result<&T, ToolchainError> {
+    pub fn get_for_version(&self, version: &str) -> Result<&T, ToolchainError> {
         if !self.has(version) {
             return Err(ToolchainError::MissingTool(format!(
                 "{} v{}",
-                self.platform, version
+                self.runtime, version
             )));
         }
 
@@ -47,8 +47,8 @@ impl<T: Tool> ToolManager<T> {
         // workspace tool. If so, update the default version within the platform.
         if self.cache.is_empty() && root {
             #[allow(clippy::single_match)]
-            match &mut self.platform {
-                SupportedPlatform::Node(ref mut version) => {
+            match &mut self.runtime {
+                Runtime::Node(ref mut version) => {
                     *version = tool.get_version();
                 }
                 _ => {

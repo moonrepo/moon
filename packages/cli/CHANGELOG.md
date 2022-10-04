@@ -8,6 +8,9 @@
   - Projects can now override the workspace configured Node.js version on a per-project basis using
     the new `workspace.node.version` setting in `moon.yml`. However, this does not override the
     package manager!
+  - Package managers workspaces (via `package.json`) are no longer required. When not enabled, or a
+    project is not within the workspace, it will install dependencies directly within the project
+    root, and will utilize its own lockfile.
 - Generator
   - Template files can now be suffixed with `.tera` or `.twig` for syntax highlighting.
 - Runner
@@ -15,6 +18,10 @@
     can be toggled with the `runner.logRunningCommand` setting.
   - The dedupe command will now be displayed when running if the `node.dedupeOnLockfileChange`
     setting is enabled.
+
+#### 📚 Docs
+
+- Config file settings will now link to their API types.
 
 #### ⚙️ Internal
 

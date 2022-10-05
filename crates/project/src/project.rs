@@ -357,6 +357,7 @@ impl Project {
     pub fn expand_tasks(
         &mut self,
         workspace_root: &Path,
+        implicit_deps: &[String],
         implicit_inputs: &[String],
     ) -> Result<(), ProjectError> {
         let resolver_data =
@@ -368,7 +369,8 @@ impl Project {
                 task.platform = TaskConfig::detect_platform(&self.config, &task.command);
             }
 
-            // Inherit implicit inputs before resolving
+            // Inherit implicits before resolving
+            task.deps.extend(implicit_deps.iter().cloned());
             task.inputs.extend(implicit_inputs.iter().cloned());
 
             // Resolve in order!

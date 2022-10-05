@@ -367,6 +367,7 @@ impl ProjectGraph {
         // Expand all tasks for the project (this must happen last)
         project.expand_tasks(
             &self.workspace_root,
+            &self.workspace_config.runner.implicit_deps,
             &self.workspace_config.runner.implicit_inputs,
         )?;
 

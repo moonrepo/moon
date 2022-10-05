@@ -1106,55 +1106,122 @@ mod typescript {
         );
     }
 
-    #[test]
-    fn routes_out_dir_to_cache() {
-        let fixture = create_sandbox_with_git("typescript");
+    mod out_dir {
+        use super::*;
 
-        append_workspace_config(fixture.path(), "  routeOutDirToCache: true");
+        #[test]
+        fn routes_to_cache() {
+            let fixture = create_sandbox_with_git("typescript");
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("out-dir-routing:test")
-            .assert();
+            append_workspace_config(fixture.path(), "  routeOutDirToCache: true");
 
-        assert_snapshot!(
-            read_to_string(fixture.path().join("out-dir-routing/tsconfig.json")).unwrap()
-        );
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("out-dir-routing:test")
+                .assert();
+
+            assert_snapshot!(
+                read_to_string(fixture.path().join("out-dir-routing/tsconfig.json")).unwrap()
+            );
+        }
+
+        #[test]
+        fn routes_to_cache_when_no_compiler_options() {
+            let fixture = create_sandbox_with_git("typescript");
+
+            append_workspace_config(fixture.path(), "  routeOutDirToCache: true");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("out-dir-routing-no-options:test")
+                .assert();
+
+            assert_snapshot!(read_to_string(
+                fixture
+                    .path()
+                    .join("out-dir-routing-no-options/tsconfig.json")
+            )
+            .unwrap());
+        }
+
+        #[test]
+        fn doesnt_route_to_cache_if_disabled() {
+            let fixture = create_sandbox_with_git("typescript");
+
+            append_workspace_config(fixture.path(), "  routeOutDirToCache: false");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("out-dir-routing:test")
+                .assert();
+
+            assert_snapshot!(
+                read_to_string(fixture.path().join("out-dir-routing/tsconfig.json")).unwrap()
+            );
+        }
     }
 
-    #[test]
-    fn routes_out_dir_to_cache_when_no_compiler_options() {
-        let fixture = create_sandbox_with_git("typescript");
+    mod paths {
+        use super::*;
 
-        append_workspace_config(fixture.path(), "  routeOutDirToCache: true");
+        #[test]
+        fn maps_paths() {
+            let fixture = create_sandbox_with_git("typescript");
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("out-dir-routing-no-options:test")
-            .assert();
+            append_workspace_config(
+                fixture.path(),
+                "  syncProjectReferences: true\n  syncProjectReferencesToPaths: true",
+            );
 
-        assert_snapshot!(read_to_string(
-            fixture
-                .path()
-                .join("out-dir-routing-no-options/tsconfig.json")
-        )
-        .unwrap());
-    }
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("syncs-paths-refs:test")
+                .assert();
 
-    #[test]
-    fn doesnt_route_out_dir_to_cache() {
-        let fixture = create_sandbox_with_git("typescript");
+            assert_snapshot!(
+                read_to_string(fixture.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
+            );
+        }
 
-        append_workspace_config(fixture.path(), "  routeOutDirToCache: false");
+        #[test]
+        fn doesnt_map_paths_if_no_refs() {
+            let fixture = create_sandbox_with_git("typescript");
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("out-dir-routing:test")
-            .assert();
+            append_workspace_config(
+                fixture.path(),
+                "  syncProjectReferences: false\n  syncProjectReferencesToPaths: true",
+            );
 
-        assert_snapshot!(
-            read_to_string(fixture.path().join("out-dir-routing/tsconfig.json")).unwrap()
-        );
+            std::fs::remove_file(fixture.path().join("syncs-paths-refs/moon.yml")).unwrap();
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("syncs-paths-refs:test")
+                .assert();
+
+            assert_snapshot!(
+                read_to_string(fixture.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
+            );
+        }
+
+        #[test]
+        fn doesnt_map_paths_if_disabled() {
+            let fixture = create_sandbox_with_git("typescript");
+
+            append_workspace_config(
+                fixture.path(),
+                "  syncProjectReferences: true\n  syncProjectReferencesToPaths: false",
+            );
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("syncs-paths-refs:test")
+                .assert();
+
+            assert_snapshot!(
+                read_to_string(fixture.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
+            );
+        }
     }
 }
 

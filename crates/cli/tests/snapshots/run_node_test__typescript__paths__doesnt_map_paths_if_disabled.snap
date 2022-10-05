@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 1221
+expression: "read_to_string(fixture.path().join(\"syncs-paths-refs/tsconfig.json\")).unwrap()"
+---
+{
+  "references": [
+    {
+      "path": "../base-no-src"
+    },
+    {
+      "path": "../base-src"
+    }
+  ]
+}
+

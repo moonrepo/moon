@@ -1,0 +1,32 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 1181
+expression: "read_to_string(fixture.path().join(\"syncs-paths-refs/tsconfig.json\")).unwrap()"
+---
+{
+  "references": [
+    {
+      "path": "../base-no-src"
+    },
+    {
+      "path": "../base-src"
+    }
+  ],
+  "compilerOptions": {
+    "paths": {
+      "test-typescript-base-no-src": [
+        "../base-no-src/index.tsx"
+      ],
+      "test-typescript-base-no-src/*": [
+        "../base-no-src/*"
+      ],
+      "test-typescript-base-src": [
+        "../base-src/src/index.ts"
+      ],
+      "test-typescript-base-src/*": [
+        "../base-src/src/*"
+      ]
+    }
+  }
+}
+

@@ -332,6 +332,10 @@
         "syncProjectReferences": {
           "default": true,
           "type": "boolean"
+        },
+        "syncProjectReferencesToPaths": {
+          "default": false,
+          "type": "boolean"
         }
       }
     },

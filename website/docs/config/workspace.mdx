@@ -406,7 +406,7 @@ typescript:
 
 Updates the `outDir` compiler option in each project's [`tsconfig.json`](#projectConfigFileName) to
 route to moon's cache folder. This is useful when using project references and wanting to keep all
-the compiled `.d.ts` files _out_ of the project folder.
+the compiled `.d.ts` files _out_ of the project folder. Defaults to `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 typescript:
@@ -430,9 +430,9 @@ option will be re-routed to the following when syncing.
 
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#syncProjectReferences" />
 
-Will sync a project's [`dependsOn`](./project#dependson) setting as project references within that
-project's `tsconfig.json`, and the workspace root `tsconfig.json`. Defaults to `true` when the
-parent `typescript` setting is defined, otherwise `false`.
+Will sync a project's [dependencies](../concepts/project#dependencies) (when applicable) as project
+references within that project's `tsconfig.json`, and the workspace root `tsconfig.json`. Defaults
+to `true` when the parent `typescript` setting is defined, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 typescript:
@@ -441,7 +441,7 @@ typescript:
 
 A quick example on how this works. Given the following `dependsOn`:
 
-```yaml
+```yaml title="moon.yml"
 dependsOn:
   - 'designSystem'
   - 'reactHooks'
@@ -459,6 +459,44 @@ Would result in the following `references` within both `tsconfig.json`s.
   ]
 }
 ```
+
+### `syncProjectReferencesToPaths`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#syncProjectReferencesToPaths" />
+
+Will sync a project's [`tsconfig.json`](#projectConfigFileName) project references to the `paths`
+compiler option, using the referenced project's `package.json` name. This is useful for mapping
+import aliases to their source code. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+typescript:
+  syncProjectReferencesToPaths: true
+```
+
+As a demonstration, if we had a reference to a shared npm package with the name `@brand/components`,
+the `paths` compiler option would be updated to the following when syncing. The index file may exist
+in a `src` folder, or the root of the package.
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "paths": {
+      "@brand/components": ["../shared/components/src/index.ts"],
+      "@brand/components/*": ["../shared/components/src/*"]
+    }
+  },
+  "references": [
+    {
+      "path": "../shared/components"
+    }
+  ]
+}
+```
+
+> This setting runs _after_ [`syncProjectReferences`](#syncprojectreferences) and will inherit any
+> synced references from that setting.
 
 ## Features
 

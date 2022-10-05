@@ -18,6 +18,8 @@ pub struct TypeScriptConfig {
     pub route_out_dir_to_cache: bool,
 
     pub sync_project_references: bool,
+
+    pub sync_project_references_to_paths: bool,
 }
 
 impl Default for TypeScriptConfig {
@@ -29,6 +31,7 @@ impl Default for TypeScriptConfig {
             root_options_config_file_name: String::from("tsconfig.options.json"),
             route_out_dir_to_cache: false,
             sync_project_references: true,
+            sync_project_references_to_paths: false,
         }
     }
 }

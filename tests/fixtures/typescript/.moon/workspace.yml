@@ -5,5 +5,6 @@ projects:
 
 typescript:
   createMissingConfig: true
-  syncProjectReferences: true
   routeOutDirToCache: false
+  syncProjectReferences: true
+  syncProjectReferencesToPaths: false

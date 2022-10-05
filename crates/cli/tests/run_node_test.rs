@@ -1123,6 +1123,25 @@ mod typescript {
     }
 
     #[test]
+    fn routes_out_dir_to_cache_when_no_compiler_options() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        append_workspace_config(fixture.path(), "  routeOutDirToCache: true");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("out-dir-routing-no-options:test")
+            .assert();
+
+        assert_snapshot!(read_to_string(
+            fixture
+                .path()
+                .join("out-dir-routing-no-options/tsconfig.json")
+        )
+        .unwrap());
+    }
+
+    #[test]
     fn doesnt_route_out_dir_to_cache() {
         let fixture = create_sandbox_with_git("typescript");
 

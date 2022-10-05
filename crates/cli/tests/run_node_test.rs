@@ -1105,6 +1105,38 @@ mod typescript {
             read_to_string(fixture.path().join("syncs-deps-refs/tsconfig.json")).unwrap()
         );
     }
+
+    #[test]
+    fn routes_out_dir_to_cache() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        append_workspace_config(fixture.path(), "  routeOutDirToCache: true");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("out-dir-routing:test")
+            .assert();
+
+        assert_snapshot!(
+            read_to_string(fixture.path().join("out-dir-routing/tsconfig.json")).unwrap()
+        );
+    }
+
+    #[test]
+    fn doesnt_route_out_dir_to_cache() {
+        let fixture = create_sandbox_with_git("typescript");
+
+        append_workspace_config(fixture.path(), "  routeOutDirToCache: false");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("out-dir-routing:test")
+            .assert();
+
+        assert_snapshot!(
+            read_to_string(fixture.path().join("out-dir-routing/tsconfig.json")).unwrap()
+        );
+    }
 }
 
 mod workspace_overrides {

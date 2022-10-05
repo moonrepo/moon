@@ -215,17 +215,31 @@ pub async fn sync_project(
         }
 
         // Sync to the project's `tsconfig.json`
-        if is_project_typescript_enabled && !tsconfig_project_refs.is_empty() {
+        if is_project_typescript_enabled {
             TsConfigJson::sync_with_name(
                 &project.root,
                 &typescript_config.project_config_file_name,
                 |tsconfig_json| {
-                    for ref_path in tsconfig_project_refs {
-                        if tsconfig_json
-                            .add_project_ref(&ref_path, &typescript_config.project_config_file_name)
-                        {
-                            mutated_files = true;
+                    // Project references
+                    if !tsconfig_project_refs.is_empty() {
+                        for ref_path in tsconfig_project_refs {
+                            if tsconfig_json.add_project_ref(
+                                &ref_path,
+                                &typescript_config.project_config_file_name,
+                            ) {
+                                mutated_files = true;
+                            }
                         }
+                    }
+
+                    // Out dir
+                    if typescript_config.route_out_dir_to_cache {
+                        let cache_route = workspace.cache.dir.join("types").join(&project.source);
+
+                        tsconfig_json.update_compiler_options().out_dir =
+                            Some(path::to_virtual_string(
+                                path::relative_from(&cache_route, &project.root).unwrap(),
+                            )?);
                     }
 
                     Ok(())

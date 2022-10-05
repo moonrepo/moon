@@ -123,6 +123,15 @@ impl TsConfigJson {
         true
     }
 
+    pub fn update_compiler_options(&mut self) -> &mut CompilerOptions {
+        if self.compiler_options.is_none() {
+            self.compiler_options = Some(CompilerOptions::default());
+        }
+
+        self.dirty = true;
+        self.compiler_options.as_mut().unwrap()
+    }
+
     pub fn save(&mut self) -> Result<(), MoonError> {
         if self.dirty {
             write_preserved_json(&self.path, self)?;
@@ -679,13 +688,13 @@ impl<'de> Deserialize<'de> for Target {
 // making the changes. For this to work correctly, we need to read the json
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
-fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(), MoonError> {
+fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), MoonError> {
     let contents = fs::sync::read_json_string(path)?;
     let mut data = json::parse(&contents).expect("Unable to parse tsconfig.json");
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!
-    if let Some(references) = &package.references {
+    if let Some(references) = &tsconfig.references {
         let mut list = json::JsonValue::new_array();
 
         for reference in references {
@@ -700,6 +709,16 @@ fn write_preserved_json(path: &Path, package: &TsConfigJson) -> Result<(), MoonE
         }
 
         data["references"] = list;
+    }
+
+    if let Some(options) = &tsconfig.compiler_options {
+        if options.out_dir.is_some() && data["compilerOptions"].is_empty() {
+            data["compilerOptions"] = json::JsonValue::new_object();
+        }
+
+        if let Some(out_dir) = &options.out_dir {
+            data["compilerOptions"]["outDir"] = json::from(out_dir.to_owned());
+        }
     }
 
     let mut data = json::stringify_pretty(data, 2);

@@ -400,6 +400,32 @@ typescript:
   rootOptionsConfigFileName: 'tsconfig.base.json'
 ```
 
+### `routeOutDirToCache`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#routeOutDirToCache" />
+
+Updates the `outDir` compiler option in each project's [`tsconfig.json`](#projectConfigFileName) to
+route to moon's cache folder. This is useful when using project references and wanting to keep all
+the compiled `.d.ts` files _out_ of the project folder.
+
+```yaml title=".moon/workspace.yml" {2}
+typescript:
+  routeOutDirToCache: true
+```
+
+As a demonstration, if we had an npm package located at "packages/components", the `outDir` compiler
+option will be re-routed to the following when syncing.
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "outDir": "../../.moon/cache/types/packages/components"
+  }
+}
+```
+
 ### `syncProjectReferences`
 
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#syncProjectReferences" />

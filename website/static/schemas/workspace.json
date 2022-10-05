@@ -325,6 +325,10 @@
           "default": "tsconfig.options.json",
           "type": "string"
         },
+        "routeOutDirToCache": {
+          "default": false,
+          "type": "boolean"
+        },
         "syncProjectReferences": {
           "default": true,
           "type": "boolean"

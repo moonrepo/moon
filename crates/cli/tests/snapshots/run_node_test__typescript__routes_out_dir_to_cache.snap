@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 1120
+expression: "read_to_string(fixture.path().join(\"out-dir-routing/tsconfig.json\")).unwrap()"
+---
+{
+  "compilerOptions": {
+    "outDir": "../.moon/cache/types/out-dir-routing"
+  }
+}
+

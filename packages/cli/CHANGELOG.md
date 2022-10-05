@@ -17,6 +17,8 @@
 
 - Added a new `typescript.routeOutDirToCache` setting to `.moon/workspace.yml`, that will update the
   `outDir` compiler option to route to `.moon/cache/types`.
+- Added a new `typescript.syncProjectReferencesToPaths` setting to `.moon/workspace.yml`, that will
+  map project references to compiler option `paths` aliases.
 
 ##### Generator
 

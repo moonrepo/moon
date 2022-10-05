@@ -483,7 +483,7 @@ mod test {
                     ),
                     (
                         "shared-workspace.yml".to_owned(),
-                        "6b639b54b13a9847d4cdf610c8589f0ea6966aeb".to_owned()
+                        "b4be93368a88e7038c02969b78d024a23ebe97a5".to_owned()
                     )
                 ])
             );

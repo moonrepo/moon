@@ -202,6 +202,8 @@ pub struct TypeAcquisition {
     pub disable_filename_based_type_acquisition: Option<bool>,
 }
 
+pub type CompilerOptionsPaths = BTreeMap<String, Vec<String>>;
+
 // https://www.typescriptlang.org/tsconfig#compilerOptions
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -400,7 +402,7 @@ pub struct CompilerOptions {
     pub out_file: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub paths: Option<BTreeMap<String, Vec<String>>>,
+    pub paths: Option<CompilerOptionsPaths>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plugins: Option<Vec<BTreeMap<String, Value>>>,
@@ -517,6 +519,16 @@ pub struct CompilerOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub suppress_implicit_any_index_errors: Option<bool>,
+}
+
+impl CompilerOptions {
+    pub fn update_paths(&mut self) -> &mut CompilerOptionsPaths {
+        if self.paths.is_none() {
+            self.paths = Some(BTreeMap::new());
+        }
+
+        self.paths.as_mut().unwrap()
+    }
 }
 
 // https://www.typescriptlang.org/tsconfig#watch-options
@@ -712,12 +724,18 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), Moon
     }
 
     if let Some(options) = &tsconfig.compiler_options {
-        if options.out_dir.is_some() && data["compilerOptions"].is_empty() {
+        if (options.out_dir.is_some() || options.paths.is_some())
+            && data["compilerOptions"].is_empty()
+        {
             data["compilerOptions"] = json::JsonValue::new_object();
         }
 
         if let Some(out_dir) = &options.out_dir {
             data["compilerOptions"]["outDir"] = json::from(out_dir.to_owned());
+        }
+
+        if let Some(paths) = &options.paths {
+            data["compilerOptions"]["paths"] = json::from(paths.to_owned());
         }
     }
 

@@ -1,5 +1,6 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
+use moon_lang_node::tsconfig::CompilerOptionsPaths;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson, NPM};
 use moon_logger::{color, debug};
 use moon_project::Project;
@@ -87,12 +88,12 @@ pub async fn sync_project(
     let mut package_peer_deps: BTreeMap<String, String> = BTreeMap::new();
     let mut package_dev_deps: BTreeMap<String, String> = BTreeMap::new();
     let mut tsconfig_project_refs: HashSet<String> = HashSet::new();
+    let mut tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     for (dep_id, dep_cfg) in &project.dependencies {
         let dep_project = workspace.projects.load(dep_id)?;
-        let dep_relative_path = path::to_virtual_string(
-            path::relative_from(&dep_project.root, &project.root).unwrap_or_default(),
-        )?;
+        let dep_relative_path =
+            path::relative_from(&dep_project.root, &project.root).unwrap_or_default();
         let is_dep_typescript_enabled = dep_project.config.workspace.typescript;
 
         // Update dependencies within this project's `package.json`.
@@ -107,7 +108,11 @@ pub async fn sync_project(
                     let dep_package_version = dep_package_json.version.unwrap_or_default();
                     let dep_version = match format {
                         NodeVersionFormat::File | NodeVersionFormat::Link => {
-                            format!("{}{}", version_prefix, dep_relative_path)
+                            format!(
+                                "{}{}",
+                                version_prefix,
+                                path::to_virtual_string(&dep_relative_path)?
+                            )
                         }
                         NodeVersionFormat::Version
                         | NodeVersionFormat::VersionCaret
@@ -148,10 +153,10 @@ pub async fn sync_project(
             }
         }
 
-        // Update `references` within this project's `tsconfig.json`.
-        // Only add if the dependent project has a `tsconfig.json`,
-        // and this `tsconfig.json` has not already declared the dep.
         if let Some(typescript_config) = &workspace.config.typescript {
+            // Update `references` within this project's `tsconfig.json`.
+            // Only add if the dependent project has a `tsconfig.json`,
+            // and this `tsconfig.json` has not already declared the dep.
             if is_project_typescript_enabled
                 && is_dep_typescript_enabled
                 && typescript_config.sync_project_references
@@ -160,7 +165,7 @@ pub async fn sync_project(
                     .join(&typescript_config.project_config_file_name)
                     .exists()
             {
-                tsconfig_project_refs.insert(dep_relative_path);
+                tsconfig_project_refs.insert(path::to_virtual_string(&dep_relative_path)?);
 
                 debug!(
                     target: LOG_TARGET,
@@ -169,6 +174,47 @@ pub async fn sync_project(
                     color::id(&project.id),
                     color::file(&typescript_config.project_config_file_name)
                 );
+            }
+
+            // Map the depended on reference as a `paths` alias using
+            // the dep's `package.json` name.
+            if is_project_typescript_enabled
+                && is_dep_typescript_enabled
+                && typescript_config.sync_project_references_to_paths
+            {
+                if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
+                    if let Some(dep_package_name) = &dep_package_json.name {
+                        for index in ["src/index.ts", "src/index.tsx", "index.ts", "index.tsx"] {
+                            if dep_project.root.join(&index).exists() {
+                                tsconfig_paths.insert(
+                                    dep_package_name.clone(),
+                                    vec![path::to_virtual_string(dep_relative_path.join(&index))?],
+                                );
+
+                                tsconfig_paths.insert(
+                                    format!("{}/*", dep_package_name),
+                                    vec![path::to_virtual_string(dep_relative_path.join(
+                                        if index.starts_with("src") {
+                                            "src/*"
+                                        } else {
+                                            "*"
+                                        },
+                                    ))?],
+                                );
+
+                                debug!(
+                                    target: LOG_TARGET,
+                                    "Syncing {} as a import path alias to {}'s {}",
+                                    color::id(&dep_project.id),
+                                    color::id(&project.id),
+                                    color::file(&typescript_config.project_config_file_name)
+                                );
+
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -240,6 +286,16 @@ pub async fn sync_project(
                             Some(path::to_virtual_string(
                                 path::relative_from(&cache_route, &project.root).unwrap(),
                             )?);
+                    }
+
+                    // Paths
+                    if typescript_config.sync_project_references_to_paths
+                        && !tsconfig_paths.is_empty()
+                    {
+                        tsconfig_json
+                            .update_compiler_options()
+                            .update_paths()
+                            .extend(tsconfig_paths);
                     }
 
                     Ok(())

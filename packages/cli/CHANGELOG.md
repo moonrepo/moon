@@ -30,6 +30,8 @@
   can be toggled with the `runner.logRunningCommand` setting.
 - The dedupe command will now be displayed when running if the `node.dedupeOnLockfileChange` setting
   is enabled.
+- Added a new `runner.implicitDeps` setting to `.moon/workspace.yml`, that will add task `deps` to
+  _all_ tasks.
 
 #### 📚 Docs
 

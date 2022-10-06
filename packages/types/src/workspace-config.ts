@@ -42,6 +42,7 @@ export interface NodeConfig {
 
 export interface RunnerConfig {
 	cacheLifetime: string;
+	implicitDeps: string[];
 	implicitInputs: string[];
 	inheritColorsForPipedTasks: boolean;
 	logRunningCommand: boolean;

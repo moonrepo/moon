@@ -565,9 +565,9 @@ runner:
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#implicitDeps" />
 
-Defines task [`deps`](./project#deps) that are implicit inherited by _all_ tasks within the
+Defines task [`deps`](./project#deps) that are implicitly inherited by _all_ tasks within the
 workspace. This is extremely useful for pre-building projects that are used extensively throughout
-the repo, or always building dependencies. Defaults to an empty list.
+the repo, or always building project dependencies. Defaults to an empty list.
 
 ```yaml title=".moon/workspace.yml" {2-5}
 runner:
@@ -579,7 +579,7 @@ runner:
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#implicitInputs" />
 
-Defines task [`inputs`](./project#inputs) that are implicit inherited by _all_ tasks within the
+Defines task [`inputs`](./project#inputs) that are implicitly inherited by _all_ tasks within the
 workspace. This is extremely useful for the "changes to these files should always trigger a task"
 scenario.
 

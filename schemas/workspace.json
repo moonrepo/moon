@@ -55,6 +55,7 @@
     "runner": {
       "default": {
         "cacheLifetime": "7 days",
+        "implicitDeps": [],
         "implicitInputs": [
           "package.json",
           "/.moon/project.yml",
@@ -285,6 +286,13 @@
           "default": "7 days",
           "type": "string"
         },
+        "implicitDeps": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "implicitInputs": {
           "default": [
             "package.json",
@@ -325,8 +333,16 @@
           "default": "tsconfig.options.json",
           "type": "string"
         },
+        "routeOutDirToCache": {
+          "default": false,
+          "type": "boolean"
+        },
         "syncProjectReferences": {
           "default": true,
+          "type": "boolean"
+        },
+        "syncProjectReferencesToPaths": {
+          "default": false,
           "type": "boolean"
         }
       }

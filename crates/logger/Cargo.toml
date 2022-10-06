@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.22"
-console = "0.15.1"
+console = "0.15.2"
 dirs = "4.0.0"
 fern = "0.6.1"
 log = "0.4.17"

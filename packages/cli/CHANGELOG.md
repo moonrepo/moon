@@ -41,6 +41,8 @@
 
 - We've renamed and restructured the `.moon/cache` directory. If you were relying on any of these
   files, you'll need to update your implementation.
+- Updated Cargo dependencies. A big change was clap v3 -> v4, so if you encounter any CLI issues,
+  please report.
 
 ## 0.15.0
 

@@ -1,0 +1,141 @@
+---
+slug: v0.16
+title: v0.16 - Per-project tool versions and TypeScript impovements
+authors: [milesj]
+tags: [toolchain, runner, generator, typescript, node]
+image: ./img/v0.16.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Image from '@site/src/components/Image';
+
+With this release, we've landed a long standing request of supporting project-level overrides for
+tools configured in the workspace, as well as some quality of life improvements for TypeScript.
+
+<!--truncate-->
+
+## Per-project tool version overrides
+
+Since moons inception, our [toolchain](../docs/concepts/toolchain) has only supported a single
+version of a tool (Node.js), as we wanted to embrace the single version policy and encourage all
+consumers to keep their tooling version consistent across all projects for reliability. While this
+works flawlessly, it's not entirely realistic, as many companies have legacy projects that are stuck
+on older versions for whatever reason, and integrating them into moon was rather difficult.
+
+Well no more! We've refactored our toolchain to support tool overrides on a project-by-project
+basis. Since we only support Node.js at the moment, this can be achieved with the new
+[`workspace.node.version`](../docs/config/project#node) setting in
+[`moon.yml`](../docs/config/project).
+
+For example, if your workspace Node.js version is configured as v18.
+
+```yml title=".moon/workspace.yml"
+node:
+  version: '18.0.0'
+```
+
+You can now override this version at the project-level. Let's go with v14.
+
+```yml title="<project>/moon.yml"
+workspace:
+  node:
+    version: '14.0.0'
+```
+
+When running a task from a project with overrides, the toolchain will download, install, and
+configure the new version behind the scenes. This new version will then be used to install
+dependencies and execute the tasks commands.
+
+> Although we now support overriding the tool version, the workspace configured package manager
+> (`node.packageManager`) and associated version cannot be overridden. This is unlikely to change.
+
+## Per-project dependency installs
+
+Because of the toolchain refactor above, we now support per-project dependency installs as a welcome
+side-effect. This is a necessary step in supporting new languages, especially for those that don't
+install dependencies in the workspace for all projects, and must install them per project.
+
+This also means that moon now supports non-`package.json` workspaces! If your repository _is not_
+using npm/pnpm/yarn workspaces, or a project _is not_ listed within the workspaces glob list,
+dependencies will be installed within the project.
+
+## TypeScript improvements
+
+### Routing `outDir` to the cache
+
+A requirement for using project references is that each project must compile declarations (`.d.ts`)
+so that consumers/dependees can resolve type information. While this makes sense, it becomes rather
+unfortunate as each project folder is now littered with the declaration outputs, which are typically
+gitignored.
+
+To improve this experience, we're introducing a new setting
+[`typescript.routeOutDirToCache`](../docs/config/workspace#routeoutdirtocache), that will update the
+`outDir` compiler option of _all_ projects to route to moon's cache directory (which should already
+be gitignored). This will standardize the use of project references for the entire repository.
+
+For example, a project at "packages/components" will route to the following output directory:
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "outDir": "../../.moon/cache/types/packages/components"
+  }
+}
+```
+
+> If you require declarations to live within the project, for example an npm package that ships
+> types, you should introduce an additional configuration to handle this, like
+> `tsconfig.build.json`.
+
+### Mapping project references as `paths`
+
+moon automatically keeps TypeScript project references in sync with the
+[`typescript.syncProjectReferences`](../docs/config/workspace#syncprojectreferences) setting, which
+is great, but we can take it further. With the new
+[`typescript.syncProjectReferencesToPaths`](../docs/config/workspace#syncprojectreferencestopaths)
+setting, project references (either synced or explicitly defined) will _also_ be mapped to the
+`paths` compiler option, automating the list of import aliases.
+
+For example, if a reference has the package name `@brand/components`, the `paths` will be mapped
+with:
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "paths": {
+      "@brand/components": ["../shared/components/src/index.ts"],
+      "@brand/components/*": ["../shared/components/src/*"]
+    }
+  },
+  "references": [
+    {
+      "path": "../shared/components"
+    }
+  ]
+}
+```
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.16.0) for a
+full list of changes.
+
+- Template files can now be suffixed with `.tera` or `.twig` for
+  [syntax highlighting](../docs/guides/codegen#file-extensions).
+- We now display more commands and information when running tasks.
+- Declare implicit task dependencies with a new
+  [`runner.implicitDeps`](../docs/config/workspace.mdx#implicitdeps) setting.
+
+## What's next?
+
+Expect the following in the v0.17 release!
+
+- Webhooks for important pipeline events (for real this time)!
+- YAML anchors and references in config files.
+- And [many more](https://github.com/moonrepo/moon/issues/356)...

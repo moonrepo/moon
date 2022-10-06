@@ -1535,7 +1535,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "assert_cmd",
  "async-recursion",

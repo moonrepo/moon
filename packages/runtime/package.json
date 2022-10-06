@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@boost/common": "^4.0.0",
-    "@moonrepo/types": "^0.0.3"
+    "@moonrepo/types": "^0.0.4"
   },
   "engines": {
     "node": ">=14.15.0",

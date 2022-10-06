@@ -55,6 +55,12 @@ const workspaceRows: Comparison[] = [
 		},
 	},
 	{
+		feature: 'Supports dependencies inherited by all tasks',
+		support: {
+			moon: [SUPPORTED, 'via `implicitDeps`'],
+		},
+	},
+	{
 		feature: 'Supports inputs inherited by all tasks',
 		support: {
 			moon: [SUPPORTED, 'via `implicitInputs`'],

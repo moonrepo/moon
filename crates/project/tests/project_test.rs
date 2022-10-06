@@ -34,7 +34,7 @@ fn create_expanded_project(
 ) -> Project {
     let mut project = Project::new(id, source, workspace_root, config).unwrap();
 
-    project.expand_tasks(workspace_root, &[]).unwrap();
+    project.expand_tasks(workspace_root, &[], &[]).unwrap();
 
     project
 }
@@ -422,6 +422,66 @@ mod tasks {
     }
 
     #[test]
+    fn inherits_implicit_deps() {
+        let workspace_root = get_fixtures_root();
+        let mut project = Project::new(
+            "id",
+            "tasks/basic",
+            &workspace_root,
+            &GlobalProjectConfig {
+                tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
+                ..GlobalProjectConfig::default()
+            },
+        )
+        .unwrap();
+
+        project
+            .expand_tasks(
+                &workspace_root,
+                &string_vec!["~:build", "project:task"],
+                &[],
+            )
+            .unwrap();
+
+        let mut build = Task::from_config(
+            Target::format("id", "build").unwrap(),
+            &mock_task_config("webpack"),
+        )
+        .unwrap();
+
+        let mut std = Task::from_config(
+            Target::format("id", "standard").unwrap(),
+            &mock_task_config("cmd"),
+        )
+        .unwrap();
+
+        let mut test = Task::from_config(
+            Target::format("id", "test").unwrap(),
+            &mock_task_config("jest"),
+        )
+        .unwrap();
+
+        let mut lint = Task::from_config(
+            Target::format("id", "lint").unwrap(),
+            &mock_task_config("eslint"),
+        )
+        .unwrap();
+
+        // Expanded
+        let implicit_deps = string_vec!["id:build", "project:task"];
+
+        build.deps.extend(implicit_deps.clone());
+        std.deps.extend(implicit_deps.clone());
+        test.deps.extend(implicit_deps.clone());
+        lint.deps.extend(implicit_deps);
+
+        assert_eq!(project.get_task("build").unwrap().deps, build.deps);
+        assert_eq!(project.get_task("standard").unwrap().deps, std.deps);
+        assert_eq!(project.get_task("test").unwrap().deps, test.deps);
+        assert_eq!(project.get_task("lint").unwrap().deps, lint.deps);
+    }
+
+    #[test]
     fn inherits_implicit_inputs() {
         let workspace_root = get_fixtures_root();
         let implicit_inputs = string_vec!["$VAR", "package.json", "/.moon/workspace.yml"];
@@ -437,7 +497,7 @@ mod tasks {
         .unwrap();
 
         project
-            .expand_tasks(&workspace_root, &implicit_inputs)
+            .expand_tasks(&workspace_root, &[], &implicit_inputs)
             .unwrap();
 
         let mut build = Task::from_config(
@@ -895,6 +955,8 @@ mod tasks {
 
     mod tokens {
         use super::*;
+        use moon_config::DependencyConfig;
+        use moon_project::ProjectDependency;
         use pretty_assertions::assert_eq;
         use std::collections::HashSet;
         use std::path::PathBuf;
@@ -1145,6 +1207,50 @@ mod tasks {
         }
 
         #[test]
+        fn expands_implicit_deps() {
+            let workspace_root = get_fixtures_dir("base");
+            let mut project = Project::new(
+                "id",
+                "files-and-dirs",
+                &workspace_root,
+                &GlobalProjectConfig {
+                    file_groups: create_file_groups_config(),
+                    tasks: BTreeMap::from([(
+                        String::from("test"),
+                        TaskConfig {
+                            command: Some(TaskCommandArgs::String("test".to_owned())),
+                            deps: Some(string_vec!["~:test"]),
+                            type_of: PlatformType::Node,
+                            ..TaskConfig::default()
+                        },
+                    )]),
+                    ..GlobalProjectConfig::default()
+                },
+            )
+            .unwrap();
+
+            project.dependencies.insert(
+                "example".into(),
+                ProjectDependency::from_config(&DependencyConfig::new("example")),
+            );
+
+            project
+                .expand_tasks(
+                    &workspace_root,
+                    &string_vec!["^:build", "project:task"],
+                    &[],
+                )
+                .unwrap();
+
+            let task = project.tasks.get("test").unwrap();
+
+            assert_eq!(
+                task.deps,
+                string_vec!["id:test", "example:build", "project:task"]
+            );
+        }
+
+        #[test]
         fn expands_implicit_inputs() {
             let workspace_root = get_fixtures_dir("base");
             let project_root = workspace_root.join("files-and-dirs");
@@ -1171,6 +1277,7 @@ mod tasks {
             project
                 .expand_tasks(
                     &workspace_root,
+                    &[],
                     &[
                         "/.moon/$taskType-$projectType.yml".to_owned(),
                         "*.yml".to_owned(),

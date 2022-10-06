@@ -23,6 +23,8 @@ pub struct RunnerConfig {
     #[validate(custom = "validate_cache_lifetime")]
     pub cache_lifetime: String,
 
+    pub implicit_deps: Vec<String>,
+
     pub implicit_inputs: Vec<String>,
 
     pub inherit_colors_for_piped_tasks: bool,
@@ -34,6 +36,7 @@ impl Default for RunnerConfig {
     fn default() -> Self {
         RunnerConfig {
             cache_lifetime: "7 days".to_owned(),
+            implicit_deps: vec![],
             implicit_inputs: string_vec![
                 // When a project changes
                 "package.json",

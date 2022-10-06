@@ -35,7 +35,7 @@ moon_workspace = { path = "../workspace" }
 async-recursion = "1.0.0"
 clap = { version = "3.2.22", features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.2.4"
-console = "0.15.1"
+console = "0.15.2"
 console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
 futures = "0.3.24"
@@ -51,7 +51,7 @@ tokio = { workspace = true }
 [dev-dependencies]
 moon_cache = { path = "../cache" }
 assert_cmd = "2.0.4"
-insta = "1.20.0"
+insta = "1.21.0"
 predicates = "2.1.1"
 pretty_assertions = "1.3.0"
 serial_test = "0.9.0"

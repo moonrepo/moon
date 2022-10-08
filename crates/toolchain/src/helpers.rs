@@ -85,6 +85,14 @@ pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), Toolch
 
     // Fetch the file from the HTTP source
     let response = reqwest::get(url).await?;
+    let status = response.status();
+
+    if !status.is_success() {
+        return Err(ToolchainError::DownloadFailed(
+            url.to_owned(),
+            status.to_string(),
+        ));
+    }
 
     // Write the bytes to our local file
     let mut contents = io::Cursor::new(response.bytes().await?);

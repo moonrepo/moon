@@ -5,6 +5,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolchainError {
+    #[error("Failed to download tool from <url>{0}</url> <muted>({1})</muted>")]
+    DownloadFailed(String, String),
+
     #[error("Internet connection required, unable to download and install tools.")]
     InternetConnectionRequired,
 

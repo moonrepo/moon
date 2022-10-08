@@ -1,3 +1,4 @@
+# https://moonrepo.dev/docs/config/template
 $schema: 'https://moonrepo.dev/schemas/template.json'
 
 # REQUIRED: Name of the template in a human readable format.

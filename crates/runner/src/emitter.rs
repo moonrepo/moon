@@ -6,6 +6,7 @@ use moon_contract::{handle_flow, Runtime};
 use moon_error::MoonError;
 use moon_project::Project;
 use moon_task::Task;
+use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use serde::Serialize;
 use std::path::PathBuf;
@@ -73,7 +74,6 @@ pub enum Event<'e> {
         task: &'e Task,
     },
     TargetOutputArchived {
-        #[serde(skip)]
         archive_path: PathBuf,
         hash: &'e str,
         project: &'e Project,
@@ -85,7 +85,6 @@ pub enum Event<'e> {
         task: &'e Task,
     },
     TargetOutputHydrated {
-        #[serde(skip)]
         archive_path: PathBuf,
         hash: &'e str,
         project: &'e Project,
@@ -148,12 +147,15 @@ impl RunnerEmitter {
             workspace: Arc::clone(&workspace),
         };
 
-        let workspace = workspace.read().await;
+        // For security and privacy purposes, only send webhooks from a CI environment
+        if is_ci() {
+            let workspace = workspace.read().await;
 
-        if let Some(webhook_url) = &workspace.config.notifier.webhook_url {
-            emitter.webhooks = Some(Arc::new(RwLock::new(WebhooksSubscriber::new(
-                webhook_url.to_owned(),
-            ))));
+            if let Some(webhook_url) = &workspace.config.notifier.webhook_url {
+                emitter.webhooks = Some(Arc::new(RwLock::new(WebhooksSubscriber::new(
+                    webhook_url.to_owned(),
+                ))));
+            }
         }
 
         emitter
@@ -168,13 +170,15 @@ impl RunnerEmitter {
             handle_flow!(webhooks.write().await.on_emit(&event, &workspace).await);
         }
 
-        handle_flow!(
-            self.local_cache
-                .write()
-                .await
-                .on_emit(&event, &workspace)
-                .await
-        );
+        {
+            handle_flow!(
+                self.local_cache
+                    .write()
+                    .await
+                    .on_emit(&event, &workspace)
+                    .await
+            );
+        }
 
         Ok(EventFlow::Continue)
     }

@@ -1,3 +1,5 @@
+import { Runtime } from './common';
+
 export interface Duration {
 	secs: number;
 	nanos: number;
@@ -44,4 +46,38 @@ export interface RunReport {
 	duration: Duration;
 	estimatedSavings: Duration | null;
 	projectedDuration: Duration;
+}
+
+// NODES
+
+export type ActionNode =
+	| ActionNodeInstallDeps
+	| ActionNodeInstallProjectDeps
+	| ActionNodeRunTarget
+	| ActionNodeSetupTool
+	| ActionNodeSyncProject;
+
+export interface ActionNodeInstallDeps {
+	action: 'InstallDeps';
+	params: [Runtime];
+}
+
+export interface ActionNodeInstallProjectDeps {
+	action: 'InstallProjectDeps';
+	params: [Runtime, string];
+}
+
+export interface ActionNodeRunTarget {
+	action: 'RunTarget';
+	params: [string];
+}
+
+export interface ActionNodeSetupTool {
+	action: 'SetupTool';
+	params: [Runtime];
+}
+
+export interface ActionNodeSyncProject {
+	action: 'SyncProject';
+	params: [Runtime, string];
 }

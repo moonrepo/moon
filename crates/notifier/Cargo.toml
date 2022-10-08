@@ -1,0 +1,8 @@
+[package]
+name = "moon_notifier"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = "0.11.12"
+serde = { workspace = true }

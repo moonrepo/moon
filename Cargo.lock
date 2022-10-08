@@ -1717,6 +1717,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_notifier"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+]
+
+[[package]]
 name = "moon_platform_node"
 version = "0.1.0"
 dependencies = [
@@ -1805,6 +1813,7 @@ dependencies = [
  "moon_hasher",
  "moon_lang",
  "moon_logger",
+ "moon_notifier",
  "moon_platform_node",
  "moon_platform_system",
  "moon_project",
@@ -1816,7 +1825,6 @@ dependencies = [
  "moon_vcs",
  "moon_workspace",
  "petgraph",
- "reqwest",
  "serde",
  "serde_json",
  "thiserror",

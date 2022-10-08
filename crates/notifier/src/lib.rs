@@ -1,4 +1,3 @@
-use reqwest;
 use serde::Serialize;
 
 #[derive(Serialize)]

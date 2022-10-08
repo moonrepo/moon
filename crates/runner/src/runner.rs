@@ -106,7 +106,9 @@ impl ActionRunner {
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
         let context = Arc::new(context.unwrap_or_default());
-        let emitter = Arc::new(RwLock::new(RunnerEmitter::new(Arc::clone(&self.workspace))));
+        let emitter = Arc::new(RwLock::new(
+            RunnerEmitter::new(Arc::clone(&self.workspace)).await,
+        ));
         let local_emitter = emitter.read().await;
 
         debug!(
@@ -231,7 +233,7 @@ impl ActionRunner {
                         }
 
                         if self.bail && result.has_failed() || result.should_abort() {
-                            local_emitter.emit(Event::RunAborted).await?;
+                            local_emitter.emit(Event::RunAborted {}).await?;
 
                             return Err(RunnerError::Failure(result.error.unwrap()));
                         }
@@ -240,13 +242,13 @@ impl ActionRunner {
                     }
                     Ok(Err(e)) => {
                         self.failed_count += 1;
-                        local_emitter.emit(Event::RunAborted).await?;
+                        local_emitter.emit(Event::RunAborted {}).await?;
 
                         return Err(e);
                     }
                     Err(e) => {
                         self.failed_count += 1;
-                        local_emitter.emit(Event::RunAborted).await?;
+                        local_emitter.emit(Event::RunAborted {}).await?;
 
                         return Err(RunnerError::Failure(e.to_string()));
                     }

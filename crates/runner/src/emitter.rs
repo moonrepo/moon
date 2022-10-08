@@ -1,4 +1,5 @@
 use crate::subscribers::local_cache::LocalCacheSubscriber;
+use crate::subscribers::webhooks::WebhooksSubscriber;
 use crate::ActionNode;
 use moon_action::Action;
 use moon_contract::{handle_flow, Runtime};
@@ -48,7 +49,7 @@ pub enum Event<'e> {
     },
 
     // Runner
-    RunAborted,
+    RunAborted {},
     RunStarted {
         actions_count: usize,
     },
@@ -113,7 +114,7 @@ impl<'e> Event<'e> {
             Event::DependenciesInstalled { .. } => "dependencies.installed",
             Event::ProjectSyncing { .. } => "project.syncing",
             Event::ProjectSynced { .. } => "project.synced",
-            Event::RunAborted => "run.aborted",
+            Event::RunAborted { .. } => "run.aborted",
             Event::RunStarted { .. } => "run.started",
             Event::RunFinished { .. } => "run.finished",
             Event::TargetRunning { .. } => "target.running",
@@ -134,21 +135,38 @@ impl<'e> Event<'e> {
 pub struct RunnerEmitter {
     local_cache: Arc<RwLock<LocalCacheSubscriber>>,
 
+    webhooks: Option<Arc<RwLock<WebhooksSubscriber>>>,
+
     workspace: Arc<RwLock<Workspace>>,
 }
 
 impl RunnerEmitter {
-    pub fn new(workspace: Arc<RwLock<Workspace>>) -> Self {
-        RunnerEmitter {
+    pub async fn new(workspace: Arc<RwLock<Workspace>>) -> Self {
+        let mut emitter = RunnerEmitter {
             local_cache: Arc::new(RwLock::new(LocalCacheSubscriber::new())),
-            workspace,
+            webhooks: None,
+            workspace: Arc::clone(&workspace),
+        };
+
+        let workspace = workspace.read().await;
+
+        if let Some(webhook_url) = &workspace.config.notifier.webhook_url {
+            emitter.webhooks = Some(Arc::new(RwLock::new(WebhooksSubscriber::new(
+                webhook_url.to_owned(),
+            ))));
         }
+
+        emitter
     }
 
     pub async fn emit<'e>(&self, event: Event<'e>) -> Result<EventFlow, MoonError> {
         let workspace = self.workspace.read().await;
 
         // dbg!(&event);
+
+        if let Some(webhooks) = &self.webhooks {
+            handle_flow!(webhooks.write().await.on_emit(&event, &workspace).await);
+        }
 
         handle_flow!(
             self.local_cache

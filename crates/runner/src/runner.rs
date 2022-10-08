@@ -1,6 +1,6 @@
 use crate::dep_graph::DepGraph;
 use crate::emitter::{Event, RunnerEmitter};
-use crate::errors::{ActionRunnerError, DepGraphError};
+use crate::errors::{DepGraphError, RunnerError};
 use crate::node::ActionNode;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus};
@@ -25,7 +25,7 @@ async fn run_action(
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<RunnerEmitter>>,
-) -> Result<(), ActionRunnerError> {
+) -> Result<(), RunnerError> {
     match node.run(action, context, workspace, emitter).await {
         Ok(status) => {
             action.done(status);
@@ -99,7 +99,7 @@ impl ActionRunner {
         &mut self,
         graph: DepGraph,
         context: Option<ActionContext>,
-    ) -> Result<ActionResults, ActionRunnerError> {
+    ) -> Result<ActionResults, RunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
@@ -201,7 +201,7 @@ impl ActionRunner {
                     } else {
                         action.status = ActionStatus::Invalid;
 
-                        return Err(ActionRunnerError::DepGraph(DepGraphError::UnknownNode(
+                        return Err(RunnerError::DepGraph(DepGraphError::UnknownNode(
                             node_index.index(),
                         )));
                     }
@@ -233,7 +233,7 @@ impl ActionRunner {
                         if self.bail && result.has_failed() || result.should_abort() {
                             local_emitter.emit(Event::RunAborted).await?;
 
-                            return Err(ActionRunnerError::Failure(result.error.unwrap()));
+                            return Err(RunnerError::Failure(result.error.unwrap()));
                         }
 
                         results.push(result);
@@ -248,7 +248,7 @@ impl ActionRunner {
                         self.failed_count += 1;
                         local_emitter.emit(Event::RunAborted).await?;
 
-                        return Err(ActionRunnerError::Failure(e.to_string()));
+                        return Err(RunnerError::Failure(e.to_string()));
                     }
                 }
             }
@@ -401,7 +401,7 @@ impl ActionRunner {
         &self,
         actions: &ActionResults,
         context: &ActionContext,
-    ) -> Result<(), ActionRunnerError> {
+    ) -> Result<(), RunnerError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();

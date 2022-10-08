@@ -1,6 +1,6 @@
 use crate::actions;
 use crate::emitter::{Event, RunnerEmitter};
-use crate::errors::ActionRunnerError;
+use crate::errors::RunnerError;
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_contract::Runtime;
 use moon_platform_node::actions as node_actions;
@@ -13,6 +13,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[derive(Clone, Debug, Eq, Serialize)]
+#[serde(tag = "action", content = "params")]
 pub enum ActionNode {
     /// Install tool dependencies in the workspace root.
     InstallDeps(Runtime),
@@ -58,7 +59,7 @@ impl ActionNode {
         context: &ActionContext,
         workspace: Arc<RwLock<Workspace>>,
         emitter: Arc<RwLock<RunnerEmitter>>,
-    ) -> Result<ActionStatus, ActionRunnerError> {
+    ) -> Result<ActionStatus, RunnerError> {
         let local_emitter = Arc::clone(&emitter);
         let local_emitter = local_emitter.read().await;
 
@@ -76,7 +77,7 @@ impl ActionNode {
                     Runtime::Node(_) => {
                         node_actions::install_deps(action, context, workspace, runtime, None)
                             .await
-                            .map_err(ActionRunnerError::Workspace)
+                            .map_err(RunnerError::Workspace)
                     }
                     _ => Ok(ActionStatus::Passed),
                 };
@@ -109,7 +110,7 @@ impl ActionNode {
                         Some(project_id),
                     )
                     .await
-                    .map_err(ActionRunnerError::Workspace),
+                    .map_err(RunnerError::Workspace),
                     _ => Ok(ActionStatus::Passed),
                 };
 
@@ -151,7 +152,7 @@ impl ActionNode {
 
                 let tool_result = actions::setup_toolchain(action, context, workspace, runtime)
                     .await
-                    .map_err(ActionRunnerError::Workspace);
+                    .map_err(RunnerError::Workspace);
 
                 local_emitter.emit(Event::ToolInstalled { runtime }).await?;
 
@@ -171,7 +172,7 @@ impl ActionNode {
                     Runtime::Node(_) => {
                         node_actions::sync_project(action, context, workspace, project_id)
                             .await
-                            .map_err(ActionRunnerError::Workspace)
+                            .map_err(RunnerError::Workspace)
                     }
                     _ => Ok(ActionStatus::Passed),
                 };

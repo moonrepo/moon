@@ -15,7 +15,7 @@ use tokio::sync::RwLock;
 pub use moon_contract::EventFlow;
 
 #[derive(Debug, Serialize)]
-#[serde(untagged)]
+#[serde(untagged, rename_all = "camelCase")]
 pub enum Event<'e> {
     // Actions
     ActionStarted {
@@ -72,6 +72,7 @@ pub enum Event<'e> {
         task: &'e Task,
     },
     TargetOutputArchived {
+        #[serde(skip)]
         archive_path: PathBuf,
         hash: &'e str,
         project: &'e Project,
@@ -83,6 +84,7 @@ pub enum Event<'e> {
         task: &'e Task,
     },
     TargetOutputHydrated {
+        #[serde(skip)]
         archive_path: PathBuf,
         hash: &'e str,
         project: &'e Project,

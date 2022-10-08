@@ -71,6 +71,7 @@ pub trait Platformable {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(tag = "platform", content = "version")]
 pub enum Runtime {
     Node(String),
     System,

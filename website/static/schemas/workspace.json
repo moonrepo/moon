@@ -44,6 +44,16 @@
         }
       ]
     },
+    "notifier": {
+      "default": {
+        "webhookUrl": null
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/NotifierConfig"
+        }
+      ]
+    },
     "projects": {
       "default": {},
       "allOf": [
@@ -258,6 +268,18 @@
         "nodenv",
         "nvm"
       ]
+    },
+    "NotifierConfig": {
+      "type": "object",
+      "properties": {
+        "webhookUrl": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     },
     "NpmConfig": {
       "type": "object",

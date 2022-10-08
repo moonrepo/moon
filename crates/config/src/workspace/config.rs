@@ -8,6 +8,7 @@ use crate::validators::{validate_child_relative_path, validate_extends, validate
 use crate::workspace::generator::GeneratorConfig;
 use crate::workspace::hasher::HasherConfig;
 use crate::workspace::node::NodeConfig;
+use crate::workspace::notifier::NotifierConfig;
 use crate::workspace::runner::RunnerConfig;
 use crate::workspace::typescript::TypeScriptConfig;
 use crate::workspace::vcs::VcsConfig;
@@ -75,6 +76,9 @@ pub struct WorkspaceConfig {
 
     #[validate]
     pub node: Option<NodeConfig>,
+
+    #[validate]
+    pub notifier: NotifierConfig,
 
     #[validate(custom = "validate_projects")]
     pub projects: WorkspaceProjects,

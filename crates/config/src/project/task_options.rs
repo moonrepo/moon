@@ -5,7 +5,7 @@ use validator::{Validate, ValidationError};
 
 fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidationError> {
     if let TaskOptionEnvFile::File(path) = file {
-        validate_child_relative_path("env_file", path)?;
+        validate_child_relative_path("envFile", path)?;
     }
 
     Ok(())

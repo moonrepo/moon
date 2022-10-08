@@ -1,6 +1,6 @@
 use moon_config::{
-    ConfigError, GeneratorConfig, HasherConfig, NodeConfig, RunnerConfig, VcsConfig, VcsManager,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigError, GeneratorConfig, HasherConfig, NodeConfig, NotifierConfig, RunnerConfig,
+    VcsConfig, VcsManager, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_constants::CONFIG_WORKSPACE_FILENAME;
 use moon_utils::test::get_fixtures_dir;
@@ -32,6 +32,7 @@ fn loads_defaults() {
                 extends: None,
                 hasher: HasherConfig::default(),
                 node: None,
+                notifier: NotifierConfig::default(),
                 projects: WorkspaceProjects::default(),
                 typescript: None,
                 vcs: VcsConfig::default(),

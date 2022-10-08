@@ -1,3 +1,4 @@
+# https://moonrepo.dev/docs/config/workspace
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
 
 # Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
@@ -38,16 +39,17 @@ node:
   addEnginesConstraint: true
 
   # Use the `package.json` name as an alias for the respective moon project.
-  # Do note that this requires eager loading all `package.json`s in the repo.
-  aliasPackageNames: false
+  # aliasPackageNames: 'name-and-scope'
 
   # Dedupe dependencies after the lockfile has changed.
   dedupeOnLockfileChange: true
 
+  # Version format to use when syncing dependencies within the project's `package.json`.
+  # dependencyVersionFormat: 'workspace'
+
   # Infer and automatically create moon tasks from `package.json` scripts, per project.
-  # Do note that this requires eager loading all `package.json`s in the repo.
   # BEWARE: Tasks and scripts are not 1:1 in functionality, so please refer to the documentation.
-  inferTasksFromScripts: false
+  # inferTasksFromScripts: false
 
   # Sync a project's `dependsOn` as dependencies within the project's `package.json`.
   syncProjectWorkspaceDependencies: true
@@ -69,18 +71,24 @@ typescript:
   createMissingConfig: true
 
   # Name of `tsconfig.json` file in the project root.
-  projectConfigFileName: 'tsconfig.json'
+  # projectConfigFileName: 'tsconfig.json'
 
   # Name of `tsconfig.json` file in the workspace root.
-  rootConfigFileName: 'tsconfig.json'
+  # rootConfigFileName: 'tsconfig.json'
 
   # Name of the config file in the workspace root that defines shared compiler options
   # for all project reference based config files.
-  rootOptionsConfigFileName: 'tsconfig.options.json'
+  # rootOptionsConfigFileName: 'tsconfig.options.json'
+
+  # Update the project's `tsconfig.json` to route the `outDir` to moon's cache.
+  # routeOutDirToCache: true
 
   # Sync a project's `dependsOn` as TypeScript project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
   syncProjectReferences: true
+
+  # Sync a project's project references as `paths` aliases.
+  # syncProjectReferencesToPaths: true
 
 # Configures the version control system to utilize within the workspace. A VCS
 # is required for determining touched (added, modified, etc) files, calculating file hashes,

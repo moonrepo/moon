@@ -1,10 +1,10 @@
+# https://moonrepo.dev/docs/config/project
 $schema: 'https://moonrepo.dev/schemas/project.json'
 
 # The type of project. Accepts "library" (default), "application", or "tool".
 type: 'library'
 
 # Primary programming language the project is written in.
-# Accepts "javascript" or "typescript" (default).
 language: 'typescript'
 
 # This setting defines metadata about the project itself. Although this
@@ -28,7 +28,7 @@ project:
   # and can provide support. Can be a name, email, LDAP/GitHub username, etc.
   maintainers: ['user.name']
 
-# A list of other projects that this project depends on. Each value
+# An explicit list of other projects that this project depends on. Each value
 # must be a unique project ID, and NOT a file path or project name.
 #
 # When `node.syncProjectWorkspaceDependencies` and `typescript.syncProjectReferences`

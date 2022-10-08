@@ -7,11 +7,12 @@ use moon_platform_node::actions as node_actions;
 use moon_project::ProjectID;
 use moon_task::TargetID;
 use moon_workspace::Workspace;
+use serde::Serialize;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug, Eq, Serialize)]
 pub enum ActionNode {
     /// Install tool dependencies in the workspace root.
     InstallDeps(Runtime),

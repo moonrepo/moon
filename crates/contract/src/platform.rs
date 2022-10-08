@@ -5,6 +5,7 @@ use moon_config::{
     WorkspaceConfig,
 };
 use moon_error::MoonError;
+use serde::Serialize;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::path::Path;
@@ -69,7 +70,7 @@ pub trait Platformable {
     fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError>;
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub enum Runtime {
     Node(String),
     System,

@@ -1632,6 +1632,7 @@ version = "0.1.0"
 dependencies = [
  "moon_config",
  "moon_error",
+ "serde",
 ]
 
 [[package]]
@@ -1815,7 +1816,9 @@ dependencies = [
  "moon_vcs",
  "moon_workspace",
  "petgraph",
+ "reqwest",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
 ]

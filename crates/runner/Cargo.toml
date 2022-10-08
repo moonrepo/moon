@@ -24,7 +24,9 @@ moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 console = "0.15.2"
 petgraph = "0.6.2"
+reqwest = "0.11.12"
 serde = { workspace = true }
+serde_json = "1.0.85"
 thiserror = { workspace = true }
 tokio = { workspace = true }
 

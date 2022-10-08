@@ -6,6 +6,7 @@ use moon_error::MoonError;
 use moon_project::Project;
 use moon_task::Task;
 use moon_workspace::Workspace;
+use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -13,7 +14,8 @@ use tokio::sync::RwLock;
 
 pub use moon_contract::EventFlow;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
 pub enum Event<'e> {
     // Actions
     ActionStarted {
@@ -98,6 +100,33 @@ pub enum Event<'e> {
     ToolInstalled {
         runtime: &'e Runtime,
     },
+}
+
+impl<'e> Event<'e> {
+    pub fn get_type(&self) -> String {
+        let key = match self {
+            Event::ActionStarted { .. } => "action.started",
+            Event::ActionFinished { .. } => "action.finished",
+            Event::DependenciesInstalling { .. } => "dependencies.installing",
+            Event::DependenciesInstalled { .. } => "dependencies.installed",
+            Event::ProjectSyncing { .. } => "project.syncing",
+            Event::ProjectSynced { .. } => "project.synced",
+            Event::RunAborted => "run.aborted",
+            Event::RunStarted { .. } => "run.started",
+            Event::RunFinished { .. } => "run.finished",
+            Event::TargetRunning { .. } => "target.running",
+            Event::TargetRan { .. } => "target.ran",
+            Event::TargetOutputArchiving { .. } => "target-output.archiving",
+            Event::TargetOutputArchived { .. } => "target-output.archived",
+            Event::TargetOutputHydrating { .. } => "target-output.hydrating",
+            Event::TargetOutputHydrated { .. } => "target-output.hydrated",
+            Event::TargetOutputCacheCheck { .. } => "target-output.cache-check",
+            Event::ToolInstalling { .. } => "tool.installing",
+            Event::ToolInstalled { .. } => "tool.installed",
+        };
+
+        format!("runner.{}", key)
+    }
 }
 
 pub struct RunnerEmitter {

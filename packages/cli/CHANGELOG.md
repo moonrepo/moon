@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon init` would generate a config with invalid settings.
+- Fixed an issue where downloading a tool would fail, but moon would still continue.
+
 ## 0.16.0
 
 #### 🚀 Updates

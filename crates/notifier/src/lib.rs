@@ -1,3 +1,5 @@
+pub mod subscribers;
+
 use moon_utils::time::chrono::prelude::*;
 use serde::Serialize;
 

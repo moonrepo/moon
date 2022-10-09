@@ -1737,9 +1737,16 @@ dependencies = [
 name = "moon_notifier"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "moon_emitter",
+ "moon_error",
+ "moon_logger",
  "moon_utils",
+ "moon_workspace",
  "reqwest",
  "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -1846,7 +1853,6 @@ dependencies = [
  "moon_workspace",
  "petgraph",
  "serde",
- "serde_json",
  "thiserror",
  "tokio",
 ]

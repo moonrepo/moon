@@ -1,7 +1,7 @@
+use crate::{notify_webhook, WebhookPayload};
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, error};
-use moon_notifier::{notify_webhook, WebhookPayload};
 use moon_utils::time::chrono::Utc;
 use moon_workspace::Workspace;
 use tokio::task::JoinHandle;
@@ -47,7 +47,7 @@ impl Subscriber for WebhooksSubscriber {
                 self.enabled = false;
 
                 error!(
-                    target: "moon:runner",
+                    target: "moon:notifier",
                     "Failed to send webhook event to {}. Subsequent webhook requests will be disabled.",
                     color::url(&self.url),
                 );

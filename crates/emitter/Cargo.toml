@@ -1,0 +1,11 @@
+[package]
+name = "moon_emitter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_error = { path = "../error" }
+moon_utils = { path = "../utils" }
+moon_workspace = { path = "../workspace" }
+async-trait = "0.1.57"
+tokio = { workspace = true }

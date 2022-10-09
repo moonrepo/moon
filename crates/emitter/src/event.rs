@@ -1,3 +1,7 @@
+pub enum Event<'e> {
+    Foo { string: &'e str },
+}
+
 pub enum EventFlow {
     Break,
     Continue,

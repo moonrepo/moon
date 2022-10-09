@@ -1,5 +1,4 @@
 use crate::event::{Event, EventFlow};
-use crate::handle_flow;
 use crate::subscriber::Subscriber;
 use moon_error::MoonError;
 use moon_workspace::Workspace;
@@ -26,7 +25,11 @@ impl Emitter {
         // dbg!(&event);
 
         for subscriber in &self.subscribers {
-            handle_flow!(subscriber.write().await.on_emit(&event, &workspace).await);
+            match subscriber.write().await.on_emit(&event, &workspace).await? {
+                EventFlow::Break => return Ok(EventFlow::Break),
+                EventFlow::Return(value) => return Ok(EventFlow::Return(value)),
+                EventFlow::Continue => {}
+            };
         }
 
         Ok(EventFlow::Continue)

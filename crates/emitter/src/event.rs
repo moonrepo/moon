@@ -14,6 +14,7 @@ pub enum Event<'e> {
     },
     ActionFinished {
         action: &'e Action,
+        error: Option<String>,
         node: &'e ActionNode,
     },
 
@@ -23,6 +24,7 @@ pub enum Event<'e> {
         runtime: &'e Runtime,
     },
     DependenciesInstalled {
+        error: Option<String>,
         project_id: Option<&'e str>,
         runtime: &'e Runtime,
     },
@@ -33,12 +35,15 @@ pub enum Event<'e> {
         runtime: &'e Runtime,
     },
     ProjectSynced {
+        error: Option<String>,
         project_id: &'e str,
         runtime: &'e Runtime,
     },
 
     // Runner
-    RunnerAborted {},
+    RunnerAborted {
+        error: String,
+    },
     RunnerStarted {
         actions_count: usize,
     },
@@ -54,6 +59,7 @@ pub enum Event<'e> {
         target_id: &'e str,
     },
     TargetRan {
+        error: Option<String>,
         target_id: &'e str,
     },
     TargetOutputArchiving {
@@ -88,6 +94,7 @@ pub enum Event<'e> {
         runtime: &'e Runtime,
     },
     ToolInstalled {
+        error: Option<String>,
         runtime: &'e Runtime,
     },
 }
@@ -123,15 +130,4 @@ pub enum EventFlow {
     Break,
     Continue,
     Return(String),
-}
-
-#[macro_export]
-macro_rules! handle_flow {
-    ($result:expr) => {
-        match $result? {
-            EventFlow::Break => return Ok(EventFlow::Break),
-            EventFlow::Return(value) => return Ok(EventFlow::Return(value)),
-            EventFlow::Continue => {}
-        };
-    };
 }

@@ -41,7 +41,9 @@ impl Subscriber for WebhooksSubscriber {
         // by sending the request and checking for a failure. If failed,
         // we will disable subsequent requests from being called.
         if matches!(event, Event::RunnerStarted { .. }) {
-            if notify_webhook(url, body).await.is_err() {
+            let response = notify_webhook(url, body).await;
+
+            if response.is_err() || !response.unwrap().status().is_success() {
                 self.enabled = false;
 
                 error!(

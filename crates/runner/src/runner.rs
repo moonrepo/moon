@@ -23,6 +23,13 @@ const LOG_TARGET: &str = "moon:runner";
 
 pub type ActionResults = Vec<Action>;
 
+fn extract_run_error<T>(result: &Result<T, RunnerError>) -> Option<String> {
+    match result {
+        Ok(_) => None,
+        Err(error) => Some(error.to_string()),
+    }
+}
+
 async fn run_action(
     node: &ActionNode,
     action: &mut Action,
@@ -54,6 +61,7 @@ async fn run_action(
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
+                    error: extract_run_error(&install_result),
                     project_id: None,
                     runtime,
                 })
@@ -86,6 +94,7 @@ async fn run_action(
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
+                    error: extract_run_error(&install_result),
                     project_id: Some(project_id),
                     runtime,
                 })
@@ -104,7 +113,12 @@ async fn run_action(
                 actions::run_target(action, context, workspace, Arc::clone(&emitter), target_id)
                     .await;
 
-            local_emitter.emit(Event::TargetRan { target_id }).await?;
+            local_emitter
+                .emit(Event::TargetRan {
+                    error: extract_run_error(&run_result),
+                    target_id,
+                })
+                .await?;
 
             run_result
         }
@@ -119,7 +133,12 @@ async fn run_action(
                 .await
                 .map_err(RunnerError::Workspace);
 
-            local_emitter.emit(Event::ToolInstalled { runtime }).await?;
+            local_emitter
+                .emit(Event::ToolInstalled {
+                    error: extract_run_error(&tool_result),
+                    runtime,
+                })
+                .await?;
 
             tool_result
         }
@@ -144,6 +163,7 @@ async fn run_action(
 
             local_emitter
                 .emit(Event::ProjectSynced {
+                    error: extract_run_error(&sync_result),
                     project_id,
                     runtime,
                 })
@@ -296,14 +316,22 @@ impl ActionRunner {
                             log_action_label
                         );
 
-                        run_action(
+                        let result = run_action(
                             node,
                             &mut action,
                             &context_clone,
                             workspace_clone,
                             Arc::clone(&emitter_clone),
                         )
-                        .await?;
+                        .await;
+
+                        own_emitter
+                            .emit(Event::ActionFinished {
+                                action: &action,
+                                error: extract_run_error(&result),
+                                node,
+                            })
+                            .await?;
 
                         if action.has_failed() {
                             trace!(
@@ -321,12 +349,8 @@ impl ActionRunner {
                             );
                         }
 
-                        own_emitter
-                            .emit(Event::ActionFinished {
-                                action: &action,
-                                node,
-                            })
-                            .await?;
+                        // Bubble up any failure
+                        result?;
                     } else {
                         action.status = ActionStatus::Invalid;
 
@@ -360,7 +384,11 @@ impl ActionRunner {
                         }
 
                         if self.bail && result.has_failed() || result.should_abort() {
-                            local_emitter.emit(Event::RunnerAborted {}).await?;
+                            local_emitter
+                                .emit(Event::RunnerAborted {
+                                    error: result.error.clone().unwrap_or_default(),
+                                })
+                                .await?;
 
                             return Err(RunnerError::Failure(result.error.unwrap()));
                         }
@@ -369,13 +397,21 @@ impl ActionRunner {
                     }
                     Ok(Err(e)) => {
                         self.failed_count += 1;
-                        local_emitter.emit(Event::RunnerAborted {}).await?;
+                        local_emitter
+                            .emit(Event::RunnerAborted {
+                                error: e.to_string(),
+                            })
+                            .await?;
 
                         return Err(e);
                     }
                     Err(e) => {
                         self.failed_count += 1;
-                        local_emitter.emit(Event::RunnerAborted {}).await?;
+                        local_emitter
+                            .emit(Event::RunnerAborted {
+                                error: e.to_string(),
+                            })
+                            .await?;
 
                         return Err(RunnerError::Failure(e.to_string()));
                     }

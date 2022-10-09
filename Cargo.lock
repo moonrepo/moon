@@ -1516,6 +1516,7 @@ name = "moon_action"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "moon_contract",
  "moon_utils",
  "serde",
 ]
@@ -1640,9 +1641,14 @@ name = "moon_emitter"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "moon_action",
+ "moon_contract",
  "moon_error",
+ "moon_project",
+ "moon_task",
  "moon_utils",
  "moon_workspace",
+ "serde",
  "tokio",
 ]
 
@@ -1815,12 +1821,14 @@ dependencies = [
 name = "moon_runner"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "console",
  "insta",
  "moon_action",
  "moon_cache",
  "moon_config",
  "moon_contract",
+ "moon_emitter",
  "moon_error",
  "moon_hasher",
  "moon_lang",

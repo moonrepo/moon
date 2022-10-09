@@ -8,6 +8,7 @@ moon_action = { path = "../action" }
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_contract = { path = "../contract" }
+moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_lang = { path = "../lang" }
@@ -23,6 +24,7 @@ moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
+async-trait = "0.1.57"
 console = "0.15.2"
 petgraph = "0.6.2"
 serde = { workspace = true }

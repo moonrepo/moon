@@ -1,5 +1,5 @@
 use crate::errors::DepGraphError;
-use crate::node::ActionNode;
+use moon_action::ActionNode;
 use moon_config::{default_node_version, ProjectLanguage, ProjectWorkspaceNodeConfig};
 use moon_contract::Runtime;
 use moon_logger::{color, debug, map_list, trace};

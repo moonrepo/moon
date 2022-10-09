@@ -1,5 +1,4 @@
-use crate::emitter::Event;
-use moon_contract::EventFlow;
+use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, error};
 use moon_notifier::{notify_webhook, WebhookPayload};
@@ -21,8 +20,11 @@ impl WebhooksSubscriber {
             url,
         }
     }
+}
 
-    pub async fn on_emit<'a>(
+#[async_trait::async_trait]
+impl Subscriber for WebhooksSubscriber {
+    async fn on_emit<'a>(
         &mut self,
         event: &Event<'a>,
         _workspace: &Workspace,
@@ -38,7 +40,7 @@ impl WebhooksSubscriber {
         // For the first event, we want to ensure that the webhook URL is valid
         // by sending the request and checking for a failure. If failed,
         // we will disable subsequent requests from being called.
-        if matches!(event, Event::RunStarted { .. }) {
+        if matches!(event, Event::RunnerStarted { .. }) {
             if notify_webhook(url, body).await.is_err() {
                 self.enabled = false;
 
@@ -60,7 +62,9 @@ impl WebhooksSubscriber {
         // For the last event, we want to ensure that all webhook requests have
         // actually sent, otherwise, when the program exists all of these requests
         // will be dropped!
-        if matches!(event, Event::RunAborted { .. }) || matches!(event, Event::RunFinished { .. }) {
+        if matches!(event, Event::RunnerAborted { .. })
+            || matches!(event, Event::RunnerFinished { .. })
+        {
             for future in self.requests.drain(0..) {
                 let _ = future.await;
             }

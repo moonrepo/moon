@@ -7,18 +7,15 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub struct Emitter {
-    subscribers: Vec<Arc<RwLock<dyn Subscriber>>>,
+    pub subscribers: Vec<Arc<RwLock<dyn Subscriber>>>,
 
     workspace: Arc<RwLock<Workspace>>,
 }
 
 impl Emitter {
-    pub async fn new(
-        workspace: Arc<RwLock<Workspace>>,
-        subscribers: Vec<Arc<RwLock<dyn Subscriber>>>,
-    ) -> Self {
+    pub fn new(workspace: Arc<RwLock<Workspace>>) -> Self {
         Emitter {
-            subscribers,
+            subscribers: vec![],
             workspace,
         }
     }

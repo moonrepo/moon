@@ -1,10 +1,10 @@
-use crate::emitter::{Event, EventFlow, RunnerEmitter};
 use crate::RunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
 use moon_config::PlatformType;
 use moon_config::TaskOutputStyle;
+use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};
@@ -36,7 +36,7 @@ pub enum HydrateFrom {
 pub struct TargetRunner<'a> {
     pub cache: CacheItem<RunTargetState>,
 
-    emitter: &'a RunnerEmitter,
+    emitter: &'a Emitter,
 
     project: &'a Project,
 
@@ -51,7 +51,7 @@ pub struct TargetRunner<'a> {
 
 impl<'a> TargetRunner<'a> {
     pub async fn new(
-        emitter: &'a RunnerEmitter,
+        emitter: &'a Emitter,
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
@@ -674,7 +674,7 @@ pub async fn run_target(
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-    emitter: Arc<RwLock<RunnerEmitter>>,
+    emitter: Arc<RwLock<Emitter>>,
     target_id: &str,
 ) -> Result<ActionStatus, RunnerError> {
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;

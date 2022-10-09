@@ -1,5 +1,4 @@
-use crate::emitter::Event;
-use moon_contract::EventFlow;
+use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_utils::path;
 use moon_workspace::Workspace;
@@ -17,10 +16,13 @@ impl LocalCacheSubscriber {
     pub fn new() -> Self {
         LocalCacheSubscriber {}
     }
+}
 
-    pub async fn on_emit<'a>(
+#[async_trait::async_trait]
+impl Subscriber for LocalCacheSubscriber {
+    async fn on_emit<'e>(
         &mut self,
-        event: &Event<'a>,
+        event: &Event<'e>,
         workspace: &Workspace,
     ) -> Result<EventFlow, MoonError> {
         match event {
@@ -56,7 +58,7 @@ impl LocalCacheSubscriber {
             }
 
             // After the run has finished, clean any stale archives
-            Event::RunFinished { .. } => {
+            Event::RunnerFinished { .. } => {
                 workspace
                     .cache
                     .clean_stale_cache(&workspace.config.runner.cache_lifetime)

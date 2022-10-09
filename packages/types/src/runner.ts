@@ -1,9 +1,4 @@
-import { Runtime } from './common';
-
-export interface Duration {
-	secs: number;
-	nanos: number;
-}
+import { Duration, Runtime } from './common';
 
 export type ActionStatus =
 	| 'cached'

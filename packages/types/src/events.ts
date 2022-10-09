@@ -1,6 +1,6 @@
-import { Runtime } from './common';
+import { Duration, Runtime } from './common';
 import { Project, Task } from './project';
-import { Action, ActionNode, Duration } from './runner';
+import { Action, ActionNode } from './runner';
 
 export interface WebhookPayload<T extends EventType, E> {
 	createdAt: string;
@@ -9,38 +9,39 @@ export interface WebhookPayload<T extends EventType, E> {
 }
 
 export type EventType =
-	| 'runner.action.finished'
-	| 'runner.action.started'
-	| 'runner.dependencies.installed'
-	| 'runner.dependencies.installing'
-	| 'runner.project.synced'
-	| 'runner.project.syncing'
-	| 'runner.run.aborted'
-	| 'runner.run.finished'
-	| 'runner.run.started'
-	| 'runner.target-output.archived'
-	| 'runner.target-output.archiving'
-	| 'runner.target-output.cache-check'
-	| 'runner.target-output.hydrated'
-	| 'runner.target-output.hydrating'
-	| 'runner.target.ran'
-	| 'runner.target.running'
-	| 'runner.tool.installed'
-	| 'runner.tool.installing';
+	| 'action.finished'
+	| 'action.started'
+	| 'dependencies.installed'
+	| 'dependencies.installing'
+	| 'project.synced'
+	| 'project.syncing'
+	| 'runner.aborted'
+	| 'runner.finished'
+	| 'runner.started'
+	| 'target-output.archived'
+	| 'target-output.archiving'
+	| 'target-output.cache-check'
+	| 'target-output.hydrated'
+	| 'target-output.hydrating'
+	| 'target.ran'
+	| 'target.running'
+	| 'tool.installed'
+	| 'tool.installing';
 
 export interface EventActionStarted {
 	action: Action;
 	node: ActionNode;
 }
 
-export type PayloadActionStarted = WebhookPayload<'runner.action.started', EventActionStarted>;
+export type PayloadActionStarted = WebhookPayload<'action.started', EventActionStarted>;
 
 export interface EventActionFinished {
 	action: Action;
+	error: string | null;
 	node: ActionNode;
 }
 
-export type PayloadActionFinished = WebhookPayload<'runner.action.finished', EventActionFinished>;
+export type PayloadActionFinished = WebhookPayload<'action.finished', EventActionFinished>;
 
 export interface EventDependenciesInstalling {
 	projectId: string | null;
@@ -48,17 +49,18 @@ export interface EventDependenciesInstalling {
 }
 
 export type PayloadDependenciesInstalling = WebhookPayload<
-	'runner.dependencies.installing',
+	'dependencies.installing',
 	EventDependenciesInstalling
 >;
 
 export interface EventDependenciesInstalled {
+	error: string | null;
 	projectId: string | null;
 	runtime: Runtime;
 }
 
 export type PayloadDependenciesInstalled = WebhookPayload<
-	'runner.dependencies.installed',
+	'dependencies.installed',
 	EventDependenciesInstalled
 >;
 
@@ -67,46 +69,49 @@ export interface EventProjectSyncing {
 	runtime: Runtime;
 }
 
-export type PayloadProjectSyncing = WebhookPayload<'runner.project.syncing', EventProjectSyncing>;
+export type PayloadProjectSyncing = WebhookPayload<'project.syncing', EventProjectSyncing>;
 
 export interface EventProjectSynced {
+	error: string | null;
 	projectId: string;
 	runtime: Runtime;
 }
 
-export type PayloadProjectSynced = WebhookPayload<'runner.project.synced', EventProjectSynced>;
+export type PayloadProjectSynced = WebhookPayload<'project.synced', EventProjectSynced>;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface EventRunAborted {}
+export interface EventRunnerAborted {
+	error: string;
+}
 
-export type PayloadRunAborted = WebhookPayload<'runner.run.aborted', EventRunAborted>;
+export type PayloadRunnerAborted = WebhookPayload<'runner.aborted', EventRunnerAborted>;
 
-export interface EventRunStarted {
+export interface EventRunnerStarted {
 	actionsCount: number;
 }
 
-export type PayloadRunStarted = WebhookPayload<'runner.run.started', EventRunStarted>;
+export type PayloadRunnerStarted = WebhookPayload<'runner.started', EventRunnerStarted>;
 
-export interface EventRunFinished {
+export interface EventRunnerFinished {
 	duration: Duration;
 	cachedCount: number;
 	failedCount: number;
 	passedCount: number;
 }
 
-export type PayloadRunFinished = WebhookPayload<'runner.run.finished', EventRunFinished>;
+export type PayloadRunnerFinished = WebhookPayload<'runner.finished', EventRunnerFinished>;
 
 export interface EventTargetRunning {
 	targetId: string;
 }
 
-export type PayloadTargetRunning = WebhookPayload<'runner.target.running', EventTargetRunning>;
+export type PayloadTargetRunning = WebhookPayload<'target.running', EventTargetRunning>;
 
 export interface EventTargetRan {
+	error: string | null;
 	targetId: string;
 }
 
-export type PayloadTargetRan = WebhookPayload<'runner.target.ran', EventTargetRan>;
+export type PayloadTargetRan = WebhookPayload<'target.ran', EventTargetRan>;
 
 export interface EventTargetOutputArchiving {
 	hash: string;
@@ -115,7 +120,7 @@ export interface EventTargetOutputArchiving {
 }
 
 export type PayloadTargetOutputArchiving = WebhookPayload<
-	'runner.target-output.archiving',
+	'target-output.archiving',
 	EventTargetOutputArchiving
 >;
 
@@ -127,7 +132,7 @@ export interface EventTargetOutputArchived {
 }
 
 export type PayloadTargetOutputArchived = WebhookPayload<
-	'runner.target-output.archived',
+	'target-output.archived',
 	EventTargetOutputArchived
 >;
 
@@ -138,7 +143,7 @@ export interface EventTargetOutputHydrating {
 }
 
 export type PayloadTargetOutputHydrating = WebhookPayload<
-	'runner.target-output.hydrating',
+	'target-output.hydrating',
 	EventTargetOutputHydrating
 >;
 
@@ -150,7 +155,7 @@ export interface EventTargetOutputHydrated {
 }
 
 export type PayloadTargetOutputHydrated = WebhookPayload<
-	'runner.target-output.hydrated',
+	'target-output.hydrated',
 	EventTargetOutputHydrated
 >;
 
@@ -160,7 +165,7 @@ export interface EventTargetOutputCacheCheck {
 }
 
 export type PayloadTargetOutputCacheCheck = WebhookPayload<
-	'runner.target-output.cache-check',
+	'target-output.cache-check',
 	EventTargetOutputCacheCheck
 >;
 
@@ -168,10 +173,11 @@ export interface EventToolInstalling {
 	runtime: Runtime;
 }
 
-export type PayloadToolInstalling = WebhookPayload<'runner.tool.installing', EventToolInstalling>;
+export type PayloadToolInstalling = WebhookPayload<'tool.installing', EventToolInstalling>;
 
 export interface EventToolInstalled {
+	error: string | null;
 	runtime: Runtime;
 }
 
-export type PayloadToolInstalled = WebhookPayload<'runner.tool.installed', EventToolInstalled>;
+export type PayloadToolInstalled = WebhookPayload<'tool.installed', EventToolInstalled>;

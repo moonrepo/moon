@@ -1,6 +1,6 @@
-import { Duration, Runtime } from './common';
-import { Project, Task } from './project';
-import { Action, ActionNode } from './runner';
+import type { Duration, Runtime } from './common';
+import type { Project, Task } from './project';
+import type { Action, ActionNode } from './runner';
 
 export interface WebhookPayload<T extends EventType, E> {
 	createdAt: string;

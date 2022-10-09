@@ -1,4 +1,4 @@
-import { Duration, Runtime } from './common';
+import type { Duration, Runtime } from './common';
 
 export type ActionStatus =
 	| 'cached'

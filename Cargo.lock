@@ -1720,6 +1720,7 @@ dependencies = [
 name = "moon_notifier"
 version = "0.1.0"
 dependencies = [
+ "moon_utils",
  "reqwest",
  "serde",
 ]

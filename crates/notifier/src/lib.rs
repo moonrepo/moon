@@ -1,7 +1,11 @@
+use moon_utils::time::chrono::prelude::*;
 use serde::Serialize;
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WebhookPayload<T: Serialize> {
+    pub created_at: DateTime<Utc>,
+
     pub event: T,
 
     #[serde(rename = "type")]

@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_utils = { path = "../utils" }
 reqwest = "0.11.12"
 serde = { workspace = true }

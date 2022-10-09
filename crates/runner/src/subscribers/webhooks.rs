@@ -3,6 +3,7 @@ use moon_contract::EventFlow;
 use moon_error::MoonError;
 use moon_logger::{color, error};
 use moon_notifier::{notify_webhook, WebhookPayload};
+use moon_utils::time::chrono::Utc;
 use moon_workspace::Workspace;
 use tokio::task::JoinHandle;
 
@@ -28,6 +29,7 @@ impl WebhooksSubscriber {
     ) -> Result<EventFlow, MoonError> {
         let url = self.url.to_owned();
         let body = serde_json::to_string(&WebhookPayload {
+            created_at: Utc::now(),
             type_of: event.get_type(),
             event,
         })

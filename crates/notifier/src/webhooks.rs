@@ -1,10 +1,28 @@
-use crate::{notify_webhook, WebhookPayload};
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, error};
-use moon_utils::time::chrono::Utc;
+use moon_utils::time::chrono::prelude::*;
 use moon_workspace::Workspace;
+use serde::Serialize;
 use tokio::task::JoinHandle;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebhookPayload<T: Serialize> {
+    pub created_at: DateTime<Utc>,
+
+    pub event: T,
+
+    #[serde(rename = "type")]
+    pub type_of: String,
+}
+
+pub async fn notify_webhook(
+    url: String,
+    body: String,
+) -> Result<reqwest::Response, reqwest::Error> {
+    reqwest::Client::new().post(url).body(body).send().await
+}
 
 pub struct WebhooksSubscriber {
     enabled: bool,

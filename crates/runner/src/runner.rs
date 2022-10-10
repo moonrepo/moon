@@ -9,7 +9,7 @@ use moon_contract::Runtime;
 use moon_emitter::{Emitter, Event};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
-use moon_notifier::subscribers::WebhooksSubscriber;
+use moon_notifier::WebhooksSubscriber;
 use moon_platform_node::actions as node_actions;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
 use moon_utils::{is_ci, time};

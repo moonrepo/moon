@@ -542,6 +542,24 @@ hasher:
   optimization: 'performance'
 ```
 
+## `notifier`<VersionLabel version="0.17" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#notifier" />
+
+Configures how moon notifies and interacts with a developer or an external system.
+
+### `webhookUrl`
+
+<HeadingApiLink to="/api/types/interface/NotifierConfig#webhookUrl" />
+
+Defines an HTTPS URL that all pipeline events will be posted to. View the
+[webhooks guide for more information](../guides/webhooks) on available events.
+
+```yaml title=".moon/workspace.yml" {2}
+notifier:
+  webhookUrl: 'https://api.brand.com/some/endpoint'
+```
+
 ## `runner`<VersionLabel updated version="0.13" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#runner" />

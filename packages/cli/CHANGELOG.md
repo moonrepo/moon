@@ -20,6 +20,13 @@
   for each value item.
 - Added JSON schema support for the `template.yml` config.
 
+##### Notifier
+
+- Implemented a new service for notifying you about events happening in moon. The first feature in
+  this service is webhooks!
+- Added a new `notifier.webhookUrl` setting to `.moon/workspace.yml`, in which the webhooks endpoint
+  can be defined.
+
 #### ⚡️ Performance
 
 - Enabled [mimalloc](https://github.com/microsoft/mimalloc). This reduces memory cost and increases

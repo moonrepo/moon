@@ -119,7 +119,7 @@ const notificationFeatures: Feature[] = [
 		title: 'Webhook events',
 		icon: faMessageCode,
 		description: 'Receive a webhook for every event in the pipeline. Useful for metrics gathering.',
-		status: 'coming-soon',
+		status: 'experimental',
 	},
 	{
 		title: 'Terminal notifications',
@@ -167,7 +167,6 @@ const additionalFeatures: Feature[] = [
 				in Chrome.
 			</>
 		),
-		status: 'new',
 	},
 	{
 		title: 'Editor extensions',

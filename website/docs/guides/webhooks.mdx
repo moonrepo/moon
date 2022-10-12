@@ -32,7 +32,8 @@ detailed information about the actions. Use the [`action.*`](#actionstarted) eve
   "createdAt": "...",
   "event": {
     "actionsCount": 15
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -59,7 +60,8 @@ catch crashes.
     },
     "failedCount": 1,
     "passedCount": 4
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -76,7 +78,8 @@ action failing.
   "createdAt": "...",
   "event": {
     "error": "..."
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -116,7 +119,8 @@ Triggered when an action within the runner has started to run.
         }
       ]
     }
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -154,7 +158,8 @@ If the action failed, the `error` field will be set with the error message.
         }
       ]
     }
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -178,7 +183,8 @@ project, the `project` field will be set, otherwise `null` for the entire worksp
       "platform": "Node",
       "version": "18.0.0"
     }
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -204,7 +210,8 @@ Installed deps can be scoped with the `InstallDeps(...)` labels.
       "platform": "Node",
       "version": "18.0.0"
     }
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -228,7 +235,8 @@ automatically before a project's task is ran.
       "platform": "Node",
       "version": "18.0.0"
     }
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -256,7 +264,8 @@ Synced projects can be scoped with the `SyncProject(...)` labels.
       "platform": "Node",
       "version": "18.0.0"
     }
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -279,7 +288,8 @@ For an accurate state, use the [`action.finished`](#actionfinished) event. If th
       "platform": "Node",
       "version": "18.0.0"
     }
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -303,7 +313,8 @@ Tools can be scoped with the `SetupTool(...)` labels.
       "platform": "Node",
       "version": "18.0.0"
     }
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -320,7 +331,8 @@ Triggered when a [target](../concepts/target) has started to run (via
   "createdAt": "...",
   "event": {
     "target": "app:build"
-  }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -341,6 +353,7 @@ targets can be scoped with the `RunTarget(...)` labels.
   "event": {
     "error": null,
     "target": "app:build"
-  }
+  },
+  "uuid": "..."
 }
 ```

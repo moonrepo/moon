@@ -5,6 +5,7 @@ use moon_utils::time::chrono::prelude::*;
 use moon_workspace::Workspace;
 use serde::Serialize;
 use tokio::task::JoinHandle;
+use uuid::Uuid;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,6 +16,8 @@ pub struct WebhookPayload<T: Serialize> {
 
     #[serde(rename = "type")]
     pub type_of: String,
+
+    pub uuid: String,
 }
 
 pub async fn notify_webhook(
@@ -28,6 +31,7 @@ pub struct WebhooksSubscriber {
     enabled: bool,
     requests: Vec<JoinHandle<()>>,
     url: String,
+    uuid: String,
 }
 
 impl WebhooksSubscriber {
@@ -36,6 +40,7 @@ impl WebhooksSubscriber {
             enabled: false,
             requests: vec![],
             url,
+            uuid: Uuid::new_v4().to_string(),
         }
     }
 }
@@ -47,25 +52,30 @@ impl Subscriber for WebhooksSubscriber {
         event: &Event<'a>,
         _workspace: &Workspace,
     ) -> Result<EventFlow, MoonError> {
-        let url = self.url.to_owned();
-        let body = serde_json::to_string(&WebhookPayload {
-            created_at: Utc::now(),
-            type_of: event.get_type(),
-            event,
-        })
-        .unwrap();
+        // Avoid this overhead if not enabled!
+        let body = if self.enabled {
+            serde_json::to_string(&WebhookPayload {
+                created_at: Utc::now(),
+                event,
+                type_of: event.get_type(),
+                uuid: self.uuid.clone(),
+            })
+            .unwrap()
+        } else {
+            String::from("{}")
+        };
 
         // For the first event, we want to ensure that the webhook URL is valid
         // by sending the request and checking for a failure. If failed,
         // we will disable subsequent requests from being called.
         if matches!(event, Event::RunnerStarted { .. }) {
-            let response = notify_webhook(url, body).await;
+            let response = notify_webhook(self.url.to_owned(), body).await;
 
             if response.is_err() || !response.unwrap().status().is_success() {
                 self.enabled = false;
 
                 error!(
-                    target: "moon:notifier",
+                    target: "moon:notifier:webhooks",
                     "Failed to send webhook event to {}. Subsequent webhook requests will be disabled.",
                     color::url(&self.url),
                 );
@@ -74,6 +84,8 @@ impl Subscriber for WebhooksSubscriber {
             // For every other event, we will make the request and ignore the result.
             // We will also avoid awaiting the request to not slow down the overall runner.
         } else if self.enabled {
+            let url = self.url.to_owned();
+
             self.requests.push(tokio::spawn(async {
                 let _ = notify_webhook(url, body).await;
             }));

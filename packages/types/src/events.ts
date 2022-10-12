@@ -44,7 +44,7 @@ export interface EventActionFinished {
 export type PayloadActionFinished = WebhookPayload<'action.finished', EventActionFinished>;
 
 export interface EventDependenciesInstalling {
-	projectId: string | null;
+	project: Project | null;
 	runtime: Runtime;
 }
 
@@ -55,7 +55,7 @@ export type PayloadDependenciesInstalling = WebhookPayload<
 
 export interface EventDependenciesInstalled {
 	error: string | null;
-	projectId: string | null;
+	project: Project | null;
 	runtime: Runtime;
 }
 
@@ -65,7 +65,7 @@ export type PayloadDependenciesInstalled = WebhookPayload<
 >;
 
 export interface EventProjectSyncing {
-	projectId: string;
+	project: Project;
 	runtime: Runtime;
 }
 
@@ -73,7 +73,7 @@ export type PayloadProjectSyncing = WebhookPayload<'project.syncing', EventProje
 
 export interface EventProjectSynced {
 	error: string | null;
-	projectId: string;
+	project: Project;
 	runtime: Runtime;
 }
 
@@ -101,14 +101,14 @@ export interface EventRunnerFinished {
 export type PayloadRunnerFinished = WebhookPayload<'runner.finished', EventRunnerFinished>;
 
 export interface EventTargetRunning {
-	targetId: string;
+	target: string;
 }
 
 export type PayloadTargetRunning = WebhookPayload<'target.running', EventTargetRunning>;
 
 export interface EventTargetRan {
 	error: string | null;
-	targetId: string;
+	target: string;
 }
 
 export type PayloadTargetRan = WebhookPayload<'target.ran', EventTargetRan>;

@@ -40,12 +40,15 @@ async fn run_action(
     let local_emitter = Arc::clone(&emitter);
     let local_emitter = local_emitter.read().await;
 
+    let local_workspace = Arc::clone(&workspace);
+    let local_workspace = local_workspace.read().await;
+
     let result = match node {
         // Install dependencies in the workspace root
         ActionNode::InstallDeps(runtime) => {
             local_emitter
                 .emit(Event::DependenciesInstalling {
-                    project_id: None,
+                    project: None,
                     runtime,
                 })
                 .await?;
@@ -62,7 +65,7 @@ async fn run_action(
             local_emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_run_error(&install_result),
-                    project_id: None,
+                    project: None,
                     runtime,
                 })
                 .await?;
@@ -72,30 +75,28 @@ async fn run_action(
 
         // Install dependencies in the project root
         ActionNode::InstallProjectDeps(runtime, project_id) => {
+            let project = local_workspace.projects.load(project_id)?;
+
             local_emitter
                 .emit(Event::DependenciesInstalling {
-                    project_id: Some(project_id),
+                    project: Some(&project),
                     runtime,
                 })
                 .await?;
 
             let install_result = match runtime {
-                Runtime::Node(_) => node_actions::install_deps(
-                    action,
-                    context,
-                    workspace,
-                    runtime,
-                    Some(project_id),
-                )
-                .await
-                .map_err(RunnerError::Workspace),
+                Runtime::Node(_) => {
+                    node_actions::install_deps(action, context, workspace, runtime, Some(&project))
+                        .await
+                        .map_err(RunnerError::Workspace)
+                }
                 _ => Ok(ActionStatus::Passed),
             };
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_run_error(&install_result),
-                    project_id: Some(project_id),
+                    project: Some(&project),
                     runtime,
                 })
                 .await?;
@@ -106,7 +107,7 @@ async fn run_action(
         // Run a task within a project
         ActionNode::RunTarget(target_id) => {
             local_emitter
-                .emit(Event::TargetRunning { target_id })
+                .emit(Event::TargetRunning { target: target_id })
                 .await?;
 
             let run_result =
@@ -116,7 +117,7 @@ async fn run_action(
             local_emitter
                 .emit(Event::TargetRan {
                     error: extract_run_error(&run_result),
-                    target_id,
+                    target: target_id,
                 })
                 .await?;
 
@@ -145,16 +146,18 @@ async fn run_action(
 
         // Sync a project within the graph
         ActionNode::SyncProject(runtime, project_id) => {
+            let project = local_workspace.projects.load(project_id)?;
+
             local_emitter
                 .emit(Event::ProjectSyncing {
-                    project_id,
+                    project: &project,
                     runtime,
                 })
                 .await?;
 
             let sync_result = match runtime {
                 Runtime::Node(_) => {
-                    node_actions::sync_project(action, context, workspace, project_id)
+                    node_actions::sync_project(action, context, workspace, &project)
                         .await
                         .map_err(RunnerError::Workspace)
                 }
@@ -164,7 +167,7 @@ async fn run_action(
             local_emitter
                 .emit(Event::ProjectSynced {
                     error: extract_run_error(&sync_result),
-                    project_id,
+                    project: &project,
                     runtime,
                 })
                 .await?;

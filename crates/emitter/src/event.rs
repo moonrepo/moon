@@ -20,23 +20,23 @@ pub enum Event<'e> {
 
     // Installing deps
     DependenciesInstalling {
-        project_id: Option<&'e str>,
+        project: Option<&'e Project>,
         runtime: &'e Runtime,
     },
     DependenciesInstalled {
         error: Option<String>,
-        project_id: Option<&'e str>,
+        project: Option<&'e Project>,
         runtime: &'e Runtime,
     },
 
     // Syncing projects
     ProjectSyncing {
-        project_id: &'e str,
+        project: &'e Project,
         runtime: &'e Runtime,
     },
     ProjectSynced {
         error: Option<String>,
-        project_id: &'e str,
+        project: &'e Project,
         runtime: &'e Runtime,
     },
 
@@ -56,11 +56,11 @@ pub enum Event<'e> {
 
     // Running targets
     TargetRunning {
-        target_id: &'e str,
+        target: &'e str,
     },
     TargetRan {
         error: Option<String>,
-        target_id: &'e str,
+        target: &'e str,
     },
     TargetOutputArchiving {
         hash: &'e str,

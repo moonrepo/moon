@@ -93,6 +93,6 @@ and provide a first-class developer experience.
 
 - **Flakiness detection** - Reduce flaky builds with automatic retries and passthrough settings.
 - **Webhook events** - Receive a webhook for every event in the pipeline. Useful for metrics
-  gathering.
+  gathering and insights.
 - **Terminal notifications** - Receives notifications in your chosen terminal when builds are
   successful... or are not.

@@ -118,7 +118,8 @@ const notificationFeatures: Feature[] = [
 	{
 		title: 'Webhook events',
 		icon: faMessageCode,
-		description: 'Receive a webhook for every event in the pipeline. Useful for metrics gathering.',
+		description:
+			'Receive a webhook for every event in the pipeline. Useful for metrics gathering and insights.',
 		status: 'experimental',
 	},
 	{

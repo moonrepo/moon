@@ -3,7 +3,7 @@ use crate::helpers::load_workspace;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use moon_action::{ActionContext, ProfileType};
 use moon_logger::{color, map_list};
-use moon_runner::{ActionRunner, DepGraph};
+use moon_runner::{DepGraph, Runner};
 use moon_task::Target;
 use moon_workspace::Workspace;
 use std::collections::HashSet;
@@ -89,7 +89,7 @@ pub async fn run(
         touched_files: touched_files.unwrap_or_default(),
     };
 
-    let mut runner = ActionRunner::new(workspace);
+    let mut runner = Runner::new(workspace);
 
     if options.report {
         runner.generate_report("runReport.json");

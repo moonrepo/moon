@@ -200,7 +200,7 @@ async fn run_action(
     Ok(())
 }
 
-pub struct ActionRunner {
+pub struct Runner {
     bail: bool,
 
     cached_count: usize,
@@ -216,11 +216,11 @@ pub struct ActionRunner {
     workspace: Arc<RwLock<Workspace>>,
 }
 
-impl ActionRunner {
+impl Runner {
     pub fn new(workspace: Workspace) -> Self {
         debug!(target: LOG_TARGET, "Creating action runner");
 
-        ActionRunner {
+        Runner {
             bail: false,
             cached_count: 0,
             duration: None,

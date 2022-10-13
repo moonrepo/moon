@@ -93,6 +93,7 @@ impl<'a> TargetRunner<'a> {
             .emit(Event::TargetOutputArchiving {
                 hash,
                 project: self.project,
+                target: &self.task.target,
                 task: self.task,
             })
             .await?
@@ -102,6 +103,7 @@ impl<'a> TargetRunner<'a> {
                     archive_path: archive_path.into(),
                     hash,
                     project: self.project,
+                    target: &self.task.target,
                     task: self.task,
                 })
                 .await?;
@@ -130,6 +132,7 @@ impl<'a> TargetRunner<'a> {
             .emit(Event::TargetOutputHydrating {
                 hash,
                 project: self.project,
+                target: &self.task.target,
                 task: self.task,
             })
             .await?
@@ -139,6 +142,7 @@ impl<'a> TargetRunner<'a> {
                     archive_path: archive_path.into(),
                     hash,
                     project: self.project,
+                    target: &self.task.target,
                     task: self.task,
                 })
                 .await?;
@@ -314,7 +318,7 @@ impl<'a> TargetRunner<'a> {
             .emitter
             .emit(Event::TargetOutputCacheCheck {
                 hash: &hash,
-                task: self.task,
+                target: &self.task.target,
             })
             .await?
         {

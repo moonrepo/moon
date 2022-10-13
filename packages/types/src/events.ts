@@ -117,6 +117,7 @@ export type PayloadTargetRan = WebhookPayload<'target.ran', EventTargetRan>;
 export interface EventTargetOutputArchiving {
 	hash: string;
 	project: Project;
+	target: string;
 	task: Task;
 }
 
@@ -129,6 +130,7 @@ export interface EventTargetOutputArchived {
 	archivePath: string;
 	hash: string;
 	project: Project;
+	target: string;
 	task: Task;
 }
 
@@ -140,6 +142,7 @@ export type PayloadTargetOutputArchived = WebhookPayload<
 export interface EventTargetOutputHydrating {
 	hash: string;
 	project: Project;
+	target: string;
 	task: Task;
 }
 
@@ -152,6 +155,7 @@ export interface EventTargetOutputHydrated {
 	archivePath: string;
 	hash: string;
 	project: Project;
+	target: string;
 	task: Task;
 }
 
@@ -162,7 +166,7 @@ export type PayloadTargetOutputHydrated = WebhookPayload<
 
 export interface EventTargetOutputCacheCheck {
 	hash: string;
-	task: Task;
+	target: string;
 }
 
 export type PayloadTargetOutputCacheCheck = WebhookPayload<

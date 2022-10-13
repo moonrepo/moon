@@ -33,6 +33,7 @@ impl Subscriber for RemoteCacheSubscriber {
                 archive_path,
                 hash,
                 project,
+                target,
                 task,
             } => {}
 

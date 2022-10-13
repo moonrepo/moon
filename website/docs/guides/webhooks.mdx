@@ -357,3 +357,150 @@ targets can be scoped with the `RunTarget(...)` labels.
   "uuid": "..."
 }
 ```
+
+### Targets
+
+Targets to run. Each event contains a `hash` field, that is a unique SHA-256 identifier for the the
+target's hashed contents.
+
+#### `target-output.cache-check`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputCacheCheck" />
+
+Triggered when the runner is checking for a cached archive of the currently running target.
+
+```json
+{
+  "type": "target-output.cache-check",
+  "createdAt": "...",
+  "event": {
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "target": "app:build"
+  },
+  "uuid": "..."
+}
+```
+
+#### `target-output.archiving`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputArchiving" />
+
+Triggered when the [outputs](../config/project#outputs) of a task are being cached into a tarball
+archive. This archive will be stored within `.moon/cache/outputs` on the host machine.
+
+This event _does not_ trigger if the task has no `outputs`.
+
+```json
+{
+  "type": "target-output.archiving",
+  "createdAt": "...",
+  "event": {
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "project": {
+      "id": "app"
+      // ...
+    },
+    "target": "app:build",
+    "task": {
+      "id": "build"
+      // ...
+    }
+  },
+  "uuid": "..."
+}
+```
+
+#### `target-output.archived`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputArchived" />
+
+Triggered when the [outputs](../config/project#outputs) of a task have been archived and stored in
+the `.moon/cache/outputs` directory. The `archivePath` field is an absolute path to this archive,
+_but_ is unique to the host machine that the target ran on.
+
+This event _does not_ trigger if [`target-output.archiving`](#targetoutputarchiving) did not run or
+failed to run.
+
+```json
+{
+  "type": "target-output.archived",
+  "createdAt": "...",
+  "event": {
+    "archivePath": "...",
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "project": {
+      "id": "app"
+      // ...
+    },
+    "target": "app:build",
+    "task": {
+      "id": "build"
+      // ...
+    }
+  },
+  "uuid": "..."
+}
+```
+
+#### `target-output.hydrating`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputHydrating" />
+
+Triggered when a target has a cache hit for the generated hash (a cached archive exists on the local
+file system) and the archive is being unpacked into the project directory at the defined
+[outputs](../config/project#outputs).
+
+This event _does not_ trigger if the task has no `outputs`, or there was a cache miss (no matching
+archive).
+
+```json
+{
+  "type": "target-output.hydrating",
+  "createdAt": "...",
+  "event": {
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "project": {
+      "id": "app"
+      // ...
+    },
+    "target": "app:build",
+    "task": {
+      "id": "build"
+      // ...
+    }
+  },
+  "uuid": "..."
+}
+```
+
+#### `target-output.hydrated`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputHydrated" />
+
+Triggered when a target has hydrated a project with the contents of a cached archive. The
+`archivePath` field is an absolute path to this archive, _but_ is unique to the host machine that
+the target ran on.
+
+This event _does not_ trigger if [`target-output.hydrating`](#targetoutputhydrating) did not run or
+failed to run.
+
+```json
+{
+  "type": "target-output.hydrated",
+  "createdAt": "...",
+  "event": {
+    "archivePath": "...",
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "project": {
+      "id": "app"
+      // ...
+    },
+    "target": "app:build",
+    "task": {
+      "id": "build"
+      // ...
+    }
+  },
+  "uuid": "..."
+}
+```

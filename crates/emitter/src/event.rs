@@ -65,28 +65,32 @@ pub enum Event<'e> {
     TargetOutputArchiving {
         hash: &'e str,
         project: &'e Project,
+        target: &'e str,
         task: &'e Task,
     },
     TargetOutputArchived {
         archive_path: PathBuf,
         hash: &'e str,
         project: &'e Project,
+        target: &'e str,
         task: &'e Task,
     },
     TargetOutputHydrating {
         hash: &'e str,
         project: &'e Project,
+        target: &'e str,
         task: &'e Task,
     },
     TargetOutputHydrated {
         archive_path: PathBuf,
         hash: &'e str,
         project: &'e Project,
+        target: &'e str,
         task: &'e Task,
     },
     TargetOutputCacheCheck {
         hash: &'e str,
-        task: &'e Task,
+        target: &'e str,
     },
 
     // Installing a tool

@@ -1,6 +1,3 @@
-# Keep commands in sync with Makefile.toml! We don't use `cargo-make`
-# in CI as it adds roughly 10 minutes to the overall time.
-
 name: Rust
 on:
   push:
@@ -68,11 +65,9 @@ jobs:
           toolchain: 1.64.0
           profile: minimal
           components: clippy
-      - uses: actions-rs/cargo@v1
-        name: Run linter
-        with:
-          command: clippy
-          args: --workspace --all-targets
+      - uses: davidB/rust-cargo-make@v1
+      - name: Run linter
+        run: cargo make lint
   test:
     name: Test
     runs-on: ${{ matrix.os }}
@@ -97,46 +92,26 @@ jobs:
           toolchain: 1.64.0
           profile: minimal
           components: llvm-tools-preview
+      - uses: davidB/rust-cargo-make@v1
       - uses: actions-rs/cargo@v1
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         name: Install grcov
         with:
           command: install
           args: --force grcov
-      - uses: actions-rs/cargo@v1
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        name: Build debug binary
-        with:
-          command: build
-        env:
-          RUSTFLAGS: -Cinstrument-coverage
-      - uses: marcopolo/cargo@master
-        name: Setup moon toolchain
-        env:
-          MOON_TEST: true
-        with:
-          command: run
-          args: -- --log debug setup
-          working-directory: ./tests/fixtures/cases
-      - uses: actions-rs/cargo@v1
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+      - name: Setup moon toolchain
+        run: cargo make setup-test
+      - if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         name: Run tests with coverage
-        with:
-          command: test
-          args: --workspace
-        env:
-          RUSTFLAGS: -Cinstrument-coverage
-          LLVM_PROFILE_FILE: ${{ github.workspace }}/moon-%p-%m.profraw
-      - uses: actions-rs/cargo@v1
-        if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
+        run: cargo make test-coverage
+      - if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
         name: Run tests
-        with:
-          command: test
-          args: --workspace
+        run: cargo make test-nocoverage
       - name: Generate code coverage
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        run: |
-          grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
+        run: cargo make generate-report
+        # run: |
+        #   grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
       - uses: actions/upload-artifact@v2
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         name: Upload coverage report

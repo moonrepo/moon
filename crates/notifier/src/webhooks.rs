@@ -37,7 +37,7 @@ pub struct WebhooksSubscriber {
 impl WebhooksSubscriber {
     pub fn new(url: String) -> Self {
         WebhooksSubscriber {
-            enabled: false,
+            enabled: true,
             requests: vec![],
             url,
             uuid: Uuid::new_v4().to_string(),

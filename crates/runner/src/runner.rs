@@ -40,9 +40,6 @@ async fn run_action(
     let local_emitter = Arc::clone(&emitter);
     let local_emitter = local_emitter.read().await;
 
-    let local_workspace = Arc::clone(&workspace);
-    let local_workspace = local_workspace.read().await;
-
     let result = match node {
         // Install dependencies in the workspace root
         ActionNode::InstallDeps(runtime) => {
@@ -75,7 +72,11 @@ async fn run_action(
 
         // Install dependencies in the project root
         ActionNode::InstallProjectDeps(runtime, project_id) => {
-            let project = local_workspace.projects.load(project_id)?;
+            let project = Arc::clone(&workspace)
+                .read()
+                .await
+                .projects
+                .load(project_id)?;
 
             local_emitter
                 .emit(Event::DependenciesInstalling {
@@ -146,7 +147,11 @@ async fn run_action(
 
         // Sync a project within the graph
         ActionNode::SyncProject(runtime, project_id) => {
-            let project = local_workspace.projects.load(project_id)?;
+            let project = Arc::clone(&workspace)
+                .read()
+                .await
+                .projects
+                .load(project_id)?;
 
             local_emitter
                 .emit(Event::ProjectSyncing {

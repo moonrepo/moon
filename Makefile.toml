@@ -35,7 +35,7 @@ args = ["run", "--", "--log", "debug", "setup"]
 env = { MOON_TEST = "true" }
 cwd = "./tests/fixtures/cases"
 
-[tasks.run-test]
+[tasks.test-nocoverage]
 command = "cargo"
 args = ["test", "--workspace"]
 
@@ -44,7 +44,7 @@ script = "rm -rf ./tests/fixtures/cases/.moon/cache"
 condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
-run_task = { name = ["clean-test", "setup-test", "run-test", "clean-test"] }
+run_task = { name = ["clean-test", "setup-test", "test-nocoverage", "clean-test"] }
 
 [tasks.test-output]
 command = "cargo"

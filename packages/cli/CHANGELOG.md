@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Integrated [mimalloc](https://github.com/microsoft/mimalloc). This reduces memory cost and
+  increases performance.
+
 ## 0.16.1
 
 #### 🐞 Fixes

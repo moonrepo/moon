@@ -1,9 +1,13 @@
+use mimalloc::MiMalloc;
 use moon_cli::{run_cli, BIN_NAME};
 use moon_constants::CONFIG_DIRNAME;
 use moon_lang_node::NODE;
 use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Check whether this binary has been installed globally or not.
 /// If we encounter an error, simply abort early instead of failing.

@@ -1,0 +1,7 @@
+releases:
+  "@moonrepo/report": patch
+  "@moonrepo/runtime": patch
+  "@moonrepo/types": patch
+
+declined:
+  - website

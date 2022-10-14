@@ -8,7 +8,34 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel header version="0.17" />
 
-TODO
+Looking to gather metrics for your pipelines? Gain insight into run durations and failures? Maybe
+you want to send Slack or Discord notifications? With our webhooks, all of these are possible!
+
+When the [`notifier.webhookUrl`](../config/workspace#webhookurl) setting is configured with an HTTPS
+URL, and moon is running in a CI environment, moon will POST a payload to this endpoint for every
+event in our pipeline.
+
+## Payload structure
+
+Every webhook event is posted with the following request body, known as a payload.
+
+- `type` - The type of [event](#events).
+- `event` - The event specific payload. View each event for an example of their structure.
+- `createdAt` - When the event was created, as a UTC timestamp in ISO 8601 (RFC 3339) format.
+- `uuid` - A unique identifier for all webhooks in the current run batch.
+
+```json
+{
+  "type": "...",
+  "event": {
+    // ...
+  },
+  "createdAt": "...",
+  "uuid": "..."
+}
+```
+
+> The `uuid` field can be used to differentiate concurrently running pipelines!
 
 ## Events
 
@@ -17,7 +44,7 @@ TODO
 Runs actions within moon using a robust dependency graph. Is triggered when using
 [`moon run`](../commands/run).
 
-#### `runner.started`
+### `runner.started`
 
 <HeadingApiLink to="/api/types#PayloadRunnerStarted" />
 
@@ -37,7 +64,7 @@ detailed information about the actions. Use the [`action.*`](#actionstarted) eve
 }
 ```
 
-#### `runner.finished`
+### `runner.finished`
 
 <HeadingApiLink to="/api/types#PayloadRunnerFinished" />
 
@@ -65,7 +92,7 @@ catch crashes.
 }
 ```
 
-#### `runner.aborted`
+### `runner.aborted`
 
 <HeadingApiLink to="/api/types#PayloadRunnerAborted" />
 
@@ -87,7 +114,7 @@ action failing.
 
 Actions are "jobs" within the runner that are executed topologically.
 
-#### `action.started`
+### `action.started`
 
 <HeadingApiLink to="/api/types#PayloadActionStarted" />
 
@@ -124,7 +151,7 @@ Triggered when an action within the runner has started to run.
 }
 ```
 
-#### `action.finished`
+### `action.finished`
 
 <HeadingApiLink to="/api/types#PayloadActionFinished" />
 
@@ -163,7 +190,7 @@ If the action failed, the `error` field will be set with the error message.
 }
 ```
 
-#### `dependencies.installing`
+### `dependencies.installing`
 
 <HeadingApiLink to="/api/types#PayloadDependenciesInstalling" />
 
@@ -188,7 +215,7 @@ project, the `project` field will be set, otherwise `null` for the entire worksp
 }
 ```
 
-#### `dependencies.installed`
+### `dependencies.installed`
 
 <HeadingApiLink to="/api/types#PayloadDependenciesInstalled" />
 
@@ -215,7 +242,7 @@ Installed deps can be scoped with the `InstallDeps(...)` labels.
 }
 ```
 
-#### `project.syncing`
+### `project.syncing`
 
 <HeadingApiLink to="/api/types#PayloadProjectSyncing" />
 
@@ -240,7 +267,7 @@ automatically before a project's task is ran.
 }
 ```
 
-#### `project.synced`
+### `project.synced`
 
 <HeadingApiLink to="/api/types#PayloadProjectSynced" />
 
@@ -269,7 +296,7 @@ Synced projects can be scoped with the `SyncProject(...)` labels.
 }
 ```
 
-#### `tool.installing`
+### `tool.installing`
 
 <HeadingApiLink to="/api/types#PayloadToolInstalling" />
 
@@ -293,7 +320,7 @@ For an accurate state, use the [`action.finished`](#actionfinished) event. If th
 }
 ```
 
-#### `tool.installed`
+### `tool.installed`
 
 <HeadingApiLink to="/api/types#PayloadToolInstalled" />
 
@@ -318,7 +345,7 @@ Tools can be scoped with the `SetupTool(...)` labels.
 }
 ```
 
-#### `target.running`
+### `target.running`
 
 <HeadingApiLink to="/api/types#PayloadTargetRunning" />
 
@@ -336,7 +363,7 @@ Triggered when a [target](../concepts/target) has started to run (via
 }
 ```
 
-#### `target.ran`
+### `target.ran`
 
 <HeadingApiLink to="/api/types#PayloadTargetRan" />
 
@@ -363,7 +390,7 @@ targets can be scoped with the `RunTarget(...)` labels.
 Targets to run. Each event contains a `hash` field, that is a unique SHA-256 identifier for the the
 target's hashed contents.
 
-#### `target-output.cache-check`
+### `target-output.cache-check`
 
 <HeadingApiLink to="/api/types#PayloadTargetOutputCacheCheck" />
 
@@ -381,7 +408,7 @@ Triggered when the runner is checking for a cached archive of the currently runn
 }
 ```
 
-#### `target-output.archiving`
+### `target-output.archiving`
 
 <HeadingApiLink to="/api/types#PayloadTargetOutputArchiving" />
 
@@ -410,7 +437,7 @@ This event _does not_ trigger if the task has no `outputs`.
 }
 ```
 
-#### `target-output.archived`
+### `target-output.archived`
 
 <HeadingApiLink to="/api/types#PayloadTargetOutputArchived" />
 
@@ -442,7 +469,7 @@ failed to run.
 }
 ```
 
-#### `target-output.hydrating`
+### `target-output.hydrating`
 
 <HeadingApiLink to="/api/types#PayloadTargetOutputHydrating" />
 
@@ -473,7 +500,7 @@ archive).
 }
 ```
 
-#### `target-output.hydrated`
+### `target-output.hydrated`
 
 <HeadingApiLink to="/api/types#PayloadTargetOutputHydrated" />
 

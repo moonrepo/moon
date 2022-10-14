@@ -3,7 +3,6 @@
   "private": true,
   "packageManager": "yarn@3.2.3",
   "scripts": {
-    "build": "NODE_ENV=production packemon pack --addEngines --addExports --declaration",
     "docs": "cargo run -- run website:start",
     "moon": "target/debug/moon --log trace",
     "type": "target/debug/moon --log trace run :typecheck",
@@ -22,6 +21,7 @@
   "devDependencies": {
     "@moonrepo/cli": "workspace:*",
     "@types/node": "^17.0.45",
+    "babel-preset-moon": "^1.0.2",
     "eslint": "^8.24.0",
     "eslint-config-moon": "^1.0.2",
     "execa": "^6.1.0",

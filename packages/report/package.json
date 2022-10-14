@@ -1,14 +1,13 @@
 {
-  "name": "@moonrepo/runtime",
-  "version": "0.0.8",
+  "name": "@moonrepo/report",
+  "version": "0.0.0",
   "type": "commonjs",
-  "description": "Action runner and runtime utilities.",
+  "description": "Utilities working with moon run reports.",
   "keywords": [
     "moon",
     "repo",
-    "task",
-    "runner",
-    "runtime"
+    "report",
+    "utils"
   ],
   "author": "Miles Johnson",
   "license": "MIT",
@@ -17,7 +16,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/moonrepo/moon",
-    "directory": "packages/runtime"
+    "directory": "packages/report"
   },
   "files": [
     "cjs/**/*.{cjs,mjs,map}",
@@ -30,7 +29,6 @@
     "bundle": true
   },
   "dependencies": {
-    "@boost/common": "^4.0.0",
     "@moonrepo/types": "workspace:^"
   },
   "engines": {

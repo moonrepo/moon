@@ -176,14 +176,6 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
-      - uses: actions/cache@v3
-        name: Cache node modules
-        with:
-          path: |
-            ~/.yarn
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: ${{ runner.os }}-yarn-
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
@@ -226,14 +218,6 @@ jobs:
           cache: yarn
           check-latest: true
           node-version: 16
-      - uses: actions/cache@v3
-        name: Cache node modules
-        with:
-          path: |
-            ~/.yarn
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: ${{ runner.os }}-yarn-
       - name: Install dependencies
         run: yarn install --immutable
       - uses: actions/download-artifact@v2
@@ -272,18 +256,10 @@ jobs:
           cache: yarn
           check-latest: true
           node-version: 16
-      - uses: actions/cache@v3
-        name: Cache node modules
-        with:
-          path: |
-            ~/.yarn
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: ${{ runner.os }}-yarn-
       - name: Install dependencies
         run: yarn install --immutable
       - name: Build packages
-        run: yarn run build
+        run: bash ./scripts/release/buildPackages.sh
       - name: Publish npm packages
         run: bash ./scripts/release/publishPackages.sh
         shell: bash

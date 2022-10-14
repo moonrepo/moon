@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dts",
+    "rootDir": "src"
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

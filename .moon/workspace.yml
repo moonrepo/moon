@@ -21,6 +21,7 @@ node:
   inferTasksFromScripts: false
 
 typescript:
+  routeOutDirToCache: true
   syncProjectReferences: true
 
 generator:
@@ -29,6 +30,8 @@ generator:
     - './tests/fixtures/generator/templates'
 
 runner:
+  implicitDeps:
+    - '^:build'
   logRunningCommand: true
 
 vcs:

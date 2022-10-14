@@ -11,13 +11,15 @@ fileGroups:
 
 tasks:
   build:
-    command: 'packemon build --addFiles --addExports --declaration'
+    command:
+      'packemon build --addFiles --addExports --declaration --declarationConfig tsconfig.build.json'
     env:
       NODE_ENV: 'production'
     inputs:
       - '@globs(sources)'
       - 'package.json'
       - 'tsconfig.json'
+      - 'tsconfig.build.json'
       - '/tsconfig.options.json'
     outputs:
       - 'cjs'
@@ -55,8 +57,6 @@ tasks:
       - '--no-error-on-unmatched-pattern'
       - '--report-unused-disable-directives'
       - '.'
-    deps:
-      - '^:build'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
@@ -83,12 +83,8 @@ tasks:
 
   typecheck:
     command: 'tsc --build --verbose'
-    deps:
-      - '^:build'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
       - 'tsconfig.json'
       - '/tsconfig.options.json'
-    outputs:
-      - 'dts'

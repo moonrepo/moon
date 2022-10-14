@@ -1,10 +1,11 @@
 {
   "extends": "../../tsconfig.options.json",
   "compilerOptions": {
-    "outDir": "../../.moon/cache/types/packages/runtime",
+    "outDir": "../../.moon/cache/types/packages/report",
     "rootDir": "."
   },
   "include": [
+    ".eslintrc.js",
     "src/**/*"
   ],
   "references": [

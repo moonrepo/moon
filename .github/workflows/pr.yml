@@ -14,9 +14,9 @@ jobs:
           cache: yarn
       - run: yarn install --immutable
       - run: yarn version check
-      - run: node scripts/version/checkBumpForRustChanges.mjs
+      - run: node ./scripts/version/checkBumpForRustChanges.mjs
       # This just tests package building, which release uses
-      - run: yarn run build
+      - run: bash ./scripts/release/buildPackages.sh
   clibin:
     name: CLI binary check
     runs-on: ubuntu-latest

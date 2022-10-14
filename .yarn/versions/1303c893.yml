@@ -1,7 +1,8 @@
 releases:
-  "@moonrepo/report": patch
-  "@moonrepo/runtime": patch
-  "@moonrepo/types": patch
+  '@moonrepo/report': patch
+  '@moonrepo/runtime': patch
+  '@moonrepo/types': patch
 
 declined:
+  - '@moonrepo/cli'
   - website

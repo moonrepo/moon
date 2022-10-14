@@ -1,0 +1,25 @@
+---
+slug: v0.17
+title: v0.17 - ???
+authors: [milesj]
+tags: [webhooks, runner]
+# image: ./img/v0.16.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Image from '@site/src/components/Image';
+
+With this release, we've landed a long standing request of supporting project-level overrides for
+tools configured in the workspace, as well as some quality of life improvements for TypeScript.
+
+<!--truncate-->
+
+## Webhook events
+
+Looking to gather metrics for your pipelines? Gain insight into run durations and failures? Maybe
+you want to send Slack or Discord notifications? With our webhooks, all of these are possible!
+
+When the [`notifier.webhookUrl`](../config/workspace#webhookurl) setting is configured with an HTTPS
+URL, and moon is running in a CI environment, moon will POST a payload to this endpoint for every
+event in our pipeline.

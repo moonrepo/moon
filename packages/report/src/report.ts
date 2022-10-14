@@ -1,17 +1,15 @@
 import { Duration, RunReport } from '@moonrepo/types';
 import { getIconForStatus, isFlaky, isSlow } from './action';
-import { formatDuration } from './time';
+import { formatDuration, getDurationInMillis } from './time';
 
-export function sortReport(report: RunReport, sortBy: string, sortDir: string) {
+export function sortReport(report: RunReport, sortBy: 'label' | 'time', sortDir: 'asc' | 'desc') {
 	const isAsc = sortDir === 'asc';
 
 	report.actions.sort((a, d) => {
 		switch (sortBy) {
 			case 'time': {
-				const at: Duration = a.duration ?? { nanos: 0, secs: 0 };
-				const dt: Duration = d.duration ?? { nanos: 0, secs: 0 };
-				const am = at.secs * 1000 + at.nanos / 1_000_000;
-				const dm = dt.secs * 1000 + dt.nanos / 1_000_000;
+				const am = getDurationInMillis(a.duration ?? { nanos: 0, secs: 0 });
+				const dm = getDurationInMillis(d.duration ?? { nanos: 0, secs: 0 });
 
 				return isAsc ? am - dm : dm - am;
 			}

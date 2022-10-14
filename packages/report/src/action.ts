@@ -2,6 +2,8 @@ import { Action, ActionStatus } from '@moonrepo/types';
 import { getDurationInMillis } from './time';
 
 export function getIconForStatus(status: ActionStatus): string {
+	// Use exhaustive checks!
+	// eslint-disable-next-line default-case
 	switch (status) {
 		case 'cached':
 			return '🟪';
@@ -14,9 +16,12 @@ export function getIconForStatus(status: ActionStatus): string {
 			return '🟨';
 		case 'passed':
 			return '🟩';
-		default:
+		case 'running':
+		case 'skipped':
 			return '⬛️';
 	}
+
+	return '⬜️';
 }
 
 export function hasFailed(status: ActionStatus): boolean {
@@ -28,6 +33,11 @@ export function hasPassed(status: ActionStatus): boolean {
 }
 
 export function isFlaky(action: Action): boolean {
+	if (action.flaky) {
+		return true;
+	}
+
+	// The flaky field above didn't always exist!
 	if (!action.attempts || action.attempts.length === 0) {
 		return false;
 	}

@@ -6,8 +6,7 @@ const path = require('path');
 
 const isMoonLocal =
 	fs.existsSync(path.join(__dirname, '../../.moon')) &&
-	fs.existsSync(path.join(__dirname, '../../crates')) &&
-	!process.env.CI;
+	fs.existsSync(path.join(__dirname, '../../crates'));
 
 const isLinux = process.platform === 'linux';
 const isMacos = process.platform === 'darwin';

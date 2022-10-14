@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/runtime",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "commonjs",
   "description": "Action runner and runtime utilities.",
   "keywords": [

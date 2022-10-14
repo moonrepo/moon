@@ -3054,11 +3054,11 @@ __metadata:
   resolution: "@moonrepo/runtime@workspace:packages/runtime"
   dependencies:
     "@boost/common": ^4.0.0
-    "@moonrepo/types": ^0.0.4
+    "@moonrepo/types": "workspace:^"
   languageName: unknown
   linkType: soft
 
-"@moonrepo/types@^0.0.4, @moonrepo/types@workspace:^, @moonrepo/types@workspace:packages/types":
+"@moonrepo/types@workspace:^, @moonrepo/types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@moonrepo/types@workspace:packages/types"
   languageName: unknown

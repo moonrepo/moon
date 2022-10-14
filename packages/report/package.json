@@ -28,6 +28,9 @@
     "platform": "node",
     "bundle": true
   },
+  "dependencies": {
+    "@moonrepo/types": "workspace:^"
+  },
   "engines": {
     "node": ">=14.15.0",
     "npm": ">=6.14.0"
@@ -41,8 +44,5 @@
         "require": "./cjs/index.cjs"
       }
     }
-  },
-  "dependencies": {
-    "@moonrepo/types": "workspace:^"
   }
 }

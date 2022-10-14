@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+# Change the working directory so that we avoid the CLI postinstall checks!
+cd scripts
+
 # Build all packages with moon itself, so that the order is resolved correctly
-yarn dlx --package @moonrepo/cli@latest moon run :build
+npx --package @moonrepo/cli@latest -- moon run :build
 
 # # When not in CI, use npx
 # if [[ -z "${CI}" ]]; then

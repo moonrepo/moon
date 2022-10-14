@@ -11,13 +11,15 @@ fileGroups:
 
 tasks:
   build:
-    command: 'packemon build --addFiles --addExports --declaration'
+    command:
+      'packemon build --addFiles --addExports --declaration --declarationConfig tsconfig.build.json'
     env:
       NODE_ENV: 'production'
     inputs:
       - '@globs(sources)'
       - 'package.json'
       - 'tsconfig.json'
+      - 'tsconfig.build.json'
       - '/tsconfig.options.json'
     outputs:
       - 'cjs'
@@ -90,5 +92,3 @@ tasks:
       - '@globs(tests)'
       - 'tsconfig.json'
       - '/tsconfig.options.json'
-    outputs:
-      - 'dts'

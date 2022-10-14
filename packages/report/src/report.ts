@@ -24,7 +24,7 @@ export function sortReport(report: RunReport, sortBy: string, sortDir: string) {
 			}
 
 			default: {
-				return 0;
+				throw new Error(`Unknown sort by "${sortBy}".`);
 			}
 		}
 	});

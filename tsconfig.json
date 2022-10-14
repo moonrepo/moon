@@ -6,6 +6,9 @@
       "path": "packages/cli"
     },
     {
+      "path": "packages/report"
+    },
+    {
       "path": "packages/runtime"
     },
     {

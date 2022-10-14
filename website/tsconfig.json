@@ -6,7 +6,8 @@
     "src/**/*"
   ],
   "compilerOptions": {
-    "baseUrl": "."
+    "baseUrl": ".",
+    "outDir": "../.moon/cache/types/website"
   },
   "references": [
     {

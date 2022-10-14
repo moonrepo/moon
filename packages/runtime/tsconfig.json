@@ -1,16 +1,11 @@
 {
   "extends": "../../tsconfig.options.json",
   "compilerOptions": {
-    "outDir": "dts",
-    "rootDir": "src"
+    "outDir": "../../.moon/cache/types/packages/runtime",
+    "rootDir": "."
   },
-  "exclude": [
-    "dts"
-  ],
   "include": [
-    "src/**/*",
-    "tests/**/*",
-    "types/**/*"
+    "src/**/*"
   ],
   "references": [
     {

@@ -21,6 +21,7 @@ node:
   inferTasksFromScripts: false
 
 typescript:
+  routeOutDirToCache: true
   syncProjectReferences: true
 
 generator:

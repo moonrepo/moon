@@ -57,8 +57,6 @@ tasks:
       - '--no-error-on-unmatched-pattern'
       - '--report-unused-disable-directives'
       - '.'
-    deps:
-      - '^:build'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
@@ -85,8 +83,6 @@ tasks:
 
   typecheck:
     command: 'tsc --build --verbose'
-    deps:
-      - '^:build'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'

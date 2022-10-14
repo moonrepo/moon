@@ -259,7 +259,7 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
       - name: Build packages
-        run: yarn run build
+        run: bash ./scripts/release/buildPackages.sh
       - name: Publish npm packages
         run: bash ./scripts/release/publishPackages.sh
         shell: bash

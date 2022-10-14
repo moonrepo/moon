@@ -3,7 +3,6 @@
   "private": true,
   "packageManager": "yarn@3.2.3",
   "scripts": {
-    "build": "bash ./scripts/release/buildPackages.sh",
     "docs": "cargo run -- run website:start",
     "moon": "target/debug/moon --log trace",
     "type": "target/debug/moon --log trace run :typecheck",

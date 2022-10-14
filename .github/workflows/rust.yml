@@ -5,6 +5,7 @@ on:
       - master
   pull_request:
     paths:
+      - .cargo/config.toml
       - .github/workflows/rust.yml
       - crates/**
       - tests/**

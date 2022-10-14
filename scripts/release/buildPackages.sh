@@ -4,11 +4,11 @@
 
 
 # When not in CI, use npx
-if [[ -z "${CI}" ]]; then
+# if [[ -z "${CI}" ]]; then
 	npx --package @moonrepo/cli@latest -- moon run :build
 
 # npx doesn't work in CI, so install directly
-else
-	yarn add --dev @moonrepo/cli@latest
-	./node_modules/@moonrepo/cli/moon run :build
-fi
+# else
+# 	yarn add --dev @moonrepo/cli@latest
+# 	./node_modules/@moonrepo/cli/moon run :build
+# fi

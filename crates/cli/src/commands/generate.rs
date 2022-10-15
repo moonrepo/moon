@@ -224,7 +224,7 @@ fn gather_variables(
                         let index = Select::with_theme(theme)
                             .with_prompt(&var.prompt)
                             .default(default_index)
-                            .items(&values)
+                            .items(&labels)
                             .interact()
                             .map_err(error_handler)?;
 

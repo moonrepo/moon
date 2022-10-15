@@ -357,7 +357,7 @@ impl ProjectGraph {
                 // Inferred tasks should not override explicit tasks
                 #[allow(clippy::map_entry)]
                 if !project.tasks.contains_key(&task_id) {
-                    let task = Task::from_config(Target::format(id, &task_id)?, &task_config)?;
+                    let task = Task::from_config(Target::new(id, &task_id)?, &task_config)?;
 
                     project.tasks.insert(task_id, task);
                 }

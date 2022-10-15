@@ -165,6 +165,8 @@ pub struct Task {
 
     pub env: EnvVars,
 
+    pub id: String,
+
     pub inputs: Vec<InputValue>,
 
     pub input_globs: HashSet<FileGlob>,
@@ -197,19 +199,7 @@ impl Logable for Task {
 }
 
 impl Task {
-    pub fn new<T: AsRef<str>>(target: T) -> Self {
-        let target = target.as_ref();
-        let log_target = format!("moon:project:{}", target);
-
-        Task {
-            inputs: string_vec!["**/*"],
-            log_target,
-            target: target.to_owned(),
-            ..Task::default()
-        }
-    }
-
-    pub fn from_config(target: TargetID, config: &TaskConfig) -> Result<Self, TaskError> {
+    pub fn from_config(target: Target, config: &TaskConfig) -> Result<Self, TaskError> {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
 
@@ -217,13 +207,14 @@ impl Task {
         let command = command.unwrap_or_default();
         let is_local =
             cloned_config.local || command == "dev" || command == "serve" || command == "start";
-        let log_target = format!("moon:project:{}", target);
+        let log_target = format!("moon:project:{}", target.id);
 
         let task = Task {
             args,
             command,
             deps: cloned_config.deps.unwrap_or_default(),
             env: cloned_config.env.unwrap_or_default(),
+            id: target.task_id.clone(),
             inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
             input_vars: HashSet::new(),
             input_globs: HashSet::new(),
@@ -250,14 +241,14 @@ impl Task {
             outputs: cloned_config.outputs.unwrap_or_default(),
             output_paths: HashSet::new(),
             platform: cloned_config.type_of,
-            target: target.clone(),
+            target: target.id.clone(),
             type_of: TaskType::Test,
         };
 
         debug!(
             target: &task.log_target,
             "Creating task {} with command {}",
-            color::target(&target),
+            color::target(&target.id),
             color::shell(&task.command)
         );
 

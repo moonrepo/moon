@@ -206,7 +206,7 @@ fn create_tasks_from_config(
 
         tasks.insert(
             task_name.to_owned(),
-            Task::from_config(Target::format(project_id, task_name)?, task_config)?,
+            Task::from_config(Target::new(project_id, task_name)?, task_config)?,
         );
     }
 
@@ -225,7 +225,7 @@ fn create_tasks_from_config(
             // Insert a new task
             tasks.insert(
                 task_id.clone(),
-                Task::from_config(Target::format(project_id, task_id)?, task_config)?,
+                Task::from_config(Target::new(project_id, task_id)?, task_config)?,
             );
         }
     }

@@ -139,6 +139,7 @@ describe('prepareReportActions()', () => {
 				},
 				icon: '🟪',
 				label: 'RunTarget(types:build)',
+				status: 'cached',
 				time: '0s',
 			},
 			{
@@ -149,6 +150,7 @@ describe('prepareReportActions()', () => {
 				},
 				icon: '🟩',
 				label: 'RunTarget(runtime:typecheck)',
+				status: 'passed',
 				time: '32m 2s',
 			},
 			{
@@ -159,6 +161,7 @@ describe('prepareReportActions()', () => {
 				},
 				icon: '🟩',
 				label: 'RunTarget(types:typecheck)',
+				status: 'passed',
 				time: '1m 4s',
 			},
 			{
@@ -169,6 +172,7 @@ describe('prepareReportActions()', () => {
 				},
 				icon: '🟩',
 				label: 'RunTarget(website:typecheck)',
+				status: 'passed',
 				time: '34.4s',
 			},
 		]);

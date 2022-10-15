@@ -11,12 +11,17 @@ export interface TemplateBooleanVariableConfig
 	type: 'boolean';
 }
 
+export interface TemplateEnumValue {
+	label: string;
+	value: string;
+}
+
 export interface TemplateEnumVariableConfig
 	extends Omit<TemplateVariableConfig<string>, 'prompt' | 'required'> {
 	multiple: boolean | null;
 	prompt: string;
 	type: 'enum';
-	values: string[];
+	values: (TemplateEnumValue | string)[];
 }
 
 export interface TemplateNumberVariableConfig extends TemplateVariableConfig<number> {

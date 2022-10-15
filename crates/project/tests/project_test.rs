@@ -294,7 +294,11 @@ mod tasks {
         let mut task =
             create_expanded_task_internal(workspace_root, &project_root, Some(config)).unwrap();
 
+        let mut parts = target.split(':');
+        parts.next();
+
         task.log_target = format!("moon:project:{}", target);
+        task.id = parts.next().unwrap().to_string();
         task.target = target;
 
         Ok(task)
@@ -1484,10 +1488,11 @@ mod workspace {
             let mut task =
                 create_expanded_task(&workspace_root, &workspace_root.join("rename-merge"), None)
                     .unwrap();
+            task.id = "foo".to_owned();
             task.target = "id:foo".to_owned();
             task.command = "a".to_owned();
             task.args.push("renamed-and-merge-foo".to_owned());
-            task.log_target = String::from("moon:project:id:foo");
+            task.log_target = "moon:project:id:foo".to_owned();
 
             assert_eq!(*project.get_task("foo").unwrap(), task);
 

@@ -294,7 +294,11 @@ mod tasks {
         let mut task =
             create_expanded_task_internal(workspace_root, &project_root, Some(config)).unwrap();
 
+        let mut parts = target.split(':');
+        parts.next();
+
         task.log_target = format!("moon:project:{}", target);
+        task.id = parts.next().unwrap().to_string();
         task.target = target;
 
         Ok(task)
@@ -314,7 +318,7 @@ mod tasks {
         );
 
         let mut task = Task::from_config(
-            Target::format("id", "standard").unwrap(),
+            Target::new("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         )
         .unwrap();
@@ -355,28 +359,28 @@ mod tasks {
         );
 
         let mut build = Task::from_config(
-            Target::format("id", "build").unwrap(),
+            Target::new("id", "build").unwrap(),
             &mock_task_config("webpack"),
         )
         .unwrap();
         build.platform = PlatformType::Node;
 
         let mut std = Task::from_config(
-            Target::format("id", "standard").unwrap(),
+            Target::new("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         )
         .unwrap();
         std.platform = PlatformType::System;
 
         let mut test = Task::from_config(
-            Target::format("id", "test").unwrap(),
+            Target::new("id", "test").unwrap(),
             &mock_task_config("jest"),
         )
         .unwrap();
         test.platform = PlatformType::Node;
 
         let mut lint = Task::from_config(
-            Target::format("id", "lint").unwrap(),
+            Target::new("id", "lint").unwrap(),
             &mock_task_config("eslint"),
         )
         .unwrap();
@@ -444,25 +448,25 @@ mod tasks {
             .unwrap();
 
         let mut build = Task::from_config(
-            Target::format("id", "build").unwrap(),
+            Target::new("id", "build").unwrap(),
             &mock_task_config("webpack"),
         )
         .unwrap();
 
         let mut std = Task::from_config(
-            Target::format("id", "standard").unwrap(),
+            Target::new("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         )
         .unwrap();
 
         let mut test = Task::from_config(
-            Target::format("id", "test").unwrap(),
+            Target::new("id", "test").unwrap(),
             &mock_task_config("jest"),
         )
         .unwrap();
 
         let mut lint = Task::from_config(
-            Target::format("id", "lint").unwrap(),
+            Target::new("id", "lint").unwrap(),
             &mock_task_config("eslint"),
         )
         .unwrap();
@@ -479,6 +483,36 @@ mod tasks {
         assert_eq!(project.get_task("standard").unwrap().deps, std.deps);
         assert_eq!(project.get_task("test").unwrap().deps, test.deps);
         assert_eq!(project.get_task("lint").unwrap().deps, lint.deps);
+    }
+
+    #[test]
+    fn inherits_implicit_deps_self_target() {
+        let workspace_root = get_fixtures_root();
+        let mut project = Project::new(
+            "id",
+            "tasks/basic",
+            &workspace_root,
+            &GlobalProjectConfig {
+                tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
+                ..GlobalProjectConfig::default()
+            },
+        )
+        .unwrap();
+
+        project
+            .expand_tasks(&workspace_root, &string_vec!["build"], &[])
+            .unwrap();
+
+        let mut build = Task::from_config(
+            Target::new("id", "build").unwrap(),
+            &mock_task_config("webpack"),
+        )
+        .unwrap();
+
+        // Expanded
+        build.deps.extend(string_vec!["id:build"]);
+
+        assert_eq!(project.get_task("build").unwrap().deps, build.deps);
     }
 
     #[test]
@@ -501,25 +535,25 @@ mod tasks {
             .unwrap();
 
         let mut build = Task::from_config(
-            Target::format("id", "build").unwrap(),
+            Target::new("id", "build").unwrap(),
             &mock_task_config("webpack"),
         )
         .unwrap();
 
         let mut std = Task::from_config(
-            Target::format("id", "standard").unwrap(),
+            Target::new("id", "standard").unwrap(),
             &mock_task_config("cmd"),
         )
         .unwrap();
 
         let mut test = Task::from_config(
-            Target::format("id", "test").unwrap(),
+            Target::new("id", "test").unwrap(),
             &mock_task_config("jest"),
         )
         .unwrap();
 
         let mut lint = Task::from_config(
-            Target::format("id", "lint").unwrap(),
+            Target::new("id", "lint").unwrap(),
             &mock_task_config("eslint"),
         )
         .unwrap();
@@ -886,6 +920,21 @@ mod tasks {
             let project = create_expanded_project(
                 "id",
                 "self",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            );
+
+            assert_eq!(
+                project.tasks.get("lint").unwrap().deps,
+                string_vec!["id:clean", "id:build"]
+            );
+        }
+
+        #[test]
+        fn resolves_self_scope_without_prefix() {
+            let project = create_expanded_project(
+                "id",
+                "self-no-prefix",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
             );
@@ -1439,10 +1488,11 @@ mod workspace {
             let mut task =
                 create_expanded_task(&workspace_root, &workspace_root.join("rename-merge"), None)
                     .unwrap();
+            task.id = "foo".to_owned();
             task.target = "id:foo".to_owned();
             task.command = "a".to_owned();
             task.args.push("renamed-and-merge-foo".to_owned());
-            task.log_target = String::from("moon:project:id:foo");
+            task.log_target = "moon:project:id:foo".to_owned();
 
             assert_eq!(*project.get_task("foo").unwrap(), task);
 

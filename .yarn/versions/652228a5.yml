@@ -9,3 +9,7 @@ releases:
   '@moonrepo/core-windows-x64-msvc': minor
   '@moonrepo/report': patch
   '@moonrepo/types': patch
+
+declined:
+  - '@moonrepo/runtime'
+  - website

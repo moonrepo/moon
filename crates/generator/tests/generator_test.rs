@@ -67,19 +67,19 @@ mod create_template {
             .unwrap();
 
         assert!(dir
-            .join("templates/sometemPlatE-withRandom-Values123_")
+            .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_")
             .exists());
         assert!(dir
-            .join("templates/sometemPlatE-withRandom-Values123_/template.yml")
+            .join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_/template.yml")
             .exists());
 
         assert_eq!(
             template.name,
-            "sometemPlatE-withRandom-Values123_".to_owned()
+            "so-me-temPlatE--with-Ran-dom-Valu-es-123_".to_owned()
         );
         assert_eq!(
             template.root,
-            dir.join("templates/sometemPlatE-withRandom-Values123_")
+            dir.join("templates/so-me-temPlatE--with-Ran-dom-Valu-es-123_")
         );
     }
 }

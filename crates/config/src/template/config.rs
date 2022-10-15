@@ -70,6 +70,10 @@ pub struct TemplateConfig {
 
     #[schemars(default)]
     pub variables: HashMap<String, TemplateVariable>,
+
+    /// JSON schema URI.
+    #[serde(skip, rename = "$schema")]
+    pub schema: String,
 }
 
 impl TemplateConfig {

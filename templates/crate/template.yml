@@ -8,7 +8,11 @@ variables:
     required: true
   type:
     type: 'enum'
-    values: ['lib', 'main']
+    values:
+      - value: 'lib'
+        label: 'Library'
+      - value: 'main'
+        label: 'Binary'
     default: 'lib'
     prompt: 'Crate type?'
   edition:

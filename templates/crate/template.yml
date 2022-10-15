@@ -1,3 +1,5 @@
+$schema: 'https://moonrepo.dev/schemas/template.json'
+
 title: 'Cargo crate'
 description: 'Create a new Cargo crate, pre-setup for the moon workspace.'
 variables:

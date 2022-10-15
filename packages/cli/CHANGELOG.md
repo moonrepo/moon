@@ -13,6 +13,7 @@
 
 - Enum variables can now declare an object form for `values`, so that a custom label can be provided
   for each value item.
+- Added JSON schema support for the `template.yml` config.
 
 #### ⚡️ Performance
 

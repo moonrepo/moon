@@ -7,10 +7,18 @@
 - Refactored project and task name/id cleaning. Previously, unsupported characters were simply
   removed. Instead, we now replace them with dashes for better readability.
 
-#### ⚙️ Internal
+#### 🚀 Updates
 
-- Integrated [mimalloc](https://github.com/microsoft/mimalloc). This reduces memory cost and
-  increases performance.
+##### Generator
+
+- Enum variables can now declare an object form for `values`, so that a custom label can be provided
+  for each value item.
+
+#### ⚡️ Performance
+
+- Enabled [mimalloc](https://github.com/microsoft/mimalloc). This reduces memory cost and increases
+  runtime performance.
+- Enabled link-time optimization, increases runtime performance.
 
 ## 0.16.1
 

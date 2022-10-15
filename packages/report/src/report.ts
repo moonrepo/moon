@@ -1,4 +1,4 @@
-import { Duration, RunReport } from '@moonrepo/types';
+import { ActionStatus, Duration, RunReport } from '@moonrepo/types';
 import { getIconForStatus, isFlaky, isSlow } from './action';
 import { formatDuration, getDurationInMillis } from './time';
 
@@ -33,6 +33,7 @@ export interface PreparedAction {
 	duration: Duration | null;
 	icon: string;
 	label: string;
+	status: ActionStatus;
 	time: string;
 }
 
@@ -57,6 +58,7 @@ export function prepareReportActions(report: RunReport, slowThreshold: number): 
 			duration: action.duration,
 			icon: getIconForStatus(action.status),
 			label: action.label ?? '<unknown>',
+			status: action.status,
 			time: formatDuration(action.duration),
 		};
 	});

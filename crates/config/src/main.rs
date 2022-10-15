@@ -1,4 +1,6 @@
-use moon_config::{GlobalProjectConfig, ProjectConfig, WorkspaceConfig};
+use moon_config::{
+    GlobalProjectConfig, ProjectConfig, TemplateConfig, TemplateFrontmatterConfig, WorkspaceConfig,
+};
 use schemars::schema_for;
 use std::fs;
 
@@ -6,6 +8,8 @@ fn main() {
     // Generate JSON schemas derived from our structs
     let project_schema = schema_for!(ProjectConfig);
     let global_project_schema = schema_for!(GlobalProjectConfig);
+    let template_schema = schema_for!(TemplateConfig);
+    let template_frontmatter_schema = schema_for!(TemplateFrontmatterConfig);
     let workspace_schema = schema_for!(WorkspaceConfig);
 
     fs::write(
@@ -17,6 +21,18 @@ fn main() {
     fs::write(
         "website/static/schemas/global-project.json",
         serde_json::to_string_pretty(&global_project_schema).unwrap(),
+    )
+    .unwrap();
+
+    fs::write(
+        "website/static/schemas/template.json",
+        serde_json::to_string_pretty(&template_schema).unwrap(),
+    )
+    .unwrap();
+
+    fs::write(
+        "website/static/schemas/template-frontmatter.json",
+        serde_json::to_string_pretty(&template_frontmatter_schema).unwrap(),
     )
     .unwrap();
 

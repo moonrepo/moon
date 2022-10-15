@@ -32,7 +32,10 @@ pub struct TemplateVariableConfig<T> {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(untagged)]
+#[serde(
+    untagged,
+    expecting = "expected a value string or value object with label"
+)]
 pub enum TemplateVariableEnumValue {
     String(String),
     Object { label: String, value: String },
@@ -60,7 +63,6 @@ pub enum TemplateVariable {
 
 /// Docs: https://moonrepo.dev/docs/config/template
 #[derive(Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct TemplateConfig {
     #[validate(custom = "validate_description")]
@@ -69,7 +71,12 @@ pub struct TemplateConfig {
     #[validate(custom = "validate_title")]
     pub title: String,
 
+    #[schemars(default)]
     pub variables: HashMap<String, TemplateVariable>,
+
+    /// JSON schema URI.
+    #[serde(skip, rename = "$schema")]
+    pub schema: String,
 }
 
 impl TemplateConfig {

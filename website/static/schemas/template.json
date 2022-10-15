@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TemplateConfig",
+  "description": "Docs: https://moonrepo.dev/docs/config/template",
+  "type": "object",
+  "required": [
+    "description",
+    "title"
+  ],
+  "properties": {
+    "description": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "variables": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/TemplateVariable"
+      }
+    }
+  },
+  "definitions": {
+    "TemplateVariable": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "default",
+            "type"
+          ],
+          "properties": {
+            "default": {
+              "type": "boolean"
+            },
+            "prompt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "required": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "boolean"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "default",
+            "prompt",
+            "type",
+            "values"
+          ],
+          "properties": {
+            "default": {
+              "type": "string"
+            },
+            "multiple": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "prompt": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "enum"
+              ]
+            },
+            "values": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TemplateVariableEnumValue"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "default",
+            "type"
+          ],
+          "properties": {
+            "default": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "prompt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "required": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "number"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "default",
+            "type"
+          ],
+          "properties": {
+            "default": {
+              "type": "string"
+            },
+            "prompt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "required": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "string"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "TemplateVariableEnumValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": [
+            "label",
+            "value"
+          ],
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

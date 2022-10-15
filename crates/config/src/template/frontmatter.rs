@@ -17,6 +17,10 @@ pub struct TemplateFrontmatterConfig {
     pub force: Option<bool>,
     pub to: Option<String>,
     pub skip: Option<bool>,
+
+    /// JSON schema URI.
+    #[serde(skip, rename = "$schema")]
+    pub schema: String,
 }
 
 impl TemplateFrontmatterConfig {

@@ -191,7 +191,7 @@ impl DepGraph {
                 }
             }
             // ~:task
-            TargetProjectScope::Own => {
+            TargetProjectScope::OwnSelf => {
                 target.fail_with(TargetError::NoProjectSelfInRunContext)?;
             }
         };

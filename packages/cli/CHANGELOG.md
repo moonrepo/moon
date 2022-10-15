@@ -9,6 +9,11 @@
 
 #### 🚀 Updates
 
+##### Tasks
+
+- When defining `deps` within the current project, the `~:` prefix is now optional. For example,
+  `~:build` can now be written as simply `build`.
+
 ##### Generator
 
 - Enum variables can now declare an object form for `values`, so that a custom label can be provided

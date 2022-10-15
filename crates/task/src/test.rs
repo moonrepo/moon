@@ -71,7 +71,7 @@ pub fn create_file_groups() -> HashMap<String, FileGroup> {
 
 pub fn create_initial_task(config: Option<TaskConfig>) -> Task {
     Task::from_config(
-        Target::format("project", "task").unwrap(),
+        Target::new("project", "task").unwrap(),
         &config.unwrap_or_default(),
     )
     .unwrap()

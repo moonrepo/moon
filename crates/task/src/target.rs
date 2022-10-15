@@ -9,7 +9,7 @@ pub enum TargetProjectScope {
     All,           // :task
     Deps,          // ^:task
     Id(ProjectID), // project:task
-    Own,           // ~:task
+    OwnSelf,       // ~:task
 }
 
 // impl fmt::Display for TargetProjectScope {
@@ -59,6 +59,15 @@ impl Target {
         })
     }
 
+    pub fn new_self(task_id: &str) -> Result<Target, TargetError> {
+        Ok(Target {
+            id: Target::format("~", task_id)?,
+            project: TargetProjectScope::OwnSelf,
+            project_id: None,
+            task_id: task_id.to_owned(),
+        })
+    }
+
     pub fn format(project_id: &str, task_id: &str) -> Result<TargetID, TargetError> {
         Ok(format!("{}:{}", project_id, task_id))
     }
@@ -79,7 +88,7 @@ impl Target {
             Some(value) => match value.as_str() {
                 "" => TargetProjectScope::All,
                 "^" => TargetProjectScope::Deps,
-                "~" => TargetProjectScope::Own,
+                "~" => TargetProjectScope::OwnSelf,
                 id => {
                     project_id = Some(id.to_owned());
                     TargetProjectScope::Id(id.to_owned())
@@ -229,7 +238,7 @@ mod tests {
             Target::parse("~:build").unwrap(),
             Target {
                 id: String::from("~:build"),
-                project: TargetProjectScope::Own,
+                project: TargetProjectScope::OwnSelf,
                 project_id: None,
                 task_id: "build".to_owned(),
                 // task: TargetTask::Id("build".to_owned())

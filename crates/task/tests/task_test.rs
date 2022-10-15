@@ -1,6 +1,6 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
 use moon_task::test::create_expanded_task;
-use moon_task::{Task, TaskOptions};
+use moon_task::{Target, Task, TaskOptions};
 use moon_utils::test::{create_sandbox, get_fixtures_dir};
 use moon_utils::{glob, string_vec};
 use std::collections::{HashMap, HashSet};
@@ -30,7 +30,8 @@ mod from_config {
 
     #[test]
     fn sets_defaults() {
-        let task = Task::from_config("foo:test".to_owned(), &TaskConfig::default()).unwrap();
+        let task =
+            Task::from_config(Target::new("foo", "test").unwrap(), &TaskConfig::default()).unwrap();
 
         assert_eq!(task.inputs, string_vec!["**/*"]);
         assert_eq!(task.log_target, "moon:project:foo:test");
@@ -57,7 +58,7 @@ mod from_config {
     #[test]
     fn changes_options_if_local() {
         let task = Task::from_config(
-            "foo:test".to_owned(),
+            Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 local: true,
                 ..TaskConfig::default()
@@ -79,7 +80,7 @@ mod from_config {
     #[test]
     fn determines_local_from_command() {
         let task = Task::from_config(
-            "foo:test".to_owned(),
+            Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 command: Some(TaskCommandArgs::String("dev".to_owned())),
                 ..TaskConfig::default()
@@ -101,7 +102,7 @@ mod from_config {
     #[test]
     fn can_override_local_output_style() {
         let task = Task::from_config(
-            "foo:test".to_owned(),
+            Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 local: true,
                 options: TaskOptionsConfig {
@@ -127,7 +128,7 @@ mod from_config {
     #[test]
     fn converts_env_file_enum() {
         let task = Task::from_config(
-            "foo:test".to_owned(),
+            Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 options: TaskOptionsConfig {
                     env_file: Some(TaskOptionEnvFile::Enabled(true)),
@@ -150,7 +151,7 @@ mod from_config {
     #[test]
     fn handles_command_string() {
         let task = Task::from_config(
-            "foo:test".to_owned(),
+            Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 command: Some(TaskCommandArgs::String("foo --bar".to_owned())),
                 args: Some(TaskCommandArgs::Sequence(string_vec!["--baz"])),
@@ -166,7 +167,7 @@ mod from_config {
     #[test]
     fn handles_command_list() {
         let task = Task::from_config(
-            "foo:test".to_owned(),
+            Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 command: Some(TaskCommandArgs::Sequence(string_vec!["foo", "--bar"])),
                 args: Some(TaskCommandArgs::String("--baz".to_owned())),

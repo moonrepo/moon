@@ -33,6 +33,7 @@ export interface Task {
 	command: string;
 	deps: string[];
 	env: Record<string, string>;
+	id: string;
 	inputs: string[];
 	inputGlobs: string[];
 	inputPaths: string[];

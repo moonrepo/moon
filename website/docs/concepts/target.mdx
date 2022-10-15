@@ -46,10 +46,9 @@ $ moon run :lint
 
 > Only available when configuring a task.
 
-When you want to include a reference for each project in your
-[`dependsOn`](../config/project#dependson) list, you can utilize the `^` scope. This will be
-expanded to _all_ depended on projects. If you do not want all projects, then you'll need to
-explicitly define them.
+When you want to include a reference for each project [that's depended on](./project#dependencies),
+you can utilize the `^` scope. This will be expanded to _all_ depended on projects. If you do not
+want all projects, then you'll need to explicitly define them.
 
 ```yaml title="moon.yml"
 dependsOn:
@@ -76,10 +75,10 @@ tasks:
 
 > Only available when configuring a task.
 
-When referring to another task within the current project, you can utilize the `~` scope, which will
-be expanded to the current project's name. This is useful for situations where the name is unknown,
-for example, when configuring [`.moon/project.yml`](../config/global-project). Or if you just want a
-shortcut!
+When referring to another task within the current project, you can utilize the `~` scope, or emit
+the `~:` prefix altogether, which will be expanded to the current project's name. This is useful for
+situations where the name is unknown, for example, when configuring
+[`.moon/project.yml`](../config/global-project). Or if you just want a shortcut!
 
 ```yaml title=".moon/project.yml"
 # Configured as
@@ -88,6 +87,8 @@ tasks:
 		command: 'eslint'
 		deps:
 			- '~:typecheck'
+			# OR
+			- 'typecheck'
 	typecheck:
 		command: 'tsc'
 

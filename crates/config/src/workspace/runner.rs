@@ -1,4 +1,7 @@
-use crate::{errors::create_validation_error, validators::validate_target};
+use crate::{
+    errors::create_validation_error,
+    validators::{validate_id, validate_target},
+};
 use moon_utils::{string_vec, time};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -6,9 +9,13 @@ use validator::{Validate, ValidationError};
 
 fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
+        let key = format!("implicitDeps[{}]", index);
+
         // When no target scope, it's assumed to be a self scope
         if item.contains(':') {
-            validate_target(format!("implicitDeps[{}]", index), item)?;
+            validate_target(key, item)?;
+        } else {
+            validate_id(key, item)?;
         }
     }
 

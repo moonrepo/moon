@@ -1,7 +1,9 @@
 use crate::project::local_config::{ProjectConfig, ProjectLanguage};
 use crate::project::task_options::TaskOptionsConfig;
 use crate::types::{FilePath, InputValue, TargetID};
-use crate::validators::{skip_if_default, validate_child_or_root_path, validate_target};
+use crate::validators::{
+    skip_if_default, validate_child_or_root_path, validate_id, validate_target,
+};
 use moon_utils::process::split_args;
 use moon_utils::process::ArgsParseError;
 use moon_utils::regex::{ENV_VAR, NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
@@ -16,9 +18,13 @@ use validator::{Validate, ValidationError};
 
 fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
+        let key = format!("deps[{}]", index);
+
         // When no target scope, it's assumed to be a self scope
         if item.contains(':') {
-            validate_target(format!("deps[{}]", index), item)?;
+            validate_target(key, item)?;
+        } else {
+            validate_id(key, item)?;
         }
     }
 

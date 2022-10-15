@@ -60,7 +60,6 @@ pub enum TemplateVariable {
 
 /// Docs: https://moonrepo.dev/docs/config/template
 #[derive(Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct TemplateConfig {
     #[validate(custom = "validate_description")]
@@ -69,6 +68,7 @@ pub struct TemplateConfig {
     #[validate(custom = "validate_title")]
     pub title: String,
 
+    #[schemars(default)]
     pub variables: HashMap<String, TemplateVariable>,
 }
 

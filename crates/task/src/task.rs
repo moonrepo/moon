@@ -410,7 +410,11 @@ impl Task {
         };
 
         for dep in &self.deps {
-            let target = Target::parse(dep)?;
+            let target = if dep.contains(':') {
+                Target::parse(dep)?
+            } else {
+                Target::new_self(dep)?
+            };
 
             match &target.project {
                 // ^:task
@@ -420,7 +424,7 @@ impl Task {
                     }
                 }
                 // ~:task
-                TargetProjectScope::Own => {
+                TargetProjectScope::OwnSelf => {
                     push_dep(Target::format(owner_id, &target.task_id)?);
                 }
                 // project:task

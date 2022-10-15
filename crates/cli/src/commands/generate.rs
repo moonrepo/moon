@@ -1,7 +1,7 @@
 use crate::helpers::load_workspace;
 use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
-use moon_config::TemplateVariable;
+use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
 use moon_logger::{color, debug, map_list, trace, warn};
@@ -164,30 +164,46 @@ fn gather_variables(
                 }
             }
             TemplateVariable::Enum(var) => {
-                let default = custom_vars.get(name).unwrap_or(&var.default);
-                let default_index = var
+                let values = var
                     .values
                     .iter()
-                    .position(|i| i == default)
+                    .map(|e| match e {
+                        TemplateVariableEnumValue::String(value) => value,
+                        TemplateVariableEnumValue::Object { value, .. } => value,
+                    })
+                    .collect::<Vec<_>>();
+                let labels = var
+                    .values
+                    .iter()
+                    .map(|e| match e {
+                        TemplateVariableEnumValue::String(value) => value,
+                        TemplateVariableEnumValue::Object { label, .. } => label,
+                    })
+                    .collect::<Vec<_>>();
+
+                let default = custom_vars.get(name).unwrap_or(&var.default);
+                let default_index = values
+                    .iter()
+                    .position(|i| *i == default)
                     .unwrap_or_default();
 
                 if options.defaults {
-                    log_var(name, &var.values[default_index], Some(&default_comment));
+                    log_var(name, &values[default_index], Some(&default_comment));
                 }
 
                 match (options.defaults, var.multiple.unwrap_or_default()) {
                     (true, true) => {
-                        context.insert(name, &[&var.values[default_index]]);
+                        context.insert(name, &[&values[default_index]]);
                     }
                     (true, false) => {
-                        context.insert(name, &var.values[default_index]);
+                        context.insert(name, &values[default_index]);
                     }
                     (false, true) => {
                         let indexes = MultiSelect::with_theme(theme)
                             .with_prompt(&var.prompt)
-                            .items(&var.values)
+                            .items(&labels)
                             .defaults(
-                                &var.values
+                                &values
                                     .iter()
                                     .enumerate()
                                     .map(|(i, _)| i == default_index)
@@ -197,7 +213,7 @@ fn gather_variables(
                             .map_err(error_handler)?;
                         let value = indexes
                             .iter()
-                            .map(|i| var.values[*i].clone())
+                            .map(|i| values[*i].clone())
                             .collect::<Vec<String>>();
 
                         log_var(name, &map_list(&value, |f| f.to_string()), None);
@@ -208,13 +224,13 @@ fn gather_variables(
                         let index = Select::with_theme(theme)
                             .with_prompt(&var.prompt)
                             .default(default_index)
-                            .items(&var.values)
+                            .items(&labels)
                             .interact()
                             .map_err(error_handler)?;
 
-                        log_var(name, &var.values[index], None);
+                        log_var(name, &values[index], None);
 
-                        context.insert(name, &var.values[index]);
+                        context.insert(name, &values[index]);
                     }
                 };
             }

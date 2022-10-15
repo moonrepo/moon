@@ -31,13 +31,20 @@ pub struct TemplateVariableConfig<T> {
     pub required: Option<bool>,
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum TemplateVariableEnumValue {
+    String(String),
+    Object { label: String, value: String },
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct TemplateVariableEnumConfig {
     pub default: String,
     pub multiple: Option<bool>,
     pub prompt: String,
     // pub required: Option<bool>,
-    pub values: Vec<String>,
+    pub values: Vec<TemplateVariableEnumValue>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]

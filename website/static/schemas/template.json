@@ -85,7 +85,7 @@
             "values": {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/TemplateVariableEnumValue"
               }
             }
           }
@@ -148,6 +148,28 @@
               "enum": [
                 "string"
               ]
+            }
+          }
+        }
+      ]
+    },
+    "TemplateVariableEnumValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": [
+            "label",
+            "value"
+          ],
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
             }
           }
         }

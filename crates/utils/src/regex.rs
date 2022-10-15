@@ -40,7 +40,7 @@ pub fn create_regex(value: &str) -> Result<Regex, MoonError> {
 }
 
 pub fn clean_id(id: &str) -> String {
-    ID_CLEAN.replace_all(id, "").to_string()
+    ID_CLEAN.replace_all(id, "-").to_string()
 }
 
 pub fn matches_id(id: &str) -> bool {
@@ -57,4 +57,23 @@ pub fn matches_token_func(token: &str) -> bool {
 
 pub fn matches_token_var(token: &str) -> bool {
     TOKEN_VAR_PATTERN.is_match(token)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod clean_ids {
+        use super::*;
+
+        #[test]
+        fn doesnt_clean_supported_chars() {
+            assert_eq!(clean_id("foo-bar_baz/123"), "foo-bar_baz/123");
+        }
+
+        #[test]
+        fn replaces_unsupported_chars() {
+            assert_eq!(clean_id("foo bar.baz$123"), "foo-bar-baz-123");
+        }
+    }
 }

@@ -113,11 +113,24 @@ variables:
 Allows multiple values to be chosen during prompting. In the template, an array or strings will be
 rendered, otherwise when not-multiple, a single string will be.
 
-### `values`<RequiredLabel />
+### `values`<RequiredLabel /><VersionLabel updated version="0.17" />
 
 <HeadingApiLink to="/api/types/interface/TemplateEnumVariableConfig#values" />
 
-List of explicit values to choose from.
+List of explicit values to choose from. Can either be defined with a string, which acts as a value
+and label, or as an object, which defines an explicit value and label.
+
+```yaml title="template.yml"
+variables:
+	color:
+		type: 'enum'
+		values:
+			- 'red'
+			# OR
+			- value: 'red'
+			  label: 'Red 🔴'
+		# ...
+```
 
 ## Frontmatter<VersionLabel version="0.15" />
 

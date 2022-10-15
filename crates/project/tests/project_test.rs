@@ -482,6 +482,36 @@ mod tasks {
     }
 
     #[test]
+    fn inherits_implicit_deps_self_target() {
+        let workspace_root = get_fixtures_root();
+        let mut project = Project::new(
+            "id",
+            "tasks/basic",
+            &workspace_root,
+            &GlobalProjectConfig {
+                tasks: BTreeMap::from([(String::from("standard"), mock_task_config("cmd"))]),
+                ..GlobalProjectConfig::default()
+            },
+        )
+        .unwrap();
+
+        project
+            .expand_tasks(&workspace_root, &string_vec!["build"], &[])
+            .unwrap();
+
+        let mut build = Task::from_config(
+            Target::format("id", "build").unwrap(),
+            &mock_task_config("webpack"),
+        )
+        .unwrap();
+
+        // Expanded
+        build.deps.extend(string_vec!["id:build"]);
+
+        assert_eq!(project.get_task("build").unwrap().deps, build.deps);
+    }
+
+    #[test]
     fn inherits_implicit_inputs() {
         let workspace_root = get_fixtures_root();
         let implicit_inputs = string_vec!["$VAR", "package.json", "/.moon/workspace.yml"];
@@ -886,6 +916,21 @@ mod tasks {
             let project = create_expanded_project(
                 "id",
                 "self",
+                &get_fixtures_dir("task-deps"),
+                &mock_global_project_config(),
+            );
+
+            assert_eq!(
+                project.tasks.get("lint").unwrap().deps,
+                string_vec!["id:clean", "id:build"]
+            );
+        }
+
+        #[test]
+        fn resolves_self_scope_without_prefix() {
+            let project = create_expanded_project(
+                "id",
+                "self-no-prefix",
                 &get_fixtures_dir("task-deps"),
                 &mock_global_project_config(),
             );

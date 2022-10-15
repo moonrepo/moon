@@ -16,7 +16,10 @@ use validator::{Validate, ValidationError};
 
 fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        validate_target(format!("deps[{}]", index), item)?;
+        // When no target scope, it's assumed to be a self scope
+        if item.contains(':') {
+            validate_target(format!("deps[{}]", index), item)?;
+        }
     }
 
     Ok(())

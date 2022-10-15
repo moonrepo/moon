@@ -1,8 +1,19 @@
-use crate::errors::create_validation_error;
+use crate::{errors::create_validation_error, validators::validate_target};
 use moon_utils::{string_vec, time};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
+
+fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
+    for (index, item) in list.iter().enumerate() {
+        // When no target scope, it's assumed to be a self scope
+        if item.contains(':') {
+            validate_target(format!("implicitDeps[{}]", index), item)?;
+        }
+    }
+
+    Ok(())
+}
 
 fn validate_cache_lifetime(value: &str) -> Result<(), ValidationError> {
     if let Err(e) = time::parse_duration(value) {
@@ -23,6 +34,7 @@ pub struct RunnerConfig {
     #[validate(custom = "validate_cache_lifetime")]
     pub cache_lifetime: String,
 
+    #[validate(custom = "validate_deps")]
     pub implicit_deps: Vec<String>,
 
     pub implicit_inputs: Vec<String>,

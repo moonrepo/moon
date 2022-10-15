@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Refactored project and task name/id cleaning. Previously, unsupported characters were simply
+  removed. Instead, we now replace them with dashes for better readability.
+
 #### ⚙️ Internal
 
 - Integrated [mimalloc](https://github.com/microsoft/mimalloc). This reduces memory cost and

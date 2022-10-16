@@ -1,8 +1,8 @@
 ---
 slug: v0.17
-title: v0.17 - ???
+title: v0.17 - Webhooks and improved runtime performance
 authors: [milesj]
-tags: [webhooks, runner]
+tags: [notifier, runner, vscode]
 # image: ./img/v0.16.png
 ---
 
@@ -10,16 +10,46 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Image from '@site/src/components/Image';
 
-With this release, we've landed a long standing request of supporting project-level overrides for
-tools configured in the workspace, as well as some quality of life improvements for TypeScript.
+With this release, we're landing the first iteration of our notifier service, starting with
+webhooks! We've also spent some time working on quality of life improvements.
 
 <!--truncate-->
 
 ## Webhook events
 
 Looking to gather metrics for your pipelines? Gain insight into run durations and failures? Maybe
-you want to send Slack or Discord notifications? With our webhooks, all of these are possible!
+you want to send Slack or Discord notifications? With our new notifier system, this is now possible
+through webhooks!
 
-When the [`notifier.webhookUrl`](../config/workspace#webhookurl) setting is configured with an HTTPS
-URL, and moon is running in a CI environment, moon will POST a payload to this endpoint for every
-event in our pipeline.
+Simply enable the [`notifier.webhookUrl`](../docs/config/workspace#webhookurl) setting to start
+receiving events from your CI environments.
+
+```yaml title=".moon/workspace.yml"
+notifier:
+  webhookUrl: 'https://api.company.com/some/endpoint'
+```
+
+> View the [official guide on webhooks](../docs/guides/webhooks) for a full list of events and an
+> example payload structure!
+
+## New VS Code extension
+
+TODO
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.17.0) for a
+full list of changes.
+
+- Increased runtime performance and reduced memory consumption.
+- Template enum variables can now defined objects for their
+  [`values`](../docs/config/template#values).
+- Task `deps` can now omit the `~:` prefix for tasks within the current project.
+
+## What's next?
+
+Expect the following in the v0.18 release!
+
+- Workflow improvements for `moon init`.
+- Benchmarks and performance tuning.

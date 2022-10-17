@@ -2,11 +2,30 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moon Blog</title>
-    <updated>2022-10-06T00:00:00.000Z</updated>
+    <updated>2022-10-17T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moon Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[New VS Code extension!]]></title>
+        <id>vscode-extension</id>
+        <link href="https://moonrepo.dev/blog/vscode-extension"/>
+        <updated>2022-10-17T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[We're very excited to announce the initial release of our Visual Studio Code extension!]]></summary>
+        <content type="html"><![CDATA[<p>We're very excited to announce the initial release of our Visual Studio Code extension!</p><p>If you're a huge VS Code fan like us, you most likely use extensions in your everyday workflow. We
+want to enhance this experience by providing a fully integrated and interactive moon console! Here's
+a preview of what it looks like:</p><div style="padding-bottom:1rem;padding-top:1rem;text-align:center"><img src="/assets/images/projects-view-675ba8c24ec1896093663c29966b5e50.png" width="40%" alt=""></div><p>Excited?? Want to learn more? Check out the official
+<a href="https://marketplace.visualstudio.com/items?itemName=moonrepo.moon-console" target="_blank" rel="noopener noreferrer">moonrepo.moon-console</a>
+marketplace page, or read the <a href="/docs/editors/vscode">official documentation</a>. This is only the
+first iteration of the extension. Expect more advanced features in the future, like...</p><ul><li>Schema validation for configuration files</li><li>Autocompletion for configuration files</li><li>Automatic running/building of projects in the background</li><li>File type association</li><li>Integrated language server</li><li>And much more!</li></ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="editors" term="editors"/>
+        <category label="vscode" term="vscode"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[v0.16 - Per-project tool versions and TypeScript impovements]]></title>
         <id>v0.16</id>
@@ -46,7 +65,7 @@ with:</p><div class="language-json codeBlockContainer_mQmQ theme-code-block" sty
 <a href="https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.16.0" target="_blank" rel="noopener noreferrer">official release</a> for a
 full list of changes.</p><ul><li>Template files can now be suffixed with <code>.tera</code> or <code>.twig</code> for
 <a href="/docs/guides/codegen#file-extensions">syntax highlighting</a>.</li><li>We now display more commands and information when running tasks.</li><li>Declare implicit task dependencies with a new
-<a href="/docs/config/workspace.mdx#implicitdeps"><code>runner.implicitDeps</code></a> setting.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.17 release!</p><ul><li>Webhooks for important pipeline events (for real this time)!</li><li>YAML anchors and references in config files.</li><li>And <a href="https://github.com/moonrepo/moon/issues/356" target="_blank" rel="noopener noreferrer">many more</a>...</li></ul>]]></content>
+<a href="/docs/config/workspace#implicitdeps"><code>runner.implicitDeps</code></a> setting.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.17 release!</p><ul><li>Webhooks for important pipeline events (for real this time)!</li><li>YAML anchors and references in config files.</li><li>And <a href="https://github.com/moonrepo/moon/issues/356" target="_blank" rel="noopener noreferrer">many more</a>...</li></ul>]]></content>
         <author>
             <name>Miles Johnson</name>
             <uri>https://github.com/milesj</uri>

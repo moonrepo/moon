@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[2201],{4476:e=>{e.exports=JSON.parse('{"title":"Editors","keywords":["editors","vscode"],"slug":"/editors","permalink":"/docs/editors","navigation":{"previous":{"title":"template.yml","permalink":"/docs/config/template"},"next":{"title":"VS Code","permalink":"/docs/editors/vscode"}}}')}}]);

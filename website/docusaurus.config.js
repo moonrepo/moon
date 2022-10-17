@@ -212,7 +212,7 @@ const config = {
 			'docusaurus-plugin-typedoc-api',
 			{
 				projectRoot: path.join(__dirname, '..'),
-				packages: ['packages/runtime', 'packages/types'],
+				packages: ['packages/report', 'packages/runtime', 'packages/types'],
 				minimal: true,
 				readme: true,
 			},

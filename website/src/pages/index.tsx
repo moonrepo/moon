@@ -172,8 +172,13 @@ const additionalFeatures: Feature[] = [
 	{
 		title: 'Editor extensions',
 		icon: faChartTreeMap,
-		description: 'Utilize moon extensions in your favorite editor.',
-		status: 'coming-soon',
+		description: (
+			<>
+				Utilize moon extensions in your favorite editor, like{' '}
+				<Link href="/docs/editors/vscode">Visual Studio Code</Link>.
+			</>
+		),
+		status: 'new',
 	},
 ];
 

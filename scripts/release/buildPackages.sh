@@ -5,6 +5,6 @@ cd scripts
 
 # Build all packages with moon itself, so that the order is resolved correctly
 npm install -g pnpm
-pnpm --package @moonrepo/cli@latest dlx moon run :build
+pnpm --package @moonrepo/cli@latest dlx moon run report:build runtime:build types:build
 
 # Note: yarn/npm/npx did not work here, but pnpm does!

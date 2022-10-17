@@ -53,6 +53,17 @@ const sidebars = {
 		},
 		{
 			type: 'category',
+			label: 'Editors',
+			items: ['editors/vscode'],
+			link: {
+				type: 'generated-index',
+				title: 'Editors',
+				slug: '/editors',
+				keywords: ['editors', 'vscode'],
+			},
+		},
+		{
+			type: 'category',
 			label: 'Commands',
 			items: [
 				'commands/overview',

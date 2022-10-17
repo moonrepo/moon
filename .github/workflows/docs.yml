@@ -13,7 +13,7 @@ jobs:
         with:
           cache: yarn
       - run: yarn install --immutable
-      - run: yarn build
+      - run: bash ./scripts/release/buildPackages.sh
       - run: yarn workspace website run build
       - uses: peaceiris/actions-gh-pages@v3
         with:

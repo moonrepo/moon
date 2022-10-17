@@ -24,7 +24,13 @@ pub async fn notify_webhook(
     url: String,
     body: String,
 ) -> Result<reqwest::Response, reqwest::Error> {
-    reqwest::Client::new().post(url).body(body).send().await
+    reqwest::Client::new()
+        .post(url)
+        .body(body)
+        .header("Accept", "application/json")
+        .header("Content-Type", "application/json")
+        .send()
+        .await
 }
 
 pub struct WebhooksSubscriber {
@@ -52,18 +58,17 @@ impl Subscriber for WebhooksSubscriber {
         event: &Event<'a>,
         _workspace: &Workspace,
     ) -> Result<EventFlow, MoonError> {
-        // Avoid this overhead if not enabled!
-        let body = if self.enabled {
-            serde_json::to_string(&WebhookPayload {
-                created_at: Utc::now(),
-                event,
-                type_of: event.get_type(),
-                uuid: self.uuid.clone(),
-            })
-            .unwrap()
-        } else {
-            String::from("{}")
-        };
+        if !self.enabled {
+            return Ok(EventFlow::Continue);
+        }
+
+        let body = serde_json::to_string(&WebhookPayload {
+            created_at: Utc::now(),
+            event,
+            type_of: event.get_type(),
+            uuid: self.uuid.clone(),
+        })
+        .unwrap();
 
         // For the first event, we want to ensure that the webhook URL is valid
         // by sending the request and checking for a failure. If failed,
@@ -83,7 +88,7 @@ impl Subscriber for WebhooksSubscriber {
 
             // For every other event, we will make the request and ignore the result.
             // We will also avoid awaiting the request to not slow down the overall runner.
-        } else if self.enabled {
+        } else {
             let url = self.url.to_owned();
 
             self.requests.push(tokio::spawn(async {

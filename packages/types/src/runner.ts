@@ -54,7 +54,7 @@ export type ActionNode =
 
 export interface ActionNodeInstallDeps {
 	action: 'InstallDeps';
-	params: [Runtime];
+	params: Runtime;
 }
 
 export interface ActionNodeInstallProjectDeps {
@@ -64,12 +64,12 @@ export interface ActionNodeInstallProjectDeps {
 
 export interface ActionNodeRunTarget {
 	action: 'RunTarget';
-	params: [string];
+	params: string;
 }
 
 export interface ActionNodeSetupTool {
 	action: 'SetupTool';
-	params: [Runtime];
+	params: Runtime;
 }
 
 export interface ActionNodeSyncProject {

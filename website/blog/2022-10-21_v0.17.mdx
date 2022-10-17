@@ -2,13 +2,9 @@
 slug: v0.17
 title: v0.17 - Webhooks and improved runtime performance
 authors: [milesj]
-tags: [notifier, runner, vscode]
-# image: ./img/v0.16.png
+tags: [notifier, runner, editors, vscode]
+# image: ./img/v0.17.png
 ---
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import Image from '@site/src/components/Image';
 
 With this release, we're landing the first iteration of our notifier service, starting with
 webhooks! We've also spent some time working on quality of life improvements.
@@ -32,9 +28,11 @@ notifier:
 > View the [official guide on webhooks](../docs/guides/webhooks) for a full list of events and an
 > example payload structure!
 
-## New VS Code extension
+## VS Code extension
 
-TODO
+If you missed the [announcement earlier this week](./vscode-extension), we released the initial
+version of our new VS Code extension! Give it a try and
+[refer to the documentation](../docs/editors/vscode) for more information.
 
 ## Other changes
 
@@ -53,3 +51,4 @@ Expect the following in the v0.18 release!
 
 - Workflow improvements for `moon init`.
 - Benchmarks and performance tuning.
+- Individual stdout/stderr log files when running tasks.

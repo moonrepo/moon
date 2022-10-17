@@ -6,6 +6,7 @@ use serde::Serialize;
 use std::{path::PathBuf, time::Duration};
 
 #[derive(Serialize)]
+#[serde(untagged, rename_all = "camelCase")]
 pub enum Event<'e> {
     // Actions
     ActionStarted {

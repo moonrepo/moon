@@ -12,7 +12,7 @@ use moon_logger::{color, debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_platform_node::actions as node_actions;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
-use moon_utils::{is_ci, time};
+use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -574,10 +574,8 @@ impl Runner {
         let mut emitter = Emitter::new(Arc::clone(&workspace));
 
         // For security and privacy purposes, only send webhooks from a CI environment
-        if is_ci() {
-            let ws = workspace.read().await;
-
-            if let Some(webhook_url) = &ws.config.notifier.webhook_url {
+        if is_ci() || is_test_env() {
+            if let Some(webhook_url) = &workspace.read().await.config.notifier.webhook_url {
                 emitter
                     .subscribers
                     .push(Arc::new(RwLock::new(WebhooksSubscriber::new(

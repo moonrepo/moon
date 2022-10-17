@@ -68,7 +68,7 @@ const config = {
 				{
 					name: 'keywords',
 					content:
-						'moon, repo, build, system, ci, times, devx, developer, experience, tooling, tools',
+						'moon, repo, build, system, ci, times, devx, developer, experience, tooling, tools, monorepo, polyrepo',
 				},
 				{
 					name: 'og:image',
@@ -115,6 +115,10 @@ const config = {
 							{
 								label: '@moonrepo/dev',
 								href: 'https://www.npmjs.com/package/@moonrepo/dev',
+							},
+							{
+								label: '@moonrepo/report',
+								href: 'https://www.npmjs.com/package/@moonrepo/report',
 							},
 							{
 								label: '@moonrepo/types',
@@ -184,7 +188,7 @@ const config = {
 								to: 'https://github.com/moonrepo/moon/discussions',
 							},
 							{
-								label: 'Tooling configs',
+								label: 'Developer tools',
 								href: 'https://github.com/moonrepo/dev',
 							},
 							{

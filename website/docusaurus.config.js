@@ -214,7 +214,7 @@ const config = {
 				projectRoot: path.join(__dirname, '..'),
 				packages: ['packages/report', 'packages/runtime', 'packages/types'],
 				minimal: true,
-				readme: true,
+				readmes: true,
 			},
 		],
 		function tailwind() {

@@ -1,0 +1,74 @@
+---
+title: VS Code extension
+sidebar_label: VS Code
+---
+
+import Image from '@site/src/components/Image';
+import TwoColumn from '@site/src/components/docs/TwoColumn';
+
+Enhance your VS Code experience with our integrated moon console! Whether you're a fan of the
+command line, or prefer interactive interfaces, our console will be a welcome experience.
+
+> This extension is in its early stages. Expect more advanced features in the future, like
+> autocompletion, config validation, and more!
+
+## Views
+
+<div className="flex">
+  <div className="mr-2">
+    <Image
+    src={require('./vscode/activity-icon.png')}
+    alt="VS Code - Sidebar icon"
+    width="50px"
+    align="left"
+    padding="0"
+  />
+  </div>
+  <div>
+
+All views are available within the moon sidebar. Simply click the moon icon in the left activity
+bar!
+
+  </div>
+</div>
+
+<br />
+
+<TwoColumn aside={<Image src={require('./vscode/projects-view.png')} alt="VS Code view - Projects" />}>
+
+### Projects
+
+The backbone of moon is the projects view. In this view, all moon configured projects will be
+listed, categorized by their [`type`](../config/project#type), and designated with their
+[`language`](../config/project#language).
+
+Each project can then be expanded to view all available tasks. Tasks can be ran by clicking the `▶`
+icon, or using the command palette.
+
+> This view is available in both the "Explorer" and "moon" sidebars.
+
+</TwoColumn>
+
+<TwoColumn
+  aside={<Image src={require('./vscode/last-run-view.png')} alt="VS Code view - Last run" />}
+>
+
+### Last run
+
+Information about the last ran target will be displayed in a beautiful table with detailed stats.
+Only tasks ran from the [projects view](#projects), or with `--report` on the command line will be
+displayed here.
+
+This table displays all actions that were ran alongside running the the primary target. They are
+ordered topologically via the dependency graph.
+
+</TwoColumn>
+
+## Troubleshooting
+
+View the
+[official VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=moonrepo.moon-console)
+for more information on the extension, its commands, available settings, and more!
+
+If you encounter a bug, or have a feature request, please submit them to the
+[moonrepo/dev](https://github.com/moonrepo/dev/tree/master/packages/vscode-extension) repository!

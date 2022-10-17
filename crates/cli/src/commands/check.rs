@@ -3,7 +3,15 @@ use crate::helpers::load_workspace;
 use moon_project::Project;
 use std::env;
 
-pub async fn check(project_ids: &Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
+#[derive(Default)]
+pub struct CheckOptions {
+    pub report: bool,
+}
+
+pub async fn check(
+    project_ids: &Vec<String>,
+    options: CheckOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let mut projects: Vec<Project> = vec![];
 
@@ -28,7 +36,15 @@ pub async fn check(project_ids: &Vec<String>) -> Result<(), Box<dyn std::error::
     }
 
     // Run targets using our run command
-    run(&targets, RunOptions::default(), Some(workspace)).await?;
+    run(
+        &targets,
+        RunOptions {
+            report: options.report,
+            ..RunOptions::default()
+        },
+        Some(workspace),
+    )
+    .await?;
 
     Ok(())
 }

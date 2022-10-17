@@ -290,6 +290,9 @@ pub enum Commands {
     Check {
         #[arg(help = "List of project IDs to explicitly check")]
         ids: Vec<ProjectID>,
+
+        #[arg(long, help = "Generate a run report for the current actions")]
+        report: bool,
     },
 
     // moon ci

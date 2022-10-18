@@ -11,4 +11,5 @@ moon_utils = { path = "../utils" }
 common-path = "1.0.0"
 dotenvy = "0.15.6"
 serde = { workspace = true }
+strum = { version = "0.24.1", features = ["derive"] }
 thiserror = { workspace = true }

@@ -516,7 +516,12 @@ mod args {
 
         assert_eq!(resolver.resolve_var("$task", &task).unwrap(), "task");
 
-        assert_eq!(resolver.resolve_var("$taskPlatform", &task).unwrap(), "node");
+        assert_eq!(
+            resolver.resolve_var("$taskPlatform", &task).unwrap(),
+            "node"
+        );
+
+        assert_eq!(resolver.resolve_var("$taskType", &task).unwrap(), "test");
 
         assert_eq!(
             resolver.resolve_var("$workspaceRoot", &task).unwrap(),

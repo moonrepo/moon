@@ -1866,6 +1866,7 @@ dependencies = [
  "moon_logger",
  "moon_utils",
  "serde",
+ "strum",
  "thiserror",
 ]
 

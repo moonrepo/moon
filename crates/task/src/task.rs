@@ -12,13 +12,19 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
+use strum::Display;
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum TaskType {
+    #[strum(serialize = "build")]
     Build,
+
+    #[strum(serialize = "run")]
     Run,
+
     #[default]
+    #[strum(serialize = "test")]
     Test,
 }
 

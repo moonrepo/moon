@@ -278,6 +278,7 @@ impl<'a> TokenResolver<'a> {
             "target" => task.target.clone(),
             "task" => task_id,
             "taskPlatform" => task.platform.to_string(),
+            "taskType" => task.type_of.to_string(),
             "workspaceRoot" => path::to_string(workspace_root)?,
             _ => {
                 warn!(

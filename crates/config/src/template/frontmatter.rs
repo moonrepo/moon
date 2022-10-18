@@ -2,7 +2,7 @@
 
 use crate::{errors::map_validation_errors_to_figment_errors, ConfigError};
 use figment::{
-    providers::{Format, Serialized, Yaml},
+    providers::{Format, Serialized, YamlExtended},
     Figment,
 };
 use schemars::JsonSchema;
@@ -31,7 +31,7 @@ impl TemplateFrontmatterConfig {
         let figment = Figment::from(
             Serialized::defaults(TemplateFrontmatterConfig::default()).profile(&profile_name),
         )
-        .merge(Yaml::string(content).profile(&profile_name))
+        .merge(YamlExtended::string(content).profile(&profile_name))
         .select(&profile_name);
 
         let config: TemplateFrontmatterConfig = figment.extract()?;

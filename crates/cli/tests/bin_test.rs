@@ -26,7 +26,7 @@ fn invalid_tool() {
         .failure()
         .code(2)
         .stdout("")
-        .stderr(predicate::str::contains("\"unknown\" isn\'t a valid value"));
+        .stderr(predicate::str::contains("'unknown' isn't a valid value"));
 }
 
 // We use a different Node.js version as to not conflict with other tests!

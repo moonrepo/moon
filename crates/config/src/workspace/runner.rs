@@ -74,7 +74,7 @@ mod tests {
     use super::*;
     use crate::errors::map_validation_errors_to_figment_errors;
     use figment::{
-        providers::{Format, Serialized, Yaml},
+        providers::{Format, Serialized, YamlExtended},
         Figment,
     };
     use std::path::PathBuf;
@@ -83,7 +83,7 @@ mod tests {
 
     fn load_jailed_config() -> Result<RunnerConfig, figment::Error> {
         let figment = Figment::from(Serialized::defaults(RunnerConfig::default()))
-            .merge(Yaml::file(&PathBuf::from(CONFIG_FILENAME)));
+            .merge(YamlExtended::file(&PathBuf::from(CONFIG_FILENAME)));
         let config: RunnerConfig = figment.extract()?;
 
         config

@@ -9,7 +9,7 @@ use crate::providers::url::Url;
 use crate::types::FileGroups;
 use crate::validators::{validate_extends, validate_id};
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format, YamlExtended},
     Figment,
 };
 use schemars::JsonSchema;
@@ -73,7 +73,7 @@ impl GlobalProjectConfig {
             let figment = if source.starts_with("http") {
                 Figment::from(Url::from(source).profile(&profile_name))
             } else {
-                Figment::from(Yaml::file(source).profile(&profile_name))
+                Figment::from(YamlExtended::file(source).profile(&profile_name))
             };
 
             let extended_config = GlobalProjectConfig::load_config(figment.select(&profile_name))?;

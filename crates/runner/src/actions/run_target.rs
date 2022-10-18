@@ -1,10 +1,10 @@
-use crate::emitter::{Event, EventFlow, RunnerEmitter};
-use crate::ActionRunnerError;
+use crate::RunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
 use moon_cache::{CacheItem, RunTargetState};
 use moon_config::PlatformType;
 use moon_config::TaskOutputStyle;
+use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};
@@ -36,7 +36,7 @@ pub enum HydrateFrom {
 pub struct TargetRunner<'a> {
     pub cache: CacheItem<RunTargetState>,
 
-    emitter: &'a RunnerEmitter,
+    emitter: &'a Emitter,
 
     project: &'a Project,
 
@@ -51,7 +51,7 @@ pub struct TargetRunner<'a> {
 
 impl<'a> TargetRunner<'a> {
     pub async fn new(
-        emitter: &'a RunnerEmitter,
+        emitter: &'a Emitter,
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
@@ -70,7 +70,7 @@ impl<'a> TargetRunner<'a> {
     /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
     /// so that subsequent builds are faster, and any local outputs
     /// can be rehydrated easily.
-    pub async fn archive_outputs(&self) -> Result<(), ActionRunnerError> {
+    pub async fn archive_outputs(&self) -> Result<(), RunnerError> {
         let hash = &self.cache.item.hash;
 
         if self.task.outputs.is_empty() || hash.is_empty() {
@@ -80,7 +80,7 @@ impl<'a> TargetRunner<'a> {
         // Check that outputs actually exist
         for (i, output) in self.task.output_paths.iter().enumerate() {
             if !output.exists() {
-                return Err(ActionRunnerError::Task(TaskError::MissingOutput(
+                return Err(RunnerError::Task(TaskError::MissingOutput(
                     self.task.target.clone(),
                     self.task.outputs.get(i).unwrap().to_owned(),
                 )));
@@ -93,6 +93,7 @@ impl<'a> TargetRunner<'a> {
             .emit(Event::TargetOutputArchiving {
                 hash,
                 project: self.project,
+                target: &self.task.target,
                 task: self.task,
             })
             .await?
@@ -102,6 +103,7 @@ impl<'a> TargetRunner<'a> {
                     archive_path: archive_path.into(),
                     hash,
                     project: self.project,
+                    target: &self.task.target,
                     task: self.task,
                 })
                 .await?;
@@ -112,7 +114,7 @@ impl<'a> TargetRunner<'a> {
 
     /// If we are cached (hash match), hydrate the project with the
     /// cached task outputs found in the hashed archive.
-    pub async fn hydrate_outputs(&self) -> Result<(), ActionRunnerError> {
+    pub async fn hydrate_outputs(&self) -> Result<(), RunnerError> {
         let hash = &self.cache.item.hash;
 
         if hash.is_empty() {
@@ -130,6 +132,7 @@ impl<'a> TargetRunner<'a> {
             .emit(Event::TargetOutputHydrating {
                 hash,
                 project: self.project,
+                target: &self.task.target,
                 task: self.task,
             })
             .await?
@@ -139,6 +142,7 @@ impl<'a> TargetRunner<'a> {
                     archive_path: archive_path.into(),
                     hash,
                     project: self.project,
+                    target: &self.task.target,
                     task: self.task,
                 })
                 .await?;
@@ -155,7 +159,7 @@ impl<'a> TargetRunner<'a> {
     pub async fn create_common_hasher(
         &self,
         context: &ActionContext,
-    ) -> Result<TargetHasher, ActionRunnerError> {
+    ) -> Result<TargetHasher, RunnerError> {
         let vcs = &self.workspace.vcs;
         let task = &self.task;
         let project = &self.project;
@@ -314,7 +318,7 @@ impl<'a> TargetRunner<'a> {
             .emitter
             .emit(Event::TargetOutputCacheCheck {
                 hash: &hash,
-                task: self.task,
+                target: &self.task.target,
             })
             .await?
         {
@@ -367,7 +371,7 @@ impl<'a> TargetRunner<'a> {
         &mut self,
         context: &ActionContext,
         command: &mut Command,
-    ) -> Result<Vec<Attempt>, ActionRunnerError> {
+    ) -> Result<Vec<Attempt>, RunnerError> {
         command.envs(self.create_env_vars().await?);
 
         if !context.passthrough_args.is_empty() {
@@ -451,9 +455,7 @@ impl<'a> TargetRunner<'a> {
                         output = out;
                         break;
                     } else if attempt_index >= attempt_total {
-                        return Err(ActionRunnerError::Moon(
-                            command.output_to_error(&out, false),
-                        ));
+                        return Err(RunnerError::Moon(command.output_to_error(&out, false)));
                     } else {
                         attempt_index += 1;
 
@@ -470,7 +472,7 @@ impl<'a> TargetRunner<'a> {
                     attempt.done(ActionStatus::Failed);
                     attempts.push(attempt);
 
-                    return Err(ActionRunnerError::Moon(error));
+                    return Err(RunnerError::Moon(error));
                 }
             }
         }
@@ -676,9 +678,9 @@ pub async fn run_target(
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-    emitter: Arc<RwLock<RunnerEmitter>>,
+    emitter: Arc<RwLock<Emitter>>,
     target_id: &str,
-) -> Result<ActionStatus, ActionRunnerError> {
+) -> Result<ActionStatus, RunnerError> {
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let workspace = workspace.read().await;
     let emitter = emitter.read().await;

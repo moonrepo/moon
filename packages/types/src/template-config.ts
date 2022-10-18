@@ -1,5 +1,3 @@
-// template.yml
-
 export interface TemplateVariableConfig<T> {
 	default: T;
 	prompt: string | null;

@@ -75,12 +75,11 @@ pub async fn sync_project(
     _action: &mut Action,
     _context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-    project_id: &str,
+    project: &Project,
 ) -> Result<ActionStatus, WorkspaceError> {
     let mut mutated_files = false;
     let workspace = workspace.read().await;
     let node = workspace.toolchain.node.get()?;
-    let project = workspace.projects.load(project_id)?;
     let is_project_typescript_enabled = project.config.workspace.typescript;
 
     // Sync each dependency to `tsconfig.json` and `package.json`
@@ -257,7 +256,7 @@ pub async fn sync_project(
                 .join(&typescript_config.project_config_file_name)
                 .exists()
         {
-            create_missing_tsconfig(&project, typescript_config, &workspace.root).await?;
+            create_missing_tsconfig(project, typescript_config, &workspace.root).await?;
         }
 
         // Sync to the project's `tsconfig.json`
@@ -309,7 +308,7 @@ pub async fn sync_project(
                 &workspace.root,
                 &typescript_config.root_config_file_name,
                 |tsconfig_json| {
-                    if sync_root_tsconfig(tsconfig_json, typescript_config, &project) {
+                    if sync_root_tsconfig(tsconfig_json, typescript_config, project) {
                         mutated_files = true;
                     }
 

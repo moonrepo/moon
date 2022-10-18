@@ -5,7 +5,7 @@ use itertools::Itertools;
 use moon_action::ActionContext;
 use moon_logger::{color, debug};
 use moon_project::ProjectError;
-use moon_runner::{ActionRunner, DepGraph, DepGraphError};
+use moon_runner::{DepGraph, DepGraphError, Runner};
 use moon_task::{Target, TouchedFilePaths};
 use moon_terminal::safe_exit;
 use moon_utils::is_ci;
@@ -175,7 +175,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     // Process all tasks in the graph
     print_header("Running all targets");
 
-    let mut runner = ActionRunner::new(workspace);
+    let mut runner = Runner::new(workspace);
 
     let results = runner
         .generate_report("ciReport.json")

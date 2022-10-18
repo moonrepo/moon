@@ -1,0 +1,54 @@
+---
+slug: v0.17
+title: v0.17 - Webhooks and improved runtime performance
+authors: [milesj]
+tags: [notifier, runner, editors, vscode]
+# image: ./img/v0.17.png
+---
+
+With this release, we're landing the first iteration of our notifier service, starting with
+webhooks! We've also spent some time working on quality of life improvements.
+
+<!--truncate-->
+
+## Webhook events
+
+Looking to gather metrics for your pipelines? Gain insight into run durations and failures? Maybe
+you want to send Slack or Discord notifications? With our new notifier system, this is now possible
+through webhooks!
+
+Simply enable the [`notifier.webhookUrl`](../docs/config/workspace#webhookurl) setting to start
+receiving events from your CI environments.
+
+```yaml title=".moon/workspace.yml"
+notifier:
+  webhookUrl: 'https://api.company.com/some/endpoint'
+```
+
+> View the [official guide on webhooks](../docs/guides/webhooks) for a full list of events and an
+> example payload structure!
+
+## VS Code extension
+
+If you missed the [announcement earlier this week](./vscode-extension), we released the initial
+version of our new VS Code extension! Give it a try and
+[refer to the documentation](../docs/editors/vscode) for more information.
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.17.0) for a
+full list of changes.
+
+- Increased runtime performance and reduced memory consumption.
+- Template enum variables can now defined objects for their
+  [`values`](../docs/config/template#values).
+- Task `deps` can now omit the `~:` prefix for tasks within the current project.
+
+## What's next?
+
+Expect the following in the v0.18 release!
+
+- Workflow improvements for `moon init`.
+- Benchmarks and performance tuning.
+- Individual stdout/stderr log files when running tasks.

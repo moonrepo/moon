@@ -143,6 +143,7 @@ const sidebars = {
 		'guides/profile',
 		'guides/root-project',
 		'guides/sharing-config',
+		'guides/webhooks',
 		{
 			type: 'category',
 			label: 'Examples',

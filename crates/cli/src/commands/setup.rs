@@ -1,6 +1,6 @@
 use crate::helpers::{create_progress_bar, load_workspace};
 use moon_contract::Runtime;
-use moon_runner::{ActionRunner, DepGraph};
+use moon_runner::{DepGraph, Runner};
 use moon_utils::is_test_env;
 
 pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
@@ -19,7 +19,7 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    ActionRunner::new(workspace).run(dep_graph, None).await?;
+    Runner::new(workspace).run(dep_graph, None).await?;
 
     done("Setup complete", true);
 

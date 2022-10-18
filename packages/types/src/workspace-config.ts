@@ -6,6 +6,10 @@ export interface HasherConfig {
 	optimization: 'accuracy' | 'performance';
 }
 
+export interface NotifierConfig {
+	webhookUrl: string | null;
+}
+
 export type NodeVersionFormat =
 	| 'file'
 	| 'link'
@@ -65,9 +69,11 @@ export interface WorkspaceConfig {
 	extends: string | null;
 	generator: GeneratorConfig;
 	hasher: HasherConfig;
-	node: NodeConfig | null;
+	notifier: NotifierConfig;
 	projects: Record<string, string> | string[];
 	runner: RunnerConfig;
-	typescript: TypeScriptConfig | null;
 	vcs: VcsConfig;
+	// Languages
+	node: NodeConfig | null;
+	typescript: TypeScriptConfig | null;
 }

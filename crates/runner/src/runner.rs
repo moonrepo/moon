@@ -1,14 +1,18 @@
+use crate::actions;
 use crate::dep_graph::DepGraph;
-use crate::emitter::{Event, RunnerEmitter};
-use crate::errors::{ActionRunnerError, DepGraphError};
-use crate::node::ActionNode;
+use crate::errors::{DepGraphError, RunnerError};
+use crate::subscribers::local_cache::LocalCacheSubscriber;
 use console::Term;
-use moon_action::{Action, ActionContext, ActionStatus};
+use moon_action::{Action, ActionContext, ActionNode, ActionStatus};
 use moon_cache::RunReport;
+use moon_contract::Runtime;
+use moon_emitter::{Emitter, Event};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
+use moon_notifier::WebhooksSubscriber;
+use moon_platform_node::actions as node_actions;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
-use moon_utils::time;
+use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -19,14 +23,165 @@ const LOG_TARGET: &str = "moon:runner";
 
 pub type ActionResults = Vec<Action>;
 
+fn extract_run_error<T>(result: &Result<T, RunnerError>) -> Option<String> {
+    match result {
+        Ok(_) => None,
+        Err(error) => Some(error.to_string()),
+    }
+}
+
 async fn run_action(
     node: &ActionNode,
     action: &mut Action,
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
-    emitter: Arc<RwLock<RunnerEmitter>>,
-) -> Result<(), ActionRunnerError> {
-    match node.run(action, context, workspace, emitter).await {
+    emitter: Arc<RwLock<Emitter>>,
+) -> Result<(), RunnerError> {
+    let local_emitter = Arc::clone(&emitter);
+    let local_emitter = local_emitter.read().await;
+
+    let result = match node {
+        // Install dependencies in the workspace root
+        ActionNode::InstallDeps(runtime) => {
+            local_emitter
+                .emit(Event::DependenciesInstalling {
+                    project: None,
+                    runtime,
+                })
+                .await?;
+
+            let install_result = match runtime {
+                Runtime::Node(_) => {
+                    node_actions::install_deps(action, context, workspace, runtime, None)
+                        .await
+                        .map_err(RunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::DependenciesInstalled {
+                    error: extract_run_error(&install_result),
+                    project: None,
+                    runtime,
+                })
+                .await?;
+
+            install_result
+        }
+
+        // Install dependencies in the project root
+        ActionNode::InstallProjectDeps(runtime, project_id) => {
+            let project = Arc::clone(&workspace)
+                .read()
+                .await
+                .projects
+                .load(project_id)?;
+
+            local_emitter
+                .emit(Event::DependenciesInstalling {
+                    project: Some(&project),
+                    runtime,
+                })
+                .await?;
+
+            let install_result = match runtime {
+                Runtime::Node(_) => {
+                    node_actions::install_deps(action, context, workspace, runtime, Some(&project))
+                        .await
+                        .map_err(RunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::DependenciesInstalled {
+                    error: extract_run_error(&install_result),
+                    project: Some(&project),
+                    runtime,
+                })
+                .await?;
+
+            install_result
+        }
+
+        // Run a task within a project
+        ActionNode::RunTarget(target_id) => {
+            local_emitter
+                .emit(Event::TargetRunning { target: target_id })
+                .await?;
+
+            let run_result =
+                actions::run_target(action, context, workspace, Arc::clone(&emitter), target_id)
+                    .await;
+
+            local_emitter
+                .emit(Event::TargetRan {
+                    error: extract_run_error(&run_result),
+                    target: target_id,
+                })
+                .await?;
+
+            run_result
+        }
+
+        // Setup and install the specific tool
+        ActionNode::SetupTool(runtime) => {
+            local_emitter
+                .emit(Event::ToolInstalling { runtime })
+                .await?;
+
+            let tool_result = actions::setup_toolchain(action, context, workspace, runtime)
+                .await
+                .map_err(RunnerError::Workspace);
+
+            local_emitter
+                .emit(Event::ToolInstalled {
+                    error: extract_run_error(&tool_result),
+                    runtime,
+                })
+                .await?;
+
+            tool_result
+        }
+
+        // Sync a project within the graph
+        ActionNode::SyncProject(runtime, project_id) => {
+            let project = Arc::clone(&workspace)
+                .read()
+                .await
+                .projects
+                .load(project_id)?;
+
+            local_emitter
+                .emit(Event::ProjectSyncing {
+                    project: &project,
+                    runtime,
+                })
+                .await?;
+
+            let sync_result = match runtime {
+                Runtime::Node(_) => {
+                    node_actions::sync_project(action, context, workspace, &project)
+                        .await
+                        .map_err(RunnerError::Workspace)
+                }
+                _ => Ok(ActionStatus::Passed),
+            };
+
+            local_emitter
+                .emit(Event::ProjectSynced {
+                    error: extract_run_error(&sync_result),
+                    project: &project,
+                    runtime,
+                })
+                .await?;
+
+            sync_result
+        }
+    };
+
+    match result {
         Ok(status) => {
             action.done(status);
         }
@@ -45,7 +200,7 @@ async fn run_action(
     Ok(())
 }
 
-pub struct ActionRunner {
+pub struct Runner {
     bail: bool,
 
     cached_count: usize,
@@ -61,11 +216,11 @@ pub struct ActionRunner {
     workspace: Arc<RwLock<Workspace>>,
 }
 
-impl ActionRunner {
+impl Runner {
     pub fn new(workspace: Workspace) -> Self {
         debug!(target: LOG_TARGET, "Creating action runner");
 
-        ActionRunner {
+        Runner {
             bail: false,
             cached_count: 0,
             duration: None,
@@ -99,14 +254,16 @@ impl ActionRunner {
         &mut self,
         graph: DepGraph,
         context: Option<ActionContext>,
-    ) -> Result<ActionResults, ActionRunnerError> {
+    ) -> Result<ActionResults, RunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
         let context = Arc::new(context.unwrap_or_default());
-        let emitter = Arc::new(RwLock::new(RunnerEmitter::new(Arc::clone(&self.workspace))));
+        let emitter = Arc::new(RwLock::new(
+            self.create_emitter(Arc::clone(&self.workspace)).await,
+        ));
         let local_emitter = emitter.read().await;
 
         debug!(
@@ -115,7 +272,7 @@ impl ActionRunner {
         );
 
         local_emitter
-            .emit(Event::RunStarted {
+            .emit(Event::RunnerStarted {
                 actions_count: node_count,
             })
             .await?;
@@ -167,14 +324,22 @@ impl ActionRunner {
                             log_action_label
                         );
 
-                        run_action(
+                        let result = run_action(
                             node,
                             &mut action,
                             &context_clone,
                             workspace_clone,
                             Arc::clone(&emitter_clone),
                         )
-                        .await?;
+                        .await;
+
+                        own_emitter
+                            .emit(Event::ActionFinished {
+                                action: &action,
+                                error: extract_run_error(&result),
+                                node,
+                            })
+                            .await?;
 
                         if action.has_failed() {
                             trace!(
@@ -192,16 +357,12 @@ impl ActionRunner {
                             );
                         }
 
-                        own_emitter
-                            .emit(Event::ActionFinished {
-                                action: &action,
-                                node,
-                            })
-                            .await?;
+                        // Bubble up any failure
+                        result?;
                     } else {
                         action.status = ActionStatus::Invalid;
 
-                        return Err(ActionRunnerError::DepGraph(DepGraphError::UnknownNode(
+                        return Err(RunnerError::DepGraph(DepGraphError::UnknownNode(
                             node_index.index(),
                         )));
                     }
@@ -231,24 +392,36 @@ impl ActionRunner {
                         }
 
                         if self.bail && result.has_failed() || result.should_abort() {
-                            local_emitter.emit(Event::RunAborted).await?;
+                            local_emitter
+                                .emit(Event::RunnerAborted {
+                                    error: result.error.clone().unwrap_or_default(),
+                                })
+                                .await?;
 
-                            return Err(ActionRunnerError::Failure(result.error.unwrap()));
+                            return Err(RunnerError::Failure(result.error.unwrap()));
                         }
 
                         results.push(result);
                     }
                     Ok(Err(e)) => {
                         self.failed_count += 1;
-                        local_emitter.emit(Event::RunAborted).await?;
+                        local_emitter
+                            .emit(Event::RunnerAborted {
+                                error: e.to_string(),
+                            })
+                            .await?;
 
                         return Err(e);
                     }
                     Err(e) => {
                         self.failed_count += 1;
-                        local_emitter.emit(Event::RunAborted).await?;
+                        local_emitter
+                            .emit(Event::RunnerAborted {
+                                error: e.to_string(),
+                            })
+                            .await?;
 
-                        return Err(ActionRunnerError::Failure(e.to_string()));
+                        return Err(RunnerError::Failure(e.to_string()));
                     }
                 }
             }
@@ -262,7 +435,7 @@ impl ActionRunner {
         );
 
         local_emitter
-            .emit(Event::RunFinished {
+            .emit(Event::RunnerFinished {
                 duration: &duration,
                 cached_count: self.cached_count,
                 failed_count: self.failed_count,
@@ -397,11 +570,32 @@ impl ActionRunner {
         Ok(())
     }
 
+    async fn create_emitter(&self, workspace: Arc<RwLock<Workspace>>) -> Emitter {
+        let mut emitter = Emitter::new(Arc::clone(&workspace));
+
+        // For security and privacy purposes, only send webhooks from a CI environment
+        if is_ci() || is_test_env() {
+            if let Some(webhook_url) = &workspace.read().await.config.notifier.webhook_url {
+                emitter
+                    .subscribers
+                    .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
+                        webhook_url.to_owned(),
+                    ))));
+            }
+        }
+
+        emitter
+            .subscribers
+            .push(Arc::new(RwLock::new(LocalCacheSubscriber::new())));
+
+        emitter
+    }
+
     async fn create_run_report(
         &self,
         actions: &ActionResults,
         context: &ActionContext,
-    ) -> Result<(), ActionRunnerError> {
+    ) -> Result<(), RunnerError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();

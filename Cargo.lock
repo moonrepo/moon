@@ -1516,6 +1516,7 @@ name = "moon_action"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "moon_contract",
  "moon_utils",
  "serde",
 ]
@@ -1632,6 +1633,23 @@ version = "0.1.0"
 dependencies = [
  "moon_config",
  "moon_error",
+ "serde",
+]
+
+[[package]]
+name = "moon_emitter"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "moon_action",
+ "moon_contract",
+ "moon_error",
+ "moon_project",
+ "moon_task",
+ "moon_utils",
+ "moon_workspace",
+ "serde",
+ "tokio",
 ]
 
 [[package]]
@@ -1716,6 +1734,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_notifier"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "moon_emitter",
+ "moon_error",
+ "moon_logger",
+ "moon_utils",
+ "moon_workspace",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "moon_platform_node"
 version = "0.1.0"
 dependencies = [
@@ -1794,16 +1829,19 @@ dependencies = [
 name = "moon_runner"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "console",
  "insta",
  "moon_action",
  "moon_cache",
  "moon_config",
  "moon_contract",
+ "moon_emitter",
  "moon_error",
  "moon_hasher",
  "moon_lang",
  "moon_logger",
+ "moon_notifier",
  "moon_platform_node",
  "moon_platform_system",
  "moon_project",
@@ -3400,6 +3438,15 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "uuid"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "feb41e78f93363bb2df8b0e86a2ca30eed7806ea16ea0c790d757cf93f79be83"
+dependencies = [
+ "getrandom",
 ]
 
 [[package]]

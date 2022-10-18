@@ -7,7 +7,7 @@ use moon_workspace::WorkspaceError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum ActionRunnerError {
+pub enum RunnerError {
     #[error("{0}")]
     Failure(String),
 

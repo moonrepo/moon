@@ -1,5 +1,5 @@
 use crate::helpers::{create_progress_bar, load_workspace};
-use moon_runner::{ActionRunner, DepGraph};
+use moon_runner::{DepGraph, Runner};
 
 pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
     let done = create_progress_bar("Syncing projects...");
@@ -16,7 +16,7 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
         project_count += 1;
     }
 
-    let mut runner = ActionRunner::new(workspace);
+    let mut runner = Runner::new(workspace);
     let results = runner.run(graph, None).await?;
 
     if runner.has_failed() {

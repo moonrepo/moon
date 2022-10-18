@@ -154,7 +154,7 @@ impl CacheEngine {
         hash: &str,
         project_root: &Path,
         outputs: &[String],
-    ) -> Result<PathBuf, MoonError> {
+    ) -> Result<Option<PathBuf>, MoonError> {
         let archive_path = self.get_hash_archive_path(hash);
 
         if is_writable() && !outputs.is_empty() {
@@ -172,9 +172,11 @@ impl CacheEngine {
                 tar(project_root, outputs, &archive_path, None)
                     .map_err(|e| MoonError::Generic(e.to_string()))?;
             }
+
+            return Ok(Some(archive_path));
         }
 
-        Ok(archive_path)
+        Ok(None)
     }
 
     pub async fn create_hash_manifest<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>
@@ -259,14 +261,16 @@ impl CacheEngine {
         &self,
         hash: &str,
         project_root: &Path,
-    ) -> Result<PathBuf, MoonError> {
+    ) -> Result<Option<PathBuf>, MoonError> {
         let archive_path = self.get_hash_archive_path(hash);
 
         if is_readable() && archive_path.exists() {
             untar(&archive_path, project_root, None)
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
+
+            return Ok(Some(archive_path));
         }
 
-        Ok(archive_path)
+        Ok(None)
     }
 }

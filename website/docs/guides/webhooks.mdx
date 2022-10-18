@@ -1,0 +1,531 @@
+---
+title: Webhooks
+toc_max_heading_level: 6
+---
+
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.17" />
+
+Looking to gather metrics for your pipelines? Gain insight into run durations and failures? Maybe
+you want to send Slack or Discord notifications? With our webhooks, all of these are possible!
+
+When the [`notifier.webhookUrl`](../config/workspace#webhookurl) setting is configured with an HTTPS
+URL, and moon is running in a CI environment, moon will POST a payload to this endpoint for every
+event in our pipeline.
+
+## Payload structure
+
+Every webhook event is posted with the following request body, known as a payload.
+
+- `type` - The type of [event](#events).
+- `event` - The event specific payload. View each event for an example of their structure.
+- `createdAt` - When the event was created, as a UTC timestamp in ISO 8601 (RFC 3339) format.
+- `uuid` - A unique identifier for all webhooks in the current run batch.
+
+```json
+{
+  "type": "...",
+  "event": {
+    // ...
+  },
+  "createdAt": "...",
+  "uuid": "..."
+}
+```
+
+> The `uuid` field can be used to differentiate concurrently running pipelines!
+
+## Events
+
+### Runner
+
+Runs actions within moon using a robust dependency graph. Is triggered when using
+[`moon run`](../commands/run).
+
+### `runner.started`
+
+<HeadingApiLink to="/api/types#PayloadRunnerStarted" />
+
+Triggered when the runner has been created but before actions have started to run.
+
+This event includes the number of actions registered within the runner, but does not provide
+detailed information about the actions. Use the [`action.*`](#actionstarted) events for this.
+
+```json
+{
+  "type": "runner.started",
+  "createdAt": "...",
+  "event": {
+    "actionsCount": 15
+  },
+  "uuid": "..."
+}
+```
+
+### `runner.finished`
+
+<HeadingApiLink to="/api/types#PayloadRunnerFinished" />
+
+Triggered when the runner has finished running all actions, with aggregated counts based on final
+status.
+
+This event is _not_ triggered if the runner crashes (this does not include actions that have failed,
+as those are legitimate runs). Use the [`runner.aborted`](#runneraborted) event if you want to also
+catch crashes.
+
+```json
+{
+  "type": "runner.finished",
+  "createdAt": "...",
+  "event": {
+    "cachedCount": 10,
+    "duration": {
+      "secs": 120,
+      "nanos": 3591693
+    },
+    "failedCount": 1,
+    "passedCount": 4
+  },
+  "uuid": "..."
+}
+```
+
+### `runner.aborted`
+
+<HeadingApiLink to="/api/types#PayloadRunnerAborted" />
+
+Triggered when the runner has crashed for unknown reasons, or had to abort as a result of a critical
+action failing.
+
+```json
+{
+  "type": "runner.aborted",
+  "createdAt": "...",
+  "event": {
+    "error": "..."
+  },
+  "uuid": "..."
+}
+```
+
+### Actions
+
+Actions are "jobs" within the runner that are executed topologically.
+
+### `action.started`
+
+<HeadingApiLink to="/api/types#PayloadActionStarted" />
+
+Triggered when an action within the runner has started to run.
+
+```json
+{
+  "type": "action.started",
+  "createdAt": "...",
+  "event": {
+    "action": {
+      "attempts": null,
+      "createdAt": "...",
+      "duration": {
+        "secs": 0,
+        "nanos": 3591693
+      },
+      "error": null,
+      "label": "InstallNodeDeps(18.0.0)",
+      "nodeIndex": 5,
+      "status": "passed"
+    },
+    "node": {
+      "action": "InstallDeps",
+      "params": [
+        {
+          "platform": "Node",
+          "version": "18.0.0"
+        }
+      ]
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `action.finished`
+
+<HeadingApiLink to="/api/types#PayloadActionFinished" />
+
+Triggered when an action within the runner has finished running, either with a success or failure.
+If the action failed, the `error` field will be set with the error message.
+
+```json
+{
+  "type": "action.finished",
+  "createdAt": "...",
+  "event": {
+    "action": {
+      "attempts": null,
+      "createdAt": "...",
+      "duration": {
+        "secs": 0,
+        "nanos": 3591693
+      },
+      "error": null,
+      "label": "InstallNodeDeps(18.0.0)",
+      "nodeIndex": 5,
+      "status": "passed"
+    },
+    "error": null,
+    "node": {
+      "action": "InstallDeps",
+      "params": {
+        "platform": "Node",
+        "version": "18.0.0"
+      }
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `dependencies.installing`
+
+<HeadingApiLink to="/api/types#PayloadDependenciesInstalling" />
+
+Triggered when dependencies for a workspace or project have started to install. When targeting a
+project, the `project` field will be set, otherwise `null` for the entire workspace.
+
+```json
+{
+  "type": "dependencies.installing",
+  "createdAt": "...",
+  "event": {
+    "project": {
+      "id": "server"
+      // ...
+    },
+    "runtime": {
+      "platform": "Node",
+      "version": "18.0.0"
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `dependencies.installed`
+
+<HeadingApiLink to="/api/types#PayloadDependenciesInstalled" />
+
+Triggered when dependencies for a workspace or project have finished installing. When targeting a
+project, the `project` field will be set, otherwise `null` for the entire workspace. If the install
+failed, the `error` field will be set with the error message.
+
+For more information about the action, refer to the [`action.finished`](#actionfinished) event.
+Installed deps can be scoped with the `InstallDeps(...)` labels.
+
+```json
+{
+  "type": "dependencies.installed",
+  "createdAt": "...",
+  "event": {
+    "error": null,
+    "project": null,
+    "runtime": {
+      "platform": "Node",
+      "version": "18.0.0"
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `project.syncing`
+
+<HeadingApiLink to="/api/types#PayloadProjectSyncing" />
+
+Triggered when an affected project has started syncing its workspace state. This occurs
+automatically before a project's task is ran.
+
+```json
+{
+  "type": "project.syncing",
+  "createdAt": "...",
+  "event": {
+    "project": {
+      "id": "client"
+      // ...
+    },
+    "runtime": {
+      "platform": "Node",
+      "version": "18.0.0"
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `project.synced`
+
+<HeadingApiLink to="/api/types#PayloadProjectSynced" />
+
+Triggered when an affected project has finished syncing. If the sync failed, the `error` field will
+be set with the error message.
+
+For more information about the action, refer to the [`action.finished`](#actionfinished) event.
+Synced projects can be scoped with the `SyncProject(...)` labels.
+
+```json
+{
+  "type": "project.synced",
+  "createdAt": "...",
+  "event": {
+    "error": null,
+    "project": {
+      "id": "client"
+      // ...
+    },
+    "runtime": {
+      "platform": "Node",
+      "version": "18.0.0"
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `tool.installing`
+
+<HeadingApiLink to="/api/types#PayloadToolInstalling" />
+
+Triggered when a tool within the toolchain has started downloading and installing.
+
+This event is _always_ triggered, regardless of whether the tool has already been installed or not.
+For an accurate state, use the [`action.finished`](#actionfinished) event. If the `status` is
+"skipped", then the tool was already installed.
+
+```json
+{
+  "type": "tool.installing",
+  "createdAt": "...",
+  "event": {
+    "runtime": {
+      "platform": "Node",
+      "version": "18.0.0"
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `tool.installed`
+
+<HeadingApiLink to="/api/types#PayloadToolInstalled" />
+
+Triggered when a tool within the toolchain has finished installing. If the install failed, the
+`error` field will be set with the error message.
+
+For more information about the action, refer to the [`action.finished`](#actionfinished) event.
+Tools can be scoped with the `SetupTool(...)` labels.
+
+```json
+{
+  "type": "tool.installed",
+  "createdAt": "...",
+  "event": {
+    "error": null,
+    "runtime": {
+      "platform": "Node",
+      "version": "18.0.0"
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `target.running`
+
+<HeadingApiLink to="/api/types#PayloadTargetRunning" />
+
+Triggered when a [target](../concepts/target) has started to run (via
+[`moon run`](../commands/run)).
+
+```json
+{
+  "type": "target.running",
+  "createdAt": "...",
+  "event": {
+    "target": "app:build"
+  },
+  "uuid": "..."
+}
+```
+
+### `target.ran`
+
+<HeadingApiLink to="/api/types#PayloadTargetRan" />
+
+Triggered when a [target](../concepts/target) has finished running. If the run failed, the `error`
+field will be set with the error message.
+
+For more information about the action, refer to the [`action.finished`](#actionfinished) event. Ran
+targets can be scoped with the `RunTarget(...)` labels.
+
+```json
+{
+  "type": "target.ran",
+  "createdAt": "...",
+  "event": {
+    "error": null,
+    "target": "app:build"
+  },
+  "uuid": "..."
+}
+```
+
+### Targets
+
+Targets to run. Each event contains a `hash` field, that is a unique SHA-256 identifier for the the
+target's hashed contents.
+
+### `target-output.cache-check`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputCacheCheck" />
+
+Triggered when the runner is checking for a cached archive of the currently running target.
+
+```json
+{
+  "type": "target-output.cache-check",
+  "createdAt": "...",
+  "event": {
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "target": "app:build"
+  },
+  "uuid": "..."
+}
+```
+
+### `target-output.archiving`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputArchiving" />
+
+Triggered when the [outputs](../config/project#outputs) of a task are being cached into a tarball
+archive. This archive will be stored within `.moon/cache/outputs` on the host machine.
+
+This event _does not_ trigger if the task has no `outputs`.
+
+```json
+{
+  "type": "target-output.archiving",
+  "createdAt": "...",
+  "event": {
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "project": {
+      "id": "app"
+      // ...
+    },
+    "target": "app:build",
+    "task": {
+      "id": "build"
+      // ...
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `target-output.archived`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputArchived" />
+
+Triggered when the [outputs](../config/project#outputs) of a task have been archived and stored in
+the `.moon/cache/outputs` directory. The `archivePath` field is an absolute path to this archive,
+_but_ is unique to the host machine that the target ran on.
+
+This event _does not_ trigger if [`target-output.archiving`](#targetoutputarchiving) did not run or
+failed to run.
+
+```json
+{
+  "type": "target-output.archived",
+  "createdAt": "...",
+  "event": {
+    "archivePath": "...",
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "project": {
+      "id": "app"
+      // ...
+    },
+    "target": "app:build",
+    "task": {
+      "id": "build"
+      // ...
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `target-output.hydrating`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputHydrating" />
+
+Triggered when a target has a cache hit for the generated hash (a cached archive exists on the local
+file system) and the archive is being unpacked into the project directory at the defined
+[outputs](../config/project#outputs).
+
+This event _does not_ trigger if the task has no `outputs`, or there was a cache miss (no matching
+archive).
+
+```json
+{
+  "type": "target-output.hydrating",
+  "createdAt": "...",
+  "event": {
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "project": {
+      "id": "app"
+      // ...
+    },
+    "target": "app:build",
+    "task": {
+      "id": "build"
+      // ...
+    }
+  },
+  "uuid": "..."
+}
+```
+
+### `target-output.hydrated`
+
+<HeadingApiLink to="/api/types#PayloadTargetOutputHydrated" />
+
+Triggered when a target has hydrated a project with the contents of a cached archive. The
+`archivePath` field is an absolute path to this archive, _but_ is unique to the host machine that
+the target ran on.
+
+This event _does not_ trigger if [`target-output.hydrating`](#targetoutputhydrating) did not run or
+failed to run.
+
+```json
+{
+  "type": "target-output.hydrated",
+  "createdAt": "...",
+  "event": {
+    "archivePath": "...",
+    "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
+    "project": {
+      "id": "app"
+      // ...
+    },
+    "target": "app:build",
+    "task": {
+      "id": "build"
+      // ...
+    }
+  },
+  "uuid": "..."
+}
+```

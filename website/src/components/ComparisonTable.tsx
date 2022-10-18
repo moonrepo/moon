@@ -516,6 +516,15 @@ const generatorRows: Comparison[] = [
 	},
 ];
 
+const otherSystemRows: Comparison[] = [
+	{
+		feature: 'Can send webhooks for critical pipeline events',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+];
+
 const javascriptRows: Comparison[] = [
 	{
 		feature: 'Will automatically install node modules when lockfile changes',
@@ -561,6 +570,18 @@ const javascriptRows: Comparison[] = [
 	},
 	{
 		feature: 'Can auto-create missing `tsconfig.json`',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can sync dependencies as `paths` to `tsconfig.json`',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can route `outDir` to a shared cached in `tsconfig.json`',
 		support: {
 			moon: SUPPORTED,
 		},
@@ -656,6 +677,7 @@ function createTable(rows: Comparison[]) {
 export const DockerTable = createTable(dockerRows);
 export const GeneratorTable = createTable(generatorRows);
 export const JavaScriptTable = createTable(javascriptRows);
+export const OtherSystemsTable = createTable(otherSystemRows);
 export const ProjectsTable = createTable(projectsRows);
 export const TasksTable = createTable(tasksRows);
 export const TaskRunnerTable = createTable(taskRunnerRows);

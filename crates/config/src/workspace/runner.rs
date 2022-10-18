@@ -26,7 +26,7 @@ fn validate_cache_lifetime(value: &str) -> Result<(), ValidationError> {
     if let Err(e) = time::parse_duration(value) {
         return Err(create_validation_error(
             "invalid_duration",
-            "cache_lifetime",
+            "cacheLifetime",
             format!("Invalid lifetime duration: {}", e),
         ));
     }

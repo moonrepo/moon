@@ -6,6 +6,7 @@ use moon_error::MoonError;
 use moon_lang::has_vendor_installed_dependencies;
 use moon_lang_node::{package::PackageJson, NODE, NPM};
 use moon_logger::{color, debug, warn};
+use moon_project::Project;
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_toolchain::tools::node::NodeTool;
 use moon_utils::{fs, is_ci, is_offline};
@@ -101,7 +102,7 @@ pub async fn install_deps(
     context: &ActionContext,
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
-    project_id: Option<&str>,
+    project: Option<&Project>,
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
     let node = workspace.toolchain.node.get_for_runtime(runtime)?;
@@ -113,10 +114,8 @@ pub async fn install_deps(
     let working_dir;
     let has_modified_files;
 
-    if let Some(project_id) = project_id {
-        let project = workspace.projects.load(project_id)?;
-
-        working_dir = project.root;
+    if let Some(project) = project {
+        working_dir = project.root.clone();
         has_modified_files = context
             .touched_files
             .contains(&working_dir.join(&lock_filename))
@@ -139,7 +138,7 @@ pub async fn install_deps(
     let mut last_modified = 0;
     let mut cache = workspace
         .cache
-        .cache_deps_state(runtime, project_id)
+        .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))
         .await?;
 
     if lock_filepath.exists() {

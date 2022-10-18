@@ -1,5 +1,4 @@
-use crate::emitter::Event;
-use moon_contract::EventFlow;
+use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_utils::path;
 use moon_workspace::Workspace;
@@ -17,10 +16,13 @@ impl LocalCacheSubscriber {
     pub fn new() -> Self {
         LocalCacheSubscriber {}
     }
+}
 
-    pub async fn on_emit<'a>(
+#[async_trait::async_trait]
+impl Subscriber for LocalCacheSubscriber {
+    async fn on_emit<'e>(
         &mut self,
-        event: &Event<'a>,
+        event: &Event<'e>,
         workspace: &Workspace,
     ) -> Result<EventFlow, MoonError> {
         match event {
@@ -36,27 +38,30 @@ impl LocalCacheSubscriber {
                 hash,
                 project,
                 task,
+                ..
             } => {
-                let archive_path = workspace
+                if let Some(archive_path) = workspace
                     .cache
                     .create_hash_archive(hash, &project.root, &task.outputs)
-                    .await?;
-
-                return Ok(EventFlow::Return(path::to_string(archive_path)?));
+                    .await?
+                {
+                    return Ok(EventFlow::Return(path::to_string(archive_path)?));
+                }
             }
 
             // Hydrate the cached archive into the task's outputs
             Event::TargetOutputHydrating { hash, project, .. } => {
-                let archive_path = workspace
+                if let Some(archive_path) = workspace
                     .cache
                     .hydrate_from_hash_archive(hash, &project.root)
-                    .await?;
-
-                return Ok(EventFlow::Return(path::to_string(archive_path)?));
+                    .await?
+                {
+                    return Ok(EventFlow::Return(path::to_string(archive_path)?));
+                }
             }
 
             // After the run has finished, clean any stale archives
-            Event::RunFinished { .. } => {
+            Event::RunnerFinished { .. } => {
                 workspace
                     .cache
                     .clean_stale_cache(&workspace.config.runner.cache_lifetime)

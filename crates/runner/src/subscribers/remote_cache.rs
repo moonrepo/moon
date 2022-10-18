@@ -1,8 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::emitter::Event;
-use moon_contract::EventFlow;
+use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_workspace::Workspace;
 
@@ -12,8 +11,11 @@ impl RemoteCacheSubscriber {
     pub fn new() -> Self {
         RemoteCacheSubscriber {}
     }
+}
 
-    pub async fn on_emit<'a>(
+#[async_trait::async_trait]
+impl Subscriber for RemoteCacheSubscriber {
+    async fn on_emit<'a>(
         &mut self,
         event: &Event<'a>,
         workspace: &Workspace,
@@ -31,6 +33,7 @@ impl RemoteCacheSubscriber {
                 archive_path,
                 hash,
                 project,
+                target,
                 task,
             } => {}
 

@@ -33,7 +33,7 @@ moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 async-recursion = "1.0.0"
-clap = { version = "4.0.10", features = ["derive", "env", "wrap_help"] }
+clap = { version = "4.0.16", features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.3.0"
 console = "0.15.2"
 console-subscriber = "0.1.8"
@@ -43,7 +43,7 @@ indicatif = "0.17.1"
 itertools = "0.10.5"
 mimalloc = { version = "0.1.30", default-features = false }
 serde = { workspace = true }
-serde_json = "1.0.85"
+serde_json = "1.0.86"
 serde_yaml = "0.9.13"
 strum = { version = "0.24.1", features = ["derive"] }
 tera = { version = "1.17.1", features = ["preserve_order"] }

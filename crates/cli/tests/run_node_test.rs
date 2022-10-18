@@ -328,12 +328,10 @@ mod engines {
             "addEnginesConstraint: true",
         );
 
-        let assert = create_moon_command(fixture.path())
+        create_moon_command(fixture.path())
             .arg("run")
             .arg("node:standard")
             .assert();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert_snapshot!(read_to_string(fixture.path().join("package.json")).unwrap());
     }

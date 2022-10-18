@@ -29,7 +29,7 @@ to be language agnostic and easily pluggable in the future. If we're to guess wh
 be next, it would most likely be Ruby to support React Native based applications.
 
 With that being said, for languages not supported in our toolchain, you can still execute them
-within at task by setting the [`type` to "system"](./config/project#type-1).
+within at task by setting the [`platform` to "system"](./config/project#platform).
 
 ### Will moon support continuous deployment?
 
@@ -111,7 +111,7 @@ moon project foo --json | jq ...
 tasks:
 	pipe:
 		command: 'bash ./scripts/pipe.sh'
-		type: 'system'
+		platform: 'system'
 ```
 
 ### How to run multiple commands within a task?
@@ -138,32 +138,32 @@ the shell manually like so:
 tasks:
   bash:
     command: 'bash -c some-command'
-    type: 'system'
+    platform: 'system'
   # Windows
   cmd:
     command: 'cmd.exe /d /s /c some-command'
-    type: 'system'
+    platform: 'system'
   pwsh:
     command: 'pwsh.exe -c some-command'
-    type: 'system'
+    platform: 'system'
 ```
 
 ### Can we run other languages?
 
 Yes! Although our toolchain only supports JavaScript/Node.js at this time, you can still run other
-languages within tasks by setting their [`type`](./config/project#type-1) to "system". System tasks
-are an escape hatch that will use any command available on the current machine.
+languages within tasks by setting their [`platform`](./config/project#platform) to "system". System
+tasks are an escape hatch that will use any command available on the current machine.
 
 ```yaml title="moon.yml"
 tasks:
   # Ruby
   lint:
     command: 'rubocop'
-    type: 'system'
+    platform: 'system'
   # PHP
   test:
     command: 'phpunit tests'
-    type: 'system'
+    platform: 'system'
 ```
 
 However, because these languages are not supported directly within our toolchain, they will not

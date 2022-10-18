@@ -37,7 +37,7 @@ export interface TaskConfig {
 	local: boolean;
 	outputs: string[] | null;
 	options: TaskOptionsConfig;
-	type: Platform;
+	platform: Platform;
 }
 
 export type ProjectLanguage = 'bash' | 'batch' | 'javascript' | 'typescript' | 'unknown';

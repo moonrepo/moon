@@ -596,7 +596,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -619,7 +619,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -640,7 +640,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Replace),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -672,7 +672,7 @@ mod tasks {
                         inputs: Some(string_vec!["a.*"]),
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -695,7 +695,7 @@ mod tasks {
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Append),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -719,7 +719,7 @@ mod tasks {
                             local: false,
                             outputs: Some(string_vec!["a.ts", "b.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Append),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -751,7 +751,7 @@ mod tasks {
                         local: false,
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -774,7 +774,7 @@ mod tasks {
                             local: false,
                             outputs: Some(string_vec!["b.ts"]),
                             options: mock_local_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -798,7 +798,7 @@ mod tasks {
                             local: false,
                             outputs: Some(string_vec!["b.ts", "a.ts"]),
                             options: mock_merged_task_options_config(TaskMergeStrategy::Prepend),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                         },
                         &workspace_root,
                         project_source
@@ -830,7 +830,7 @@ mod tasks {
                         local: false,
                         outputs: Some(string_vec!["a.ts"]),
                         options: stub_global_task_options_config(),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                     },
                 )]),
                 ..GlobalProjectConfig::default()
@@ -860,7 +860,7 @@ mod tasks {
                     run_from_workspace_root: None,
                     ..TaskOptionsConfig::default()
                 },
-                type_of: PlatformType::Unknown,
+                platform: PlatformType::Unknown,
             },
             &workspace_root,
             project_source,
@@ -897,7 +897,7 @@ mod tasks {
                                 run_in_ci: None,
                                 run_from_workspace_root: None,
                             },
-                            type_of: PlatformType::Unknown,
+                            platform: PlatformType::Unknown,
                         }
                     )]),
                     ..ProjectConfig::default()
@@ -1269,7 +1269,7 @@ mod tasks {
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("test".to_owned())),
                             deps: Some(string_vec!["~:test"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         },
                     )]),
@@ -1314,7 +1314,7 @@ mod tasks {
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("test".to_owned())),
                             inputs: Some(string_vec!["local.ts",]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         },
                     )]),
@@ -1328,7 +1328,7 @@ mod tasks {
                     &workspace_root,
                     &[],
                     &[
-                        "/.moon/$taskType-$projectType.yml".to_owned(),
+                        "/.moon/$taskPlatform-$projectType.yml".to_owned(),
                         "*.yml".to_owned(),
                     ],
                 )

@@ -438,9 +438,28 @@ tasks:
       - '--task=build'
 ```
 
-### `$taskType`<VersionLabel version="0.7" />
+### `$taskPlatform`<VersionLabel version="0.17" />
 
-The type of task that is currently running.
+The platform that task will run against.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example --platform $taskPlatform'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--platform'
+      - 'system'
+```
+
+### `$taskType`<VersionLabel version="0.17" />
+
+The [type of task](./task#types), based on its configured settings.
 
 ```yaml
 # Configured as
@@ -454,7 +473,7 @@ tasks:
     command:
       - 'example'
       - '--type'
-      - 'system'
+      - 'build'
 ```
 
 ### `$workspaceRoot`

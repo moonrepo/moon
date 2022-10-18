@@ -15,8 +15,8 @@ tasks:
     - ./lib
     outputs:
     - lib
-    type: node
+    platform: node
   test:
     command: jest
-    type: node
+    platform: node
 

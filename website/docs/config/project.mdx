@@ -218,14 +218,14 @@ tasks:
 ```
 
 By default a task assumes the command name is an npm binary, and if you'd like to reference a system
-command, you'll also need to set the [`type`](#type-1) to "system". We do our best to automatically
-detect this, but it's not accurate in all scenarios.
+command, you'll also need to set the [`platform`](#platform) to "system". We do our best to
+automatically detect this, but it's not accurate in all scenarios.
 
 ```yaml title="moon.yml"
 tasks:
   clean:
     command: 'rm -rf ./dist'
-    type: 'system'
+    platform: 'system'
 ```
 
 #### Special commands
@@ -234,9 +234,9 @@ For interoperability reasons, the following command names have special handling.
 
 - `noop`, `no-op`, `nop` - Marks the task as a "no operation". Will not execute a command in the
   action runner but can define dependencies.
-- When `type` is "node":
+- When `platform` is "node":
   - `node`, `npm`, `pnpm`, `yarn` - Uses the binaries from the toolchain.
-- When `type` is "system":
+- When `platform` is "system":
   - `cmd`, `cmd.exe` - Will execute the arguments with `cmd.exe` (Windows only).
   - `powershell`, `powershell.exe` - Will execute the arguments with `powershell.exe` (Windows
     only).
@@ -574,12 +574,13 @@ tasks:
       runFromWorkspaceRoot: true
 ```
 
-### `type`
+### `platform`
 
-<HeadingApiLink to="/api/types/interface/TaskConfig#type" />
+<HeadingApiLink to="/api/types/interface/TaskConfig#platform" />
 
-The `type` field defines the type of command to run, where to locate its executable, and which tool
-to execute it with. By default will set to a value based on the project's [`language`](#language).
+The `platform` field defines the platform the command runs on, where to locate its executable, and
+which tool to execute it with. By default moon will set to a value based on the project's
+[`language`](#language).
 
 - `node` - Command is a binary within node modules and will be executed with Node.js.
 - `system` - Command is expected to exist within the system's environment.
@@ -589,7 +590,7 @@ to execute it with. By default will set to a value based on the project's [`lang
 tasks:
   env:
     command: 'printenv'
-    type: 'system'
+    platform: 'system'
 ```
 
 > This field exists because of our [toolchain](../concepts/toolchain), and moon ensuring the correct

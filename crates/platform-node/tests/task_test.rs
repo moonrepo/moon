@@ -168,7 +168,7 @@ mod create_task {
                         "bash",
                         "scripts/setup.sh"
                     ])),
-                    type_of: PlatformType::System,
+                    platform: PlatformType::System,
                     ..TaskConfig::default()
                 }
             )
@@ -191,7 +191,7 @@ mod create_task {
                         "bash",
                         "scripts/setup.sh"
                     ])),
-                    type_of: PlatformType::System,
+                    platform: PlatformType::System,
                     ..TaskConfig::default()
                 }
             )
@@ -214,7 +214,7 @@ mod create_task {
                         "node",
                         "scripts/test.js"
                     ])),
-                    type_of: PlatformType::Node,
+                    platform: PlatformType::Node,
                     ..TaskConfig::default()
                 }
             )
@@ -237,7 +237,7 @@ mod create_task {
                     task,
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["node", candidate])),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 )
@@ -263,7 +263,7 @@ mod create_task {
                 TaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec!["yarn", "install"])),
                     env: Some(HashMap::from([("KEY".to_owned(), "VALUE".to_owned())])),
-                    type_of: PlatformType::Node,
+                    platform: PlatformType::Node,
                     ..TaskConfig::default()
                 }
             )
@@ -287,7 +287,7 @@ mod create_task {
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ])),
-                    type_of: PlatformType::Node,
+                    platform: PlatformType::Node,
                     ..TaskConfig::default()
                 }
             )
@@ -311,7 +311,7 @@ mod create_task {
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ])),
-                    type_of: PlatformType::Node,
+                    platform: PlatformType::Node,
                     ..TaskConfig::default()
                 }
             )
@@ -335,7 +335,7 @@ mod create_task {
                         "NODE_OPTIONS".to_owned(),
                         "-f -b".to_owned()
                     )])),
-                    type_of: PlatformType::Node,
+                    platform: PlatformType::Node,
                     ..TaskConfig::default()
                 }
             )
@@ -383,7 +383,7 @@ mod create_task {
                             candidate.1
                         ])),
                         outputs: Some(string_vec![candidate.2]),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 )
@@ -461,7 +461,7 @@ mod infer_tasks_from_scripts {
                             "build:app"
                         ])),
                         outputs: Some(string_vec!["dist"]),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 ),
@@ -475,7 +475,7 @@ mod infer_tasks_from_scripts {
                             "dev"
                         ])),
                         local: true,
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 ),
@@ -488,7 +488,7 @@ mod infer_tasks_from_scripts {
                             "run-script",
                             "test"
                         ])),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 ),
@@ -501,7 +501,7 @@ mod infer_tasks_from_scripts {
                             "run-script",
                             "lint"
                         ])),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 ),
@@ -514,7 +514,7 @@ mod infer_tasks_from_scripts {
                             "run-script",
                             "typecheck"
                         ])),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 ),
@@ -601,7 +601,7 @@ mod create_tasks_from_scripts {
                     "test".to_owned(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 ),
@@ -611,7 +611,7 @@ mod create_tasks_from_scripts {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "eslint", "src/**/*", "."
                         ])),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 ),
@@ -619,7 +619,7 @@ mod create_tasks_from_scripts {
                     "typecheck".to_owned(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["tsc", "--build"])),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 ),
@@ -656,7 +656,7 @@ mod create_tasks_from_scripts {
                                 "do",
                                 "something"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -665,7 +665,7 @@ mod create_tasks_from_scripts {
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
                             deps: Some(string_vec!["~:test"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -674,7 +674,7 @@ mod create_tasks_from_scripts {
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
                             deps: Some(string_vec!["~:pretest"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -706,7 +706,7 @@ mod create_tasks_from_scripts {
                                 "do",
                                 "something"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -715,7 +715,7 @@ mod create_tasks_from_scripts {
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
                             deps: Some(string_vec!["~:pretest-dep1"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -724,7 +724,7 @@ mod create_tasks_from_scripts {
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
                             deps: Some(string_vec!["~:pretest"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     )
@@ -756,7 +756,7 @@ mod create_tasks_from_scripts {
                                 "do",
                                 "something"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -765,7 +765,7 @@ mod create_tasks_from_scripts {
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
                             deps: Some(string_vec!["~:posttest-dep1", "~:test"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -773,7 +773,7 @@ mod create_tasks_from_scripts {
                         "test".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -804,7 +804,7 @@ mod create_tasks_from_scripts {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "webpack", "build"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -813,7 +813,7 @@ mod create_tasks_from_scripts {
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["npm", "publish"])),
                             deps: Some(string_vec!["~:prerelease"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -846,7 +846,7 @@ mod create_tasks_from_scripts {
                     "lint".to_owned(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["eslint", "."])),
-                        type_of: PlatformType::Node,
+                        platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
                 )])
@@ -886,7 +886,7 @@ mod create_tasks_from_scripts {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "eslint", "."
                                 ])),
-                                type_of: PlatformType::Node,
+                                platform: PlatformType::Node,
                                 ..TaskConfig::default()
                             }
                         ),
@@ -898,7 +898,7 @@ mod create_tasks_from_scripts {
                                     "run",
                                     "project:lint"
                                 ])),
-                                type_of: PlatformType::Node,
+                                platform: PlatformType::Node,
                                 ..TaskConfig::default()
                             }
                         ),
@@ -939,7 +939,7 @@ mod create_tasks_from_scripts {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "eslint", "."
                                 ])),
-                                type_of: PlatformType::Node,
+                                platform: PlatformType::Node,
                                 ..TaskConfig::default()
                             }
                         ),
@@ -953,7 +953,7 @@ mod create_tasks_from_scripts {
                                     "--",
                                     "--fix"
                                 ])),
-                                type_of: PlatformType::Node,
+                                platform: PlatformType::Node,
                                 ..TaskConfig::default()
                             }
                         ),
@@ -996,7 +996,7 @@ mod create_tasks_from_scripts {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "webpack", "build"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1014,7 +1014,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "development".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1030,7 +1030,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1049,7 +1049,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "staging".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1103,7 +1103,7 @@ mod create_tasks_from_scripts {
                         "build".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["babel", "."])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1111,7 +1111,7 @@ mod create_tasks_from_scripts {
                         "lint".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["eslint", "."])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1119,7 +1119,7 @@ mod create_tasks_from_scripts {
                         "test".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     )
@@ -1188,7 +1188,7 @@ mod create_tasks_from_scripts {
                                 "make",
                                 "bootstrap"
                             ])),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1196,7 +1196,7 @@ mod create_tasks_from_scripts {
                         "build".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "build"])),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1207,7 +1207,7 @@ mod create_tasks_from_scripts {
                                 "make",
                                 "build-no-bundle"
                             ])),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1215,7 +1215,7 @@ mod create_tasks_from_scripts {
                         "fix".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "fix"])),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1223,7 +1223,7 @@ mod create_tasks_from_scripts {
                         "lint".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "lint"])),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1231,7 +1231,7 @@ mod create_tasks_from_scripts {
                         "test".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "test"])),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1242,7 +1242,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "test/esm/index.js"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1253,7 +1253,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "test/runtime-integration/bundlers.cjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1264,7 +1264,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "test/runtime-integration/generate-absolute-runtime.cjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1275,7 +1275,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "test/runtime-integration/node.cjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1326,7 +1326,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "build"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1338,7 +1338,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:type",
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1351,7 +1351,7 @@ mod create_tasks_from_scripts {
                                 "project:test",
                             ])),
                             deps: Some(string_vec!["~:check-dep1"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1364,7 +1364,7 @@ mod create_tasks_from_scripts {
                                 "project:lint",
                             ])),
                             deps: Some(string_vec!["~:check-dep2"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1378,7 +1378,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "clean"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1388,7 +1388,7 @@ mod create_tasks_from_scripts {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "yarn", "install"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1401,7 +1401,7 @@ mod create_tasks_from_scripts {
                                 "yarn.lock"
                             ])),
                             deps: Some(string_vec!["~:commit-dep1"]),
-                            type_of: PlatformType::System,
+                            platform: PlatformType::System,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1415,7 +1415,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--coverage"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1423,7 +1423,7 @@ mod create_tasks_from_scripts {
                         "create-config".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("create-config".to_owned())),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1431,7 +1431,7 @@ mod create_tasks_from_scripts {
                         "format".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("prettier".to_owned())),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1439,7 +1439,7 @@ mod create_tasks_from_scripts {
                         "lint".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("eslint".to_owned())),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1460,7 +1460,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1471,7 +1471,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./packages/packemon/cjs/bin.cjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1483,7 +1483,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:clean"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1496,7 +1496,7 @@ mod create_tasks_from_scripts {
                                 "project:setup"
                             ])),
                             deps: Some(string_vec!["~:prerelease-dep1"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1509,7 +1509,7 @@ mod create_tasks_from_scripts {
                                 "project:packup"
                             ])),
                             deps: Some(string_vec!["~:prerelease-dep2"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1522,7 +1522,7 @@ mod create_tasks_from_scripts {
                                 "project:check"
                             ])),
                             deps: Some(string_vec!["~:prerelease-dep3"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1534,7 +1534,7 @@ mod create_tasks_from_scripts {
                                 "lerna-release"
                             ])),
                             deps: Some(string_vec!["~:prerelease"]),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1552,7 +1552,7 @@ mod create_tasks_from_scripts {
                                 "packemon",
                                 "build"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1560,7 +1560,7 @@ mod create_tasks_from_scripts {
                         "test".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("jest".to_owned())),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1571,7 +1571,7 @@ mod create_tasks_from_scripts {
                                 "typescript",
                                 "--build"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1585,7 +1585,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "validate"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1644,7 +1644,7 @@ mod create_tasks_from_scripts {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "run-p", "lint:*"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1652,7 +1652,7 @@ mod create_tasks_from_scripts {
                         "lint-actionlint".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("node-actionlint".to_owned())),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1663,7 +1663,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/lint-changelog.mjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1674,7 +1674,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/check-deps.mjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1692,7 +1692,7 @@ mod create_tasks_from_scripts {
                                 "EFF_NO_LINK_RULES".to_owned(),
                                 "true".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1702,7 +1702,7 @@ mod create_tasks_from_scripts {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "prettier", ".", "!test*", "--check"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1716,7 +1716,7 @@ mod create_tasks_from_scripts {
                                 "--dot",
                                 "--gitignore"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1724,7 +1724,7 @@ mod create_tasks_from_scripts {
                         "lint-typecheck".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("tsc".to_owned())),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1738,7 +1738,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--fix"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1752,7 +1752,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--write"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1763,7 +1763,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/build/build.mjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1774,7 +1774,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/build-website.mjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1791,7 +1791,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1805,7 +1805,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--debug-benchmark"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1823,7 +1823,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1835,7 +1835,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:build"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1847,7 +1847,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:build"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1855,7 +1855,7 @@ mod create_tasks_from_scripts {
                         "test".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("jest".to_owned())),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1870,7 +1870,7 @@ mod create_tasks_from_scripts {
                                 "INSTALL_PACKAGE".to_owned(),
                                 "1".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1885,7 +1885,7 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1900,7 +1900,7 @@ mod create_tasks_from_scripts {
                                 "--config=./scripts/bundle-eslint-config.cjs",
                                 "dist/**/*.{js,mjs}"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1915,7 +1915,7 @@ mod create_tasks_from_scripts {
                                 ("TEST_STANDALONE".to_owned(), "1".to_owned()),
                                 ("NODE_ENV".to_owned(), "production".to_owned())
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1926,7 +1926,7 @@ mod create_tasks_from_scripts {
                                 "jest",
                                 "tests/integration"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),
@@ -1937,7 +1937,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./scripts/vendors/bundle-vendors.mjs"
                             ])),
-                            type_of: PlatformType::Node,
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
                     ),

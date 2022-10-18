@@ -240,7 +240,7 @@ impl Task {
             },
             outputs: cloned_config.outputs.unwrap_or_default(),
             output_paths: HashSet::new(),
-            platform: cloned_config.type_of,
+            platform: cloned_config.platform,
             target: target.id.clone(),
             type_of: TaskType::Test,
         };
@@ -284,7 +284,7 @@ impl Task {
         }
 
         if !matches!(self.platform, PlatformType::Unknown) {
-            config.type_of = self.platform.clone();
+            config.platform = self.platform.clone();
         }
 
         config
@@ -581,7 +581,7 @@ impl Task {
 
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
-        self.platform = config.type_of.clone();
+        self.platform = config.platform.clone();
 
         // Then merge the actual task fields
         if let Some(cmd) = command {

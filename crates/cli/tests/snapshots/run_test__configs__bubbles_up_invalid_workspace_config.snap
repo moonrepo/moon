@@ -4,11 +4,11 @@ assertion_line: 122
 expression: "standardize_separators(get_path_safe_output(&assert,\n        &PathBuf::from(\"./fake/path\")))"
 ---
 
- ERROR 
+ ERROR
 
 Failed to validate .moon/workspace.yml configuration file.
 
-  ▪ expected a sequence of globs or a map of projects for key "workspace.projects" in .moon/workspace.yml YAML file
+  ▪ expected a sequence of globs or a map of projects for key "workspace.projects" in .moon/workspace.yml YAML extended file
 
 
 

@@ -1,7 +1,7 @@
 // Based on https://docs.rs/figment/latest/figment/trait.Provider.html
 
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format, YamlExtended},
     value::{Dict, Map},
     Error, Metadata, Profile, Provider,
 };
@@ -47,7 +47,7 @@ impl Provider for Url {
 
         // We expect the URLs to point to YAML files,
         // so piggyback off the default YAML provider
-        Yaml::string(&resp)
+        YamlExtended::string(&resp)
             .profile(self.profile.as_ref().unwrap().clone())
             .data()
     }

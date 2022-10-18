@@ -11,7 +11,7 @@ use crate::validators::{
     skip_if_btree_empty, skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id,
 };
 use figment::{
-    providers::{Format, Serialized, Yaml},
+    providers::{Format, Serialized, YamlExtended},
     Figment,
 };
 use schemars::JsonSchema;
@@ -189,7 +189,7 @@ impl ProjectConfig {
         let profile_name = "project";
         let figment =
             Figment::from(Serialized::defaults(ProjectConfig::default()).profile(&profile_name))
-                .merge(Yaml::file(path).profile(&profile_name))
+                .merge(YamlExtended::file(path).profile(&profile_name))
                 .select(&profile_name);
 
         let mut config: ProjectConfig = figment.extract()?;

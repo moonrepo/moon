@@ -14,7 +14,7 @@ use crate::workspace::typescript::TypeScriptConfig;
 use crate::workspace::vcs::VcsConfig;
 use crate::ConfigError;
 use figment::{
-    providers::{Format, Serialized, Yaml},
+    providers::{Format, Serialized, YamlExtended},
     Figment,
 };
 use schemars::JsonSchema;
@@ -107,7 +107,7 @@ impl WorkspaceConfig {
             if source.starts_with("http") {
                 figment = figment.merge(Url::from(source).profile(&profile_name));
             } else {
-                figment = figment.merge(Yaml::file(source).profile(&profile_name));
+                figment = figment.merge(YamlExtended::file(source).profile(&profile_name));
             };
         }
 

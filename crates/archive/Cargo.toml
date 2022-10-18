@@ -10,4 +10,4 @@ moon_utils = { path = "../utils" }
 flate2 = "1.0.24"
 tar = "0.4.38"
 thiserror = { workspace = true }
-zip = "0.6.2"
+zip = "0.6.3"

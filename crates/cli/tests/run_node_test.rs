@@ -5,7 +5,7 @@ use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_assert_
 use predicates::prelude::*;
 use serial_test::serial;
 use std::fs::read_to_string;
-use utils::{append_workspace_config, get_path_safe_output, update_version_workspace_config};
+use utils::{append_workspace_config, get_path_safe_output, update_workspace_config};
 
 #[test]
 fn runs_package_managers() {
@@ -322,7 +322,11 @@ mod engines {
     fn adds_engines_constraint() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(fixture.path(), r#"  addEnginesConstraint: true"#);
+        update_workspace_config(
+            fixture.path(),
+            "addEnginesConstraint: false",
+            "addEnginesConstraint: true",
+        );
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -427,12 +431,15 @@ mod sync_depends_on {
     fn test_depends_on_format(format: &str) {
         let fixture = create_sandbox_with_git("cases");
 
+        update_workspace_config(
+            fixture.path(),
+            "syncProjectWorkspaceDependencies: false",
+            "syncProjectWorkspaceDependencies: true",
+        );
+
         append_workspace_config(
             fixture.path(),
-            &format!(
-                "  syncProjectWorkspaceDependencies: true\n  dependencyVersionFormat: {}",
-                format
-            ),
+            &format!("  dependencyVersionFormat: {}", format),
         );
 
         create_moon_command(fixture.path())
@@ -496,7 +503,11 @@ mod sync_depends_on {
     fn syncs_depends_on_with_scopes() {
         let fixture = create_sandbox_with_git("cases");
 
-        append_workspace_config(fixture.path(), "  syncProjectWorkspaceDependencies: true");
+        update_workspace_config(
+            fixture.path(),
+            "syncProjectWorkspaceDependencies: false",
+            "syncProjectWorkspaceDependencies: true",
+        );
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -532,7 +543,7 @@ mod npm {
         let fixture = create_sandbox_with_git("node-npm");
 
         // Corepack released in v16.9
-        update_version_workspace_config(fixture.path(), "16.1.0", "16.10.0");
+        update_workspace_config(fixture.path(), "16.1.0", "16.10.0");
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -626,7 +637,7 @@ mod pnpm {
         let fixture = create_sandbox_with_git("node-pnpm");
 
         // Corepack released in v16.9
-        update_version_workspace_config(fixture.path(), "16.2.0", "16.11.0");
+        update_workspace_config(fixture.path(), "16.2.0", "16.11.0");
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -740,7 +751,7 @@ mod yarn1 {
         let fixture = create_sandbox_with_git("node-yarn1");
 
         // Corepack released in v16.9
-        update_version_workspace_config(fixture.path(), "16.3.0", "16.12.0");
+        update_workspace_config(fixture.path(), "16.3.0", "16.12.0");
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -830,7 +841,7 @@ mod yarn {
         let fixture = create_sandbox_with_git("node-yarn");
 
         // Corepack released in v16.9
-        update_version_workspace_config(fixture.path(), "16.4.0", "16.13.0");
+        update_workspace_config(fixture.path(), "16.4.0", "16.13.0");
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -998,8 +1009,6 @@ mod typescript {
     fn creates_missing_tsconfig() {
         let fixture = create_sandbox_with_git("typescript");
 
-        append_workspace_config(fixture.path(), "  createMissingConfig: true");
-
         assert!(!fixture.path().join("create-config/tsconfig.json").exists());
 
         create_moon_command(fixture.path())
@@ -1022,7 +1031,11 @@ mod typescript {
     fn doesnt_create_missing_tsconfig_if_setting_off() {
         let fixture = create_sandbox_with_git("typescript");
 
-        append_workspace_config(fixture.path(), "  createMissingConfig: false");
+        update_workspace_config(
+            fixture.path(),
+            "createMissingConfig: true",
+            "createMissingConfig: false",
+        );
 
         assert!(!fixture.path().join("create-config/tsconfig.json").exists());
 
@@ -1038,9 +1051,10 @@ mod typescript {
     fn doesnt_create_missing_tsconfig_if_syncing_off() {
         let fixture = create_sandbox_with_git("typescript");
 
-        append_workspace_config(
+        update_workspace_config(
             fixture.path(),
-            "  createMissingConfig: true\n  syncProjectReferences: false",
+            "syncProjectReferences: true",
+            "syncProjectReferences: false",
         );
 
         assert!(!fixture.path().join("create-config/tsconfig.json").exists());
@@ -1056,8 +1070,6 @@ mod typescript {
     #[test]
     fn doesnt_create_missing_tsconfig_if_project_disabled() {
         let fixture = create_sandbox_with_git("typescript");
-
-        append_workspace_config(fixture.path(), "  createMissingConfig: true");
 
         assert!(!fixture.path().join("create-config/tsconfig.json").exists());
 
@@ -1113,7 +1125,11 @@ mod typescript {
         fn routes_to_cache() {
             let fixture = create_sandbox_with_git("typescript");
 
-            append_workspace_config(fixture.path(), "  routeOutDirToCache: true");
+            update_workspace_config(
+                fixture.path(),
+                "routeOutDirToCache: false",
+                "routeOutDirToCache: true",
+            );
 
             create_moon_command(fixture.path())
                 .arg("run")
@@ -1129,7 +1145,11 @@ mod typescript {
         fn routes_to_cache_when_no_compiler_options() {
             let fixture = create_sandbox_with_git("typescript");
 
-            append_workspace_config(fixture.path(), "  routeOutDirToCache: true");
+            update_workspace_config(
+                fixture.path(),
+                "routeOutDirToCache: false",
+                "routeOutDirToCache: true",
+            );
 
             create_moon_command(fixture.path())
                 .arg("run")
@@ -1147,8 +1167,6 @@ mod typescript {
         #[test]
         fn doesnt_route_to_cache_if_disabled() {
             let fixture = create_sandbox_with_git("typescript");
-
-            append_workspace_config(fixture.path(), "  routeOutDirToCache: false");
 
             create_moon_command(fixture.path())
                 .arg("run")
@@ -1168,9 +1186,10 @@ mod typescript {
         fn maps_paths() {
             let fixture = create_sandbox_with_git("typescript");
 
-            append_workspace_config(
+            update_workspace_config(
                 fixture.path(),
-                "  syncProjectReferences: true\n  syncProjectReferencesToPaths: true",
+                "syncProjectReferencesToPaths: false",
+                "syncProjectReferencesToPaths: true",
             );
 
             create_moon_command(fixture.path())
@@ -1187,9 +1206,16 @@ mod typescript {
         fn doesnt_map_paths_if_no_refs() {
             let fixture = create_sandbox_with_git("typescript");
 
-            append_workspace_config(
+            update_workspace_config(
                 fixture.path(),
-                "  syncProjectReferences: false\n  syncProjectReferencesToPaths: true",
+                "syncProjectReferences: true",
+                "syncProjectReferences: false",
+            );
+
+            update_workspace_config(
+                fixture.path(),
+                "syncProjectReferencesToPaths: false",
+                "syncProjectReferencesToPaths: true",
             );
 
             std::fs::remove_file(fixture.path().join("syncs-paths-refs/moon.yml")).unwrap();
@@ -1207,11 +1233,6 @@ mod typescript {
         #[test]
         fn doesnt_map_paths_if_disabled() {
             let fixture = create_sandbox_with_git("typescript");
-
-            append_workspace_config(
-                fixture.path(),
-                "  syncProjectReferences: true\n  syncProjectReferencesToPaths: false",
-            );
 
             create_moon_command(fixture.path())
                 .arg("run")

@@ -1,6 +1,6 @@
 ---
 slug: v0.17
-title: v0.17 - Webhooks and improved runtime performance
+title: v0.17 - Webhooks, extended YAML, and improved runtime performance
 authors: [milesj]
 tags: [notifier, runner, editors, vscode]
 # image: ./img/v0.17.png
@@ -13,6 +13,51 @@ With this release, we're landing the first iteration of our notifier service, st
 webhooks! We've also spent some time working on quality of life improvements.
 
 <!--truncate-->
+
+## Breaking changes
+
+To start, we have a few breaking changes this release to be aware of!
+
+### Task `type` has been renamed to `platform`
+
+This setting was renamed for a few reasons. To start, tasks actually have a
+[type internally](../docs/concepts/task#types) that is not configured, but is inferred based on
+what's configured. This was a bit confusing.
+
+And secondly, our toolchain refers to language integrations as platforms, and since this setting
+determines which tool to run with, we wanted to align on the platform terminology.
+
+<Tabs
+  groupId="task-type"
+  defaultValue="before"
+  values={[
+    { label: 'Before', value: 'before' },
+    { label: 'After', value: 'after' },
+  ]}
+>
+<TabItem value="before">
+
+```yaml
+tasks:
+  clean:
+    command: 'rm -rf ./dist'
+    type: 'system'
+```
+
+</TabItem>
+<TabItem value="after">
+
+```yaml
+tasks:
+  clean:
+    command: 'rm -rf ./dist'
+    platform: 'system'
+```
+
+</TabItem>
+</Tabs>
+
+> Because of this change, the `$taskType` token was also renamed to `$taskPlatform`!
 
 ## Webhook events
 

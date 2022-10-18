@@ -1,5 +1,5 @@
 use figment::{
-    providers::{Format, Yaml},
+    providers::{Format, YamlExtended},
     Figment,
 };
 use moon_config::{TaskCommandArgs, TaskConfig};
@@ -11,7 +11,7 @@ const CONFIG_FILENAME: &str = "tasks.yml";
 // Not a config file, but we want to test in isolation
 fn load_jailed_config() -> Result<TaskConfig, figment::Error> {
     Figment::new()
-        .merge(Yaml::file(&PathBuf::from(CONFIG_FILENAME)))
+        .merge(YamlExtended::file(&PathBuf::from(CONFIG_FILENAME)))
         .extract()
 }
 

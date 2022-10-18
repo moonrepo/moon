@@ -17,10 +17,10 @@ pub fn append_workspace_config(root: &Path, yaml: &str) {
     writeln!(file, "{}", yaml).unwrap();
 }
 
-pub fn update_version_workspace_config(dir: &Path, old_version: &str, new_version: &str) {
+pub fn update_workspace_config(dir: &Path, old: &str, new: &str) {
     let mut config = fs::read_to_string(dir.join(".moon/workspace.yml")).unwrap();
 
-    config = config.replace(old_version, new_version);
+    config = config.replace(old, new);
 
     fs::write(dir.join(".moon/workspace.yml"), config).unwrap();
 }

@@ -6,6 +6,9 @@ tags: [notifier, runner, editors, vscode]
 # image: ./img/v0.17.png
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 With this release, we're landing the first iteration of our notifier service, starting with
 webhooks! We've also spent some time working on quality of life improvements.
 
@@ -28,6 +31,94 @@ notifier:
 > View the [official guide on webhooks](../docs/guides/webhooks) for a full list of events and an
 > example payload structure!
 
+## YAML anchors and aliases
+
+We've updated our YAML configuration files to support extended syntax,
+[anchors (`&`) and aliases (`*`)](https://support.atlassian.com/bitbucket-cloud/docs/yaml-anchors/).
+With this new syntax, you're now able to reduce the amount of duplication required in your config
+files, especially when declaring tasks, as demonstrated below!
+
+<Tabs
+  groupId="yaml"
+  defaultValue="before"
+  values={[
+    { label: 'Before', value: 'before' },
+    { label: 'After', value: 'after' },
+  ]}
+>
+<TabItem value="before">
+
+```yaml
+tasks:
+  astro:
+    command: 'astro'
+    local: true
+
+  dev:
+    command: 'astro dev'
+    inputs:
+      - '@group(astro)'
+    local: true
+
+  build:
+    command: 'astro build'
+    inputs:
+      - '@group(astro)'
+    outputs:
+      - 'dist'
+
+  check:
+    command: 'astro check'
+    inputs:
+      - '@group(astro)'
+    deps:
+      - '~:typecheck'
+
+  preview:
+    command: 'astro preview'
+    inputs:
+      - '@group(astro)'
+    deps:
+      - '~:build'
+    local: true
+```
+
+</TabItem>
+<TabItem value="after">
+
+```yaml
+_astro: &astro
+  command: 'astro'
+  inputs:
+    - '@group(astro)'
+
+tasks:
+  dev:
+    <<: *astro
+    args: 'dev'
+    local: true
+
+  build:
+    <<: *astro
+    args: 'build'
+    outputs:
+      - 'dist'
+
+  check:
+    <<: *astro
+    args: 'check'
+
+  preview:
+    <<: *astro
+    args: 'preview'
+    deps:
+      - '~:build'
+    local: true
+```
+
+</TabItem>
+</Tabs>
+
 ## VS Code extension
 
 If you missed the [announcement earlier this week](./vscode-extension), we released the initial
@@ -41,7 +132,7 @@ View the
 full list of changes.
 
 - Increased runtime performance and reduced memory consumption.
-- Template enum variables can now defined objects for their
+- Template enum variables can now define objects for their
   [`values`](../docs/config/template#values).
 - Task `deps` can now omit the `~:` prefix for tasks within the current project.
 

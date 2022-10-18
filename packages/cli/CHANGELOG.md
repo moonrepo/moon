@@ -9,6 +9,9 @@
 
 #### 🚀 Updates
 
+- All YAML configuration files can now use
+  [aliases and anchors](https://support.atlassian.com/bitbucket-cloud/docs/yaml-anchors/)!
+
 ##### Tasks
 
 - When defining `deps` within the current project, the `~:` prefix is now optional. For example,

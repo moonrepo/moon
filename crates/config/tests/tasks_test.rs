@@ -539,10 +539,10 @@ outputs:
     }
 }
 
-mod type_of {
+mod platform {
     #[test]
     #[should_panic(
-        expected = "unknown variant: found `whatisthis`, expected `one of `node`, `system`, `unknown`` for key \"default.type\""
+        expected = "unknown variant: found `whatisthis`, expected `one of `node`, `system`, `unknown`` for key \"default.platform\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
@@ -550,7 +550,7 @@ mod type_of {
                 super::CONFIG_FILENAME,
                 r#"
 command: foo
-type: whatisthis
+platform: whatisthis
 "#,
             )?;
 

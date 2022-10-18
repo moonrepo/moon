@@ -68,6 +68,6 @@ tasks:
     # To output files to the workspace root, prefix the path with a "/".
     outputs: []
 
-    # The type of command to run, and where to locate it.
-    # Accepts "node" (default) or "system".
-    type: 'node'
+    # The platform to run the command on, and where to locate it.
+    # Accepts "node" or "system". Defaults based on project `language`.
+    platform: 'node'

@@ -1,6 +1,6 @@
 tasks:
   standard:
-    type: system
+    platform: system
     deps:
       - b:standard
     args:

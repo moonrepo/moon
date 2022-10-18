@@ -9,7 +9,7 @@ tasks:
     command:
     - eslint
     - .
-    type: node
+    platform: node
   lint-fix:
     command:
     - moon
@@ -17,5 +17,5 @@ tasks:
     - common:lint
     - --
     - --fix
-    type: node
+    platform: node
 

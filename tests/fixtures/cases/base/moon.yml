@@ -4,14 +4,14 @@ tasks:
   runFromProject:
     command: echo
     args: '"in project"'
-    type: system
+    platform: system
   runFromWorkspace:
     command: echo
     args: '"in workspace"'
     options:
       runFromWorkspaceRoot: true
-    type: system
+    platform: system
   localOnly:
     command: 'echo "local only"'
-    type: system
+    platform: system
     local: true

@@ -4,27 +4,27 @@ tasks:
   ls:
     command: ls
     args: '-1 .'
-    type: system
+    platform: system
   echo:
     command: echo
     args: 'hello'
-    type: system
+    platform: system
   bash:
     command: bash
     args: ./standard.sh
-    type: system
+    platform: system
   exitNonZero:
     command: bash
     args: ./exitNonZero.sh
-    type: system
+    platform: system
   exitZero:
     command: bash
     args: ./exitZero.sh
-    type: system
+    platform: system
   passthroughArgs:
     command: bash
     args: ./passthroughArgs.sh
-    type: system
+    platform: system
   envVars:
     command: bash
     args: ./envVars.sh
@@ -32,24 +32,24 @@ tasks:
       MOON_FOO: abc
       MOON_BAR: '123'
       MOON_BAZ: 'true'
-    type: system
+    platform: system
   envVarsMoon:
     command: bash
     args: ./envVarsMoon.sh
-    type: system
+    platform: system
   runFromProject:
     command: bash
     args: ./cwd.sh
-    type: system
+    platform: system
   runFromWorkspace:
     command: bash
     args: ./system/cwd.sh
-    type: system
+    platform: system
     options:
       runFromWorkspaceRoot: true
   retryCount:
     command: bash
     args: ./exitNonZero.sh
-    type: system
+    platform: system
     options:
       retryCount: 3

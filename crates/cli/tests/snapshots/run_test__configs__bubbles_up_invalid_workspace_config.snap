@@ -1,10 +1,10 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 122
+assertion_line: 116
 expression: "standardize_separators(get_path_safe_output(&assert,\n        &PathBuf::from(\"./fake/path\")))"
 ---
 
- ERROR
+ ERROR 
 
 Failed to validate .moon/workspace.yml configuration file.
 

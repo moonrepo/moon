@@ -11,6 +11,7 @@
 
 - All YAML configuration files can now use
   [aliases and anchors](https://support.atlassian.com/bitbucket-cloud/docs/yaml-anchors/)!
+- The `moon check` command can now use the `--report` option.
 
 ##### Tasks
 

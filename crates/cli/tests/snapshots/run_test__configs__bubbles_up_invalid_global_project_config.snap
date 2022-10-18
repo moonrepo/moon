@@ -8,7 +8,7 @@ expression: get_assert_output(&assert)
 
 Failed to validate .moon/project.yml configuration file.
 
-  ▪ invalid type: found unsigned int `123`, expected a map for key "globalProject.tasks" in .moon/project.yml YAML extended file
+  ▪ invalid type: found unsigned int `123`, expected a map for key "globalProject.tasks" in .moon/project.yml YAML Extended file
 
 
 

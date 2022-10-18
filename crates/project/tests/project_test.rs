@@ -1328,7 +1328,7 @@ mod tasks {
                     &workspace_root,
                     &[],
                     &[
-                        "/.moon/$taskType-$projectType.yml".to_owned(),
+                        "/.moon/$taskPlatform-$projectType.yml".to_owned(),
                         "*.yml".to_owned(),
                     ],
                 )

@@ -22,7 +22,7 @@ lazy_static! {
 
     pub static ref TOKEN_FUNC_PATTERN: Regex = Regex::new(&format!("^@([a-z]+)\\({}\\)$", *TOKEN_GROUP)).unwrap();
     pub static ref TOKEN_FUNC_ANYWHERE_PATTERN: Regex = Regex::new(&format!("@([a-z]+)\\({}\\)", *TOKEN_GROUP)).unwrap();
-    pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$(language|projectRoot|projectSource|projectType|project|target|taskType|task|workspaceRoot)").unwrap();
+    pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$(language|projectRoot|projectSource|projectType|project|target|taskPlatform|task|workspaceRoot)").unwrap();
 
     // Task commands (these are not exhaustive)
     pub static ref NODE_COMMAND: regex::Regex =

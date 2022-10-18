@@ -438,15 +438,15 @@ tasks:
       - '--task=build'
 ```
 
-### `$taskType`<VersionLabel version="0.7" />
+### `$taskPlatform`<VersionLabel version="0.7" />
 
-The type of task that is currently running.
+The platform that task will run against.
 
 ```yaml
 # Configured as
 tasks:
   build:
-    command: 'example --type $taskType'
+    command: 'example --type $taskPlatform'
 
 # Resolves to
 tasks:

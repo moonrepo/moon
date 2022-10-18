@@ -516,7 +516,7 @@ mod args {
 
         assert_eq!(resolver.resolve_var("$task", &task).unwrap(), "task");
 
-        assert_eq!(resolver.resolve_var("$taskType", &task).unwrap(), "node");
+        assert_eq!(resolver.resolve_var("$taskPlatform", &task).unwrap(), "node");
 
         assert_eq!(
             resolver.resolve_var("$workspaceRoot", &task).unwrap(),
@@ -526,7 +526,7 @@ mod args {
         // Multiple vars
         assert_eq!(
             resolver
-                .resolve_vars("$language-$taskType-project", &task)
+                .resolve_vars("$language-$taskPlatform-project", &task)
                 .unwrap(),
             "javascript-node-project"
         );

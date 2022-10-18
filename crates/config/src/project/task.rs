@@ -105,8 +105,7 @@ pub struct TaskConfig {
     pub options: TaskOptionsConfig,
 
     #[serde(skip_serializing_if = "skip_if_default")]
-    #[serde(rename = "type")]
-    pub type_of: PlatformType,
+    pub platform: PlatformType,
 }
 
 impl TaskConfig {

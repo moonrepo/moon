@@ -6,6 +6,8 @@
 
 - Refactored project and task name/id cleaning. Previously, unsupported characters were simply
   removed. Instead, we now replace them with dashes for better readability.
+- The task `type` in `moon.yml` and `.moon/project.yml` has been renamed to `platform`.
+- The `$taskType` token has been renamed to `$taskPlatform`.
 
 #### 🚀 Updates
 

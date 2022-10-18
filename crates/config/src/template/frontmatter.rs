@@ -26,7 +26,12 @@ pub struct TemplateFrontmatterConfig {
 impl TemplateFrontmatterConfig {
     #[track_caller]
     pub fn parse<T: AsRef<str>>(content: T) -> Result<TemplateFrontmatterConfig, ConfigError> {
-        let content = content.as_ref();
+        let mut content = content.as_ref();
+
+        if content.is_empty() {
+            content = "{}";
+        }
+
         let profile_name = "frontmatter";
         let figment = Figment::from(
             Serialized::defaults(TemplateFrontmatterConfig::default()).profile(&profile_name),

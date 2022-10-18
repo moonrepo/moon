@@ -45,9 +45,11 @@ pub enum Event<'e> {
     RunnerAborted {
         error: String,
     },
+    #[serde(rename_all = "camelCase")]
     RunnerStarted {
         actions_count: usize,
     },
+    #[serde(rename_all = "camelCase")]
     RunnerFinished {
         duration: &'e Duration,
         cached_count: usize,
@@ -69,6 +71,7 @@ pub enum Event<'e> {
         target: &'e str,
         task: &'e Task,
     },
+    #[serde(rename_all = "camelCase")]
     TargetOutputArchived {
         archive_path: PathBuf,
         hash: &'e str,
@@ -82,6 +85,7 @@ pub enum Event<'e> {
         target: &'e str,
         task: &'e Task,
     },
+    #[serde(rename_all = "camelCase")]
     TargetOutputHydrated {
         archive_path: PathBuf,
         hash: &'e str,

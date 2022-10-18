@@ -324,6 +324,94 @@ tasks:
             Ok(())
         });
     }
+
+    #[test]
+    fn can_use_references() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_PROJECT_FILENAME,
+                r#"
+tasks:
+    build: &webpack
+        command: 'webpack'
+        inputs:
+            - 'src/**/*'
+    start:
+        <<: *webpack
+        args: 'serve'
+"#,
+            )?;
+
+            let config: ProjectConfig = super::load_jailed_config()?; // jail.directory())?;
+
+            assert_eq!(
+                config.tasks.get("build").unwrap(),
+                &TaskConfig {
+                    command: Some(TaskCommandArgs::String("webpack".to_owned())),
+                    inputs: Some(string_vec!["src/**/*"]),
+                    ..TaskConfig::default()
+                }
+            );
+
+            assert_eq!(
+                config.tasks.get("start").unwrap(),
+                &TaskConfig {
+                    command: Some(TaskCommandArgs::String("webpack".to_owned())),
+                    args: Some(TaskCommandArgs::String("serve".to_owned())),
+                    inputs: Some(string_vec!["src/**/*"]),
+                    ..TaskConfig::default()
+                }
+            );
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn can_use_references_from_root() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_PROJECT_FILENAME,
+                r#"
+_webpack: &webpack
+    command: 'webpack'
+    inputs:
+        - 'src/**/*'
+
+tasks:
+    build: *webpack
+    start:
+        <<: *webpack
+        args: 'serve'
+"#,
+            )?;
+
+            let config: ProjectConfig = super::load_jailed_config()?; // jail.directory())?;
+
+            dbg!(&config);
+
+            assert_eq!(
+                config.tasks.get("build").unwrap(),
+                &TaskConfig {
+                    command: Some(TaskCommandArgs::String("webpack".to_owned())),
+                    inputs: Some(string_vec!["src/**/*"]),
+                    ..TaskConfig::default()
+                }
+            );
+
+            assert_eq!(
+                config.tasks.get("start").unwrap(),
+                &TaskConfig {
+                    command: Some(TaskCommandArgs::String("webpack".to_owned())),
+                    args: Some(TaskCommandArgs::String("serve".to_owned())),
+                    inputs: Some(string_vec!["src/**/*"]),
+                    ..TaskConfig::default()
+                }
+            );
+
+            Ok(())
+        });
+    }
 }
 
 mod project {

@@ -1617,7 +1617,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "validator",
- "yaml-rust",
+ "yaml-rust-davvid",
 ]
 
 [[package]]
@@ -3739,6 +3739,15 @@ name = "yaml-rust"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
+dependencies = [
+ "linked-hash-map",
+]
+
+[[package]]
+name = "yaml-rust-davvid"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4227001e07509d0f7965a515c79944a211e77a3ec3cb585d25882240d6ebebd1"
 dependencies = [
  "linked-hash-map",
 ]

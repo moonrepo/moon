@@ -27,7 +27,7 @@ serde_yaml = "0.9.13"
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = { workspace = true }
 validator = { version = "0.16.0", features = ["derive"] }
-yaml-rust = "0.4.5"
+yaml-rust = { version = "0.4.5", package = "yaml-rust-davvid" }
 
 [dev-dependencies]
 assert_fs = "1.0.7"

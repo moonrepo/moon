@@ -1,7 +1,7 @@
 // These configs are project-level settings that override those from the workspace!
 
 use crate::types::TaskID;
-use crate::validators::{skip_if_default, validate_semver_version};
+use crate::validators::validate_semver_version;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -15,7 +15,6 @@ fn validate_node_version(value: &str) -> Result<(), ValidationError> {
 #[schemars(default)]
 #[serde(default)]
 pub struct ProjectWorkspaceNodeConfig {
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_node_version")]
     pub version: Option<String>,
 }
@@ -24,13 +23,10 @@ pub struct ProjectWorkspaceNodeConfig {
 #[schemars(default)]
 #[serde(default)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<Vec<TaskID>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub include: Option<Vec<TaskID>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub rename: Option<HashMap<TaskID, TaskID>>,
 }
 
@@ -38,11 +34,9 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
-    #[serde(skip_serializing_if = "skip_if_default")]
     #[validate]
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub node: Option<ProjectWorkspaceNodeConfig>,
 

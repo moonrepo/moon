@@ -7,14 +7,20 @@ use moon_utils::test::get_fixtures_dir;
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
-    match WorkspaceConfig::load(root.join(CONFIG_WORKSPACE_FILENAME)) {
-        Ok(cfg) => Ok(cfg),
-        Err(error) => Err(match error {
-            ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
-            ConfigError::Figment(f) => f,
-            e => figment::Error::from(e.to_string()),
-        }),
-    }
+    // Our config loading is async, but figment only allows testing sync code,
+    // so we need this wrapper that blocks the thread so we can run async.
+    tokio::task::block_in_place(|| {
+        tokio::runtime::Handle::current().block_on(async {
+            match WorkspaceConfig::load(root.join(CONFIG_WORKSPACE_FILENAME)).await {
+                Ok(cfg) => Ok(cfg),
+                Err(err) => Err(match err {
+                    ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
+                    ConfigError::Figment(f) => f,
+                    e => figment::Error::from(e.to_string()),
+                }),
+            }
+        })
+    })
 }
 
 #[test]
@@ -50,10 +56,12 @@ mod extends {
     use pretty_assertions::assert_eq;
     use std::fs;
 
-    #[test]
-    fn recursive_merges() {
+    #[tokio::test]
+    async fn recursive_merges() {
         let fixture = get_fixtures_dir("config-extends/workspace");
-        let config = WorkspaceConfig::load(fixture.join("base-2.yml")).unwrap();
+        let config = WorkspaceConfig::load(fixture.join("base-2.yml"))
+            .await
+            .unwrap();
 
         assert_eq!(
             config,
@@ -83,10 +91,12 @@ mod extends {
         );
     }
 
-    #[test]
-    fn recursive_merges_typescript() {
+    #[tokio::test]
+    async fn recursive_merges_typescript() {
         let fixture = get_fixtures_dir("config-extends/workspace");
-        let config = WorkspaceConfig::load(fixture.join("typescript-2.yml")).unwrap();
+        let config = WorkspaceConfig::load(fixture.join("typescript-2.yml"))
+            .await
+            .unwrap();
 
         assert_eq!(
             config.typescript,

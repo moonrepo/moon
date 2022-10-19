@@ -22,21 +22,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        name: Cache cargo
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
           toolchain: 1.64.0
           profile: minimal
           components: rustfmt
+      - uses: Swatinem/rust-cache@v2
       - uses: actions-rs/cargo@v1
         name: Check formatting
         with:
@@ -51,21 +43,13 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        name: Cache cargo
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
           toolchain: 1.64.0
           profile: minimal
           components: clippy
+      - uses: Swatinem/rust-cache@v2
       - uses: davidB/rust-cargo-make@v1
       - name: Run linter
         run: cargo make lint
@@ -78,21 +62,13 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        name: Cache cargo
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
           toolchain: 1.64.0
           profile: minimal
           components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
       - uses: davidB/rust-cargo-make@v1
       - uses: actions-rs/cargo@v1
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}

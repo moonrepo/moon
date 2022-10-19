@@ -353,8 +353,8 @@ pub mod temp {
             .join("cache/temp")
     }
 
-    pub fn get_file(source: &str) -> PathBuf {
-        get_dir().join(format!("{:x}", md5::compute(source)))
+    pub fn get_file(source: &str, ext: &str) -> PathBuf {
+        get_dir().join(format!("{:x}.{}", md5::compute(source), ext))
     }
 
     pub async fn read<P: AsRef<Path>>(path: P) -> Result<Option<String>, MoonError> {
@@ -369,7 +369,7 @@ pub mod temp {
 
         if let Ok(metadata) = file.metadata() {
             if let Ok(filetime) = metadata.created() {
-                if filetime < threshold {
+                if filetime > threshold {
                     super::remove_file(file).await?;
 
                     return Ok(None);
@@ -381,6 +381,12 @@ pub mod temp {
     }
 
     pub async fn write<P: AsRef<Path>, D: AsRef<str>>(path: P, data: D) -> Result<(), MoonError> {
+        let path = path.as_ref();
+
+        if let Some(parent) = path.parent() {
+            super::create_dir_all(parent).await?;
+        }
+
         super::write(path, data.as_ref()).await
     }
 }

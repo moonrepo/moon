@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use yaml_rust::{Yaml, YamlLoader};
 
 pub async fn download_and_cache_config(url: &str) -> Result<PathBuf, ConfigError> {
-    let file = temp::get_file(url);
+    let file = temp::get_file(url, "yml");
 
     if temp::read(&file).await?.is_some() {
         return Ok(file);

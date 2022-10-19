@@ -185,10 +185,7 @@ where
 
 #[inline]
 pub async fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
-    let path = path.as_ref();
-    let json = read(path).await?;
-
-    clean_json(json)
+    clean_json(read(path).await?)
 }
 
 #[inline]
@@ -344,6 +341,48 @@ where
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
     Ok(())
+}
+
+pub mod temp {
+    use super::*;
+    use moon_constants::CONFIG_DIRNAME;
+
+    pub fn get_dir() -> PathBuf {
+        crate::get_workspace_root()
+            .join(CONFIG_DIRNAME)
+            .join("cache/temp")
+    }
+
+    pub fn get_file(source: &str) -> PathBuf {
+        get_dir().join(format!("{:x}", md5::compute(source)))
+    }
+
+    pub async fn read<P: AsRef<Path>>(path: P) -> Result<Option<String>, MoonError> {
+        let file = path.as_ref();
+
+        if !file.exists() {
+            return Ok(None);
+        }
+
+        // Temp files only last for 6 hours
+        let threshold = SystemTime::now() - Duration::from_secs(60 * 60 * 6);
+
+        if let Ok(metadata) = file.metadata() {
+            if let Ok(filetime) = metadata.created() {
+                if filetime < threshold {
+                    super::remove_file(file).await?;
+
+                    return Ok(None);
+                }
+            }
+        }
+
+        Ok(Some(super::read(file).await?))
+    }
+
+    pub async fn write<P: AsRef<Path>, D: AsRef<str>>(path: P, data: D) -> Result<(), MoonError> {
+        super::write(path, data.as_ref()).await
+    }
 }
 
 pub mod sync {

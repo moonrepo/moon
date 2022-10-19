@@ -29,6 +29,8 @@ pub async fn notify_webhook(
         .body(body)
         .header("Accept", "application/json")
         .header("Content-Type", "application/json")
+        .header("Connection", "keep-alive")
+        .header("Keep-Alive", "timeout=30, max=120")
         .send()
         .await
 }

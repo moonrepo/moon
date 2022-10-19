@@ -22,8 +22,8 @@ fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error
     })
 }
 
-#[test]
-fn loads_defaults() {
+#[tokio::test(flavor = "multi_thread")]
+async fn loads_defaults() {
     figment::Jail::expect_with(|jail| {
         jail.create_file(
             CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -55,7 +55,7 @@ mod extends {
     use pretty_assertions::assert_eq;
     use std::fs;
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn recursive_merges() {
         let fixture = get_fixtures_dir("config-extends/project");
         let config = GlobalProjectConfig::load(fixture.join("global-2.yml"))
@@ -97,12 +97,12 @@ mod extends {
         )
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     // #[should_panic(
     //     expected = "invalid type: found unsigned int `123`, expected a string for key \"globalProject.extends\""
     // )]
     #[should_panic(expected = "Invalid <id>extends</id> field, must be a string.")]
-    fn invalid_type() {
+    async fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_GLOBAL_PROJECT_FILENAME, "extends: 123")?;
 
@@ -112,12 +112,12 @@ mod extends {
         });
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     // #[should_panic(
     //     expected = "Must be a valid URL or relative file path (starts with ./) for key \"globalProject.extends\""
     // )]
     #[should_panic(expected = "only YAML documents are supported")]
-    fn not_a_url_or_file() {
+    async fn not_a_url_or_file() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -130,9 +130,9 @@ mod extends {
         });
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(expected = "only HTTPS URLs are supported")]
-    fn not_a_https_url() {
+    async fn not_a_https_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -145,10 +145,10 @@ mod extends {
         });
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     // #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
     #[should_panic(expected = "only YAML documents are supported")]
-    fn not_a_yaml_url() {
+    async fn not_a_yaml_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -161,10 +161,10 @@ mod extends {
         });
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     // #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
     #[should_panic(expected = "only YAML documents are supported")]
-    fn not_a_yaml_file() {
+    async fn not_a_yaml_file() {
         figment::Jail::expect_with(|jail| {
             fs::create_dir_all(jail.directory().join("shared")).unwrap();
 
@@ -228,8 +228,8 @@ mod extends {
         ])
     }
 
-    #[test]
-    fn loads_from_file() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn loads_from_file() {
         use pretty_assertions::assert_eq;
 
         figment::Jail::expect_with(|jail| {
@@ -271,8 +271,8 @@ fileGroups:
         });
     }
 
-    #[test]
-    fn loads_from_url() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn loads_from_url() {
         use pretty_assertions::assert_eq;
 
         figment::Jail::expect_with(|jail| {
@@ -328,11 +328,11 @@ fileGroups:
 }
 
 mod file_groups {
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.fileGroups\""
     )]
-    fn invalid_type() {
+    async fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_GLOBAL_PROJECT_FILENAME, "fileGroups: 123")?;
 
@@ -342,11 +342,11 @@ mod file_groups {
         });
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected a sequence for key \"globalProject.fileGroups.sources\""
     )]
-    fn invalid_value_type() {
+    async fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -366,11 +366,11 @@ mod tasks {
     use super::*;
     use moon_config::TaskConfig;
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.tasks\""
     )]
-    fn invalid_type() {
+    async fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -386,11 +386,11 @@ tasks: 123
         });
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"globalProject.tasks.test\""
     )]
-    fn invalid_value_type() {
+    async fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -407,11 +407,11 @@ tasks:
         });
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(
         expected = "expected a string or a sequence of strings for key \"globalProject.tasks.test.command\""
     )]
-    fn invalid_value_field() {
+    async fn invalid_value_field() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -429,9 +429,9 @@ tasks:
         });
     }
 
-    #[test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(expected = "An npm/system command is required")]
-    fn invalid_value_empty_field() {
+    async fn invalid_value_empty_field() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -449,8 +449,8 @@ tasks:
         });
     }
 
-    #[test]
-    fn can_use_references() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn can_use_references() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -491,8 +491,8 @@ tasks:
         });
     }
 
-    #[test]
-    fn can_use_references_from_root() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn can_use_references_from_root() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,

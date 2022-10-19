@@ -535,6 +535,9 @@ mod args {
                 .unwrap(),
             "javascript-node-project"
         );
+
+        // Unknown var
+        assert_eq!(resolver.resolve_var("$unknown", &task).unwrap(), "$unknown");
     }
 }
 

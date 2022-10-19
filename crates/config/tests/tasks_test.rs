@@ -2,17 +2,24 @@ use figment::{
     providers::{Format, YamlExtended},
     Figment,
 };
+use moon_config::map_validation_errors_to_figment_errors;
 use moon_config::{TaskCommandArgs, TaskConfig};
 use moon_utils::string_vec;
 use std::path::PathBuf;
+use validator::Validate;
 
 const CONFIG_FILENAME: &str = "tasks.yml";
 
 // Not a config file, but we want to test in isolation
 fn load_jailed_config() -> Result<TaskConfig, figment::Error> {
-    Figment::new()
-        .merge(YamlExtended::file(&PathBuf::from(CONFIG_FILENAME)))
-        .extract()
+    let figment = Figment::new().merge(YamlExtended::file(&PathBuf::from(CONFIG_FILENAME)));
+    let config: TaskConfig = figment.extract()?;
+
+    config
+        .validate()
+        .map_err(|e| map_validation_errors_to_figment_errors(&figment, &e)[0].clone())?;
+
+    Ok(config)
 }
 
 mod command {
@@ -368,26 +375,45 @@ deps:
         });
     }
 
-    //         #[test]
-    //         #[should_panic(
-    //             expected = "Invalid field <id>deps.0</id>: Expected a string type, received unsigned int `123`."
-    //         )]
-    //         fn invalid_format() {
-    //             figment::Jail::expect_with(|jail| {
-    //                 jail.create_file(
-    //                     super::CONFIG_FILENAME,
-    //                     r#"
-    // command: foo
-    // deps:
-    //     - foo
-    // "#,
-    //                 )?;
+    #[test]
+    #[should_panic(expected = "Must be a valid target format")]
+    fn invalid_dep_target() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_FILENAME,
+                r#"
+command: foo
+deps:
+  - '%:task'
+"#,
+            )?;
 
-    //                 super::load_jailed_config()?;
+            super::load_jailed_config()?;
 
-    //                 Ok(())
-    //             });
-    //         }
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)"
+    )]
+    fn invalid_dep_target_no_scope() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_FILENAME,
+                r#"
+command: foo
+deps:
+  - 'foo bar'
+"#,
+            )?;
+
+            super::load_jailed_config()?;
+
+            Ok(())
+        });
+    }
 }
 
 mod env {

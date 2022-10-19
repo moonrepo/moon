@@ -58,7 +58,7 @@ function Line({ type, time, message }: LineProps) {
 				</>
 			)}
 			{message}
-			{time && <span className="text-gray-700 text-sm"> ({num(time)})</span>}
+			{time && <span className="text-sm text-gray-700"> ({num(time)})</span>}
 		</li>
 	);
 }
@@ -150,8 +150,8 @@ export default function HeroTerminal() {
 
 	return (
 		<ul
-			className="bg-slate-900 border border-solid border-slate-500 w-full h-full m-0 p-2 rounded-lg text-gray-200 overflow-auto font-mono text-sm flex flex-col"
-			style={{ maxHeight: 230 }}
+			className="flex flex-col w-full p-2 m-0 overflow-auto font-mono text-sm text-gray-200 border border-solid rounded-lg bg-slate-900 border-slate-500"
+			style={{ height: 230 }}
 			ref={terminal}
 		>
 			<li className="list-none">
@@ -164,7 +164,7 @@ export default function HeroTerminal() {
 
 			{stopTime > 0 && (
 				<>
-					<li className="list-none pt-2">
+					<li className="pt-2 list-none">
 						<strong className="text-gray-600">Tasks</strong>:{' '}
 						<span className="text-green-500">{lines.length / 2} completed</span>
 					</li>

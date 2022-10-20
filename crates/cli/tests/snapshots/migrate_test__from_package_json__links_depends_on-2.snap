@@ -5,7 +5,9 @@ expression: "fs::read_to_string(fixture.path().join(\"package-json/deps/moon.yml
 ---
 dependsOn:
 - common
+fileGroups: {}
 language: javascript
+project: null
 tasks:
   build:
     command:
@@ -13,10 +15,55 @@ tasks:
     - ./src
     - --out
     - ./lib
+    args: null
+    deps: null
+    env: null
+    inputs: null
+    local: false
     outputs:
     - lib
+    options:
+      cache: null
+      envFile: null
+      mergeArgs: null
+      mergeDeps: null
+      mergeEnv: null
+      mergeInputs: null
+      mergeOutputs: null
+      outputStyle: null
+      retryCount: null
+      runDepsInParallel: null
+      runInCI: null
+      runFromWorkspaceRoot: null
     platform: node
   test:
     command: jest
+    args: null
+    deps: null
+    env: null
+    inputs: null
+    local: false
+    outputs: null
+    options:
+      cache: null
+      envFile: null
+      mergeArgs: null
+      mergeDeps: null
+      mergeEnv: null
+      mergeInputs: null
+      mergeOutputs: null
+      outputStyle: null
+      retryCount: null
+      runDepsInParallel: null
+      runInCI: null
+      runFromWorkspaceRoot: null
     platform: node
+type: unknown
+workspace:
+  inheritedTasks:
+    exclude: null
+    include: null
+    rename: null
+  node: null
+  typescript: true
 

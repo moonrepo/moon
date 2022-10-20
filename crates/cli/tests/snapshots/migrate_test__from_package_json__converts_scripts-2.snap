@@ -3,12 +3,34 @@ source: crates/cli/tests/migrate_test.rs
 assertion_line: 21
 expression: "fs::read_to_string(fixture.path().join(\"package-json/common/moon.yml\")).unwrap()"
 ---
+dependsOn: []
+fileGroups: {}
 language: javascript
+project: null
 tasks:
   lint:
     command:
     - eslint
     - .
+    args: null
+    deps: null
+    env: null
+    inputs: null
+    local: false
+    outputs: null
+    options:
+      cache: null
+      envFile: null
+      mergeArgs: null
+      mergeDeps: null
+      mergeEnv: null
+      mergeInputs: null
+      mergeOutputs: null
+      outputStyle: null
+      retryCount: null
+      runDepsInParallel: null
+      runInCI: null
+      runFromWorkspaceRoot: null
     platform: node
   lint-fix:
     command:
@@ -17,5 +39,32 @@ tasks:
     - common:lint
     - --
     - --fix
+    args: null
+    deps: null
+    env: null
+    inputs: null
+    local: false
+    outputs: null
+    options:
+      cache: null
+      envFile: null
+      mergeArgs: null
+      mergeDeps: null
+      mergeEnv: null
+      mergeInputs: null
+      mergeOutputs: null
+      outputStyle: null
+      retryCount: null
+      runDepsInParallel: null
+      runInCI: null
+      runFromWorkspaceRoot: null
     platform: node
+type: unknown
+workspace:
+  inheritedTasks:
+    exclude: null
+    include: null
+    rename: null
+  node: null
+  typescript: true
 

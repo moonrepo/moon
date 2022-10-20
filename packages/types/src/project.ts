@@ -2,6 +2,8 @@ import type { Platform } from './common';
 import type {
 	DependencyConfig,
 	ProjectConfig,
+	ProjectLanguage,
+	ProjectType,
 	TaskMergeStrategy,
 	TaskOutputStyle,
 } from './project-config';
@@ -56,7 +58,9 @@ export interface Project {
 	dependencies: Record<string, ProjectDependency>;
 	fileGroups: Record<string, FileGroup>;
 	id: string;
+	language: ProjectLanguage;
 	root: string;
 	source: string;
 	tasks: Record<string, Task>;
+	type: ProjectType;
 }

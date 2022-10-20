@@ -65,7 +65,7 @@ impl DepGraph {
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Runtime {
-        match &project.config.language {
+        match &project.language {
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
                 let version = match &project.config.workspace.node {
                     Some(ProjectWorkspaceNodeConfig {

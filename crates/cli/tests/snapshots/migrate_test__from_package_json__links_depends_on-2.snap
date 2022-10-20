@@ -4,6 +4,7 @@ assertion_line: 40
 expression: "fs::read_to_string(fixture.path().join(\"package-json/deps/moon.yml\")).unwrap()"
 ---
 ---
+language: javascript
 dependsOn:
   - common
 tasks:

@@ -17,6 +17,11 @@ use yaml_rust::YamlEmitter;
 pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::error::Error>> {
     let mut root = Hash::new();
 
+    root.insert(
+        Yaml::String("language".to_owned()),
+        Yaml::String(to_string(&config.language)?.trim().to_owned()),
+    );
+
     if !config.depends_on.is_empty() {
         let mut depends_on = vec![];
 
@@ -98,7 +103,7 @@ pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::er
             if !matches!(task_config.platform, PlatformType::Node) {
                 task.insert(
                     Yaml::String("platform".to_owned()),
-                    Yaml::String(to_string(&task_config.platform)?),
+                    Yaml::String(to_string(&task_config.platform)?.trim().to_owned()),
                 );
             }
 

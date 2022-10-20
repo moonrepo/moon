@@ -260,7 +260,13 @@ impl<'a> TokenResolver<'a> {
     }
 
     pub fn resolve_var(&self, value: &str, task: &Task) -> Result<String, TokenError> {
-        let matches = TOKEN_VAR_PATTERN.captures(value).unwrap();
+        let matches = match TOKEN_VAR_PATTERN.captures(value) {
+            Some(value) => value,
+            None => {
+                return Ok(value.to_owned());
+            }
+        };
+
         let token = matches.get(0).unwrap().as_str(); // $var
         let var = matches.get(1).unwrap().as_str(); // var
 
@@ -281,17 +287,11 @@ impl<'a> TokenResolver<'a> {
             "taskType" => task.type_of.to_string(),
             "workspaceRoot" => path::to_string(workspace_root)?,
             _ => {
-                warn!(
-                    target: "moon:project:token",
-                    "Found a token variable in \"{}\" that is not supported, but this may be intentional, so leaving it.",
-                    value
-                );
-
-                return Ok(String::from(value));
+                return Ok(value.to_owned());
             }
         };
 
-        Ok(String::from(value).replace(token, &var_value))
+        Ok(value.to_owned().replace(token, &var_value))
     }
 
     fn convert_string_to_u8(&self, token: &str, value: String) -> Result<u8, TokenError> {

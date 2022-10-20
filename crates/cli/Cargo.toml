@@ -48,6 +48,7 @@ serde_yaml = "0.9.13"
 strum = { version = "0.24.1", features = ["derive"] }
 tera = { version = "1.17.1", features = ["preserve_order"] }
 tokio = { workspace = true }
+yaml-rust = { version = "0.4.5", package = "yaml-rust-davvid" }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }

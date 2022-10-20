@@ -3,67 +3,17 @@ source: crates/cli/tests/migrate_test.rs
 assertion_line: 40
 expression: "fs::read_to_string(fixture.path().join(\"package-json/deps/moon.yml\")).unwrap()"
 ---
+---
 dependsOn:
-- common
-fileGroups: {}
-language: javascript
-project: null
+  - common
 tasks:
   build:
     command:
-    - babel
-    - ./src
-    - --out
-    - ./lib
-    args: null
-    deps: null
-    env: null
-    inputs: null
-    local: false
+      - babel
+      - "./src"
+      - "--out"
+      - "./lib"
     outputs:
-    - lib
-    options:
-      cache: null
-      envFile: null
-      mergeArgs: null
-      mergeDeps: null
-      mergeEnv: null
-      mergeInputs: null
-      mergeOutputs: null
-      outputStyle: null
-      retryCount: null
-      runDepsInParallel: null
-      runInCI: null
-      runFromWorkspaceRoot: null
-    platform: node
+      - lib
   test:
     command: jest
-    args: null
-    deps: null
-    env: null
-    inputs: null
-    local: false
-    outputs: null
-    options:
-      cache: null
-      envFile: null
-      mergeArgs: null
-      mergeDeps: null
-      mergeEnv: null
-      mergeInputs: null
-      mergeOutputs: null
-      outputStyle: null
-      retryCount: null
-      runDepsInParallel: null
-      runInCI: null
-      runFromWorkspaceRoot: null
-    platform: node
-type: unknown
-workspace:
-  inheritedTasks:
-    exclude: null
-    include: null
-    rename: null
-  node: null
-  typescript: true
-

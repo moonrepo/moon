@@ -7,9 +7,7 @@ use crate::project::dep::DependencyConfig;
 use crate::project::task::TaskConfig;
 use crate::project::workspace::ProjectWorkspaceConfig;
 use crate::types::{FileGroups, ProjectID};
-use crate::validators::{
-    skip_if_btree_empty, skip_if_default, skip_if_hash_empty, skip_if_vec_empty, validate_id,
-};
+use crate::validators::validate_id;
 use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
@@ -138,30 +136,23 @@ pub enum ProjectDependsOn {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectConfig {
-    #[serde(skip_serializing_if = "skip_if_vec_empty")]
     pub depends_on: Vec<ProjectDependsOn>,
 
-    #[serde(skip_serializing_if = "skip_if_hash_empty")]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
     pub language: ProjectLanguage,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
-    #[serde(skip_serializing_if = "skip_if_btree_empty")]
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: BTreeMap<String, TaskConfig>,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
     #[serde(rename = "type")]
     pub type_of: ProjectType,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
     #[validate]
     pub workspace: ProjectWorkspaceConfig,
 

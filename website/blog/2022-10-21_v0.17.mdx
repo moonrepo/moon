@@ -2,8 +2,8 @@
 slug: v0.17
 title: v0.17 - Webhooks, extended YAML, and improved runtime performance
 authors: [milesj]
-tags: [notifier, runner, editors, vscode]
-# image: ./img/v0.17.png
+tags: [notifier, runner, config, editors, vscode]
+image: ./img/v0.17.png
 ---
 
 import Tabs from '@theme/Tabs';
@@ -17,6 +17,20 @@ webhooks! We've also spent some time working on quality of life improvements.
 ## Breaking changes
 
 To start, we have a few breaking changes this release to be aware of!
+
+### Minor changes to ID formatting
+
+An ID refers to many things — project names, task names, target segments, so on and so forth. When
+parsing these values, we format them to remove unwanted characters, as these IDs are used in many
+contexts, many of which need to be strict.
+
+Previously, we would remove unwanted characters entirely. Instead, we now replace them with dashes
+(`-`) for better readability. Take the following for example:
+
+| ID         | Old       | New        |
+| :--------- | :-------- | :--------- |
+| domain.com | domaincom | domain-com |
+| build:esm  | buildesm  | build-esm  |
 
 ### Task `type` has been renamed to `platform`
 
@@ -59,7 +73,7 @@ tasks:
 
 > Because of this change, the `$taskType` token was also renamed to `$taskPlatform`!
 
-## Webhook events
+## Webhook events (experimental)
 
 Looking to gather metrics for your pipelines? Gain insight into run durations and failures? Maybe
 you want to send Slack or Discord notifications? With our new notifier system, this is now possible

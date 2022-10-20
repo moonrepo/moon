@@ -3,7 +3,6 @@ use crate::helpers::load_workspace;
 use moon_project::Project;
 use std::env;
 
-#[derive(Default)]
 pub struct CheckOptions {
     pub report: bool,
 }

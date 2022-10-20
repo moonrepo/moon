@@ -3,20 +3,18 @@ source: crates/cli/tests/migrate_test.rs
 assertion_line: 40
 expression: "fs::read_to_string(fixture.path().join(\"package-json/deps/moon.yml\")).unwrap()"
 ---
-dependsOn:
-- common
+---
 language: javascript
+dependsOn:
+  - common
 tasks:
   build:
     command:
-    - babel
-    - ./src
-    - --out
-    - ./lib
+      - babel
+      - "./src"
+      - "--out"
+      - "./lib"
     outputs:
-    - lib
-    platform: node
+      - lib
   test:
     command: jest
-    platform: node
-

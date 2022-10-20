@@ -1,17 +1,21 @@
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
-use moon_logger::{color, error};
+use moon_logger::{color, error, trace};
 use moon_utils::time::chrono::prelude::*;
 use moon_workspace::Workspace;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 
-#[derive(Serialize)]
+const LOG_TARGET: &str = "moon:notifier:webhooks";
+
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WebhookPayload<T: Serialize> {
     pub created_at: DateTime<Utc>,
 
+    // Only for testing!
+    #[serde(skip_deserializing)]
     pub event: T,
 
     #[serde(rename = "type")]
@@ -29,6 +33,8 @@ pub async fn notify_webhook(
         .body(body)
         .header("Accept", "application/json")
         .header("Content-Type", "application/json")
+        .header("Connection", "keep-alive")
+        .header("Keep-Alive", "timeout=30, max=120")
         .send()
         .await
 }
@@ -62,13 +68,20 @@ impl Subscriber for WebhooksSubscriber {
             return Ok(EventFlow::Continue);
         }
 
-        let body = serde_json::to_string(&WebhookPayload {
+        let payload = WebhookPayload {
             created_at: Utc::now(),
             event,
             type_of: event.get_type(),
             uuid: self.uuid.clone(),
-        })
-        .unwrap();
+        };
+
+        trace!(
+            target: LOG_TARGET,
+            "Posting event {} to webhook endpoint",
+            color::id(&payload.type_of),
+        );
+
+        let body = serde_json::to_string(&payload).unwrap();
 
         // For the first event, we want to ensure that the webhook URL is valid
         // by sending the request and checking for a failure. If failed,
@@ -80,7 +93,7 @@ impl Subscriber for WebhooksSubscriber {
                 self.enabled = false;
 
                 error!(
-                    target: "moon:notifier:webhooks",
+                    target: LOG_TARGET,
                     "Failed to send webhook event to {}. Subsequent webhook requests will be disabled.",
                     color::url(&self.url),
                 );

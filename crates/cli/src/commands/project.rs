@@ -33,8 +33,8 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
         term.render_entry("Root", color::path(&project.root))?;
     }
 
-    term.render_entry("Language", term.format(&config.language))?;
-    term.render_entry("Type", term.format(&config.type_of))?;
+    term.render_entry("Language", term.format(&project.language))?;
+    term.render_entry("Type", term.format(&project.type_of))?;
 
     if let Some(meta) = &config.project {
         term.render_entry("Name", &meta.name)?;

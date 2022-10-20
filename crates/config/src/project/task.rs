@@ -1,9 +1,7 @@
 use crate::project::local_config::{ProjectConfig, ProjectLanguage};
 use crate::project::task_options::TaskOptionsConfig;
 use crate::types::{FilePath, InputValue, TargetID};
-use crate::validators::{
-    skip_if_default, validate_child_or_root_path, validate_id, validate_target,
-};
+use crate::validators::{validate_child_or_root_path, validate_id, validate_target};
 use moon_utils::process::split_args;
 use moon_utils::process::ArgsParseError;
 use moon_utils::regex::{ENV_VAR, NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
@@ -76,35 +74,26 @@ pub enum TaskCommandArgs {
 #[schemars(default)]
 #[serde(default)]
 pub struct TaskConfig {
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<TaskCommandArgs>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub args: Option<TaskCommandArgs>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_deps")]
     pub deps: Option<Vec<TargetID>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub env: Option<HashMap<String, String>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<InputValue>>,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
     pub local: bool,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_outputs")]
     pub outputs: Option<Vec<FilePath>>,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
     #[validate]
     pub options: TaskOptionsConfig,
 
-    #[serde(skip_serializing_if = "skip_if_default")]
     pub platform: PlatformType,
 }
 

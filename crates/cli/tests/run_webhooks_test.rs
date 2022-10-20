@@ -1,140 +1,118 @@
-// mod utils;
+mod utils;
 
-// use insta::assert_snapshot;
-// use moon_cache::CacheEngine;
-// use moon_utils::path::standardize_separators;
-// use moon_utils::test::{
-//     create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
-// };
-// use predicates::prelude::*;
-// use std::fs;
-// use std::io::{Read, Write};
-// use tokio::sync::{mpsc, oneshot};
-// // use std::net::{TcpListener, TcpStream};
-// use std::path::Path;
-// use std::thread;
-// use tokio::net::TcpListener;
-// use tokio::task;
-// use utils::{append_workspace_config, get_path_safe_output};
+use moon_notifier::WebhookPayload;
+use moon_utils::test::{create_moon_command, create_sandbox_with_git};
+use utils::append_workspace_config;
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
-// fn handle_read(mut stream: &TcpStream) {
-//     let mut buf = [0u8; 4096];
-//     match stream.read(&mut buf) {
-//         Ok(_) => {
-//             let req_str = String::from_utf8_lossy(&buf);
-//             println!("{}", req_str);
-//         }
-//         Err(e) => println!("Unable to read stream: {}", e),
-//     }
-// }
+#[tokio::test]
+async fn sends_webhooks() {
+    let server = MockServer::start().await;
+    let fixture = create_sandbox_with_git("cases");
 
-// fn handle_write(mut stream: TcpStream) {
-//     let response = b"HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<html><body>Hello world</body></html>\r\n";
-//     match stream.write(response) {
-//         Ok(_) => println!("Response sent"),
-//         Err(e) => println!("Failed sending response: {}", e),
-//     }
-// }
+    Mock::given(method("POST"))
+        .and(path("/webhook"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(19)
+        .mount(&server)
+        .await;
 
-// fn handle_client(stream: TcpStream) {
-//     // handle_read(&stream);
-//     // handle_write(stream);
-//     println!("CLIENT");
-// }
+    append_workspace_config(
+        fixture.path(),
+        &format!("notifier:\n  webhookUrl: '{}/webhook'", server.uri()),
+    );
 
-// fn create_localhost_server() -> TcpListener {
-//     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    create_moon_command(fixture.path())
+        .arg("run")
+        .arg("node:cjs")
+        .assert();
+}
 
-//     println!("CONNECTED {}", listener.local_addr().unwrap());
+#[tokio::test]
+async fn sends_webhooks_for_cache_events() {
+    let server = MockServer::start().await;
+    let fixture = create_sandbox_with_git("cases");
 
-//     tokio::spawn(async {
-//         for stream in listener.incoming() {
-//             match stream {
-//                 Ok(stream) => {
-//                     thread::spawn(|| handle_client(stream));
-//                 }
-//                 Err(e) => {
-//                     println!("Unable to connect: {}", e);
-//                 }
-//             }
-//         }
-//     });
+    Mock::given(method("POST"))
+        .and(path("/webhook"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(37)
+        .mount(&server)
+        .await;
 
-//     listener
-// }
+    append_workspace_config(
+        fixture.path(),
+        &format!("notifier:\n  webhookUrl: '{}/webhook'", server.uri()),
+    );
 
-// #[tokio::test]
-// async fn sends_webhooks_to_server() {
-//     // let server = create_localhost_server();
-//     let server = TcpListener::bind("127.0.0.1:0").await.unwrap();
-//     let port = server.local_addr().unwrap().port();
+    create_moon_command(fixture.path())
+        .arg("run")
+        .arg("node:cjs")
+        .assert();
 
-//     dbg!(port);
+    // Run again to hit the cache
+    create_moon_command(fixture.path())
+        .arg("run")
+        .arg("node:cjs")
+        .assert();
+}
 
-//     let client = task::spawn(async move {
-//         let fixture = create_sandbox_with_git("cases");
+#[tokio::test]
+async fn doesnt_send_webhooks_if_first_fails() {
+    let server = MockServer::start().await;
+    let fixture = create_sandbox_with_git("cases");
 
-//         append_workspace_config(
-//             fixture.path(),
-//             &format!("notifier:\n  webhookUrl: 'http://127.0.0.1:{}'", port),
-//         );
+    Mock::given(method("POST"))
+        .and(path("/webhook"))
+        .respond_with(ResponseTemplate::new(500))
+        .expect(1)
+        .mount(&server)
+        .await;
 
-//         let assert = create_moon_command(fixture.path())
-//             .arg("run")
-//             .arg("node:cjs")
-//             .assert();
+    append_workspace_config(
+        fixture.path(),
+        &format!("notifier:\n  webhookUrl: '{}/webhook'", server.uri()),
+    );
 
-//         moon_utils::test::debug_sandbox(&fixture, &assert);
+    create_moon_command(fixture.path())
+        .arg("run")
+        .arg("node:cjs")
+        .assert();
+}
 
-//         assert.failure();
-//     });
+#[tokio::test]
+async fn all_webhooks_have_same_uuid() {
+    let server = MockServer::start().await;
+    let fixture = create_sandbox_with_git("cases");
 
-//     server.set_ttl(15).unwrap();
+    Mock::given(method("POST"))
+        .and(path("/webhook"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&server)
+        .await;
 
-//     match (server.accept().await.unwrap(), client.await.unwrap()) {
-//         (conn, _) => {
-//             dbg!(&conn);
-//         }
-//     }
+    append_workspace_config(
+        fixture.path(),
+        &format!("notifier:\n  webhookUrl: '{}/webhook'", server.uri()),
+    );
 
-//     drop(server);
+    create_moon_command(fixture.path())
+        .arg("run")
+        .arg("node:cjs")
+        .assert();
 
-//     panic!("hoops");
-// }
+    let received_requests = server.received_requests().await.unwrap();
+    let mut uuid = None;
 
-// #[tokio::test]
-// async fn sends_webhooks_to_server() {
-//     // let server = create_localhost_server();
-//     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-//     let port = listener.local_addr().unwrap().port();
+    for request in received_requests {
+        let payload: WebhookPayload<String> =
+            serde_json::from_str(&String::from_utf8(request.body).unwrap()).unwrap();
 
-//     dbg!(port);
-
-//     task::spawn(async move {
-//         let fixture = create_sandbox_with_git("cases");
-
-//         append_workspace_config(
-//             fixture.path(),
-//             &format!("notifier:\n  webhookUrl: 'http://127.0.0.1:{}'", port),
-//         );
-
-//         let assert = create_moon_command(fixture.path())
-//             .arg("run")
-//             .arg("node:cjs")
-//             .assert();
-
-//         moon_utils::test::debug_sandbox(&fixture, &assert);
-
-//         assert.failure();
-//     })
-//     .await
-//     .unwrap();
-
-//     let (server, addr) = listener.accept().await.unwrap();
-
-//     dbg!(server);
-
-//     drop(listener);
-
-//     panic!("hoops");
-// }
+        if uuid.is_none() {
+            uuid = Some(payload.uuid);
+        } else {
+            assert_eq!(&payload.uuid, uuid.as_ref().unwrap());
+        }
+    }
+}

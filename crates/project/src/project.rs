@@ -2,7 +2,7 @@ use crate::errors::ProjectError;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
     FilePath, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID,
-    TaskConfig, TaskID,
+    ProjectLanguage, ProjectType, TaskConfig, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
@@ -282,6 +282,9 @@ pub struct Project {
     /// Unique ID for the project. Is the LHS of the `projects` setting.
     pub id: ProjectID,
 
+    /// Primary programming language of the project.
+    pub language: ProjectLanguage,
+
     /// Logging target label.
     #[serde(skip)]
     pub log_target: String,
@@ -294,6 +297,10 @@ pub struct Project {
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
+
+    /// The type of project.
+    #[serde(rename = "type")]
+    pub type_of: ProjectType,
 }
 
 impl PartialEq for Project {
@@ -342,14 +349,16 @@ impl Project {
 
         Ok(Project {
             alias: None,
-            config,
             dependencies,
             file_groups,
             id: String::from(id),
+            language: config.language.clone(),
             log_target,
             root,
             source: String::from(source),
             tasks,
+            type_of: config.type_of.clone(),
+            config,
         })
     }
 

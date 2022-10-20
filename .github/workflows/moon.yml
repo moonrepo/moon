@@ -26,15 +26,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/cache@v3
-        name: Cache cargo
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-      - uses: actions/cache@v3
         name: Cache node modules
         with:
           path: |
@@ -54,6 +45,7 @@ jobs:
         with:
           toolchain: 1.64.0
           profile: minimal
+      - uses: Swatinem/rust-cache@v2
       - uses: moonrepo/tool-version-action@v1
         with:
           node: ${{ matrix.node-version }}

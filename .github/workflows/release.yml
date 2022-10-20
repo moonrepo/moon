@@ -72,16 +72,6 @@ jobs:
     runs-on: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        name: Cache cargo
-        if: ${{ !matrix.docker-target }}
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
         if: ${{ !matrix.docker-target }}
         with:
@@ -89,6 +79,7 @@ jobs:
           profile: minimal
           target: ${{ matrix.target }}
           toolchain: stable
+      - uses: Swatinem/rust-cache@v2
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
         if: ${{ !matrix.docker-target }}
@@ -167,15 +158,7 @@ jobs:
           cache: yarn
           check-latest: true
           node-version: 16
-      - uses: actions/cache@v3
-        name: Cache cargo
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+      - uses: Swatinem/rust-cache@v2
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}

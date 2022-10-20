@@ -74,7 +74,7 @@ pub async fn prune() -> Result<(), Box<dyn std::error::Error>> {
         let project = workspace.projects.load(project_id)?;
 
         // We use a match here to exhaustively check all languages
-        match project.config.language {
+        match project.language {
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
                 is_using_node = true;
             }

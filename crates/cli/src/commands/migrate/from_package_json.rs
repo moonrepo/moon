@@ -1,5 +1,8 @@
 use crate::helpers::load_workspace;
-use moon_config::{DependencyConfig, DependencyScope, ProjectDependsOn};
+use moon_config::{
+    DependencyConfig, DependencyScope, PlatformType, ProjectConfig, ProjectDependsOn,
+    TaskCommandArgs,
+};
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_lang_node::package::{DepsSet, PackageJson};
@@ -7,6 +10,120 @@ use moon_platform_node::create_tasks_from_scripts;
 use moon_utils::fs;
 use serde_yaml::to_string;
 use std::collections::HashMap;
+use yaml_rust::yaml::{Hash, Yaml};
+use yaml_rust::YamlEmitter;
+
+// Dont use serde since it writes *everything*, which is a ton of nulled fields!
+pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::error::Error>> {
+    let mut root = Hash::new();
+
+    root.insert(
+        Yaml::String("language".to_owned()),
+        Yaml::String(to_string(&config.language)?.trim().to_owned()),
+    );
+
+    if !config.depends_on.is_empty() {
+        let mut depends_on = vec![];
+
+        for dep in &config.depends_on {
+            match dep {
+                ProjectDependsOn::String(value) => {
+                    depends_on.push(Yaml::String(value.to_owned()));
+                }
+                ProjectDependsOn::Object(value) => {
+                    let mut dep_value = Hash::new();
+
+                    dep_value.insert(
+                        Yaml::String("id".to_owned()),
+                        Yaml::String(value.id.to_owned()),
+                    );
+
+                    dep_value.insert(
+                        Yaml::String("scope".to_owned()),
+                        Yaml::String(to_string(&value.scope)?),
+                    );
+
+                    if let Some(via) = &value.via {
+                        dep_value
+                            .insert(Yaml::String("via".to_owned()), Yaml::String(via.to_owned()));
+                    }
+                }
+            }
+        }
+
+        root.insert(
+            Yaml::String("dependsOn".to_owned()),
+            Yaml::Array(depends_on),
+        );
+    }
+
+    // We're only declaring fields used in `create_tasks_from_scripts`, not everything
+    if !config.tasks.is_empty() {
+        let mut tasks = Hash::new();
+
+        let convert_string_list = |list: &Vec<String>| {
+            Yaml::Array(list.iter().map(|v| Yaml::String(v.to_owned())).collect())
+        };
+
+        let convert_command_args = |value: &TaskCommandArgs| match value {
+            TaskCommandArgs::String(v) => Yaml::String(v.to_owned()),
+            TaskCommandArgs::Sequence(vs) => convert_string_list(vs),
+        };
+
+        for (id, task_config) in &config.tasks {
+            let mut task = Hash::new();
+
+            if let Some(command) = &task_config.command {
+                task.insert(
+                    Yaml::String("command".to_owned()),
+                    convert_command_args(command),
+                );
+            }
+
+            if let Some(args) = &task_config.args {
+                task.insert(Yaml::String("args".to_owned()), convert_command_args(args));
+            }
+
+            if let Some(outputs) = &task_config.outputs {
+                task.insert(
+                    Yaml::String("outputs".to_owned()),
+                    convert_string_list(outputs),
+                );
+            }
+            if let Some(env) = &task_config.env {
+                let mut env_vars = Hash::new();
+
+                for (key, value) in env {
+                    env_vars.insert(Yaml::String(key.to_owned()), Yaml::String(value.to_owned()));
+                }
+
+                task.insert(Yaml::String("env".to_owned()), Yaml::Hash(env_vars));
+            }
+
+            if !matches!(task_config.platform, PlatformType::Node) {
+                task.insert(
+                    Yaml::String("platform".to_owned()),
+                    Yaml::String(to_string(&task_config.platform)?.trim().to_owned()),
+                );
+            }
+
+            if task_config.local {
+                task.insert(Yaml::String("local".to_owned()), Yaml::Boolean(true));
+            }
+
+            tasks.insert(Yaml::String(id.to_owned()), Yaml::Hash(task));
+        }
+
+        root.insert(Yaml::String("tasks".to_owned()), Yaml::Hash(tasks));
+    }
+
+    let mut out = String::new();
+    let mut emitter = YamlEmitter::new(&mut out);
+
+    emitter.dump(&Yaml::Hash(root))?;
+
+    Ok(out)
+}
 
 pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
@@ -72,7 +189,7 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
 
     fs::write(
         project.root.join(CONFIG_PROJECT_FILENAME),
-        to_string(&project.config)?,
+        convert_to_yaml(&project.config)?,
     )
     .await?;
 

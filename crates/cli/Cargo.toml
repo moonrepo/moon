@@ -52,8 +52,10 @@ yaml-rust = { version = "0.4.5", package = "yaml-rust-davvid" }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
+moon_notifier = { path = "../notifier" }
 assert_cmd = "2.0.4"
 insta = "1.21.0"
 predicates = "2.1.1"
 pretty_assertions = "1.3.0"
 serial_test = "0.9.0"
+wiremock = "0.5.15"

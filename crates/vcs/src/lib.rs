@@ -15,7 +15,9 @@ pub use vcs::*;
 
 #[derive(Debug, Display)]
 pub enum SupportedVcs {
+    #[strum(serialize = "git")]
     Git,
+    #[strum(serialize = "svn")]
     Svn,
 }
 

@@ -26,7 +26,7 @@ use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCom
 use clap::Parser;
 use console::Term;
 use enums::LogLevel;
-use moon_logger::{LevelFilter, Logger};
+use moon_logger::{info, LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use std::env;
 
@@ -132,9 +132,24 @@ pub async fn run_cli() {
             )
             .await
         }
-        Commands::Migrate { command } => match command {
-            MigrateCommands::FromPackageJson { id } => migrate::from_package_json(id).await,
-        },
+        Commands::Migrate {
+            command,
+            skip_touched_files_check,
+        } => {
+            let error_in_check = if *skip_touched_files_check {
+                info!("Skipping touched files check.");
+                None
+            } else {
+                migrate::check_dirty_repo().await.err()
+            };
+            if error_in_check.is_none() {
+                match command {
+                    MigrateCommands::FromPackageJson { id } => migrate::from_package_json(id).await,
+                }
+            } else {
+                Err(error_in_check.unwrap())
+            }
+        }
         Commands::Node { command } => match command {
             NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
         },

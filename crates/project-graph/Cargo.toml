@@ -3,6 +3,10 @@ name = "moon_project_graph"
 version = "0.1.0"
 edition = "2021"
 
+[[bench]]
+name = "graph_benchmark"
+harness = false
+
 [dependencies]
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
@@ -17,5 +21,7 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 moon_platform_node = { path = "../platform-node" }
+criterion = { workspace = true }
 insta = "1.21.0"
 tokio = { workspace = true, features = ["test-util"] }
+

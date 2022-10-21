@@ -6,6 +6,10 @@ use std::time::Duration;
 pub use chrono;
 pub use humantime::{format_duration, parse_duration};
 
+pub fn now_timestamp() -> chrono::NaiveDateTime {
+    chrono::Utc::now().naive_utc()
+}
+
 pub fn elapsed(duration: Duration) -> String {
     if is_test_env() {
         return String::from("100ms"); // Snapshots

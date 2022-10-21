@@ -1,7 +1,7 @@
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, error, trace};
-use moon_utils::time::chrono::prelude::*;
+use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use moon_workspace::Workspace;
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinHandle;
@@ -12,7 +12,7 @@ const LOG_TARGET: &str = "moon:notifier:webhooks";
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WebhookPayload<T: Serialize> {
-    pub created_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
 
     // Only for testing!
     #[serde(skip_deserializing)]
@@ -69,7 +69,7 @@ impl Subscriber for WebhooksSubscriber {
         }
 
         let payload = WebhookPayload {
-            created_at: Utc::now(),
+            created_at: now_timestamp(),
             event,
             type_of: event.get_type(),
             uuid: self.uuid.clone(),

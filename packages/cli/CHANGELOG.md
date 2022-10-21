@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Timestamps have been updated to UTC _without timezone_.
+
 ## 0.17.0
 
 #### 💥 Breaking

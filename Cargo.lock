@@ -2058,6 +2058,7 @@ dependencies = [
  "moon_error",
  "moon_utils",
  "regex",
+ "strum",
  "thiserror",
  "tokio",
 ]

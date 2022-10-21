@@ -12,7 +12,7 @@ use moon_logger::color;
 use moon_project::detect_projects_with_globs;
 use moon_terminal::create_theme;
 use moon_utils::{fs, path};
-use moon_vcs::{Git, Svn, Vcs};
+use moon_vcs::detect_vcs;
 use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::fs::{read_to_string, OpenOptions};
@@ -242,25 +242,6 @@ async fn detect_projects(
     Ok((sorted_projects, project_globs))
 }
 
-/// Detect the version control system being used and the potential default branch.
-async fn detect_vcs(dest_dir: &Path) -> Result<(String, String), AnyError> {
-    if dest_dir.join(".git").exists() {
-        return Ok((
-            "git".into(),
-            Git::new("master", dest_dir)?.get_local_branch().await?,
-        ));
-    }
-
-    if dest_dir.join(".svn").exists() {
-        return Ok((
-            "svn".into(),
-            Svn::new("trunk", dest_dir).get_local_branch().await?,
-        ));
-    }
-
-    Ok(("git".into(), "master".into()))
-}
-
 pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     let working_dir = env::current_dir().unwrap();
     let dest_path = PathBuf::from(dest);
@@ -291,7 +272,7 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     context.insert("node_version_manager", &node_version.1);
     context.insert("projects", &projects);
     context.insert("project_globs", &project_globs);
-    context.insert("vcs_manager", &vcs.0);
+    context.insert("vcs_manager", &vcs.0.to_string());
     context.insert("vcs_default_branch", &vcs.1);
 
     let mut tera = Tera::default();

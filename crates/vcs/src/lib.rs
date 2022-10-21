@@ -43,9 +43,9 @@ pub async fn detect_vcs(
 /// Get all the touched/dirty files in the repository
 pub async fn get_touched_files(path: &Path) -> Result<HashSet<String>, Box<dyn std::error::Error>> {
     let (using_vcs, local_branch) = detect_vcs(path).await?;
-    let vcs = match using_vcs {
-        SupportedVcs::Git => Git::new(&local_branch, path)?,
-        _ => unimplemented!(),
+    let vcs: Box<dyn Vcs> = match using_vcs {
+        SupportedVcs::Git => Box::new(Git::new(&local_branch, path)?),
+        SupportedVcs::Svn => Box::new(Svn::new(&local_branch, path)),
     };
     Ok(vcs.get_touched_files().await?.all)
 }

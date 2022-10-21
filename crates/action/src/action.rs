@@ -69,6 +69,8 @@ pub struct Action {
 
     pub error: Option<String>,
 
+    pub finished_at: Option<NaiveDateTime>,
+
     pub flaky: bool,
 
     pub label: Option<String>,
@@ -88,6 +90,7 @@ impl Action {
             created_at: now_timestamp(),
             duration: None,
             error: None,
+            finished_at: None,
             flaky: false,
             label,
             node_index,
@@ -101,6 +104,7 @@ impl Action {
     }
 
     pub fn done(&mut self, status: ActionStatus) {
+        self.finished_at = Some(now_timestamp());
         self.status = status;
 
         if let Some(start) = &self.start_time {

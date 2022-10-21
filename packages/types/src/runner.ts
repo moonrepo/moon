@@ -22,6 +22,7 @@ export interface Action {
 	createdAt: string;
 	duration: Duration | null;
 	error: string | null;
+	finishedAt: string | null;
 	flaky: boolean;
 	label: string | null;
 	nodeIndex: number;

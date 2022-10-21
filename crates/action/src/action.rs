@@ -1,4 +1,4 @@
-use moon_utils::time::chrono::prelude::*;
+use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 
@@ -24,11 +24,11 @@ pub enum ActionStatus {
 pub struct Attempt {
     pub duration: Option<Duration>,
 
-    pub finished_at: Option<DateTime<Utc>>,
+    pub finished_at: Option<NaiveDateTime>,
 
     pub index: u8,
 
-    pub started_at: DateTime<Utc>,
+    pub started_at: NaiveDateTime,
 
     #[serde(skip)]
     pub start_time: Option<Instant>,
@@ -42,14 +42,14 @@ impl Attempt {
             duration: None,
             finished_at: None,
             index,
-            started_at: Utc::now(),
+            started_at: now_timestamp(),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
         }
     }
 
     pub fn done(&mut self, status: ActionStatus) {
-        self.finished_at = Some(Utc::now());
+        self.finished_at = Some(now_timestamp());
         self.status = status;
 
         if let Some(start) = &self.start_time {
@@ -63,7 +63,7 @@ impl Attempt {
 pub struct Action {
     pub attempts: Option<Vec<Attempt>>,
 
-    pub created_at: DateTime<Utc>,
+    pub created_at: NaiveDateTime,
 
     pub duration: Option<Duration>,
 
@@ -85,7 +85,7 @@ impl Action {
     pub fn new(node_index: usize, label: Option<String>) -> Self {
         Action {
             attempts: None,
-            created_at: Utc::now(),
+            created_at: now_timestamp(),
             duration: None,
             error: None,
             flaky: false,

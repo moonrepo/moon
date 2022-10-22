@@ -4,18 +4,18 @@ name: Benchmark
 on:
   issue_comment:
     types: [created]
-  pull_request:
+  # pull_request:
 env:
   RUST_LOG: info
 jobs:
   bench:
     name: Bench
-    # if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        bench: [dep_graph_benchmark, emitter_benchmark, project_graph_benchmark, runner_benchmark]
-      fail-fast: false
+    # strategy:
+    #   matrix:
+    #     bench: [dep_graph_benchmark, emitter_benchmark, project_graph_benchmark, runner_benchmark]
+    #   fail-fast: false
     steps:
       # Run on base first to get a baseline
       - name: Checkout base branch
@@ -31,7 +31,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
+          # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
+          args: |
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline base-sha
 
       # Run on head second
       - name: Checkout head branch
@@ -43,7 +45,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --workspace --bench ${{ matrix.bench }} -- --save-baseline head-sha
+          # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
+          args: |
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline head-sha
 
       # Compare diffs
       - name: Install critcmp

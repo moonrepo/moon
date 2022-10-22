@@ -23,6 +23,10 @@ jobs:
           toolchain: 1.64.0
           profile: minimal
       - uses: Swatinem/rust-cache@v1
+      - name: Build crates
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
       - name: Run benchmarks
         uses: actions-rs/cargo@v1
         with:

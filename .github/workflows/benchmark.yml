@@ -1,0 +1,39 @@
+# Thanks to Rome! https://github.com/rome/tools/blob/main/.github/workflows/bench_parser.yml
+
+name: Benchmark
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+env:
+  RUST_LOG: info
+jobs:
+  bench:
+    name: Bench
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
+    runs-on: ubuntu-latest
+    steps:
+      # Run on base first to get a baseline
+      - name: Checkout base branch
+        uses: actions/checkout@v3
+        with:
+          clean: false
+          ref: master
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v1
+      - uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: critcmp
+      - uses: actions-rs/cargo@v1
+        with:
+          command: bench
+
+      # Run on head second
+      - name: Checkout head branch
+        uses: actions/checkout@v3
+        with:
+          clean: false
+      - uses: actions-rs/cargo@v1
+        with:
+          command: bench

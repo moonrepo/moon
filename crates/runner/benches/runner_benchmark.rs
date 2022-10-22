@@ -105,7 +105,7 @@ pub fn runner_benchmark(c: &mut Criterion) {
 pub fn runner_with_platforms_benchmark(c: &mut Criterion) {
     c.bench_function("runner_with_platforms", |b| {
         b.iter(|| async {
-            let workspace = Workspace::create(get_fixtures_dir("cases")).await.unwrap();
+            let mut workspace = Workspace::create(get_fixtures_dir("cases")).await.unwrap();
 
             setup_platforms(&mut workspace);
 

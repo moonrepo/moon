@@ -26,7 +26,7 @@ pub fn load_benchmark(c: &mut Criterion) {
         .await
         .unwrap();
 
-        c.bench_function("load", |b| {
+        c.bench_function("project_graph_load", |b| {
             b.iter(|| {
                 // This clones a new project struct every time
                 graph.load("base").unwrap();
@@ -39,7 +39,7 @@ pub fn load_all_benchmark(c: &mut Criterion) {
     let workspace_root = get_fixtures_dir("cases");
     let workspace_config = WorkspaceConfig::default();
 
-    c.bench_function("load_all", |b| {
+    c.bench_function("project_graph_load_all", |b| {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
                 let cache = CacheEngine::create(&workspace_root).await.unwrap();

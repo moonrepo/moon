@@ -4,13 +4,13 @@ name: Benchmark
 on:
   issue_comment:
     types: [created]
-  # pull_request:
+  pull_request:
 env:
   RUST_LOG: info
 jobs:
   bench:
     name: Bench
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
+    # if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     runs-on: ubuntu-latest
     steps:
       # Run on base first to get a baseline
@@ -27,7 +27,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --workspace
+          args: |
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline
+            base-sha
 
       # Run on head second
       - name: Checkout head branch
@@ -39,7 +41,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --workspace
+          args: |
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline
+            head-sha
 
       # Compare diffs
       - name: Install critcmp
@@ -53,15 +57,15 @@ jobs:
         shell: bash
         run: |
           echo "### Benchmark results" > output
-          echo "\`\`\`"  >> output
-          critcmp base new >> output
+          echo "\`\`\`" >> output
+          critcmp base-sha head-sha >> output
           echo "\`\`\`" >> output
           cat output
           comment="$(cat output)"
           comment="${comment//'%'/'%25'}"
           comment="${comment//$'\n'/'%0A'}"
           comment="${comment//$'\r'/'%0D'}"
-          echo "::set-output name=comment::$comment"
+          echo "comment=$comment" >> $GITHUB_OUTPUT
 
       - name: Add comment
         uses: peter-evans/create-or-update-comment@v1.4.5

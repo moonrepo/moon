@@ -24,7 +24,7 @@ pub fn emit_benchmark(c: &mut Criterion) {
     let workspace_root = get_fixtures_dir("cases");
     let runtime = tokio::runtime::Runtime::new().unwrap();
 
-    c.bench_function("emit", |b| {
+    c.bench_function("emitter_emit", |b| {
         b.to_async(&runtime).iter(|| async {
             let workspace = Workspace::create(&workspace_root).await.unwrap();
             let emitter = Emitter::new(Arc::new(RwLock::new(workspace)));

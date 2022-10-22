@@ -12,6 +12,10 @@ jobs:
     name: Bench
     # if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bench: [dep_graph_benchmark, emitter_benchmark, project_graph_benchmark, runner_benchmark]
+      fail-fast: false
     steps:
       # Run on base first to get a baseline
       - name: Checkout base branch
@@ -23,17 +27,11 @@ jobs:
           toolchain: 1.64.0
           profile: minimal
       - uses: Swatinem/rust-cache@v1
-      - name: Build crates
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
       - name: Run benchmarks
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: |
-            --package moon_emitter --package moon_project_graph --package moon_runner -- --save-baseline base-sha
+          args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
 
       # Run on head second
       - name: Checkout head branch
@@ -45,8 +43,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: |
-            --package moon_emitter --package moon_project_graph --package moon_runner -- --save-baseline head-sha
+          args: --workspace --bench ${{ matrix.bench }} -- --save-baseline head-sha
 
       # Compare diffs
       - name: Install critcmp

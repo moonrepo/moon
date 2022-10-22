@@ -16,12 +16,14 @@ const LOG_TARGET: &str = "moon:workspace";
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
-fn find_workspace_root(current_dir: PathBuf) -> Option<PathBuf> {
+fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
     if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
         let root: PathBuf = root.parse().expect("Failed to parse MOON_WORKSPACE_ROOT.");
 
         return Some(root);
     }
+
+    let current_dir = current_dir.as_ref();
 
     trace!(
         target: "moon:workspace",
@@ -126,8 +128,12 @@ impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
     pub async fn load() -> Result<Workspace, WorkspaceError> {
-        let working_dir = env::current_dir().unwrap();
-        let root_dir = match find_workspace_root(working_dir.clone()) {
+        Workspace::create(env::current_dir().unwrap()).await
+    }
+
+    pub async fn create<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
+        let working_dir = working_dir.as_ref();
+        let root_dir = match find_workspace_root(working_dir) {
             Some(dir) => dir,
             None => return Err(WorkspaceError::MissingConfigDir),
         };
@@ -156,7 +162,7 @@ impl Workspace {
             root: root_dir,
             toolchain,
             vcs,
-            working_dir,
+            working_dir: working_dir.to_owned(),
         })
     }
 }

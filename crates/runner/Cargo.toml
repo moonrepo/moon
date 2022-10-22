@@ -3,6 +3,10 @@ name = "moon_runner"
 version = "0.1.0"
 edition = "2021"
 
+[[bench]]
+name = "runner_benchmark"
+harness = false
+
 [dependencies]
 moon_action = { path = "../action" }
 moon_cache = { path = "../cache" }
@@ -33,4 +37,5 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
+criterion = { workspace = true }
 insta = "1.21.0"

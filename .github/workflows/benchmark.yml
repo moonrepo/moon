@@ -33,7 +33,7 @@ jobs:
         with:
           command: bench
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark --profile release -- --save-baseline base-sha
+            --package moon_emitter --package moon_project_graph --package moon_runner -- --save-baseline base-sha
 
       # Run on head second
       - name: Checkout head branch
@@ -46,7 +46,7 @@ jobs:
         with:
           command: bench
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark --profile release -- --save-baseline head-sha
+            --package moon_emitter --package moon_project_graph --package moon_runner -- --save-baseline head-sha
 
       # Compare diffs
       - name: Install critcmp

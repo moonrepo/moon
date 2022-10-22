@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [[bench]]
-name = "graph_benchmark"
+name = "project_graph_benchmark"
 harness = false
 
 [dependencies]

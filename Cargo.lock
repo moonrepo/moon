@@ -2080,6 +2080,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "console",
+ "criterion",
  "insta",
  "moon_action",
  "moon_cache",

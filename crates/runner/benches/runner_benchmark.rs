@@ -1,6 +1,6 @@
 mod utils;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon_action::ActionContext;
 use moon_runner::Runner;
 use moon_utils::test::get_fixtures_dir;
@@ -13,10 +13,12 @@ pub fn runner_benchmark(c: &mut Criterion) {
 
             let dep_graph = utils::setup_dep_graph(&workspace.projects);
 
-            Runner::new(workspace)
-                .run(dep_graph, Some(ActionContext::default()))
-                .await
-                .unwrap();
+            black_box(
+                Runner::new(workspace)
+                    .run(dep_graph, Some(ActionContext::default()))
+                    .await
+                    .unwrap(),
+            );
         })
     });
 }
@@ -30,10 +32,12 @@ pub fn runner_with_platforms_benchmark(c: &mut Criterion) {
 
             let dep_graph = utils::setup_dep_graph(&workspace.projects);
 
-            Runner::new(workspace)
-                .run(dep_graph, Some(ActionContext::default()))
-                .await
-                .unwrap();
+            black_box(
+                Runner::new(workspace)
+                    .run(dep_graph, Some(ActionContext::default()))
+                    .await
+                    .unwrap(),
+            );
         })
     });
 }

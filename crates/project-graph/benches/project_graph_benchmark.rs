@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon_cache::CacheEngine;
 use moon_config::{GlobalProjectConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project_graph::ProjectGraph;
@@ -29,7 +29,7 @@ pub fn load_benchmark(c: &mut Criterion) {
         c.bench_function("project_graph_load", |b| {
             b.iter(|| {
                 // This clones a new project struct every time
-                graph.load("base").unwrap();
+                black_box(graph.load("base").unwrap());
             })
         });
     });
@@ -53,7 +53,7 @@ pub fn load_all_benchmark(c: &mut Criterion) {
                 .unwrap();
 
                 // This does NOT clone but inserts all projects into the graph
-                graph.load_all().unwrap();
+                black_box(graph.load_all().unwrap());
             })
     });
 }

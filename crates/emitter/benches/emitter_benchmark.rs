@@ -1,10 +1,9 @@
-use std::sync::Arc;
-
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon_emitter::{Emitter, Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_utils::test::get_fixtures_dir;
 use moon_workspace::Workspace;
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
 struct TestSubscriber;
@@ -43,6 +42,8 @@ pub fn emit_benchmark(c: &mut Criterion) {
                 .emit(Event::RunnerStarted { actions_count: 1 })
                 .await
                 .unwrap();
+
+            black_box(emitter);
         })
     });
 }

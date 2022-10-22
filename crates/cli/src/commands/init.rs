@@ -272,7 +272,7 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     context.insert("node_version_manager", &node_version.1);
     context.insert("projects", &projects);
     context.insert("project_globs", &project_globs);
-    context.insert("vcs_manager", &vcs.0.to_string());
+    context.insert("vcs_manager", &vcs.0);
     context.insert("vcs_default_branch", &vcs.1);
 
     let mut tera = Tera::default();

@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon_cache::CacheEngine;
 use moon_config::{GlobalProjectConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project_graph::ProjectGraph;
@@ -26,10 +26,10 @@ pub fn load_benchmark(c: &mut Criterion) {
         .await
         .unwrap();
 
-        c.bench_function("load", |b| {
+        c.bench_function("project_graph_load", |b| {
             b.iter(|| {
                 // This clones a new project struct every time
-                graph.load("base").unwrap();
+                black_box(graph.load("base").unwrap());
             })
         });
     });
@@ -39,7 +39,7 @@ pub fn load_all_benchmark(c: &mut Criterion) {
     let workspace_root = get_fixtures_dir("cases");
     let workspace_config = WorkspaceConfig::default();
 
-    c.bench_function("load_all", |b| {
+    c.bench_function("project_graph_load_all", |b| {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
                 let cache = CacheEngine::create(&workspace_root).await.unwrap();
@@ -53,7 +53,7 @@ pub fn load_all_benchmark(c: &mut Criterion) {
                 .unwrap();
 
                 // This does NOT clone but inserts all projects into the graph
-                graph.load_all().unwrap();
+                black_box(graph.load_all().unwrap());
             })
     });
 }

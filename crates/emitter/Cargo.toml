@@ -3,6 +3,9 @@ name = "moon_emitter"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+bench = false
+
 [[bench]]
 name = "emitter_benchmark"
 harness = false

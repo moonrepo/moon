@@ -4,13 +4,13 @@ name: Benchmark
 on:
   issue_comment:
     types: [created]
-  pull_request:
+  # pull_request:
 env:
   RUST_LOG: info
 jobs:
   bench:
     name: Bench
-    # if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     runs-on: ubuntu-latest
     steps:
       # Run on base first to get a baseline
@@ -23,7 +23,8 @@ jobs:
           toolchain: 1.64.0
           profile: minimal
       - uses: Swatinem/rust-cache@v1
-      - uses: actions-rs/cargo@v1
+      - name: Run benchmarks
+        uses: actions-rs/cargo@v1
         with:
           command: bench
           args: --workspace
@@ -34,7 +35,8 @@ jobs:
         with:
           clean: false
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: actions-rs/cargo@v1
+      - name: Run benchmarks
+        uses: actions-rs/cargo@v1
         with:
           command: bench
           args: --workspace

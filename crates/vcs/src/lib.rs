@@ -5,7 +5,7 @@ mod svn;
 mod vcs;
 
 use moon_config::VcsManager;
-use std::{collections::HashSet, path::Path};
+use std::path::Path;
 
 pub use errors::VcsError;
 pub use git::Git;
@@ -30,14 +30,4 @@ pub async fn detect_vcs(
         ));
     }
     Ok((VcsManager::Git, "master".into()))
-}
-
-/// Get all the touched/dirty files in the repository
-pub async fn get_touched_files(path: &Path) -> Result<HashSet<String>, Box<dyn std::error::Error>> {
-    let (using_vcs, local_branch) = detect_vcs(path).await?;
-    let vcs: Box<dyn Vcs> = match using_vcs {
-        VcsManager::Git => Box::new(Git::new(&local_branch, path)?),
-        VcsManager::Svn => Box::new(Svn::new(&local_branch, path)),
-    };
-    Ok(vcs.get_touched_files().await?.all)
 }

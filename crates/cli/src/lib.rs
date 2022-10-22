@@ -21,6 +21,7 @@ use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::sync::sync;
 use crate::commands::teardown::teardown;
+use crate::helpers::load_workspace;
 use crate::helpers::setup_colors;
 use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
@@ -136,18 +137,26 @@ pub async fn run_cli() {
             command,
             skip_touched_files_check,
         } => {
-            let error_in_check = if *skip_touched_files_check {
-                info!("Skipping touched files check.");
-                None
+            let maybe_workspace = load_workspace().await;
+            if let Err(e) = maybe_workspace {
+                Err(e.into())
             } else {
-                migrate::check_dirty_repo().await.err()
-            };
-            if error_in_check.is_none() {
-                match command {
-                    MigrateCommands::FromPackageJson { id } => migrate::from_package_json(id).await,
+                let workspace = maybe_workspace.unwrap();
+                let error_in_check = if *skip_touched_files_check {
+                    info!("Skipping touched files check.");
+                    None
+                } else {
+                    migrate::check_dirty_repo(&workspace).await.err()
+                };
+                if error_in_check.is_none() {
+                    match command {
+                        MigrateCommands::FromPackageJson { id } => {
+                            migrate::from_package_json(workspace, id).await
+                        }
+                    }
+                } else {
+                    Err(error_in_check.unwrap())
                 }
-            } else {
-                Err(error_in_check.unwrap())
             }
         }
         Commands::Node { command } => match command {

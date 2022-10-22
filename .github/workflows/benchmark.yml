@@ -17,23 +17,30 @@ jobs:
       - name: Checkout base branch
         uses: actions/checkout@v3
         with:
-          clean: false
-          ref: master
-      - run: rustup show
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.64.0
+          profile: minimal
       - uses: Swatinem/rust-cache@v1
       - uses: actions-rs/cargo@v1
         with:
-          command: install
-          args: critcmp
-      - uses: actions-rs/cargo@v1
-        with:
           command: bench
+          args: --workspace
 
       # Run on head second
       - name: Checkout head branch
         uses: actions/checkout@v3
         with:
           clean: false
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions-rs/cargo@v1
         with:
           command: bench
+          args: --workspace
+
+      # Compare diffs
+      - uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: critcmp

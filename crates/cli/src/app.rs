@@ -400,7 +400,8 @@ pub enum Commands {
     // moon migrate <operation>
     #[command(
         name = "migrate",
-        about = "Operations for migrating existing projects to moon."
+        about = "Operations for migrating existing projects to moon.",
+        rename_all = "camelCase"
     )]
     Migrate {
         #[command(subcommand)]

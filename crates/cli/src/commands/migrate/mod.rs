@@ -16,7 +16,7 @@ pub async fn check_dirty_repo() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .map_err(|_| "Unable to check if repo is dirty. Did you initialize your VCS?")?
     {
-        Err("Commit or stash your changes before running this command, or use the `--skip-touched-files-check` flag to disable this check.".to_string())?;
+        Err("Commit or stash your changes before running this command, or use the `--skipTouchedFilesCheck` flag to disable this check.".to_string())?;
     }
     Ok(())
 }

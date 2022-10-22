@@ -23,6 +23,11 @@ jobs:
           toolchain: 1.64.0
           profile: minimal
       - uses: Swatinem/rust-cache@v1
+      - name: Install critcmp
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: critcmp
       - name: Run benchmarks
         uses: actions-rs/cargo@v1
         with:
@@ -42,12 +47,6 @@ jobs:
           args: --workspace -- --save-baseline head
 
       # Compare diffs
-      - name: Install critcmp
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: critcmp
-
       - name: Compare benchmarks
         id: bench_comparison
         shell: bash

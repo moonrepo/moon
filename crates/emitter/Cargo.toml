@@ -3,6 +3,10 @@ name = "moon_emitter"
 version = "0.1.0"
 edition = "2021"
 
+[[bench]]
+name = "emitter_benchmark"
+harness = false
+
 [dependencies]
 moon_action = { path = "../action" }
 moon_contract = { path = "../contract" }
@@ -14,3 +18,6 @@ moon_workspace = { path = "../workspace" }
 async-trait = "0.1.57"
 serde = { workspace = true }
 tokio = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }

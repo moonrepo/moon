@@ -1888,6 +1888,7 @@ name = "moon_emitter"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "criterion",
  "moon_action",
  "moon_contract",
  "moon_error",

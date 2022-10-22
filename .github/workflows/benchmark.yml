@@ -28,8 +28,7 @@ jobs:
         with:
           command: bench
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline
-            base-sha
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline base-sha
 
       # Run on head second
       - name: Checkout head branch
@@ -42,8 +41,7 @@ jobs:
         with:
           command: bench
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline
-            head-sha
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline head-sha
 
       # Compare diffs
       - name: Install critcmp

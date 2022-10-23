@@ -16,7 +16,7 @@ async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
         ..WorkspaceConfig::default()
     };
 
-    let toolchain = Toolchain::create_from(base_dir.path(), &config)
+    let toolchain = Toolchain::load_from(base_dir.path(), &config)
         .await
         .unwrap();
 

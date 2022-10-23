@@ -11,8 +11,12 @@ use std::fmt;
 use std::path::Path;
 
 pub trait Platform: Send + Sync {
-    /// Return true if the current platform is for the provided runtime.
-    fn is(&self, runtime: &Runtime) -> bool;
+    /// Return a runtime with an appropriate version based on the provided configs.
+    fn get_runtime_from_config(
+        &self,
+        project_config: &ProjectConfig,
+        workspace_config: &WorkspaceConfig,
+    ) -> Option<Runtime>;
 
     /// Determine if the provided project is within the platform's package manager
     /// workspace (not to be confused with moon's workspace).
@@ -62,6 +66,9 @@ pub trait Platform: Send + Sync {
     ) -> Result<TasksConfigsMap, MoonError> {
         Ok(BTreeMap::new())
     }
+
+    /// Return true if the current platform is for the provided project or runtime.
+    fn matches(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool;
 }
 
 pub type RegisteredPlatforms = Vec<Box<dyn Platform>>;

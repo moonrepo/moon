@@ -1760,7 +1760,7 @@ name = "moon_action"
 version = "0.1.0"
 dependencies = [
  "clap 4.0.16",
- "moon_contract",
+ "moon_platform",
  "moon_utils",
  "serde",
 ]
@@ -1787,9 +1787,9 @@ dependencies = [
  "moon_action",
  "moon_archive",
  "moon_constants",
- "moon_contract",
  "moon_error",
  "moon_logger",
+ "moon_platform",
  "moon_utils",
  "serde",
  "serial_test",
@@ -1816,13 +1816,13 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_constants",
- "moon_contract",
  "moon_error",
  "moon_generator",
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
  "moon_notifier",
+ "moon_platform",
  "moon_platform_node",
  "moon_platform_system",
  "moon_project",
@@ -1875,23 +1875,14 @@ name = "moon_constants"
 version = "0.1.0"
 
 [[package]]
-name = "moon_contract"
-version = "0.1.0"
-dependencies = [
- "moon_config",
- "moon_error",
- "serde",
-]
-
-[[package]]
 name = "moon_emitter"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "criterion",
  "moon_action",
- "moon_contract",
  "moon_error",
+ "moon_platform",
  "moon_project",
  "moon_task",
  "moon_utils",
@@ -1999,6 +1990,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_platform"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_error",
+ "serde",
+]
+
+[[package]]
 name = "moon_platform_node"
 version = "0.1.0"
 dependencies = [
@@ -2007,12 +2007,12 @@ dependencies = [
  "moon_action",
  "moon_cache",
  "moon_config",
- "moon_contract",
  "moon_error",
  "moon_hasher",
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
+ "moon_platform",
  "moon_project",
  "moon_project_graph",
  "moon_task",
@@ -2029,8 +2029,9 @@ dependencies = [
 name = "moon_platform_system"
 version = "0.1.0"
 dependencies = [
- "moon_contract",
+ "moon_config",
  "moon_hasher",
+ "moon_platform",
  "moon_project",
  "moon_task",
  "moon_utils",
@@ -2062,9 +2063,9 @@ dependencies = [
  "insta",
  "moon_cache",
  "moon_config",
- "moon_contract",
  "moon_error",
  "moon_logger",
+ "moon_platform",
  "moon_platform_node",
  "moon_project",
  "moon_task",
@@ -2085,13 +2086,13 @@ dependencies = [
  "moon_action",
  "moon_cache",
  "moon_config",
- "moon_contract",
  "moon_emitter",
  "moon_error",
  "moon_hasher",
  "moon_lang",
  "moon_logger",
  "moon_notifier",
+ "moon_platform",
  "moon_platform_node",
  "moon_platform_system",
  "moon_project",
@@ -2144,11 +2145,11 @@ dependencies = [
  "moon_archive",
  "moon_config",
  "moon_constants",
- "moon_contract",
  "moon_error",
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
+ "moon_platform",
  "moon_utils",
  "predicates",
  "reqwest",

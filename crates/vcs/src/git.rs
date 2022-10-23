@@ -18,7 +18,7 @@ pub struct Git {
 }
 
 impl Git {
-    pub fn new(default_branch: &str, working_dir: &Path) -> VcsResult<Self> {
+    pub fn load(default_branch: &str, working_dir: &Path) -> VcsResult<Self> {
         let root = match fs::find_upwards(".git", working_dir) {
             Some(dir) => dir.parent().unwrap().to_path_buf(),
             None => working_dir.to_path_buf(),
@@ -438,7 +438,7 @@ mod test {
         #[tokio::test]
         async fn filters_ignored_files() {
             let fixture = create_sandbox_with_git("ignore");
-            let git = Git::new("master", fixture.path()).unwrap();
+            let git = Git::load("master", fixture.path()).unwrap();
 
             assert_eq!(
                 git.get_file_hashes(&string_vec!["foo", "bar", "dir/baz", "dir/qux"])
@@ -464,7 +464,7 @@ mod test {
         #[tokio::test]
         async fn filters_ignored_files() {
             let fixture = create_sandbox_with_git("ignore");
-            let git = Git::new("master", fixture.path()).unwrap();
+            let git = Git::load("master", fixture.path()).unwrap();
 
             assert_eq!(
                 git.get_file_tree_hashes(".").await.unwrap(),

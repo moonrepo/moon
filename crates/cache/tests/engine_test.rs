@@ -31,7 +31,7 @@ mod create {
     async fn creates_dirs() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        CacheEngine::create(dir.path()).await.unwrap();
+        CacheEngine::load(dir.path()).await.unwrap();
 
         assert!(dir.path().join(".moon/cache").exists());
         assert!(dir.path().join(".moon/cache/hashes").exists());
@@ -49,7 +49,7 @@ mod delete_hash {
     #[serial]
     async fn deletes_files() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
 
         dir.child(".moon/cache/hashes/abc123.json")
             .write_str("{}")
@@ -77,7 +77,7 @@ mod delete_hash {
     #[serial]
     async fn doesnt_delete_if_cache_off() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
 
         dir.child(".moon/cache/hashes/abc123.json")
             .write_str("{}")
@@ -107,7 +107,7 @@ mod delete_hash {
     #[serial]
     async fn doesnt_delete_if_cache_readonly() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
 
         dir.child(".moon/cache/hashes/abc123.json")
             .write_str("{}")
@@ -141,7 +141,7 @@ mod create_runfile {
     #[serial]
     async fn creates_runfile_on_call() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let runfile = cache
             .create_runfile("123", &"content".to_owned())
             .await
@@ -165,7 +165,7 @@ mod cache_run_target_state {
     #[serial]
     async fn creates_parent_dir_on_call() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
         assert!(!item.path.exists());
@@ -183,7 +183,7 @@ mod cache_run_target_state {
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
                 .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
         assert_eq!(
@@ -207,7 +207,7 @@ mod cache_run_target_state {
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
                 .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = run_with_env("read", || cache.cache_run_target_state("foo:bar"))
             .await
             .unwrap();
@@ -233,7 +233,7 @@ mod cache_run_target_state {
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
                 .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = run_with_env("off", || cache.cache_run_target_state("foo:bar"))
             .await
             .unwrap();
@@ -253,7 +253,7 @@ mod cache_run_target_state {
     #[serial]
     async fn saves_to_cache() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
         item.item.exit_code = 123;
@@ -272,7 +272,7 @@ mod cache_run_target_state {
     #[serial]
     async fn doesnt_save_if_cache_off() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
         item.item.exit_code = 123;
@@ -288,7 +288,7 @@ mod cache_run_target_state {
     #[serial]
     async fn doesnt_save_if_cache_readonly() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
         item.item.exit_code = 123;
@@ -303,13 +303,13 @@ mod cache_run_target_state {
 
 mod cache_tool_state {
     use super::*;
-    use moon_contract::Runtime;
+    use moon_platform::Runtime;
 
     #[tokio::test]
     #[serial]
     async fn creates_parent_dir_on_call() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache
             .cache_tool_state(&Runtime::Node("1.2.3".into()))
             .await
@@ -330,7 +330,7 @@ mod cache_tool_state {
             .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache
             .cache_tool_state(&Runtime::Node("1.2.3".into()))
             .await
@@ -355,7 +355,7 @@ mod cache_tool_state {
             .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let runtime = Runtime::Node("4.5.6".into());
         let item = run_with_env("read", || cache.cache_tool_state(&runtime))
             .await
@@ -380,7 +380,7 @@ mod cache_tool_state {
             .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = run_with_env("off", || cache.cache_tool_state(&Runtime::System))
             .await
             .unwrap();
@@ -394,7 +394,7 @@ mod cache_tool_state {
     #[serial]
     async fn saves_to_cache() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache
             .cache_tool_state(&Runtime::Node("7.8.9".into()))
             .await
@@ -424,7 +424,7 @@ mod cache_projects_state {
     #[serial]
     async fn creates_parent_dir_on_call() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache.cache_projects_state().await.unwrap();
 
         assert!(!item.path.exists());
@@ -442,7 +442,7 @@ mod cache_projects_state {
             .write_str(r#"{"globs":["**/*"],"projects":{"foo":"bar"}}"#)
             .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache.cache_projects_state().await.unwrap();
 
         assert_eq!(
@@ -465,7 +465,7 @@ mod cache_projects_state {
             .write_str(r#"{"globs":["**/*"],"projects":{"foo":"bar"}}"#)
             .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = run_with_env("read", || cache.cache_projects_state())
             .await
             .unwrap();
@@ -490,7 +490,7 @@ mod cache_projects_state {
             .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
             .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = run_with_env("off", || cache.cache_projects_state())
             .await
             .unwrap();
@@ -517,7 +517,7 @@ mod cache_projects_state {
         )
         .unwrap();
 
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache.cache_projects_state().await.unwrap();
 
         assert_eq!(item.item, ProjectsState::default());
@@ -529,7 +529,7 @@ mod cache_projects_state {
     #[serial]
     async fn saves_to_cache() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_projects_state().await.unwrap();
 
         item.item
@@ -560,7 +560,7 @@ mod create_hash_manifest {
     #[serial]
     async fn creates_hash_file() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let hasher = TestHasher::default();
 
         cache.create_hash_manifest("abc123", &hasher).await.unwrap();
@@ -574,7 +574,7 @@ mod create_hash_manifest {
     #[serial]
     async fn doesnt_create_if_cache_off() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let hasher = TestHasher::default();
 
         run_with_env("off", || cache.create_hash_manifest("abc123", &hasher))
@@ -590,7 +590,7 @@ mod create_hash_manifest {
     #[serial]
     async fn doesnt_create_if_cache_readonly() {
         let dir = assert_fs::TempDir::new().unwrap();
-        let cache = CacheEngine::create(dir.path()).await.unwrap();
+        let cache = CacheEngine::load(dir.path()).await.unwrap();
         let hasher = TestHasher::default();
 
         run_with_env("read", || cache.create_hash_manifest("abc123", &hasher))

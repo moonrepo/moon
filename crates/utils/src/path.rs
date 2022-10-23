@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 pub use pathdiff::diff_paths as relative_from;
 
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
+#[inline]
 pub fn expand_root_path<F, P>(file: F, workspace_root: P, project_root: P) -> PathBuf
 where
     F: AsRef<str>,
@@ -22,20 +23,24 @@ where
     }
 }
 
+#[inline]
 pub fn normalize<T: AsRef<Path>>(path: T) -> PathBuf {
     path.as_ref().clean()
 }
 
 #[cfg(not(windows))]
+#[inline]
 pub fn normalize_separators<T: AsRef<str>>(path: T) -> String {
     path.as_ref().replace('\\', "/")
 }
 
 #[cfg(windows)]
+#[inline]
 pub fn normalize_separators<T: AsRef<str>>(path: T) -> String {
     path.as_ref().replace('/', "\\")
 }
 
+#[inline]
 pub fn replace_home_dir<T: AsRef<str>>(value: T) -> String {
     let value = value.as_ref();
 
@@ -51,10 +56,12 @@ pub fn replace_home_dir<T: AsRef<str>>(value: T) -> String {
     value.to_owned()
 }
 
+#[inline]
 pub fn standardize_separators<T: AsRef<str>>(path: T) -> String {
     path.as_ref().replace('\\', "/")
 }
 
+#[inline]
 pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     let mut path = path.as_ref();
 
@@ -69,6 +76,7 @@ pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     }
 }
 
+#[inline]
 pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     Ok(standardize_separators(to_string(path)?))
 }

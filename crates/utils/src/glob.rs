@@ -38,11 +38,13 @@ impl<'t> GlobSet<'t> {
     }
 }
 
+#[inline]
 pub fn create_glob(pattern: &str) -> Result<Glob, GlobError> {
     Ok(Glob::new(pattern).map_err(|e| e.into_owned())?)
 }
 
 // This is not very exhaustive and may be inaccurate.
+#[inline]
 pub fn is_glob<T: AsRef<str>>(value: T) -> bool {
     let value = value.as_ref();
     let single_values = vec!['*', '?', '!'];
@@ -87,16 +89,19 @@ pub fn is_glob<T: AsRef<str>>(value: T) -> bool {
     false
 }
 
+#[inline]
 pub fn normalize<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     path::to_virtual_string(path.as_ref())
 }
 
+#[inline]
 pub fn remove_drive_prefix<T: AsRef<str>>(glob: T) -> String {
     WINDOWS_PREFIX.replace_all(glob.as_ref(), "**").to_string()
 }
 
 /// Wax currently doesn't support negated globs (starts with !),
 /// so we must extract them manually.
+#[inline]
 #[track_caller]
 pub fn split_patterns<P: AsRef<str>>(patterns: &[P]) -> Result<(Vec<Glob>, Vec<Glob>), GlobError> {
     let mut expressions = vec![];
@@ -121,6 +126,7 @@ pub fn split_patterns<P: AsRef<str>>(patterns: &[P]) -> Result<(Vec<Glob>, Vec<G
     Ok((expressions, negations))
 }
 
+#[inline]
 #[track_caller]
 pub fn walk<T: AsRef<Path>, P: AsRef<str>>(
     base_dir: T,

@@ -53,8 +53,34 @@ pub struct NodePlatform {
 }
 
 impl Platform for NodePlatform {
-    fn is(&self, runtime: &Runtime) -> bool {
-        matches!(runtime, Runtime::Node(_))
+    fn get_runtime_from_config(
+        &self,
+        project_config: &ProjectConfig,
+        workspace_config: &WorkspaceConfig,
+    ) -> Option<Runtime> {
+        if let Some(node_config) = &project_config.workspace.node {
+            if let Some(version) = &node_config.version {
+                return Some(Runtime::Node(version.to_owned()));
+            }
+        }
+
+        if let Some(node_config) = &workspace_config.node {
+            return Some(Runtime::Node(node_config.version.to_owned()));
+        }
+
+        None
+    }
+
+    fn is(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool {
+        if project_config.language.is_node_platform() {
+            return true;
+        }
+
+        if let Some(runtime) = &runtime {
+            return matches!(runtime, Runtime::Node(_));
+        }
+
+        false
     }
 
     fn is_project_in_package_manager_workspace(
@@ -167,14 +193,10 @@ impl Platform for NodePlatform {
         &self,
         project_id: &str,
         project_root: &Path,
-        project_config: &ProjectConfig,
+        _project_config: &ProjectConfig,
         _aliases_map: &ProjectsAliasesMap,
     ) -> Result<Vec<DependencyConfig>, MoonError> {
         let mut implicit_deps = vec![];
-
-        if !project_config.language.is_node_platform() {
-            return Ok(implicit_deps);
-        }
 
         debug!(
             target: LOG_TARGET,
@@ -216,20 +238,16 @@ impl Platform for NodePlatform {
         &self,
         project_id: &str,
         project_root: &Path,
-        project_config: &ProjectConfig,
+        _project_config: &ProjectConfig,
         _workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
         let mut tasks = BTreeMap::new();
 
-        if !project_config.language.is_node_platform()
-            || !workspace_config
-                .node
-                .as_ref()
-                .unwrap()
-                .infer_tasks_from_scripts
-        {
-            return Ok(tasks);
+        if let Some(node_config) = &workspace_config.node {
+            if !node_config.infer_tasks_from_scripts {
+                return Ok(tasks);
+            }
         }
 
         debug!(

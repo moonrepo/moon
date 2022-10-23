@@ -2029,6 +2029,7 @@ dependencies = [
 name = "moon_platform_system"
 version = "0.1.0"
 dependencies = [
+ "moon_config",
  "moon_hasher",
  "moon_platform",
  "moon_project",

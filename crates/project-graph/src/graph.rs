@@ -328,6 +328,10 @@ impl ProjectGraph {
         project.alias = self.find_alias_for_id(id);
 
         for platform in &self.platforms {
+            if !platform.is(&project.config, None) {
+                continue;
+            }
+
             // Determine implicit dependencies
             for dep_cfg in platform.load_project_implicit_dependencies(
                 id,

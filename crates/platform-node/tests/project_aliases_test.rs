@@ -21,11 +21,11 @@ async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
         ..WorkspaceConfig::default()
     };
 
-    let mut graph = ProjectGraph::create(
+    let mut graph = ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
         GlobalProjectConfig::default(),
-        &CacheEngine::create(&workspace_root).await.unwrap(),
+        &CacheEngine::load(&workspace_root).await.unwrap(),
     )
     .await
     .unwrap();

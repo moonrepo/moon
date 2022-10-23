@@ -25,11 +25,11 @@ async fn create_project_graph() -> (ProjectGraph, TempDir) {
     };
 
     (
-        ProjectGraph::create(
+        ProjectGraph::generate(
             workspace_root,
             &workspace_config,
             GlobalProjectConfig::default(),
-            &CacheEngine::create(workspace_root).await.unwrap(),
+            &CacheEngine::load(workspace_root).await.unwrap(),
         )
         .await
         .unwrap(),
@@ -64,11 +64,11 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
     };
 
     (
-        ProjectGraph::create(
+        ProjectGraph::generate(
             workspace_root,
             &workspace_config,
             global_config,
-            &CacheEngine::create(workspace_root).await.unwrap(),
+            &CacheEngine::load(workspace_root).await.unwrap(),
         )
         .await
         .unwrap(),

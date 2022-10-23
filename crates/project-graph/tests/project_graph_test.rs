@@ -30,11 +30,11 @@ async fn get_aliases_graph() -> ProjectGraph {
         ..WorkspaceConfig::default()
     };
 
-    ProjectGraph::create(
+    ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
         GlobalProjectConfig::default(),
-        &CacheEngine::create(&workspace_root).await.unwrap(),
+        &CacheEngine::load(&workspace_root).await.unwrap(),
     )
     .await
     .unwrap()
@@ -52,11 +52,11 @@ async fn get_dependencies_graph() -> ProjectGraph {
         ..WorkspaceConfig::default()
     };
 
-    ProjectGraph::create(
+    ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
         GlobalProjectConfig::default(),
-        &CacheEngine::create(&workspace_root).await.unwrap(),
+        &CacheEngine::load(&workspace_root).await.unwrap(),
     )
     .await
     .unwrap()
@@ -74,11 +74,11 @@ async fn get_dependents_graph() -> ProjectGraph {
         ..WorkspaceConfig::default()
     };
 
-    ProjectGraph::create(
+    ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
         GlobalProjectConfig::default(),
-        &CacheEngine::create(&workspace_root).await.unwrap(),
+        &CacheEngine::load(&workspace_root).await.unwrap(),
     )
     .await
     .unwrap()
@@ -102,11 +102,11 @@ mod globs {
             ..WorkspaceConfig::default()
         };
 
-        let graph = ProjectGraph::create(
+        let graph = ProjectGraph::generate(
             fixture.path(),
             &workspace_config,
             GlobalProjectConfig::default(),
-            &CacheEngine::create(fixture.path()).await.unwrap(),
+            &CacheEngine::load(fixture.path()).await.unwrap(),
         )
         .await
         .unwrap();
@@ -141,11 +141,11 @@ mod globs {
             ..WorkspaceConfig::default()
         };
 
-        let graph = ProjectGraph::create(
+        let graph = ProjectGraph::generate(
             fixture.path(),
             &workspace_config,
             GlobalProjectConfig::default(),
-            &CacheEngine::create(fixture.path()).await.unwrap(),
+            &CacheEngine::load(fixture.path()).await.unwrap(),
         )
         .await
         .unwrap();

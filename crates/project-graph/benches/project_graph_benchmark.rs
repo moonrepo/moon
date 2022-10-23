@@ -15,9 +15,9 @@ pub fn load_benchmark(c: &mut Criterion) {
     let runtime = tokio::runtime::Runtime::new().unwrap();
 
     runtime.block_on(async {
-        let cache = CacheEngine::create(&workspace_root).await.unwrap();
+        let cache = CacheEngine::load(&workspace_root).await.unwrap();
 
-        let graph = ProjectGraph::create(
+        let graph = ProjectGraph::generate(
             &workspace_root,
             &workspace_config,
             GlobalProjectConfig::default(),
@@ -42,8 +42,8 @@ pub fn load_all_benchmark(c: &mut Criterion) {
     c.bench_function("project_graph_load_all", |b| {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
-                let cache = CacheEngine::create(&workspace_root).await.unwrap();
-                let graph = ProjectGraph::create(
+                let cache = CacheEngine::load(&workspace_root).await.unwrap();
+                let graph = ProjectGraph::generate(
                     &workspace_root,
                     &workspace_config,
                     GlobalProjectConfig::default(),

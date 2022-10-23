@@ -43,7 +43,15 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub async fn create_from<P: AsRef<Path>>(
+    pub async fn load(workspace_config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
+        Toolchain::load_from(
+            path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
+            workspace_config,
+        )
+        .await
+    }
+
+    pub async fn load_from<P: AsRef<Path>>(
         base_dir: P,
         workspace_config: &WorkspaceConfig,
     ) -> Result<Toolchain, ToolchainError> {
@@ -72,14 +80,6 @@ impl Toolchain {
         }
 
         Ok(toolchain)
-    }
-
-    pub async fn create(workspace_config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
-        Toolchain::create_from(
-            path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
-            workspace_config,
-        )
-        .await
     }
 
     pub fn get_paths(&self) -> ToolchainPaths {

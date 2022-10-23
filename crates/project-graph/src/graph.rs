@@ -121,7 +121,7 @@ impl Platformable for ProjectGraph {
 }
 
 impl ProjectGraph {
-    pub async fn create(
+    pub async fn generate(
         workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
         global_config: GlobalProjectConfig,

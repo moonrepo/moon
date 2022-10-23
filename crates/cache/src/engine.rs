@@ -29,7 +29,7 @@ pub struct CacheEngine {
 }
 
 impl CacheEngine {
-    pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
+    pub async fn load(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
         let out_dir = dir.join("out");

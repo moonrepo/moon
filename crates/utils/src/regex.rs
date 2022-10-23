@@ -35,26 +35,32 @@ lazy_static! {
                 Regex::new("^(cd|cmd|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy)$").unwrap();
 }
 
+#[inline]
 pub fn create_regex(value: &str) -> Result<Regex, MoonError> {
     Regex::new(value).map_err(MoonError::Regex)
 }
 
+#[inline]
 pub fn clean_id(id: &str) -> String {
     ID_CLEAN.replace_all(id, "-").to_string()
 }
 
+#[inline]
 pub fn matches_id(id: &str) -> bool {
     ID_PATTERN.is_match(id)
 }
 
+#[inline]
 pub fn matches_target(target_id: &str) -> bool {
     TARGET_PATTERN.is_match(target_id)
 }
 
+#[inline]
 pub fn matches_token_func(token: &str) -> bool {
     TOKEN_FUNC_PATTERN.is_match(token)
 }
 
+#[inline]
 pub fn matches_token_var(token: &str) -> bool {
     TOKEN_VAR_PATTERN.is_match(token)
 }

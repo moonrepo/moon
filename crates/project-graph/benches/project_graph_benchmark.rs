@@ -53,7 +53,7 @@ pub fn load_all_benchmark(c: &mut Criterion) {
                 .unwrap();
 
                 // This does NOT clone but inserts all projects into the graph
-                black_box(graph.load_all().unwrap());
+                graph.load_all().unwrap();
             })
     });
 }

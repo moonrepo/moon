@@ -8,6 +8,7 @@ lazy_static! {
 }
 
 // https://github.com/clap-rs/clap/blob/master/src/util/mod.rs#L25
+#[inline]
 pub fn safe_exit(code: i32) -> ! {
     use std::io::Write;
 
@@ -17,6 +18,7 @@ pub fn safe_exit(code: i32) -> ! {
     std::process::exit(code)
 }
 
+#[inline]
 pub fn replace_style_tokens<T: AsRef<str>>(value: T) -> String {
     String::from(STYLE_TOKEN.replace_all(value.as_ref(), |caps: &Captures| {
         let token = caps.get(1).map_or("", |m| m.as_str());

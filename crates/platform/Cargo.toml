@@ -1,5 +1,5 @@
 [package]
-name = "moon_contract"
+name = "moon_platform"
 version = "0.1.0"
 edition = "2021"
 

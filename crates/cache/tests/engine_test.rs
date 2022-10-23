@@ -303,7 +303,7 @@ mod cache_run_target_state {
 
 mod cache_tool_state {
     use super::*;
-    use moon_contract::Runtime;
+    use moon_platform::Runtime;
 
     #[tokio::test]
     #[serial]

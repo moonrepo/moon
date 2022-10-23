@@ -7,12 +7,12 @@ use moon_config::{
     DependencyConfig, DependencyScope, NodeProjectAliasFormat, ProjectConfig, ProjectID,
     ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
 };
-use moon_contract::{Platform, Runtime};
 use moon_error::MoonError;
 use moon_lang_node::node::{get_package_manager_workspaces, parse_package_name};
 use moon_lang_node::package::PackageJson;
 use moon_lang_node::NPM;
 use moon_logger::{color, debug, warn};
+use moon_platform::{Platform, Runtime};
 use moon_task::TaskError;
 use moon_utils::glob::GlobSet;
 use std::{

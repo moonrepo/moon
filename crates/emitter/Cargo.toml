@@ -12,7 +12,7 @@ harness = false
 
 [dependencies]
 moon_action = { path = "../action" }
-moon_contract = { path = "../contract" }
+moon_platform = { path = "../platform" }
 moon_error = { path = "../error" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }

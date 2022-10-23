@@ -2,7 +2,7 @@ pub mod actions;
 mod hasher;
 
 pub use hasher::SystemTargetHasher;
-use moon_contract::{Platform, Runtime};
+use moon_platform::{Platform, Runtime};
 
 #[derive(Default)]
 pub struct SystemPlatform;

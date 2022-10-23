@@ -1,4 +1,4 @@
-use moon_contract::Platformable;
+use moon_platform::Platformable;
 use moon_platform_node::NodePlatform;
 use moon_platform_system::SystemPlatform;
 use moon_project_graph::ProjectGraph;

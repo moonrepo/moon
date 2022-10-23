@@ -1,5 +1,5 @@
 use crate::{Tool, ToolchainError};
-use moon_contract::Runtime;
+use moon_platform::Runtime;
 use std::collections::HashMap;
 
 #[derive(Debug)]

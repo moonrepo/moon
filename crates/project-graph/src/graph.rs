@@ -3,9 +3,9 @@ use moon_config::{
     GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
     WorkspaceProjects,
 };
-use moon_contract::{Platform, Platformable, RegisteredPlatforms};
 use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
+use moon_platform::{Platform, Platformable, RegisteredPlatforms};
 use moon_project::{
     detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
 };

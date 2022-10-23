@@ -1,5 +1,5 @@
 use crate::helpers::{create_progress_bar, load_workspace};
-use moon_contract::Runtime;
+use moon_platform::Runtime;
 use moon_runner::{DepGraph, Runner};
 use moon_utils::is_test_env;
 

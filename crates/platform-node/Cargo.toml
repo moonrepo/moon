@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 moon_action = { path = "../action" }
 moon_config = { path = "../config" }
-moon_contract = { path = "../contract" }
+moon_platform = { path = "../platform" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_lang = { path = "../lang" }

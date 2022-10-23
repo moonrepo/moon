@@ -3,6 +3,7 @@ use std::env;
 use tokio::process::Command as TokioCommand;
 
 #[cached]
+#[inline]
 fn is_program_on_path(program_name: String) -> bool {
     let system_path = match env::var_os("PATH") {
         Some(x) => x,
@@ -19,6 +20,7 @@ fn is_program_on_path(program_name: String) -> bool {
 }
 
 // https://thinkpowershell.com/decision-to-switch-to-powershell-core-pwsh/
+#[inline]
 pub fn create_windows_shell() -> (String, TokioCommand) {
     let shell = if is_program_on_path("pwsh.exe".into()) {
         "pwsh.exe".into()

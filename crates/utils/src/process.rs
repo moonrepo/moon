@@ -11,18 +11,22 @@ use tokio::task;
 pub use shell_words::{join as join_args, split as split_args, ParseError as ArgsParseError};
 pub use std::process::{ExitStatus, Output, Stdio};
 
+#[inline]
 pub fn is_windows_script(bin: &str) -> bool {
     bin.ends_with(".cmd") || bin.ends_with(".bat") || bin.ends_with(".ps1")
 }
 
+#[inline]
 pub fn output_to_string(data: &[u8]) -> String {
     String::from_utf8(data.to_vec()).unwrap_or_default()
 }
 
+#[inline]
 pub fn output_to_trimmed_string(data: &[u8]) -> String {
     output_to_string(data).trim().to_owned()
 }
 
+#[inline]
 pub fn format_running_command(
     command_line: &str,
     working_dir: Option<&Path>,

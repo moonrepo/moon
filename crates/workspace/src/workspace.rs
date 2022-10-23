@@ -128,10 +128,10 @@ impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
     pub async fn load() -> Result<Workspace, WorkspaceError> {
-        Workspace::create(env::current_dir().unwrap()).await
+        Workspace::load_from(env::current_dir().unwrap()).await
     }
 
-    pub async fn create<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
+    pub async fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
         let working_dir = working_dir.as_ref();
         let root_dir = match find_workspace_root(working_dir) {
             Some(dir) => dir,
@@ -150,9 +150,9 @@ impl Workspace {
         let project_config = load_global_project_config(&root_dir)?;
 
         // Setup components
-        let cache = CacheEngine::create(&root_dir).await?;
-        let toolchain = Toolchain::create(&config).await?;
-        let projects = ProjectGraph::create(&root_dir, &config, project_config, &cache).await?;
+        let cache = CacheEngine::load(&root_dir).await?;
+        let toolchain = Toolchain::load(&config).await?;
+        let projects = ProjectGraph::generate(&root_dir, &config, project_config, &cache).await?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {

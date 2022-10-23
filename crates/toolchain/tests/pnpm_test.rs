@@ -20,7 +20,7 @@ async fn create_pnpm_tool() -> (NodeTool, assert_fs::TempDir) {
         ..WorkspaceConfig::default()
     };
 
-    let toolchain = Toolchain::create_from(base_dir.path(), &config)
+    let toolchain = Toolchain::load_from(base_dir.path(), &config)
         .await
         .unwrap();
 

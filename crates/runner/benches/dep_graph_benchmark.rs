@@ -7,7 +7,9 @@ use moon_workspace::Workspace;
 pub fn load_benchmark(c: &mut Criterion) {
     c.bench_function("dep_graph_load", |b| {
         b.iter(|| async {
-            let workspace = Workspace::create(get_fixtures_dir("cases")).await.unwrap();
+            let workspace = Workspace::load_from(get_fixtures_dir("cases"))
+                .await
+                .unwrap();
 
             utils::setup_dep_graph(&workspace.projects);
         })
@@ -17,7 +19,9 @@ pub fn load_benchmark(c: &mut Criterion) {
 pub fn load_with_platforms_benchmark(c: &mut Criterion) {
     c.bench_function("dep_graph_load_with_platforms", |b| {
         b.iter(|| async {
-            let mut workspace = Workspace::create(get_fixtures_dir("cases")).await.unwrap();
+            let mut workspace = Workspace::load_from(get_fixtures_dir("cases"))
+                .await
+                .unwrap();
 
             utils::setup_platforms(&mut workspace);
             utils::setup_dep_graph(&workspace.projects);

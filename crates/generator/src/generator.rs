@@ -16,7 +16,7 @@ pub struct Generator {
 }
 
 impl Generator {
-    pub fn create(workspace_root: &Path, config: &GeneratorConfig) -> Result<Self, GeneratorError> {
+    pub fn load(workspace_root: &Path, config: &GeneratorConfig) -> Result<Self, GeneratorError> {
         debug!(target: LOG_TARGET, "Creating generator");
 
         Ok(Generator {

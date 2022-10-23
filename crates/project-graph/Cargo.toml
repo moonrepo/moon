@@ -13,9 +13,9 @@ harness = false
 [dependencies]
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
-moon_contract = { path = "../contract" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
+moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }

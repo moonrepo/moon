@@ -1,4 +1,4 @@
-use moon_contract::Runtime;
+use moon_platform::Runtime;
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
 

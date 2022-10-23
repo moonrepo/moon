@@ -17,8 +17,8 @@ impl VcsLoader {
         let default_branch = &vcs_config.default_branch;
 
         Ok(match manager {
-            VcsManager::Svn => Box::new(Svn::new(default_branch, working_dir)),
-            _ => Box::new(Git::new(default_branch, working_dir)?),
+            VcsManager::Svn => Box::new(Svn::load(default_branch, working_dir)),
+            _ => Box::new(Git::load(default_branch, working_dir)?),
         })
     }
 }

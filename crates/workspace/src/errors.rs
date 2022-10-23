@@ -1,6 +1,6 @@
 use moon_constants as constants;
 use moon_error::MoonError;
-use moon_project_graph::ProjectError;
+// use moon_project_graph::ProjectError;
 use moon_toolchain::ToolchainError;
 use moon_vcs::VcsError;
 use thiserror::Error;
@@ -37,9 +37,8 @@ pub enum WorkspaceError {
     #[error(transparent)]
     Moon(#[from] MoonError),
 
-    #[error(transparent)]
-    Project(#[from] ProjectError),
-
+    // #[error(transparent)]
+    // Project(#[from] ProjectError),
     #[error(transparent)]
     Toolchain(#[from] ToolchainError),
 

@@ -1,16 +1,11 @@
-use moon_cache::CacheEngine;
-use moon_config::{
-    GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
-    WorkspaceProjects,
-};
-use moon_error::MoonError;
+use moon_config::{ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_logger::{color, debug, map_list, trace};
-use moon_platform::{Platform, Platformable, RegisteredPlatforms};
 use moon_project::{
     detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
 };
 use moon_task::{Target, Task};
 use moon_utils::path;
+use moon_workspace::Workspace;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -27,15 +22,13 @@ const READ_ERROR: &str = "Failed to acquire a read lock";
 const WRITE_ERROR: &str = "Failed to acquire a write lock";
 const ROOT_NODE_ID: &str = "(workspace)";
 
-async fn load_projects_from_cache(
-    workspace_root: &Path,
-    workspace_config: &WorkspaceConfig,
-    engine: &CacheEngine,
+async fn load_projects_from_cache<'w>(
+    workspace: &'w Workspace,
 ) -> Result<ProjectsSourcesMap, ProjectError> {
-    let projects = match &workspace_config.projects {
+    let projects = match &workspace.config.projects {
         WorkspaceProjects::Map(map) => map.clone(),
         WorkspaceProjects::List(globs) => {
-            let mut cache = engine.cache_projects_state().await?;
+            let mut cache = workspace.cache.cache_projects_state().await?;
 
             // Return the values from the cache
             if !cache.item.projects.is_empty() {
@@ -53,7 +46,7 @@ async fn load_projects_from_cache(
 
             let mut map = HashMap::new();
 
-            detect_projects_with_globs(workspace_root, globs, &mut map)?;
+            detect_projects_with_globs(&workspace.root, globs, &mut map)?;
 
             // Update the cache
             cache.item.globs = globs.clone();
@@ -73,13 +66,9 @@ async fn load_projects_from_cache(
     Ok(projects)
 }
 
-pub struct ProjectGraph {
+pub struct ProjectGraph<'w> {
     /// A mapping of an alias to a project ID.
     pub aliases_map: ProjectsAliasesMap,
-
-    /// The global project configuration that all projects inherit from.
-    /// Is loaded from `.moon/project.yml`.
-    global_config: GlobalProjectConfig,
 
     /// Projects that have been loaded into scope represented as a DAG.
     graph: Arc<RwLock<GraphType>>,
@@ -88,64 +77,55 @@ pub struct ProjectGraph {
     /// to query the graph by ID as it only supports it by index.
     indices: Arc<RwLock<IndicesType>>,
 
-    /// List of platforms that provide unique functionality.
-    pub platforms: RegisteredPlatforms,
-
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
     pub projects_map: ProjectsSourcesMap,
 
-    /// The workspace configuration. Necessary for project variants.
-    /// Is loaded from `.moon/workspace.yml`.
-    pub workspace_config: WorkspaceConfig,
-
     /// The workspace root, in which projects are relatively loaded from.
-    pub workspace_root: PathBuf,
+    pub workspace: &'w Workspace,
 }
 
-impl Platformable for ProjectGraph {
-    fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError> {
-        let mut platform = platform;
+// impl Platformable for ProjectGraph {
+//     fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError> {
+//         let mut platform = platform;
 
-        platform.load_project_graph_aliases(
-            &self.workspace_root,
-            &self.workspace_config,
-            &self.projects_map,
-            &mut self.aliases_map,
-        )?;
+//         self.platforms.push(platform);
 
-        self.platforms.push(platform);
+//         Ok(())
+//     }
+// }
 
-        Ok(())
-    }
-}
-
-impl ProjectGraph {
-    pub async fn create(
-        workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
-        global_config: GlobalProjectConfig,
-        cache: &CacheEngine,
-    ) -> Result<ProjectGraph, ProjectError> {
+impl<'w> ProjectGraph<'w> {
+    pub async fn create(workspace: &'w mut Workspace) -> Result<ProjectGraph, ProjectError> {
         let mut graph = DiGraph::new();
 
         // Add a virtual root node
         graph.add_node(Project {
             id: ROOT_NODE_ID.to_owned(),
-            root: workspace_root.to_path_buf(),
+            root: workspace.root.clone(),
             source: String::from("."),
             ..Project::default()
         });
 
+        // Load aliases from registered platforms
+        let projects_map = load_projects_from_cache(workspace).await?;
+        let mut aliases_map = HashMap::new();
+
+        for platform in &mut workspace.platforms {
+            platform.load_project_graph_aliases(
+                &workspace.root,
+                &workspace.config,
+                &projects_map,
+                &mut aliases_map,
+            )?;
+        }
+
         Ok(ProjectGraph {
-            aliases_map: HashMap::new(),
-            global_config,
+            aliases_map,
             graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(HashMap::new())),
-            platforms: vec![],
-            projects_map: load_projects_from_cache(workspace_root, workspace_config, cache).await?,
-            workspace_config: workspace_config.clone(),
-            workspace_root: workspace_root.to_path_buf(),
+            projects_map,
+            workspace,
         })
     }
 
@@ -205,11 +185,11 @@ impl ProjectGraph {
     pub fn load_from_path<P: AsRef<Path>>(&self, current_file: P) -> Result<Project, ProjectError> {
         let current_file = current_file.as_ref();
 
-        let file = if current_file == self.workspace_root {
+        let file = if current_file == self.workspace.root {
             PathBuf::from(".")
-        } else if current_file.starts_with(&self.workspace_root) {
+        } else if current_file.starts_with(&self.workspace.root) {
             current_file
-                .strip_prefix(&self.workspace_root)
+                .strip_prefix(&self.workspace.root)
                 .unwrap()
                 .to_path_buf()
         } else {
@@ -324,10 +304,16 @@ impl ProjectGraph {
     }
 
     fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectError> {
-        let mut project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
+        let mut project = Project::new(
+            id,
+            source,
+            &self.workspace.root,
+            &self.workspace.project_config,
+        )?;
+
         project.alias = self.find_alias_for_id(id);
 
-        for platform in &self.platforms {
+        for platform in &self.workspace.platforms {
             // Determine implicit dependencies
             for dep_cfg in platform.load_project_implicit_dependencies(
                 id,
@@ -351,8 +337,8 @@ impl ProjectGraph {
                 id,
                 &project.root,
                 &project.config,
-                &self.workspace_root,
-                &self.workspace_config,
+                &self.workspace.root,
+                &self.workspace.config,
             )? {
                 // Inferred tasks should not override explicit tasks
                 #[allow(clippy::map_entry)]
@@ -366,9 +352,9 @@ impl ProjectGraph {
 
         // Expand all tasks for the project (this must happen last)
         project.expand_tasks(
-            &self.workspace_root,
-            &self.workspace_config.runner.implicit_deps,
-            &self.workspace_config.runner.implicit_inputs,
+            &self.workspace.root,
+            &self.workspace.config.runner.implicit_deps,
+            &self.workspace.config.runner.implicit_inputs,
         )?;
 
         Ok(project)

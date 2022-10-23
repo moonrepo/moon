@@ -9,6 +9,7 @@ moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
+moon_platform = { path = "../platform" }
 moon_project_graph = { path = "../project-graph" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }

@@ -1,7 +1,6 @@
 use console::{set_colors_enabled, set_colors_enabled_stderr};
 use indicatif::{ProgressBar, ProgressStyle};
 use moon_logger::color::{no_color, supports_color};
-use moon_platform::Platformable;
 use moon_platform_node::NodePlatform;
 use moon_platform_system::SystemPlatform;
 use moon_terminal::create_theme;
@@ -13,14 +12,10 @@ use std::time::Duration;
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
     let mut workspace = Workspace::load().await?;
 
-    workspace
-        .projects
-        .register_platform(Box::new(SystemPlatform::default()))?;
+    workspace.register_platform(Box::new(SystemPlatform::default()));
 
     if workspace.config.node.is_some() {
-        workspace
-            .projects
-            .register_platform(Box::new(NodePlatform::default()))?;
+        workspace.register_platform(Box::new(NodePlatform::default()));
     }
 
     Ok(workspace)

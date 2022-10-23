@@ -5,6 +5,7 @@ use moon_config::{
 };
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
+use moon_platform::{Platform, RegisteredPlatforms};
 use moon_project_graph::ProjectGraph;
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
@@ -108,6 +109,9 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
+    /// List of platforms that provide unique functionality.
+    pub platforms: RegisteredPlatforms,
+
     /// The project graph, where each project is lazy loaded in.
     pub projects: ProjectGraph,
 
@@ -158,11 +162,17 @@ impl Workspace {
         Ok(Workspace {
             cache,
             config,
+            platforms: vec![],
             projects,
             root: root_dir,
             toolchain,
             vcs,
             working_dir: working_dir.to_owned(),
         })
+    }
+
+    pub fn register_platform(&mut self, platform: Box<dyn Platform>) -> &mut Self {
+        self.platforms.push(platform);
+        self
     }
 }

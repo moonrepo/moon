@@ -137,17 +137,17 @@ fn generate_dep_graph<'w>(
     workspace: &'w Workspace,
     project_graph: &'w ProjectGraph<'w>,
     targets: &TargetList,
-) -> Result<DepGraph, DepGraphError> {
+) -> Result<DepGraph<'w>, DepGraphError> {
     print_header("Generating dependency graph");
 
-    let mut dep_graph = DepGraph::default();
+    let mut dep_graph = DepGraph::generate(project_graph);
 
     for target in targets {
         // Run the target and its dependencies
-        dep_graph.run_target(target, &project_graph, &None)?;
+        dep_graph.run_target(target, &None)?;
 
         // And also run its dependents to ensure consumers still work correctly
-        dep_graph.run_target_dependents(target, &project_graph)?;
+        dep_graph.run_target_dependents(target)?;
     }
 
     println!("Target count: {}", targets.len());
@@ -179,11 +179,12 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     // Process all tasks in the graph
     print_header("Running all targets");
 
-    let mut runner = Runner::new(workspace);
+    let mut runner = Runner::new();
 
     let results = runner
         .generate_report("ciReport.json")
         .run(
+            workspace,
             dep_graph,
             Some(ActionContext {
                 touched_files,

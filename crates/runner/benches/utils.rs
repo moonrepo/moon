@@ -19,7 +19,7 @@ pub fn setup_platforms(workspace: &mut Workspace) {
 }
 
 pub fn setup_dep_graph(project_graph: &ProjectGraph) -> DepGraph {
-    let mut dep_graph = DepGraph::default();
+    let mut dep_graph = DepGraph::generate(project_graph);
 
     dep_graph
         .run_target(Target::parse("base:base").unwrap(), project_graph, &None)

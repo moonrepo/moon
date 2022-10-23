@@ -33,7 +33,7 @@ pub async fn run(
     let project_graph = ProjectGraph::generate(&workspace).await?;
 
     // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_graph = DepGraph::default();
+    let mut dep_graph = DepGraph::generate(&project_graph);
     let touched_files = if options.affected {
         Some(
             query_touched_files(
@@ -52,7 +52,7 @@ pub async fn run(
 
     // Run targets, optionally based on affected files
     let (primary_targets, inserted_count) =
-        dep_graph.run_targets_by_id(target_ids, &project_graph, &touched_files)?;
+        dep_graph.run_targets_by_id(target_ids, &touched_files)?;
 
     if inserted_count == 0 {
         let targets_list = map_list(target_ids, |id| color::target(id));
@@ -79,7 +79,7 @@ pub async fn run(
         project_graph.load_all()?;
 
         for target in &primary_targets {
-            dep_graph.run_target_dependents(Target::parse(target)?, &project_graph)?;
+            dep_graph.run_target_dependents(Target::parse(target)?)?;
         }
     }
 
@@ -91,13 +91,16 @@ pub async fn run(
         touched_files: touched_files.unwrap_or_default(),
     };
 
-    let mut runner = Runner::new(workspace);
+    let mut runner = Runner::new();
 
     if options.report {
         runner.generate_report("runReport.json");
     }
 
-    let results = runner.bail_on_error().run(dep_graph, Some(context)).await?;
+    let results = runner
+        .bail_on_error()
+        .run(workspace, dep_graph, Some(context))
+        .await?;
 
     runner.render_stats(&results, true)?;
 

@@ -215,12 +215,10 @@ pub struct Runner {
     passed_count: usize,
 
     report_name: Option<String>,
-
-    workspace: Arc<RwLock<Workspace>>,
 }
 
 impl Runner {
-    pub fn new(workspace: Workspace) -> Self {
+    pub fn new() -> Self {
         debug!(target: LOG_TARGET, "Creating action runner");
 
         Runner {
@@ -230,7 +228,6 @@ impl Runner {
             failed_count: 0,
             passed_count: 0,
             report_name: None,
-            workspace: Arc::new(RwLock::new(workspace)),
         }
     }
 
@@ -255,18 +252,20 @@ impl Runner {
 
     pub async fn run(
         &mut self,
-        graph: DepGraph,
+        local_workspace: Workspace,
+        local_dep_graph: DepGraph<'static>,
         context: Option<ActionContext>,
     ) -> Result<ActionResults, RunnerError> {
         let start = Instant::now();
-        let node_count = graph.graph.node_count();
-        let batches = graph.sort_batched_topological()?;
+        let node_count = local_dep_graph.graph.node_count();
+        let batches = local_dep_graph.sort_batched_topological()?;
         let batches_count = batches.len();
-        let graph = Arc::new(RwLock::new(graph));
+
+        // Creates arcs for threads
+        let workspace = Arc::new(RwLock::new(local_workspace));
+        let dep_graph = Arc::new(RwLock::new(local_dep_graph));
         let context = Arc::new(context.unwrap_or_default());
-        let emitter = Arc::new(RwLock::new(
-            self.create_emitter(Arc::clone(&self.workspace)).await,
-        ));
+        let emitter = Arc::new(RwLock::new(self.create_emitter(&workspace).await));
         let local_emitter = emitter.read().await;
 
         debug!(
@@ -297,9 +296,9 @@ impl Runner {
 
             for (i, node_index) in batch.into_iter().enumerate() {
                 let action_count = i + 1;
-                let graph_clone = Arc::clone(&graph);
+                let graph_clone = Arc::clone(&dep_graph);
                 let context_clone = Arc::clone(&context);
-                let workspace_clone = Arc::clone(&self.workspace);
+                let workspace_clone = Arc::clone(&workspace);
                 let emitter_clone = Arc::clone(&emitter);
 
                 action_handles.push(task::spawn(async move {
@@ -573,7 +572,7 @@ impl Runner {
         Ok(())
     }
 
-    async fn create_emitter(&self, workspace: Arc<RwLock<Workspace>>) -> Emitter {
+    async fn create_emitter(&self, workspace: &Arc<RwLock<Workspace>>) -> Emitter {
         let mut emitter = Emitter::new(Arc::clone(&workspace));
 
         // For security and privacy purposes, only send webhooks from a CI environment
@@ -600,13 +599,13 @@ impl Runner {
         context: &ActionContext,
     ) -> Result<(), RunnerError> {
         if let Some(name) = &self.report_name {
-            let workspace = self.workspace.read().await;
-            let duration = self.duration.unwrap();
+            // let workspace = self.workspace.read().await;
+            // let duration = self.duration.unwrap();
 
-            workspace
-                .cache
-                .create_json_report(name, RunReport::new(actions, context, duration))
-                .await?;
+            // workspace
+            //     .cache
+            //     .create_json_report(name, RunReport::new(actions, context, duration))
+            //     .await?;
         }
 
         Ok(())

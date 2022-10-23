@@ -4,9 +4,9 @@ use crate::runfiles::CacheRunfile;
 use crate::DependenciesState;
 use moon_archive::{tar, untar};
 use moon_constants::CONFIG_DIRNAME;
-use moon_contract::Runtime;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
+use moon_platform::Runtime;
 use moon_utils::{fs, time};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -29,7 +29,7 @@ pub struct CacheEngine {
 }
 
 impl CacheEngine {
-    pub async fn create(workspace_root: &Path) -> Result<Self, MoonError> {
+    pub async fn load(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
         let out_dir = dir.join("out");

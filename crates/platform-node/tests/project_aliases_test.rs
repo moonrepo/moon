@@ -3,7 +3,7 @@ use moon_cache::CacheEngine;
 use moon_config::{
     GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, WorkspaceConfig, WorkspaceProjects,
 };
-use moon_contract::Platformable;
+use moon_platform::Platformable;
 use moon_platform_node::NodePlatform;
 use moon_project_graph::ProjectGraph;
 use moon_utils::test::get_fixtures_dir;
@@ -21,11 +21,11 @@ async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
         ..WorkspaceConfig::default()
     };
 
-    let mut graph = ProjectGraph::create(
+    let mut graph = ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
         GlobalProjectConfig::default(),
-        &CacheEngine::create(&workspace_root).await.unwrap(),
+        &CacheEngine::load(&workspace_root).await.unwrap(),
     )
     .await
     .unwrap();

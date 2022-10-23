@@ -1,8 +1,7 @@
 use crate::errors::DepGraphError;
 use moon_action::ActionNode;
-use moon_config::{default_node_version, ProjectLanguage, ProjectWorkspaceNodeConfig};
-use moon_contract::Runtime;
 use moon_logger::{color, debug, map_list, trace};
+use moon_platform::Runtime;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetError, TargetProjectScope, TouchedFilePaths};
@@ -65,23 +64,17 @@ impl DepGraph {
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Runtime {
-        match &project.language {
-            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
-                let version = match &project.config.workspace.node {
-                    Some(ProjectWorkspaceNodeConfig {
-                        version: Some(version),
-                        ..
-                    }) => version.to_owned(),
-                    _ => match &project_graph.workspace_config.node {
-                        Some(node) => node.version.to_owned(),
-                        None => default_node_version(),
-                    },
-                };
-
-                Runtime::Node(version)
+        for platform in &project_graph.platforms {
+            if platform.matches(&project.config, None) {
+                if let Some(runtime) = platform
+                    .get_runtime_from_config(&project.config, &project_graph.workspace_config)
+                {
+                    return runtime;
+                }
             }
-            _ => Runtime::System,
         }
+
+        Runtime::System
     }
 
     pub fn install_deps(&mut self, runtime: &Runtime) -> Result<NodeIndex, DepGraphError> {
@@ -114,11 +107,11 @@ impl DepGraph {
     ) -> Result<NodeIndex, DepGraphError> {
         let mut node = ActionNode::InstallDeps(runtime.clone());
 
-        for platform_service in &project_graph.platforms {
-            if platform_service.is(runtime) {
+        for platform in &project_graph.platforms {
+            if platform.matches(&project.config, Some(runtime)) {
                 // If project is not in the package manager workspace,
                 // update the node to install deps into the project directly!
-                if !platform_service.is_project_in_package_manager_workspace(
+                if !platform.is_project_in_package_manager_workspace(
                     &project.id,
                     &project.root,
                     &project_graph.workspace_root,

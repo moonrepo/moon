@@ -12,7 +12,7 @@ use std::path::Path;
 use utils::get_path_safe_output;
 
 async fn extract_hash_from_run(fixture: &Path, target: &str) -> String {
-    let engine = CacheEngine::create(fixture).await.unwrap();
+    let engine = CacheEngine::load(fixture).await.unwrap();
     let cache = engine.cache_run_target_state(target).await.unwrap();
 
     cache.item.hash

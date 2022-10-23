@@ -226,7 +226,7 @@ mod to_dot {
 
 mod implicit_explicit_deps {
     use super::*;
-    use moon_contract::Platformable;
+    use moon_platform::Platformable;
     use moon_platform_node::NodePlatform;
     use moon_project::{ProjectDependency, ProjectDependencySource};
 

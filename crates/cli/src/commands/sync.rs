@@ -1,18 +1,20 @@
 use crate::helpers::{create_progress_bar, load_workspace};
+use moon_project_graph::project_graph::ProjectGraph;
 use moon_runner::{DepGraph, Runner};
 
 pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
     let done = create_progress_bar("Syncing projects...");
 
     let workspace = load_workspace().await?;
+    let project_graph = ProjectGraph::generate(&workspace).await?;
     let mut project_count = 0;
     let mut graph = DepGraph::default();
 
-    for project_id in workspace.projects.ids() {
-        let project = workspace.projects.load(&project_id)?;
-        let runtime = graph.get_runtime_from_project(&project, &workspace.projects);
+    for project_id in project_graph.ids() {
+        let project = project_graph.load(&project_id)?;
+        let runtime = graph.get_runtime_from_project(&project, &project_graph);
 
-        graph.sync_project(&runtime, &project, &workspace.projects)?;
+        graph.sync_project(&runtime, &project, &project_graph)?;
         project_count += 1;
     }
 

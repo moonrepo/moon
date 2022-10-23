@@ -11,6 +11,7 @@ use moon_logger::{color, debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_platform::Runtime;
 use moon_platform_node::actions as node_actions;
+use moon_project::Project;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
@@ -72,11 +73,12 @@ async fn run_action(
 
         // Install dependencies in the project root
         ActionNode::InstallProjectDeps(runtime, project_id) => {
-            let project = Arc::clone(&workspace)
-                .read()
-                .await
-                .projects
-                .load(project_id)?;
+            let project = Project::default();
+            //  Arc::clone(&workspace)
+            //     .read()
+            //     .await
+            //     .projects
+            //     .load(project_id)?;
 
             local_emitter
                 .emit(Event::DependenciesInstalling {
@@ -147,11 +149,12 @@ async fn run_action(
 
         // Sync a project within the graph
         ActionNode::SyncProject(runtime, project_id) => {
-            let project = Arc::clone(&workspace)
-                .read()
-                .await
-                .projects
-                .load(project_id)?;
+            let project = Project::default();
+            //  Arc::clone(&workspace)
+            //     .read()
+            //     .await
+            //     .projects
+            //     .load(project_id)?;
 
             local_emitter
                 .emit(Event::ProjectSyncing {

@@ -1,15 +1,17 @@
 use crate::helpers::load_workspace;
+use moon_project_graph::project_graph::ProjectGraph;
 
 pub async fn project_graph(project_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
+    let project_graph = ProjectGraph::generate(&workspace).await?;
 
     if let Some(id) = project_id {
-        workspace.projects.load(id)?;
+        project_graph.load(id)?;
     } else {
-        workspace.projects.load_all()?;
+        project_graph.load_all()?;
     }
 
-    println!("{}", workspace.projects.to_dot());
+    println!("{}", project_graph.to_dot());
 
     Ok(())
 }

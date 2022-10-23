@@ -5,6 +5,7 @@ use itertools::Itertools;
 use moon_action::ActionContext;
 use moon_logger::{color, debug};
 use moon_project::ProjectError;
+use moon_project_graph::project_graph::ProjectGraph;
 use moon_runner::{DepGraph, DepGraphError, Runner};
 use moon_task::{Target, TouchedFilePaths};
 use moon_terminal::safe_exit;
@@ -56,8 +57,9 @@ async fn gather_touched_files(
 }
 
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
-fn gather_runnable_targets(
-    workspace: &Workspace,
+fn gather_runnable_targets<'w>(
+    workspace: &'w Workspace,
+    project_graph: &'w ProjectGraph,
     touched_files: &TouchedFilePaths,
 ) -> Result<TargetList, ProjectError> {
     print_header("Gathering runnable targets");
@@ -65,10 +67,10 @@ fn gather_runnable_targets(
     let mut targets = vec![];
 
     // Required for dependents
-    workspace.projects.load_all()?;
+    project_graph.load_all()?;
 
-    for project_id in workspace.projects.ids() {
-        let project = workspace.projects.load(&project_id)?;
+    for project_id in project_graph.ids() {
+        let project = project_graph.load(&project_id)?;
 
         for (task_id, task) in &project.tasks {
             let target = Target::new(&project.id, task_id)?;
@@ -131,8 +133,9 @@ fn distribute_targets_across_jobs(options: &CiOptions, targets: TargetList) -> T
 }
 
 /// Generate a dependency graph with the runnable targets.
-fn generate_dep_graph(
-    workspace: &Workspace,
+fn generate_dep_graph<'w>(
+    workspace: &'w Workspace,
+    project_graph: &'w ProjectGraph<'w>,
     targets: &TargetList,
 ) -> Result<DepGraph, DepGraphError> {
     print_header("Generating dependency graph");
@@ -141,10 +144,10 @@ fn generate_dep_graph(
 
     for target in targets {
         // Run the target and its dependencies
-        dep_graph.run_target(target, &workspace.projects, &None)?;
+        dep_graph.run_target(target, &project_graph, &None)?;
 
         // And also run its dependents to ensure consumers still work correctly
-        dep_graph.run_target_dependents(target, &workspace.projects)?;
+        dep_graph.run_target_dependents(target, &project_graph)?;
     }
 
     println!("Target count: {}", targets.len());
@@ -162,15 +165,16 @@ pub struct CiOptions {
 
 pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
+    let project_graph = ProjectGraph::generate(&workspace).await?;
     let touched_files = gather_touched_files(&workspace, &options).await?;
-    let targets = gather_runnable_targets(&workspace, &touched_files)?;
+    let targets = gather_runnable_targets(&workspace, &project_graph, &touched_files)?;
 
     if targets.is_empty() {
         return Ok(());
     }
 
     let targets = distribute_targets_across_jobs(&options, targets);
-    let dep_graph = generate_dep_graph(&workspace, &targets)?;
+    let dep_graph = generate_dep_graph(&workspace, &project_graph, &targets)?;
 
     // Process all tasks in the graph
     print_header("Running all targets");

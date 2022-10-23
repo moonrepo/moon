@@ -7,6 +7,7 @@ use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_lang_node::package::{DepsSet, PackageJson};
 use moon_platform_node::create_tasks_from_scripts;
+use moon_project_graph::project_graph::ProjectGraph;
 use moon_utils::fs;
 use serde_yaml::to_string;
 use std::collections::HashMap;
@@ -127,12 +128,13 @@ pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::er
 
 pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
+    let project_graph = ProjectGraph::generate(&workspace).await?;
 
     // Create a mapping of `package.json` names to project IDs
     let mut package_map: HashMap<String, String> = HashMap::new();
 
-    for id in workspace.projects.ids() {
-        let project = workspace.projects.load(&id)?;
+    for id in project_graph.ids() {
+        let project = project_graph.load(&id)?;
 
         if let Some(package_json) = PackageJson::read(&project.root)? {
             if let Some(package_name) = package_json.name {
@@ -142,7 +144,7 @@ pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::erro
     }
 
     // Create or update the local `moon.yml`
-    let mut project = workspace.projects.load(project_id)?;
+    let mut project = project_graph.load(project_id)?;
 
     let mut link_deps = |deps: &DepsSet, scope: DependencyScope| {
         for package_name in deps.keys() {

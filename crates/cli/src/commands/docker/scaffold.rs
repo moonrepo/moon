@@ -6,6 +6,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_lang_node::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
+use moon_project_graph::project_graph::ProjectGraph;
 use moon_utils::{fs, glob, path};
 use moon_workspace::Workspace;
 use serde::{Deserialize, Serialize};
@@ -45,11 +46,15 @@ async fn copy_files<T: AsRef<str>>(
     Ok(())
 }
 
-async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result<(), ProjectError> {
+async fn scaffold_workspace<'w>(
+    workspace: &'w Workspace,
+    project_graph: &'w ProjectGraph<'w>,
+    docker_root: &Path,
+) -> Result<(), ProjectError> {
     let docker_workspace_root = docker_root.join("workspace");
 
     // Copy each project and mimic the folder structure
-    for project_source in workspace.projects.projects_map.values() {
+    for project_source in project_graph.projects_map.values() {
         let docker_project_root = docker_workspace_root.join(&project_source);
 
         // Create the project root
@@ -129,27 +134,36 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
 }
 
 #[async_recursion]
-async fn scaffold_sources_project(
-    workspace: &Workspace,
+async fn scaffold_sources_project<'w>(
+    workspace: &'w Workspace,
+    project_graph: &'w ProjectGraph<'w>,
     docker_sources_root: &Path,
     project_id: &str,
     manifest: &mut DockerManifest,
 ) -> Result<(), ProjectError> {
-    let project = workspace.projects.load(project_id)?;
+    let project = project_graph.load(project_id)?;
 
     manifest.focused_projects.insert(project_id.to_owned());
 
     copy_files(&[&project.source], &workspace.root, docker_sources_root).await?;
 
     for dep_id in project.get_dependency_ids() {
-        scaffold_sources_project(workspace, docker_sources_root, &dep_id, manifest).await?;
+        scaffold_sources_project(
+            workspace,
+            project_graph,
+            docker_sources_root,
+            &dep_id,
+            manifest,
+        )
+        .await?;
     }
 
     Ok(())
 }
 
-async fn scaffold_sources(
-    workspace: &Workspace,
+async fn scaffold_sources<'w>(
+    workspace: &'w Workspace,
+    project_graph: &'w ProjectGraph<'w>,
     docker_root: &Path,
     project_ids: &[String],
     include: &[String],
@@ -162,12 +176,18 @@ async fn scaffold_sources(
 
     // Copy all projects
     for project_id in project_ids {
-        scaffold_sources_project(workspace, &docker_sources_root, project_id, &mut manifest)
-            .await?;
+        scaffold_sources_project(
+            workspace,
+            project_graph,
+            &docker_sources_root,
+            project_id,
+            &mut manifest,
+        )
+        .await?;
     }
 
     // Include non-focused projects in the manifest
-    for project_id in workspace.projects.projects_map.keys() {
+    for project_id in project_graph.projects_map.keys() {
         if !manifest.focused_projects.contains(project_id) {
             manifest.unfocused_projects.insert(project_id.to_owned());
         }
@@ -199,6 +219,7 @@ pub async fn scaffold(
     include: &[String],
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
+    let project_graph = ProjectGraph::generate(&workspace).await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
     // Delete the docker skeleton to remove any stale files
@@ -206,8 +227,15 @@ pub async fn scaffold(
     fs::create_dir_all(&docker_root).await?;
 
     // Create the workspace skeleton
-    scaffold_workspace(&workspace, &docker_root).await?;
-    scaffold_sources(&workspace, &docker_root, project_ids, include).await?;
+    scaffold_workspace(&workspace, &project_graph, &docker_root).await?;
+    scaffold_sources(
+        &workspace,
+        &project_graph,
+        &docker_root,
+        project_ids,
+        include,
+    )
+    .await?;
 
     Ok(())
 }

@@ -3,6 +3,7 @@ use crate::helpers::load_workspace;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use moon_action::{ActionContext, ProfileType};
 use moon_logger::{color, map_list};
+use moon_project_graph::project_graph::ProjectGraph;
 use moon_runner::{DepGraph, Runner};
 use moon_task::Target;
 use moon_workspace::Workspace;
@@ -29,6 +30,7 @@ pub async fn run(
         Some(ws) => ws,
         None => load_workspace().await?,
     };
+    let project_graph = ProjectGraph::generate(&workspace).await?;
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();
@@ -50,7 +52,7 @@ pub async fn run(
 
     // Run targets, optionally based on affected files
     let (primary_targets, inserted_count) =
-        dep_graph.run_targets_by_id(target_ids, &workspace.projects, &touched_files)?;
+        dep_graph.run_targets_by_id(target_ids, &project_graph, &touched_files)?;
 
     if inserted_count == 0 {
         let targets_list = map_list(target_ids, |id| color::target(id));
@@ -74,10 +76,10 @@ pub async fn run(
 
     // Run dependents for all primary targets
     if options.dependents {
-        workspace.projects.load_all()?;
+        project_graph.load_all()?;
 
         for target in &primary_targets {
-            dep_graph.run_target_dependents(Target::parse(target)?, &workspace.projects)?;
+            dep_graph.run_target_dependents(Target::parse(target)?, &project_graph)?;
         }
     }
 

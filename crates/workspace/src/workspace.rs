@@ -5,13 +5,13 @@ use moon_config::{
 };
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
-use moon_platform::{Platform, RegisteredPlatforms};
-// use moon_project_graph::ProjectGraph;
+use moon_platform::RegisteredPlatforms;
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
 use moon_vcs::{Vcs, VcsLoader};
 use std::env;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, RwLock};
 
 const LOG_TARGET: &str = "moon:workspace";
 
@@ -110,10 +110,7 @@ pub struct Workspace {
     pub config: WorkspaceConfig,
 
     /// List of platforms that provide unique functionality.
-    pub platforms: RegisteredPlatforms,
-
-    /// The project graph, where each project is lazy loaded in.
-    // pub projects: ProjectGraph,
+    pub platforms: Arc<RwLock<RegisteredPlatforms>>,
 
     /// Global project configuration loaded from ".moon/project.yml".
     pub project_config: GlobalProjectConfig,
@@ -159,24 +156,17 @@ impl Workspace {
         // Setup components
         let cache = CacheEngine::create(&root_dir).await?;
         let toolchain = Toolchain::create(&config).await?;
-        // let projects = ProjectGraph::create(&root_dir, &config, project_config, &cache).await?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {
             cache,
             config,
-            platforms: vec![],
+            platforms: Arc::new(RwLock::new(vec![])),
             project_config,
-            // projects,
             root: root_dir,
             toolchain,
             vcs,
             working_dir: working_dir.to_owned(),
         })
-    }
-
-    pub fn register_platform(&mut self, platform: Box<dyn Platform>) -> &mut Self {
-        self.platforms.push(platform);
-        self
     }
 }

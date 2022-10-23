@@ -1,6 +1,7 @@
 use crate::commands::run::{run, RunOptions};
 use crate::helpers::load_workspace;
 use moon_project::Project;
+use moon_project_graph::project_graph::ProjectGraph;
 use std::env;
 
 pub struct CheckOptions {
@@ -12,14 +13,15 @@ pub async fn check(
     options: CheckOptions,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
+    let project_graph = ProjectGraph::generate(&workspace).await?;
     let mut projects: Vec<Project> = vec![];
 
     // Load projects
     if project_ids.is_empty() {
-        projects.push(workspace.projects.load_from_path(env::current_dir()?)?);
+        projects.push(project_graph.load_from_path(env::current_dir()?)?);
     } else {
         for id in project_ids {
-            projects.push(workspace.projects.load(id)?);
+            projects.push(project_graph.load(id)?);
         }
     };
 

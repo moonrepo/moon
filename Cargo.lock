@@ -1826,6 +1826,7 @@ dependencies = [
  "moon_platform_node",
  "moon_platform_system",
  "moon_project",
+ "moon_project_graph",
  "moon_runner",
  "moon_task",
  "moon_terminal",

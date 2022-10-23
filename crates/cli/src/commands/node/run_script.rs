@@ -1,5 +1,6 @@
 use crate::helpers::load_workspace;
 use moon_error::MoonError;
+use moon_project_graph::project_graph::ProjectGraph;
 use moon_utils::process::Command;
 use std::env;
 
@@ -22,7 +23,9 @@ pub async fn run_script(
     if let Ok(project_root) = env::var("MOON_PROJECT_ROOT") {
         command.cwd(project_root);
     } else if let Some(project_id) = project {
-        command.cwd(workspace.projects.load(project_id)?.root);
+        let project_graph = ProjectGraph::generate(&workspace).await?;
+
+        command.cwd(project_graph.load(project_id)?.root);
     } else {
         return Err(MoonError::Generic(
             "This command must be ran within the context of a project.".to_owned(),

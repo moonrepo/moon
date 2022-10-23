@@ -90,7 +90,8 @@ pub async fn sync_project(
     let mut tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     for (dep_id, dep_cfg) in &project.dependencies {
-        let dep_project = workspace.projects.load(dep_id)?;
+        // TODO
+        let dep_project = Project::default(); // workspace.projects.load(dep_id)?;
         let dep_relative_path =
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default();
         let is_dep_typescript_enabled = dep_project.config.workspace.typescript;

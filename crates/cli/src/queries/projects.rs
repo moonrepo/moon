@@ -4,6 +4,7 @@ use crate::queries::touched_files::{
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;
+use moon_project_graph::project_graph::ProjectGraph;
 use moon_task::TouchedFilePaths;
 use moon_utils::{is_ci, regex};
 use moon_workspace::{Workspace, WorkspaceError};
@@ -72,8 +73,9 @@ async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, W
     .await
 }
 
-pub async fn query_projects(
-    workspace: &Workspace,
+pub async fn query_projects<'w>(
+    workspace: &'w Workspace,
+    project_graph: &'w ProjectGraph<'w>,
     options: &QueryProjectsOptions,
 ) -> Result<Vec<Project>, WorkspaceError> {
     debug!(target: LOG_TARGET, "Querying for projects");
@@ -91,14 +93,14 @@ pub async fn query_projects(
         None
     };
 
-    for project_id in workspace.projects.ids() {
+    for project_id in project_graph.ids() {
         if let Some(regex) = &id_regex {
             if !regex.is_match(&project_id) {
                 continue;
             }
         }
 
-        let project = workspace.projects.load(&project_id)?;
+        let project = project_graph.load(&project_id)?;
 
         if options.affected {
             if let Some(touched) = &touched_files {

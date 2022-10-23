@@ -10,12 +10,19 @@ use std::time::Duration;
 
 /// Loads the workspace and registers all available platforms!
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load().await?;
+    let workspace = Workspace::load().await?;
 
-    workspace.register_platform(Box::new(SystemPlatform::default()));
+    {
+        let mut plaforms = workspace
+            .platforms
+            .write()
+            .expect("Unable to set platforms.");
 
-    if workspace.config.node.is_some() {
-        workspace.register_platform(Box::new(NodePlatform::default()));
+        plaforms.push(Box::new(SystemPlatform::default()));
+
+        if workspace.config.node.is_some() {
+            plaforms.push(Box::new(NodePlatform::default()));
+        }
     }
 
     Ok(workspace)

@@ -2,12 +2,14 @@ use crate::helpers::load_workspace;
 use console::Term;
 use itertools::Itertools;
 use moon_logger::color;
+use moon_project_graph::project_graph::ProjectGraph;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 
 pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
-    let project = workspace.projects.load(id)?;
+    let project_graph = ProjectGraph::generate(&workspace).await?;
+    let project = project_graph.load(id)?;
     let config = &project.config;
 
     if json {

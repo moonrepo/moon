@@ -684,7 +684,8 @@ pub async fn run_target(
     let (project_id, task_id) = Target::parse(target_id)?.ids()?;
     let workspace = workspace.read().await;
     let emitter = emitter.read().await;
-    let project = workspace.projects.load(&project_id)?;
+    // TODO
+    let project = Project::default(); // workspace.projects.load(&project_id)?;
     let task = project.get_task(&task_id)?;
     let mut runner = TargetRunner::new(&emitter, &workspace, &project, task).await?;
 

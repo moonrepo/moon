@@ -10,7 +10,12 @@ mod from_package_json {
         let fixture = create_sandbox("migrate");
 
         let assert = create_moon_command(fixture.path())
-            .args(["migrate", "from-package-json", "common"])
+            .args([
+                "migrate",
+                "--skipTouchedFilesCheck",
+                "from-package-json",
+                "common",
+            ])
             .assert();
 
         assert_snapshot!(fs::read_to_string(
@@ -30,7 +35,12 @@ mod from_package_json {
         let fixture = create_sandbox("migrate");
 
         let assert = create_moon_command(fixture.path())
-            .args(["migrate", "from-package-json", "deps"])
+            .args([
+                "migrate",
+                "--skipTouchedFilesCheck",
+                "from-package-json",
+                "deps",
+            ])
             .assert();
 
         assert_snapshot!(

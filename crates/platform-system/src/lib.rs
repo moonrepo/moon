@@ -17,7 +17,7 @@ impl Platform for SystemPlatform {
         Some(Runtime::System)
     }
 
-    fn is(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool {
+    fn matches(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool {
         if project_config.language.is_system_platform() {
             return true;
         }

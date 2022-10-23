@@ -328,7 +328,7 @@ impl ProjectGraph {
         project.alias = self.find_alias_for_id(id);
 
         for platform in &self.platforms {
-            if !platform.is(&project.config, None) {
+            if !platform.matches(&project.config, None) {
                 continue;
             }
 

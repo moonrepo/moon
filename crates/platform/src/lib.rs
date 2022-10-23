@@ -18,9 +18,6 @@ pub trait Platform: Send + Sync {
         workspace_config: &WorkspaceConfig,
     ) -> Option<Runtime>;
 
-    /// Return true if the current platform is for the provided project or runtime.
-    fn is(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool;
-
     /// Determine if the provided project is within the platform's package manager
     /// workspace (not to be confused with moon's workspace).
     fn is_project_in_package_manager_workspace(
@@ -69,6 +66,9 @@ pub trait Platform: Send + Sync {
     ) -> Result<TasksConfigsMap, MoonError> {
         Ok(BTreeMap::new())
     }
+
+    /// Return true if the current platform is for the provided project or runtime.
+    fn matches(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool;
 }
 
 pub type RegisteredPlatforms = Vec<Box<dyn Platform>>;

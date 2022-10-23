@@ -1,11 +1,23 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{GlobalProjectConfig, NodeConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_platform::Platformable;
+use moon_platform_node::NodePlatform;
+use moon_platform_system::SystemPlatform;
 use moon_project_graph::ProjectGraph;
 use moon_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_task::Target;
 use moon_utils::test::{create_sandbox, TempDir};
 use std::collections::{HashMap, HashSet};
+
+fn register_platforms(project_graph: &mut ProjectGraph) {
+    project_graph
+        .register_platform(Box::new(NodePlatform::default()))
+        .unwrap();
+    project_graph
+        .register_platform(Box::new(SystemPlatform::default()))
+        .unwrap();
+}
 
 async fn create_project_graph() -> (ProjectGraph, TempDir) {
     let fixture = create_sandbox("projects");
@@ -21,20 +33,22 @@ async fn create_project_graph() -> (ProjectGraph, TempDir) {
             ("baz".to_owned(), "deps/baz".to_owned()),
             ("tasks".to_owned(), "tasks".to_owned()),
         ])),
+        node: Some(NodeConfig::default()),
         ..WorkspaceConfig::default()
     };
 
-    (
-        ProjectGraph::generate(
-            workspace_root,
-            &workspace_config,
-            GlobalProjectConfig::default(),
-            &CacheEngine::load(workspace_root).await.unwrap(),
-        )
-        .await
-        .unwrap(),
-        fixture,
+    let mut graph = ProjectGraph::generate(
+        workspace_root,
+        &workspace_config,
+        GlobalProjectConfig::default(),
+        &CacheEngine::load(workspace_root).await.unwrap(),
     )
+    .await
+    .unwrap();
+
+    register_platforms(&mut graph);
+
+    (graph, fixture)
 }
 
 async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
@@ -56,6 +70,7 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("no-tasks".to_owned(), "no-tasks".to_owned()),
         ])),
+        node: Some(NodeConfig::default()),
         ..WorkspaceConfig::default()
     };
     let global_config = GlobalProjectConfig {
@@ -63,17 +78,18 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
         ..GlobalProjectConfig::default()
     };
 
-    (
-        ProjectGraph::generate(
-            workspace_root,
-            &workspace_config,
-            global_config,
-            &CacheEngine::load(workspace_root).await.unwrap(),
-        )
-        .await
-        .unwrap(),
-        fixture,
+    let mut graph = ProjectGraph::generate(
+        workspace_root,
+        &workspace_config,
+        global_config,
+        &CacheEngine::load(workspace_root).await.unwrap(),
     )
+    .await
+    .unwrap();
+
+    register_platforms(&mut graph);
+
+    (graph, fixture)
 }
 
 fn sort_batches(batches: BatchedTopoSort) -> BatchedTopoSort {

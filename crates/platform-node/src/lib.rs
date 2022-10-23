@@ -71,18 +71,6 @@ impl Platform for NodePlatform {
         None
     }
 
-    fn is(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool {
-        if project_config.language.is_node_platform() {
-            return true;
-        }
-
-        if let Some(runtime) = &runtime {
-            return matches!(runtime, Runtime::Node(_));
-        }
-
-        false
-    }
-
     fn is_project_in_package_manager_workspace(
         &self,
         project_id: &str,
@@ -265,5 +253,17 @@ impl Platform for NodePlatform {
         }
 
         Ok(tasks)
+    }
+
+    fn matches(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool {
+        if project_config.language.is_node_platform() {
+            return true;
+        }
+
+        if let Some(runtime) = &runtime {
+            return matches!(runtime, Runtime::Node(_));
+        }
+
+        false
     }
 }

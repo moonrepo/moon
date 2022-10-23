@@ -65,7 +65,7 @@ impl DepGraph {
         project_graph: &ProjectGraph,
     ) -> Runtime {
         for platform in &project_graph.platforms {
-            if platform.is(&project.config, None) {
+            if platform.matches(&project.config, None) {
                 if let Some(runtime) = platform
                     .get_runtime_from_config(&project.config, &project_graph.workspace_config)
                 {
@@ -108,7 +108,7 @@ impl DepGraph {
         let mut node = ActionNode::InstallDeps(runtime.clone());
 
         for platform in &project_graph.platforms {
-            if platform.is(&project.config, Some(runtime)) {
+            if platform.matches(&project.config, Some(runtime)) {
                 // If project is not in the package manager workspace,
                 // update the node to install deps into the project directly!
                 if !platform.is_project_in_package_manager_workspace(

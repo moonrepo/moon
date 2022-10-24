@@ -253,6 +253,27 @@ mod caching {
             state.hash,
             "b690c7bdbfb85bf385be5b0c6d68e2616a140352f9c854fd376ee3e2096ab688"
         );
+
+        // Outputs are written to their own file
+        assert_eq!(
+            fs::read_to_string(
+                fixture
+                    .path()
+                    .join(".moon/cache/states/node/standard/stdout.log")
+            )
+            .unwrap(),
+            "stdout"
+        );
+
+        assert_eq!(
+            fs::read_to_string(
+                fixture
+                    .path()
+                    .join(".moon/cache/states/node/standard/stderr.log")
+            )
+            .unwrap(),
+            "stderr"
+        );
     }
 }
 

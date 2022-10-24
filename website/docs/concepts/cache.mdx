@@ -56,7 +56,11 @@ The following diagram outlines our cache folder structure and why each piece exi
 			runfile.json
 
 			<task>/
-				# Contents of the child process, including stdout, stderr, and exit code.
-				# Also contains the unique hash that is referenced above.
+				# Contents of the child process, including the exit code and
+				# unique hash that is referenced above.
 				lastRun.json
+
+				# Outputs of last run target.
+				stderr.log
+				stdout.log
 ```

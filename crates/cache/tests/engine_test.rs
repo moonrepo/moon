@@ -1,5 +1,6 @@
 use assert_fs::prelude::*;
-use moon_cache::{to_millis, CacheEngine, ProjectsState, RunTargetState, ToolState};
+use moon_cache::{CacheEngine, ProjectsState, RunTargetState, ToolState};
+use moon_utils::time;
 use serde::Serialize;
 use serial_test::serial;
 use std::env;
@@ -187,10 +188,11 @@ mod cache_run_target_state {
         let item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
         assert_eq!(
-            item.item,
+            item,
             RunTargetState {
                 exit_code: 123,
                 target: String::from("foo:bar"),
+                path: dir.path().join(".moon/cache/states/foo/bar/lastRun.json"),
                 ..RunTargetState::default()
             }
         );
@@ -213,10 +215,11 @@ mod cache_run_target_state {
             .unwrap();
 
         assert_eq!(
-            item.item,
+            item,
             RunTargetState {
                 exit_code: 123,
                 target: String::from("foo:bar"),
+                path: dir.path().join(".moon/cache/states/foo/bar/lastRun.json"),
                 ..RunTargetState::default()
             }
         );
@@ -239,9 +242,10 @@ mod cache_run_target_state {
             .unwrap();
 
         assert_eq!(
-            item.item,
+            item,
             RunTargetState {
                 target: String::from("foo:bar"),
+                path: dir.path().join(".moon/cache/states/foo/bar/lastRun.json"),
                 ..RunTargetState::default()
             }
         );
@@ -256,13 +260,13 @@ mod cache_run_target_state {
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
-        item.item.exit_code = 123;
+        item.exit_code = 123;
 
         run_with_env("", || item.save()).await.unwrap();
 
         assert_eq!(
             fs::read_to_string(item.path).unwrap(),
-            r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#
+            r#"{"exitCode":123,"hash":"","lastRunTime":0,"target":"foo:bar"}"#
         );
 
         dir.close().unwrap();
@@ -275,7 +279,7 @@ mod cache_run_target_state {
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
-        item.item.exit_code = 123;
+        item.exit_code = 123;
 
         run_with_env("off", || item.save()).await.unwrap();
 
@@ -291,7 +295,7 @@ mod cache_run_target_state {
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
-        item.item.exit_code = 123;
+        item.exit_code = 123;
 
         run_with_env("read", || item.save()).await.unwrap();
 
@@ -337,9 +341,10 @@ mod cache_tool_state {
             .unwrap();
 
         assert_eq!(
-            item.item,
+            item,
             ToolState {
                 last_version_check_time: 123,
+                path: dir.path().join(".moon/cache/states/toolNode-1.2.3.json")
             }
         );
 
@@ -362,9 +367,10 @@ mod cache_tool_state {
             .unwrap();
 
         assert_eq!(
-            item.item,
+            item,
             ToolState {
                 last_version_check_time: 123,
+                path: dir.path().join(".moon/cache/states/toolNode-4.5.6.json")
             }
         );
 
@@ -376,7 +382,7 @@ mod cache_tool_state {
     async fn doesnt_load_if_it_exists_but_cache_is_off() {
         let dir = assert_fs::TempDir::new().unwrap();
 
-        dir.child(".moon/cache/states/tool-system.json")
+        dir.child(".moon/cache/states/toolSystem-latest.json")
             .write_str(r#"{"lastVersionCheckTime":123}"#)
             .unwrap();
 
@@ -385,7 +391,13 @@ mod cache_tool_state {
             .await
             .unwrap();
 
-        assert_eq!(item.item, ToolState::default());
+        assert_eq!(
+            item,
+            ToolState {
+                path: dir.path().join(".moon/cache/states/toolSystem-latest.json"),
+                ..ToolState::default()
+            }
+        );
 
         dir.close().unwrap();
     }
@@ -400,7 +412,7 @@ mod cache_tool_state {
             .await
             .unwrap();
 
-        item.item.last_version_check_time = 123;
+        item.last_version_check_time = 123;
 
         run_with_env("", || item.save()).await.unwrap();
 
@@ -446,10 +458,11 @@ mod cache_projects_state {
         let item = cache.cache_projects_state().await.unwrap();
 
         assert_eq!(
-            item.item,
+            item,
             ProjectsState {
                 globs: string_vec!["**/*"],
                 projects: HashMap::from([("foo".to_owned(), "bar".to_owned())]),
+                path: dir.path().join(".moon/cache/states/projects.json")
             }
         );
 
@@ -471,10 +484,11 @@ mod cache_projects_state {
             .unwrap();
 
         assert_eq!(
-            item.item,
+            item,
             ProjectsState {
                 globs: string_vec!["**/*"],
                 projects: HashMap::from([("foo".to_owned(), "bar".to_owned())]),
+                path: dir.path().join(".moon/cache/states/projects.json")
             }
         );
 
@@ -495,7 +509,13 @@ mod cache_projects_state {
             .await
             .unwrap();
 
-        assert_eq!(item.item, ProjectsState::default());
+        assert_eq!(
+            item,
+            ProjectsState {
+                path: dir.path().join(".moon/cache/states/projects.json"),
+                ..ProjectsState::default()
+            }
+        );
 
         dir.close().unwrap();
     }
@@ -509,7 +529,7 @@ mod cache_projects_state {
             .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
             .unwrap();
 
-        let now = to_millis(SystemTime::now()) - 100000;
+        let now = time::to_millis(SystemTime::now()) - 100000;
 
         set_file_mtime(
             dir.path().join(".moon/cache/states/projects.json"),
@@ -520,7 +540,13 @@ mod cache_projects_state {
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache.cache_projects_state().await.unwrap();
 
-        assert_eq!(item.item, ProjectsState::default());
+        assert_eq!(
+            item,
+            ProjectsState {
+                path: dir.path().join(".moon/cache/states/projects.json"),
+                ..ProjectsState::default()
+            }
+        );
 
         dir.close().unwrap();
     }
@@ -532,9 +558,7 @@ mod cache_projects_state {
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_projects_state().await.unwrap();
 
-        item.item
-            .projects
-            .insert("foo".to_owned(), "bar".to_owned());
+        item.projects.insert("foo".to_owned(), "bar".to_owned());
 
         run_with_env("", || item.save()).await.unwrap();
 

@@ -1,7 +1,7 @@
 use crate::RunnerError;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionStatus, Attempt};
-use moon_cache::{CacheItem, RunTargetState};
+use moon_cache::RunTargetState;
 use moon_config::{PlatformType, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
@@ -33,7 +33,7 @@ pub enum HydrateFrom {
 }
 
 pub struct TargetRunner<'a> {
-    pub cache: CacheItem<RunTargetState>,
+    pub cache: RunTargetState,
 
     emitter: &'a Emitter,
 
@@ -70,7 +70,7 @@ impl<'a> TargetRunner<'a> {
     /// so that subsequent builds are faster, and any local outputs
     /// can be rehydrated easily.
     pub async fn archive_outputs(&self) -> Result<(), RunnerError> {
-        let hash = &self.cache.item.hash;
+        let hash = &self.cache.hash;
 
         if self.task.outputs.is_empty() || hash.is_empty() {
             return Ok(());
@@ -114,7 +114,7 @@ impl<'a> TargetRunner<'a> {
     /// If we are cached (hash match), hydrate the project with the
     /// cached task outputs found in the hashed archive.
     pub async fn hydrate_outputs(&self) -> Result<(), RunnerError> {
-        let hash = &self.cache.item.hash;
+        let hash = &self.cache.hash;
 
         if hash.is_empty() {
             return Ok(());
@@ -294,7 +294,7 @@ impl<'a> TargetRunner<'a> {
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
-        if self.cache.item.hash == hash && self.has_outputs() {
+        if self.cache.hash == hash && self.has_outputs() {
             debug!(
                 target: LOG_TARGET,
                 "Cache hit for hash {}, reusing previous build",
@@ -304,7 +304,7 @@ impl<'a> TargetRunner<'a> {
             return Ok(Some(HydrateFrom::PreviousOutput));
         }
 
-        self.cache.item.hash = hash.clone();
+        self.cache.hash = hash.clone();
 
         // Refresh the hash manifest
         self.workspace
@@ -477,19 +477,24 @@ impl<'a> TargetRunner<'a> {
         }
 
         // Write the cache with the result and output
-        self.cache.item.exit_code = output.status.code().unwrap_or(0);
-        self.cache.item.last_run_time = self.cache.now_millis();
-        self.cache.item.stderr = output_to_string(&output.stderr);
-        self.cache.item.stdout = output_to_string(&output.stdout);
+        self.cache.exit_code = output.status.code().unwrap_or(0);
+        self.cache.last_run_time = time::now_millis();
         self.cache.save().await?;
+        self.cache
+            .save_outputs(
+                output_to_string(&output.stdout),
+                output_to_string(&output.stderr),
+            )
+            .await?;
 
         Ok(attempts)
     }
 
-    pub fn print_cache_item(&self) -> Result<(), MoonError> {
-        let item = &self.cache.item;
+    pub async fn print_cache_item(&self) -> Result<(), MoonError> {
+        let item = &self.cache;
+        let (stdout, stderr) = item.load_outputs().await?;
 
-        self.print_output_with_style(&item.stdout, &item.stderr, item.exit_code != 0)?;
+        self.print_output_with_style(&stdout, &stderr, item.exit_code != 0)?;
 
         Ok(())
     }
@@ -536,7 +541,7 @@ impl<'a> TargetRunner<'a> {
             }
             // Only show the hash
             Some(TaskOutputStyle::Hash) => {
-                let hash = &self.cache.item.hash;
+                let hash = &self.cache.hash;
 
                 if !hash.is_empty() {
                     // Print to stderr so it can be captured
@@ -760,7 +765,7 @@ pub async fn run_target(
                 },
             )?;
 
-            runner.print_cache_item()?;
+            runner.print_cache_item().await?;
             runner.flush_output()?;
 
             return Ok(ActionStatus::Cached);

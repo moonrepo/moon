@@ -1,5 +1,5 @@
 use crate::helpers::{is_readable, is_writable, LOG_TARGET};
-use crate::items::{CacheItem, ProjectsState, RunTargetState, ToolState};
+use crate::items::{ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::CacheRunfile;
 use crate::DependenciesState;
 use moon_archive::{tar, untar};
@@ -65,16 +65,15 @@ impl CacheEngine {
         &self,
         runtime: &Runtime,
         project_id: Option<&str>,
-    ) -> Result<CacheItem<DependenciesState>, MoonError> {
+    ) -> Result<DependenciesState, MoonError> {
         let name = format!("deps{}.json", runtime);
 
-        CacheItem::load(
+        DependenciesState::load(
             self.states_dir.join(if let Some(id) = project_id {
                 format!("{}/{}", id, name)
             } else {
                 name
             }),
-            DependenciesState::default(),
             0,
         )
         .await
@@ -83,35 +82,29 @@ impl CacheEngine {
     pub async fn cache_run_target_state(
         &self,
         target_id: &str,
-    ) -> Result<CacheItem<RunTargetState>, MoonError> {
-        CacheItem::load(
-            self.get_target_dir(target_id).join("lastRun.json"),
-            RunTargetState {
-                target: String::from(target_id),
-                ..RunTargetState::default()
-            },
-            0,
-        )
-        .await
+    ) -> Result<RunTargetState, MoonError> {
+        let mut item =
+            RunTargetState::load(self.get_target_dir(target_id).join("lastRun.json"), 0).await?;
+
+        if item.target.is_empty() {
+            item.target = target_id.to_owned();
+        }
+
+        Ok(item)
     }
 
-    pub async fn cache_projects_state(&self) -> Result<CacheItem<ProjectsState>, MoonError> {
-        CacheItem::load(
+    pub async fn cache_projects_state(&self) -> Result<ProjectsState, MoonError> {
+        ProjectsState::load(
             self.states_dir.join("projects.json"),
-            ProjectsState::default(),
             90000, // Cache for 3 minutes
         )
         .await
     }
 
-    pub async fn cache_tool_state(
-        &self,
-        runtime: &Runtime,
-    ) -> Result<CacheItem<ToolState>, MoonError> {
-        CacheItem::load(
+    pub async fn cache_tool_state(&self, runtime: &Runtime) -> Result<ToolState, MoonError> {
+        ToolState::load(
             self.states_dir
                 .join(format!("tool{}-{}.json", runtime, runtime.version())),
-            ToolState::default(),
             0,
         )
         .await

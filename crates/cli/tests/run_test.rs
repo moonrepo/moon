@@ -15,7 +15,7 @@ async fn extract_hash_from_run(fixture: &Path, target: &str) -> String {
     let engine = CacheEngine::load(fixture).await.unwrap();
     let cache = engine.cache_run_target_state(target).await.unwrap();
 
-    cache.item.hash
+    cache.hash
 }
 
 #[test]
@@ -187,7 +187,7 @@ mod logs {
 
 mod caching {
     use super::*;
-    use moon_cache::{CacheItem, RunTargetState};
+    use moon_cache::RunTargetState;
 
     #[test]
     fn uses_cache_on_subsequent_runs() {
@@ -238,22 +238,41 @@ mod caching {
 
         assert!(cache_path.exists());
 
-        let state = CacheItem::load(cache_path, RunTargetState::default(), 0)
-            .await
-            .unwrap();
+        let state = RunTargetState::load(cache_path, 0).await.unwrap();
 
         assert_snapshot!(fs::read_to_string(
             fixture
                 .path()
-                .join(format!(".moon/cache/hashes/{}.json", state.item.hash))
+                .join(format!(".moon/cache/hashes/{}.json", state.hash))
         )
         .unwrap());
 
-        assert_eq!(state.item.exit_code, 0);
-        assert_eq!(state.item.target, "node:standard");
+        assert_eq!(state.exit_code, 0);
+        assert_eq!(state.target, "node:standard");
         assert_eq!(
-            state.item.hash,
+            state.hash,
             "b690c7bdbfb85bf385be5b0c6d68e2616a140352f9c854fd376ee3e2096ab688"
+        );
+
+        // Outputs are written to their own file
+        assert_eq!(
+            fs::read_to_string(
+                fixture
+                    .path()
+                    .join(".moon/cache/states/node/standard/stdout.log")
+            )
+            .unwrap(),
+            "stdout"
+        );
+
+        assert_eq!(
+            fs::read_to_string(
+                fixture
+                    .path()
+                    .join(".moon/cache/states/node/standard/stderr.log")
+            )
+            .unwrap(),
+            "stderr"
         );
     }
 }

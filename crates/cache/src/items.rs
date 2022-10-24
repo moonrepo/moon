@@ -86,6 +86,33 @@ pub struct RunTargetState {
 
 cache_item!(RunTargetState);
 
+impl RunTargetState {
+    pub async fn load_outputs(&self) -> Result<(String, String), MoonError> {
+        let stdout_path = self.path.parent().unwrap().join("stdout.log");
+        let stdout = if stdout_path.exists() {
+            fs::read(stdout_path).await?
+        } else {
+            String::new()
+        };
+
+        let stderr_path = self.path.parent().unwrap().join("stderr.log");
+        let stderr = if stderr_path.exists() {
+            fs::read(stderr_path).await?
+        } else {
+            String::new()
+        };
+
+        Ok((stdout, stderr))
+    }
+
+    pub async fn save_outputs(&self, stdout: String, stderr: String) -> Result<(), MoonError> {
+        fs::write(self.path.parent().unwrap().join("stdout.log"), stdout).await?;
+        fs::write(self.path.parent().unwrap().join("stderr.log"), stderr).await?;
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectsState {

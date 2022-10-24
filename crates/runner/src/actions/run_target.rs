@@ -479,18 +479,22 @@ impl<'a> TargetRunner<'a> {
         // Write the cache with the result and output
         self.cache.exit_code = output.status.code().unwrap_or(0);
         self.cache.last_run_time = time::now_millis();
-        // self.cache.item.stderr = output_to_string(&output.stderr);
-        // self.cache.item.stdout = output_to_string(&output.stdout);
         self.cache.save().await?;
+        self.cache
+            .save_outputs(
+                output_to_string(&output.stdout),
+                output_to_string(&output.stderr),
+            )
+            .await?;
 
         Ok(attempts)
     }
 
-    pub fn print_cache_item(&self) -> Result<(), MoonError> {
+    pub async fn print_cache_item(&self) -> Result<(), MoonError> {
         let item = &self.cache;
+        let (stdout, stderr) = item.load_outputs().await?;
 
-        // TODO
-        // self.print_output_with_style(&item.stdout, &item.stderr, item.exit_code != 0)?;
+        self.print_output_with_style(&stdout, &stderr, item.exit_code != 0)?;
 
         Ok(())
     }
@@ -761,7 +765,7 @@ pub async fn run_target(
                 },
             )?;
 
-            runner.print_cache_item()?;
+            runner.print_cache_item().await?;
             runner.flush_output()?;
 
             return Ok(ActionStatus::Cached);

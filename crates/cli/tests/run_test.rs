@@ -251,7 +251,7 @@ mod caching {
         assert_eq!(state.target, "node:standard");
         assert_eq!(
             state.hash,
-            "b690c7bdbfb85bf385be5b0c6d68e2616a140352f9c854fd376ee3e2096ab688"
+            "d6d8b9ac59dd7d574c7f38b6ed646b3237537b590c21520f4ae960e988715f57"
         );
 
         // Outputs are written to their own file

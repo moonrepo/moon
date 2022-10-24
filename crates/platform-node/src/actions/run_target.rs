@@ -25,10 +25,15 @@ fn create_node_options(
 ) -> Result<Vec<String>, MoonError> {
     let mut options = string_vec![
         // "--inspect", // Enable node inspector
-        // "--preserve-symlinks", // Add an option in a follow-up
         "--title",
         &task.target,
     ];
+
+    if let Some(node_config) = &workspace.config.node {
+        if !node_config.bin_exec_args.is_empty() {
+            options.extend(node_config.bin_exec_args.to_owned());
+        }
+    }
 
     if let Some(profile) = &context.profile {
         let prof_dir = workspace.cache.get_target_dir(&task.target);

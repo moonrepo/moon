@@ -175,6 +175,25 @@ fn passes_args_through() {
 }
 
 #[test]
+fn passes_args_to_the_node_bin() {
+    let fixture = create_sandbox_with_git("cases");
+
+    append_workspace_config(
+        fixture.path(),
+        "  binExecArgs:\n    - '--preserve-symlinks'\n",
+    );
+
+    let assert = create_moon_command(fixture.path())
+        .arg("run")
+        .arg("node:binExecArgs")
+        .arg("--")
+        .arg("--extraArg")
+        .assert();
+
+    assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+}
+
+#[test]
 fn sets_env_vars() {
     let fixture = create_sandbox_with_git("cases");
 

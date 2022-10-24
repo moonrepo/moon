@@ -160,6 +160,8 @@ pub struct NodeConfig {
 
     pub alias_package_names: Option<NodeProjectAliasFormat>,
 
+    pub bin_exec_args: Vec<String>,
+
     pub dedupe_on_lockfile_change: bool,
 
     pub dependency_version_format: NodeVersionFormat,
@@ -190,6 +192,7 @@ impl Default for NodeConfig {
         NodeConfig {
             add_engines_constraint: true,
             alias_package_names: None,
+            bin_exec_args: vec![],
             dedupe_on_lockfile_change: true,
             dependency_version_format: NodeVersionFormat::WorkspaceCaret,
             infer_tasks_from_scripts: false,

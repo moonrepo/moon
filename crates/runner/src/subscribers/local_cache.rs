@@ -42,7 +42,7 @@ impl Subscriber for LocalCacheSubscriber {
             } => {
                 if let Some(archive_path) = workspace
                     .cache
-                    .create_hash_archive(hash, &project.root, &task.outputs)
+                    .create_hash_archive(hash, &task.target, &project.root, &task.outputs)
                     .await?
                 {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));
@@ -50,10 +50,15 @@ impl Subscriber for LocalCacheSubscriber {
             }
 
             // Hydrate the cached archive into the task's outputs
-            Event::TargetOutputHydrating { hash, project, .. } => {
+            Event::TargetOutputHydrating {
+                hash,
+                project,
+                task,
+                ..
+            } => {
                 if let Some(archive_path) = workspace
                     .cache
-                    .hydrate_from_hash_archive(hash, &project.root)
+                    .hydrate_from_hash_archive(hash, &task.target, &project.root)
                     .await?
                 {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));

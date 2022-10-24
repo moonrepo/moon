@@ -2,9 +2,9 @@ use crate::helpers::{is_readable, is_writable, LOG_TARGET};
 use crate::items::{ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::CacheRunfile;
 use crate::DependenciesState;
-use moon_archive::{tar, untar};
+use moon_archive::{untar, TarArchiver};
 use moon_constants::CONFIG_DIRNAME;
-use moon_error::MoonError;
+use moon_error::{map_io_to_fs_error, MoonError};
 use moon_logger::{color, debug, trace};
 use moon_platform::Runtime;
 use moon_utils::{fs, time};
@@ -145,6 +145,7 @@ impl CacheEngine {
     pub async fn create_hash_archive(
         &self,
         hash: &str,
+        target_id: &str,
         project_root: &Path,
         outputs: &[String],
     ) -> Result<Option<PathBuf>, MoonError> {
@@ -162,8 +163,19 @@ impl CacheEngine {
 
             // New implementation uses tar archives! Very cool.
             if !archive_path.exists() {
-                tar(project_root, outputs, &archive_path, None)
-                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+                let mut tar = TarArchiver::new(project_root, &archive_path);
+                let target_path = self.get_target_dir(target_id);
+
+                // Outputs are relative from project root
+                for output in outputs {
+                    tar.add_source(project_root.join(output), Some(output));
+                }
+
+                // Also include stdout/stderr
+                tar.add_source(target_path.join("stdout.log"), Some("stdout.log"));
+                tar.add_source(target_path.join("stderr.log"), Some("stderr.log"));
+
+                tar.pack().map_err(|e| MoonError::Generic(e.to_string()))?;
             }
 
             return Ok(Some(archive_path));
@@ -253,6 +265,7 @@ impl CacheEngine {
     pub async fn hydrate_from_hash_archive(
         &self,
         hash: &str,
+        target_id: &str,
         project_root: &Path,
     ) -> Result<Option<PathBuf>, MoonError> {
         let archive_path = self.get_hash_archive_path(hash);
@@ -260,6 +273,20 @@ impl CacheEngine {
         if is_readable() && archive_path.exists() {
             untar(&archive_path, project_root, None)
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
+
+            let target_path = self.get_target_dir(target_id);
+            let stdout_log = project_root.join("stdout.log");
+            let stderr_log = project_root.join("stderr.log");
+
+            if stdout_log.exists() {
+                std::fs::rename(&stdout_log, target_path.join("stdout.log"))
+                    .map_err(|e| map_io_to_fs_error(e, stdout_log.to_path_buf()))?;
+            }
+
+            if stderr_log.exists() {
+                std::fs::rename(&stderr_log, target_path.join("stderr.log"))
+                    .map_err(|e| map_io_to_fs_error(e, stderr_log.to_path_buf()))?;
+            }
 
             return Ok(Some(archive_path));
         }

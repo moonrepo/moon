@@ -12,7 +12,7 @@ use tar::{Archive, Builder};
 
 const LOG_TARGET: &str = "moon:archive:tar";
 
-struct TarArchiver<'l> {
+pub struct TarArchiver<'l> {
     input_root: &'l Path,
 
     output_file: &'l Path,
@@ -26,8 +26,8 @@ struct TarArchiver<'l> {
 impl<'l> TarArchiver<'l> {
     pub fn new(input_root: &'l Path, output_file: &'l Path) -> Self {
         TarArchiver {
-            input_root: input_root.as_ref(),
-            output_file: output_file.as_ref(),
+            input_root,
+            output_file,
             prefix: "",
             sources: HashMap::new(),
         }
@@ -121,7 +121,7 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
     }
 
     for file in files {
-        tar.add_source(input_root.join(file), Some(&file));
+        tar.add_source(input_root.join(file), Some(file));
     }
 
     tar.pack()?;

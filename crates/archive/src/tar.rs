@@ -4,12 +4,107 @@ use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use moon_error::map_io_to_fs_error;
-use moon_logger::{color, debug, map_list, trace};
+use moon_logger::{color, debug, trace};
+use std::collections::HashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
 
 const LOG_TARGET: &str = "moon:archive:tar";
+
+struct TarArchiver<'l> {
+    input_root: &'l Path,
+
+    output_file: &'l Path,
+
+    prefix: &'l str,
+
+    // relative file in tarball -> absolute file path to source
+    sources: HashMap<String, PathBuf>,
+}
+
+impl<'l> TarArchiver<'l> {
+    pub fn new(input_root: &'l Path, output_file: &'l Path) -> Self {
+        TarArchiver {
+            input_root: input_root.as_ref(),
+            output_file: output_file.as_ref(),
+            prefix: "",
+            sources: HashMap::new(),
+        }
+    }
+
+    pub fn add_source<P: AsRef<Path>>(&mut self, source: P, name: Option<&str>) -> &mut Self {
+        let source = source.as_ref();
+        let name = match name {
+            Some(n) => n,
+            None => source
+                .file_name()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or_default(),
+        };
+
+        self.sources.insert(name.to_owned(), source.to_path_buf());
+        self
+    }
+
+    pub fn set_prefix(&mut self, prefix: &'l str) -> &mut Self {
+        self.prefix = prefix;
+        self
+    }
+
+    pub fn pack(&self) -> Result<(), ArchiveError> {
+        debug!(
+            target: LOG_TARGET,
+            "Packing tar archive from {} to {}",
+            color::path(&self.input_root),
+            color::path(&self.output_file),
+        );
+
+        // Create .tar
+        let tar = File::create(&self.output_file)
+            .map_err(|e| map_io_to_fs_error(e, self.output_file.to_owned()))?;
+
+        // Compress to .tar.gz
+        let tar_gz = GzEncoder::new(tar, Compression::fast());
+
+        // Add the files to the archive
+        let mut archive = Builder::new(tar_gz);
+
+        for (file, source) in &self.sources {
+            if !source.exists() {
+                trace!(
+                    target: LOG_TARGET,
+                    "Source file {} does not exist, skipping",
+                    color::path(&source)
+                );
+
+                continue;
+            }
+
+            if source.is_file() {
+                trace!(target: LOG_TARGET, "Packing file {}", color::path(&source));
+
+                let mut fh =
+                    File::open(&source).map_err(|e| map_io_to_fs_error(e, source.to_path_buf()))?;
+
+                archive.append_file(prepend_name(file, self.prefix), &mut fh)?;
+            } else {
+                trace!(
+                    target: LOG_TARGET,
+                    "Packing directory {}",
+                    color::path(&source)
+                );
+
+                archive.append_dir_all(prepend_name(file, self.prefix), source)?;
+            }
+        }
+
+        archive.finish()?;
+
+        Ok(())
+    }
+}
 
 #[track_caller]
 pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
@@ -19,53 +114,17 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
     base_prefix: Option<&str>,
 ) -> Result<(), ArchiveError> {
     let input_root = input_root.as_ref();
-    let output_file = output_file.as_ref();
+    let mut tar = TarArchiver::new(input_root, output_file.as_ref());
 
-    debug!(
-        target: LOG_TARGET,
-        "Packing tar archive from {} with {} to {}",
-        color::path(input_root),
-        map_list(files, |f| color::file(f)),
-        color::path(output_file),
-    );
-
-    // Create .tar
-    let tar =
-        File::create(output_file).map_err(|e| map_io_to_fs_error(e, output_file.to_path_buf()))?;
-
-    // Compress to .tar.gz
-    let tar_gz = GzEncoder::new(tar, Compression::fast());
-
-    // Add the files to the archive
-    let mut archive = Builder::new(tar_gz);
-    let prefix = base_prefix.unwrap_or_default();
-
-    for file in files {
-        let input_src = input_root.join(file);
-
-        if input_src.is_file() {
-            trace!(
-                target: LOG_TARGET,
-                "Packing file {}",
-                color::path(&input_src)
-            );
-
-            let mut fh = File::open(&input_src)
-                .map_err(|e| map_io_to_fs_error(e, input_src.to_path_buf()))?;
-
-            archive.append_file(prepend_name(file, prefix), &mut fh)?;
-        } else {
-            trace!(
-                target: LOG_TARGET,
-                "Packing directory {}",
-                color::path(&input_src)
-            );
-
-            archive.append_dir_all(prepend_name(file, prefix), input_src)?;
-        }
+    if let Some(prefix) = base_prefix {
+        tar.set_prefix(prefix);
     }
 
-    archive.finish()?;
+    for file in files {
+        tar.add_source(input_root.join(file), Some(&file));
+    }
+
+    tar.pack()?;
 
     Ok(())
 }

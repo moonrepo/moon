@@ -9,7 +9,7 @@ use moon_platform::Runtime;
 use moon_project::Project;
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_toolchain::tools::node::NodeTool;
-use moon_utils::{fs, is_ci, is_offline};
+use moon_utils::{fs, is_ci, is_offline, time};
 use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -142,7 +142,7 @@ pub async fn install_deps(
         .await?;
 
     if lock_filepath.exists() {
-        last_modified = cache.to_millis(
+        last_modified = time::to_millis(
             fs::metadata(&lock_filepath)
                 .await?
                 .modified()
@@ -151,7 +151,7 @@ pub async fn install_deps(
     }
 
     // Install deps if the lockfile has been modified since the last time they were installed!
-    if has_modified_files || last_modified == 0 || last_modified > cache.item.last_install_time {
+    if has_modified_files || last_modified == 0 || last_modified > cache.last_install_time {
         debug!(
             target: LOG_TARGET,
             "Installing {} dependencies in {}",
@@ -212,7 +212,7 @@ pub async fn install_deps(
         }
 
         // Update the cache with the timestamp
-        cache.item.last_install_time = cache.now_millis();
+        cache.last_install_time = time::now_millis();
         cache.save().await?;
 
         return Ok(ActionStatus::Passed);

@@ -36,10 +36,3 @@ pub fn is_readable() -> bool {
 pub fn is_writable() -> bool {
     get_cache_env_var() == "write"
 }
-
-pub fn to_millis(time: SystemTime) -> u128 {
-    match time.duration_since(SystemTime::UNIX_EPOCH) {
-        Ok(d) => d.as_millis(),
-        Err(_) => 0,
-    }
-}

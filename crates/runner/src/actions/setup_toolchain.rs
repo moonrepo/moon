@@ -3,6 +3,7 @@ use moon_config::NodeConfig;
 use moon_logger::debug;
 use moon_platform::Runtime;
 use moon_toolchain::tools::node::NodeTool;
+use moon_utils::time;
 use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -33,9 +34,9 @@ pub async fn setup_toolchain(
     // Only check the versions every 12 hours, as checking every
     // run has considerable overhead spawning all the child processes.
     // Revisit the threshold if need be.
-    let now = cache.now_millis();
-    let check_versions = cache.item.last_version_check_time == 0
-        || (cache.item.last_version_check_time + HOUR_MILLIS * 12) <= now;
+    let now = time::now_millis();
+    let check_versions = cache.last_version_check_time == 0
+        || (cache.last_version_check_time + HOUR_MILLIS * 12) <= now;
 
     // Install and setup the specific tool + version in the toolchain!
     let installed = match runtime {
@@ -65,7 +66,7 @@ pub async fn setup_toolchain(
 
     // Update the cache with the timestamp
     if check_versions {
-        cache.item.last_version_check_time = now;
+        cache.last_version_check_time = now;
         cache.save().await?;
     }
 

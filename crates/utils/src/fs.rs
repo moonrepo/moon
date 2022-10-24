@@ -159,6 +159,16 @@ pub async fn read_dir_all<T: AsRef<Path> + Send>(path: T) -> Result<Vec<fs::DirE
 }
 
 #[inline]
+pub async fn read<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+    let path = path.as_ref();
+    let data = fs::read_to_string(path)
+        .await
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    Ok(data)
+}
+
+#[inline]
 pub async fn read_json<P, D>(path: P) -> Result<D, MoonError>
 where
     P: AsRef<Path>,
@@ -176,9 +186,7 @@ where
 #[inline]
 pub async fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     let path = path.as_ref();
-    let json = fs::read_to_string(path)
-        .await
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+    let json = read(path).await?;
 
     clean_json(json)
 }

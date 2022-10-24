@@ -229,8 +229,9 @@ targets, and cannot be changed on a per target basis.
 ```yaml title=".moon/workspace.yml" {2-4}
 node:
   binExecArgs:
-    - '--abort-on-uncaught-exception'
     - '--preserve-symlinks'
+    - '--loader'
+    - '@boost/module/loader'
 ```
 
 ### `dedupeOnLockfileChange`

@@ -38,10 +38,10 @@ async fn load_projects_from_cache(
             let mut cache = engine.cache_projects_state().await?;
 
             // Return the values from the cache
-            if !cache.item.projects.is_empty() {
+            if !cache.projects.is_empty() {
                 debug!(target: LOG_TARGET, "Loading projects from cache");
 
-                return Ok(cache.item.projects);
+                return Ok(cache.projects);
             }
 
             // Generate a new projects map by globbing the filesystem
@@ -56,8 +56,8 @@ async fn load_projects_from_cache(
             detect_projects_with_globs(workspace_root, globs, &mut map)?;
 
             // Update the cache
-            cache.item.globs = globs.clone();
-            cache.item.projects = map.clone();
+            cache.globs = globs.clone();
+            cache.projects = map.clone();
             cache.save().await?;
 
             map

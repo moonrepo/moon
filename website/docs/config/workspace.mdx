@@ -218,17 +218,17 @@ node:
   aliasPackageNames: 'name-only'
 ```
 
-### `binRunArgs`
+### `binExecArgs`
 
-<HeadingApiLink to="/api/types/interface/NodeConfig#binRunArgs" />
+<HeadingApiLink to="/api/types/interface/NodeConfig#binExecArgs" />
 
 Additional [command line arguments](https://nodejs.org/api/cli.html) to pass to the `node` binary
-when running a target. This will apply arguments to _all Node.js based_ targets, and cannot be
-changed on a per target basis.
+when it s being executed by running a target. This will apply arguments to _all Node.js based_
+targets, and cannot be changed on a per target basis.
 
 ```yaml title=".moon/workspace.yml" {2-4}
 node:
-  binRunArgs:
+  binExecArgs:
     - '--abort-on-uncaught-exception'
     - '--preserve-symlinks'
 ```

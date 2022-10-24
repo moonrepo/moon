@@ -30,8 +30,8 @@ fn create_node_options(
     ];
 
     if let Some(node_config) = &workspace.config.node {
-        if !node_config.bin_run_args.is_empty() {
-            options.extend(node_config.bin_run_args.to_owned());
+        if !node_config.bin_exec_args.is_empty() {
+            options.extend(node_config.bin_exec_args.to_owned());
         }
     }
 

@@ -32,7 +32,7 @@ export interface YarnConfig extends NodePackageManagerConfig {
 export interface NodeConfig {
 	addEnginesConstraint: boolean;
 	aliasPackageNames: 'name-and-scope' | 'name-only' | null;
-	binRunArgs: string[];
+	binExecArgs: string[];
 	dedupeOnLockfileChange: boolean;
 	dependencyVersionFormat: NodeVersionFormat;
 	inferTasksFromScripts: boolean;

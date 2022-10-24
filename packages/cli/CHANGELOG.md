@@ -6,8 +6,8 @@
 
 ##### Runner
 
-- Added a `node.binRunArgs` settings so that additional `node` CLI arguments may be defined for all ran
-  targets.
+- Added a `node.binExecArgs` settings so that additional `node` CLI arguments may be defined for all
+  ran targets.
 - The stdout and stderr of ran targets are now stored as individual log files in
   `.moon/cache/states/<project>/<task>`. This allows CI environments to cache them as artifacts,
   upload/download them, or simply help developers debug broken jobs.

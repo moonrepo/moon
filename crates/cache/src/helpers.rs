@@ -1,6 +1,5 @@
 use moon_logger::warn;
 use std::env;
-use std::time::SystemTime;
 
 pub const LOG_TARGET: &str = "moon:cache";
 

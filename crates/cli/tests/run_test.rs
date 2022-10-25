@@ -830,6 +830,28 @@ mod outputs {
             .exists());
     }
 
+    #[tokio::test]
+    async fn caches_output_logs_in_tarball() {
+        let fixture = create_sandbox_with_git("cases");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputs:generateFile")
+            .assert();
+
+        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFile").await;
+        let tarball = fixture
+            .path()
+            .join(".moon/cache/outputs")
+            .join(format!("{}.tar.gz", hash));
+        let dir = fixture.path().join(".moon/cache/outputs").join(hash);
+
+        moon_archive::untar(tarball, &dir, None).unwrap();
+
+        assert!(dir.join("stdout.log").exists());
+        assert!(dir.join("stderr.log").exists());
+    }
+
     mod hydration {
         use super::*;
         use pretty_assertions::assert_eq;
@@ -857,6 +879,24 @@ mod outputs {
             assert_eq!(hash1, hash2);
             assert_snapshot!(get_assert_output(&assert1));
             assert_snapshot!(get_assert_output(&assert2));
+        }
+
+        #[tokio::test]
+        async fn doesnt_keep_output_logs_in_project() {
+            let fixture = create_sandbox_with_git("cases");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            assert!(!fixture.path().join("outputs/stdout.log").exists());
+            assert!(!fixture.path().join("outputs/stderr.log").exists());
         }
 
         #[tokio::test]

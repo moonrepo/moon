@@ -1,8 +1,6 @@
-use crate::helpers::{is_readable, is_writable, LOG_TARGET};
-use crate::items::{ProjectsState, RunTargetState, ToolState};
-use crate::runfiles::CacheRunfile;
-use crate::DependenciesState;
-use moon_archive::{tar, untar};
+use crate::helpers::{is_writable, LOG_TARGET};
+use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
+use crate::runfiles::Runfile;
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
@@ -126,11 +124,11 @@ impl CacheEngine {
         let (hashes_deleted, hashes_bytes) =
             fs::remove_dir_stale_contents(&self.hashes_dir, duration).await?;
 
-        let (outs_deleted, outs_bytes) =
+        let (outputs_deleted, outputs_bytes) =
             fs::remove_dir_stale_contents(&self.outputs_dir, duration).await?;
 
-        let deleted = hashes_deleted + outs_deleted;
-        let bytes = hashes_bytes + outs_bytes;
+        let deleted = hashes_deleted + outputs_deleted;
+        let bytes = hashes_bytes + outputs_bytes;
 
         trace!(
             target: LOG_TARGET,
@@ -140,36 +138,6 @@ impl CacheEngine {
         );
 
         Ok((deleted, bytes))
-    }
-
-    pub async fn create_hash_archive(
-        &self,
-        hash: &str,
-        project_root: &Path,
-        outputs: &[String],
-    ) -> Result<Option<PathBuf>, MoonError> {
-        let archive_path = self.get_hash_archive_path(hash);
-
-        if is_writable() && !outputs.is_empty() {
-            // TODO: Remove in v1
-            // Old implementation would copy files to a hashed folder,
-            // so if we encounter that folder, let's just remove it!
-            let old_hash_folder = self.outputs_dir.join(hash);
-
-            if old_hash_folder.exists() && old_hash_folder.is_dir() {
-                fs::remove_dir_all(old_hash_folder).await?;
-            }
-
-            // New implementation uses tar archives! Very cool.
-            if !archive_path.exists() {
-                tar(project_root, outputs, &archive_path, None)
-                    .map_err(|e| MoonError::Generic(e.to_string()))?;
-            }
-
-            return Ok(Some(archive_path));
-        }
-
-        Ok(None)
     }
 
     pub async fn create_hash_manifest<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>
@@ -209,19 +177,8 @@ impl CacheEngine {
         &self,
         project_id: &str,
         data: &T,
-    ) -> Result<CacheRunfile, MoonError> {
-        CacheRunfile::load(self.get_project_dir(project_id).join("runfile.json"), data).await
-    }
-
-    pub async fn delete_hash(&self, hash: &str) -> Result<(), MoonError> {
-        if is_writable() {
-            trace!(target: LOG_TARGET, "Deleting hash {}", color::symbol(hash));
-
-            fs::remove_file(self.get_hash_manifest_path(hash)).await?;
-            fs::remove_file(self.get_hash_archive_path(hash)).await?;
-        }
-
-        Ok(())
+    ) -> Result<Runfile, MoonError> {
+        Runfile::load(self.states_dir.join(project_id).join("runfile.json"), data).await
     }
 
     pub fn get_hash_archive_path(&self, hash: &str) -> PathBuf {
@@ -232,38 +189,7 @@ impl CacheEngine {
         self.hashes_dir.join(format!("{}.json", hash))
     }
 
-    pub fn get_project_dir(&self, project_id: &str) -> PathBuf {
-        self.states_dir.join(project_id)
-    }
-
     pub fn get_target_dir(&self, target_id: &str) -> PathBuf {
         self.states_dir.join(target_id.replace(':', "/"))
-    }
-
-    /// Check to see if a build with the provided hash has been cached.
-    /// We only check for the archive, as the manifest is purely for local debugging!
-    pub fn is_hash_cached(&self, hash: &str) -> bool {
-        if is_readable() {
-            return self.get_hash_archive_path(hash).exists();
-        }
-
-        false
-    }
-
-    pub async fn hydrate_from_hash_archive(
-        &self,
-        hash: &str,
-        project_root: &Path,
-    ) -> Result<Option<PathBuf>, MoonError> {
-        let archive_path = self.get_hash_archive_path(hash);
-
-        if is_readable() && archive_path.exists() {
-            untar(&archive_path, project_root, None)
-                .map_err(|e| MoonError::Generic(e.to_string()))?;
-
-            return Ok(Some(archive_path));
-        }
-
-        Ok(None)
     }
 }

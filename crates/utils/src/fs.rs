@@ -288,6 +288,17 @@ pub async fn remove_dir_stale_contents<P: AsRef<Path>>(
 }
 
 #[inline]
+pub async fn rename<F: AsRef<Path>, T: AsRef<Path>>(from: F, to: T) -> Result<(), MoonError> {
+    let from = from.as_ref();
+
+    fs::rename(from, to.as_ref())
+        .await
+        .map_err(|e| map_io_to_fs_error(e, from.to_path_buf()))?;
+
+    Ok(())
+}
+
+#[inline]
 pub async fn write<T: AsRef<Path>>(path: T, data: impl AsRef<[u8]>) -> Result<(), MoonError> {
     let path = path.as_ref();
 

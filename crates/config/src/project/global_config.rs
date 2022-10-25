@@ -64,11 +64,11 @@ pub struct GlobalProjectConfig {
 }
 
 impl GlobalProjectConfig {
-    pub async fn load(path: PathBuf) -> Result<GlobalProjectConfig, ConfigError> {
+    pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ConfigError> {
         let profile_name = "globalProject";
         let mut config = GlobalProjectConfig::default();
 
-        for source in gather_extended_sources(&path).await? {
+        for source in gather_extended_sources(&path)? {
             let figment = Figment::from(YamlExtended::file(source).profile(&profile_name));
             let extended_config = GlobalProjectConfig::load_config(figment.select(&profile_name))?;
 

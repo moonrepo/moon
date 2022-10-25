@@ -36,9 +36,7 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
 }
 
 // .moon/project.yml
-async fn load_global_project_config(
-    root_dir: &Path,
-) -> Result<GlobalProjectConfig, WorkspaceError> {
+fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, WorkspaceError> {
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_GLOBAL_PROJECT_FILENAME);
@@ -58,7 +56,7 @@ async fn load_global_project_config(
         return Ok(GlobalProjectConfig::default());
     }
 
-    match GlobalProjectConfig::load(config_path).await {
+    match GlobalProjectConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(
             if let ConfigError::FailedValidation(valids) = errors {
@@ -71,7 +69,7 @@ async fn load_global_project_config(
 }
 
 // .moon/workspace.yml
-async fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceError> {
+fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceError> {
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_WORKSPACE_FILENAME);
@@ -91,7 +89,7 @@ async fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, Works
         return Err(WorkspaceError::MissingWorkspaceConfigFile);
     }
 
-    match WorkspaceConfig::load(config_path).await {
+    match WorkspaceConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidWorkspaceConfigFile(
             if let ConfigError::FailedValidation(valids) = errors {
@@ -148,8 +146,8 @@ impl Workspace {
         );
 
         // Load configs
-        let config = load_workspace_config(&root_dir).await?;
-        let project_config = load_global_project_config(&root_dir).await?;
+        let config = load_workspace_config(&root_dir)?;
+        let project_config = load_global_project_config(&root_dir)?;
 
         // Setup components
         let cache = CacheEngine::load(&root_dir).await?;

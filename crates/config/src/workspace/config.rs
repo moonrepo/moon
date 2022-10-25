@@ -107,12 +107,12 @@ pub struct WorkspaceConfig {
 }
 
 impl WorkspaceConfig {
-    pub async fn load(path: PathBuf) -> Result<WorkspaceConfig, ConfigError> {
+    pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ConfigError> {
         let profile_name = "workspace";
         let mut figment =
             Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name));
 
-        for source in gather_extended_sources(&path).await? {
+        for source in gather_extended_sources(&path)? {
             figment = figment.merge(YamlExtended::file(source).profile(&profile_name));
         }
 

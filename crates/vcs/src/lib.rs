@@ -20,14 +20,16 @@ pub async fn detect_vcs(
     if dest_dir.join(".git").exists() {
         return Ok((
             VcsManager::Git,
-            Git::new("master", dest_dir)?.get_local_branch().await?,
+            Git::load("master", dest_dir)?.get_local_branch().await?,
         ));
     }
+
     if dest_dir.join(".svn").exists() {
         return Ok((
             VcsManager::Svn,
-            Svn::new("trunk", dest_dir).get_local_branch().await?,
+            Svn::load("trunk", dest_dir).get_local_branch().await?,
         ));
     }
+
     Ok((VcsManager::Git, "master".into()))
 }

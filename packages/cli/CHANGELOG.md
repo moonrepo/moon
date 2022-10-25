@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Updated the `projects` setting in `.moon/workspace.yml` to support globs _and_ a map in unison.
 - Updated default versions of tools:
   - node 16.17.0 -> 18.11.0
   - pnpm 7.12.1 -> 7.14.0
@@ -18,9 +19,16 @@
   upload/download them, or simply help developers debug broken jobs.
   - Also, these log files are now stored in the output tarballs.
 
+##### Migrator
+
+- Updated `moon migrate` commands to throw an error if the work tree is dirty. This can be bypassed
+  with the new `--skipTouchedFilesCheck` option.
+
 #### ⚙️ Internal
 
 - Timestamps have been updated to UTC _without timezone_.
+- Implemented a benchmarking system to start capturing performance changes.
+- Improved language and platform interoperability.
 
 ## 0.17.0
 

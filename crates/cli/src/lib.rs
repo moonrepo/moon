@@ -83,7 +83,7 @@ pub async fn run_cli() {
         Commands::Check { ids, report } => check(ids, CheckOptions { report: *report }).await,
         Commands::Clean { lifetime } => {
             clean(CleanOptions {
-                cache_liftime: lifetime.to_owned(),
+                cache_lifetime: lifetime.to_owned(),
             })
             .await
         }

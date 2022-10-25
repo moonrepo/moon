@@ -4,6 +4,11 @@
 
 #### 🚀 Updates
 
+- Updated default versions of tools:
+  - node 16.17.0 -> 18.11.0
+  - pnpm 7.12.1 -> 7.14.0
+  - yarn 3.2.3 -> 3.2.4
+
 ##### Runner
 
 - Added a `node.binExecArgs` setting to `.moon/workspace.yml`, so that additional `node` CLI

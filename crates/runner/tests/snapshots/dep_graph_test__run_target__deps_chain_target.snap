@@ -1,11 +1,11 @@
 ---
-source: crates/action-runner/tests/dep_graph_test.rs
-assertion_line: 167
+source: crates/runner/tests/dep_graph_test.rs
+assertion_line: 199
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label="SetupNodeTool(16.17.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    1 [ label="InstallNodeDeps(16.17.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    0 [ label="SetupNodeTool(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="InstallNodeDeps(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     2 [ label="SyncNodeProject(basic)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     3 [ label="RunTarget(basic:test)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     4 [ label="RunTarget(basic:lint)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]

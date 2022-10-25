@@ -8,12 +8,10 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct ProjectsState {
-    #[serde(default)]
     pub globs: Vec<String>,
 
-    #[serde(default)]
     pub projects: HashMap<String, String>,
 
     #[serde(skip)]

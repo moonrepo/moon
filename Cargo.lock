@@ -1813,6 +1813,7 @@ dependencies = [
  "itertools",
  "mimalloc",
  "moon_action",
+ "moon_archive",
  "moon_cache",
  "moon_config",
  "moon_constants",

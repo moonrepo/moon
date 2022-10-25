@@ -7,9 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct ToolState {
-    #[serde(default)]
     pub last_version_check_time: u128,
 
     #[serde(skip)]

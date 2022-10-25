@@ -7,9 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct DependenciesState {
-    #[serde(default)]
     pub last_install_time: u128,
 
     #[serde(skip)]

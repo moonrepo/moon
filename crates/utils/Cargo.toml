@@ -7,16 +7,16 @@ edition = "2021"
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
-assert_cmd = "2.0.4"
+assert_cmd = "2.0.5"
 assert_fs = "1.0.7"
 async-recursion = "1.0.0"
-cached = "0.39.0"
+cached = "0.40.0"
 chrono = { version = "0.4.22", features = ["serde"] }
 chrono-humanize = "0.2.2"
 clean-path = "0.2.1"
 dirs = "4.0.0"
 dunce = "1.0.3"
-futures = "0.3.24"
+futures = "0.3.25"
 humantime = "2.1.0"
 json_comments = "0.2.1"
 lazy_static = "1.4.0"

@@ -20,7 +20,7 @@ pub fn download_and_cache_config(url: &str) -> Result<PathBuf, ConfigError> {
         .text()
         .map_err(error_handler)?;
 
-    temp::write(&file, data)?;
+    temp::write(&file, format!("# source: {}\n\n{}", url, data))?;
 
     Ok(file)
 }

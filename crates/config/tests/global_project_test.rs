@@ -6,24 +6,18 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
-    // Our config loading is async, but figment only allows testing sync code,
-    // so we need this wrapper that blocks the thread so we can run async.
-    tokio::task::block_in_place(|| {
-        tokio::runtime::Handle::current().block_on(async {
-            match GlobalProjectConfig::load(root.join(CONFIG_GLOBAL_PROJECT_FILENAME)).await {
-                Ok(cfg) => Ok(cfg),
-                Err(error) => Err(match error {
-                    ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
-                    ConfigError::Figment(f) => f,
-                    e => figment::Error::from(e.to_string()),
-                }),
-            }
-        })
-    })
+    match GlobalProjectConfig::load(root.join(CONFIG_GLOBAL_PROJECT_FILENAME)) {
+        Ok(cfg) => Ok(cfg),
+        Err(error) => Err(match error {
+            ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
+            ConfigError::Figment(f) => f,
+            e => figment::Error::from(e.to_string()),
+        }),
+    }
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn loads_defaults() {
+#[test]
+fn loads_defaults() {
     figment::Jail::expect_with(|jail| {
         jail.create_file(
             CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -55,12 +49,10 @@ mod extends {
     use pretty_assertions::assert_eq;
     use std::fs;
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn recursive_merges() {
+    #[test]
+    fn recursive_merges() {
         let fixture = get_fixtures_dir("config-extends/project");
-        let config = GlobalProjectConfig::load(fixture.join("global-2.yml"))
-            .await
-            .unwrap();
+        let config = GlobalProjectConfig::load(fixture.join("global-2.yml")).unwrap();
 
         assert_eq!(
             config,
@@ -97,12 +89,12 @@ mod extends {
         )
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     // #[should_panic(
     //     expected = "invalid type: found unsigned int `123`, expected a string for key \"globalProject.extends\""
     // )]
     #[should_panic(expected = "Invalid <id>extends</id> field, must be a string.")]
-    async fn invalid_type() {
+    fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_GLOBAL_PROJECT_FILENAME, "extends: 123")?;
 
@@ -112,12 +104,12 @@ mod extends {
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     // #[should_panic(
     //     expected = "Must be a valid URL or relative file path (starts with ./) for key \"globalProject.extends\""
     // )]
     #[should_panic(expected = "only YAML documents are supported")]
-    async fn not_a_url_or_file() {
+    fn not_a_url_or_file() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -130,9 +122,9 @@ mod extends {
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[should_panic(expected = "only HTTPS URLs are supported")]
-    async fn not_a_https_url() {
+    fn not_a_https_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -145,10 +137,10 @@ mod extends {
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     // #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
     #[should_panic(expected = "only YAML documents are supported")]
-    async fn not_a_yaml_url() {
+    fn not_a_yaml_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -161,10 +153,10 @@ mod extends {
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     // #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
     #[should_panic(expected = "only YAML documents are supported")]
-    async fn not_a_yaml_file() {
+    fn not_a_yaml_file() {
         figment::Jail::expect_with(|jail| {
             fs::create_dir_all(jail.directory().join("shared")).unwrap();
 
@@ -228,8 +220,8 @@ mod extends {
         ])
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn loads_from_file() {
+    #[test]
+    fn loads_from_file() {
         use pretty_assertions::assert_eq;
 
         figment::Jail::expect_with(|jail| {
@@ -271,8 +263,8 @@ fileGroups:
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn loads_from_url() {
+    #[test]
+    fn loads_from_url() {
         use pretty_assertions::assert_eq;
 
         figment::Jail::expect_with(|jail| {
@@ -328,11 +320,11 @@ fileGroups:
 }
 
 mod file_groups {
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.fileGroups\""
     )]
-    async fn invalid_type() {
+    fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_GLOBAL_PROJECT_FILENAME, "fileGroups: 123")?;
 
@@ -342,11 +334,11 @@ mod file_groups {
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected a sequence for key \"globalProject.fileGroups.sources\""
     )]
-    async fn invalid_value_type() {
+    fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -366,11 +358,11 @@ mod tasks {
     use super::*;
     use moon_config::TaskConfig;
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.tasks\""
     )]
-    async fn invalid_type() {
+    fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -386,11 +378,11 @@ tasks: 123
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"globalProject.tasks.test\""
     )]
-    async fn invalid_value_type() {
+    fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -407,11 +399,11 @@ tasks:
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[should_panic(
         expected = "expected a string or a sequence of strings for key \"globalProject.tasks.test.command\""
     )]
-    async fn invalid_value_field() {
+    fn invalid_value_field() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -429,9 +421,9 @@ tasks:
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[should_panic(expected = "An npm/system command is required")]
-    async fn invalid_value_empty_field() {
+    fn invalid_value_empty_field() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -449,8 +441,8 @@ tasks:
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn can_use_references() {
+    #[test]
+    fn can_use_references() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -491,8 +483,8 @@ tasks:
         });
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn can_use_references_from_root() {
+    #[test]
+    fn can_use_references_from_root() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
                 super::CONFIG_GLOBAL_PROJECT_FILENAME,

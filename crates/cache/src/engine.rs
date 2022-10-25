@@ -1,7 +1,6 @@
 use crate::helpers::{is_readable, is_writable, LOG_TARGET};
-use crate::items::{ProjectsState, RunTargetState, ToolState};
+use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::CacheRunfile;
-use crate::DependenciesState;
 use moon_archive::{untar, TarArchiver};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::{map_io_to_fs_error, MoonError};

@@ -26,42 +26,45 @@ impl Subscriber for LocalCacheSubscriber {
         workspace: &Workspace,
     ) -> Result<EventFlow, MoonError> {
         match event {
-            // Check if the archive exists on the local file system
+            // Check to see if a build with the provided hash has been cached.
+            // We only check for the archive, as the manifest is purely for local debugging!
             Event::TargetOutputCacheCheck { hash, .. } => {
-                if workspace.cache.is_hash_cached(hash) {
+                let archive_file = workspace.cache.get_hash_archive_path(hash);
+
+                if archive_file.exists() {
                     return Ok(EventFlow::Return("local-cache".into()));
                 }
             }
 
             // Archive the task's outputs into the cache
             Event::TargetOutputArchiving {
+                cache,
                 hash,
                 project,
                 task,
                 ..
             } => {
-                if let Some(archive_path) = workspace
-                    .cache
-                    .create_hash_archive(hash, &task.target, &project.root, &task.outputs)
+                let archive_file = workspace.cache.get_hash_archive_path(hash);
+
+                if cache
+                    .archive_outputs(&archive_file, &project.root, &task.outputs)
                     .await?
                 {
-                    return Ok(EventFlow::Return(path::to_string(archive_path)?));
+                    return Ok(EventFlow::Return(path::to_string(archive_file)?));
                 }
             }
 
             // Hydrate the cached archive into the task's outputs
             Event::TargetOutputHydrating {
+                cache,
                 hash,
                 project,
-                task,
                 ..
             } => {
-                if let Some(archive_path) = workspace
-                    .cache
-                    .hydrate_from_hash_archive(hash, &task.target, &project.root)
-                    .await?
-                {
-                    return Ok(EventFlow::Return(path::to_string(archive_path)?));
+                let archive_file = workspace.cache.get_hash_archive_path(hash);
+
+                if cache.hydrate_outputs(&archive_file, &project.root).await? {
+                    return Ok(EventFlow::Return(path::to_string(archive_file)?));
                 }
             }
 

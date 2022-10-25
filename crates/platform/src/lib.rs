@@ -7,10 +7,10 @@ use moon_config::{
 use moon_error::MoonError;
 use serde::Serialize;
 use std::collections::BTreeMap;
-use std::fmt;
+use std::fmt::{self, Debug};
 use std::path::Path;
 
-pub trait Platform: Send + Sync {
+pub trait Platform: Debug + Send + Sync {
     /// Return a runtime with an appropriate version based on the provided configs.
     fn get_runtime_from_config(
         &self,

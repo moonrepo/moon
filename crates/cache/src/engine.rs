@@ -1,6 +1,6 @@
 use crate::helpers::{is_writable, LOG_TARGET};
 use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
-use crate::runfiles::CacheRunfile;
+use crate::runfiles::Runfile;
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
@@ -177,8 +177,8 @@ impl CacheEngine {
         &self,
         project_id: &str,
         data: &T,
-    ) -> Result<CacheRunfile, MoonError> {
-        CacheRunfile::load(self.states_dir.join(project_id).join("runfile.json"), data).await
+    ) -> Result<Runfile, MoonError> {
+        Runfile::load(self.states_dir.join(project_id).join("runfile.json"), data).await
     }
 
     pub fn get_hash_archive_path(&self, hash: &str) -> PathBuf {

@@ -5,15 +5,15 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::path::PathBuf;
 
-pub struct CacheRunfile {
+pub struct Runfile {
     pub path: PathBuf,
 }
 
-impl CacheRunfile {
+impl Runfile {
     pub async fn load<T: DeserializeOwned + Serialize>(
         path: PathBuf,
         data: &T,
-    ) -> Result<CacheRunfile, MoonError> {
+    ) -> Result<Runfile, MoonError> {
         trace!(target: "moon:cache:runfile", "Writing runfile {}", color::path(&path));
 
         fs::create_dir_all(path.parent().unwrap()).await?;
@@ -22,6 +22,6 @@ impl CacheRunfile {
         // since consumers expect this to exist at runtime
         fs::write_json(&path, data, true).await?;
 
-        Ok(CacheRunfile { path })
+        Ok(Runfile { path })
     }
 }

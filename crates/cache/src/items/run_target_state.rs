@@ -1,7 +1,7 @@
 use crate::cache_item;
 use crate::helpers::{is_readable, is_writable};
 use moon_archive::{untar, TarArchiver};
-use moon_error::{map_io_to_fs_error, MoonError};
+use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_utils::{fs, time};
 use serde::{Deserialize, Serialize};
@@ -67,13 +67,11 @@ impl RunTargetState {
             let stderr_log = project_root.join("stderr.log");
 
             if stdout_log.exists() {
-                std::fs::rename(&stdout_log, cache_logs.0)
-                    .map_err(|e| map_io_to_fs_error(e, stdout_log.to_path_buf()))?;
+                fs::rename(&stdout_log, cache_logs.0).await?;
             }
 
             if stderr_log.exists() {
-                std::fs::rename(&stderr_log, cache_logs.1)
-                    .map_err(|e| map_io_to_fs_error(e, stderr_log.to_path_buf()))?;
+                fs::rename(&stderr_log, cache_logs.1).await?;
             }
 
             return Ok(true);

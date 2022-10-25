@@ -698,6 +698,26 @@ projects:
     }
 
     #[test]
+    #[should_panic(expected = "Absolute paths are not supported for key \"workspace.projects\"")]
+    fn no_abs_paths_when_nested() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                r#"
+projects:
+  globs: []
+  sources:
+    app: /apps/app
+    foo: packages/foo"#,
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
     #[should_panic(
         expected = "Parent relative paths are not supported for key \"workspace.projects\""
     )]
@@ -709,6 +729,28 @@ projects:
 projects:
   app: ../apps/app
   foo: packages/foo"#,
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Parent relative paths are not supported for key \"workspace.projects\""
+    )]
+    fn no_parent_paths_when_nested() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                r#"
+projects:
+  globs: []
+  sources:
+    app: ../apps/app
+    foo: packages/foo"#,
             )?;
 
             super::load_jailed_config(jail.directory())?;
@@ -758,6 +800,61 @@ projects:
             assert_eq!(
                 config.projects,
                 WorkspaceProjects::Globs(moon_utils::string_vec!["apps/*", "packages/*"])
+            );
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn supports_globs_when_nested() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                r#"
+projects:
+  sources: {}
+  globs:
+    - 'apps/*'
+    - 'packages/*'"#,
+            )?;
+
+            let config = super::load_jailed_config(jail.directory())?;
+
+            assert_eq!(
+                config.projects,
+                WorkspaceProjects::Both {
+                    globs: moon_utils::string_vec!["apps/*", "packages/*"],
+                    sources: HashMap::new()
+                }
+            );
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn supports_nested_both_syntax() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                r#"
+projects:
+  globs:
+    - 'apps/*'
+    - 'packages/*'
+  sources:
+    app: apps/app "#,
+            )?;
+
+            let config = super::load_jailed_config(jail.directory())?;
+
+            assert_eq!(
+                config.projects,
+                WorkspaceProjects::Both {
+                    globs: moon_utils::string_vec!["apps/*", "packages/*"],
+                    sources: HashMap::from([(String::from("app"), String::from("apps/app")),])
+                }
             );
 
             Ok(())

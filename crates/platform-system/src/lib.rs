@@ -5,7 +5,7 @@ pub use hasher::SystemTargetHasher;
 use moon_config::{ProjectConfig, WorkspaceConfig};
 use moon_platform::{Platform, Runtime};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct SystemPlatform;
 
 impl Platform for SystemPlatform {

@@ -46,33 +46,36 @@ async fn load_projects_from_cache(
             globs: list,
             sources: map,
         } => {
-            sources.extend(map.clone());
             globs.extend(list.clone());
+            sources.extend(map.clone());
         }
     };
 
-    let mut cache = engine.cache_projects_state().await?;
+    // Only check the cache when using globs
+    if !globs.is_empty() {
+        let mut cache = engine.cache_projects_state().await?;
 
-    // Return the values from the cache
-    if !cache.projects.is_empty() {
-        debug!(target: LOG_TARGET, "Loading projects from cache");
+        // Return the values from the cache
+        if !cache.projects.is_empty() {
+            debug!(target: LOG_TARGET, "Loading projects from cache");
 
-        return Ok(cache.projects);
+            return Ok(cache.projects);
+        }
+
+        // Generate a new projects map by globbing the filesystem
+        debug!(
+            target: LOG_TARGET,
+            "Finding projects with globs: {}",
+            map_list(&globs, |g| color::file(g))
+        );
+
+        detect_projects_with_globs(workspace_root, &globs, &mut sources)?;
+
+        // Update the cache
+        cache.globs = globs.clone();
+        cache.projects = sources.clone();
+        cache.save().await?;
     }
-
-    // Generate a new projects map by globbing the filesystem
-    debug!(
-        target: LOG_TARGET,
-        "Finding projects with globs: {}",
-        map_list(&globs, |g| color::file(g))
-    );
-
-    detect_projects_with_globs(workspace_root, &globs, &mut sources)?;
-
-    // Update the cache
-    cache.globs = globs.clone();
-    cache.projects = sources.clone();
-    cache.save().await?;
 
     debug!(
         target: LOG_TARGET,

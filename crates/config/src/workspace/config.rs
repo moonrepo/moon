@@ -30,7 +30,13 @@ type ProjectsMap = HashMap<String, FilePath>;
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
 fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidationError> {
-    if let WorkspaceProjects::Sources(map) = projects {
+    let map = match projects {
+        WorkspaceProjects::Sources(sources) => Some(sources),
+        WorkspaceProjects::Both { sources, .. } => Some(sources),
+        _ => None,
+    };
+
+    if let Some(map) = map {
         for (key, value) in map {
             validate_id(format!("projects.{}", key), key)?;
 

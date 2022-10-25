@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Updated the `projects` setting in `.moon/workspace.yml` to support globs _and_ a map in unison.
 - Updated default versions of tools:
   - node 16.17.0 -> 18.11.0
   - pnpm 7.12.1 -> 7.14.0

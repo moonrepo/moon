@@ -7,6 +7,7 @@ use moon_project_graph::ProjectGraph;
 use moon_utils::string_vec;
 use moon_utils::test::{create_sandbox, create_sandbox_with_git, get_fixtures_dir};
 use std::collections::HashMap;
+use std::fs;
 
 async fn get_aliases_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/aliases");
@@ -84,9 +85,58 @@ async fn get_dependents_graph() -> ProjectGraph {
     .unwrap()
 }
 
+#[tokio::test]
+async fn can_use_map_and_globs_setting() {
+    let fixture = create_sandbox("projects");
+
+    fs::write(
+        fixture.path().join(".moon/workspace.yml"),
+        r#"
+extends: '../shared-workspace.yml'
+projects:
+  globs:
+    - 'deps/*'
+  sources:
+    basic: basic
+    noConfig: noConfig
+"#,
+    )
+    .unwrap();
+
+    let workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Both {
+            globs: string_vec!["deps/*"],
+            sources: HashMap::from([
+                ("basic".to_owned(), "basic".to_owned()),
+                ("noConfig".to_owned(), "noConfig".to_owned()),
+            ]),
+        },
+        ..WorkspaceConfig::default()
+    };
+
+    let graph = ProjectGraph::generate(
+        fixture.path(),
+        &workspace_config,
+        GlobalProjectConfig::default(),
+        &CacheEngine::load(fixture.path()).await.unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        graph.projects_map,
+        HashMap::from([
+            ("noConfig".to_owned(), "noConfig".to_owned()),
+            ("bar".to_owned(), "deps/bar".to_owned()),
+            ("basic".to_owned(), "basic".to_owned()),
+            ("baz".to_owned(), "deps/baz".to_owned()),
+            ("foo".to_owned(), "deps/foo".to_owned()),
+        ])
+    );
+}
+
 mod globs {
     use super::*;
-    use std::fs;
 
     #[tokio::test]
     async fn ignores_dot_folders() {

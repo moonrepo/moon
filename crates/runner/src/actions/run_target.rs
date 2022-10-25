@@ -90,6 +90,7 @@ impl<'a> TargetRunner<'a> {
         if let EventFlow::Return(archive_path) = self
             .emitter
             .emit(Event::TargetOutputArchiving {
+                cache: &self.cache,
                 hash,
                 project: self.project,
                 target: &self.task.target,
@@ -129,6 +130,7 @@ impl<'a> TargetRunner<'a> {
         if let EventFlow::Return(archive_path) = self
             .emitter
             .emit(Event::TargetOutputHydrating {
+                cache: &self.cache,
                 hash,
                 project: self.project,
                 target: &self.task.target,
@@ -481,7 +483,7 @@ impl<'a> TargetRunner<'a> {
         self.cache.last_run_time = time::now_millis();
         self.cache.save().await?;
         self.cache
-            .save_outputs(
+            .save_output_logs(
                 output_to_string(&output.stdout),
                 output_to_string(&output.stderr),
             )
@@ -492,7 +494,7 @@ impl<'a> TargetRunner<'a> {
 
     pub async fn print_cache_item(&self) -> Result<(), MoonError> {
         let item = &self.cache;
-        let (stdout, stderr) = item.load_outputs().await?;
+        let (stdout, stderr) = item.load_output_logs().await?;
 
         self.print_output_with_style(&stdout, &stderr, item.exit_code != 0)?;
 

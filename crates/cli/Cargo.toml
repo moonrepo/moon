@@ -51,6 +51,7 @@ tokio = { workspace = true }
 yaml-rust = { version = "0.4.5", package = "yaml-rust-davvid" }
 
 [dev-dependencies]
+moon_archive = { path = "../archive" }
 moon_cache = { path = "../cache" }
 moon_notifier = { path = "../notifier" }
 assert_cmd = "2.0.4"

@@ -32,45 +32,55 @@ async fn load_projects_from_cache(
     workspace_config: &WorkspaceConfig,
     engine: &CacheEngine,
 ) -> Result<ProjectsSourcesMap, ProjectError> {
-    let projects = match &workspace_config.projects {
-        WorkspaceProjects::Map(map) => map.clone(),
-        WorkspaceProjects::List(globs) => {
-            let mut cache = engine.cache_projects_state().await?;
+    let mut globs = vec![];
+    let mut sources = HashMap::new();
 
-            // Return the values from the cache
-            if !cache.projects.is_empty() {
-                debug!(target: LOG_TARGET, "Loading projects from cache");
-
-                return Ok(cache.projects);
-            }
-
-            // Generate a new projects map by globbing the filesystem
-            debug!(
-                target: LOG_TARGET,
-                "Finding projects with globs: {}",
-                map_list(globs, |g| color::file(g))
-            );
-
-            let mut map = HashMap::new();
-
-            detect_projects_with_globs(workspace_root, globs, &mut map)?;
-
-            // Update the cache
-            cache.globs = globs.clone();
-            cache.projects = map.clone();
-            cache.save().await?;
-
-            map
+    match &workspace_config.projects {
+        WorkspaceProjects::Sources(map) => {
+            sources.extend(map.clone());
+        }
+        WorkspaceProjects::Globs(list) => {
+            globs.extend(list.clone());
+        }
+        WorkspaceProjects::Both {
+            globs: list,
+            sources: map,
+        } => {
+            sources.extend(map.clone());
+            globs.extend(list.clone());
         }
     };
+
+    let mut cache = engine.cache_projects_state().await?;
+
+    // Return the values from the cache
+    if !cache.projects.is_empty() {
+        debug!(target: LOG_TARGET, "Loading projects from cache");
+
+        return Ok(cache.projects);
+    }
+
+    // Generate a new projects map by globbing the filesystem
+    debug!(
+        target: LOG_TARGET,
+        "Finding projects with globs: {}",
+        map_list(&globs, |g| color::file(g))
+    );
+
+    detect_projects_with_globs(workspace_root, &globs, &mut sources)?;
+
+    // Update the cache
+    cache.globs = globs.clone();
+    cache.projects = sources.clone();
+    cache.save().await?;
 
     debug!(
         target: LOG_TARGET,
         "Creating project graph with {} projects",
-        projects.len(),
+        sources.len(),
     );
 
-    Ok(projects)
+    Ok(sources)
 }
 
 pub struct ProjectGraph {

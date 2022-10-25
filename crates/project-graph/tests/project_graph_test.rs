@@ -15,7 +15,7 @@ async fn get_aliases_graph() -> ProjectGraph {
             alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
             ..NodeConfig::default()
         }),
-        projects: WorkspaceProjects::Map(HashMap::from([
+        projects: WorkspaceProjects::Sources(HashMap::from([
             ("explicit".to_owned(), "explicit".to_owned()),
             (
                 "explicitAndImplicit".to_owned(),
@@ -43,7 +43,7 @@ async fn get_aliases_graph() -> ProjectGraph {
 async fn get_dependencies_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependencies");
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Map(HashMap::from([
+        projects: WorkspaceProjects::Sources(HashMap::from([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
@@ -65,7 +65,7 @@ async fn get_dependencies_graph() -> ProjectGraph {
 async fn get_dependents_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependents");
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Map(HashMap::from([
+        projects: WorkspaceProjects::Sources(HashMap::from([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
@@ -98,7 +98,7 @@ mod globs {
         fs::write(fixture.path().join("node_modules/moon/package.json"), "{}").unwrap();
 
         let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::List(string_vec!["**"]),
+            projects: WorkspaceProjects::Globs(string_vec!["**"]),
             ..WorkspaceConfig::default()
         };
 
@@ -137,7 +137,7 @@ mod globs {
         let fixture = create_sandbox("project-graph/ids");
 
         let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::List(string_vec!["*"]),
+            projects: WorkspaceProjects::Globs(string_vec!["*"]),
             ..WorkspaceConfig::default()
         };
 

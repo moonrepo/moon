@@ -30,7 +30,7 @@ type ProjectsMap = HashMap<String, FilePath>;
 // that are relative from the workspace root. Will fail on absolute
 // paths ("/"), and parent relative paths ("../").
 fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidationError> {
-    if let WorkspaceProjects::Map(map) = projects {
+    if let WorkspaceProjects::Sources(map) = projects {
         for (key, value) in map {
             validate_id(format!("projects.{}", key), key)?;
 
@@ -50,13 +50,17 @@ fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidationError
     expecting = "expected a sequence of globs or a map of projects"
 )]
 pub enum WorkspaceProjects {
-    List(Vec<FileGlob>),
-    Map(ProjectsMap),
+    Both {
+        globs: Vec<FileGlob>,
+        sources: ProjectsMap,
+    },
+    Globs(Vec<FileGlob>),
+    Sources(ProjectsMap),
 }
 
 impl Default for WorkspaceProjects {
     fn default() -> Self {
-        WorkspaceProjects::Map(HashMap::new())
+        WorkspaceProjects::Sources(HashMap::new())
     }
 }
 

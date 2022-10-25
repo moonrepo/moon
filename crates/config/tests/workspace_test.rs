@@ -732,7 +732,7 @@ projects:
 
             assert_eq!(
                 config.projects,
-                WorkspaceProjects::Map(HashMap::from([
+                WorkspaceProjects::Sources(HashMap::from([
                     (String::from("app"), String::from("apps/app")),
                     (String::from("foo"), String::from("./packages/foo"))
                 ])),
@@ -757,7 +757,7 @@ projects:
 
             assert_eq!(
                 config.projects,
-                WorkspaceProjects::List(moon_utils::string_vec!["apps/*", "packages/*"])
+                WorkspaceProjects::Globs(moon_utils::string_vec!["apps/*", "packages/*"])
             );
 
             Ok(())

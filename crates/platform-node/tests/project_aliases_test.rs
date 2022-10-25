@@ -12,7 +12,7 @@ use std::collections::HashMap;
 async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/aliases");
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Map(HashMap::from([
+        projects: WorkspaceProjects::Sources(HashMap::from([
             ("noLang".to_owned(), "no-lang".to_owned()),
             ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
             ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),

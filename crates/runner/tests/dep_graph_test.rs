@@ -33,7 +33,11 @@ async fn create_project_graph() -> (ProjectGraph, TempDir) {
             ("baz".to_owned(), "deps/baz".to_owned()),
             ("tasks".to_owned(), "tasks".to_owned()),
         ])),
-        node: Some(NodeConfig::default()),
+        node: Some(NodeConfig {
+            // Consistent snapshots
+            version: "16.0.0".into(),
+            ..NodeConfig::default()
+        }),
         ..WorkspaceConfig::default()
     };
 
@@ -70,7 +74,11 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("no-tasks".to_owned(), "no-tasks".to_owned()),
         ])),
-        node: Some(NodeConfig::default()),
+        node: Some(NodeConfig {
+            // Consistent snapshots
+            version: "16.0.0".into(),
+            ..NodeConfig::default()
+        }),
         ..WorkspaceConfig::default()
     };
     let global_config = GlobalProjectConfig {

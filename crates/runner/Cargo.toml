@@ -35,7 +35,7 @@ moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
-async-trait = "0.1.57"
+async-trait = "0.1.58"
 console = "0.15.2"
 petgraph = "0.6.2"
 serde = { workspace = true }

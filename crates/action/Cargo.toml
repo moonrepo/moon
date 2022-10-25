@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
-clap = { version = "4.0.16", features = ["derive"] }
+clap = { version = "4.0.18", features = ["derive"] }
 serde = { workspace = true }

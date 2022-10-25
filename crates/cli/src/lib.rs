@@ -21,13 +21,12 @@ use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::sync::sync;
 use crate::commands::teardown::teardown;
-use crate::helpers::load_workspace;
 use crate::helpers::setup_colors;
 use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
 use console::Term;
 use enums::LogLevel;
-use moon_logger::{info, LevelFilter, Logger};
+use moon_logger::{LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use std::env;
 
@@ -136,29 +135,11 @@ pub async fn run_cli() {
         Commands::Migrate {
             command,
             skip_touched_files_check,
-        } => {
-            let maybe_workspace = load_workspace().await;
-            if let Err(e) = maybe_workspace {
-                Err(e.into())
-            } else {
-                let workspace = maybe_workspace.unwrap();
-                let error_in_check = if *skip_touched_files_check {
-                    info!("Skipping touched files check.");
-                    None
-                } else {
-                    migrate::check_dirty_repo(&workspace).await.err()
-                };
-                if error_in_check.is_none() {
-                    match command {
-                        MigrateCommands::FromPackageJson { id } => {
-                            migrate::from_package_json(workspace, id).await
-                        }
-                    }
-                } else {
-                    Err(error_in_check.unwrap())
-                }
+        } => match command {
+            MigrateCommands::FromPackageJson { id } => {
+                migrate::from_package_json(id, skip_touched_files_check).await
             }
-        }
+        },
         Commands::Node { command } => match command {
             NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
         },

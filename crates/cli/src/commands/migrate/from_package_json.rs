@@ -5,13 +5,17 @@ use moon_config::{
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_lang_node::package::{DepsSet, PackageJson};
+use moon_logger::info;
 use moon_platform_node::create_tasks_from_scripts;
 use moon_utils::fs;
-use moon_workspace::Workspace;
 use serde_yaml::to_string;
 use std::collections::HashMap;
 use yaml_rust::yaml::{Hash, Yaml};
 use yaml_rust::YamlEmitter;
+
+use crate::helpers::load_workspace;
+
+use super::check_dirty_repo;
 
 // Don't use serde since it writes *everything*, which is a ton of nulled fields!
 pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::error::Error>> {
@@ -126,9 +130,15 @@ pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::er
 }
 
 pub async fn from_package_json(
-    workspace: Workspace,
     project_id: &str,
+    skip_touched_files_check: &bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let workspace = load_workspace().await?;
+    if *skip_touched_files_check {
+        info!("Skipping touched files check.");
+    } else {
+        check_dirty_repo(&workspace).await?;
+    };
     // Create a mapping of `package.json` names to project IDs
     let mut package_map: HashMap<String, String> = HashMap::new();
 

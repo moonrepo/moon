@@ -71,7 +71,10 @@ export interface WorkspaceConfig {
 	generator: GeneratorConfig;
 	hasher: HasherConfig;
 	notifier: NotifierConfig;
-	projects: Record<string, string> | string[];
+	projects:
+		| Record<string, string>
+		| string[]
+		| { globs: string[]; sources: Record<string, string> };
 	runner: RunnerConfig;
 	vcs: VcsConfig;
 	// Languages

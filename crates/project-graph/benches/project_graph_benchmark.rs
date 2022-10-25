@@ -8,7 +8,10 @@ use std::collections::HashMap;
 pub fn load_benchmark(c: &mut Criterion) {
     let workspace_root = get_fixtures_dir("cases");
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Map(HashMap::from([("base".to_owned(), "base".to_owned())])),
+        projects: WorkspaceProjects::Sources(HashMap::from([(
+            "base".to_owned(),
+            "base".to_owned(),
+        )])),
         ..WorkspaceConfig::default()
     };
 

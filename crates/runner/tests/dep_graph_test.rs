@@ -23,7 +23,7 @@ async fn create_project_graph() -> (ProjectGraph, TempDir) {
     let fixture = create_sandbox("projects");
     let workspace_root = fixture.path();
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Map(HashMap::from([
+        projects: WorkspaceProjects::Sources(HashMap::from([
             ("advanced".to_owned(), "advanced".to_owned()),
             ("basic".to_owned(), "basic".to_owned()),
             ("emptyConfig".to_owned(), "empty-config".to_owned()),
@@ -59,7 +59,7 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
     let fixture = create_sandbox("tasks");
     let workspace_root = fixture.path();
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Map(HashMap::from([
+        projects: WorkspaceProjects::Sources(HashMap::from([
             ("basic".to_owned(), "basic".to_owned()),
             ("build-a".to_owned(), "build-a".to_owned()),
             ("build-b".to_owned(), "build-b".to_owned()),

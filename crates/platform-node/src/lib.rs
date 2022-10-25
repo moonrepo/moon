@@ -46,7 +46,7 @@ pub fn infer_tasks_from_scripts(
     Ok(parser.tasks)
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct NodePlatform {
     /// Maps `package.json` names to project IDs.
     package_names: HashMap<String, ProjectID>,

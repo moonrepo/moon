@@ -1,7 +1,7 @@
 use crate::helpers::{create_progress_bar, load_workspace};
 
 pub struct CleanOptions {
-    pub cache_liftime: String,
+    pub cache_lifetime: String,
 }
 
 pub async fn clean(options: CleanOptions) -> Result<(), Box<dyn std::error::Error>> {
@@ -9,12 +9,12 @@ pub async fn clean(options: CleanOptions) -> Result<(), Box<dyn std::error::Erro
 
     let done = create_progress_bar(format!(
         "Cleaning stale cache older than {}",
-        options.cache_liftime
+        options.cache_lifetime
     ));
 
     let (files_deleted, bytes_saved) = workspace
         .cache
-        .clean_stale_cache(&options.cache_liftime)
+        .clean_stale_cache(&options.cache_lifetime)
         .await?;
 
     done(

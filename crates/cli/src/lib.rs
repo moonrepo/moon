@@ -83,7 +83,7 @@ pub async fn run_cli() {
         Commands::Check { ids, report } => check(ids, CheckOptions { report: *report }).await,
         Commands::Clean { lifetime } => {
             clean(CleanOptions {
-                cache_liftime: lifetime.to_owned(),
+                cache_lifetime: lifetime.to_owned(),
             })
             .await
         }
@@ -132,8 +132,13 @@ pub async fn run_cli() {
             )
             .await
         }
-        Commands::Migrate { command } => match command {
-            MigrateCommands::FromPackageJson { id } => migrate::from_package_json(id).await,
+        Commands::Migrate {
+            command,
+            skip_touched_files_check,
+        } => match command {
+            MigrateCommands::FromPackageJson { id } => {
+                migrate::from_package_json(id, skip_touched_files_check).await
+            }
         },
         Commands::Node { command } => match command {
             NodeCommands::RunScript { name, project } => node::run_script(name, project).await,

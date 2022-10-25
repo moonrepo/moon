@@ -1,4 +1,3 @@
-use crate::helpers::load_workspace;
 use moon_config::{
     DependencyConfig, DependencyScope, PlatformType, ProjectConfig, ProjectDependsOn,
     TaskCommandArgs,
@@ -6,6 +5,7 @@ use moon_config::{
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_lang_node::package::{DepsSet, PackageJson};
+use moon_logger::info;
 use moon_platform_node::create_tasks_from_scripts;
 use moon_utils::fs;
 use serde_yaml::to_string;
@@ -13,7 +13,11 @@ use std::collections::HashMap;
 use yaml_rust::yaml::{Hash, Yaml};
 use yaml_rust::YamlEmitter;
 
-// Dont use serde since it writes *everything*, which is a ton of nulled fields!
+use crate::helpers::load_workspace;
+
+use super::check_dirty_repo;
+
+// Don't use serde since it writes *everything*, which is a ton of nulled fields!
 pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::error::Error>> {
     let mut root = Hash::new();
 
@@ -125,9 +129,16 @@ pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::er
     Ok(out)
 }
 
-pub async fn from_package_json(project_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn from_package_json(
+    project_id: &str,
+    skip_touched_files_check: &bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
-
+    if *skip_touched_files_check {
+        info!("Skipping touched files check.");
+    } else {
+        check_dirty_repo(&workspace).await?;
+    };
     // Create a mapping of `package.json` names to project IDs
     let mut package_map: HashMap<String, String> = HashMap::new();
 

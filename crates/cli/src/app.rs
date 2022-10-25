@@ -20,13 +20,13 @@ const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 pub enum DockerCommands {
     #[command(
         name = "prune",
-        about = "Remove extraneous files and folders within Dockerfiles."
+        about = "Remove extraneous files and folders within Dockerfile(s)."
     )]
     Prune,
 
     #[command(
         name = "scaffold",
-        about = "Scaffold a repository skeleton for use within Dockerfiles."
+        about = "Scaffold a repository skeleton for use within Dockerfile(s)."
     )]
     Scaffold {
         #[arg(required = true, help = "List of project IDs to copy sources for")]
@@ -390,7 +390,7 @@ pub enum Commands {
     // moon docker <operation>
     #[command(
         name = "docker",
-        about = "Operations for integrating with Docker and Dockerfiles."
+        about = "Operations for integrating with Docker and Dockerfile(s)."
     )]
     Docker {
         #[command(subcommand)]
@@ -400,11 +400,15 @@ pub enum Commands {
     // moon migrate <operation>
     #[command(
         name = "migrate",
-        about = "Operations for migrating existing projects to moon."
+        about = "Operations for migrating existing projects to moon.",
+        rename_all = "camelCase"
     )]
     Migrate {
         #[command(subcommand)]
         command: MigrateCommands,
+
+        #[arg(long, help = "Disable the check for touched/dirty files")]
+        skip_touched_files_check: bool,
     },
 
     // moon query <operation>

@@ -1,7 +1,6 @@
 mod errors;
 mod helpers;
 mod project;
-mod providers;
 mod template;
 mod types;
 mod validators;

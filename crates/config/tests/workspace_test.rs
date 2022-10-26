@@ -9,7 +9,7 @@ use std::path::Path;
 fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
     match WorkspaceConfig::load(root.join(CONFIG_WORKSPACE_FILENAME)) {
         Ok(cfg) => Ok(cfg),
-        Err(error) => Err(match error {
+        Err(err) => Err(match err {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
             ConfigError::Figment(f) => f,
             e => figment::Error::from(e.to_string()),
@@ -223,6 +223,11 @@ node:
     #[test]
     fn loads_from_url() {
         figment::Jail::expect_with(|jail| {
+            jail.set_env(
+                "MOON_WORKSPACE_ROOT",
+                jail.directory().to_owned().to_string_lossy(),
+            );
+
             jail.create_file(
                     super::CONFIG_WORKSPACE_FILENAME,
 r#"

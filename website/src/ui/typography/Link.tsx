@@ -28,6 +28,7 @@ export default function Link({
 	return (
 		<BaseLink
 			className={cx(
+				'cursor-pointer',
 				sizes[size],
 				transform && transforms[transform],
 				variants[variant],

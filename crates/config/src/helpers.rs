@@ -1,7 +1,7 @@
 use crate::errors::ConfigError;
 use moon_utils::{
     fs::{self, temp},
-    path,
+    path, time,
 };
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -20,7 +20,15 @@ pub fn download_and_cache_config(url: &str) -> Result<PathBuf, ConfigError> {
         .text()
         .map_err(error_handler)?;
 
-    temp::write(&file, format!("# source: {}\n\n{}", url, data))?;
+    temp::write(
+        &file,
+        format!(
+            "# source: {}\n# timestamp: {}\n\n{}",
+            url,
+            time::now_timestamp(),
+            data
+        ),
+    )?;
 
     Ok(file)
 }

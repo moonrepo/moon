@@ -29,6 +29,7 @@
 - Timestamps have been updated to UTC _without timezone_.
 - Implemented a benchmarking system to start capturing performance changes.
 - Improved language and platform interoperability.
+- Extended configurations will now be temporarily cached for 4 hours.
 
 ## 0.17.0
 

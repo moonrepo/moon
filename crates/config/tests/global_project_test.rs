@@ -268,6 +268,11 @@ fileGroups:
         use pretty_assertions::assert_eq;
 
         figment::Jail::expect_with(|jail| {
+            jail.set_env(
+                "MOON_WORKSPACE_ROOT",
+                jail.directory().to_owned().to_string_lossy(),
+            );
+
             jail.create_file(
                     super::CONFIG_GLOBAL_PROJECT_FILENAME,
 r#"

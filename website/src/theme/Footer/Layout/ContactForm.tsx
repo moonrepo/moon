@@ -14,6 +14,7 @@ function NextButton({ disabled, label = 'Next', onClick }: NextButtonProps) {
 	return (
 		<button
 			type="button"
+			id="contact-next"
 			className={cx(
 				'w-1/4 border border-transparent rounded-md px-2 py-1 flex items-center justify-center text-base font-bold text-white bg-blurple-400 dark:bg-purple-600',
 				disabled
@@ -30,7 +31,7 @@ function NextButton({ disabled, label = 'Next', onClick }: NextButtonProps) {
 
 export default function ContactForm() {
 	const [step, setStep] = useState(1);
-	const [subject, setSubject] = useState('Consultation');
+	const [subject, setSubject] = useState('');
 	const [email, setEmail] = useState('');
 	const [message, setMessage] = useState('');
 	const [sending, setSending] = useState(false);
@@ -78,79 +79,95 @@ export default function ContactForm() {
 	const isMessageValid = message.length > 10;
 
 	return (
-		<div className="mt-2">
-			{step === 1 && (
-				<div className="flex justify-between gap-x-1">
-					<div className="w-3/4">
-						<label htmlFor="subject" className="sr-only">
-							Subject
-						</label>
-
-						<select
-							id="subject"
-							name="subject"
-							required
-							className="outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans"
-							onChange={handleSubject}
-						>
-							<option value="Consultation">Consultation</option>
-							<option value="Partnership">Partnership</option>
-						</select>
-					</div>
-
-					<NextButton onClick={handleNext} />
-				</div>
+		<>
+			{subject ? (
+				<Text>
+					Requesting <b>{subject}</b>...
+				</Text>
+			) : (
+				<Text variant="muted">Want to learn more about moon? Have questions?</Text>
 			)}
 
-			{step === 2 && (
-				<div className="flex justify-between gap-x-1">
-					<div className="w-3/4">
-						<label htmlFor="email" className="sr-only">
-							Email address
-						</label>
+			<div className="mt-2">
+				{step === 1 && (
+					<div className="flex justify-between gap-x-1">
+						<div className="w-3/4">
+							<label htmlFor="subject" className="sr-only">
+								Subject
+							</label>
 
-						<input
-							type="email"
-							name="email"
-							id="email"
-							autoComplete="email"
+							<select
+								id="subject"
+								name="subject"
+								required
+								className="outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans"
+								onChange={handleSubject}
+							>
+								<option value=""></option>
+								<option value="Consultation">Consultation</option>
+								<option value="Partnership">Partnership</option>
+								<option value="Affiliation">Affiliation</option>
+							</select>
+						</div>
+
+						<NextButton disabled={!subject} onClick={handleNext} />
+					</div>
+				)}
+
+				{step === 2 && (
+					<div className="flex justify-between gap-x-1">
+						<div className="w-3/4">
+							<label htmlFor="email" className="sr-only">
+								Email address
+							</label>
+
+							<input
+								type="email"
+								name="email"
+								id="email"
+								autoComplete="email"
+								required
+								className="appearance-none outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans"
+								placeholder="Email address"
+								onChange={handleEmail}
+							/>
+						</div>
+
+						<NextButton disabled={!isEmailValid} onClick={handleNext} />
+					</div>
+				)}
+
+				{step === 3 && (
+					<div>
+						<textarea
+							id="message"
+							name="message"
 							required
-							className="appearance-none outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans"
-							placeholder="Email address"
-							onChange={handleEmail}
+							className="appearance-none outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 font-sans"
+							placeholder="Message..."
+							onChange={handleMessage}
 						/>
+
+						<div className="flex justify-end">
+							<NextButton
+								disabled={!isMessageValid || sending}
+								label="Send"
+								onClick={handleSubmit}
+							/>
+						</div>
 					</div>
+				)}
 
-					<NextButton disabled={!isEmailValid} onClick={handleNext} />
-				</div>
-			)}
-
-			{step === 3 && (
-				<div>
-					<textarea
-						id="message"
-						name="message"
-						required
-						className="appearance-none outline-none min-w-0 w-full bg-white border border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 font-sans"
-						placeholder="Message..."
-						onChange={handleMessage}
-					/>
-
-					<div className="flex justify-end">
-						<NextButton disabled={!isMessageValid || sending} label="Send" onClick={handleSubmit} />
+				{step === 4 && (
+					<div>
+						<Text>
+							{failed
+								? 'Failed to send message. Please try again.'
+								: "Thanks for contacting us! We'll get back to you as soon as possible."}
+						</Text>
 					</div>
-				</div>
-			)}
-
-			{step === 4 && (
-				<div>
-					<Text>
-						{failed
-							? 'Failed to send message. Please try again.'
-							: "Thanks for contacting us! We'll get back to you as soon as possible."}
-					</Text>
-				</div>
-			)}
-		</div>
+				)}
+			</div>
+		</>
 	);
 }

@@ -1,7 +1,27 @@
 import React from 'react';
+import { faCirclePlus } from '@fortawesome/pro-duotone-svg-icons';
 import DepotSvg from '../../../static/brands/depot.svg';
+import Icon from '../../ui/iconography/Icon';
 import Heading from '../../ui/typography/Heading';
 import Link from '../../ui/typography/Link';
+
+function onClick(event: React.MouseEvent) {
+	event.stopPropagation();
+	event.preventDefault();
+
+	const select = document.querySelector<HTMLSelectElement>('#subject');
+	const button = document.querySelector<HTMLButtonElement>('#contact-next');
+
+	if (select && button) {
+		select.value = 'Affiliation';
+		select.dispatchEvent(new Event('change', { bubbles: true }));
+
+		// Wait for button to become enabled
+		setTimeout(() => {
+			button.click();
+		}, 0);
+	}
+}
 
 export default function UsedBy() {
 	return (
@@ -12,19 +32,17 @@ export default function UsedBy() {
 						Used by these innovative companies
 					</Heading>
 
-					<div className="mt-4 grid grid-cols-2 gap-8 md:grid-cols-5">
-						<div className="col-span-1 flex justify-center md:col-span-2 lg:col-span-1">
+					<div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
+						<div className="col-span-1 flex justify-center">
 							<Link to="https://depot.dev/?ref=moonrepo" variant="muted" title="Depot">
-								<DepotSvg />
+								<DepotSvg className="w-full max-w-full" />
 							</Link>
 						</div>
 
-						<div className="col-span-2 flex justify-center md:col-span-3 lg:col-span-1">
-							<img
-								className="h-12"
-								src="https://tailwindui.com/img/logos/workcation-logo-gray-400.svg"
-								alt="Workcation"
-							/>
+						<div className="col-span-1 flex justify-start items-center">
+							<Link href="#" onClick={onClick} variant="muted" title="List your company here">
+								<Icon icon={faCirclePlus} className="text-3xl" />
+							</Link>
 						</div>
 					</div>
 				</div>

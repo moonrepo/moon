@@ -27,6 +27,12 @@ macro_rules! string_vec {
 
 #[cached]
 pub fn get_workspace_root() -> PathBuf {
+    if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
+        let root: PathBuf = root.parse().expect("Failed to parse MOON_WORKSPACE_ROOT.");
+
+        return root;
+    }
+
     match fs::find_upwards(
         constants::CONFIG_DIRNAME,
         env::current_dir().expect("Invalid working directory."),

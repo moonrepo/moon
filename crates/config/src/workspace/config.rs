@@ -2,7 +2,6 @@
 
 use crate::errors::map_validation_errors_to_figment_errors;
 use crate::helpers::gather_extended_sources;
-use crate::providers::url::Url;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
 use crate::workspace::generator::GeneratorConfig;
@@ -114,11 +113,7 @@ impl WorkspaceConfig {
             Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name));
 
         for source in gather_extended_sources(&path)? {
-            if source.starts_with("http") {
-                figment = figment.merge(Url::from(source).profile(&profile_name));
-            } else {
-                figment = figment.merge(YamlExtended::file(source).profile(&profile_name));
-            };
+            figment = figment.merge(YamlExtended::file(source).profile(&profile_name));
         }
 
         let mut config = WorkspaceConfig::load_config(figment.select(&profile_name))?;

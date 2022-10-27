@@ -26,9 +26,10 @@ export default function Hero() {
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0">
 						{siteConfig.tagline}
-						<span className="opacity-50">
-							,<br /> written in Rust.
-						</span>
+					</p>
+
+					<p className="mt-1 text-white opacity-50 text-sm md:text-base">
+						Supports JavaScript, TypeScript, Bash, and Batch.
 					</p>
 
 					<div className="mt-3 flex justify-center lg:justify-start">

@@ -22,7 +22,7 @@ const social = [
 /** @type {import('@docusaurus/types').Config} */
 const config = {
 	title: 'moon',
-	tagline: 'A build system for the JavaScript ecosystem',
+	tagline: 'A build system and repo management tool for the web ecosystem, written in Rust.',
 	url: 'https://moonrepo.dev',
 	baseUrl: '/',
 	onBrokenLinks: 'throw',

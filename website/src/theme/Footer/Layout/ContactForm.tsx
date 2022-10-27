@@ -97,7 +97,7 @@ export default function ContactForm() {
 					<Link className="float-right text-lg px-1" onClick={handleReset}>
 						<Icon icon={faXmark} />
 					</Link>
-					Requesting <b>{subject}</b>...{' '}
+					Contacting about <b>{subject}</b>
 				</Text>
 			) : (
 				<Text variant="muted">Want to learn more about moon? Have questions?</Text>

@@ -29,6 +29,7 @@ import {
 import AdditionalFeatures from '@site/src/components/Home/AdditionalFeatures';
 import Features, { Feature } from '@site/src/components/Home/Features';
 import Hero from '@site/src/components/Home/Hero';
+import UsedBy from '@site/src/components/Home/UsedBy';
 import Layout from '@theme/Layout';
 
 const managementFeatures: Feature[] = [
@@ -225,6 +226,8 @@ export default function Home() {
 				/>
 
 				<AdditionalFeatures header="And many more features" features={additionalFeatures} />
+
+				<UsedBy />
 			</main>
 		</Layout>
 	);

@@ -22,8 +22,6 @@ export default function FooterLayout({ style, links, logo, copyright }) {
 							Contact us
 						</Heading>
 
-						<Text variant="muted">Want to learn more about moon? Have questions?</Text>
-
 						<ContactForm />
 					</div>
 				</div>

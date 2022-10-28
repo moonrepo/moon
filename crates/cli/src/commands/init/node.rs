@@ -10,7 +10,6 @@ use moon_lang::{is_using_package_manager, is_using_version_manager};
 use moon_lang_node::package::PackageJson;
 use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
 use moon_logger::color;
-use moon_terminal::create_theme;
 use moon_utils::fs;
 use std::path::Path;
 use tera::{Context, Tera};
@@ -46,6 +45,7 @@ async fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyErr
 async fn detect_package_manager(
     dest_dir: &Path,
     options: &InitOptions,
+    theme: &ColorfulTheme,
 ) -> Result<(String, String), AnyError> {
     let mut pm_type = String::new();
     let mut pm_version = String::new();
@@ -78,13 +78,13 @@ async fn detect_package_manager(
     // If no value again, ask for explicit input
     if pm_type.is_empty() {
         let items = vec![NPM.binary, PNPM.binary, YARN.binary];
-        let default_index = options.package_manager.get_option_index();
+        let default_index = 0;
 
         let index = if options.yes {
             default_index
         } else {
-            Select::with_theme(&create_theme())
-                .with_prompt("Which package manager?")
+            Select::with_theme(theme)
+                .with_prompt("Package manager?")
                 .items(&items)
                 .default(default_index)
                 .interact_opt()?
@@ -114,7 +114,7 @@ pub async fn init_node(
     theme: &ColorfulTheme,
 ) -> Result<(), AnyError> {
     let node_version = detect_node_version(&dest_dir).await?;
-    let package_manager = detect_package_manager(&dest_dir, &options).await?;
+    let package_manager = detect_package_manager(&dest_dir, &options, theme).await?;
 
     let alias_names = if options.yes {
         false

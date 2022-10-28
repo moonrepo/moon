@@ -1,7 +1,9 @@
 mod node;
+mod typescript;
 
 use crate::helpers::AnyError;
 use clap::ValueEnum;
+use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use moon_config::{load_global_project_config_template, load_workspace_config_template};
 use moon_constants::{CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
@@ -19,6 +21,7 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
+use typescript::init_typescript;
 
 pub fn append_workspace_config(dest_dir: &Path, config: String) -> Result<(), AnyError> {
     let mut file = OpenOptions::new().create(true).append(true).open(
@@ -30,24 +33,6 @@ pub fn append_workspace_config(dest_dir: &Path, config: String) -> Result<(), An
     writeln!(file, "\n\n{}", config)?;
 
     Ok(())
-}
-
-#[derive(ValueEnum, Clone, Debug, Default)]
-pub enum PackageManager {
-    #[default]
-    Npm,
-    Pnpm,
-    Yarn,
-}
-
-impl PackageManager {
-    fn get_option_index(&self) -> usize {
-        match self {
-            PackageManager::Npm => 0,
-            PackageManager::Pnpm => 1,
-            PackageManager::Yarn => 2,
-        }
-    }
 }
 
 #[derive(ValueEnum, Clone, Debug, Default)]
@@ -71,17 +56,18 @@ impl InheritProjectsAs {
 pub struct InitOptions {
     pub force: bool,
     pub inherit_projects: InheritProjectsAs,
-    pub package_manager: PackageManager,
     pub yes: bool,
 }
 
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
-fn verify_dest_dir(dest_dir: &Path, options: &InitOptions) -> Result<Option<PathBuf>, AnyError> {
-    let theme = create_theme();
-
+fn verify_dest_dir(
+    dest_dir: &Path,
+    options: &InitOptions,
+    theme: &ColorfulTheme,
+) -> Result<Option<PathBuf>, AnyError> {
     if options.yes
-        || Confirm::with_theme(&theme)
+        || Confirm::with_theme(theme)
             .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
             .interact()?
     {
@@ -89,7 +75,7 @@ fn verify_dest_dir(dest_dir: &Path, options: &InitOptions) -> Result<Option<Path
 
         if !options.force
             && moon_dir.exists()
-            && !Confirm::with_theme(&theme)
+            && !Confirm::with_theme(theme)
                 .with_prompt("Moon has already been initialized, overwrite it?")
                 .interact()?
         {
@@ -163,7 +149,7 @@ async fn detect_projects(
 
 pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     let theme = create_theme();
-    let working_dir = env::current_dir().unwrap();
+    let working_dir = env::current_dir().expect("Failed to determine working directory.");
     let dest_path = PathBuf::from(dest);
     let dest_dir = if dest == "." {
         working_dir
@@ -175,39 +161,31 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
 
     // Extract template variables
     let dest_dir = path::normalize(&dest_dir);
-    let moon_dir = match verify_dest_dir(&dest_dir, &options)? {
+    let moon_dir = match verify_dest_dir(&dest_dir, &options, &theme)? {
         Some(dir) => dir,
         None => return Ok(()),
     };
     let (projects, project_globs) = detect_projects(&dest_dir, &options).await?;
     let vcs = detect_vcs(&dest_dir).await?;
 
-    // Generate a template
+    // Create the initial files
     let mut context = Context::new();
     context.insert("projects", &projects);
     context.insert("project_globs", &project_globs);
     context.insert("vcs_manager", &vcs.0);
     context.insert("vcs_default_branch", &vcs.1);
 
-    let mut tera = Tera::default();
-    tera.add_raw_template("workspace", load_workspace_config_template())?;
-    tera.add_raw_template("project", load_global_project_config_template())?;
-
-    // TODO node
-    init_node(&dest_dir, &options, &theme).await?;
-
-    // Create config files
     fs::create_dir_all(&moon_dir).await?;
 
     fs::write(
         &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
-        tera.render("workspace", &context)?,
+        Tera::one_off(load_workspace_config_template(), &context, false)?,
     )
     .await?;
 
     fs::write(
         &moon_dir.join(CONFIG_GLOBAL_PROJECT_FILENAME),
-        tera.render("project", &context)?,
+        Tera::one_off(load_global_project_config_template(), &context, false)?,
     )
     .await?;
 
@@ -224,6 +202,23 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
 .moon/cache
 .moon/docker"#
     )?;
+
+    // Initialize additional languages
+    if dest_dir.join(NPM.manifest_filename).exists()
+        || Confirm::with_theme(&theme)
+            .with_prompt("Initialize Node.js?")
+            .interact()?
+    {
+        init_node(&dest_dir, &options, &theme).await?;
+
+        if dest_dir.join("tsconfig.json").exists()
+            || Confirm::with_theme(&theme)
+                .with_prompt("Initialize TypeScript?")
+                .interact()?
+        {
+            init_typescript(&dest_dir, &options, &theme).await?;
+        }
+    }
 
     println!(
         "Moon has successfully been initialized in {}",

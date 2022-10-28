@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use crate::commands::bin::BinTools;
-use crate::commands::init::{InheritProjectsAs, PackageManager};
+use crate::commands::init::InheritProjectsAs;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_action::ProfileType;
@@ -152,14 +152,6 @@ pub enum Commands {
             default_value_t
         )]
         inherit_projects: InheritProjectsAs,
-
-        #[arg(
-            value_enum,
-            long,
-            help = "Package manager to configure and use",
-            default_value_t
-        )]
-        package_manager: PackageManager,
 
         #[arg(long, help = "Skip prompts and use default values")]
         yes: bool,

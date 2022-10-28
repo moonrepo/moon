@@ -2,7 +2,7 @@
 typescript:
   # When `syncProjectReferences` is enabled and a dependent project reference
   # *does not* have a `tsconfig.json`, automatically create one.
-  createMissingConfig: true
+  {{ project_refs ? '' : '# ' }}createMissingConfig: true
 
   # Name of `tsconfig.json` file in the project root.
   # projectConfigFileName: 'tsconfig.json'
@@ -15,11 +15,11 @@ typescript:
   # rootOptionsConfigFileName: 'tsconfig.options.json'
 
   # Update the project's `tsconfig.json` to route the `outDir` to moon's cache.
-  # routeOutDirToCache: true
+  {{ route_cache ? '' : '# ' }}routeOutDirToCache: true
 
   # Sync a project's `dependsOn` as TypeScript project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
-  syncProjectReferences: true
+  {{ project_refs ? '' : '# ' }}syncProjectReferences: true
 
   # Sync a project's project references as `paths` aliases.
-  # syncProjectReferencesToPaths: true
+  {{ sync_paths ? '' : '# ' }}syncProjectReferencesToPaths: true

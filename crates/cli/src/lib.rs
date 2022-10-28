@@ -114,9 +114,15 @@ pub async fn run_cli() {
             )
             .await
         }
-        Commands::Init { dest, force, yes } => {
+        Commands::Init {
+            dest,
+            force,
+            tool,
+            yes,
+        } => {
             init(
                 dest,
+                tool.as_ref(),
                 InitOptions {
                     force: *force,
                     yes: *yes,

@@ -13,6 +13,13 @@ $ moon init
 $ moon init ./app
 ```
 
+The command can also be used to initialize a specific tool _after_ moon has already been
+initialized. Perfect for adopting a new language into the workspace.
+
+```shell
+$ moon init --tool typescript
+```
+
 ### Arguments
 
 - `[dest]` - Destination to initialize and scaffold into. Defaults to `.` (current working
@@ -21,4 +28,6 @@ $ moon init ./app
 ### Options
 
 - `--force` - Overwrite existing config files if they exist.
+- `--tool` - Individual tool to initialize and configure.
+  - Accepts: `node`, `typescript`
 - `--yes` - Skip all prompts and use default values.

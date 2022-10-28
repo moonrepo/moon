@@ -183,15 +183,17 @@ async fn detect_projects(
 pub async fn init_node(
     dest_dir: &Path,
     options: &InitOptions,
-    parent_context: &mut Context,
     theme: &ColorfulTheme,
+    parent_context: Option<&mut Context>,
 ) -> Result<String, AnyError> {
     println!("\n{}\n", label_header("Node"));
 
     let node_version = detect_node_version(dest_dir).await?;
     let package_manager = detect_package_manager(dest_dir, options, theme).await?;
 
-    detect_projects(dest_dir, options, parent_context, theme).await?;
+    if let Some(parent_context) = parent_context {
+        detect_projects(dest_dir, options, parent_context, theme).await?;
+    }
 
     let alias_names = if options.yes {
         false

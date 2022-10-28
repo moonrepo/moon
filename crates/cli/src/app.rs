@@ -2,7 +2,8 @@
 
 use std::path::PathBuf;
 
-use crate::commands::bin::BinTools;
+use crate::commands::bin::BinTool;
+use crate::commands::init::InitTool;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_action::ProfileType;
@@ -146,6 +147,9 @@ pub enum Commands {
 
         #[arg(long, help = "Skip prompts and use default values")]
         yes: bool,
+
+        #[arg(long, value_enum, help = "Specific tool to initialize")]
+        tool: Option<InitTool>,
     },
 
     // TOOLCHAIN
@@ -158,7 +162,7 @@ pub enum Commands {
     )]
     Bin {
         #[arg(value_enum, help = "The tool to query")]
-        tool: BinTools,
+        tool: BinTool,
     },
 
     // moon node <command>

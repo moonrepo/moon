@@ -2,13 +2,14 @@ mod node;
 mod typescript;
 
 use crate::helpers::AnyError;
+use clap::ValueEnum;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use moon_config::{load_global_project_config_template, load_workspace_config_template};
 use moon_constants::{CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_lang_node::NPM;
 use moon_logger::color;
-use moon_terminal::create_theme;
+use moon_terminal::{create_theme, safe_exit};
 use moon_utils::{fs, path};
 use moon_vcs::detect_vcs;
 use node::init_node;
@@ -19,6 +20,13 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tera::{Context, Error, Tera};
 use typescript::init_typescript;
+
+#[derive(ValueEnum, Clone, Debug)]
+#[value(rename_all = "lowercase")]
+pub enum InitTool {
+    Node,
+    TypeScript,
+}
 
 fn render_template(context: &Context) -> Result<String, Error> {
     Tera::one_off(load_workspace_config_template(), context, false)
@@ -40,7 +48,7 @@ pub struct InitOptions {
 
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
-fn verify_dest_dir(
+async fn verify_dest_dir(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
@@ -61,13 +69,55 @@ fn verify_dest_dir(
             return Ok(None);
         }
 
+        fs::create_dir_all(&moon_dir).await?;
+
         return Ok(Some(moon_dir));
     }
 
     Ok(None)
 }
 
-pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
+pub async fn init_tool(
+    dest_dir: &Path,
+    tool: &InitTool,
+    options: &InitOptions,
+    theme: &ColorfulTheme,
+) -> Result<(), AnyError> {
+    let workspace_config_path = dest_dir
+        .join(CONFIG_DIRNAME)
+        .join(CONFIG_WORKSPACE_FILENAME);
+
+    if !workspace_config_path.exists() {
+        eprintln!(
+            "Moon has not been initialized! Try running {} first?",
+            color::shell("moon init")
+        );
+
+        safe_exit(1);
+    }
+
+    let tool_config = match tool {
+        InitTool::Node => init_node(&dest_dir, &options, &theme, None).await?,
+        InitTool::TypeScript => init_typescript(&dest_dir, &options, &theme).await?,
+    };
+
+    let mut file = OpenOptions::new()
+        .create(false)
+        .append(true)
+        .open(workspace_config_path)?;
+
+    writeln!(file, "\n\n{}", tool_config.trim())?;
+
+    println!("\nTool has successfully been initialized");
+
+    Ok(())
+}
+
+pub async fn init(
+    dest: &str,
+    tool: Option<&InitTool>,
+    options: InitOptions,
+) -> Result<(), AnyError> {
     let theme = create_theme();
     let working_dir = env::current_dir().expect("Failed to determine working directory.");
     let dest_path = PathBuf::from(dest);
@@ -78,27 +128,32 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     } else {
         working_dir.join(dest)
     };
+    let dest_dir = path::normalize(&dest_dir);
+
+    // Initialize a specific tool and exit early
+    if let Some(tool) = tool {
+        init_tool(&dest_dir, tool, &options, &theme).await?;
+
+        return Ok(());
+    }
 
     // Extract template variables
-    let dest_dir = path::normalize(&dest_dir);
-    let moon_dir = match verify_dest_dir(&dest_dir, &options, &theme)? {
+    let moon_dir = match verify_dest_dir(&dest_dir, &options, &theme).await? {
         Some(dir) => dir,
         None => return Ok(()),
     };
-    let vcs = detect_vcs(&dest_dir).await?;
-
-    // Initialize tools
-    let mut workspace_config = VecDeque::new();
     let mut context = create_default_context();
-    context.insert("vcs_manager", &vcs.0);
-    context.insert("vcs_default_branch", &vcs.1);
+
+    // Initialize all tools
+    let mut workspace_config = VecDeque::new();
 
     if dest_dir.join(NPM.manifest_filename).exists()
         || Confirm::with_theme(&theme)
             .with_prompt("Initialize Node.js?")
             .interact()?
     {
-        workspace_config.push_back(init_node(&dest_dir, &options, &mut context, &theme).await?);
+        workspace_config
+            .push_back(init_node(&dest_dir, &options, &theme, Some(&mut context)).await?);
 
         if dest_dir.join("tsconfig.json").exists()
             || Confirm::with_theme(&theme)
@@ -111,9 +166,11 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
 
     workspace_config.push_front(render_template(&context)?);
 
-    // Create config files
-    fs::create_dir_all(&moon_dir).await?;
+    let vcs = detect_vcs(&dest_dir).await?;
+    context.insert("vcs_manager", &vcs.0);
+    context.insert("vcs_default_branch", &vcs.1);
 
+    // Create config files
     fs::write(
         &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
         workspace_config

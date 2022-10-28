@@ -1,8 +1,13 @@
+---
+source: crates/cli/src/commands/init/typescript.rs
+assertion_line: 86
+expression: render_template(context).unwrap()
+---
 # Configures how moon integrates with TypeScript.
 typescript:
   # When `syncProjectReferences` is enabled and a dependent project reference
   # *does not* have a `tsconfig.json`, automatically create one.
-  createMissingConfig: {{ project_refs }}
+  createMissingConfig: true
 
   # Name of `tsconfig.json` file in each project root.
   # projectConfigFileName: 'tsconfig.json'
@@ -15,11 +20,12 @@ typescript:
   # rootOptionsConfigFileName: 'tsconfig.options.json'
 
   # Update a project's `tsconfig.json` to route the `outDir` to moon's cache.
-  routeOutDirToCache: {{ route_cache }}
+  routeOutDirToCache: true
 
   # Sync a project's `dependsOn` as project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
-  syncProjectReferences: {{ project_refs }}
+  syncProjectReferences: true
 
   # Sync a project's project references as `paths` aliases.
-  syncProjectReferencesToPaths: {{ project_refs and sync_paths }}
+  syncProjectReferencesToPaths: false
+

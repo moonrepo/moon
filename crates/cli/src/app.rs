@@ -3,7 +3,6 @@
 use std::path::PathBuf;
 
 use crate::commands::bin::BinTools;
-use crate::commands::init::InheritProjectsAs;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_action::ProfileType;
@@ -144,14 +143,6 @@ pub enum Commands {
 
         #[arg(long, help = "Overwrite existing configurations")]
         force: bool,
-
-        #[arg(
-            value_enum,
-            long,
-            help = "Inherit projects from `package.json` workspaces",
-            default_value_t
-        )]
-        inherit_projects: InheritProjectsAs,
 
         #[arg(long, help = "Skip prompts and use default values")]
         yes: bool,

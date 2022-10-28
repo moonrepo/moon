@@ -1,17 +1,21 @@
-use super::{append_workspace_config, InitOptions};
+use super::InitOptions;
 use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use moon_config::load_workspace_typescript_config_template;
 use moon_lang_node::tsconfig::TsConfigJson;
 use std::path::Path;
-use tera::{Context, Tera};
+use tera::{Context, Error, Tera};
+
+fn render_template(context: Context) -> Result<String, Error> {
+    Tera::one_off(load_workspace_typescript_config_template(), &context, false)
+}
 
 pub async fn init_typescript(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> Result<(), AnyError> {
+) -> Result<String, AnyError> {
     let project_refs = if let Ok(Some(tsconfig)) = TsConfigJson::read(dest_dir) {
         match tsconfig.compiler_options {
             Some(co) => co.composite.unwrap_or_default(),
@@ -44,10 +48,51 @@ pub async fn init_typescript(
     context.insert("route_cache", &route_cache);
     context.insert("sync_paths", &sync_paths);
 
-    append_workspace_config(
-        dest_dir,
-        Tera::one_off(load_workspace_typescript_config_template(), &context, false)?,
-    )?;
+    Ok(render_template(context)?)
+}
 
-    Ok(())
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use insta::assert_snapshot;
+
+    #[test]
+    fn renders_default() {
+        let mut context = Context::new();
+        context.insert("project_refs", &false);
+        context.insert("route_cache", &false);
+        context.insert("sync_paths", &false);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
+
+    #[test]
+    fn renders_project_refs() {
+        let mut context = Context::new();
+        context.insert("project_refs", &true);
+        context.insert("route_cache", &false);
+        context.insert("sync_paths", &false);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
+
+    #[test]
+    fn renders_route_cache() {
+        let mut context = Context::new();
+        context.insert("project_refs", &true);
+        context.insert("route_cache", &true);
+        context.insert("sync_paths", &false);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
+
+    #[test]
+    fn renders_sync_paths() {
+        let mut context = Context::new();
+        context.insert("project_refs", &true);
+        context.insert("route_cache", &true);
+        context.insert("sync_paths", &true);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
 }

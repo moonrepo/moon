@@ -2,12 +2,10 @@ mod node;
 mod typescript;
 
 use crate::helpers::AnyError;
-use clap::ValueEnum;
 use dialoguer::theme::ColorfulTheme;
-use dialoguer::{Confirm, Select};
+use dialoguer::Confirm;
 use moon_config::{load_global_project_config_template, load_workspace_config_template};
 use moon_constants::{CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
-use moon_lang_node::package::{PackageJson, PackageWorkspaces};
 use moon_lang_node::NPM;
 use moon_logger::color;
 use moon_project::detect_projects_with_globs;
@@ -35,27 +33,8 @@ pub fn append_workspace_config(dest_dir: &Path, config: String) -> Result<(), An
     Ok(())
 }
 
-#[derive(ValueEnum, Clone, Debug, Default)]
-pub enum InheritProjectsAs {
-    #[default]
-    None,
-    GlobsList,
-    ProjectsMap,
-}
-
-impl InheritProjectsAs {
-    fn get_option_index(&self) -> usize {
-        match self {
-            InheritProjectsAs::None => 0,
-            InheritProjectsAs::GlobsList => 1,
-            InheritProjectsAs::ProjectsMap => 2,
-        }
-    }
-}
-
 pub struct InitOptions {
     pub force: bool,
-    pub inherit_projects: InheritProjectsAs,
     pub yes: bool,
 }
 
@@ -90,62 +69,62 @@ fn verify_dest_dir(
 
 /// Detect potential projects (for existing repos only) by
 /// inspecting the `workspaces` field in a root `package.json`.
-async fn detect_projects(
-    dest_dir: &Path,
-    options: &InitOptions,
-) -> Result<(BTreeMap<String, String>, Vec<String>), AnyError> {
-    let mut projects = HashMap::new();
-    let mut project_globs = vec![];
+// async fn detect_projects(
+//     dest_dir: &Path,
+//     options: &InitOptions,
+// ) -> Result<(BTreeMap<String, String>, Vec<String>), AnyError> {
+//     let mut projects = HashMap::new();
+//     let mut project_globs = vec![];
 
-    if let Ok(Some(pkg)) = PackageJson::read(dest_dir) {
-        if let Some(workspaces) = pkg.workspaces {
-            let items = vec![
-                "Don't inherit",
-                "As a list of globs",
-                "As a map of project locations",
-            ];
-            let default_index = options.inherit_projects.get_option_index();
+//     if let Ok(Some(pkg)) = PackageJson::read(dest_dir) {
+//         if let Some(workspaces) = pkg.workspaces {
+//             let items = vec![
+//                 "Don't inherit",
+//                 "As a list of globs",
+//                 "As a map of project locations",
+//             ];
+//             let default_index = options.inherit_projects.get_option_index();
 
-            let index = if options.yes {
-                default_index
-            } else {
-                Select::with_theme(&create_theme())
-                    .with_prompt(format!(
-                        "Inherit projects from {} workspaces?",
-                        color::file(NPM.manifest_filename)
-                    ))
-                    .items(&items)
-                    .default(default_index)
-                    .interact_opt()?
-                    .unwrap_or(default_index)
-            };
+//             let index = if options.yes {
+//                 default_index
+//             } else {
+//                 Select::with_theme(&create_theme())
+//                     .with_prompt(format!(
+//                         "Inherit projects from {} workspaces?",
+//                         color::file(NPM.manifest_filename)
+//                     ))
+//                     .items(&items)
+//                     .default(default_index)
+//                     .interact_opt()?
+//                     .unwrap_or(default_index)
+//             };
 
-            let globs = match workspaces {
-                PackageWorkspaces::Array(list) => list,
-                PackageWorkspaces::Object(object) => object.packages.unwrap_or_default(),
-            };
+//             let globs = match workspaces {
+//                 PackageWorkspaces::Array(list) => list,
+//                 PackageWorkspaces::Object(object) => object.packages.unwrap_or_default(),
+//             };
 
-            if index == 1 {
-                project_globs.extend(globs);
-            } else if index == 2 {
-                detect_projects_with_globs(dest_dir, &globs, &mut projects)?;
-            }
-        }
-    }
+//             if index == 1 {
+//                 project_globs.extend(globs);
+//             } else if index == 2 {
+//                 detect_projects_with_globs(dest_dir, &globs, &mut projects)?;
+//             }
+//         }
+//     }
 
-    if projects.is_empty() && project_globs.is_empty() {
-        projects.insert("example".to_owned(), "apps/example".to_owned());
-    }
+//     if projects.is_empty() && project_globs.is_empty() {
+//         projects.insert("example".to_owned(), "apps/example".to_owned());
+//     }
 
-    // Sort the projects for template rendering
-    let mut sorted_projects = BTreeMap::new();
+//     // Sort the projects for template rendering
+//     let mut sorted_projects = BTreeMap::new();
 
-    for (key, value) in projects {
-        sorted_projects.insert(key, value);
-    }
+//     for (key, value) in projects {
+//         sorted_projects.insert(key, value);
+//     }
 
-    Ok((sorted_projects, project_globs))
-}
+//     Ok((sorted_projects, project_globs))
+// }
 
 pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     let theme = create_theme();
@@ -165,13 +144,13 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
         Some(dir) => dir,
         None => return Ok(()),
     };
-    let (projects, project_globs) = detect_projects(&dest_dir, &options).await?;
+    // let (projects, project_globs) = detect_projects(&dest_dir, &options).await?;
     let vcs = detect_vcs(&dest_dir).await?;
 
-    // Create the initial files
+    // Create the config files
     let mut context = Context::new();
-    context.insert("projects", &projects);
-    context.insert("project_globs", &project_globs);
+    // context.insert("projects", &projects);
+    // context.insert("project_globs", &project_globs);
     context.insert("vcs_manager", &vcs.0);
     context.insert("vcs_default_branch", &vcs.1);
 

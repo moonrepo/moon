@@ -1,4 +1,4 @@
-use super::{append_workspace_config, InitOptions};
+use super::InitOptions;
 use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
@@ -112,7 +112,7 @@ pub async fn init_node(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> Result<(), AnyError> {
+) -> Result<String, AnyError> {
     let node_version = detect_node_version(&dest_dir).await?;
     let package_manager = detect_package_manager(&dest_dir, &options, theme).await?;
 
@@ -143,10 +143,9 @@ pub async fn init_node(
     context.insert("alias_names", &alias_names);
     context.insert("infer_tasks", &infer_tasks);
 
-    append_workspace_config(
-        dest_dir,
-        Tera::one_off(load_workspace_node_config_template(), &context, false)?,
-    )?;
-
-    Ok(())
+    Ok(Tera::one_off(
+        load_workspace_node_config_template(),
+        &context,
+        false,
+    )?)
 }

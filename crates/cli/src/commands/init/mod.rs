@@ -1,24 +1,36 @@
+mod node;
+
+use crate::helpers::AnyError;
 use clap::ValueEnum;
 use dialoguer::{Confirm, Select};
-use moon_config::{
-    default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
-    load_global_project_config_template, load_workspace_config_template,
-};
+use moon_config::{load_global_project_config_template, load_workspace_config_template};
 use moon_constants::{CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
-use moon_lang::{is_using_package_manager, is_using_version_manager};
 use moon_lang_node::package::{PackageJson, PackageWorkspaces};
-use moon_lang_node::{NODENV, NPM, NVMRC, PNPM, YARN};
+use moon_lang_node::NPM;
 use moon_logger::color;
 use moon_project::detect_projects_with_globs;
 use moon_terminal::create_theme;
 use moon_utils::{fs, path};
 use moon_vcs::detect_vcs;
+use node::init_node;
 use std::collections::{BTreeMap, HashMap};
 use std::env;
-use std::fs::{read_to_string, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
+
+pub fn append_workspace_config(dest_dir: &Path, config: String) -> Result<(), AnyError> {
+    let mut file = OpenOptions::new().create(true).append(true).open(
+        dest_dir
+            .join(CONFIG_DIRNAME)
+            .join(CONFIG_WORKSPACE_FILENAME),
+    )?;
+
+    writeln!(file, "\n\n{}", config)?;
+
+    Ok(())
+}
 
 #[derive(ValueEnum, Clone, Debug, Default)]
 pub enum PackageManager {
@@ -63,8 +75,6 @@ pub struct InitOptions {
     pub yes: bool,
 }
 
-type AnyError = Box<dyn std::error::Error>;
-
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
 fn verify_dest_dir(dest_dir: &Path, options: &InitOptions) -> Result<Option<PathBuf>, AnyError> {
@@ -90,97 +100,6 @@ fn verify_dest_dir(dest_dir: &Path, options: &InitOptions) -> Result<Option<Path
     }
 
     Ok(None)
-}
-
-/// Verify the package manager to use. If a `package.json` exists,
-/// and the `packageManager` field is defined, use that.
-async fn detect_package_manager(
-    dest_dir: &Path,
-    options: &InitOptions,
-) -> Result<(String, String), AnyError> {
-    let mut pm_type = String::new();
-    let mut pm_version = String::new();
-
-    // Extract value from `packageManager` field
-    if let Ok(Some(pkg)) = PackageJson::read(dest_dir) {
-        if let Some(pm) = pkg.package_manager {
-            if pm.contains('@') {
-                let mut parts = pm.split('@');
-
-                pm_type = parts.next().unwrap_or_default().to_owned();
-                pm_version = parts.next().unwrap_or_default().to_owned();
-            } else {
-                pm_type = pm;
-            }
-        }
-    }
-
-    // If no value, detect based on files
-    if pm_type.is_empty() {
-        if is_using_package_manager(dest_dir, &YARN) {
-            pm_type = YARN.binary.to_owned();
-        } else if is_using_package_manager(dest_dir, &PNPM) {
-            pm_type = PNPM.binary.to_owned();
-        } else if is_using_package_manager(dest_dir, &NPM) {
-            pm_type = NPM.binary.to_owned();
-        }
-    }
-
-    // If no value again, ask for explicit input
-    if pm_type.is_empty() {
-        let items = vec![NPM.binary, PNPM.binary, YARN.binary];
-        let default_index = options.package_manager.get_option_index();
-
-        let index = if options.yes {
-            default_index
-        } else {
-            Select::with_theme(&create_theme())
-                .with_prompt("Which package manager?")
-                .items(&items)
-                .default(default_index)
-                .interact_opt()?
-                .unwrap_or(default_index)
-        };
-
-        pm_type = String::from(items[index]);
-    }
-
-    // If no version, fallback to configuration default
-    if pm_version.is_empty() {
-        if pm_type == NPM.binary {
-            pm_version = default_npm_version();
-        } else if pm_type == PNPM.binary {
-            pm_version = default_pnpm_version();
-        } else if pm_type == YARN.binary {
-            pm_version = default_yarn_version();
-        }
-    }
-
-    Ok((pm_type, pm_version))
-}
-
-/// Detect the Node.js version from local configuration files,
-/// otherwise fallback to the configuration default.
-fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
-    if is_using_version_manager(dest_dir, &NVMRC) {
-        return Ok((
-            read_to_string(dest_dir.join(NVMRC.version_filename))?
-                .trim()
-                .to_owned(),
-            NVMRC.binary.to_owned(),
-        ));
-    }
-
-    if is_using_version_manager(dest_dir, &NODENV) {
-        return Ok((
-            read_to_string(dest_dir.join(NODENV.version_filename))?
-                .trim()
-                .to_owned(),
-            NODENV.binary.to_owned(),
-        ));
-    }
-
-    Ok((default_node_version(), String::new()))
 }
 
 /// Detect potential projects (for existing repos only) by
@@ -243,6 +162,7 @@ async fn detect_projects(
 }
 
 pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
+    let theme = create_theme();
     let working_dir = env::current_dir().unwrap();
     let dest_path = PathBuf::from(dest);
     let dest_dir = if dest == "." {
@@ -259,17 +179,11 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
         Some(dir) => dir,
         None => return Ok(()),
     };
-    let package_manager = detect_package_manager(&dest_dir, &options).await?;
-    let node_version = detect_node_version(&dest_dir)?;
     let (projects, project_globs) = detect_projects(&dest_dir, &options).await?;
     let vcs = detect_vcs(&dest_dir).await?;
 
     // Generate a template
     let mut context = Context::new();
-    context.insert("package_manager", &package_manager.0);
-    context.insert("package_manager_version", &package_manager.1);
-    context.insert("node_version", &node_version.0);
-    context.insert("node_version_manager", &node_version.1);
     context.insert("projects", &projects);
     context.insert("project_globs", &project_globs);
     context.insert("vcs_manager", &vcs.0);
@@ -278,6 +192,9 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     let mut tera = Tera::default();
     tera.add_raw_template("workspace", load_workspace_config_template())?;
     tera.add_raw_template("project", load_global_project_config_template())?;
+
+    // TODO node
+    init_node(&dest_dir, &options, &theme).await?;
 
     // Create config files
     fs::create_dir_all(&moon_dir).await?;

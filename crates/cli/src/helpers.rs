@@ -9,6 +9,8 @@ use moon_workspace::{Workspace, WorkspaceError};
 use std::env;
 use std::time::Duration;
 
+pub type AnyError = Box<dyn std::error::Error>;
+
 /// Loads the workspace and registers all available platforms!
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
     let mut workspace = Workspace::load().await?;

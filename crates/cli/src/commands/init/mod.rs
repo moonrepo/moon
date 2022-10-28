@@ -27,7 +27,7 @@ fn render_template(context: &Context) -> Result<String, Error> {
 fn create_default_context() -> Context {
     let mut context = Context::new();
     context.insert("projects", &BTreeMap::<String, String>::new());
-    context.insert("project_globs", &Vec::<String>::new());
+    context.insert("project_globs", &vec!["apps/*", "packages/*"]);
     context.insert("vcs_manager", &"git");
     context.insert("vcs_default_branch", &"master");
     context
@@ -118,6 +118,7 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
         &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
         workspace_config
             .into_iter()
+            .map(|c| c.trim().to_owned())
             .collect::<Vec<String>>()
             .join("\n\n"),
     )
@@ -144,7 +145,7 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     )?;
 
     println!(
-        "Moon has successfully been initialized in {}",
+        "\nMoon has successfully been initialized in {}",
         color::path(&dest_dir),
     );
 

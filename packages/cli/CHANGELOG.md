@@ -4,6 +4,12 @@
 
 #### 🚀 Updates
 
+- Refactored `moon init` heavily for a better onboarding experience.
+  - Each tool is now configured individually, with its own prompts. Tools can also be skipped.
+  - Tools can now be initialized _after_ moon already exists, ala `moon init node`.
+  - Fixed many issues around the templates and rendering.
+- Updated `moon migrate` commands to throw an error if the work tree is dirty. This can be bypassed
+  with the new `--skipTouchedFilesCheck` option.
 - Updated the `projects` setting in `.moon/workspace.yml` to support globs _and_ a map in unison.
 - Updated default versions of tools:
   - node 16.17.0 -> 18.12.0
@@ -18,11 +24,6 @@
   `.moon/cache/states/<project>/<task>`. This allows CI environments to cache them as artifacts,
   upload/download them, or simply help developers debug broken jobs.
   - Also, these log files are now stored in the output tarballs.
-
-##### Migrator
-
-- Updated `moon migrate` commands to throw an error if the work tree is dirty. This can be bypassed
-  with the new `--skipTouchedFilesCheck` option.
 
 #### ⚙️ Internal
 

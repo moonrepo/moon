@@ -134,7 +134,7 @@ pub enum Commands {
     // moon init
     #[command(
         name = "init",
-        about = "Initialize a new moon repository and scaffold config files.",
+        about = "Initialize a new tool or a new moon repository, and scaffold config files.",
         rename_all = "camelCase"
     )]
     Init {

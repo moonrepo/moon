@@ -197,7 +197,10 @@ pub async fn init_node(
         false
     } else {
         Confirm::with_theme(theme)
-            .with_prompt("Use package names as moon project aliases?")
+            .with_prompt(format!(
+                "Use {} names as moon project aliases?",
+                color::file(NPM.manifest_filename)
+            ))
             .interact()?
     };
 
@@ -206,7 +209,8 @@ pub async fn init_node(
     } else {
         Confirm::with_theme(theme)
             .with_prompt(format!(
-                "Infer package scripts as moon tasks? {}",
+                "Infer {} scripts as moon tasks? {}",
+                color::file(NPM.manifest_filename),
                 color::muted("(not recommended)")
             ))
             .interact()?

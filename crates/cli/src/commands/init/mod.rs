@@ -63,7 +63,7 @@ async fn verify_dest_dir(
         if !options.force
             && moon_dir.exists()
             && !Confirm::with_theme(theme)
-                .with_prompt("Moon has already been initialized, overwrite it?")
+                .with_prompt("moon has already been initialized, overwrite it?")
                 .interact()?
         {
             return Ok(None);
@@ -89,7 +89,7 @@ pub async fn init_tool(
 
     if !workspace_config_path.exists() {
         eprintln!(
-            "Moon has not been initialized! Try running {} first?",
+            "moon has not been initialized! Try running {} first?",
             color::shell("moon init")
         );
 
@@ -196,13 +196,13 @@ pub async fn init(
     writeln!(
         file,
         r#"
- # Moon
+ # moon
  .moon/cache
  .moon/docker"#
     )?;
 
     println!(
-        "\nMoon has successfully been initialized in {}",
+        "\nmoon has successfully been initialized in {}",
         color::path(&dest_dir),
     );
 

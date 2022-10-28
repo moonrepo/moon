@@ -25,7 +25,7 @@ fn creates_files_in_dest() {
         .assert();
 
     assert.success().code(0).stdout(predicate::str::starts_with(
-        "Moon has successfully been initialized in",
+        "moon has successfully been initialized in",
     ));
 
     assert!(workspace_config.exists());
@@ -88,7 +88,7 @@ fn creates_gitignore_file() {
 
     assert_eq!(
         fs::read_to_string(gitignore).unwrap(),
-        "\n# Moon\n.moon/cache\n.moon/docker\n"
+        "\n# moon\n.moon/cache\n.moon/docker\n"
     );
 }
 
@@ -109,7 +109,7 @@ fn appends_existing_gitignore_file() {
 
     assert_eq!(
         fs::read_to_string(gitignore).unwrap(),
-        "*.js\n*.log\n# Moon\n.moon/cache\n.moon/docker\n"
+        "*.js\n*.log\n# moon\n.moon/cache\n.moon/docker\n"
     );
 }
 
@@ -134,7 +134,7 @@ fn does_overwrite_existing_config_if_force_passed() {
         .assert();
 
     assert.success().code(0).stdout(predicate::str::starts_with(
-        "Moon has successfully been initialized in",
+        "moon has successfully been initialized in",
     ));
 }
 

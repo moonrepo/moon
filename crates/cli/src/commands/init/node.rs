@@ -188,8 +188,8 @@ pub async fn init_node(
 ) -> Result<String, AnyError> {
     println!("\n{}\n", label_header("Node"));
 
-    let node_version = detect_node_version(&dest_dir).await?;
-    let package_manager = detect_package_manager(&dest_dir, &options, theme).await?;
+    let node_version = detect_node_version(dest_dir).await?;
+    let package_manager = detect_package_manager(dest_dir, options, theme).await?;
 
     detect_projects(dest_dir, options, parent_context, theme).await?;
 

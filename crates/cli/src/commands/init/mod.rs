@@ -12,24 +12,25 @@ use moon_terminal::create_theme;
 use moon_utils::{fs, path};
 use moon_vcs::detect_vcs;
 use node::init_node;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::env;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use tera::{Context, Tera};
+use tera::{Context, Error, Tera};
 use typescript::init_typescript;
 
-pub fn append_workspace_config(dest_dir: &Path, config: String) -> Result<(), AnyError> {
-    let mut file = OpenOptions::new().create(true).append(true).open(
-        dest_dir
-            .join(CONFIG_DIRNAME)
-            .join(CONFIG_WORKSPACE_FILENAME),
-    )?;
+fn render_template(context: &Context) -> Result<String, Error> {
+    Tera::one_off(load_workspace_config_template(), context, false)
+}
 
-    writeln!(file, "\n\n{}", config)?;
-
-    Ok(())
+fn create_default_context() -> Context {
+    let mut context = Context::new();
+    context.insert("projects", &BTreeMap::<String, String>::new());
+    context.insert("project_globs", &Vec::<String>::new());
+    context.insert("vcs_manager", &"git");
+    context.insert("vcs_default_branch", &"master");
+    context
 }
 
 pub struct InitOptions {
@@ -84,21 +85,41 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
         Some(dir) => dir,
         None => return Ok(()),
     };
-    // let (projects, project_globs) = detect_projects(&dest_dir, &options).await?;
     let vcs = detect_vcs(&dest_dir).await?;
 
-    // Create the config files
-    let mut context = Context::new();
-    // context.insert("projects", &BTreeMap::new::<String, String>());
-    // context.insert("project_globs", &vec![]);
+    // Initialize tools
+    let mut workspace_config = VecDeque::new();
+    let mut context = create_default_context();
     context.insert("vcs_manager", &vcs.0);
     context.insert("vcs_default_branch", &vcs.1);
 
+    if dest_dir.join(NPM.manifest_filename).exists()
+        || Confirm::with_theme(&theme)
+            .with_prompt("Initialize Node.js?")
+            .interact()?
+    {
+        workspace_config.push_back(init_node(&dest_dir, &options, &mut context, &theme).await?);
+
+        if dest_dir.join("tsconfig.json").exists()
+            || Confirm::with_theme(&theme)
+                .with_prompt("Initialize TypeScript?")
+                .interact()?
+        {
+            workspace_config.push_back(init_typescript(&dest_dir, &options, &theme).await?);
+        }
+    }
+
+    workspace_config.push_front(render_template(&context)?);
+
+    // Create config files
     fs::create_dir_all(&moon_dir).await?;
 
     fs::write(
         &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
-        Tera::one_off(load_workspace_config_template(), &context, false)?,
+        workspace_config
+            .into_iter()
+            .collect::<Vec<String>>()
+            .join("\n\n"),
     )
     .await?;
 
@@ -117,29 +138,10 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     writeln!(
         file,
         r#"
-# Moon
-.moon/cache
-.moon/docker"#
+ # Moon
+ .moon/cache
+ .moon/docker"#
     )?;
-
-    let mut context = Context::new(); // TODO
-
-    // Initialize additional languages
-    if dest_dir.join(NPM.manifest_filename).exists()
-        || Confirm::with_theme(&theme)
-            .with_prompt("Initialize Node.js?")
-            .interact()?
-    {
-        init_node(&dest_dir, &options, &mut context, &theme).await?;
-
-        if dest_dir.join("tsconfig.json").exists()
-            || Confirm::with_theme(&theme)
-                .with_prompt("Initialize TypeScript?")
-                .interact()?
-        {
-            init_typescript(&dest_dir, &options, &theme).await?;
-        }
-    }
 
     println!(
         "Moon has successfully been initialized in {}",
@@ -147,4 +149,51 @@ pub async fn init(dest: &str, options: InitOptions) -> Result<(), AnyError> {
     );
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use insta::assert_snapshot;
+
+    #[test]
+    fn renders_default() {
+        let context = create_default_context();
+
+        assert_snapshot!(render_template(&context).unwrap());
+    }
+
+    #[test]
+    fn renders_glob_list() {
+        let mut context = create_default_context();
+        context.insert("project_globs", &vec!["apps/*", "packages/*"]);
+
+        assert_snapshot!(render_template(&context).unwrap());
+    }
+
+    #[test]
+    fn renders_projects_map() {
+        let mut context = create_default_context();
+        context.insert("projects", &BTreeMap::from([("example", "apps/example")]));
+
+        assert_snapshot!(render_template(&context).unwrap());
+    }
+
+    #[test]
+    fn renders_git_vcs() {
+        let mut context = create_default_context();
+        context.insert("vcs_manager", &"git");
+        context.insert("vcs_default_branch", &"main");
+
+        assert_snapshot!(render_template(&context).unwrap());
+    }
+
+    #[test]
+    fn renders_svn_vcs() {
+        let mut context = create_default_context();
+        context.insert("vcs_manager", &"svn");
+        context.insert("vcs_default_branch", &"trunk");
+
+        assert_snapshot!(render_template(&context).unwrap());
+    }
 }

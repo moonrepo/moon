@@ -4,6 +4,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use moon_config::load_workspace_typescript_config_template;
 use moon_lang_node::tsconfig::TsConfigJson;
+use moon_terminal::label_header;
 use std::path::Path;
 use tera::{Context, Error, Tera};
 
@@ -16,6 +17,8 @@ pub async fn init_typescript(
     options: &InitOptions,
     theme: &ColorfulTheme,
 ) -> Result<String, AnyError> {
+    println!("\n{}\n", label_header("TypeScript"));
+
     let project_refs = if let Ok(Some(tsconfig)) = TsConfigJson::read(dest_dir) {
         match tsconfig.compiler_options {
             Some(co) => co.composite.unwrap_or_default(),

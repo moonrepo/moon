@@ -20,6 +20,7 @@
 
 - Added a `node.binExecArgs` setting to `.moon/workspace.yml`, so that additional `node` CLI
   arguments may be passed when executing the binary to run targets.
+- Updated the task `command` to default to "noop" when not defined.
 - The stdout and stderr of ran targets are now stored as individual log files in
   `.moon/cache/states/<project>/<task>`. This allows CI environments to cache them as artifacts,
   upload/download them, or simply help developers debug broken jobs.

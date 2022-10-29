@@ -1,16 +1,16 @@
 ---
 slug: v0.18
-title: v0.18 - Improved project and tool configuration
+title: v0.18 - Improved configuration and initialization flow
 authors: [milesj]
-tags: [projects, node]
+tags: [projects, config, init, node]
 # image: ./img/v0.18.png
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import Image from '@site/src/components/Image';
 
-With this release, we've focused heavily on our internals and benchmarking performance metrics, so
-it's rather light on new features, but we still have some to show!
+Happy Halloween 🎃 👻! With this spooky release, we've focused heavily on our internals and
+benchmarking performance metrics, so it's rather light on new features, but we still have some to
+show!
 
 <!--truncate-->
 
@@ -32,7 +32,22 @@ projects:
     www: 'www'
 ```
 
-## Define additional `node` arguments
+## Improved `moon init` flow
+
+The `moon init` command hasn't changed much since our v0.1 release, and with many new features and
+configurations over these last 18 releases, the initialization flow has fallen quite behind. We felt
+it was the perfect time to modernize this command a bit.
+
+On top of automatically detecting settings from the environment, the command will also now prompt
+you with additional questions while configuring Node.js or TypeScript. Here's an example of this
+flow:
+
+<Image src={require('./img/v0.18/init-flow.png')} width="80%" />
+
+Furthermore, the command also supports enabling a new tool (appending configuration to
+`.moon/workspace.yml`) into an _existing_ moon repository, by running `moon init --tool <name>`.
+
+## Customize `node` execution arguments
 
 moon manages the Node.js binary in our toolchain, and runs all Node.js based tasks using this
 binary, instead of relying on the binary found in the developer's environment. Because of this, how
@@ -60,6 +75,7 @@ View the
 [official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.18.0) for a
 full list of changes.
 
+- Default Node.js version has been updated to v18.12 (the new LTS) from v16.17.
 - Improvements to how we store stdout/stderr logs for ran targets.
 - Work tree dirty checks when running migration commands.
 
@@ -69,5 +85,4 @@ Expect the following in the v0.19 release!
 
 - Laying the groundwork for _remote caching_!
 - An in-repo secrets management layer.
-
-[projects]: ../docs/config/workspace#projects
+- Performance improvements.

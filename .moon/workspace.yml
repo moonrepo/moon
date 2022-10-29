@@ -4,6 +4,7 @@ $schema: '../schemas/workspace.json'
 
 projects:
   - 'packages/*'
+  - 'apps/*'
   - '!packages/cli'
   - '!packages/core-*'
   - 'website'

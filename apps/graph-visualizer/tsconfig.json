@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "outDir": "../../.moon/cache/types/apps/astro-app",
+    "rootDir": ".",
+    "importsNotUsedAsValues": "error",
+    "moduleResolution": "node",
+    "resolveJsonModule": true
+  },
+  "references": []
+}

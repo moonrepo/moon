@@ -1,0 +1,13 @@
+{
+  "name": "graph-visualizer",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "astro": "^1.6.0"
+  },
+  "devDependencies": {
+    "eslint-plugin-astro": "^0.20.0",
+    "prettier-plugin-astro": "^0.6.0"
+  }
+}

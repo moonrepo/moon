@@ -1,0 +1,44 @@
+fileGroups:
+  astro:
+    - 'src/**/*'
+    - 'astro.config.*'
+
+tasks:
+  astro:
+    command: 'astro'
+    local: true
+
+  dev:
+    command: 'astro dev'
+    inputs:
+      - '@group(astro)'
+    local: true
+
+  build:
+    command: 'astro build'
+    inputs:
+      - '@group(astro)'
+    outputs:
+      - 'dist'
+
+  check:
+    command: 'astro check'
+    inputs:
+      - '@group(astro)'
+    deps:
+      - '~:typecheck'
+
+  preview:
+    command: 'astro preview'
+    inputs:
+      - '@group(astro)'
+    deps:
+      - '~:build'
+    local: true
+
+workspace:
+  typescript: false
+  inheritedTasks:
+    exclude:
+      - 'lint'
+      - 'build'

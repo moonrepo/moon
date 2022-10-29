@@ -13,7 +13,8 @@
   },
   "workspaces": [
     "packages/*",
-    "website"
+    "website",
+    "apps/*"
   ],
   "engines": {
     "node": ">=14.15.0"
@@ -23,7 +24,7 @@
     "@types/node": "^17.0.45",
     "babel-preset-moon": "^1.0.2",
     "eslint": "^8.24.0",
-    "eslint-config-moon": "^1.0.2",
+    "eslint-config-moon": "^1.2.0",
     "execa": "^6.1.0",
     "jest": "^29.0.3",
     "jest-preset-moon": "^1.0.2",

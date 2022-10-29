@@ -268,7 +268,7 @@ impl PackageManager<NodeTool> for YarnTool {
         String::from(YARN.manifest_filename)
     }
 
-    async fn get_resolved_depenencies(
+    async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {

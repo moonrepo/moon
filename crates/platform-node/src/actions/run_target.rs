@@ -174,7 +174,7 @@ pub async fn create_target_hasher(
         HasherOptimization::Accuracy
     ) {
         node.get_package_manager()
-            .get_resolved_depenencies(&project.root)
+            .get_resolved_dependencies(&project.root)
             .await?
     } else {
         HashMap::new()

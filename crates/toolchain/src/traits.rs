@@ -226,7 +226,7 @@ pub trait PackageManager<T: Send + Sync>:
 
     /// Return a list of dependencies resolved to their latest version from the lockfile.
     /// Dependencies are based on a manifest at the provided path.
-    async fn get_resolved_depenencies(
+    async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError>;

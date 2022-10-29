@@ -56,6 +56,13 @@ fn runs_tasks_from_multiple_project() {
     assert!(predicate::str::contains("depsA:dependencyOrder").eval(&output)); // dep of noop
 }
 
+#[test]
+fn runs_on_all_projects_from_root_directory() {
+    let fixture = create_sandbox_with_git("cases");
+    let assert = create_moon_command(fixture.path()).arg("check").assert();
+    assert.stderr(predicate::str::contains("running check on all projects"));
+}
+
 mod reports {
     use super::*;
 

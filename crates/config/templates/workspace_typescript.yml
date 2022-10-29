@@ -14,12 +14,14 @@ typescript:
   # options for all project reference based config files.
   # rootOptionsConfigFileName: 'tsconfig.options.json'
 
-  # Update a project's `tsconfig.json` to route the `outDir` to moon's cache.
+  # Update a project's `tsconfig.json` to route the `outDir` compiler option
+  # to moon's `.moon/cache` directory.
   routeOutDirToCache: {{ route_cache }}
 
   # Sync a project's `dependsOn` as project references within the
   # project's `tsconfig.json` and the workspace root `tsconfig.json`.
   syncProjectReferences: {{ project_refs }}
 
-  # Sync a project's project references as `paths` aliases.
+  # Sync a project's project references as import aliases to the `paths`
+  # compiler option in each applicable project.
   syncProjectReferencesToPaths: {{ project_refs and sync_paths }}

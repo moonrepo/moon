@@ -97,8 +97,8 @@ pub async fn init_tool(
     }
 
     let tool_config = match tool {
-        InitTool::Node => init_node(&dest_dir, &options, &theme, None).await?,
-        InitTool::TypeScript => init_typescript(&dest_dir, &options, &theme).await?,
+        InitTool::Node => init_node(dest_dir, options, theme, None).await?,
+        InitTool::TypeScript => init_typescript(dest_dir, options, theme).await?,
     };
 
     let mut file = OpenOptions::new()
@@ -108,7 +108,7 @@ pub async fn init_tool(
 
     writeln!(file, "\n\n{}", tool_config.trim())?;
 
-    println!("\nTool has successfully been initialized");
+    println!("\nWorkspace config has successfully been updated");
 
     Ok(())
 }

@@ -199,6 +199,14 @@ impl ProjectGraph {
         Ok(())
     }
 
+    /// Return a list of all projects in the graph.
+    #[track_caller]
+    pub fn all_projects(&self) -> Result<Vec<Project>, ProjectError> {
+        self.load_all()?;
+        let graph = self.graph.read().expect(READ_ERROR);
+        Ok(graph.raw_nodes().iter().map(|n| n.weight.clone()).collect())
+    }
+
     /// Find and return a project based on the initial path location.
     /// This will attempt to find the closest matching project source.
     #[track_caller]

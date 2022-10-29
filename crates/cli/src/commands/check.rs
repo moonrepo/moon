@@ -1,9 +1,8 @@
-use std::env;
-
 use crate::commands::run::{run, RunOptions};
 use crate::helpers::load_workspace;
 use moon_logger::trace;
 use moon_project::Project;
+use std::env;
 
 pub struct CheckOptions {
     pub report: bool,

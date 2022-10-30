@@ -1,5 +1,5 @@
 use moon_error::MoonError;
-use semver::Version;
+use moon_utils::semver::Version;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq, Eq)]

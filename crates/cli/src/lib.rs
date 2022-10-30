@@ -80,7 +80,9 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::Check { ids, report } => check(ids, CheckOptions { report: *report }).await,
+        Commands::Check { ids, report, all } => {
+            check(ids, *all, CheckOptions { report: *report }).await
+        }
         Commands::Clean { lifetime } => {
             clean(CleanOptions {
                 cache_lifetime: lifetime.to_owned(),

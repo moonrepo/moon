@@ -12,24 +12,25 @@ const LOG_TARGET: &str = "moon:check";
 
 pub async fn check(
     project_ids: &Vec<String>,
+    all: bool,
     options: CheckOptions,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let mut projects: Vec<Project> = vec![];
 
     // Load projects
-    if project_ids.is_empty() {
-        if workspace.root == env::current_dir()? {
-            trace!(
-                target: LOG_TARGET,
-                "No project specified, running check on all projects"
-            );
-            projects.extend(workspace.projects.all_projects()?);
-        } else {
-            trace!(target: LOG_TARGET, "Loading project from current directory");
-            projects.push(workspace.projects.load_from_path(env::current_dir()?)?);
-        }
+    if all {
+        trace!(target: LOG_TARGET, "Running check on all projects");
+        projects.extend(workspace.projects.all_projects()?);
+    } else if project_ids.is_empty() {
+        trace!(target: LOG_TARGET, "Loading from path");
+        projects.push(workspace.projects.load_from_path(env::current_dir()?)?);
     } else {
+        trace!(
+            target: LOG_TARGET,
+            "Running for specific projects: {}",
+            project_ids.join(", ")
+        );
         for id in project_ids {
             projects.push(workspace.projects.load(id)?);
         }

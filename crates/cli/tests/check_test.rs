@@ -80,7 +80,7 @@ mod reports {
     use super::*;
 
     #[test]
-    fn doesnt_create_a_report_by_default() {
+    fn does_not_create_a_report_by_default() {
         let fixture = create_sandbox_with_git("cases");
 
         create_moon_command(fixture.path())

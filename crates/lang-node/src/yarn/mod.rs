@@ -1,3 +1,5 @@
+pub mod classic;
+
 use crate::YARN;
 use cached::proc_macro::cached;
 use moon_error::MoonError;

@@ -1,3 +1,7 @@
+// Most of this code is ported from
+// https://github.com/pnpm/pnpm/blob/75ac5ca2e63101817b7c02144083641a5274c182/packages/dependency-path/test/index.ts.
+// All credits go to original authors.
+
 use moon_error::MoonError;
 use moon_utils::semver::Version;
 use thiserror::Error;
@@ -23,20 +27,18 @@ pub struct PnpmDependencyPath {
     pub version: Option<String>,
 }
 
-// Ported from
-// https://github.com/pnpm/pnpm/blob/75ac5ca2e63101817b7c02144083641a5274c182/packages/dependency-path/src/index.ts
 impl PnpmDependencyPath {
     fn is_absolute(path: &str) -> bool {
         !path.starts_with('/')
     }
 
     pub fn parse(path: &str) -> Result<Self, DependencyPathError> {
-        let _is_absolute = Self::is_absolute(path);
+        let is_absolute = Self::is_absolute(path);
         let mut parts = path.split('/').map(String::from).collect::<Vec<_>>();
-        if !_is_absolute {
+        if !is_absolute {
             parts.remove(0);
         }
-        let host = if _is_absolute {
+        let host = if is_absolute {
             Some(parts.remove(0))
         } else {
             None
@@ -61,19 +63,19 @@ impl PnpmDependencyPath {
             if Version::parse(&ver).is_ok() {
                 return Ok(Self {
                     host,
-                    is_absolute: _is_absolute,
+                    is_absolute,
                     name,
                     peers_suffix,
                     version: Some(ver),
                 });
             }
         }
-        if !_is_absolute {
+        if !is_absolute {
             return Err(DependencyPathError::IsNotAbsolute(path.to_string()));
         }
         Ok(Self {
             host,
-            is_absolute: _is_absolute,
+            is_absolute,
             name: None,
             peers_suffix: None,
             version: None,
@@ -81,8 +83,6 @@ impl PnpmDependencyPath {
     }
 }
 
-// Ported from
-// https://github.com/pnpm/pnpm/blob/75ac5ca2e63101817b7c02144083641a5274c182/packages/dependency-path/test/index.ts
 #[cfg(test)]
 mod tests {
     use super::PnpmDependencyPath;

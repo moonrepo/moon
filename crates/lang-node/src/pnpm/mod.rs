@@ -11,7 +11,7 @@ use serde_yaml::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use self::dependency_path::PnpmDependencyPath;
+use dependency_path::PnpmDependencyPath;
 
 config_cache!(PnpmLock, PNPM.lock_filename, read_yaml);
 
@@ -50,10 +50,8 @@ pub struct PnpmLock {
     pub lockfile_version: Value,
     pub importers: HashMap<String, Value>,
     pub packages: HashMap<String, PnpmLockPackage>,
-
     #[serde(flatten)]
     pub unknown: HashMap<String, Value>,
-
     #[serde(skip)]
     pub path: PathBuf,
 }

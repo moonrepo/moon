@@ -57,6 +57,16 @@ fn runs_tasks_from_multiple_project() {
 }
 
 #[test]
+fn runs_for_all_projects_even_when_not_in_root_dir() {
+    let fixture = create_sandbox_with_git("cases");
+    let assert = create_moon_command(fixture.path().join("base"))
+        .arg("check")
+        .arg("--all")
+        .assert();
+    assert.stderr(predicate::str::contains("all projects"));
+}
+
+#[test]
 fn runs_on_all_projects_from_root_directory() {
     let fixture = create_sandbox_with_git("cases");
     let assert = create_moon_command(fixture.path())

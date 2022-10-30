@@ -14,7 +14,7 @@ On your first checkout of the repository, you'll need to install dependencies an
 
 ### Rust
 
-Moon is built on Rust and requires `rustup` and `cargo` to exist in your environment. You can
+moon is built on Rust and requires `rustup` and `cargo` to exist in your environment. You can
 [install Rust from the official website](https://www.rust-lang.org/tools/install).
 
 We also require the following 3rd-party Cargo commands, which can be installed with the following.

@@ -50,7 +50,6 @@ impl NodeTargetHasher {
                         for resolved_version in resolved_versions {
                             if semver::satisfies_requirement(resolved_version, &version_req) {
                                 hashed.insert(name.to_owned(), resolved_version.to_owned());
-
                                 continue 'outer;
                             }
                         }

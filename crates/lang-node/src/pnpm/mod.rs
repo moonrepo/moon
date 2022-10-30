@@ -1,3 +1,6 @@
+pub mod dependency_path;
+pub mod workspace;
+
 use crate::PNPM;
 use cached::proc_macro::cached;
 use moon_error::MoonError;
@@ -7,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+
+use self::dependency_path::PnpmDependencyPath;
 
 config_cache!(PnpmLock, PNPM.lock_filename, read_yaml);
 
@@ -35,7 +40,8 @@ pub struct PnpmLockPackage {
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PnpmLockResolution {
-    pub integrity: String,
+    pub integrity: Option<String>,
+    pub tarball: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -58,7 +64,17 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
 
     if let Some(lockfile) = PnpmLock::read(path)? {
         for (package_name, details) in lockfile.packages {
-            deps.insert(package_name, vec![details.resolution.integrity]);
+            let parsed_dependency = PnpmDependencyPath::parse(&package_name)?;
+            let entry = deps
+                .entry(parsed_dependency.name.expect("package should have a name"))
+                .or_default();
+            if let Some(ver) = details.resolution.integrity {
+                entry.push(ver.clone());
+            }
+            if let Some(ver) = details.resolution.tarball {
+                entry.push(ver.clone());
+            }
+            entry.sort();
         }
     }
 
@@ -145,7 +161,7 @@ packages:
                             ("node".to_owned(), ">=6.0.0".to_owned())
                         ])),
                         resolution:
-                        PnpmLockResolution { integrity:  "sha512-qRmjj8nj9qmLTQXXmaR1cck3UXSRMPrbsLJAasZpF+t3riI71BXed5ebIOYwQntykeZuhjsdweEc9BxH5Jc26w==".to_owned() },
+                        PnpmLockResolution { integrity: Some("sha512-qRmjj8nj9qmLTQXXmaR1cck3UXSRMPrbsLJAasZpF+t3riI71BXed5ebIOYwQntykeZuhjsdweEc9BxH5Jc26w==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
                 ), (
@@ -161,7 +177,7 @@ packages:
                             Value::String("^7.0.0-0".to_owned())
                         )])),
                         resolution:
-                        PnpmLockResolution { integrity:  "sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw==".to_owned() },
+                        PnpmLockResolution { integrity: Some( "sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
                 ), (
@@ -172,7 +188,7 @@ packages:
                             ("node".to_owned(), ">=8".to_owned())
                         ])),
                         resolution:
-                        PnpmLockResolution { integrity:  "sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==".to_owned() },
+                        PnpmLockResolution { integrity: Some( "sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
                 ), (
@@ -190,7 +206,7 @@ packages:
                         )])),
                         transitive_peer_dependencies: Some(string_vec!["@babel/core", "supports-color"]),
                         resolution:
-                        PnpmLockResolution { integrity:  "sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A==".to_owned() },
+                        PnpmLockResolution { integrity: Some( "sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
                 )]),
@@ -201,13 +217,13 @@ packages:
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("pnpm-lock.yaml")).unwrap(),
             HashMap::from([
-                ("/array-union/2.1.0".to_owned(), string_vec!["sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw=="]),
-                ("/solid-jest/0.2.0_@babel+core@7.18.9".to_owned(), string_vec!["sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A=="]),
+                ("array-union".to_owned(), string_vec!["sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw=="]),
+                ("solid-jest".to_owned(), string_vec!["sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A=="]),
                 (
-                    "/@babel/plugin-syntax-async-generators/7.8.4_@babel+core@7.18.9".to_owned(),
+                    "@babel/plugin-syntax-async-generators".to_owned(),
                     string_vec!["sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw=="]
                 ),
-                ("/@ampproject/remapping/2.2.0".to_owned(), string_vec!["sha512-qRmjj8nj9qmLTQXXmaR1cck3UXSRMPrbsLJAasZpF+t3riI71BXed5ebIOYwQntykeZuhjsdweEc9BxH5Jc26w=="]),
+                ("@ampproject/remapping".to_owned(), string_vec!["sha512-qRmjj8nj9qmLTQXXmaR1cck3UXSRMPrbsLJAasZpF+t3riI71BXed5ebIOYwQntykeZuhjsdweEc9BxH5Jc26w=="]),
             ])
         );
 

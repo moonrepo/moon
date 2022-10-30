@@ -144,10 +144,15 @@ pub async fn init(
     };
     let mut context = create_default_context();
 
+    let vcs = detect_vcs(&dest_dir).await?;
+    context.insert("vcs_manager", &vcs.0.to_string());
+    context.insert("vcs_default_branch", &vcs.1);
+
     // Initialize all tools
     let mut workspace_config = VecDeque::new();
 
-    if dest_dir.join(NPM.manifest_filename).exists()
+    if options.yes
+        || dest_dir.join(NPM.manifest_filename).exists()
         || Confirm::with_theme(&theme)
             .with_prompt("Initialize Node.js?")
             .interact()?
@@ -155,7 +160,8 @@ pub async fn init(
         workspace_config
             .push_back(init_node(&dest_dir, &options, &theme, Some(&mut context)).await?);
 
-        if dest_dir.join("tsconfig.json").exists()
+        if options.yes
+            || dest_dir.join("tsconfig.json").exists()
             || Confirm::with_theme(&theme)
                 .with_prompt("Initialize TypeScript?")
                 .interact()?
@@ -165,10 +171,6 @@ pub async fn init(
     }
 
     workspace_config.push_front(render_template(&context)?);
-
-    let vcs = detect_vcs(&dest_dir).await?;
-    context.insert("vcs_manager", &vcs.0);
-    context.insert("vcs_default_branch", &vcs.1);
 
     // Create config files
     fs::write(
@@ -196,9 +198,9 @@ pub async fn init(
     writeln!(
         file,
         r#"
- # moon
- .moon/cache
- .moon/docker"#
+# moon
+.moon/cache
+.moon/docker"#
     )?;
 
     println!(

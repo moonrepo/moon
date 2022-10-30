@@ -186,7 +186,9 @@ pub async fn init_node(
     theme: &ColorfulTheme,
     parent_context: Option<&mut Context>,
 ) -> Result<String, AnyError> {
-    println!("\n{}\n", label_header("Node"));
+    if !options.yes {
+        println!("\n{}\n", label_header("Node"));
+    }
 
     let node_version = detect_node_version(dest_dir).await?;
     let package_manager = detect_package_manager(dest_dir, options, theme).await?;

@@ -17,7 +17,9 @@ pub async fn init_typescript(
     options: &InitOptions,
     theme: &ColorfulTheme,
 ) -> Result<String, AnyError> {
-    println!("\n{}\n", label_header("TypeScript"));
+    if !options.yes {
+        println!("\n{}\n", label_header("TypeScript"));
+    }
 
     let project_refs = if let Ok(Some(tsconfig)) = TsConfigJson::read(dest_dir) {
         match tsconfig.compiler_options {

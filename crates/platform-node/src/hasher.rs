@@ -10,8 +10,9 @@ pub struct NodeTargetHasher {
     // Node.js version
     node_version: String,
 
-    // all the dependencies of the project (including dev and peer)
-    all_dependencies: BTreeMap<String, Vec<String>>,
+    // all the dependencies of the project (including dev and peer) and the hashes
+    // corresponding with their versions
+    dependencies: BTreeMap<String, Vec<String>>,
 
     // `tsconfig.json` `compilerOptions`
     tsconfig_compiler_options: BTreeMap<String, String>,
@@ -49,13 +50,13 @@ impl NodeTargetHasher {
         };
 
         if let Some(deps) = &package.dependencies {
-            copy_deps(deps, &mut self.all_dependencies);
+            copy_deps(deps, &mut self.dependencies);
         }
         if let Some(dev_deps) = &package.dev_dependencies {
-            copy_deps(dev_deps, &mut self.all_dependencies);
+            copy_deps(dev_deps, &mut self.dependencies);
         }
         if let Some(peer_deps) = &package.peer_dependencies {
-            copy_deps(peer_deps, &mut self.all_dependencies);
+            copy_deps(peer_deps, &mut self.dependencies);
         }
     }
 
@@ -86,7 +87,7 @@ impl Hasher for NodeTargetHasher {
     fn hash(&self, sha: &mut Sha256) {
         sha.update(self.version.as_bytes());
         sha.update(self.node_version.as_bytes());
-        for versions in self.all_dependencies.values() {
+        for versions in self.dependencies.values() {
             for version in versions {
                 sha.update(version.as_bytes());
             }
@@ -235,7 +236,7 @@ mod tests {
             hasher.hash_package_json(&package, &resolved_deps);
 
             assert_eq!(
-                hasher.all_dependencies,
+                hasher.dependencies,
                 BTreeMap::from([
                     ("prettier".to_owned(), vec!["2.1.3".to_owned()]),
                     ("rollup".to_owned(), vec!["^2.0.0".to_owned()])

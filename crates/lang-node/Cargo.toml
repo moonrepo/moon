@@ -18,6 +18,7 @@ serde = { workspace = true }
 serde_json = { version = "1.0.86", features = ["preserve_order"] }
 serde_yaml = "0.9.13"
 thiserror = { workspace = true }
+yarn-lock-parser = "0.3.2"
 
 [dev-dependencies]
 assert_fs = "1.0.7"

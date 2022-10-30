@@ -8,7 +8,9 @@ use moon_utils::fs::sync::read_yaml;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;
+use std::fs;
 use std::path::{Path, PathBuf};
+use yarn_lock_parser::{parse_str, Entry};
 
 config_cache!(YarnLock, YARN.lock_filename, read_yaml);
 
@@ -54,6 +56,10 @@ pub struct YarnLock {
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
     let mut deps: LockfileDependencyVersions = HashMap::new();
+    let yarn_lock_text = fs::read_to_string(&path)?;
+    let entries: Vec<Entry> = parse_str(&yarn_lock_text).unwrap();
+
+    println!("{:?}", entries[0].descriptors);
 
     if let Some(lockfile) = YarnLock::read(path)? {
         for dep in lockfile.dependencies.values() {

@@ -100,6 +100,7 @@ mod tests {
             })
         );
     }
+
     #[test]
     fn parses_scoped() {
         assert_eq!(
@@ -113,6 +114,7 @@ mod tests {
             })
         );
     }
+
     #[test]
     fn parses_with_registry() {
         assert_eq!(
@@ -126,6 +128,7 @@ mod tests {
             })
         );
     }
+
     #[test]
     fn parses_from_github_() {
         assert_eq!(
@@ -139,6 +142,7 @@ mod tests {
             })
         );
     }
+
     #[test]
     fn parses_from_custom_regsitry_with_peer_deps() {
         assert_eq!(
@@ -152,6 +156,7 @@ mod tests {
             })
         );
     }
+
     #[test]
     fn parses_with_peer_deps() {
         assert_eq!(

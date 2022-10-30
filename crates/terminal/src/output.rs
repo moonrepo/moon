@@ -102,3 +102,11 @@ pub fn label_checkpoint<T: AsRef<str>>(label: T, checkpoint: Checkpoint) -> Stri
         style(label.as_ref()).bold()
     )
 }
+
+#[inline]
+pub fn label_header<T: AsRef<str>>(label: T) -> String {
+    style(format!(" {} ", label.as_ref().to_uppercase()))
+        .bold()
+        .reverse()
+        .to_string()
+}

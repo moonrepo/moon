@@ -210,7 +210,7 @@ impl Task {
         let cloned_options = cloned_config.options;
 
         let (command, args) = config.get_command_and_args()?;
-        let command = command.unwrap_or_default();
+        let command = command.unwrap_or_else(|| "noop".to_owned());
         let is_local =
             cloned_config.local || command == "dev" || command == "serve" || command == "start";
         let log_target = format!("moon:project:{}", target.id);

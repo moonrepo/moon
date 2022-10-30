@@ -11,10 +11,18 @@ use moon_lang::{Language, PackageManager, VersionManager};
 
 pub const NODE: Language = Language {
     binary: "node",
-    default_version: "18.11.0",
+    default_version: "18.12.0",
     file_exts: &["js", "cjs", "mjs"],
     vendor_bins_dir: "node_modules/.bin",
     vendor_dir: "node_modules",
+};
+
+pub const TYPESCRIPT: Language = Language {
+    binary: "tsc",
+    default_version: "4.8.4",
+    file_exts: &["ts", "cts", "mts", "d.ts", "d.cts", "d.mts"],
+    vendor_bins_dir: "",
+    vendor_dir: "node_modules/@types",
 };
 
 // Package managers

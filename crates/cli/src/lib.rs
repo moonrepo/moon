@@ -117,16 +117,14 @@ pub async fn run_cli() {
         Commands::Init {
             dest,
             force,
-            inherit_projects,
-            package_manager,
+            tool,
             yes,
         } => {
             init(
                 dest,
+                tool.as_ref(),
                 InitOptions {
                     force: *force,
-                    inherit_projects: inherit_projects.clone(),
-                    package_manager: package_manager.clone(),
                     yes: *yes,
                 },
             )

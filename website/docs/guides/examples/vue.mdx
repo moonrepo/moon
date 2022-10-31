@@ -42,6 +42,22 @@ tasks:
       - '.js,.ts,.vue'
 ```
 
+Furthermore, when using TypeScript within ESLint, we need to make a few additional changes to the
+`.eslintrc.js` config found in the root (if the entire repo is Vue), or within the project (if only
+the project is Vue).
+
+```js
+module.exports = {
+  parser: 'vue-eslint-parser',
+  parserOptions: {
+    extraFileExtensions: ['.vue'],
+    parser: '@typescript-eslint/parser',
+    project: 'tsconfig.json', // Or another config
+    tsconfigRootDir: __dirname,
+  },
+};
+```
+
 ### TypeScript integration
 
 Vue does not use [TypeScript](./typescript)'s `tsc` binary directly, but instead uses

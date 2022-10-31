@@ -72,3 +72,41 @@ tasks:
       - '~:build'
     local: true
 ```
+
+Be sure to keep the `postinstall` script in your project's `package.json`.
+
+```json title="<project>/package.json"
+{
+  // ...
+  "scripts": {
+    "postinstall": "nuxt prepare"
+  }
+}
+```
+
+### ESLint integration
+
+Refer to our [Vue documentation](./vue#eslint-integration) for more information on linting.
+
+## Configuration
+
+### Root-level
+
+We suggest _against_ root-level configuration, as Nuxt should be installed per-project, and the
+`nuxt` command expects the configuration to live relative to the project root.
+
+### Project-level
+
+When creating a new Nuxt project, a
+[`nuxt.config.ts`](https://v3.nuxtjs.org/api/configuration/nuxt-config) is created, and _must_ exist
+in the project root. This allows each project to configure Next.js for their needs.
+
+```js title="<project>/nuxt.config.ts"
+export default defineNuxtConfig({});
+```
+
+## Testing
+
+Nuxt supports testing through [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/). Refer to
+our [Jest documentation](./jest) or [Vitest documentation](./vue#eslint-integration) for more
+information on testing.

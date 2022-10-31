@@ -279,10 +279,6 @@ impl PackageManager<NodeTool> for YarnTool {
             }
         };
 
-        if self.is_v1() {
-            return Ok(yarn::classic::load_lockfile_dependencies(lockfile_path)?);
-        }
-
         Ok(yarn::load_lockfile_dependencies(lockfile_path)?)
     }
 

@@ -42,8 +42,6 @@ tasks:
 	# Development server
 	dev:
 		command: 'next dev'
-		inputs:
-			- '@group(next)'
 		local: true
 
 	# Production build (SSR)
@@ -65,8 +63,6 @@ tasks:
 	# Serve the build
 	start:
 		command: 'next start'
-		inputs:
-			- '@group(next)'
 		local: true
 ```
 

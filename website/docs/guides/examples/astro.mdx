@@ -38,8 +38,6 @@ tasks:
 	# Development server
 	dev:
 		command: 'astro dev'
-		inputs:
-			- '@group(astro)'
 		local: true
 
 	# Production build
@@ -61,8 +59,6 @@ tasks:
 	# Preview production build locally
 	preview:
 		command: 'astro preview'
-		inputs:
-			- '@group(astro)'
 		deps:
 			- '~:build'
 		local: true

@@ -36,8 +36,6 @@ tasks:
 	# Development server
 	dev:
 		command: 'vite dev'
-		inputs:
-			- '@group(vite)'
 		local: true
 
 	# Production build
@@ -51,8 +49,6 @@ tasks:
 	# Preview production build locally
 	preview:
 		command: 'vite preview'
-		inputs:
-			- '@group(vite)'
 		deps:
 			- '~:build'
 		local: true

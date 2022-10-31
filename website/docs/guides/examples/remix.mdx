@@ -43,8 +43,6 @@ tasks:
 	# Development server
 	dev:
 		command: 'remix dev'
-		inputs:
-			- '@group(remix)'
 		local: true
 
 	# Production build
@@ -60,8 +58,6 @@ tasks:
 		command: 'remix-serve ./build'
 		deps:
 			- '~:build'
-		inputs:
-			- '@group(remix)'
 		local: true
 ```
 

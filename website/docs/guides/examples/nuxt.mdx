@@ -3,14 +3,9 @@ title: Nuxt example
 sidebar_label: Nuxt
 ---
 
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import CreateDepTabs from '@site/src/components/CreateDepTabs';
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
-> Nuxt has been prototyped in our
-> [examples repository](https://github.com/moonrepo/examples/tree/master/apps/nuxt-app), check it
-> out!
+<HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/nuxt-app" />
 
 In this guide, you'll learn how to integrate [Nuxt v3](https://v3.nuxtjs.org), a [Vue](./vue)
 framework, into moon.
@@ -88,6 +83,11 @@ Be sure to keep the `postinstall` script in your project's `package.json`.
 
 Refer to our [Vue documentation](./vue#eslint-integration) for more information on linting.
 
+### TypeScript integration
+
+Nuxt requires `vue-tsc` for type-checking, so refer to our
+[Vue documentation](./vue#typescript-integration) for more information.
+
 ## Configuration
 
 ### Root-level
@@ -108,5 +108,4 @@ export default defineNuxtConfig({});
 ## Testing
 
 Nuxt supports testing through [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/). Refer to
-our [Jest documentation](./jest) or [Vitest documentation](./vue#eslint-integration) for more
-information on testing.
+our [Jest documentation](./jest) or [Vitest documentation](./vite) for more information on testing.

@@ -8,6 +8,7 @@
   - Each tool is now configured individually, with its own prompts. Tools can also be skipped.
   - Tools can now be initialized _after_ moon already exists, ala `moon init --tool node`.
   - Fixed many issues around the templates and rendering.
+- Updated the `moon check` command to support an `--all` flag.
 - Updated `moon migrate` commands to throw an error if the work tree is dirty. This can be bypassed
   with the new `--skipTouchedFilesCheck` option.
 - Updated the `projects` setting in `.moon/workspace.yml` to support globs _and_ a map in unison.

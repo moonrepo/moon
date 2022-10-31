@@ -5,13 +5,13 @@ name: Benchmark
 on:
   issue_comment:
     types: [created]
-  # pull_request:
+  pull_request:
 env:
   RUST_LOG: info
 jobs:
   bench:
     name: Bench
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
+    # if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     runs-on: ubuntu-latest
     # strategy:
     #   matrix:
@@ -69,13 +69,24 @@ jobs:
         id: bench_comparison
         shell: bash
         run: |
-          echo "### Benchmark results" > output
-          echo "\`\`\`" >> output
-          critcmp base-sha head-sha >> output
-          echo "\`\`\`" >> output
-          cat output
-          comment="$(cat output)"
-          echo "comment=$comment" >> $GITHUB_OUTPUT
+          echo "comment<<EOF" >> $GITHUB_OUTPUT
+          echo "### Benchmark results" >> $GITHUB_OUTPUT
+          echo "\`\`\`" >> $GITHUB_OUTPUT
+          critcmp base-sha head-sha >> $GITHUB_OUTPUT
+          echo "\`\`\`" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+        # run: |
+        #   echo "### Benchmark results" > output
+        #   echo "\`\`\`" >> output
+        #   critcmp base-sha head-sha >> output
+        #   echo "\`\`\`" >> output
+        #   cat output
+        #   comment="$(cat output)"
+        #   comment="${comment//'%'/'%25'}"
+        #   comment="${comment//$'\n'/'%0A'}"
+        #   comment="${comment//$'\r'/'%0D'}"
+        #   echo "comment=$comment" >> $GITHUB_OUTPUT
 
       - name: Add comment
         uses: peter-evans/create-or-update-comment@v1.4.5
@@ -86,6 +97,3 @@ jobs:
 
       - name: Remove artifacts
         run: rm -rf ./target/criterion
-# comment="${comment//'%'/'%25'}"
-# comment="${comment//$'\n'/'%0A'}"
-# comment="${comment//$'\r'/'%0D'}"

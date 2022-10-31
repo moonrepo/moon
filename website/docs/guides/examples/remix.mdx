@@ -5,10 +5,9 @@ sidebar_label: Remix
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import CreateDepTabs from '@site/src/components/CreateDepTabs';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
-> Remix has been prototyped in our
-> [examples repository](https://github.com/moonrepo/examples/tree/master/apps/remix-app), check it
-> out!
+<HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/remix-app" />
 
 In this guide, you'll learn how to integrate [Remix](https://remix.run) into moon.
 
@@ -43,8 +42,6 @@ tasks:
 	# Development server
 	dev:
 		command: 'remix dev'
-		inputs:
-			- '@group(remix)'
 		local: true
 
 	# Production build
@@ -60,8 +57,6 @@ tasks:
 		command: 'remix-serve ./build'
 		deps:
 			- '~:build'
-		inputs:
-			- '@group(remix)'
 		local: true
 ```
 

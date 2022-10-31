@@ -7,10 +7,9 @@ import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import CreateDepTabs from '@site/src/components/CreateDepTabs';
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
-> Next.js has been prototyped in our
-> [examples repository](https://github.com/moonrepo/examples/tree/master/apps/nextjs-app), check it
-> out!
+<HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/nextjs-app" />
 
 In this guide, you'll learn how to integrate [Next.js](https://nextjs.org) into moon.
 
@@ -42,8 +41,6 @@ tasks:
 	# Development server
 	dev:
 		command: 'next dev'
-		inputs:
-			- '@group(next)'
 		local: true
 
 	# Production build (SSR)
@@ -65,8 +62,6 @@ tasks:
 	# Serve the build
 	start:
 		command: 'next start'
-		inputs:
-			- '@group(next)'
 		local: true
 ```
 

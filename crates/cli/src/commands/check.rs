@@ -6,20 +6,20 @@ use std::env;
 
 pub struct CheckOptions {
     pub report: bool,
+    pub all: bool,
 }
 
 const LOG_TARGET: &str = "moon:check";
 
 pub async fn check(
     project_ids: &Vec<String>,
-    all: bool,
     options: CheckOptions,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let mut projects: Vec<Project> = vec![];
 
     // Load projects
-    if all {
+    if options.all {
         trace!(target: LOG_TARGET, "Running check on all projects");
         projects.extend(workspace.projects.all_projects()?);
     } else if project_ids.is_empty() {

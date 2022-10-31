@@ -53,7 +53,8 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
             if dep.version.starts_with("file:") {
                 continue;
             }
-            // Most packages have `integrity` field. Exception: `npm install --save-dev
+            // Most packages have `integrity` field. Exception is when you install from
+            // source directly: `npm install --save-dev
             // https://github.com/fergiemcdowall/search-index.git`. In that case, we use
             // the `version` field instead.
             let to_push = if let Some(integrity) = dep.integrity {

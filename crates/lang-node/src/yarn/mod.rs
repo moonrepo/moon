@@ -98,7 +98,7 @@ __metadata:
 "#.trim()).unwrap();
 
         assert_eq!(
-            load_lockfile_dependencies(PathBuf::from("/tmp/test/yarn.lock")).unwrap(),
+            load_lockfile_dependencies(temp.path().join("yarn.lock")).unwrap(),
             HashMap::from([
                 (
                     "is-buffer".to_owned(),

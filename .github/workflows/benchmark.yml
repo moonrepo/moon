@@ -17,11 +17,19 @@ jobs:
     #     bench: [dep_graph_benchmark, emitter_benchmark, project_graph_benchmark, runner_benchmark]
     #   fail-fast: false
     steps:
-      # Run on base first to get a baseline
-      - name: Checkout base branch
+      - name: Get PR SHA
+        id: sha
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            const response = await github.request(context.payload.issue.pull_request.url);
+            return response.data.head.sha;
+      - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          submodules: false
+          ref: ${{ steps.sha.outputs.result }}
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: 1.64.0
@@ -33,21 +41,21 @@ jobs:
           command: bench
           # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline base-sha
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline head-sha
 
-      # Run on head second
-      - name: Checkout head branch
+      # Run on base branch to get a baseline
+      - name: Checkout base branch
         uses: actions/checkout@v3
         with:
           clean: false
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.base.sha }}
       - name: Run benchmarks
         uses: actions-rs/cargo@v1
         with:
           command: bench
           # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline head-sha
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline base-sha
 
       # Compare diffs
       - name: Install critcmp
@@ -66,9 +74,6 @@ jobs:
           echo "\`\`\`" >> output
           cat output
           comment="$(cat output)"
-          comment="${comment//'%'/'%25'}"
-          comment="${comment//$'\n'/'%0A'}"
-          comment="${comment//$'\r'/'%0D'}"
           echo "comment=$comment" >> $GITHUB_OUTPUT
 
       - name: Add comment
@@ -80,3 +85,6 @@ jobs:
 
       - name: Remove artifacts
         run: rm -rf ./target/criterion
+# comment="${comment//'%'/'%25'}"
+# comment="${comment//$'\n'/'%0A'}"
+# comment="${comment//$'\r'/'%0D'}"

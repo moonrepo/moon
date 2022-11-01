@@ -16,7 +16,7 @@ use moon_utils::{path, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};
 use std::collections::HashMap;
 
-const LOG_TARGET: &str = "moon:platform-node:run-target";
+const LOG_TARGET: &str = "moon:node-platform:run-target";
 
 fn create_node_options(
     context: &ActionContext,

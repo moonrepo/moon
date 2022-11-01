@@ -1,8 +1,8 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
 use moon_config::{GlobalProjectConfig, NodeConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
-use moon_platform_node::NodePlatform;
 use moon_project_graph::ProjectGraph;
 use moon_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_system_platform::SystemPlatform;

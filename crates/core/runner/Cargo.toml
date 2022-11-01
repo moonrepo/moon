@@ -25,7 +25,7 @@ moon_lang = { path = "../lang" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
 moon_platform = { path = "../platform" }
-moon_platform_node = { path = "../platform-node" }
+moon_node_platform = { path = "../../node/platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_system_platform = { path = "../../system/platform" }

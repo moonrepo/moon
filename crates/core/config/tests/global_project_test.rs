@@ -229,7 +229,7 @@ mod extends {
 
             jail.create_file(
                 format!("shared/{}", super::CONFIG_GLOBAL_PROJECT_FILENAME),
-                include_str!("../../../tests/fixtures/config-extends/.moon/project.yml"),
+                include_str!("../../../../tests/fixtures/config-extends/.moon/project.yml"),
             )?;
 
             jail.create_file(

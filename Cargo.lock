@@ -1828,9 +1828,9 @@ dependencies = [
  "moon_lang",
  "moon_lang_node",
  "moon_logger",
+ "moon_node_platform",
  "moon_notifier",
  "moon_platform",
- "moon_platform_node",
  "moon_project",
  "moon_runner",
  "moon_system_platform",
@@ -1983,33 +1983,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_notifier"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "moon_emitter",
- "moon_error",
- "moon_logger",
- "moon_utils",
- "moon_workspace",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "moon_platform"
-version = "0.1.0"
-dependencies = [
- "moon_config",
- "moon_error",
- "serde",
-]
-
-[[package]]
-name = "moon_platform_node"
+name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
  "insta",
@@ -2033,6 +2007,32 @@ dependencies = [
  "pretty_assertions",
  "serde",
  "tokio",
+]
+
+[[package]]
+name = "moon_notifier"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "moon_emitter",
+ "moon_error",
+ "moon_logger",
+ "moon_utils",
+ "moon_workspace",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "moon_platform"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_error",
+ "serde",
 ]
 
 [[package]]
@@ -2061,8 +2061,8 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_logger",
+ "moon_node_platform",
  "moon_platform",
- "moon_platform_node",
  "moon_project",
  "moon_task",
  "moon_utils",
@@ -2087,9 +2087,9 @@ dependencies = [
  "moon_hasher",
  "moon_lang",
  "moon_logger",
+ "moon_node_platform",
  "moon_notifier",
  "moon_platform",
- "moon_platform_node",
  "moon_project",
  "moon_project_graph",
  "moon_system_platform",

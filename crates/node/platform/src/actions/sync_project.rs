@@ -11,7 +11,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:platform-node:sync-project";
+const LOG_TARGET: &str = "moon:node-platform:sync-project";
 
 // Automatically create missing config files when we are syncing project references.
 #[track_caller]

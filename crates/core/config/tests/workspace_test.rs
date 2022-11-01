@@ -187,7 +187,7 @@ mod extends {
 
             jail.create_file(
                 format!("shared/{}", super::CONFIG_WORKSPACE_FILENAME),
-                include_str!("../../../tests/fixtures/config-extends/.moon/workspace.yml"),
+                include_str!("../../../../tests/fixtures/config-extends/.moon/workspace.yml"),
             )?;
 
             jail.create_file(

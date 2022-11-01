@@ -21,8 +21,8 @@ moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }
 moon_lang_node = { path = "../core/lang-node" }
 moon_logger = { path = "../core/logger" }
+moon_node_platform = { path = "../node/platform" }
 moon_platform = { path = "../core/platform" }
-moon_platform_node = { path = "../core/platform-node" }
 moon_project = { path = "../core/project" }
 moon_runner = { path = "../core/runner" }
 moon_system_platform = { path = "../system/platform" }

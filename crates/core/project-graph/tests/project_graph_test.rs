@@ -276,8 +276,8 @@ mod to_dot {
 
 mod implicit_explicit_deps {
     use super::*;
+    use moon_node_platform::NodePlatform;
     use moon_platform::Platformable;
-    use moon_platform_node::NodePlatform;
     use moon_project::{ProjectDependency, ProjectDependencySource};
 
     #[tokio::test]

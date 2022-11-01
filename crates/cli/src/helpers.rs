@@ -1,8 +1,8 @@
 use console::{set_colors_enabled, set_colors_enabled_stderr};
 use indicatif::{ProgressBar, ProgressStyle};
 use moon_logger::color::{no_color, supports_color};
+use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
-use moon_platform_node::NodePlatform;
 use moon_system_platform::SystemPlatform;
 use moon_terminal::create_theme;
 use moon_workspace::{Workspace, WorkspaceError};

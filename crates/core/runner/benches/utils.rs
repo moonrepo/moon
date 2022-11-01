@@ -1,5 +1,5 @@
+use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
-use moon_platform_node::NodePlatform;
 use moon_project_graph::ProjectGraph;
 use moon_runner::DepGraph;
 use moon_system_platform::SystemPlatform;

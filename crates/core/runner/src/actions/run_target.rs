@@ -7,7 +7,7 @@ use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};
-use moon_platform_node::actions as node_actions;
+use moon_node_platform::actions as node_actions;
 use moon_project::Project;
 use moon_system_platform::actions as system_actions;
 use moon_task::{Target, Task, TaskError};

@@ -6,7 +6,7 @@ use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_lang_node::package::{DepsSet, PackageJson};
 use moon_logger::info;
-use moon_platform_node::create_tasks_from_scripts;
+use moon_node_platform::create_tasks_from_scripts;
 use moon_utils::fs;
 use serde_yaml::to_string;
 use std::collections::HashMap;

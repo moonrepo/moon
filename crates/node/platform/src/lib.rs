@@ -21,7 +21,7 @@ use std::{
 };
 use task::ScriptParser;
 
-pub const LOG_TARGET: &str = "moon:platform-node";
+pub const LOG_TARGET: &str = "moon:node-platform";
 
 pub fn create_tasks_from_scripts(
     project_id: &str,

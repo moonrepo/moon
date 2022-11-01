@@ -1,7 +1,7 @@
 use moon_config::{TaskCommandArgs, TaskConfig};
 use moon_lang_node::package::PackageJson;
-use moon_platform_node::task::{create_task, should_run_in_ci, TaskContext};
-use moon_platform_node::{create_tasks_from_scripts, infer_tasks_from_scripts};
+use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
+use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
 use moon_task::PlatformType;
 use moon_utils::string_vec;
 use std::collections::{BTreeMap, HashMap};

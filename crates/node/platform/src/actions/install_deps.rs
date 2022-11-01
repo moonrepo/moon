@@ -14,7 +14,7 @@ use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:platform-node:install-deps";
+const LOG_TARGET: &str = "moon:node-platform:install-deps";
 
 /// Add `packageManager` to root `package.json`.
 fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool {

@@ -7,13 +7,13 @@ edition = "2021"
 moon_archive = { path = "../archive" }
 moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
-moon_contract = { path = "../contract" }
 moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
 moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
+moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
-async-trait = "0.1.57"
+async-trait = "0.1.58"
 reqwest = { version = "0.11.12", features = ["native-tls-vendored"] }
 sha2 = "0.10.6"
 thiserror = { workspace = true }

@@ -1,0 +1,89 @@
+---
+slug: v0.18
+title: v0.18 - Improved configuration and initialization flow
+authors: [milesj]
+tags: [projects, config, init, node]
+image: ./img/v0.18.png
+---
+
+import Image from '@site/src/components/Image';
+
+Happy Halloween 🎃 👻! With this spooky release, we've focused heavily on our internals and
+benchmarking performance metrics, so it's rather light on new features, but we still have some to
+show!
+
+<!--truncate-->
+
+## Improved projects configuration
+
+When moon initially launched, it required defining all
+[`projects`](../docs/config/workspace#projects) using a map. In v0.3, we added support for globs to
+ease the burden of defining many projects. At this point, you had to choose between the 2 patterns,
+which wasn't always ideal.
+
+To improve upon this, you can now define a map _and_ globs using a 3rd pattern, like so.
+
+```yaml title=".moon/workspace.yml"
+projects:
+  globs:
+    - 'apps/*'
+    - 'packages/*'
+  sources:
+    www: 'www'
+```
+
+## Improved `moon init` flow
+
+The `moon init` command hasn't changed much since our v0.1 release, and with many new features and
+configurations over these last 18 releases, the initialization flow has fallen quite behind. We felt
+it was the perfect time to modernize this command a bit.
+
+On top of automatically detecting settings from the environment, the command will also now prompt
+you with additional questions while configuring Node.js or TypeScript. Here's an example of this
+flow:
+
+<Image src={require('./img/v0.18/init-flow.png')} width="80%" />
+
+Furthermore, the command also supports enabling a new tool (appending configuration to
+`.moon/workspace.yml`) into an _existing_ moon repository, by running `moon init --tool <name>`.
+
+## Customize `node` execution arguments
+
+moon manages the Node.js binary in our toolchain, and runs all Node.js based tasks using this
+binary, instead of relying on the binary found in the developer's environment. Because of this, how
+`node` is executed is abstracted away from end users.
+
+What if you wanted to use an [experimental loader](https://nodejs.org/api/esm.html#loaders) and
+execute TypeScript code at _runtime_? Or to preserve symlinks? Well, you couldn't... but no longer,
+as we've added a new setting, [`node.binExecArgs`](../docs/config/workspace#binexecargs), that
+allows additional `node` [CLI arguments](https://nodejs.org/api/cli.html#options) to be defined,
+that will be passed to _all_ executions.
+
+```yaml title=".moon/workspace.yml" {2-4}
+node:
+  binExecArgs:
+    - '--loader'
+    - '@boost/module/loader'
+```
+
+> Learn more about the
+> [Boost module loader](https://boostlib.dev/docs/module#ecmascript-module-loaders)!
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.18.0) for a
+full list of changes.
+
+- Default Node.js version has been updated to v18.12 (the new LTS) from v16.17.
+- Updated the `moon check` command to support an `--all` flag.
+- Improvements to how we store stdout/stderr logs for ran targets.
+- Work tree dirty checks when running migration commands.
+
+## What's next?
+
+Expect the following in the v0.19 release!
+
+- Laying the groundwork for _remote caching_!
+- An in-repo secrets management layer.
+- Performance improvements.

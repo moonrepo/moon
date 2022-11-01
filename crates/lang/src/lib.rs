@@ -44,6 +44,7 @@ pub struct VersionManager {
 
 pub type LockfileDependencyVersions = HashMap<String, Vec<String>>;
 
+#[inline]
 pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language) -> bool {
     let vendor_path = dir.as_ref().join(lang.vendor_dir);
 
@@ -57,6 +58,7 @@ pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language
     }
 }
 
+#[inline]
 pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &PackageManager) -> bool {
     let base_dir = base_dir.as_ref();
 
@@ -73,6 +75,7 @@ pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &PackageManager
     false
 }
 
+#[inline]
 pub fn is_using_version_manager<T: AsRef<Path>>(base_dir: T, vm: &VersionManager) -> bool {
     let base_dir = base_dir.as_ref();
 

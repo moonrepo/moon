@@ -1,10 +1,25 @@
 use crate::is_test_env;
 // use chrono::Duration;
 // use chrono_humanize::HumanTime;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 pub use chrono;
 pub use humantime::{format_duration, parse_duration};
+
+pub fn now_timestamp() -> chrono::NaiveDateTime {
+    chrono::Utc::now().naive_utc()
+}
+
+pub fn now_millis() -> u128 {
+    to_millis(SystemTime::now())
+}
+
+pub fn to_millis(time: SystemTime) -> u128 {
+    match time.duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(d) => d.as_millis(),
+        Err(_) => 0,
+    }
+}
 
 pub fn elapsed(duration: Duration) -> String {
     if is_test_env() {

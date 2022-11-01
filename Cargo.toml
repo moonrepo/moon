@@ -4,6 +4,9 @@ members = ["crates/*"]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
+criterion = { version = "0.4.0", features = ["async_tokio"] }
 serde = { version = "1.0.145", features = ["derive"] }
+serde_json = "1.0.86"
+serde_yaml = "0.9.13"
 thiserror = "1.0.35"
 tokio = { version = "1.21.1", features = ["full", "tracing"] }

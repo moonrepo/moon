@@ -12,10 +12,10 @@ use std::path::Path;
 use utils::get_path_safe_output;
 
 async fn extract_hash_from_run(fixture: &Path, target: &str) -> String {
-    let engine = CacheEngine::create(fixture).await.unwrap();
+    let engine = CacheEngine::load(fixture).await.unwrap();
     let cache = engine.cache_run_target_state(target).await.unwrap();
 
-    cache.item.hash
+    cache.hash
 }
 
 #[test]
@@ -187,7 +187,7 @@ mod logs {
 
 mod caching {
     use super::*;
-    use moon_cache::{CacheItem, RunTargetState};
+    use moon_cache::RunTargetState;
 
     #[test]
     fn uses_cache_on_subsequent_runs() {
@@ -238,22 +238,41 @@ mod caching {
 
         assert!(cache_path.exists());
 
-        let state = CacheItem::load(cache_path, RunTargetState::default(), 0)
-            .await
-            .unwrap();
+        let state = RunTargetState::load(cache_path, 0).await.unwrap();
 
         assert_snapshot!(fs::read_to_string(
             fixture
                 .path()
-                .join(format!(".moon/cache/hashes/{}.json", state.item.hash))
+                .join(format!(".moon/cache/hashes/{}.json", state.hash))
         )
         .unwrap());
 
-        assert_eq!(state.item.exit_code, 0);
-        assert_eq!(state.item.target, "node:standard");
+        assert_eq!(state.exit_code, 0);
+        assert_eq!(state.target, "node:standard");
         assert_eq!(
-            state.item.hash,
-            "b690c7bdbfb85bf385be5b0c6d68e2616a140352f9c854fd376ee3e2096ab688"
+            state.hash,
+            "d6d8b9ac59dd7d574c7f38b6ed646b3237537b590c21520f4ae960e988715f57"
+        );
+
+        // Outputs are written to their own file
+        assert_eq!(
+            fs::read_to_string(
+                fixture
+                    .path()
+                    .join(".moon/cache/states/node/standard/stdout.log")
+            )
+            .unwrap(),
+            "stdout"
+        );
+
+        assert_eq!(
+            fs::read_to_string(
+                fixture
+                    .path()
+                    .join(".moon/cache/states/node/standard/stderr.log")
+            )
+            .unwrap(),
+            "stderr"
         );
     }
 }
@@ -811,6 +830,28 @@ mod outputs {
             .exists());
     }
 
+    #[tokio::test]
+    async fn caches_output_logs_in_tarball() {
+        let fixture = create_sandbox_with_git("cases");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputs:generateFile")
+            .assert();
+
+        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFile").await;
+        let tarball = fixture
+            .path()
+            .join(".moon/cache/outputs")
+            .join(format!("{}.tar.gz", hash));
+        let dir = fixture.path().join(".moon/cache/outputs").join(hash);
+
+        moon_archive::untar(tarball, &dir, None).unwrap();
+
+        assert!(dir.join("stdout.log").exists());
+        assert!(dir.join("stderr.log").exists());
+    }
+
     mod hydration {
         use super::*;
         use pretty_assertions::assert_eq;
@@ -838,6 +879,24 @@ mod outputs {
             assert_eq!(hash1, hash2);
             assert_snapshot!(get_assert_output(&assert1));
             assert_snapshot!(get_assert_output(&assert2));
+        }
+
+        #[tokio::test]
+        async fn doesnt_keep_output_logs_in_project() {
+            let fixture = create_sandbox_with_git("cases");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("outputs:generateFileAndFolder")
+                .assert();
+
+            assert!(!fixture.path().join("outputs/stdout.log").exists());
+            assert!(!fixture.path().join("outputs/stderr.log").exists());
         }
 
         #[tokio::test]

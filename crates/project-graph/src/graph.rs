@@ -3,9 +3,9 @@ use moon_config::{
     GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
     WorkspaceProjects,
 };
-use moon_contract::{Platform, Platformable, RegisteredPlatforms};
 use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
+use moon_platform::{Platform, Platformable, RegisteredPlatforms};
 use moon_project::{
     detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
 };
@@ -32,45 +32,58 @@ async fn load_projects_from_cache(
     workspace_config: &WorkspaceConfig,
     engine: &CacheEngine,
 ) -> Result<ProjectsSourcesMap, ProjectError> {
-    let projects = match &workspace_config.projects {
-        WorkspaceProjects::Map(map) => map.clone(),
-        WorkspaceProjects::List(globs) => {
-            let mut cache = engine.cache_projects_state().await?;
+    let mut globs = vec![];
+    let mut sources = HashMap::new();
 
-            // Return the values from the cache
-            if !cache.item.projects.is_empty() {
-                debug!(target: LOG_TARGET, "Loading projects from cache");
-
-                return Ok(cache.item.projects);
-            }
-
-            // Generate a new projects map by globbing the filesystem
-            debug!(
-                target: LOG_TARGET,
-                "Finding projects with globs: {}",
-                map_list(globs, |g| color::file(g))
-            );
-
-            let mut map = HashMap::new();
-
-            detect_projects_with_globs(workspace_root, globs, &mut map)?;
-
-            // Update the cache
-            cache.item.globs = globs.clone();
-            cache.item.projects = map.clone();
-            cache.save().await?;
-
-            map
+    match &workspace_config.projects {
+        WorkspaceProjects::Sources(map) => {
+            sources.extend(map.clone());
+        }
+        WorkspaceProjects::Globs(list) => {
+            globs.extend(list.clone());
+        }
+        WorkspaceProjects::Both {
+            globs: list,
+            sources: map,
+        } => {
+            globs.extend(list.clone());
+            sources.extend(map.clone());
         }
     };
+
+    // Only check the cache when using globs
+    if !globs.is_empty() {
+        let mut cache = engine.cache_projects_state().await?;
+
+        // Return the values from the cache
+        if !cache.projects.is_empty() {
+            debug!(target: LOG_TARGET, "Loading projects from cache");
+
+            return Ok(cache.projects);
+        }
+
+        // Generate a new projects map by globbing the filesystem
+        debug!(
+            target: LOG_TARGET,
+            "Finding projects with globs: {}",
+            map_list(&globs, |g| color::file(g))
+        );
+
+        detect_projects_with_globs(workspace_root, &globs, &mut sources)?;
+
+        // Update the cache
+        cache.globs = globs.clone();
+        cache.projects = sources.clone();
+        cache.save().await?;
+    }
 
     debug!(
         target: LOG_TARGET,
         "Creating project graph with {} projects",
-        projects.len(),
+        sources.len(),
     );
 
-    Ok(projects)
+    Ok(sources)
 }
 
 pub struct ProjectGraph {
@@ -121,7 +134,7 @@ impl Platformable for ProjectGraph {
 }
 
 impl ProjectGraph {
-    pub async fn create(
+    pub async fn generate(
         workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
         global_config: GlobalProjectConfig,
@@ -336,6 +349,10 @@ impl ProjectGraph {
         project.alias = self.find_alias_for_id(id);
 
         for platform in &self.platforms {
+            if !platform.matches(&project.config, None) {
+                continue;
+            }
+
             // Determine implicit dependencies
             for dep_cfg in platform.load_project_implicit_dependencies(
                 id,

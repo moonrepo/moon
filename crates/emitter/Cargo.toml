@@ -3,14 +3,25 @@ name = "moon_emitter"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+bench = false
+
+[[bench]]
+name = "emitter_benchmark"
+harness = false
+
 [dependencies]
 moon_action = { path = "../action" }
-moon_contract = { path = "../contract" }
+moon_cache = { path = "../cache" }
 moon_error = { path = "../error" }
+moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-async-trait = "0.1.57"
+async-trait = "0.1.58"
 serde = { workspace = true }
 tokio = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }

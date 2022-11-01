@@ -8,6 +8,9 @@ use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
 
 #[derive(Error, Debug)]
 pub enum ConfigError {
+    #[error("Failed to download extended configuration from <url>{0}</url>.")]
+    FailedDownload(String),
+
     #[error("Failed validation.")]
     FailedValidation(Vec<FigmentError>),
 

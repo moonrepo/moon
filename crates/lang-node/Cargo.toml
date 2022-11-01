@@ -8,14 +8,14 @@ moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-cached = "0.39.0"
+cached = "0.40.0"
 content_inspector = "0.2.4"
 json = "0.12.4"
 lazy_static = "1.4.0"
 regex = "1.6.0"
 serde = { workspace = true }
-serde_json = { version = "1.0.86", features = ["preserve_order"] }
-serde_yaml = "0.9.13"
+serde_json = { workspace = true, features = ["preserve_order"] }
+serde_yaml = { workspace = true }
 thiserror = { workspace = true }
 yarn-lock-parser = "0.4.0"
 

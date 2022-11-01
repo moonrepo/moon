@@ -13,6 +13,7 @@ pub enum Checkpoint {
     Start,
 }
 
+#[inline]
 pub fn label_moon() -> String {
     format!(
         "{}{}{}{}",
@@ -23,6 +24,7 @@ pub fn label_moon() -> String {
     )
 }
 
+#[inline]
 pub fn label_to_the_moon() -> String {
     vec![
         // style("❯").color256(238),
@@ -83,6 +85,7 @@ pub fn label_to_the_moon() -> String {
     // )
 }
 
+#[inline]
 pub fn label_checkpoint<T: AsRef<str>>(label: T, checkpoint: Checkpoint) -> String {
     let colors = match checkpoint {
         Checkpoint::Fail => FAIL_COLORS,
@@ -98,4 +101,12 @@ pub fn label_checkpoint<T: AsRef<str>>(label: T, checkpoint: Checkpoint) -> Stri
         color::paint(colors[3], STEP_CHAR),
         style(label.as_ref()).bold()
     )
+}
+
+#[inline]
+pub fn label_header<T: AsRef<str>>(label: T) -> String {
+    style(format!(" {} ", label.as_ref().to_uppercase()))
+        .bold()
+        .reverse()
+        .to_string()
 }

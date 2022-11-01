@@ -308,7 +308,7 @@ pub async fn generate(
     options: GenerateOptions,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
-    let generator = Generator::create(&workspace.root, &workspace.config.generator)?;
+    let generator = Generator::load(&workspace.root, &workspace.config.generator)?;
     let theme = create_theme();
     let cwd = env::current_dir()?;
 

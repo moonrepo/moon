@@ -60,3 +60,6 @@ tasks:
     args: ./processExitNonZero.js
     options:
       retryCount: 3
+  binExecArgs:
+    command: node
+    args: ./binExecArgs.js

@@ -26,7 +26,7 @@ umd/
 *.min.js
 *.tsbuildinfo
 
-# Moon
+# moon
 .moon/cache
 .moon/docker
 packages/*/moon
@@ -34,7 +34,7 @@ packages/*/moon.exe
 /moon
 /moon.exe
 
-# Moon tests/fixtures
+# moon tests/fixtures
 tests/fixtures/*/.moon/cache
 tests/fixtures/*/.yarn
 

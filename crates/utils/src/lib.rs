@@ -27,6 +27,12 @@ macro_rules! string_vec {
 
 #[cached]
 pub fn get_workspace_root() -> PathBuf {
+    if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
+        let root: PathBuf = root.parse().expect("Failed to parse MOON_WORKSPACE_ROOT.");
+
+        return root;
+    }
+
     match fs::find_upwards(
         constants::CONFIG_DIRNAME,
         env::current_dir().expect("Invalid working directory."),
@@ -36,6 +42,7 @@ pub fn get_workspace_root() -> PathBuf {
     }
 }
 
+#[inline]
 pub fn is_ci() -> bool {
     match env::var("CI") {
         Ok(var) => var == "true",
@@ -43,6 +50,7 @@ pub fn is_ci() -> bool {
     }
 }
 
+#[inline]
 pub fn is_docker_container() -> bool {
     PathBuf::from("/.dockerenv").exists()
 }
@@ -75,6 +83,7 @@ pub fn is_offline() -> bool {
     // true
 }
 
+#[inline]
 pub fn is_test_env() -> bool {
     env::var("MOON_TEST").is_ok()
 }

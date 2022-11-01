@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.18.0
+
+#### 🚀 Updates
+
+- Refactored `moon init` heavily for a better onboarding experience.
+  - Each tool is now configured individually, with its own prompts. Tools can also be skipped.
+  - Tools can now be initialized _after_ moon already exists, ala `moon init --tool node`.
+  - Fixed many issues around the templates and rendering.
+- Updated the `moon check` command to support an `--all` flag.
+- Updated `moon migrate` commands to throw an error if the work tree is dirty. This can be bypassed
+  with the new `--skipTouchedFilesCheck` option.
+- Updated the `projects` setting in `.moon/workspace.yml` to support globs _and_ a map in unison.
+- Updated default versions of tools:
+  - node 16.17.0 -> 18.12.0
+  - pnpm 7.12.1 -> 7.14.0
+  - yarn 3.2.3 -> 3.2.4
+
+##### Runner
+
+- Added a `node.binExecArgs` setting to `.moon/workspace.yml`, so that additional `node` CLI
+  arguments may be passed when executing the binary to run targets.
+- Updated the task `command` to default to "noop" when not defined.
+- The stdout and stderr of ran targets are now stored as individual log files in
+  `.moon/cache/states/<project>/<task>`. This allows CI environments to cache them as artifacts,
+  upload/download them, or simply help developers debug broken jobs.
+  - Also, these log files are now stored in the output tarballs.
+
+#### ⚙️ Internal
+
+- Timestamps have been updated to UTC _without timezone_.
+- Implemented a benchmarking system to start capturing performance changes.
+- Improved language and platform interoperability.
+- Extended configurations will now be temporarily cached for 4 hours.
+
 ## 0.17.0
 
 #### 💥 Breaking

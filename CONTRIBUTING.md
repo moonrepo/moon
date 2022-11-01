@@ -14,7 +14,7 @@ On your first checkout of the repository, you'll need to install dependencies an
 
 ### Rust
 
-Moon is built on Rust and requires `rustup` and `cargo` to exist in your environment. You can
+moon is built on Rust and requires `rustup` and `cargo` to exist in your environment. You can
 [install Rust from the official website](https://www.rust-lang.org/tools/install).
 
 We also require the following 3rd-party Cargo commands, which can be installed with the following.
@@ -76,9 +76,8 @@ repository with a runnable example, or a usable code snippet.
 
 ### Requesting new functionality
 
-Before requesting new functionality, view the
-[roadmap and backlog](https://github.com/moonrepo/moon/blob/master/ROADMAP.md) as your request may
-already exist. If it does not exist, submit an
+Before requesting new functionality, view [open issues](https://github.com/moonrepo/moon/issues) as
+your request may already exist. If it does not exist, submit an
 [issue using the official template](https://github.com/moonrepo/moon/issues/new?assignees=&labels=enhancement&template=feature_request.md&title=).
 Be sure to be as descriptive as possible and to include all applicable labels.
 

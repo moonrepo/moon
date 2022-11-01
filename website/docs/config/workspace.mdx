@@ -37,17 +37,13 @@ _does not merge_!
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#projects" />
 
 Defines the location of all [projects](../concepts/project) within the workspace. Supports either a
-manual map of projects (default), _or_ a list of globs in which to automatically locate projects.
+manual map of projects (default), a list of globs in which to automatically locate projects, _or_
+both.
 
-<Tabs
-  groupId="projects-type"
-  defaultValue="manual"
-  values={[
-    { label: 'Manual', value: 'manual' },
-    { label: 'Automatic', value: 'auto' },
-  ]}
->
-<TabItem value="manual">
+> Unlike packages in the JavaScript ecosystem, a moon project _does not_ require a `package.json`,
+> and is not coupled to Yarn workspaces (or similar architectures).
+
+### Using a map
 
 When using a map, each project must be _manually_ configured and requires a unique
 [name](../concepts/project#names) as the map key, where this name is used heavily on the command
@@ -63,8 +59,7 @@ projects:
   web: 'apps/web'
 ```
 
-</TabItem>
-<TabItem value="auto">
+### Using globs
 
 If manually mapping projects is too tedious or cumbersome, you may provide a list of
 [globs](../concepts/file-pattern#globs) to automatically locate all project folders, relative from
@@ -81,11 +76,19 @@ projects:
   - 'packages/*'
 ```
 
-</TabItem>
-</Tabs>
+### Using a map _and_ globs<VersionLabel version="0.18" />
 
-> Unlike packages in the JavaScript ecosystem, a moon project _does not_ require a `package.json`,
-> and is not coupled to Yarn workspaces (or similar architectures).
+For those situations where you want to use _both_ patterns, you can! The list of globs can be
+defined under a `globs` field, while the map of projects under a `sources` field.
+
+```yaml title=".moon/workspace.yml"
+projects:
+  globs:
+    - 'apps/*'
+    - 'packages/*'
+  sources:
+    www: 'www'
+```
 
 ## Languages
 
@@ -216,6 +219,22 @@ alias.
 ```yaml title=".moon/workspace.yml" {2}
 node:
   aliasPackageNames: 'name-only'
+```
+
+### `binExecArgs`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#binExecArgs" />
+
+Additional [command line arguments](https://nodejs.org/api/cli.html) to pass to the `node` binary
+when it's being executed by running a target. This will apply arguments to _all Node.js based_
+targets, and cannot be changed on a per target basis.
+
+```yaml title=".moon/workspace.yml" {2-5}
+node:
+  binExecArgs:
+    - '--preserve-symlinks'
+    - '--loader'
+    - '@boost/module/loader'
 ```
 
 ### `dedupeOnLockfileChange`

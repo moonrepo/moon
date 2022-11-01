@@ -19,7 +19,7 @@ pub struct Svn {
 }
 
 impl Svn {
-    pub fn new(default_branch: &str, working_dir: &Path) -> Self {
+    pub fn load(default_branch: &str, working_dir: &Path) -> Self {
         let root = match fs::find_upwards(".svn", working_dir) {
             Some(dir) => dir.parent().unwrap().to_path_buf(),
             None => working_dir.to_path_buf(),

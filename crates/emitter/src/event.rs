@@ -1,5 +1,6 @@
 use moon_action::{Action, ActionNode};
-use moon_contract::Runtime;
+use moon_cache::RunTargetState;
+use moon_platform::Runtime;
 use moon_project::Project;
 use moon_task::Task;
 use serde::Serialize;
@@ -66,6 +67,8 @@ pub enum Event<'e> {
         target: &'e str,
     },
     TargetOutputArchiving {
+        #[serde(skip)]
+        cache: &'e RunTargetState,
         hash: &'e str,
         project: &'e Project,
         target: &'e str,
@@ -80,6 +83,8 @@ pub enum Event<'e> {
         task: &'e Task,
     },
     TargetOutputHydrating {
+        #[serde(skip)]
+        cache: &'e RunTargetState,
         hash: &'e str,
         project: &'e Project,
         target: &'e str,

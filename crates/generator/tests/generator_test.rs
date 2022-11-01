@@ -10,7 +10,7 @@ mod create_template {
     async fn errors_if_already_exists() {
         let dir = create_sandbox("generator");
 
-        Generator::create(dir.path(), &GeneratorConfig::default())
+        Generator::load(dir.path(), &GeneratorConfig::default())
             .unwrap()
             .create_template("standard")
             .await
@@ -21,7 +21,7 @@ mod create_template {
     async fn creates_the_template() {
         let dir = create_sandbox("generator");
 
-        let template = Generator::create(dir.path(), &GeneratorConfig::default())
+        let template = Generator::load(dir.path(), &GeneratorConfig::default())
             .unwrap()
             .create_template("new-template")
             .await
@@ -38,7 +38,7 @@ mod create_template {
     async fn creates_the_template_from_another_dir() {
         let dir = create_sandbox("generator");
 
-        let template = Generator::create(
+        let template = Generator::load(
             dir.path(),
             &GeneratorConfig {
                 templates: string_vec!["./scaffolding"],
@@ -60,7 +60,7 @@ mod create_template {
     async fn cleans_and_formats_the_name() {
         let dir = create_sandbox("generator");
 
-        let template = Generator::create(dir.path(), &GeneratorConfig::default())
+        let template = Generator::load(dir.path(), &GeneratorConfig::default())
             .unwrap()
             .create_template("so&me temPlatE- with Ran!dom-Valu^es 123_")
             .await

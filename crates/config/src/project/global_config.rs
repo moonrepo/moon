@@ -5,7 +5,6 @@ use crate::errors::{
 };
 use crate::helpers::gather_extended_sources;
 use crate::project::task::TaskConfig;
-use crate::providers::url::Url;
 use crate::types::FileGroups;
 use crate::validators::{validate_extends, validate_id};
 use figment::{
@@ -70,12 +69,7 @@ impl GlobalProjectConfig {
         let mut config = GlobalProjectConfig::default();
 
         for source in gather_extended_sources(&path)? {
-            let figment = if source.starts_with("http") {
-                Figment::from(Url::from(source).profile(&profile_name))
-            } else {
-                Figment::from(YamlExtended::file(source).profile(&profile_name))
-            };
-
+            let figment = Figment::from(YamlExtended::file(source).profile(&profile_name));
             let extended_config = GlobalProjectConfig::load_config(figment.select(&profile_name))?;
 
             // Figment does not merge hash maps but replaces entirely,

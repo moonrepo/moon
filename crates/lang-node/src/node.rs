@@ -19,6 +19,7 @@ lazy_static! {
 }
 
 // https://nodejs.org/api/modules.html#loading-from-the-global-folders
+#[inline]
 pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
     let value = value.as_ref();
     let delimiter = if cfg!(windows) { ";" } else { ":" };
@@ -84,6 +85,7 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> Result<BinFile, M
     Ok(BinFile::Script(bin_path))
 }
 
+#[inline]
 pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {
     let starting_dir = starting_dir.as_ref();
     let pkg_path = starting_dir.join(NODE.vendor_dir).join(package_name);
@@ -98,6 +100,7 @@ pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Opti
     }
 }
 
+#[inline]
 #[track_caller]
 pub fn find_package_bin<P: AsRef<Path>, B: AsRef<str>>(
     starting_dir: P,
@@ -119,6 +122,7 @@ pub fn find_package_bin<P: AsRef<Path>, B: AsRef<str>>(
     })
 }
 
+#[inline]
 pub fn find_package_manager_bin<P: AsRef<Path>, B: AsRef<str>>(
     install_dir: P,
     bin_name: B,
@@ -128,6 +132,7 @@ pub fn find_package_manager_bin<P: AsRef<Path>, B: AsRef<str>>(
         .join(get_bin_name_suffix(bin_name, "cmd", false))
 }
 
+#[inline]
 pub fn get_bin_name_suffix<T: AsRef<str>>(name: T, windows_ext: &str, flat: bool) -> String {
     let name = name.as_ref();
 
@@ -140,6 +145,7 @@ pub fn get_bin_name_suffix<T: AsRef<str>>(name: T, windows_ext: &str, flat: bool
     }
 }
 
+#[inline]
 pub fn get_download_file_ext() -> &'static str {
     if consts::OS == "windows" {
         "zip"
@@ -148,6 +154,7 @@ pub fn get_download_file_ext() -> &'static str {
     }
 }
 
+#[inline]
 pub fn get_download_file_name<T: AsRef<str>>(version: T) -> Result<String, LangError> {
     let platform;
 
@@ -191,6 +198,7 @@ pub fn get_download_file_name<T: AsRef<str>>(version: T) -> Result<String, LangE
     ))
 }
 
+#[inline]
 pub fn get_download_file<T: AsRef<str>>(version: T) -> Result<String, LangError> {
     Ok(format!(
         "{}.{}",
@@ -199,6 +207,7 @@ pub fn get_download_file<T: AsRef<str>>(version: T) -> Result<String, LangError>
     ))
 }
 
+#[inline]
 pub fn get_nodejs_url<A, B, C>(version: A, host: B, path: C) -> String
 where
     A: AsRef<str>,
@@ -248,12 +257,14 @@ pub fn get_package_manager_workspaces(
     Ok(None)
 }
 
+#[inline]
 pub fn has_shebang(contents: &str, command: &str) -> bool {
     contents.starts_with(&format!("#!/usr/bin/env {command}"))
         || contents.starts_with(&format!("#!/usr/bin/{command}"))
         || contents.starts_with(&format!("#!/bin/{command}"))
 }
 
+#[inline]
 pub fn is_cmd_file(contents: &str) -> bool {
     contents.contains("%~dp0")
         || contents.contains("%dp0%")
@@ -261,6 +272,7 @@ pub fn is_cmd_file(contents: &str) -> bool {
         || contents.contains("@ECHO")
 }
 
+#[inline]
 #[track_caller]
 pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
     let captures = BIN_PATH_PATTERN.captures(&contents).unwrap_or_else(|| {
@@ -275,6 +287,7 @@ pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
     PathBuf::from(captures.get(0).unwrap().as_str())
 }
 
+#[inline]
 pub fn parse_package_name(package_name: &str) -> (Option<String>, String) {
     let scope;
     let name;

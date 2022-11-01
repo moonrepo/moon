@@ -4,10 +4,9 @@ sidebar_label: Vue
 ---
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
-> Vue + Vite has been prototyped in our
-> [examples repository](https://github.com/moonrepo/examples/tree/master/apps/vue-vite-app), check
-> it out!
+<HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/vue-vite-app" />
 
 Vue is an application or library concern, and not a build system one, since the bundling of Vue is
 abstracted away through other tools. Because of this, moon has no guidelines around utilizing Vue
@@ -40,6 +39,22 @@ tasks:
     args:
       - '--ext'
       - '.js,.ts,.vue'
+```
+
+Furthermore, when using TypeScript within ESLint, we need to make a few additional changes to the
+`.eslintrc.js` config found in the root (if the entire repo is Vue), or within the project (if only
+the project is Vue).
+
+```js
+module.exports = {
+  parser: 'vue-eslint-parser',
+  parserOptions: {
+    extraFileExtensions: ['.vue'],
+    parser: '@typescript-eslint/parser',
+    project: 'tsconfig.json', // Or another config
+    tsconfigRootDir: __dirname,
+  },
+};
 ```
 
 ### TypeScript integration

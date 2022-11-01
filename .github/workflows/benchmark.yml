@@ -1,4 +1,5 @@
 # Thanks to Rome! https://github.com/rome/tools/blob/main/.github/workflows/bench_parser.yml
+# Bump
 
 name: Benchmark
 on:
@@ -17,6 +18,7 @@ jobs:
     #     bench: [dep_graph_benchmark, emitter_benchmark, project_graph_benchmark, runner_benchmark]
     #   fail-fast: false
     steps:
+      - run: echo ${{ github.event.pull_request.head.sha }}
       - name: Get PR SHA
         id: sha
         uses: actions/github-script@v6
@@ -30,6 +32,7 @@ jobs:
         with:
           submodules: false
           ref: ${{ steps.sha.outputs.result }}
+          # ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: 1.64.0
@@ -68,16 +71,15 @@ jobs:
         id: bench_comparison
         shell: bash
         run: |
-          echo "### Benchmark results" > output
-          echo "\`\`\`" >> output
-          critcmp base-sha head-sha >> output
-          echo "\`\`\`" >> output
-          cat output
-          comment="$(cat output)"
-          echo "comment=$comment" >> $GITHUB_OUTPUT
+          echo "comment<<EOF" >> $GITHUB_OUTPUT
+          echo "### Benchmark results" >> $GITHUB_OUTPUT
+          echo "\`\`\`" >> $GITHUB_OUTPUT
+          critcmp base-sha head-sha >> $GITHUB_OUTPUT
+          echo "\`\`\`" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Add comment
-        uses: peter-evans/create-or-update-comment@v1.4.5
+        uses: peter-evans/create-or-update-comment@v2
         continue-on-error: true
         with:
           issue-number: ${{ github.event.issue.number }}
@@ -85,6 +87,3 @@ jobs:
 
       - name: Remove artifacts
         run: rm -rf ./target/criterion
-# comment="${comment//'%'/'%25'}"
-# comment="${comment//$'\n'/'%0A'}"
-# comment="${comment//$'\r'/'%0D'}"

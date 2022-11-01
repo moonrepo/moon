@@ -1,6 +1,6 @@
 // Most of this code is ported from
-// https://github.com/pnpm/pnpm/blob/75ac5ca2e63101817b7c02144083641a5274c182/packages/dependency-path/test/index.ts.
-// All credits go to original authors.
+// https://github.com/pnpm/pnpm/blob/75ac5ca2e63101817b7c02144083641a5274c182/packages/dependency-path/test/index.ts
+// (and the corresponding library). All credits go to original authors.
 
 use moon_error::MoonError;
 use moon_utils::semver::Version;
@@ -85,7 +85,15 @@ impl PnpmDependencyPath {
 
 #[cfg(test)]
 mod tests {
-    use super::PnpmDependencyPath;
+    use super::*;
+
+    #[test]
+    fn reports_absolute_paths_correctly() {
+        assert!(!PnpmDependencyPath::is_absolute("/foo/1.0.0"));
+        assert!(PnpmDependencyPath::is_absolute(
+            "registry.npmjs.org/foo/1.0.0"
+        ));
+    }
 
     #[test]
     fn parses_basic() {

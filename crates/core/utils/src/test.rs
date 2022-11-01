@@ -78,7 +78,7 @@ pub fn create_sandbox_with_git<T: AsRef<str>>(fixture: T) -> assert_fs::TempDir 
 
 pub fn get_fixtures_root() -> PathBuf {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    root.push("../../tests/fixtures");
+    root.push("../../../tests/fixtures");
 
     path::normalize(root)
 }

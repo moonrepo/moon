@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Improved the resolution and hashing of `package.json` dependencies for Yarn and pnpm.
+
+#### 🐞 Fixes
+
+- Fixed an issue where caching would fail on missing `stdout.log` and `stderr.log` files.
+
 ## 0.18.0
 
 #### 🚀 Updates

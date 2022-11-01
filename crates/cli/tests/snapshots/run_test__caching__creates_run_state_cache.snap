@@ -37,9 +37,7 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
   },
   {
     "nodeVersion": "16.0.0",
-    "packageDependencies": {},
-    "packageDevDependencies": {},
-    "packagePeerDependencies": {},
+    "dependencies": {},
     "tsconfigCompilerOptions": {},
     "version": "1"
   }

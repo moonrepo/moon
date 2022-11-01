@@ -2,10 +2,8 @@ pub mod node;
 pub mod npm;
 pub mod package;
 pub mod pnpm;
-pub mod pnpm_workspace;
 pub mod tsconfig;
 pub mod yarn;
-pub mod yarn_classic;
 
 use moon_lang::{Language, PackageManager, VersionManager};
 

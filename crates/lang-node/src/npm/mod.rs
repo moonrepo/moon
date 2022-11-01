@@ -49,14 +49,26 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
         // to the root of the lockfile. We'd need to recursively extract everything,
         // but for now, this will get us most of the way.
         for (name, dep) in lockfile.dependencies.unwrap_or_default() {
-            if let Some(versions) = deps.get_mut(&name) {
-                versions.push(dep.version.clone());
+            // this is a workspace project, so we don't care about its version
+            if dep.version.starts_with("file:") {
+                continue;
+            }
+            // Most packages have `integrity` field. Exception is when you install from
+            // source directly: `npm install --save-dev
+            // https://github.com/fergiemcdowall/search-index.git`. In that case, we use
+            // the `version` field instead.
+            let to_push = if let Some(integrity) = dep.integrity {
+                integrity
             } else {
-                deps.insert(name, vec![dep.version.clone()]);
+                dep.version
+            };
+            if let Some(versions) = deps.get_mut(&name) {
+                versions.push(to_push);
+            } else {
+                deps.insert(name, vec![to_push]);
             }
         }
     }
-
     Ok(deps)
 }
 
@@ -144,11 +156,12 @@ mod tests {
             HashMap::from([
                 (
                     "@babel/helper-function-name".to_owned(),
-                    string_vec!["7.18.9"]
+                    string_vec!["sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A=="]
+
                 ),
                 (
                     "rollup-plugin-polyfill-node".to_owned(),
-                    string_vec!["0.10.2"]
+                    string_vec!["sha512-5GMywXiLiuQP6ZzED/LO/Q0HyDi2W6b8VN+Zd3oB0opIjyRs494Me2ZMaqKWDNbGiW4jvvzl6L2n4zRgxS9cSQ=="]
                 ),
             ])
         );

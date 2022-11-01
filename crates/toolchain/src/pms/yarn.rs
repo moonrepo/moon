@@ -5,7 +5,7 @@ use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_lang::LockfileDependencyVersions;
-use moon_lang_node::{node, yarn, yarn_classic, YARN};
+use moon_lang_node::{node, yarn, YARN};
 use moon_logger::{color, debug, Logable};
 use moon_utils::{fs, get_workspace_root, is_ci};
 use std::collections::HashMap;
@@ -268,7 +268,7 @@ impl PackageManager<NodeTool> for YarnTool {
         String::from(YARN.manifest_filename)
     }
 
-    async fn get_resolved_depenencies(
+    async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
@@ -278,10 +278,6 @@ impl PackageManager<NodeTool> for YarnTool {
                 return Ok(HashMap::new());
             }
         };
-
-        if self.is_v1() {
-            return Ok(yarn_classic::load_lockfile_dependencies(lockfile_path)?);
-        }
 
         Ok(yarn::load_lockfile_dependencies(lockfile_path)?)
     }

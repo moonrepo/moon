@@ -1,5 +1,5 @@
 use crate::package::{PackageJson, PackageWorkspaces};
-use crate::pnpm_workspace::PnpmWorkspace;
+use crate::pnpm::workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;

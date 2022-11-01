@@ -42,3 +42,6 @@ tests/fixtures/*/.yarn
 *.profraw
 *profdata
 dockerManifest.json
+
+# vscode
+.vscode/settings.json

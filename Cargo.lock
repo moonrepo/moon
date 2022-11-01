@@ -1966,7 +1966,9 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "serial_test",
+ "thiserror",
  "tokio",
+ "yarn-lock-parser",
 ]
 
 [[package]]
@@ -4251,6 +4253,16 @@ name = "yansi"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
+
+[[package]]
+name = "yarn-lock-parser"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d723839879490a15b499ff05c7edd53698205f9295565a568946388c04b2ed23"
+dependencies = [
+ "nom",
+ "thiserror",
+]
 
 [[package]]
 name = "zeroize"

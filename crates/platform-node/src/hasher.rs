@@ -1,7 +1,6 @@
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
 use moon_lang::LockfileDependencyVersions;
 use moon_lang_node::{package::PackageJson, tsconfig::TsConfigJson};
-use moon_utils::semver;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -11,14 +10,9 @@ pub struct NodeTargetHasher {
     // Node.js version
     node_version: String,
 
-    // `package.json` `dependencies`
-    package_dependencies: BTreeMap<String, String>,
-
-    // `package.json` `devDependencies`
-    package_dev_dependencies: BTreeMap<String, String>,
-
-    // `package.json` `peerDependencies`
-    package_peer_dependencies: BTreeMap<String, String>,
+    // all the dependencies of the project (including dev and peer) and the hashes
+    // corresponding with their versions
+    dependencies: BTreeMap<String, Vec<String>>,
 
     // `tsconfig.json` `compilerOptions`
     tsconfig_compiler_options: BTreeMap<String, String>,
@@ -43,35 +37,28 @@ impl NodeTargetHasher {
         package: &PackageJson,
         resolved_deps: &LockfileDependencyVersions,
     ) {
-        let copy_deps = |deps: &BTreeMap<String, String>, hashed: &mut BTreeMap<String, String>| {
-            'outer: for (name, version_range) in deps {
+        let copy_deps = |deps: &BTreeMap<String, String>,
+                         hashed: &mut BTreeMap<String, Vec<String>>| {
+            for (name, version_range) in deps {
                 if let Some(resolved_versions) = resolved_deps.get(name) {
-                    if let Ok(version_req) = semver::VersionReq::parse(version_range) {
-                        for resolved_version in resolved_versions {
-                            if semver::satisfies_requirement(resolved_version, &version_req) {
-                                hashed.insert(name.to_owned(), resolved_version.to_owned());
-
-                                continue 'outer;
-                            }
-                        }
-                    }
+                    let mut sorted_deps = resolved_versions.to_owned().clone();
+                    sorted_deps.sort();
+                    hashed.insert(name.to_owned(), sorted_deps);
+                } else {
+                    // No match, just use the range itself
+                    hashed.insert(name.to_owned(), vec![version_range.to_owned()]);
                 }
-
-                // No match, just use the range itself
-                hashed.insert(name.to_owned(), version_range.to_owned());
             }
         };
 
         if let Some(deps) = &package.dependencies {
-            copy_deps(deps, &mut self.package_dependencies);
+            copy_deps(deps, &mut self.dependencies);
         }
-
         if let Some(dev_deps) = &package.dev_dependencies {
-            copy_deps(dev_deps, &mut self.package_dev_dependencies);
+            copy_deps(dev_deps, &mut self.dependencies);
         }
-
         if let Some(peer_deps) = &package.peer_dependencies {
-            copy_deps(peer_deps, &mut self.package_peer_dependencies);
+            copy_deps(peer_deps, &mut self.dependencies);
         }
     }
 
@@ -102,10 +89,11 @@ impl Hasher for NodeTargetHasher {
     fn hash(&self, sha: &mut Sha256) {
         sha.update(self.version.as_bytes());
         sha.update(self.node_version.as_bytes());
-
-        hash_btree(&self.package_dependencies, sha);
-        hash_btree(&self.package_dev_dependencies, sha);
-        hash_btree(&self.package_peer_dependencies, sha);
+        for versions in self.dependencies.values() {
+            for version in versions {
+                sha.update(version.as_bytes());
+            }
+        }
         hash_btree(&self.tsconfig_compiler_options, sha);
     }
 }
@@ -250,11 +238,33 @@ mod tests {
             hasher.hash_package_json(&package, &resolved_deps);
 
             assert_eq!(
-                hasher.package_dependencies,
+                hasher.dependencies,
                 BTreeMap::from([
-                    ("prettier".to_owned(), "2.1.3".to_owned()),
-                    ("rollup".to_owned(), "^2.0.0".to_owned())
+                    ("prettier".to_owned(), vec!["2.1.3".to_owned()]),
+                    ("rollup".to_owned(), vec!["^2.0.0".to_owned()])
                 ])
+            )
+        }
+
+        #[test]
+        fn sorts_versions_before_hashing_them() {
+            let resolved_deps = HashMap::from([(
+                "prettier".to_owned(),
+                vec!["uio".to_owned(), "abc".to_owned(), "123".to_owned()],
+            )]);
+
+            let mut package = PackageJson::default();
+            package.add_dependency("prettier", "^2.0.0", true);
+
+            let mut hasher = NodeTargetHasher::new(String::from("0.0.0"));
+            hasher.hash_package_json(&package, &resolved_deps);
+
+            assert_eq!(
+                hasher.dependencies,
+                BTreeMap::from([(
+                    "prettier".to_owned(),
+                    vec!["123".to_owned(), "abc".to_owned(), "uio".to_owned()]
+                ),])
             )
         }
     }

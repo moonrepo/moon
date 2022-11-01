@@ -16,6 +16,8 @@ regex = "1.6.0"
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+yarn-lock-parser = "0.4.0"
 
 [dev-dependencies]
 assert_fs = "1.0.7"

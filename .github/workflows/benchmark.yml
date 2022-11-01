@@ -90,7 +90,7 @@ jobs:
         #   echo "comment=$comment" >> $GITHUB_OUTPUT
 
       - name: Add comment
-        uses: peter-evans/create-or-update-comment@v1.4.5
+        uses: peter-evans/create-or-update-comment@v2
         continue-on-error: true
         with:
           issue-number: ${{ github.event.issue.number }}

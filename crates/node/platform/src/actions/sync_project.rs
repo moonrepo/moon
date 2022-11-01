@@ -1,7 +1,7 @@
 use moon_action::{Action, ActionContext, ActionStatus};
 use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
 use moon_logger::{color, debug};
-use moon_node_lang::{package::PackageJson, NPM};
+use moon_node_lang::{PackageJson, NPM};
 use moon_project::Project;
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_typescript_lang::TsConfigJson;

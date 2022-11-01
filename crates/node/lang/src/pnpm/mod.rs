@@ -3,6 +3,7 @@ pub mod workspace;
 
 use crate::PNPM;
 use cached::proc_macro::cached;
+use dependency_path::PnpmDependencyPath;
 use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
 use moon_utils::fs::sync::read_yaml;
@@ -10,8 +11,6 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-
-use dependency_path::PnpmDependencyPath;
 
 config_cache!(PnpmLock, PNPM.lock_filename, read_yaml);
 

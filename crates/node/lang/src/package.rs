@@ -518,30 +518,6 @@ mod test {
     use super::*;
     use assert_fs::prelude::*;
 
-    // #[tokio::test]
-    // async fn skips_none_when_writing() {
-    //     let dir = assert_fs::TempDir::new().unwrap();
-    //     let file = dir.child("package.json");
-    //     file.write_str("{}").unwrap();
-
-    //     let mut package = PackageJson::load(file.path()).await.unwrap();
-    //     package.name = Some(String::from("hello"));
-    //     package.description = Some(String::from("world"));
-    //     package.keywords = Some(moon_utils::string_vec!["a", "b", "c"]);
-    //     package.save().await.unwrap();
-
-    //     let expected = serde_json::json!({
-    //         "description": "world",
-    //         "keywords": ["a", "b", "c"],
-    //         "name": "hello",
-    //     });
-
-    //     assert_eq!(
-    //         fs::read_json_string(file.path()).await.unwrap(),
-    //         serde_json::to_string_pretty(&expected).unwrap(),
-    //     );
-    // }
-
     #[tokio::test]
     async fn preserves_order_when_de_to_ser() {
         let json = r#"{"name": "hello", "description": "world", "private": true}"#;

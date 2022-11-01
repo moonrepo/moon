@@ -10,8 +10,7 @@ use moon_config::{
 use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
-use moon_node_lang::package::PackageJson;
-use moon_node_lang::NPM;
+use moon_node_lang::{PackageJson, NPM};
 use moon_platform::{Platform, Runtime};
 use moon_task::TaskError;
 use moon_utils::glob::GlobSet;

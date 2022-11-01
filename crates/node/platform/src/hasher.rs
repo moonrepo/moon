@@ -1,6 +1,6 @@
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
 use moon_lang::LockfileDependencyVersions;
-use moon_node_lang::package::PackageJson;
+use moon_node_lang::PackageJson;
 use moon_typescript_lang::TsConfigJson;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;

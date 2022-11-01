@@ -5,7 +5,7 @@ use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_node_lang::{
     node::{self, BinFile},
-    package::PackageJson,
+    PackageJson,
 };
 use moon_project::Project;
 use moon_task::Task;

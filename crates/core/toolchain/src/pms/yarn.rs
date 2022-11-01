@@ -279,7 +279,7 @@ impl PackageManager<NodeTool> for YarnTool {
             }
         };
 
-        Ok(yarn::load_lockfile_dependencies(lockfile_path)?)
+        Ok(yarn::load_lockfile_dependencies(lockfile_path).await?)
     }
 
     async fn install_dependencies(

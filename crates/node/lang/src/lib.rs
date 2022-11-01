@@ -5,6 +5,7 @@ pub mod pnpm;
 pub mod yarn;
 
 use moon_lang::{Language, PackageManager, VersionManager};
+pub use package::PackageJson;
 
 pub const NODE: Language = Language {
     binary: "node",

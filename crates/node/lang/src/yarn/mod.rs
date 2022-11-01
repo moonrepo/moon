@@ -1,18 +1,21 @@
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::LockfileDependencyVersions;
+use moon_utils::fs;
 use std::collections::HashMap;
-use std::fs;
 use std::path::PathBuf;
 use yarn_lock_parser::{parse_str, Entry};
 
 #[cached(result)]
-pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
+pub async fn load_lockfile_dependencies(
+    path: PathBuf,
+) -> Result<LockfileDependencyVersions, MoonError> {
     let mut deps: LockfileDependencyVersions = HashMap::new();
 
-    let yarn_lock_text = fs::read_to_string(&path)?;
+    let yarn_lock_text = fs::read(&path).await?;
     let entries: Vec<Entry> = parse_str(&yarn_lock_text)
         .map_err(|e| MoonError::Generic(format!("Failed to parse lockfile: {}", e)))?;
+
     for entry in entries {
         if entry.integrity.is_empty() {
             // all workspace dependencies have empty integrities, so we will skip them
@@ -32,8 +35,8 @@ mod tests {
     use moon_utils::string_vec;
     use pretty_assertions::assert_eq;
 
-    #[test]
-    fn parses_lockfile() {
+    #[tokio::test]
+    async fn parses_lockfile() {
         let temp = assert_fs::TempDir::new().unwrap();
 
         temp.child("yarn.lock").write_str(r#"
@@ -97,7 +100,7 @@ __metadata:
 "#.trim()).unwrap();
 
         assert_eq!(
-            load_lockfile_dependencies(temp.path().join("yarn.lock")).unwrap(),
+            load_lockfile_dependencies(temp.path().join("yarn.lock")).await.unwrap(),
             HashMap::from([
                 (
                     "is-buffer".to_owned(),

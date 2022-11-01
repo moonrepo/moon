@@ -49,10 +49,11 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
         // to the root of the lockfile. We'd need to recursively extract everything,
         // but for now, this will get us most of the way.
         for (name, dep) in lockfile.dependencies.unwrap_or_default() {
-            // this is a workspace project, so we don't care about its version
-            if dep.version.starts_with("file:") {
+            // This is a workspace project, so we don't care about its version
+            if dep.version.contains(':') {
                 continue;
             }
+
             // Most packages have `integrity` field. Exception is when you install from
             // source directly: `npm install --save-dev
             // https://github.com/fergiemcdowall/search-index.git`. In that case, we use

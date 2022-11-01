@@ -18,19 +18,20 @@ jobs:
     #     bench: [dep_graph_benchmark, emitter_benchmark, project_graph_benchmark, runner_benchmark]
     #   fail-fast: false
     steps:
-      - name: Get PR SHA
-        id: sha
-        uses: actions/github-script@v6
-        with:
-          result-encoding: string
-          script: |
-            const response = await github.request(context.payload.issue.pull_request.url);
-            return response.data.head.sha;
+      # - name: Get PR SHA
+      #   id: sha
+      #   uses: actions/github-script@v6
+      #   with:
+      #     result-encoding: string
+      #     script: |
+      #       const response = await github.request(context.payload.issue.pull_request.url);
+      #       return response.data.head.sha;
       - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
           submodules: false
-          ref: ${{ steps.sha.outputs.result }}
+          # ref: ${{ steps.sha.outputs.result }}
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: 1.64.0

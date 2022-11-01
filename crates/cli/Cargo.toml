@@ -23,9 +23,9 @@ moon_lang_node = { path = "../core/lang-node" }
 moon_logger = { path = "../core/logger" }
 moon_platform = { path = "../core/platform" }
 moon_platform_node = { path = "../core/platform-node" }
-moon_platform_system = { path = "../core/platform-system" }
 moon_project = { path = "../core/project" }
 moon_runner = { path = "../core/runner" }
+moon_system_platform = { path = "../system/platform" }
 moon_task = { path = "../core/task" }
 moon_terminal = { path = "../core/terminal" }
 moon_toolchain = { path = "../core/toolchain" }

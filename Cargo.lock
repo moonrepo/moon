@@ -1831,9 +1831,9 @@ dependencies = [
  "moon_notifier",
  "moon_platform",
  "moon_platform_node",
- "moon_platform_system",
  "moon_project",
  "moon_runner",
+ "moon_system_platform",
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
@@ -2036,20 +2036,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_platform_system"
-version = "0.1.0"
-dependencies = [
- "moon_config",
- "moon_hasher",
- "moon_platform",
- "moon_project",
- "moon_task",
- "moon_utils",
- "moon_workspace",
- "serde",
-]
-
-[[package]]
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
@@ -2104,9 +2090,9 @@ dependencies = [
  "moon_notifier",
  "moon_platform",
  "moon_platform_node",
- "moon_platform_system",
  "moon_project",
  "moon_project_graph",
+ "moon_system_platform",
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
@@ -2117,6 +2103,20 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "moon_system_platform"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_hasher",
+ "moon_platform",
+ "moon_project",
+ "moon_task",
+ "moon_utils",
+ "moon_workspace",
+ "serde",
 ]
 
 [[package]]

@@ -4,7 +4,7 @@ use futures::future::try_join_all;
 use moon_config::{NodePackageManager, ProjectID, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
-use moon_lang_node::{NODE, NPM, PNPM, YARN};
+use moon_node_lang::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
 use moon_utils::{fs, glob, path};
 use moon_workspace::Workspace;

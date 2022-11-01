@@ -1826,17 +1826,18 @@ dependencies = [
  "moon_error",
  "moon_generator",
  "moon_lang",
- "moon_lang_node",
  "moon_logger",
+ "moon_node_lang",
+ "moon_node_platform",
  "moon_notifier",
  "moon_platform",
- "moon_platform_node",
- "moon_platform_system",
  "moon_project",
  "moon_runner",
+ "moon_system_platform",
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
+ "moon_typescript_lang",
  "moon_utils",
  "moon_vcs",
  "moon_workspace",
@@ -1862,7 +1863,7 @@ dependencies = [
  "json",
  "moon_constants",
  "moon_error",
- "moon_lang_node",
+ "moon_node_lang",
  "moon_utils",
  "pretty_assertions",
  "reqwest",
@@ -1947,7 +1948,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_lang_node"
+name = "moon_logger"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "console",
+ "dirs",
+ "fern",
+ "log",
+]
+
+[[package]]
+name = "moon_node_lang"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
@@ -1972,14 +1984,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_logger"
+name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
- "chrono",
- "console",
- "dirs",
- "fern",
- "log",
+ "insta",
+ "lazy_static",
+ "moon_action",
+ "moon_cache",
+ "moon_config",
+ "moon_error",
+ "moon_hasher",
+ "moon_lang",
+ "moon_logger",
+ "moon_node_lang",
+ "moon_platform",
+ "moon_project",
+ "moon_project_graph",
+ "moon_task",
+ "moon_terminal",
+ "moon_toolchain",
+ "moon_typescript_lang",
+ "moon_utils",
+ "moon_workspace",
+ "pretty_assertions",
+ "serde",
+ "tokio",
 ]
 
 [[package]]
@@ -2009,47 +2038,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_platform_node"
-version = "0.1.0"
-dependencies = [
- "insta",
- "lazy_static",
- "moon_action",
- "moon_cache",
- "moon_config",
- "moon_error",
- "moon_hasher",
- "moon_lang",
- "moon_lang_node",
- "moon_logger",
- "moon_platform",
- "moon_project",
- "moon_project_graph",
- "moon_task",
- "moon_terminal",
- "moon_toolchain",
- "moon_utils",
- "moon_workspace",
- "pretty_assertions",
- "serde",
- "tokio",
-]
-
-[[package]]
-name = "moon_platform_system"
-version = "0.1.0"
-dependencies = [
- "moon_config",
- "moon_hasher",
- "moon_platform",
- "moon_project",
- "moon_task",
- "moon_utils",
- "moon_workspace",
- "serde",
-]
-
-[[package]]
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
@@ -2075,8 +2063,8 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_logger",
+ "moon_node_platform",
  "moon_platform",
- "moon_platform_node",
  "moon_project",
  "moon_task",
  "moon_utils",
@@ -2101,12 +2089,12 @@ dependencies = [
  "moon_hasher",
  "moon_lang",
  "moon_logger",
+ "moon_node_platform",
  "moon_notifier",
  "moon_platform",
- "moon_platform_node",
- "moon_platform_system",
  "moon_project",
  "moon_project_graph",
+ "moon_system_platform",
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
@@ -2117,6 +2105,20 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "moon_system_platform"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_hasher",
+ "moon_platform",
+ "moon_project",
+ "moon_task",
+ "moon_utils",
+ "moon_workspace",
+ "serde",
 ]
 
 [[package]]
@@ -2157,14 +2159,29 @@ dependencies = [
  "moon_constants",
  "moon_error",
  "moon_lang",
- "moon_lang_node",
  "moon_logger",
+ "moon_node_lang",
  "moon_platform",
  "moon_utils",
  "predicates",
  "reqwest",
  "sha2",
  "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "moon_typescript_lang"
+version = "0.1.0"
+dependencies = [
+ "cached",
+ "json",
+ "moon_error",
+ "moon_lang",
+ "moon_logger",
+ "moon_utils",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

@@ -1,4 +1,3 @@
-use insta::assert_snapshot;
 use moon_constants::{CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_utils::test::{
     create_moon_command, create_sandbox, create_sandbox_with_git, run_git_command,

@@ -20,7 +20,6 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
         }
         let dep = deps.entry(entry.name.to_owned()).or_default();
         dep.push(entry.integrity.to_owned());
-        dep.sort();
     }
 
     Ok(deps)

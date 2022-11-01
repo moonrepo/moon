@@ -41,7 +41,9 @@ impl NodeTargetHasher {
                          hashed: &mut BTreeMap<String, Vec<String>>| {
             for (name, version_range) in deps {
                 if let Some(resolved_versions) = resolved_deps.get(name) {
-                    hashed.insert(name.to_owned(), resolved_versions.to_owned());
+                    let mut sorted_deps = resolved_versions.to_owned().clone();
+                    sorted_deps.sort();
+                    hashed.insert(name.to_owned(), sorted_deps);
                 } else {
                     // No match, just use the range itself
                     hashed.insert(name.to_owned(), vec![version_range.to_owned()]);

@@ -42,8 +42,13 @@ impl RunTargetState {
             // Also include stdout/stderr logs at the root of the tarball
             let (stdout_path, stderr_path) = self.get_output_logs();
 
-            tar.add_source(stdout_path, Some("stdout.log"));
-            tar.add_source(stderr_path, Some("stderr.log"));
+            if stdout_path.exists() {
+                tar.add_source(stdout_path, Some("stdout.log"));
+            }
+
+            if stderr_path.exists() {
+                tar.add_source(stderr_path, Some("stderr.log"));
+            }
 
             tar.pack().map_err(|e| MoonError::Generic(e.to_string()))?;
 

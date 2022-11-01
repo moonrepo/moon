@@ -1,5 +1,5 @@
 use crate::validators::validate_semver_version;
-use moon_lang_node::{NODE, NODENV, NVMRC, PNPM, YARN};
+use moon_node_lang::{NODE, NODENV, NVMRC, PNPM, YARN};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;

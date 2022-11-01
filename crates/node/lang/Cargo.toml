@@ -1,13 +1,13 @@
 [package]
-name = "moon_lang_node"
+name = "moon_node_lang"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_error = { path = "../error" }
-moon_lang = { path = "../lang" }
-moon_logger = { path = "../logger" }
-moon_utils = { path = "../utils" }
+moon_error = { path = "../../core/error" }
+moon_lang = { path = "../../core/lang" }
+moon_logger = { path = "../../core/logger" }
+moon_utils = { path = "../../core/utils" }
 cached = "0.40.0"
 content_inspector = "0.2.4"
 json = "0.12.4"

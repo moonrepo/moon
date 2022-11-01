@@ -1,5 +1,5 @@
 use moon_config::{TaskCommandArgs, TaskConfig};
-use moon_lang_node::package::PackageJson;
+use moon_node_lang::package::PackageJson;
 use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
 use moon_task::PlatformType;

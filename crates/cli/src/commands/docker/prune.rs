@@ -2,7 +2,7 @@ use crate::commands::docker::scaffold::DockerManifest;
 use crate::helpers::load_workspace;
 use futures::future::try_join_all;
 use moon_config::ProjectLanguage;
-use moon_lang_node::{package::PackageJson, NODE};
+use moon_node_lang::{package::PackageJson, NODE};
 use moon_terminal::safe_exit;
 use moon_utils::fs;
 use moon_workspace::Workspace;

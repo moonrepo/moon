@@ -9,8 +9,8 @@ moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
-moon_lang_node = { path = "../lang-node" }
 moon_logger = { path = "../logger" }
+moon_node_lang = { path = "../../node/lang" }
 moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
 async-trait = "0.1.58"

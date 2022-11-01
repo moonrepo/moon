@@ -2,12 +2,12 @@ use crate::hasher::NodeTargetHasher;
 use moon_action::{ActionContext, ProfileType};
 use moon_config::{HasherOptimization, NodePackageManager};
 use moon_error::MoonError;
-use moon_lang_node::{
+use moon_logger::{color, trace};
+use moon_node_lang::{
     node::{self, BinFile},
     package::PackageJson,
     tsconfig::TsConfigJson,
 };
-use moon_logger::{color, trace};
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{get_path_env_var, Executable};

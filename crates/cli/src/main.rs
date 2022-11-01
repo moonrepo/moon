@@ -1,7 +1,7 @@
 use mimalloc::MiMalloc;
 use moon_cli::{run_cli, BIN_NAME};
 use moon_constants::CONFIG_DIRNAME;
-use moon_lang_node::NODE;
+use moon_node_lang::NODE;
 use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;

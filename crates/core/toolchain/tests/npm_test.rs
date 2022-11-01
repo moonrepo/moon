@@ -1,5 +1,5 @@
 use moon_config::{NodeConfig, NpmConfig, WorkspaceConfig};
-use moon_lang_node::node;
+use moon_node_lang::node;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;

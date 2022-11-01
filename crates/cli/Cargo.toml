@@ -19,8 +19,8 @@ moon_constants = { path = "../core/constants" }
 moon_error = { path = "../core/error" }
 moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }
-moon_lang_node = { path = "../core/lang-node" }
 moon_logger = { path = "../core/logger" }
+moon_node_lang = { path = "../node/lang" }
 moon_node_platform = { path = "../node/platform" }
 moon_platform = { path = "../core/platform" }
 moon_project = { path = "../core/project" }

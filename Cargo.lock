@@ -1826,8 +1826,8 @@ dependencies = [
  "moon_error",
  "moon_generator",
  "moon_lang",
- "moon_lang_node",
  "moon_logger",
+ "moon_node_lang",
  "moon_node_platform",
  "moon_notifier",
  "moon_platform",
@@ -1862,7 +1862,7 @@ dependencies = [
  "json",
  "moon_constants",
  "moon_error",
- "moon_lang_node",
+ "moon_node_lang",
  "moon_utils",
  "pretty_assertions",
  "reqwest",
@@ -1947,7 +1947,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_lang_node"
+name = "moon_logger"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "console",
+ "dirs",
+ "fern",
+ "log",
+]
+
+[[package]]
+name = "moon_node_lang"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
@@ -1972,17 +1983,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_logger"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "console",
- "dirs",
- "fern",
- "log",
-]
-
-[[package]]
 name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
@@ -1994,8 +1994,8 @@ dependencies = [
  "moon_error",
  "moon_hasher",
  "moon_lang",
- "moon_lang_node",
  "moon_logger",
+ "moon_node_lang",
  "moon_platform",
  "moon_project",
  "moon_project_graph",
@@ -2157,8 +2157,8 @@ dependencies = [
  "moon_constants",
  "moon_error",
  "moon_lang",
- "moon_lang_node",
  "moon_logger",
+ "moon_node_lang",
  "moon_platform",
  "moon_utils",
  "predicates",

@@ -3,7 +3,7 @@ use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use moon_config::load_workspace_typescript_config_template;
-use moon_lang_node::tsconfig::TsConfigJson;
+use moon_node_lang::tsconfig::TsConfigJson;
 use moon_terminal::label_header;
 use std::path::Path;
 use tera::{Context, Error, Tera};

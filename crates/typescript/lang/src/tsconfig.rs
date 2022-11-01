@@ -750,38 +750,8 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), Moon
 #[cfg(test)]
 mod test {
     use super::*;
-    // use assert_fs::prelude::*;
     use moon_utils::string_vec;
     use moon_utils::test::get_fixtures_dir;
-
-    // #[tokio::test]
-    // async fn skips_none_when_writing() {
-    //     let dir = assert_fs::TempDir::new().unwrap();
-    //     let file = dir.child("tsconfig.json");
-    //     file.write_str("{}").unwrap();
-
-    //     let mut tsconfig = TsConfigJson::load(file.path()).await.unwrap();
-    //     tsconfig.compiler_options = Some(CompilerOptions {
-    //         composite: Some(true),
-    //         jsx: Some(Jsx::ReactJsx),
-    //         ..CompilerOptions::default()
-    //     });
-    //     tsconfig.include = Some(moon_utils::string_vec!["**/*"]);
-    //     tsconfig.save().await.unwrap();
-
-    //     let expected = serde_json::json!({
-    //         "compilerOptions": {
-    //             "composite": true,
-    //             "jsx": "react-jsx"
-    //         },
-    //         "include": ["**/*"]
-    //     });
-
-    //     assert_eq!(
-    //         fs::read_json_string(file.path()).await.unwrap(),
-    //         serde_json::to_string_pretty(&expected).unwrap(),
-    //     );
-    // }
 
     #[test]
     fn serializes_special_fields() {

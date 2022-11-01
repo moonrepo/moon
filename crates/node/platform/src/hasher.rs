@@ -1,6 +1,7 @@
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
 use moon_lang::LockfileDependencyVersions;
-use moon_node_lang::{package::PackageJson, tsconfig::TsConfigJson};
+use moon_node_lang::package::PackageJson;
+use moon_typescript_lang::TsConfigJson;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -274,7 +275,9 @@ mod tests {
 
         #[test]
         fn supports_all_dep_types() {
-            use moon_node_lang::tsconfig::{CompilerOptions, Module, ModuleResolution, Target};
+            use moon_typescript_lang::tsconfig::{
+                CompilerOptions, Module, ModuleResolution, Target,
+            };
 
             let mut tsconfig = TsConfigJson {
                 compiler_options: Some(CompilerOptions::default()),

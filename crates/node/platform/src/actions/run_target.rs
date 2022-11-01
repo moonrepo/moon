@@ -6,11 +6,11 @@ use moon_logger::{color, trace};
 use moon_node_lang::{
     node::{self, BinFile},
     package::PackageJson,
-    tsconfig::TsConfigJson,
 };
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{get_path_env_var, Executable};
+use moon_typescript_lang::TsConfigJson;
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};

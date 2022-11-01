@@ -1837,6 +1837,7 @@ dependencies = [
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
+ "moon_typescript_lang",
  "moon_utils",
  "moon_vcs",
  "moon_workspace",
@@ -2002,6 +2003,7 @@ dependencies = [
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
+ "moon_typescript_lang",
  "moon_utils",
  "moon_workspace",
  "pretty_assertions",
@@ -2165,6 +2167,21 @@ dependencies = [
  "reqwest",
  "sha2",
  "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "moon_typescript_lang"
+version = "0.1.0"
+dependencies = [
+ "cached",
+ "json",
+ "moon_error",
+ "moon_lang",
+ "moon_logger",
+ "moon_utils",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

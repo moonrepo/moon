@@ -1,6 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["crates/cli", "crates/core/*"]
+members = [
+	"crates/cli",
+	"crates/core/*",
+	"crates/node/*",
+	"crates/system/*",
+	"crates/typescript/*"
+]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]

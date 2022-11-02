@@ -101,7 +101,7 @@ __metadata:
 
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("yarn.lock")).await.unwrap(),
-            HashMap::from([
+            FxHashMap::from_iter([
                 (
                     "is-buffer".to_owned(),
                     string_vec!["4a186d995d8bbf9153b4bd9ff9fd04ae75068fe695d29025d25e592d9488911eeece84eefbd8fa41b8ddcc0711058a71d4c466dcf6f1f6e1d83830052d8ca707"]

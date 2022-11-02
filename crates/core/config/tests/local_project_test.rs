@@ -47,7 +47,10 @@ fileGroups:
         assert_eq!(
             config,
             ProjectConfig {
-                file_groups: FxHashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
+                file_groups: FxHashMap::from_iter([(
+                    String::from("sources"),
+                    string_vec!["src/**/*"]
+                )]),
                 ..ProjectConfig::default()
             }
         );

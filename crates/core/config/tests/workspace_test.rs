@@ -779,7 +779,7 @@ projects:
 
             assert_eq!(
                 config.projects,
-                WorkspaceProjects::Sources(FxHashMap::from([
+                WorkspaceProjects::Sources(FxHashMap::from_iter([
                     (String::from("app"), String::from("apps/app")),
                     (String::from("foo"), String::from("./packages/foo"))
                 ])),
@@ -858,7 +858,10 @@ projects:
                 config.projects,
                 WorkspaceProjects::Both {
                     globs: moon_utils::string_vec!["apps/*", "packages/*"],
-                    sources: FxHashMap::from([(String::from("app"), String::from("apps/app")),])
+                    sources: FxHashMap::from_iter([(
+                        String::from("app"),
+                        String::from("apps/app")
+                    ),])
                 }
             );
 

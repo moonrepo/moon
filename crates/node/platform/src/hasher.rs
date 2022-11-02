@@ -230,7 +230,7 @@ mod tests {
         #[test]
         fn uses_version_from_resolved_deps() {
             let resolved_deps =
-                FxHashMap::from([("prettier".to_owned(), vec!["2.1.3".to_owned()])]);
+                FxHashMap::from_iter([("prettier".to_owned(), vec!["2.1.3".to_owned()])]);
 
             let mut package = PackageJson::default();
             package.add_dependency("prettier", "^2.0.0", true);
@@ -250,7 +250,7 @@ mod tests {
 
         #[test]
         fn sorts_versions_before_hashing_them() {
-            let resolved_deps = FxHashMap::from([(
+            let resolved_deps = FxHashMap::from_iter([(
                 "prettier".to_owned(),
                 vec!["uio".to_owned(), "abc".to_owned(), "123".to_owned()],
             )]);

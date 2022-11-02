@@ -34,7 +34,10 @@ fileGroups:
             config,
             GlobalProjectConfig {
                 extends: None,
-                file_groups: FxHashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
+                file_groups: FxHashMap::from_iter([(
+                    String::from("sources"),
+                    string_vec!["src/**/*"]
+                )]),
                 tasks: BTreeMap::new(),
                 schema: String::new(),
             }
@@ -58,7 +61,7 @@ mod extends {
         assert_eq!(
             config,
             GlobalProjectConfig {
-                file_groups: FxHashMap::from([
+                file_groups: FxHashMap::from_iter([
                     ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
                 ]),
@@ -251,7 +254,7 @@ fileGroups:
             // Ensure values are deep merged
             assert_eq!(
                 config.file_groups,
-                FxHashMap::from([
+                FxHashMap::from_iter([
                     ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
                     ("configs".to_owned(), string_vec!["*.js"])
@@ -292,7 +295,7 @@ fileGroups:
             // Ensure values are deep merged
             assert_eq!(
                 config.file_groups,
-                FxHashMap::from([
+                FxHashMap::from_iter([
                     ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
                     ("configs".to_owned(), string_vec!["*.js"])

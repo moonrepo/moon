@@ -23,7 +23,7 @@ async fn create_project_graph() -> (ProjectGraph, TempDir) {
     let fixture = create_sandbox("projects");
     let workspace_root = fixture.path();
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from([
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".to_owned(), "advanced".to_owned()),
             ("basic".to_owned(), "basic".to_owned()),
             ("emptyConfig".to_owned(), "empty-config".to_owned()),
@@ -59,7 +59,7 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
     let fixture = create_sandbox("tasks");
     let workspace_root = fixture.path();
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from([
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".to_owned(), "basic".to_owned()),
             ("build-a".to_owned(), "build-a".to_owned()),
             ("build-b".to_owned(), "build-b".to_owned()),
@@ -82,7 +82,7 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
         ..WorkspaceConfig::default()
     };
     let global_config = GlobalProjectConfig {
-        file_groups: FxHashMap::from([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
+        file_groups: FxHashMap::from_iter([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
         ..GlobalProjectConfig::default()
     };
 

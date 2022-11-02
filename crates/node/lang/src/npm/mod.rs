@@ -123,11 +123,11 @@ mod tests {
                 lockfile_version: Value::Number(Number::from(2)),
                 name: "moon-examples".into(),
                 requires: Some(true),
-                dependencies: Some(FxHashMap::from([(
+                dependencies: Some(FxHashMap::from_iter([(
                     "@babel/helper-function-name".to_owned(),
                     PackageLockDependency {
                         integrity: Some("sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A==".into()),
-                        requires: Some(FxHashMap::from([
+                        requires: Some(FxHashMap::from_iter([
                             ("@babel/template".to_owned(), "^7.18.6".to_owned()),
                             ("@babel/types".to_owned(), "^7.18.9".to_owned())
                         ])),
@@ -140,7 +140,7 @@ mod tests {
                     PackageLockDependency {
                         dev: Some(true),
                         integrity: Some("sha512-5GMywXiLiuQP6ZzED/LO/Q0HyDi2W6b8VN+Zd3oB0opIjyRs494Me2ZMaqKWDNbGiW4jvvzl6L2n4zRgxS9cSQ==".into()),
-                        requires: Some(HashMap::from([
+                        requires: Some(FxHashMap::from_iter([
                             ("@rollup/plugin-inject".to_owned(), "^4.0.0".to_owned())
                         ])),
                         resolved: Some("https://registry.npmjs.org/rollup-plugin-polyfill-node/-/rollup-plugin-polyfill-node-0.10.2.tgz".into()),
@@ -154,7 +154,7 @@ mod tests {
 
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("package-lock.json")).unwrap(),
-            FxHashMap::from([
+            FxHashMap::from_iter([
                 (
                     "@babel/helper-function-name".to_owned(),
                     string_vec!["sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A=="]

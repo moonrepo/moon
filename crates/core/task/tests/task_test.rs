@@ -577,7 +577,7 @@ mod expand_env {
 
         assert_eq!(
             task.env,
-            FxHashMap::from([
+            FxHashMap::from_iter([
                 ("FOO".to_owned(), "foo".to_owned()),
                 ("BAR".to_owned(), "123".to_owned())
             ])
@@ -606,7 +606,7 @@ mod expand_env {
 
         assert_eq!(
             task.env,
-            FxHashMap::from([
+            FxHashMap::from_iter([
                 ("FOO".to_owned(), "foo".to_owned()),
                 ("BAR".to_owned(), "123".to_owned())
             ])
@@ -624,7 +624,10 @@ mod expand_env {
             fixture.path(),
             &project_root,
             Some(TaskConfig {
-                env: Some(FxHashMap::from([("FOO".to_owned(), "original".to_owned())])),
+                env: Some(FxHashMap::from_iter([(
+                    "FOO".to_owned(),
+                    "original".to_owned(),
+                )])),
                 options: TaskOptionsConfig {
                     env_file: Some(TaskOptionEnvFile::Enabled(true)),
                     ..TaskOptionsConfig::default()
@@ -636,7 +639,7 @@ mod expand_env {
 
         assert_eq!(
             task.env,
-            FxHashMap::from([
+            FxHashMap::from_iter([
                 ("FOO".to_owned(), "original".to_owned()),
                 ("BAR".to_owned(), "123".to_owned())
             ])
@@ -671,11 +674,11 @@ mod expand_inputs {
 
         assert_eq!(
             task.input_vars,
-            FxHashSet::from(["VAR".to_owned(), "FOO_BAR".to_owned()])
+            FxHashSet::from_iter(["VAR".to_owned(), "FOO_BAR".to_owned()])
         );
         assert_eq!(
             task.input_paths,
-            FxHashSet::from([
+            FxHashSet::from_iter([
                 project_root.join("file.ts"),
                 project_root.join("folder"),
                 workspace_root.join("config.js")
@@ -683,7 +686,7 @@ mod expand_inputs {
         );
         assert_eq!(
             task.input_globs,
-            FxHashSet::from([
+            FxHashSet::from_iter([
                 glob::normalize(project_root.join("glob/**/*")).unwrap(),
                 glob::normalize(workspace_root.join("*.cfg")).unwrap()
             ])

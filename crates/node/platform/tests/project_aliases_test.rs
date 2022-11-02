@@ -12,7 +12,7 @@ use rustc_hash::FxHashMap;
 async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/aliases");
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from([
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("noLang".to_owned(), "no-lang".to_owned()),
             ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
             ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),
@@ -47,7 +47,7 @@ async fn loads_node_aliases_name_only() {
 
     assert_eq!(
         graph.aliases_map,
-        FxHashMap::from([
+        FxHashMap::from_iter([
             ("pkg-bar".to_owned(), "nodeNameOnly".to_owned()),
             ("pkg-foo".to_owned(), "nodeNameScope".to_owned())
         ])
@@ -64,7 +64,7 @@ async fn loads_node_aliases_name_scopes() {
 
     assert_eq!(
         graph.aliases_map,
-        FxHashMap::from([
+        FxHashMap::from_iter([
             ("pkg-bar".to_owned(), "nodeNameOnly".to_owned()),
             ("@scope/pkg-foo".to_owned(), "nodeNameScope".to_owned())
         ])

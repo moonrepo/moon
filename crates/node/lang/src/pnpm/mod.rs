@@ -144,16 +144,16 @@ packages:
             lockfile,
             PnpmLock {
                 lockfile_version: Value::Number(Number::from(5.4)),
-                importers: FxHashMap::from([(".".into(), Value::Mapping(Mapping::new()))]),
-                packages: FxHashMap::from([(
+                importers: FxHashMap::from_iter([(".".into(), Value::Mapping(Mapping::new()))]),
+                packages: FxHashMap::from_iter([(
                     "/@ampproject/remapping/2.2.0".into(),
                     PnpmLockPackage {
                         dev: Some(true),
-                        dependencies: Some(FxHashMap::from([
+                        dependencies: Some(FxHashMap::from_iter([
                             ("@jridgewell/gen-mapping".to_owned(), Value::String("0.1.1".to_owned())),
                             ("@jridgewell/trace-mapping".to_owned(), Value::String("0.3.14".to_owned()))
                         ])),
-                        engines: Some(FxHashMap::from([
+                        engines: Some(FxHashMap::from_iter([
                             ("node".to_owned(), ">=6.0.0".to_owned())
                         ])),
                         resolution:
@@ -164,11 +164,11 @@ packages:
                     "/@babel/plugin-syntax-async-generators/7.8.4_@babel+core@7.18.9".into(),
                     PnpmLockPackage {
                         dev: Some(true),
-                        dependencies: Some(FxHashMap::from([
+                        dependencies: Some(FxHashMap::from_iter([
                             ("@babel/core".to_owned(), Value::Number(Number::from(7))),
                             ("@babel/helper-plugin-utils".to_owned(), Value::String("7.18.9".to_owned()))
                         ])),
-                        peer_dependencies: Some(FxHashMap::from([(
+                        peer_dependencies: Some(FxHashMap::from_iter([(
                             "@babel/core".to_owned(),
                             Value::String("^7.0.0-0".to_owned())
                         )])),
@@ -180,7 +180,7 @@ packages:
                     "/array-union/2.1.0".into(),
                     PnpmLockPackage {
                         dev: Some(true),
-                        engines: Some(FxHashMap::from([
+                        engines: Some(FxHashMap::from_iter([
                             ("node".to_owned(), ">=8".to_owned())
                         ])),
                         resolution:
@@ -191,12 +191,12 @@ packages:
                     "/solid-jest/0.2.0_@babel+core@7.18.9".into(),
                     PnpmLockPackage {
                         dev: Some(true),
-                        dependencies: Some(FxHashMap::from([
+                        dependencies: Some(FxHashMap::from_iter([
                             ("babel-jest".to_owned(), Value::String("27.5.1_@babel+core@7.18.9".to_owned())),
                             ("@babel/preset-env".to_owned(), Value::String("7.18.9_@babel+core@7.18.9".to_owned())),
                             ("enhanced-resolve-jest".to_owned(), Value::String("1.1.0".to_owned()))
                         ])),
-                        peer_dependencies: Some(FxHashMap::from([(
+                        peer_dependencies: Some(FxHashMap::from_iter([(
                             "babel-preset-solid".to_owned(),
                             Value::String("^1.0.0".to_owned())
                         )])),
@@ -212,7 +212,7 @@ packages:
 
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("pnpm-lock.yaml")).unwrap(),
-            FxHashMap::from([
+            FxHashMap::from_iter([
                 ("array-union".to_owned(), string_vec!["sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw=="]),
                 ("solid-jest".to_owned(), string_vec!["sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A=="]),
                 (

@@ -1,0 +1,15 @@
+tasks:
+  dep:
+    command: bash ./passthroughArgs.sh
+    platform: system
+  a:
+    command: bash ./passthroughArgs.sh
+    platform: system
+  b:
+    command: bash ./passthroughArgs.sh
+    deps: [dep]
+    platform: system
+  c:
+    command: bash ./passthroughArgs.sh
+    deps: [dep]
+    platform: system

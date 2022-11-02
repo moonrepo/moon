@@ -1,0 +1,17 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 561
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ passthroughArgs:dep
+▪▪▪▪ passthroughArgs:dep (100ms)
+
+
+▪▪▪▪ passthroughArgs:b
+-aBc
+
+Tasks: 2 completed
+ Time: 100ms
+
+
+

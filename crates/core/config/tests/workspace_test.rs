@@ -668,7 +668,7 @@ projects: {}
 
 mod projects {
     use super::*;
-    use std::collections::HashMap;
+    use rustc_hash::FxHashMap;
 
     #[test]
     #[should_panic(
@@ -779,7 +779,7 @@ projects:
 
             assert_eq!(
                 config.projects,
-                WorkspaceProjects::Sources(HashMap::from([
+                WorkspaceProjects::Sources(FxHashMap::from_iter([
                     (String::from("app"), String::from("apps/app")),
                     (String::from("foo"), String::from("./packages/foo"))
                 ])),
@@ -830,7 +830,7 @@ projects:
                 config.projects,
                 WorkspaceProjects::Both {
                     globs: moon_utils::string_vec!["apps/*", "packages/*"],
-                    sources: HashMap::new()
+                    sources: FxHashMap::default()
                 }
             );
 
@@ -858,7 +858,10 @@ projects:
                 config.projects,
                 WorkspaceProjects::Both {
                     globs: moon_utils::string_vec!["apps/*", "packages/*"],
-                    sources: HashMap::from([(String::from("app"), String::from("apps/app")),])
+                    sources: FxHashMap::from_iter([(
+                        String::from("app"),
+                        String::from("apps/app")
+                    ),])
                 }
             );
 

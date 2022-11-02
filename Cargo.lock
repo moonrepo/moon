@@ -1768,6 +1768,7 @@ dependencies = [
  "clap 4.0.18",
  "moon_platform",
  "moon_utils",
+ "rustc-hash",
  "serde",
 ]
 
@@ -1779,6 +1780,7 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_utils",
+ "rustc-hash",
  "tar",
  "thiserror",
  "zip",
@@ -1797,6 +1799,7 @@ dependencies = [
  "moon_logger",
  "moon_platform",
  "moon_utils",
+ "rustc-hash",
  "serde",
  "serial_test",
  "tokio",
@@ -1843,6 +1846,7 @@ dependencies = [
  "moon_workspace",
  "predicates",
  "pretty_assertions",
+ "rustc-hash",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1867,6 +1871,7 @@ dependencies = [
  "moon_utils",
  "pretty_assertions",
  "reqwest",
+ "rustc-hash",
  "schemars",
  "serde",
  "serde_json",
@@ -1936,6 +1941,7 @@ dependencies = [
  "moon_error",
  "moon_task",
  "moon_utils",
+ "rustc-hash",
  "serde",
  "sha2",
 ]
@@ -1944,6 +1950,7 @@ dependencies = [
 name = "moon_lang"
 version = "0.1.0"
 dependencies = [
+ "rustc-hash",
  "thiserror",
 ]
 
@@ -1974,6 +1981,7 @@ dependencies = [
  "pretty_assertions",
  "regex",
  "reqwest",
+ "rustc-hash",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -2007,6 +2015,7 @@ dependencies = [
  "moon_utils",
  "moon_workspace",
  "pretty_assertions",
+ "rustc-hash",
  "serde",
  "tokio",
 ]
@@ -2048,6 +2057,7 @@ dependencies = [
  "moon_task",
  "moon_utils",
  "pretty_assertions",
+ "rustc-hash",
  "serde",
  "strum",
  "thiserror",
@@ -2069,6 +2079,7 @@ dependencies = [
  "moon_task",
  "moon_utils",
  "petgraph",
+ "rustc-hash",
  "thiserror",
  "tokio",
 ]
@@ -2102,6 +2113,7 @@ dependencies = [
  "moon_vcs",
  "moon_workspace",
  "petgraph",
+ "rustc-hash",
  "serde",
  "thiserror",
  "tokio",
@@ -2131,6 +2143,7 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_utils",
+ "rustc-hash",
  "serde",
  "strum",
  "thiserror",
@@ -2165,6 +2178,7 @@ dependencies = [
  "moon_utils",
  "predicates",
  "reqwest",
+ "rustc-hash",
  "sha2",
  "thiserror",
  "tokio",
@@ -2227,6 +2241,7 @@ dependencies = [
  "moon_error",
  "moon_utils",
  "regex",
+ "rustc-hash",
  "thiserror",
  "tokio",
 ]
@@ -2983,6 +2998,12 @@ name = "retain_mut"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4389f1d5789befaf6029ebd9f7dac4af7f7e3d61b69d4f30e2ac02b57e7712b0"
+
+[[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustix"

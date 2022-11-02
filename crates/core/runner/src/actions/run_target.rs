@@ -19,8 +19,8 @@ use moon_utils::{
     time,
 };
 use moon_workspace::Workspace;
+use rustc_hash::FxHashMap;
 use serde::Serialize;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -219,8 +219,8 @@ impl<'a> TargetRunner<'a> {
         Ok(hasher)
     }
 
-    pub async fn create_env_vars(&self) -> Result<HashMap<String, String>, MoonError> {
-        let mut env_vars = HashMap::new();
+    pub async fn create_env_vars(&self) -> Result<FxHashMap<String, String>, MoonError> {
+        let mut env_vars = FxHashMap::default();
 
         env_vars.insert(
             "MOON_CACHE_DIR".to_owned(),

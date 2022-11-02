@@ -103,7 +103,7 @@ impl Hasher for NodeTargetHasher {
 mod tests {
     use super::*;
     use moon_hasher::to_hash_only;
-    use std::collections::HashMap;
+    use rustc_hash::FxHashMap;
 
     #[test]
     fn returns_default_hash() {
@@ -135,7 +135,7 @@ mod tests {
 
         #[test]
         fn returns_same_hash_for_same_value_inserted() {
-            let resolved_deps = HashMap::new();
+            let resolved_deps = FxHashMap::default();
 
             let mut package1 = PackageJson::default();
             package1.add_dependency("react", "17.0.0", true);
@@ -152,7 +152,7 @@ mod tests {
 
         #[test]
         fn returns_same_hash_for_diff_order_insertion() {
-            let resolved_deps = HashMap::new();
+            let resolved_deps = FxHashMap::default();
 
             let mut package1 = PackageJson::default();
             package1.add_dependency("react", "17.0.0", true);
@@ -173,7 +173,7 @@ mod tests {
 
         #[test]
         fn returns_diff_hash_for_overwritten_value() {
-            let resolved_deps = HashMap::new();
+            let resolved_deps = FxHashMap::default();
 
             let mut package1 = PackageJson::default();
             package1.add_dependency("react", "17.0.0", true);
@@ -199,7 +199,7 @@ mod tests {
 
         #[test]
         fn supports_all_dep_types() {
-            let resolved_deps = HashMap::new();
+            let resolved_deps = FxHashMap::default();
 
             let mut package = PackageJson::default();
             package.add_dependency("moment", "10.0.0", true);
@@ -229,7 +229,8 @@ mod tests {
 
         #[test]
         fn uses_version_from_resolved_deps() {
-            let resolved_deps = HashMap::from([("prettier".to_owned(), vec!["2.1.3".to_owned()])]);
+            let resolved_deps =
+                FxHashMap::from_iter([("prettier".to_owned(), vec!["2.1.3".to_owned()])]);
 
             let mut package = PackageJson::default();
             package.add_dependency("prettier", "^2.0.0", true);
@@ -249,7 +250,7 @@ mod tests {
 
         #[test]
         fn sorts_versions_before_hashing_them() {
-            let resolved_deps = HashMap::from([(
+            let resolved_deps = FxHashMap::from_iter([(
                 "prettier".to_owned(),
                 vec!["uio".to_owned(), "abc".to_owned(), "123".to_owned()],
             )]);

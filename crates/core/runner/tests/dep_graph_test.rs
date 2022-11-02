@@ -8,7 +8,7 @@ use moon_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_system_platform::SystemPlatform;
 use moon_task::Target;
 use moon_utils::test::{create_sandbox, TempDir};
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 fn register_platforms(project_graph: &mut ProjectGraph) {
     project_graph
@@ -23,7 +23,7 @@ async fn create_project_graph() -> (ProjectGraph, TempDir) {
     let fixture = create_sandbox("projects");
     let workspace_root = fixture.path();
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(HashMap::from([
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".to_owned(), "advanced".to_owned()),
             ("basic".to_owned(), "basic".to_owned()),
             ("emptyConfig".to_owned(), "empty-config".to_owned()),
@@ -59,7 +59,7 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
     let fixture = create_sandbox("tasks");
     let workspace_root = fixture.path();
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(HashMap::from([
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".to_owned(), "basic".to_owned()),
             ("build-a".to_owned(), "build-a".to_owned()),
             ("build-b".to_owned(), "build-b".to_owned()),
@@ -82,7 +82,7 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
         ..WorkspaceConfig::default()
     };
     let global_config = GlobalProjectConfig {
-        file_groups: HashMap::from([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
+        file_groups: FxHashMap::from_iter([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
         ..GlobalProjectConfig::default()
     };
 
@@ -363,7 +363,7 @@ mod run_target_if_touched {
     async fn skips_if_untouched_project() {
         let (projects, fixture) = create_tasks_project_graph().await;
 
-        let mut touched_files = HashSet::new();
+        let mut touched_files = FxHashSet::default();
         touched_files.insert(fixture.path().join("input-a/a.ts"));
         touched_files.insert(fixture.path().join("input-c/c.ts"));
         let touched_files = Some(touched_files);
@@ -391,7 +391,7 @@ mod run_target_if_touched {
     async fn skips_if_untouched_task() {
         let (projects, fixture) = create_tasks_project_graph().await;
 
-        let mut touched_files = HashSet::new();
+        let mut touched_files = FxHashSet::default();
         touched_files.insert(fixture.path().join("input-a/a2.ts"));
         touched_files.insert(fixture.path().join("input-b/b2.ts"));
         touched_files.insert(fixture.path().join("input-c/any.ts"));

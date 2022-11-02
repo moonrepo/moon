@@ -7,14 +7,14 @@ use dependency_path::PnpmDependencyPath;
 use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
 use moon_utils::fs::sync::read_yaml;
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 config_cache!(PnpmLock, PNPM.lock_filename, read_yaml);
 
-type DependencyMap = HashMap<String, Value>;
+type DependencyMap = FxHashMap<String, Value>;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,7 +22,7 @@ pub struct PnpmLockPackage {
     pub cpu: Option<Vec<String>>,
     pub dependencies: Option<DependencyMap>,
     pub dev: Option<bool>,
-    pub engines: Option<HashMap<String, String>>,
+    pub engines: Option<FxHashMap<String, String>>,
     pub has_bin: Option<bool>,
     pub optional: Option<bool>,
     pub optional_dependencies: Option<DependencyMap>,
@@ -33,7 +33,7 @@ pub struct PnpmLockPackage {
     pub resolution: PnpmLockResolution,
 
     #[serde(flatten)]
-    pub unknown: HashMap<String, Value>,
+    pub unknown: FxHashMap<String, Value>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -47,17 +47,17 @@ pub struct PnpmLockResolution {
 #[serde(rename_all = "camelCase")]
 pub struct PnpmLock {
     pub lockfile_version: Value,
-    pub importers: HashMap<String, Value>,
-    pub packages: HashMap<String, PnpmLockPackage>,
+    pub importers: FxHashMap<String, Value>,
+    pub packages: FxHashMap<String, PnpmLockPackage>,
     #[serde(flatten)]
-    pub unknown: HashMap<String, Value>,
+    pub unknown: FxHashMap<String, Value>,
     #[serde(skip)]
     pub path: PathBuf,
 }
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
-    let mut deps: LockfileDependencyVersions = HashMap::new();
+    let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     if let Some(lockfile) = PnpmLock::read(path)? {
         for (package_name, details) in lockfile.packages {
@@ -144,16 +144,16 @@ packages:
             lockfile,
             PnpmLock {
                 lockfile_version: Value::Number(Number::from(5.4)),
-                importers: HashMap::from([(".".into(), Value::Mapping(Mapping::new()))]),
-                packages: HashMap::from([(
+                importers: FxHashMap::from_iter([(".".into(), Value::Mapping(Mapping::new()))]),
+                packages: FxHashMap::from_iter([(
                     "/@ampproject/remapping/2.2.0".into(),
                     PnpmLockPackage {
                         dev: Some(true),
-                        dependencies: Some(HashMap::from([
+                        dependencies: Some(FxHashMap::from_iter([
                             ("@jridgewell/gen-mapping".to_owned(), Value::String("0.1.1".to_owned())),
                             ("@jridgewell/trace-mapping".to_owned(), Value::String("0.3.14".to_owned()))
                         ])),
-                        engines: Some(HashMap::from([
+                        engines: Some(FxHashMap::from_iter([
                             ("node".to_owned(), ">=6.0.0".to_owned())
                         ])),
                         resolution:
@@ -164,11 +164,11 @@ packages:
                     "/@babel/plugin-syntax-async-generators/7.8.4_@babel+core@7.18.9".into(),
                     PnpmLockPackage {
                         dev: Some(true),
-                        dependencies: Some(HashMap::from([
+                        dependencies: Some(FxHashMap::from_iter([
                             ("@babel/core".to_owned(), Value::Number(Number::from(7))),
                             ("@babel/helper-plugin-utils".to_owned(), Value::String("7.18.9".to_owned()))
                         ])),
-                        peer_dependencies: Some(HashMap::from([(
+                        peer_dependencies: Some(FxHashMap::from_iter([(
                             "@babel/core".to_owned(),
                             Value::String("^7.0.0-0".to_owned())
                         )])),
@@ -180,7 +180,7 @@ packages:
                     "/array-union/2.1.0".into(),
                     PnpmLockPackage {
                         dev: Some(true),
-                        engines: Some(HashMap::from([
+                        engines: Some(FxHashMap::from_iter([
                             ("node".to_owned(), ">=8".to_owned())
                         ])),
                         resolution:
@@ -191,12 +191,12 @@ packages:
                     "/solid-jest/0.2.0_@babel+core@7.18.9".into(),
                     PnpmLockPackage {
                         dev: Some(true),
-                        dependencies: Some(HashMap::from([
+                        dependencies: Some(FxHashMap::from_iter([
                             ("babel-jest".to_owned(), Value::String("27.5.1_@babel+core@7.18.9".to_owned())),
                             ("@babel/preset-env".to_owned(), Value::String("7.18.9_@babel+core@7.18.9".to_owned())),
                             ("enhanced-resolve-jest".to_owned(), Value::String("1.1.0".to_owned()))
                         ])),
-                        peer_dependencies: Some(HashMap::from([(
+                        peer_dependencies: Some(FxHashMap::from_iter([(
                             "babel-preset-solid".to_owned(),
                             Value::String("^1.0.0".to_owned())
                         )])),
@@ -212,7 +212,7 @@ packages:
 
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("pnpm-lock.yaml")).unwrap(),
-            HashMap::from([
+            FxHashMap::from_iter([
                 ("array-union".to_owned(), string_vec!["sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw=="]),
                 ("solid-jest".to_owned(), string_vec!["sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A=="]),
                 (

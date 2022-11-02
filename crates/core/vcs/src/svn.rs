@@ -3,7 +3,8 @@ use async_trait::async_trait;
 use moon_utils::fs;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use regex::Regex;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeMap;
 use std::fs::metadata;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -13,7 +14,7 @@ use tokio::sync::RwLock;
 // TODO: This code hasn't been tested yet and may not be accurate!
 
 pub struct Svn {
-    cache: Arc<RwLock<HashMap<String, String>>>,
+    cache: Arc<RwLock<FxHashMap<String, String>>>,
     default_branch: String,
     root: PathBuf,
 }
@@ -26,7 +27,7 @@ impl Svn {
         };
 
         Svn {
-            cache: Arc::new(RwLock::new(HashMap::new())),
+            cache: Arc::new(RwLock::new(FxHashMap::default())),
             default_branch: String::from(default_branch),
             root,
         }
@@ -55,13 +56,13 @@ impl Svn {
             return TouchedFiles::default();
         }
 
-        let mut added = HashSet::new();
-        let mut deleted = HashSet::new();
-        let mut modified = HashSet::new();
-        let mut untracked = HashSet::new();
-        let mut staged = HashSet::new();
-        let unstaged = HashSet::new();
-        let mut all = HashSet::new();
+        let mut added = FxHashSet::default();
+        let mut deleted = FxHashSet::default();
+        let mut modified = FxHashSet::default();
+        let mut untracked = FxHashSet::default();
+        let mut staged = FxHashSet::default();
+        let unstaged = FxHashSet::default();
+        let mut all = FxHashSet::default();
 
         for line in output.split('\n') {
             if line.is_empty() {

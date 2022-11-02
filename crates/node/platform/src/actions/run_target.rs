@@ -14,7 +14,7 @@ use moon_typescript_lang::TsConfigJson;
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 const LOG_TARGET: &str = "moon:node-platform:run-target";
 
@@ -182,7 +182,7 @@ pub async fn create_target_hasher(
             .get_resolved_dependencies(&project.root)
             .await?
     } else {
-        HashMap::new()
+        FxHashMap::default()
     };
 
     if let Some(root_package) = PackageJson::read(&workspace.root)? {

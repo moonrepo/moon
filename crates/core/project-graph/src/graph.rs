@@ -15,12 +15,12 @@ use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockWriteGuard};
 
 type GraphType = DiGraph<Project, ()>;
-type IndicesType = HashMap<ProjectID, NodeIndex>;
+type IndicesType = FxHashMap<ProjectID, NodeIndex>;
 
 const LOG_TARGET: &str = "moon:project-graph";
 const READ_ERROR: &str = "Failed to acquire a read lock";
@@ -33,7 +33,7 @@ async fn load_projects_from_cache(
     engine: &CacheEngine,
 ) -> Result<ProjectsSourcesMap, ProjectError> {
     let mut globs = vec![];
-    let mut sources = HashMap::new();
+    let mut sources = FxHashMap::default();
 
     match &workspace_config.projects {
         WorkspaceProjects::Sources(map) => {
@@ -151,10 +151,10 @@ impl ProjectGraph {
         });
 
         Ok(ProjectGraph {
-            aliases_map: HashMap::new(),
+            aliases_map: FxHashMap::default(),
             global_config,
             graph: Arc::new(RwLock::new(graph)),
-            indices: Arc::new(RwLock::new(HashMap::new())),
+            indices: Arc::new(RwLock::new(FxHashMap::default())),
             platforms: vec![],
             projects_map: load_projects_from_cache(workspace_root, workspace_config, cache).await?,
             workspace_config: workspace_config.clone(),

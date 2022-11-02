@@ -8,7 +8,7 @@ use moon_lang::LockfileDependencyVersions;
 use moon_logger::{color, debug, Logable};
 use moon_node_lang::{node, yarn, YARN};
 use moon_utils::{fs, get_workspace_root, is_ci};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -275,7 +275,7 @@ impl PackageManager<NodeTool> for YarnTool {
         let lockfile_path = match fs::find_upwards(YARN.lock_filename, project_root) {
             Some(path) => path,
             None => {
-                return Ok(HashMap::new());
+                return Ok(FxHashMap::default());
             }
         };
 

@@ -6,9 +6,9 @@ use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
 };
+use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::Path;
 use validator::{Validate, ValidationError};
 
@@ -72,7 +72,7 @@ pub struct TemplateConfig {
     pub title: String,
 
     #[schemars(default)]
-    pub variables: HashMap<String, TemplateVariable>,
+    pub variables: FxHashMap<String, TemplateVariable>,
 
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]

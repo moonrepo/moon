@@ -170,7 +170,10 @@ impl<'a> TargetRunner<'a> {
 
         hasher.hash_project_deps(self.project.get_dependency_ids());
         hasher.hash_task(task);
-        hasher.hash_args(&context.passthrough_args);
+
+        if context.should_inherit_args(&task.target) {
+            hasher.hash_args(&context.passthrough_args);
+        }
 
         // For input files, hash them with the vcs layer first
         if !task.input_paths.is_empty() {
@@ -375,7 +378,7 @@ impl<'a> TargetRunner<'a> {
     ) -> Result<Vec<Attempt>, RunnerError> {
         command.envs(self.create_env_vars().await?);
 
-        if !context.passthrough_args.is_empty() {
+        if context.should_inherit_args(&self.task.target) {
             command.args(&context.passthrough_args);
         }
 
@@ -421,7 +424,7 @@ impl<'a> TargetRunner<'a> {
                 attempt_total,
             )?;
 
-            self.print_target_command(&context.passthrough_args)?;
+            self.print_target_command(&context)?;
 
             self.flush_output()?;
 
@@ -562,7 +565,7 @@ impl<'a> TargetRunner<'a> {
         Ok(())
     }
 
-    pub fn print_target_command(&self, passthrough_args: &[String]) -> Result<(), MoonError> {
+    pub fn print_target_command(&self, context: &ActionContext) -> Result<(), MoonError> {
         if !self.workspace.config.runner.log_running_command {
             return Ok(());
         }
@@ -570,7 +573,10 @@ impl<'a> TargetRunner<'a> {
         let task = &self.task;
         let mut args = vec![];
         args.extend(&task.args);
-        args.extend(passthrough_args);
+
+        if context.should_inherit_args(&task.target) {
+            args.extend(&context.passthrough_args);
+        }
 
         let command_line = if args.is_empty() {
             task.command.clone()

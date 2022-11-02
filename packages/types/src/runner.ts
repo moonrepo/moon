@@ -30,6 +30,7 @@ export interface Action {
 }
 
 export interface ActionContext {
+	initialTargets: string[];
 	passthroughArgs: string[];
 	primaryTargets: string[];
 	profile: 'cpu' | 'heap' | null;

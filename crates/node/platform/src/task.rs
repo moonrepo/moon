@@ -200,7 +200,7 @@ pub fn create_task(
     }
 
     if !env.is_empty() {
-        // task_config.env = Some(env);
+        task_config.env = Some(env);
     }
 
     if !outputs.is_empty() {

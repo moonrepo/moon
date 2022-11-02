@@ -5,7 +5,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
@@ -20,7 +20,7 @@ pub struct TarArchiver<'l> {
     prefix: &'l str,
 
     // relative file in tarball -> absolute file path to source
-    sources: HashMap<String, PathBuf>,
+    sources: FxHashMap<String, PathBuf>,
 }
 
 impl<'l> TarArchiver<'l> {
@@ -29,7 +29,7 @@ impl<'l> TarArchiver<'l> {
             input_root,
             output_file,
             prefix: "",
-            sources: HashMap::new(),
+            sources: FxHashMap::default(),
         }
     }
 

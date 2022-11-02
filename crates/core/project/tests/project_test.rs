@@ -7,11 +7,12 @@ use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
-use std::collections::{BTreeMap, HashMap};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeMap;
 use std::path::Path;
 
-fn mock_file_groups() -> HashMap<String, FileGroup> {
-    HashMap::from([(
+fn mock_file_groups() -> FxHashMap<String, FileGroup> {
+    FxHashMap::from_iter([(
         String::from("sources"),
         FileGroup::new("sources", string_vec!["src/**/*"]),
     )])
@@ -20,7 +21,7 @@ fn mock_file_groups() -> HashMap<String, FileGroup> {
 fn mock_global_project_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
         extends: None,
-        file_groups: HashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
+        file_groups: FxHashMap::from_iter([(String::from("sources"), string_vec!["src/**/*"])]),
         tasks: BTreeMap::new(),
         schema: String::new(),
     }
@@ -125,7 +126,10 @@ fn basic_config() {
             id: String::from("basic"),
             config: ProjectConfig {
                 depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
-                file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
+                file_groups: FxHashMap::from_iter([(
+                    String::from("tests"),
+                    string_vec!["**/*_test.rs"]
+                )]),
                 language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
             },
@@ -182,7 +186,7 @@ fn overrides_global_file_groups() {
         "projects/basic",
         &workspace_root,
         &GlobalProjectConfig {
-            file_groups: HashMap::from([(String::from("tests"), string_vec!["tests/**/*"])]),
+            file_groups: FxHashMap::from_iter([(String::from("tests"), string_vec!["tests/**/*"])]),
             ..GlobalProjectConfig::default()
         },
     )
@@ -194,13 +198,16 @@ fn overrides_global_file_groups() {
             id: String::from("basic"),
             config: ProjectConfig {
                 depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
-                file_groups: HashMap::from([(String::from("tests"), string_vec!["**/*_test.rs"])]),
+                file_groups: FxHashMap::from_iter([(
+                    String::from("tests"),
+                    string_vec!["**/*_test.rs"]
+                )]),
                 language: ProjectLanguage::JavaScript,
                 ..ProjectConfig::default()
             },
             log_target: String::from("moon:project:basic"),
             root: workspace_root.join("projects/basic"),
-            file_groups: HashMap::from([(
+            file_groups: FxHashMap::from_iter([(
                 String::from("tests"),
                 FileGroup::new("tests", string_vec!["**/*_test.rs"],)
             )]),
@@ -217,7 +224,6 @@ mod tasks {
     };
     use moon_utils::glob;
     use pretty_assertions::assert_eq;
-    use std::collections::HashSet;
 
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {
@@ -278,7 +284,7 @@ mod tasks {
     }
 
     fn stub_global_env_vars() -> EnvVars {
-        HashMap::from([
+        FxHashMap::from_iter([
             ("GLOBAL".to_owned(), "1".to_owned()),
             ("KEY".to_owned(), "a".to_owned()),
         ])
@@ -572,7 +578,7 @@ mod tasks {
         // Applies to all tasks
         assert_eq!(
             project.get_task("build").unwrap().input_vars,
-            HashSet::from(["VAR".to_owned()])
+            FxHashSet::from_iter(["VAR".to_owned()])
         );
     }
 
@@ -614,7 +620,7 @@ mod tasks {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: Some(TaskCommandArgs::String("newcmd".to_owned())),
                             deps: Some(string_vec!["b:standard"]),
-                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
+                            env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             local: false,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
@@ -635,7 +641,7 @@ mod tasks {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: Some(TaskCommandArgs::String("newcmd".to_owned())),
                             deps: Some(string_vec!["b:standard"]),
-                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
+                            env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             local: false,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
@@ -690,7 +696,7 @@ mod tasks {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: None,
                             deps: Some(string_vec!["b:standard"]),
-                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
+                            env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             local: false,
                             inputs: Some(string_vec!["b.*"]),
                             outputs: Some(string_vec!["b.ts"]),
@@ -711,7 +717,7 @@ mod tasks {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--a", "--b"])),
                             command: Some(TaskCommandArgs::String("standard".to_owned())),
                             deps: Some(string_vec!["a:standard", "b:standard"]),
-                            env: Some(HashMap::from([
+                            env: Some(FxHashMap::from_iter([
                                 ("GLOBAL".to_owned(), "1".to_owned()),
                                 ("KEY".to_owned(), "b".to_owned())
                             ])),
@@ -769,7 +775,7 @@ mod tasks {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: Some(TaskCommandArgs::String("newcmd".to_owned())),
                             deps: Some(string_vec!["b:standard"]),
-                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
+                            env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             local: false,
                             outputs: Some(string_vec!["b.ts"]),
@@ -790,7 +796,7 @@ mod tasks {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b", "--a"])),
                             command: Some(TaskCommandArgs::String("newcmd".to_owned())),
                             deps: Some(string_vec!["b:standard", "a:standard"]),
-                            env: Some(HashMap::from([
+                            env: Some(FxHashMap::from_iter([
                                 ("GLOBAL".to_owned(), "1".to_owned()),
                                 ("KEY".to_owned(), "a".to_owned())
                             ])),
@@ -843,7 +849,7 @@ mod tasks {
                 args: Some(TaskCommandArgs::Sequence(string_vec!["--a", "--b"])),
                 command: Some(TaskCommandArgs::String("standard".to_owned())),
                 deps: Some(string_vec!["b:standard", "a:standard"]),
-                env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
+                env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                 inputs: Some(string_vec!["b.*"]),
                 local: false,
                 outputs: Some(string_vec!["a.ts", "b.ts"]),
@@ -879,7 +885,7 @@ mod tasks {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: None,
                             deps: Some(string_vec!["b:standard"]),
-                            env: Some(HashMap::from([("KEY".to_owned(), "b".to_owned())])),
+                            env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             local: false,
                             outputs: Some(string_vec!["b.ts"]),
@@ -1007,7 +1013,6 @@ mod tasks {
         use moon_config::DependencyConfig;
         use moon_project::ProjectDependency;
         use pretty_assertions::assert_eq;
-        use std::collections::HashSet;
         use std::path::PathBuf;
 
         #[test]
@@ -1230,15 +1235,15 @@ mod tasks {
 
             assert_eq!(
                 task.input_globs,
-                HashSet::from([
+                FxHashSet::from_iter([
                     glob::normalize(project_root.join("**/*.{ts,tsx}")).unwrap(),
                     glob::normalize(project_root.join("*.js")).unwrap()
                 ]),
             );
 
-            let a: HashSet<PathBuf> =
-                HashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
-            let b: HashSet<PathBuf> = HashSet::from_iter(
+            let a: FxHashSet<PathBuf> =
+                FxHashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
+            let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
                 vec![
                     project_root.join("file.ts"),
                     project_root.join("dir"),
@@ -1338,12 +1343,12 @@ mod tasks {
 
             assert_eq!(
                 task.input_globs,
-                HashSet::from([glob::normalize(project_root.join("*.yml")).unwrap()])
+                FxHashSet::from_iter([glob::normalize(project_root.join("*.yml")).unwrap()])
             );
 
-            let a: HashSet<PathBuf> =
-                HashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
-            let b: HashSet<PathBuf> = HashSet::from_iter(
+            let a: FxHashSet<PathBuf> =
+                FxHashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
+            let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
                 vec![
                     project_root.join("local.ts"),
                     workspace_root.join(".moon/node-unknown.yml"),
@@ -1366,7 +1371,7 @@ mod workspace {
 
         fn mock_global_project_config() -> GlobalProjectConfig {
             GlobalProjectConfig {
-                file_groups: HashMap::new(),
+                file_groups: FxHashMap::default(),
                 tasks: BTreeMap::from([
                     (
                         String::from("a"),

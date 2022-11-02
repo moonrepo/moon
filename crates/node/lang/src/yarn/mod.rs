@@ -2,7 +2,7 @@ use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::LockfileDependencyVersions;
 use moon_utils::fs;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 use yarn_lock_parser::{parse_str, Entry};
 
@@ -10,7 +10,7 @@ use yarn_lock_parser::{parse_str, Entry};
 pub async fn load_lockfile_dependencies(
     path: PathBuf,
 ) -> Result<LockfileDependencyVersions, MoonError> {
-    let mut deps: LockfileDependencyVersions = HashMap::new();
+    let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     let yarn_lock_text = fs::read(&path).await?;
     let entries: Vec<Entry> = parse_str(&yarn_lock_text)
@@ -101,7 +101,7 @@ __metadata:
 
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("yarn.lock")).await.unwrap(),
-            HashMap::from([
+            FxHashMap::from_iter([
                 (
                     "is-buffer".to_owned(),
                     string_vec!["4a186d995d8bbf9153b4bd9ff9fd04ae75068fe695d29025d25e592d9488911eeece84eefbd8fa41b8ddcc0711058a71d4c466dcf6f1f6e1d83830052d8ca707"]

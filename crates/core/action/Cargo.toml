@@ -7,4 +7,5 @@ edition = "2021"
 moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
 clap = { version = "4.0.18", features = ["derive"] }
+rustc-hash = { workspace = true }
 serde = { workspace = true }

@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::PathBuf;
 
-pub type TouchedFilePaths = HashSet<PathBuf>;
+pub type TouchedFilePaths = FxHashSet<PathBuf>;
 
-pub type EnvVars = HashMap<String, String>;
+pub type EnvVars = FxHashMap<String, String>;

@@ -6,7 +6,7 @@ use moon_config::{
 use moon_project_graph::ProjectGraph;
 use moon_utils::string_vec;
 use moon_utils::test::{create_sandbox, create_sandbox_with_git, get_fixtures_dir};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::fs;
 
 async fn get_aliases_graph() -> ProjectGraph {
@@ -16,7 +16,7 @@ async fn get_aliases_graph() -> ProjectGraph {
             alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
             ..NodeConfig::default()
         }),
-        projects: WorkspaceProjects::Sources(HashMap::from([
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("explicit".to_owned(), "explicit".to_owned()),
             (
                 "explicitAndImplicit".to_owned(),
@@ -44,7 +44,7 @@ async fn get_aliases_graph() -> ProjectGraph {
 async fn get_dependencies_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependencies");
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(HashMap::from([
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
@@ -66,7 +66,7 @@ async fn get_dependencies_graph() -> ProjectGraph {
 async fn get_dependents_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/dependents");
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(HashMap::from([
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("a".to_owned(), "a".to_owned()),
             ("b".to_owned(), "b".to_owned()),
             ("c".to_owned(), "c".to_owned()),
@@ -106,7 +106,7 @@ projects:
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Both {
             globs: string_vec!["deps/*"],
-            sources: HashMap::from([
+            sources: FxHashMap::from_iter([
                 ("basic".to_owned(), "basic".to_owned()),
                 ("noConfig".to_owned(), "noConfig".to_owned()),
             ]),
@@ -125,7 +125,7 @@ projects:
 
     assert_eq!(
         graph.projects_map,
-        HashMap::from([
+        FxHashMap::from_iter([
             ("noConfig".to_owned(), "noConfig".to_owned()),
             ("bar".to_owned(), "deps/bar".to_owned()),
             ("basic".to_owned(), "basic".to_owned()),
@@ -163,7 +163,7 @@ mod globs {
 
         assert_eq!(
             graph.projects_map,
-            HashMap::from([
+            FxHashMap::from_iter([
                 ("advanced".to_owned(), "advanced".to_owned()),
                 ("bar".to_owned(), "deps/bar".to_owned()),
                 ("bash".to_owned(), "langs/bash".to_owned()),
@@ -202,7 +202,7 @@ mod globs {
 
         assert_eq!(
             graph.projects_map,
-            HashMap::from([
+            FxHashMap::from_iter([
                 ("camelCase".to_owned(), "camelCase".to_owned()),
                 ("Capital".to_owned(), "Capital".to_owned()),
                 ("kebab-case".to_owned(), "kebab-case".to_owned()),
@@ -292,7 +292,7 @@ mod implicit_explicit_deps {
 
         assert_eq!(
             project.dependencies,
-            HashMap::from([
+            FxHashMap::from_iter([
                 (
                     "nodeNameScope".to_string(),
                     ProjectDependency {
@@ -327,7 +327,7 @@ mod implicit_explicit_deps {
 
         assert_eq!(
             project.dependencies,
-            HashMap::from([
+            FxHashMap::from_iter([
                 (
                     "nodeNameScope".to_string(),
                     ProjectDependency {
@@ -362,7 +362,7 @@ mod implicit_explicit_deps {
 
         assert_eq!(
             project.dependencies,
-            HashMap::from([
+            FxHashMap::from_iter([
                 (
                     "nodeNameScope".to_string(),
                     ProjectDependency {

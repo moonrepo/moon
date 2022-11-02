@@ -3,14 +3,15 @@ use moon_utils::test::{
     create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
 };
 use predicates::prelude::*;
-use std::{collections::HashSet, fs, path::Path};
+use rustc_hash::FxHashSet;
+use std::{fs, path::Path};
 
 fn write_manifest(path: &Path, id: &str) {
     fs::write(
         path.join("dockerManifest.json"),
         serde_json::to_string(&DockerManifest {
-            focused_projects: HashSet::from([id.to_owned()]),
-            unfocused_projects: HashSet::new(),
+            focused_projects: FxHashSet::from_iter([id.to_owned()]),
+            unfocused_projects: FxHashSet::default(),
         })
         .unwrap(),
     )

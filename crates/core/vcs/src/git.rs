@@ -5,13 +5,14 @@ use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use moon_utils::{fs, string_vec};
 use regex::Regex;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub struct Git {
-    cache: Arc<RwLock<HashMap<String, String>>>,
+    cache: Arc<RwLock<FxHashMap<String, String>>>,
     default_branch: String,
     ignore: Option<Gitignore>,
     root: PathBuf,
@@ -38,7 +39,7 @@ impl Git {
         }
 
         Ok(Git {
-            cache: Arc::new(RwLock::new(HashMap::new())),
+            cache: Arc::new(RwLock::new(FxHashMap::default())),
             default_branch: String::from(default_branch),
             ignore,
             root,
@@ -245,13 +246,13 @@ impl Vcs for Git {
             return Ok(TouchedFiles::default());
         }
 
-        let mut added = HashSet::new();
-        let mut deleted = HashSet::new();
-        let mut modified = HashSet::new();
-        let mut untracked = HashSet::new();
-        let mut staged = HashSet::new();
-        let mut unstaged = HashSet::new();
-        let mut all = HashSet::new();
+        let mut added = FxHashSet::default();
+        let mut deleted = FxHashSet::default();
+        let mut modified = FxHashSet::default();
+        let mut untracked = FxHashSet::default();
+        let mut staged = FxHashSet::default();
+        let mut unstaged = FxHashSet::default();
+        let mut all = FxHashSet::default();
         let xy_regex = Regex::new(r"^(M|T|A|D|R|C|U|\?|!| )(M|T|A|D|R|C|U|\?|!| ) ").unwrap();
 
         // Lines are terminated by a NUL byte:
@@ -365,11 +366,11 @@ impl Vcs for Git {
             return Ok(TouchedFiles::default());
         }
 
-        let mut added = HashSet::new();
-        let mut deleted = HashSet::new();
-        let mut modified = HashSet::new();
-        let mut staged = HashSet::new();
-        let mut all = HashSet::new();
+        let mut added = FxHashSet::default();
+        let mut deleted = FxHashSet::default();
+        let mut modified = FxHashSet::default();
+        let mut staged = FxHashSet::default();
+        let mut all = FxHashSet::default();
         let x_with_score_regex = Regex::new(r"^(C|M|R)(\d{3})$").unwrap();
         let x_regex = Regex::new(r"^(A|D|M|T|U|X)$").unwrap();
         let mut last_status = "A";
@@ -418,8 +419,8 @@ impl Vcs for Git {
             deleted,
             modified,
             staged,
-            unstaged: HashSet::new(),
-            untracked: HashSet::new(),
+            unstaged: FxHashSet::default(),
+            untracked: FxHashSet::default(),
         })
     }
 

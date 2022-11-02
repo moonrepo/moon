@@ -14,10 +14,8 @@ use moon_node_lang::{PackageJson, NPM};
 use moon_platform::{Platform, Runtime};
 use moon_task::TaskError;
 use moon_utils::glob::GlobSet;
-use std::{
-    collections::{BTreeMap, HashMap},
-    path::Path,
-};
+use rustc_hash::FxHashMap;
+use std::{collections::BTreeMap, path::Path};
 use task::ScriptParser;
 
 pub const LOG_TARGET: &str = "moon:node-platform";
@@ -48,7 +46,7 @@ pub fn infer_tasks_from_scripts(
 #[derive(Debug, Default)]
 pub struct NodePlatform {
     /// Maps `package.json` names to project IDs.
-    package_names: HashMap<String, ProjectID>,
+    package_names: FxHashMap<String, ProjectID>,
 }
 
 impl Platform for NodePlatform {

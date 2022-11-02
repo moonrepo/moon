@@ -3,12 +3,12 @@ use moon_cache::CacheEngine;
 use moon_config::{GlobalProjectConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project_graph::ProjectGraph;
 use moon_utils::test::get_fixtures_dir;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 pub fn load_benchmark(c: &mut Criterion) {
     let workspace_root = get_fixtures_dir("cases");
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(HashMap::from([(
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([(
             "base".to_owned(),
             "base".to_owned(),
         )])),

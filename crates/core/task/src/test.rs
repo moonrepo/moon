@@ -1,11 +1,11 @@
 use crate::{FileGroup, ResolverData, Target, Task, TaskError, TokenResolver};
 use moon_config::{ProjectConfig, TaskConfig};
 use moon_utils::string_vec;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::path::Path;
 
-pub fn create_file_groups_config() -> HashMap<String, Vec<String>> {
-    let mut map = HashMap::new();
+pub fn create_file_groups_config() -> FxHashMap<String, Vec<String>> {
+    let mut map = FxHashMap::default();
 
     map.insert(
         String::from("static"),
@@ -29,8 +29,8 @@ pub fn create_file_groups_config() -> HashMap<String, Vec<String>> {
     map
 }
 
-pub fn create_file_groups() -> HashMap<String, FileGroup> {
-    let mut map = HashMap::new();
+pub fn create_file_groups() -> FxHashMap<String, FileGroup> {
+    let mut map = FxHashMap::default();
 
     map.insert(
         String::from("static"),

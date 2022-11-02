@@ -3,7 +3,7 @@ use moon_task::test::create_expanded_task;
 use moon_task::{Target, Task, TaskOptions};
 use moon_utils::test::{create_sandbox, get_fixtures_dir};
 use moon_utils::{glob, string_vec};
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
 
 #[test]
@@ -358,7 +358,7 @@ mod is_affected {
 
         env::set_var("FOO", "foo");
 
-        assert!(task.is_affected(&HashSet::new()).unwrap());
+        assert!(task.is_affected(&FxHashSet::default()).unwrap());
 
         env::remove_var("FOO");
     }
@@ -377,7 +377,7 @@ mod is_affected {
         )
         .unwrap();
 
-        assert!(!task.is_affected(&HashSet::new()).unwrap());
+        assert!(!task.is_affected(&FxHashSet::default()).unwrap());
     }
 
     #[test]
@@ -396,7 +396,7 @@ mod is_affected {
 
         env::set_var("BAZ", "");
 
-        assert!(!task.is_affected(&HashSet::new()).unwrap());
+        assert!(!task.is_affected(&FxHashSet::default()).unwrap());
 
         env::remove_var("BAZ");
     }
@@ -415,7 +415,7 @@ mod is_affected {
         )
         .unwrap();
 
-        let mut set = HashSet::new();
+        let mut set = FxHashSet::default();
         set.insert(project_root.join("file.ts"));
 
         assert!(task.is_affected(&set).unwrap());
@@ -435,7 +435,7 @@ mod is_affected {
         )
         .unwrap();
 
-        let mut set = HashSet::new();
+        let mut set = FxHashSet::default();
         set.insert(project_root.join("file.ts"));
 
         assert!(task.is_affected(&set).unwrap());
@@ -455,7 +455,7 @@ mod is_affected {
         )
         .unwrap();
 
-        let mut set = HashSet::new();
+        let mut set = FxHashSet::default();
         set.insert(workspace_root.join("package.json"));
 
         assert!(task.is_affected(&set).unwrap());
@@ -475,7 +475,7 @@ mod is_affected {
         )
         .unwrap();
 
-        let mut set = HashSet::new();
+        let mut set = FxHashSet::default();
         set.insert(workspace_root.join("base/other/outside.ts"));
 
         assert!(!task.is_affected(&set).unwrap());
@@ -495,7 +495,7 @@ mod is_affected {
         )
         .unwrap();
 
-        let mut set = HashSet::new();
+        let mut set = FxHashSet::default();
         set.insert(project_root.join("another.rs"));
 
         assert!(!task.is_affected(&set).unwrap());
@@ -577,7 +577,7 @@ mod expand_env {
 
         assert_eq!(
             task.env,
-            HashMap::from([
+            FxHashMap::from_iter([
                 ("FOO".to_owned(), "foo".to_owned()),
                 ("BAR".to_owned(), "123".to_owned())
             ])
@@ -606,7 +606,7 @@ mod expand_env {
 
         assert_eq!(
             task.env,
-            HashMap::from([
+            FxHashMap::from_iter([
                 ("FOO".to_owned(), "foo".to_owned()),
                 ("BAR".to_owned(), "123".to_owned())
             ])
@@ -624,7 +624,10 @@ mod expand_env {
             fixture.path(),
             &project_root,
             Some(TaskConfig {
-                env: Some(HashMap::from([("FOO".to_owned(), "original".to_owned())])),
+                env: Some(FxHashMap::from_iter([(
+                    "FOO".to_owned(),
+                    "original".to_owned(),
+                )])),
                 options: TaskOptionsConfig {
                     env_file: Some(TaskOptionEnvFile::Enabled(true)),
                     ..TaskOptionsConfig::default()
@@ -636,7 +639,7 @@ mod expand_env {
 
         assert_eq!(
             task.env,
-            HashMap::from([
+            FxHashMap::from_iter([
                 ("FOO".to_owned(), "original".to_owned()),
                 ("BAR".to_owned(), "123".to_owned())
             ])
@@ -671,11 +674,11 @@ mod expand_inputs {
 
         assert_eq!(
             task.input_vars,
-            HashSet::from(["VAR".to_owned(), "FOO_BAR".to_owned()])
+            FxHashSet::from_iter(["VAR".to_owned(), "FOO_BAR".to_owned()])
         );
         assert_eq!(
             task.input_paths,
-            HashSet::from([
+            FxHashSet::from_iter([
                 project_root.join("file.ts"),
                 project_root.join("folder"),
                 workspace_root.join("config.js")
@@ -683,7 +686,7 @@ mod expand_inputs {
         );
         assert_eq!(
             task.input_globs,
-            HashSet::from([
+            FxHashSet::from_iter([
                 glob::normalize(project_root.join("glob/**/*")).unwrap(),
                 glob::normalize(workspace_root.join("*.cfg")).unwrap()
             ])

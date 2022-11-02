@@ -8,8 +8,8 @@ use moon_logger::info;
 use moon_node_lang::package::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
 use moon_utils::fs;
+use rustc_hash::FxHashMap;
 use serde_yaml::to_string;
-use std::collections::HashMap;
 use yaml_rust::yaml::{Hash, Yaml};
 use yaml_rust::YamlEmitter;
 
@@ -140,7 +140,7 @@ pub async fn from_package_json(
         check_dirty_repo(&workspace).await?;
     };
     // Create a mapping of `package.json` names to project IDs
-    let mut package_map: HashMap<String, String> = HashMap::new();
+    let mut package_map: FxHashMap<String, String> = FxHashMap::default();
 
     for id in workspace.projects.ids() {
         let project = workspace.projects.load(&id)?;

@@ -13,7 +13,8 @@ use moon_node_lang::{NODENV, NPM, NVMRC, PNPM, YARN};
 use moon_project::detect_projects_with_globs;
 use moon_terminal::label_header;
 use moon_utils::fs;
-use std::collections::{BTreeMap, HashMap};
+use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 use std::path::Path;
 use tera::{Context, Error, Tera};
 
@@ -123,7 +124,7 @@ async fn detect_projects(
     parent_context: &mut Context,
     theme: &ColorfulTheme,
 ) -> Result<(), AnyError> {
-    let mut projects = HashMap::new();
+    let mut projects = FxHashMap::default();
     let mut project_globs = vec![];
 
     if let Ok(Some(pkg)) = PackageJson::read(dest_dir) {

@@ -2,9 +2,9 @@
 
 use crate::types::TaskID;
 use crate::validators::validate_semver_version;
+use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use validator::{Validate, ValidationError};
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {
@@ -27,7 +27,7 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
 
     pub include: Option<Vec<TaskID>>,
 
-    pub rename: Option<HashMap<TaskID, TaskID>>,
+    pub rename: Option<FxHashMap<TaskID, TaskID>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]

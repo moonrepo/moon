@@ -7,7 +7,7 @@ use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateCon
 use moon_logger::{color, debug, map_list, trace, warn};
 use moon_terminal::create_theme;
 use moon_utils::path;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::env;
 use std::fmt::Display;
 use std::path::PathBuf;
@@ -34,8 +34,8 @@ fn log_var<T: Display>(name: &str, value: &T, comment: Option<&str>) {
     );
 }
 
-fn parse_var_args(vars: &[String]) -> HashMap<String, String> {
-    let mut custom_vars = HashMap::new();
+fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
+    let mut custom_vars = FxHashMap::default();
 
     if vars.is_empty() {
         return custom_vars;

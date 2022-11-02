@@ -9,7 +9,7 @@ use moon_utils::regex::{
     TOKEN_VAR_PATTERN,
 };
 use moon_utils::{glob, path};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
 type PathsGlobsNormalized = (Vec<PathBuf>, Vec<FileGlob>);
@@ -32,7 +32,7 @@ impl ResolverType {
 }
 
 pub struct ResolverData<'a> {
-    pub file_groups: &'a HashMap<String, FileGroup>,
+    pub file_groups: &'a FxHashMap<String, FileGroup>,
 
     pub project_config: &'a ProjectConfig,
 
@@ -43,7 +43,7 @@ pub struct ResolverData<'a> {
 
 impl<'a> ResolverData<'a> {
     pub fn new(
-        file_groups: &'a HashMap<String, FileGroup>,
+        file_groups: &'a FxHashMap<String, FileGroup>,
         workspace_root: &'a Path,
         project_root: &'a Path,
         project_config: &'a ProjectConfig,

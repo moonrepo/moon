@@ -8,16 +8,16 @@ use moon_node_lang::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
 use moon_utils::{fs, glob, path};
 use moon_workspace::Workspace;
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::path::Path;
 use strum::IntoEnumIterator;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DockerManifest {
-    pub focused_projects: HashSet<ProjectID>,
-    pub unfocused_projects: HashSet<ProjectID>,
+    pub focused_projects: FxHashSet<ProjectID>,
+    pub unfocused_projects: FxHashSet<ProjectID>,
 }
 
 async fn copy_files<T: AsRef<str>>(
@@ -157,8 +157,8 @@ async fn scaffold_sources(
 ) -> Result<(), ProjectError> {
     let docker_sources_root = docker_root.join("sources");
     let mut manifest = DockerManifest {
-        focused_projects: HashSet::new(),
-        unfocused_projects: HashSet::new(),
+        focused_projects: FxHashSet::default(),
+        unfocused_projects: FxHashSet::default(),
     };
 
     // Copy all projects

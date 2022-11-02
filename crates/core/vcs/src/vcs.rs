@@ -1,22 +1,23 @@
 use crate::errors::VcsError;
 use async_trait::async_trait;
 use moon_utils::process::Command;
-use std::collections::{BTreeMap, HashSet};
+use rustc_hash::FxHashSet;
+use std::collections::BTreeMap;
 
 pub type VcsResult<T> = Result<T, VcsError>;
 
 #[allow(dead_code)]
 #[derive(Default)]
 pub struct TouchedFiles {
-    pub added: HashSet<String>,
-    pub deleted: HashSet<String>,
-    pub modified: HashSet<String>,
-    pub untracked: HashSet<String>,
+    pub added: FxHashSet<String>,
+    pub deleted: FxHashSet<String>,
+    pub modified: FxHashSet<String>,
+    pub untracked: FxHashSet<String>,
 
     // Will contain files from the previous fields
-    pub staged: HashSet<String>,
-    pub unstaged: HashSet<String>,
-    pub all: HashSet<String>,
+    pub staged: FxHashSet<String>,
+    pub unstaged: FxHashSet<String>,
+    pub all: FxHashSet<String>,
 }
 
 #[async_trait]

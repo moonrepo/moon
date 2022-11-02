@@ -10,7 +10,7 @@ use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
 use petgraph::visit::EdgeRef;
 use petgraph::Graph;
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub use petgraph::graph::NodeIndex;
 
@@ -25,7 +25,7 @@ pub type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 pub struct DepGraph {
     pub graph: DepGraphType,
 
-    indices: HashMap<ActionNode, NodeIndex>,
+    indices: FxHashMap<ActionNode, NodeIndex>,
 }
 
 impl DepGraph {
@@ -34,7 +34,7 @@ impl DepGraph {
 
         DepGraph {
             graph: Graph::new(),
-            indices: HashMap::new(),
+            indices: FxHashMap::default(),
         }
     }
 
@@ -280,7 +280,7 @@ impl DepGraph {
         let mut batches: BatchedTopoSort = vec![];
 
         // Count how many times an index is referenced across nodes and edges
-        let mut node_counts = HashMap::<NodeIndex, u32>::new();
+        let mut node_counts = FxHashMap::<NodeIndex, u32>::default();
 
         for ix in self.graph.node_indices() {
             node_counts.entry(ix).and_modify(|e| *e += 1).or_insert(0);
@@ -294,7 +294,7 @@ impl DepGraph {
         }
 
         // Gather root nodes (count of 0)
-        let mut root_nodes = HashSet::<NodeIndex>::new();
+        let mut root_nodes = FxHashSet::<NodeIndex>::default();
 
         for (ix, count) in &node_counts {
             if *count == 0 {
@@ -312,7 +312,7 @@ impl DepGraph {
             batches.push(root_nodes.clone().into_iter().collect());
 
             // Reset the root nodes and find new ones after decrementing
-            let mut next_root_nodes = HashSet::<NodeIndex>::new();
+            let mut next_root_nodes = FxHashSet::<NodeIndex>::default();
 
             for ix in &root_nodes {
                 for dep_ix in self.graph.neighbors(*ix) {

@@ -2,7 +2,7 @@ mod config;
 mod errors;
 
 pub use errors::LangError;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::fs;
 use std::path::Path;
 
@@ -42,7 +42,7 @@ pub struct VersionManager {
     pub version_filename: StaticString,
 }
 
-pub type LockfileDependencyVersions = HashMap<String, Vec<String>>;
+pub type LockfileDependencyVersions = FxHashMap<String, Vec<String>>;
 
 #[inline]
 pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language) -> bool {

@@ -38,6 +38,7 @@ moon_workspace = { path = "../workspace" }
 async-trait = "0.1.58"
 console = "0.15.2"
 petgraph = "0.6.2"
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

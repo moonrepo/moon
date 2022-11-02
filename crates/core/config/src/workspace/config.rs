@@ -16,14 +16,14 @@ use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
 };
+use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError};
 
-type ProjectsMap = HashMap<String, FilePath>;
+type ProjectsMap = FxHashMap<String, FilePath>;
 
 // Validate the `projects` field is a map of valid file system paths
 // that are relative from the workspace root. Will fail on absolute
@@ -65,7 +65,7 @@ pub enum WorkspaceProjects {
 
 impl Default for WorkspaceProjects {
     fn default() -> Self {
-        WorkspaceProjects::Sources(HashMap::new())
+        WorkspaceProjects::Sources(FxHashMap::default())
     }
 }
 

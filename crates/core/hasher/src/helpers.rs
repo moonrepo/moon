@@ -1,7 +1,8 @@
 use moon_error::MoonError;
 use moon_utils::path;
+use rustc_hash::FxHashSet;
 use sha2::{Digest, Sha256};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 pub trait Hasher {
@@ -39,7 +40,7 @@ pub fn hash_vec(list: &Vec<String>, sha: &mut Sha256) {
 }
 
 pub fn convert_paths_to_strings(
-    paths: &HashSet<PathBuf>,
+    paths: &FxHashSet<PathBuf>,
     workspace_root: &Path,
 ) -> Result<Vec<String>, MoonError> {
     let mut files: Vec<String> = vec![];

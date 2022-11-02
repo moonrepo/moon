@@ -5,9 +5,9 @@ use crate::validators::{validate_child_or_root_path, validate_id, validate_targe
 use moon_utils::process::split_args;
 use moon_utils::process::ArgsParseError;
 use moon_utils::regex::{ENV_VAR, NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
+use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use strum::Display;
 use validator::{Validate, ValidationError};
 
@@ -81,7 +81,7 @@ pub struct TaskConfig {
     #[validate(custom = "validate_deps")]
     pub deps: Option<Vec<TargetID>>,
 
-    pub env: Option<HashMap<String, String>>,
+    pub env: Option<FxHashMap<String, String>>,
 
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<InputValue>>,

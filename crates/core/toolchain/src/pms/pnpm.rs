@@ -8,7 +8,7 @@ use moon_lang::LockfileDependencyVersions;
 use moon_logger::{color, debug, Logable};
 use moon_node_lang::{node, pnpm, PNPM};
 use moon_utils::{fs, is_ci};
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -194,7 +194,7 @@ impl PackageManager<NodeTool> for PnpmTool {
         let lockfile_path = match fs::find_upwards(PNPM.lock_filename, project_root) {
             Some(path) => path,
             None => {
-                return Ok(HashMap::new());
+                return Ok(FxHashMap::default());
             }
         };
 

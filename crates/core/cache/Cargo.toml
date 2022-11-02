@@ -11,6 +11,7 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]

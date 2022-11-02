@@ -1,17 +1,17 @@
 use crate::{Tool, ToolchainError};
 use moon_platform::Runtime;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
 pub struct ToolManager<T: Tool> {
-    cache: HashMap<String, T>,
+    cache: FxHashMap<String, T>,
     runtime: Runtime, // Default workspace version
 }
 
 impl<T: Tool> ToolManager<T> {
     pub fn new(runtime: Runtime) -> Self {
         ToolManager {
-            cache: HashMap::new(),
+            cache: FxHashMap::default(),
             runtime,
         }
     }

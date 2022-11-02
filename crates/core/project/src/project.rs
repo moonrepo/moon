@@ -8,14 +8,15 @@ use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
 use moon_task::{FileGroup, ResolverData, Target, Task, TokenResolver, TouchedFilePaths};
 use moon_utils::path;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use strum::Display;
 
-type FileGroupsMap = HashMap<String, FileGroup>;
+type FileGroupsMap = FxHashMap<String, FileGroup>;
 
-type ProjectDependenciesMap = HashMap<ProjectID, ProjectDependency>;
+type ProjectDependenciesMap = FxHashMap<ProjectID, ProjectDependency>;
 
 type TasksMap = BTreeMap<TaskID, Task>;
 
@@ -55,7 +56,7 @@ fn create_file_groups_from_config(
     config: &ProjectConfig,
     global_config: &GlobalProjectConfig,
 ) -> FileGroupsMap {
-    let mut file_groups = HashMap::<String, FileGroup>::new();
+    let mut file_groups = FxHashMap::<String, FileGroup>::default();
 
     debug!(target: log_target, "Creating file groups");
 
@@ -94,7 +95,7 @@ fn create_dependencies_from_config(
     log_target: &str,
     config: &ProjectConfig,
 ) -> ProjectDependenciesMap {
-    let mut deps = HashMap::new();
+    let mut deps = FxHashMap::default();
 
     debug!(target: log_target, "Creating dependencies");
 
@@ -130,9 +131,9 @@ fn create_tasks_from_config(
 
     // Gather inheritance configs
     let mut include_all = true;
-    let mut include: HashSet<TaskID> = HashSet::new();
-    let mut exclude: HashSet<TaskID> = HashSet::new();
-    let mut rename: HashMap<TaskID, TaskID> = HashMap::new();
+    let mut include: FxHashSet<TaskID> = FxHashSet::default();
+    let mut exclude: FxHashSet<TaskID> = FxHashSet::default();
+    let mut rename: FxHashMap<TaskID, TaskID> = FxHashMap::default();
 
     if let Some(rename_config) = &project_config.workspace.inherited_tasks.rename {
         rename.extend(rename_config.clone());

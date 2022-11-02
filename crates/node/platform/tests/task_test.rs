@@ -4,7 +4,8 @@ use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
 use moon_task::PlatformType;
 use moon_utils::string_vec;
-use std::collections::{BTreeMap, HashMap};
+use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 
 mod should_run_in_ci {
     use super::*;
@@ -262,7 +263,7 @@ mod create_task {
                 task,
                 TaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec!["yarn", "install"])),
-                    env: Some(HashMap::from([("KEY".to_owned(), "VALUE".to_owned())])),
+                    env: Some(FxHashMap::from([("KEY".to_owned(), "VALUE".to_owned())])),
                     platform: PlatformType::Node,
                     ..TaskConfig::default()
                 }
@@ -283,7 +284,7 @@ mod create_task {
                 task,
                 TaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec!["yarn", "install"])),
-                    env: Some(HashMap::from([
+                    env: Some(FxHashMap::from([
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ])),
@@ -307,7 +308,7 @@ mod create_task {
                 task,
                 TaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec!["yarn", "install"])),
-                    env: Some(HashMap::from([
+                    env: Some(FxHashMap::from([
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ])),
@@ -331,7 +332,7 @@ mod create_task {
                 task,
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("yarn".to_owned())),
-                    env: Some(HashMap::from([(
+                    env: Some(FxHashMap::from([(
                         "NODE_OPTIONS".to_owned(),
                         "-f -b".to_owned()
                     )])),
@@ -1010,7 +1011,7 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--stats"
                             ])),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "NODE_ENV".to_owned(),
                                 "development".to_owned()
                             )])),
@@ -1026,7 +1027,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:build"
                             ])),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
@@ -1045,7 +1046,7 @@ mod create_tasks_from_scripts {
                                 "--mode",
                                 "production"
                             ])),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "NODE_ENV".to_owned(),
                                 "staging".to_owned()
                             )])),
@@ -1456,7 +1457,7 @@ mod create_tasks_from_scripts {
                                 "--addExports",
                                 "--declaration"
                             ])),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
@@ -1688,7 +1689,7 @@ mod create_tasks_from_scripts {
                                 "--format",
                                 "friendly"
                             ])),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "EFF_NO_LINK_RULES".to_owned(),
                                 "true".to_owned()
                             )])),
@@ -1787,7 +1788,7 @@ mod create_tasks_from_scripts {
                                 "./dist/bin-prettier.js"
                             ])),
                             deps: Some(string_vec!["~:perf-dep1"]),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
@@ -1819,7 +1820,7 @@ mod create_tasks_from_scripts {
                                 "./dist/bin-prettier.js"
                             ])),
                             deps: Some(string_vec!["~:perf-inspect-dep1"]),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
@@ -1866,7 +1867,7 @@ mod create_tasks_from_scripts {
                                 "cross-env",
                                 "jest"
                             ])),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "INSTALL_PACKAGE".to_owned(),
                                 "1".to_owned()
                             )])),
@@ -1881,7 +1882,7 @@ mod create_tasks_from_scripts {
                                 "cross-env",
                                 "jest"
                             ])),
-                            env: Some(HashMap::from([(
+                            env: Some(FxHashMap::from([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
@@ -1911,7 +1912,7 @@ mod create_tasks_from_scripts {
                                 "cross-env",
                                 "jest"
                             ])),
-                            env: Some(HashMap::from([
+                            env: Some(FxHashMap::from([
                                 ("TEST_STANDALONE".to_owned(), "1".to_owned()),
                                 ("NODE_ENV".to_owned(), "production".to_owned())
                             ])),

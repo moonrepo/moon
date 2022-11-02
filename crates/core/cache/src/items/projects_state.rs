@@ -3,8 +3,8 @@ use crate::helpers::{is_readable, is_writable};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_utils::{fs, time};
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 pub struct ProjectsState {
     pub globs: Vec<String>,
 
-    pub projects: HashMap<String, String>,
+    pub projects: FxHashMap<String, String>,
 
     #[serde(skip)]
     pub path: PathBuf,

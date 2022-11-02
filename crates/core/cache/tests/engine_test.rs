@@ -337,7 +337,7 @@ mod cache_projects_state {
     use super::*;
     use filetime::{set_file_mtime, FileTime};
     use moon_utils::string_vec;
-    use std::collections::HashMap;
+    use rustc_hash::FxHashMap;
     use std::time::SystemTime;
 
     #[tokio::test]
@@ -369,7 +369,7 @@ mod cache_projects_state {
             item,
             ProjectsState {
                 globs: string_vec!["**/*"],
-                projects: HashMap::from([("foo".to_owned(), "bar".to_owned())]),
+                projects: FxHashMap::from([("foo".to_owned(), "bar".to_owned())]),
                 path: dir.path().join(".moon/cache/states/projects.json")
             }
         );
@@ -395,7 +395,7 @@ mod cache_projects_state {
             item,
             ProjectsState {
                 globs: string_vec!["**/*"],
-                projects: HashMap::from([("foo".to_owned(), "bar".to_owned())]),
+                projects: FxHashMap::from([("foo".to_owned(), "bar".to_owned())]),
                 path: dir.path().join(".moon/cache/states/projects.json")
             }
         );

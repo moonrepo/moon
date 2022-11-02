@@ -1,5 +1,6 @@
 use crate::TaskConfig;
-use std::collections::{BTreeMap, HashMap};
+use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 
 pub type FileGlob = String;
 
@@ -7,15 +8,15 @@ pub type FilePath = String;
 
 pub type FilePathOrGlob = String;
 
-pub type FileGroups = HashMap<String, Vec<FilePathOrGlob>>;
+pub type FileGroups = FxHashMap<String, Vec<FilePathOrGlob>>;
 
 pub type InputValue = String; // file path, glob, env var
 
 pub type ProjectAlias = String;
 
-pub type ProjectsSourcesMap = HashMap<ProjectID, String>;
+pub type ProjectsSourcesMap = FxHashMap<ProjectID, String>;
 
-pub type ProjectsAliasesMap = HashMap<ProjectAlias, ProjectID>;
+pub type ProjectsAliasesMap = FxHashMap<ProjectAlias, ProjectID>;
 
 pub type ProjectID = String;
 

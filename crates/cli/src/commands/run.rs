@@ -6,7 +6,7 @@ use moon_logger::{color, map_list};
 use moon_runner::{DepGraph, Runner};
 use moon_task::Target;
 use moon_workspace::Workspace;
-use std::collections::HashSet;
+use rustc_hash::FxHashSet;
 use std::string::ToString;
 
 #[derive(Default)]
@@ -84,7 +84,7 @@ pub async fn run(
     // Process all tasks in the graph
     let context = ActionContext {
         passthrough_args: options.passthrough,
-        primary_targets: HashSet::from_iter(primary_targets),
+        primary_targets: FxHashSet::from_iter(primary_targets),
         profile: options.profile,
         touched_files: touched_files.unwrap_or_default(),
     };

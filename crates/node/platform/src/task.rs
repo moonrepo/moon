@@ -6,9 +6,10 @@ use moon_node_lang::package::{PackageJson, ScriptsSet};
 use moon_task::{PlatformType, Target, TaskError, TaskID};
 use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{process, regex, string_vec};
-use std::collections::{BTreeMap, HashMap};
+use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 
-pub type ScriptsMap = HashMap<String, String>;
+pub type ScriptsMap = FxHashMap<String, String>;
 
 lazy_static! {
     pub static ref WIN_DRIVE: regex::Regex = regex::create_regex(r#"^[A-Z]:"#).unwrap();
@@ -145,7 +146,7 @@ pub fn create_task(
     let mut task_config = TaskConfig::default();
     let mut args = vec![];
     let mut outputs = vec![];
-    let mut env = HashMap::new();
+    let mut env = FxHashMap::default();
 
     for (index, arg) in script_args.iter().enumerate() {
         // Extract environment variables
@@ -199,7 +200,7 @@ pub fn create_task(
     }
 
     if !env.is_empty() {
-        task_config.env = Some(env);
+        // task_config.env = Some(env);
     }
 
     if !outputs.is_empty() {
@@ -223,7 +224,7 @@ pub struct ScriptParser<'a> {
     life_cycles: ScriptsMap,
 
     /// Script names -> task IDs.
-    names_to_ids: HashMap<String, String>,
+    names_to_ids: FxHashMap<String, String>,
 
     /// Scripts that started with "post".
     post: ScriptsMap,
@@ -247,14 +248,14 @@ pub struct ScriptParser<'a> {
 impl<'a> ScriptParser<'a> {
     pub fn new(project_id: &'a str) -> Self {
         ScriptParser {
-            life_cycles: HashMap::new(),
-            names_to_ids: HashMap::new(),
-            post: HashMap::new(),
-            pre: HashMap::new(),
+            life_cycles: FxHashMap::default(),
+            names_to_ids: FxHashMap::default(),
+            post: FxHashMap::default(),
+            pre: FxHashMap::default(),
             project_id,
-            scripts: HashMap::new(),
+            scripts: FxHashMap::default(),
             tasks: BTreeMap::new(),
-            unresolved_scripts: HashMap::new(),
+            unresolved_scripts: FxHashMap::default(),
         }
     }
 
@@ -309,7 +310,7 @@ impl<'a> ScriptParser<'a> {
         //  - Extract hooks and life cycles
         //  - Convert stand-alone scripts
         //  - Retain && operators
-        let mut standalone_scripts = HashMap::new();
+        let mut standalone_scripts = FxHashMap::default();
 
         for (name, script) in &scripts {
             if PM_LIFE_CYCLES.is_match(name) {
@@ -396,8 +397,8 @@ impl<'a> ScriptParser<'a> {
         // Second pass:
         //  - Convert scripts that use "npm run", etc
         //  - Retain && operators
-        let mut multi_scripts = HashMap::new();
-        let mut run_scripts = HashMap::new();
+        let mut multi_scripts = FxHashMap::default();
+        let mut run_scripts = FxHashMap::default();
 
         self.scripts.retain(|name, script| {
             if script.contains("&&") {

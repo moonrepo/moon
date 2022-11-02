@@ -2,7 +2,8 @@ use moon_config::{ConfigError, GlobalProjectConfig, TaskCommandArgs};
 use moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME;
 use moon_utils::string_vec;
 use moon_utils::test::get_fixtures_dir;
-use std::collections::{BTreeMap, HashMap};
+use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
@@ -33,7 +34,7 @@ fileGroups:
             config,
             GlobalProjectConfig {
                 extends: None,
-                file_groups: HashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
+                file_groups: FxHashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
                 tasks: BTreeMap::new(),
                 schema: String::new(),
             }
@@ -57,7 +58,7 @@ mod extends {
         assert_eq!(
             config,
             GlobalProjectConfig {
-                file_groups: HashMap::from([
+                file_groups: FxHashMap::from([
                     ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
                 ]),
@@ -250,7 +251,7 @@ fileGroups:
             // Ensure values are deep merged
             assert_eq!(
                 config.file_groups,
-                HashMap::from([
+                FxHashMap::from([
                     ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
                     ("configs".to_owned(), string_vec!["*.js"])
@@ -291,7 +292,7 @@ fileGroups:
             // Ensure values are deep merged
             assert_eq!(
                 config.file_groups,
-                HashMap::from([
+                FxHashMap::from([
                     ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
                     ("configs".to_owned(), string_vec!["*.js"])

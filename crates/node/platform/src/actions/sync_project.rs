@@ -7,7 +7,8 @@ use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::{fs, is_ci, path, semver, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};
-use std::collections::{BTreeMap, HashSet};
+use rustc_hash::FxHashSet;
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -87,7 +88,7 @@ pub async fn sync_project(
     let mut package_prod_deps: BTreeMap<String, String> = BTreeMap::new();
     let mut package_peer_deps: BTreeMap<String, String> = BTreeMap::new();
     let mut package_dev_deps: BTreeMap<String, String> = BTreeMap::new();
-    let mut tsconfig_project_refs: HashSet<String> = HashSet::new();
+    let mut tsconfig_project_refs: FxHashSet<String> = FxHashSet::default();
     let mut tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     for (dep_id, dep_cfg) in &project.dependencies {

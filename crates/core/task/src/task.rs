@@ -8,8 +8,8 @@ use moon_config::{
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{glob, is_ci, path, regex::ENV_VAR, string_vec};
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::env;
 use std::path::PathBuf;
 use strum::Display;
@@ -175,11 +175,11 @@ pub struct Task {
 
     pub inputs: Vec<InputValue>,
 
-    pub input_globs: HashSet<FileGlob>,
+    pub input_globs: FxHashSet<FileGlob>,
 
-    pub input_paths: HashSet<PathBuf>,
+    pub input_paths: FxHashSet<PathBuf>,
 
-    pub input_vars: HashSet<String>,
+    pub input_vars: FxHashSet<String>,
 
     #[serde(skip)]
     pub log_target: String,
@@ -188,7 +188,7 @@ pub struct Task {
 
     pub outputs: Vec<FilePath>,
 
-    pub output_paths: HashSet<PathBuf>,
+    pub output_paths: FxHashSet<PathBuf>,
 
     pub platform: PlatformType,
 
@@ -222,9 +222,9 @@ impl Task {
             env: cloned_config.env.unwrap_or_default(),
             id: target.task_id.clone(),
             inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
-            input_vars: HashSet::new(),
-            input_globs: HashSet::new(),
-            input_paths: HashSet::new(),
+            input_vars: FxHashSet::default(),
+            input_globs: FxHashSet::default(),
+            input_paths: FxHashSet::default(),
             log_target,
             options: TaskOptions {
                 cache: cloned_options.cache.unwrap_or(!is_local),
@@ -245,7 +245,7 @@ impl Task {
                 run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
             },
             outputs: cloned_config.outputs.unwrap_or_default(),
-            output_paths: HashSet::new(),
+            output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
             target: target.id.clone(),
             type_of: TaskType::Test,

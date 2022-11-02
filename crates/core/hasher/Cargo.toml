@@ -7,5 +7,6 @@ edition = "2021"
 moon_error = { path = "../error" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 sha2 = "0.10.6"

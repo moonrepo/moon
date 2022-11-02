@@ -20,6 +20,7 @@ moon_typescript_lang = { path = "../../typescript/lang" }
 moon_utils = { path = "../../core/utils" }
 moon_workspace = { path = "../../core/workspace" }
 lazy_static = "1.4.0"
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
 

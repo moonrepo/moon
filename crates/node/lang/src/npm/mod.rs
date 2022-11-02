@@ -3,9 +3,9 @@ use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
 use moon_utils::fs::sync::read_json;
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 config_cache!(PackageLock, NPM.lock_filename, read_json);
@@ -13,15 +13,15 @@ config_cache!(PackageLock, NPM.lock_filename, read_json);
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageLockDependency {
-    pub dependencies: Option<HashMap<String, PackageLockDependency>>,
+    pub dependencies: Option<FxHashMap<String, PackageLockDependency>>,
     pub dev: Option<bool>,
     pub integrity: Option<String>,
-    pub requires: Option<HashMap<String, String>>,
+    pub requires: Option<FxHashMap<String, String>>,
     pub resolved: Option<String>,
     pub version: String,
 
     #[serde(flatten)]
-    pub unknown: HashMap<String, Value>,
+    pub unknown: FxHashMap<String, Value>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -29,12 +29,12 @@ pub struct PackageLockDependency {
 pub struct PackageLock {
     pub lockfile_version: Value,
     pub name: String,
-    pub dependencies: Option<HashMap<String, PackageLockDependency>>,
-    pub packages: Option<HashMap<String, Value>>,
+    pub dependencies: Option<FxHashMap<String, PackageLockDependency>>,
+    pub packages: Option<FxHashMap<String, Value>>,
     pub requires: Option<bool>,
 
     #[serde(flatten)]
-    pub unknown: HashMap<String, Value>,
+    pub unknown: FxHashMap<String, Value>,
 
     #[serde(skip)]
     pub path: PathBuf,
@@ -42,7 +42,7 @@ pub struct PackageLock {
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
-    let mut deps: LockfileDependencyVersions = HashMap::new();
+    let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     if let Some(lockfile) = PackageLock::read(path)? {
         // TODO: This isn't entirely accurate as npm does not hoist all dependencies
@@ -123,11 +123,11 @@ mod tests {
                 lockfile_version: Value::Number(Number::from(2)),
                 name: "moon-examples".into(),
                 requires: Some(true),
-                dependencies: Some(HashMap::from([(
+                dependencies: Some(FxHashMap::from([(
                     "@babel/helper-function-name".to_owned(),
                     PackageLockDependency {
                         integrity: Some("sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A==".into()),
-                        requires: Some(HashMap::from([
+                        requires: Some(FxHashMap::from([
                             ("@babel/template".to_owned(), "^7.18.6".to_owned()),
                             ("@babel/types".to_owned(), "^7.18.9".to_owned())
                         ])),
@@ -154,7 +154,7 @@ mod tests {
 
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("package-lock.json")).unwrap(),
-            HashMap::from([
+            FxHashMap::from([
                 (
                     "@babel/helper-function-name".to_owned(),
                     string_vec!["sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A=="]

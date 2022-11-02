@@ -4,7 +4,8 @@ use moon_config::{
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_utils::string_vec;
-use std::collections::{BTreeMap, HashMap};
+use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {
@@ -46,7 +47,7 @@ fileGroups:
         assert_eq!(
             config,
             ProjectConfig {
-                file_groups: HashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
+                file_groups: FxHashMap::from([(String::from("sources"), string_vec!["src/**/*"])]),
                 ..ProjectConfig::default()
             }
         );

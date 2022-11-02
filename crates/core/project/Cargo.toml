@@ -10,6 +10,7 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = { workspace = true }

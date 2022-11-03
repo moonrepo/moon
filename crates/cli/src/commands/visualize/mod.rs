@@ -14,7 +14,7 @@ use std::{env, net::SocketAddr};
 static INDEX_HTML: &str = "index.html";
 
 #[derive(RustEmbed)]
-#[folder = "../../apps/graph-visualizer/dist"]
+#[folder = "../../apps/visualizer/dist"]
 struct Assets;
 
 pub async fn visualize() -> Result<(), AnyError> {

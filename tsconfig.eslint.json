@@ -1,13 +1,17 @@
 {
   "extends": "./tsconfig.options.json",
   "compilerOptions": {
-		"emitDeclarationOnly": false,
-		"noEmit": true
+    "emitDeclarationOnly": false,
+    "noEmit": true
   },
   "parserOptions": {
-    "extraFileExtensions": [".mjs"]
+    "extraFileExtensions": [
+      ".mjs",
+      ".tsx"
+    ]
   },
   "include": [
+    "apps/**/*",
     "packages/*/.eslintrc.js",
     "packages/*/src/**/*",
     "packages/*/tests/**/*",

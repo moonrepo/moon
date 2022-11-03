@@ -3,6 +3,12 @@
   "files": [],
   "references": [
     {
+      "path": "apps/graph-visualizer"
+    },
+    {
+      "path": "apps/visualizer"
+    },
+    {
       "path": "packages/cli"
     },
     {

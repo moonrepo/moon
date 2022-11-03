@@ -64,7 +64,7 @@ impl RunTargetState {
         project_root: &Path,
     ) -> Result<bool, MoonError> {
         if is_readable() && archive_file.exists() {
-            untar(&archive_file, project_root, None)
+            untar(archive_file, project_root, None)
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
 
             let cache_logs = self.get_output_logs();

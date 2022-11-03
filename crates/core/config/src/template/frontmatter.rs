@@ -34,10 +34,10 @@ impl TemplateFrontmatterConfig {
 
         let profile_name = "frontmatter";
         let figment = Figment::from(
-            Serialized::defaults(TemplateFrontmatterConfig::default()).profile(&profile_name),
+            Serialized::defaults(TemplateFrontmatterConfig::default()).profile(profile_name),
         )
-        .merge(YamlExtended::string(content).profile(&profile_name))
-        .select(&profile_name);
+        .merge(YamlExtended::string(content).profile(profile_name))
+        .select(profile_name);
 
         let config: TemplateFrontmatterConfig = figment.extract()?;
 

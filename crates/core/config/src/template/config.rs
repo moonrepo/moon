@@ -85,9 +85,9 @@ impl TemplateConfig {
         let path = path.as_ref();
         let profile_name = "template";
         let figment =
-            Figment::from(Serialized::defaults(TemplateConfig::default()).profile(&profile_name))
-                .merge(YamlExtended::file(path).profile(&profile_name))
-                .select(&profile_name);
+            Figment::from(Serialized::defaults(TemplateConfig::default()).profile(profile_name))
+                .merge(YamlExtended::file(path).profile(profile_name))
+                .select(profile_name);
 
         let config: TemplateConfig = figment.extract()?;
 

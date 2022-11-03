@@ -18,7 +18,7 @@ mod init_node {
         create_moon_command(root)
             .arg("init")
             .arg("--yes")
-            .arg(&root)
+            .arg(root)
             .assert();
 
         let content = fs::read_to_string(workspace_config).unwrap();
@@ -38,7 +38,7 @@ mod init_node {
         create_moon_command(root)
             .arg("init")
             .arg("--yes")
-            .arg(&root)
+            .arg(root)
             .assert();
 
         let content = fs::read_to_string(workspace_config).unwrap();
@@ -68,7 +68,7 @@ mod init_node {
         create_moon_command(root)
             .arg("init")
             .arg("--yes")
-            .arg(&root)
+            .arg(root)
             .assert();
 
         let content = fs::read_to_string(workspace_config).unwrap();
@@ -98,7 +98,7 @@ mod init_node {
         create_moon_command(root)
             .arg("init")
             .arg("--yes")
-            .arg(&root)
+            .arg(root)
             .assert();
 
         let content = fs::read_to_string(workspace_config).unwrap();
@@ -121,7 +121,7 @@ mod init_node {
             create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
-                .arg(&root)
+                .arg(root)
                 .assert();
 
             let content = fs::read_to_string(workspace_config).unwrap();
@@ -145,7 +145,7 @@ mod init_node {
             create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
-                .arg(&root)
+                .arg(root)
                 .assert();
 
             let content = fs::read_to_string(workspace_config).unwrap();
@@ -166,7 +166,7 @@ mod init_node {
             create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
-                .arg(&root)
+                .arg(root)
                 .assert();
 
             let content = fs::read_to_string(workspace_config).unwrap();
@@ -190,7 +190,7 @@ mod init_node {
             create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
-                .arg(&root)
+                .arg(root)
                 .assert();
 
             let content = fs::read_to_string(workspace_config).unwrap();
@@ -211,7 +211,7 @@ mod init_node {
             create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
-                .arg(&root)
+                .arg(root)
                 .assert();
 
             let content = fs::read_to_string(workspace_config).unwrap();
@@ -235,7 +235,7 @@ mod init_node {
             create_moon_command(root)
                 .arg("init")
                 .arg("--yes")
-                .arg(&root)
+                .arg(root)
                 .assert();
 
             let content = fs::read_to_string(workspace_config).unwrap();

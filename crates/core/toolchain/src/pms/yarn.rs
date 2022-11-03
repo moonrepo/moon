@@ -272,11 +272,8 @@ impl PackageManager<NodeTool> for YarnTool {
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let lockfile_path = match fs::find_upwards(YARN.lock_filename, project_root) {
-            Some(path) => path,
-            None => {
-                return Ok(FxHashMap::default());
-            }
+        let Some(lockfile_path) = fs::find_upwards(YARN.lock_filename, project_root) else {
+            return Ok(FxHashMap::default());
         };
 
         Ok(yarn::load_lockfile_dependencies(lockfile_path).await?)

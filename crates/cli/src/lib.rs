@@ -21,6 +21,7 @@ use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::sync::sync;
 use crate::commands::teardown::teardown;
+use crate::commands::visualize::visualize;
 use crate::helpers::setup_colors;
 use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
@@ -219,6 +220,7 @@ pub async fn run_cli() {
         }
         Commands::Setup => setup().await,
         Commands::Teardown => teardown().await,
+        Commands::Visualize => visualize().await,
     };
 
     if let Err(error) = result {

@@ -186,6 +186,12 @@ pub enum Commands {
     )]
     Teardown,
 
+    #[command(
+        name = "visualize",
+        alias = "vis",
+        about = "Start an interactive monorepo visualization graph"
+    )]
+    Visualize,
     // PROJECTS
 
     // moon dep-graph [target]

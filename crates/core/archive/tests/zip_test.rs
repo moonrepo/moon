@@ -16,7 +16,7 @@ fn zips_file() {
     let input = fixture.path();
     let archive = fixture.path().join("out.zip");
 
-    zip(&input, &string_vec!["file.txt"], &archive, None).unwrap();
+    zip(input, &string_vec!["file.txt"], &archive, None).unwrap();
 
     assert!(archive.exists());
     assert_ne!(archive.metadata().unwrap().len(), 0);
@@ -45,7 +45,7 @@ fn zips_file_with_prefix() {
     let archive = fixture.path().join("out.zip");
 
     zip(
-        &input,
+        input,
         &string_vec!["file.txt"],
         &archive,
         Some("some/prefix"),
@@ -79,7 +79,7 @@ fn zips_file_with_prefix_thats_removed() {
     let archive = fixture.path().join("out.zip");
 
     zip(
-        &input,
+        input,
         &string_vec!["file.txt"],
         &archive,
         Some("some/prefix"),
@@ -113,7 +113,7 @@ fn zips_nested_file_and_preserves_path() {
     let archive = fixture.path().join("out.zip");
 
     zip(
-        &input,
+        input,
         &string_vec!["folder/nested/other.js"],
         &archive,
         None,
@@ -147,7 +147,7 @@ fn zips_file_and_dir_explicitly() {
     let archive = fixture.path().join("out.zip");
 
     zip(
-        &input,
+        input,
         &string_vec!["folder/nested", "file.txt"],
         &archive,
         None,
@@ -186,7 +186,7 @@ fn zips_dir() {
     let input = fixture.path();
     let archive = fixture.path().join("out.zip");
 
-    zip(&input, &string_vec!["folder"], &archive, None).unwrap();
+    zip(input, &string_vec!["folder"], &archive, None).unwrap();
 
     assert!(archive.exists());
     assert_ne!(archive.metadata().unwrap().len(), 0);
@@ -219,13 +219,7 @@ fn zips_dir_with_prefix() {
     let input = fixture.path();
     let archive = fixture.path().join("out.zip");
 
-    zip(
-        &input,
-        &string_vec!["folder"],
-        &archive,
-        Some("some/prefix"),
-    )
-    .unwrap();
+    zip(input, &string_vec!["folder"], &archive, Some("some/prefix")).unwrap();
 
     assert!(archive.exists());
     assert_ne!(archive.metadata().unwrap().len(), 0);
@@ -258,13 +252,7 @@ fn zips_dir_with_prefix_thats_removed() {
     let input = fixture.path();
     let archive = fixture.path().join("out.zip");
 
-    zip(
-        &input,
-        &string_vec!["folder"],
-        &archive,
-        Some("some/prefix"),
-    )
-    .unwrap();
+    zip(input, &string_vec!["folder"], &archive, Some("some/prefix")).unwrap();
 
     assert!(archive.exists());
     assert_ne!(archive.metadata().unwrap().len(), 0);

@@ -194,7 +194,7 @@ impl<'a> TokenResolver<'a> {
                     self.data.project_root,
                 );
 
-                if glob::is_glob(&value) {
+                if glob::is_glob(value) {
                     globs.push(glob::normalize(resolved)?);
                 } else {
                     paths.push(resolved);

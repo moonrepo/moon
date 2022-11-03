@@ -69,8 +69,8 @@ impl GlobalProjectConfig {
         let mut config = GlobalProjectConfig::default();
 
         for source in gather_extended_sources(&path)? {
-            let figment = Figment::from(YamlExtended::file(source).profile(&profile_name));
-            let extended_config = GlobalProjectConfig::load_config(figment.select(&profile_name))?;
+            let figment = Figment::from(YamlExtended::file(source).profile(profile_name));
+            let extended_config = GlobalProjectConfig::load_config(figment.select(profile_name))?;
 
             // Figment does not merge hash maps but replaces entirely,
             // so we need to manually handle this here!

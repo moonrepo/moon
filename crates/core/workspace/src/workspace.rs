@@ -28,10 +28,10 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
     trace!(
         target: "moon:workspace",
         "Attempting to find workspace root at {}",
-        color::path(&current_dir),
+        color::path(current_dir),
     );
 
-    fs::find_upwards(constants::CONFIG_DIRNAME, &current_dir)
+    fs::find_upwards(constants::CONFIG_DIRNAME, current_dir)
         .map(|dir| dir.parent().unwrap().to_path_buf())
 }
 
@@ -142,7 +142,7 @@ impl Workspace {
             target: LOG_TARGET,
             "Creating workspace at {} (from working directory {})",
             color::path(&root_dir),
-            color::path(&working_dir)
+            color::path(working_dir)
         );
 
         // Load configs

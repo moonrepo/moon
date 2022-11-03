@@ -23,7 +23,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
     term.render_entry("ID", color::id(&project.id))?;
 
     if let Some(alias) = &project.alias {
-        term.render_entry("Alias", color::id(&alias))?;
+        term.render_entry("Alias", color::id(alias))?;
     }
 
     term.render_entry("Source", color::file(&project.source))?;

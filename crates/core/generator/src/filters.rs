@@ -1,3 +1,6 @@
+// HashMap is required for Tera
+#![allow(clippy::disallowed_types)]
+
 use convert_case::{Case, Casing};
 use serde_json::value::{to_value, Value};
 use std::collections::HashMap;

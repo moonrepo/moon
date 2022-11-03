@@ -41,7 +41,7 @@ mod run_script {
         setup_toolchain(fixture.path(), "");
 
         let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "unknown", "--project", "npm"])
+            .args(["node", "run-script", "unknown", "--project", "base"])
             .assert();
 
         assert
@@ -57,7 +57,7 @@ mod run_script {
         setup_toolchain(fixture.path(), "npm:installDep");
 
         let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "test", "--project", "npm"])
+            .args(["node", "run-script", "test", "--project", "base"])
             .assert();
 
         assert.success().stdout(predicate::str::contains("> test"));
@@ -74,7 +74,7 @@ mod run_script {
             .args(["node", "run-script", "test"])
             .env(
                 "MOON_PROJECT_ROOT",
-                get_fixtures_dir("node-npm").join("npm"),
+                get_fixtures_dir("node-npm").join("base"),
             )
             .assert();
 
@@ -86,10 +86,10 @@ mod run_script {
     fn works_with_pnpm() {
         let fixture = create_sandbox_with_git("node-pnpm");
 
-        setup_toolchain(fixture.path(), "pnpm:installDep");
+        setup_toolchain(fixture.path(), "base:installDep");
 
         let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "lint", "--project", "pnpm"])
+            .args(["node", "run-script", "lint", "--project", "base"])
             .assert();
 
         assert.success().stdout(predicate::str::contains("lint"));
@@ -100,10 +100,10 @@ mod run_script {
     fn works_with_yarn() {
         let fixture = create_sandbox_with_git("node-yarn");
 
-        setup_toolchain(fixture.path(), "yarn:installDep");
+        setup_toolchain(fixture.path(), "base:installDep");
 
         let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "build", "--project", "yarn"])
+            .args(["node", "run-script", "build", "--project", "base"])
             .assert();
 
         assert.success().stdout(predicate::str::contains("build"));
@@ -114,10 +114,10 @@ mod run_script {
     fn works_with_yarn1() {
         let fixture = create_sandbox_with_git("node-yarn1");
 
-        setup_toolchain(fixture.path(), "yarn:installDep");
+        setup_toolchain(fixture.path(), "base:installDep");
 
         let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "build", "--project", "yarn"])
+            .args(["node", "run-script", "build", "--project", "base"])
             .assert();
 
         assert.success().stdout(predicate::str::contains("build"));

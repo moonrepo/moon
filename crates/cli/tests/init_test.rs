@@ -22,7 +22,7 @@ fn creates_files_in_dest() {
     let assert = create_moon_command(root)
         .arg("init")
         .arg("--yes")
-        .arg(&root)
+        .arg(root)
         .assert();
 
     assert.success().code(0).stdout(predicate::str::contains(
@@ -44,7 +44,7 @@ fn creates_workspace_config_from_template() {
     create_moon_command(root)
         .arg("init")
         .arg("--yes")
-        .arg(&root)
+        .arg(root)
         .assert();
 
     assert!(
@@ -65,7 +65,7 @@ fn creates_project_config_from_template() {
     create_moon_command(root)
         .arg("init")
         .arg("--yes")
-        .arg(&root)
+        .arg(root)
         .assert();
 
     assert!(
@@ -84,7 +84,7 @@ fn creates_gitignore_file() {
     create_moon_command(root)
         .arg("init")
         .arg("--yes")
-        .arg(&root)
+        .arg(root)
         .assert();
 
     assert_eq!(
@@ -105,7 +105,7 @@ fn appends_existing_gitignore_file() {
     create_moon_command(root)
         .arg("init")
         .arg("--yes")
-        .arg(&root)
+        .arg(root)
         .assert();
 
     assert_eq!(
@@ -123,14 +123,14 @@ fn does_overwrite_existing_config_if_force_passed() {
     create_moon_command(root)
         .arg("init")
         .arg("--yes")
-        .arg(&root)
+        .arg(root)
         .assert();
 
     // Run again
     let assert = create_moon_command(root)
         .arg("init")
         .arg("--yes")
-        .arg(&root)
+        .arg(root)
         .arg("--force")
         .assert();
 
@@ -157,7 +157,7 @@ mod vcs {
         create_moon_command(root)
             .arg("init")
             .arg("--yes")
-            .arg(&root)
+            .arg(root)
             .assert();
 
         let content = fs::read_to_string(workspace_config).unwrap();

@@ -32,7 +32,7 @@ fn zip_contents<P: AsRef<str>>(
             options = options.unix_permissions(path.metadata()?.permissions().mode());
         }
 
-        trace!(target: LOG_TARGET, "Zipping file {}", color::path(&path));
+        trace!(target: LOG_TARGET, "Zipping file {}", color::path(path));
 
         archive.start_file(prepend_name(&name, prefix), options)?;
         archive.write_all(&fs::read(path)?)?;
@@ -128,7 +128,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         // Remove the prefix
         if let Some(prefix) = remove_prefix {
             if path.starts_with(prefix) {
-                path = path.strip_prefix(&prefix).unwrap().to_owned();
+                path = path.strip_prefix(prefix).unwrap().to_owned();
             }
         }
 

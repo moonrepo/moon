@@ -87,7 +87,7 @@ impl Command {
 
         let mut command = Command {
             bin: String::from(bin.to_string_lossy()),
-            cmd: TokioCommand::new(&bin),
+            cmd: TokioCommand::new(bin),
             error_on_nonzero: true,
             input: vec![],
             log_command: false,

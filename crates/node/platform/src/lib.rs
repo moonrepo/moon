@@ -93,7 +93,7 @@ impl Platform for NodePlatform {
                 target: LOG_TARGET,
                 "Project {} not within root {} workspaces, will be handled externally",
                 color::id(project_id),
-                color::file(&NPM.manifest_filename)
+                color::file(NPM.manifest_filename)
             );
         }
 
@@ -120,7 +120,7 @@ impl Platform for NodePlatform {
         debug!(
             target: LOG_TARGET,
             "Loading names (aliases) from project {}'s",
-            color::file(&NPM.manifest_filename)
+            color::file(NPM.manifest_filename)
         );
 
         for (project_id, project_source) in projects_map {
@@ -239,7 +239,7 @@ impl Platform for NodePlatform {
             target: LOG_TARGET,
             "Inferring {} tasks from {}",
             color::id(project_id),
-            color::file(&NPM.manifest_filename)
+            color::file(NPM.manifest_filename)
         );
 
         if let Some(package_json) = PackageJson::read(project_root)? {

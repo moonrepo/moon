@@ -418,7 +418,7 @@ impl<'a> TargetRunner<'a> {
                 attempt_total,
             )?;
 
-            self.print_target_command(&context)?;
+            self.print_target_command(context)?;
 
             self.flush_output()?;
 

@@ -5,9 +5,8 @@ use tokio::process::Command as TokioCommand;
 #[cached]
 #[inline]
 fn is_program_on_path(program_name: String) -> bool {
-    let system_path = match env::var_os("PATH") {
-        Some(x) => x,
-        None => return false,
+    let Some(system_path) = env::var_os("PATH") else {
+        return false;
     };
 
     for path_dir in env::split_paths(&system_path) {

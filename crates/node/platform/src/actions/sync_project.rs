@@ -186,10 +186,10 @@ pub async fn sync_project(
                 if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
                     if let Some(dep_package_name) = &dep_package_json.name {
                         for index in ["src/index.ts", "src/index.tsx", "index.ts", "index.tsx"] {
-                            if dep_project.root.join(&index).exists() {
+                            if dep_project.root.join(index).exists() {
                                 tsconfig_paths.insert(
                                     dep_package_name.clone(),
-                                    vec![path::to_virtual_string(dep_relative_path.join(&index))?],
+                                    vec![path::to_virtual_string(dep_relative_path.join(index))?],
                                 );
 
                                 tsconfig_paths.insert(

@@ -404,7 +404,7 @@ pub mod sync {
         P: AsRef<Path>,
     {
         let path = path.as_ref();
-        let data = read_to_string(&path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+        let data = read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
         Ok(data)
     }

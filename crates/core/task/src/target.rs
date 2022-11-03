@@ -77,9 +77,8 @@ impl Target {
             return Err(TargetError::TooWild);
         }
 
-        let matches = match TARGET_PATTERN.captures(target_id) {
-            Some(result) => result,
-            None => return Err(TargetError::InvalidFormat(target_id.to_owned())),
+        let Some(matches) = TARGET_PATTERN.captures(target_id) else {
+            return Err(TargetError::InvalidFormat(target_id.to_owned()));
         };
 
         let mut project_id = None;

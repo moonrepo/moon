@@ -47,7 +47,7 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
         debug!(
             target: LOG_TARGET,
             "Adding package manager version to root {}",
-            color::file(&NPM.manifest_filename)
+            color::file(NPM.manifest_filename)
         );
 
         return true;
@@ -62,7 +62,7 @@ fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bo
         debug!(
             target: LOG_TARGET,
             "Adding engines version constraint to root {}",
-            color::file(&NPM.manifest_filename)
+            color::file(NPM.manifest_filename)
         );
 
         return true;

@@ -1,6 +1,6 @@
 [package]
 name = "moon_cli"
-version = "0.17.0"
+version = "0.18.1"
 edition = "2021"
 
 [[bin]]
@@ -13,48 +13,50 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
-moon_action = { path = "../action" }
-moon_config = { path = "../config" }
-moon_constants = { path = "../constants" }
-moon_contract = { path = "../contract" }
-moon_error = { path = "../error" }
-moon_generator = { path = "../generator" }
-moon_lang = { path = "../lang" }
-moon_lang_node = { path = "../lang-node" }
-moon_logger = { path = "../logger" }
-moon_platform_node = { path = "../platform-node" }
-moon_platform_system = { path = "../platform-system" }
-moon_project = { path = "../project" }
-moon_runner = { path = "../runner" }
-moon_task = { path = "../task" }
-moon_terminal = { path = "../terminal" }
-moon_toolchain = { path = "../toolchain" }
-moon_utils = { path = "../utils" }
-moon_vcs = { path = "../vcs" }
-moon_workspace = { path = "../workspace" }
+moon_action = { path = "../core/action" }
+moon_config = { path = "../core/config" }
+moon_constants = { path = "../core/constants" }
+moon_error = { path = "../core/error" }
+moon_generator = { path = "../core/generator" }
+moon_lang = { path = "../core/lang" }
+moon_logger = { path = "../core/logger" }
+moon_node_lang = { path = "../node/lang" }
+moon_node_platform = { path = "../node/platform" }
+moon_platform = { path = "../core/platform" }
+moon_project = { path = "../core/project" }
+moon_runner = { path = "../core/runner" }
+moon_system_platform = { path = "../system/platform" }
+moon_task = { path = "../core/task" }
+moon_terminal = { path = "../core/terminal" }
+moon_toolchain = { path = "../core/toolchain" }
+moon_typescript_lang = { path = "../typescript/lang" }
+moon_utils = { path = "../core/utils" }
+moon_vcs = { path = "../core/vcs" }
+moon_workspace = { path = "../core/workspace" }
 async-recursion = "1.0.0"
-clap = { version = "4.0.16", features = ["derive", "env", "wrap_help"] }
+clap = { version = "4.0.18", features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.3.0"
 console = "0.15.2"
 console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
-futures = "0.3.24"
+futures = "0.3.25"
 indicatif = "0.17.1"
 itertools = "0.10.5"
 mimalloc = { version = "0.1.30", default-features = false }
 serde = { workspace = true }
-serde_json = "1.0.86"
-serde_yaml = "0.9.13"
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
 strum = { version = "0.24.1", features = ["derive"] }
 tera = { version = "1.17.1", features = ["preserve_order"] }
 tokio = { workspace = true }
-yaml-rust = { version = "0.4.5", package = "yaml-rust-davvid" }
+yaml-rust = { version = "0.5.1", package = "yaml-rust-davvid" }
 rust-embed = "6.4.2"
 
 [dev-dependencies]
-moon_cache = { path = "../cache" }
-moon_notifier = { path = "../notifier" }
-assert_cmd = "2.0.4"
+moon_archive = { path = "../core/archive" }
+moon_cache = { path = "../core/cache" }
+moon_notifier = { path = "../core/notifier" }
+assert_cmd = "2.0.5"
 insta = "1.21.0"
 predicates = "2.1.1"
 pretty_assertions = "1.3.0"

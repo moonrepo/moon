@@ -1,11 +1,15 @@
 use crate::commands::run::{run, RunOptions};
 use crate::helpers::load_workspace;
+use moon_logger::trace;
 use moon_project::Project;
 use std::env;
 
 pub struct CheckOptions {
     pub report: bool,
+    pub all: bool,
 }
+
+const LOG_TARGET: &str = "moon:check";
 
 pub async fn check(
     project_ids: &Vec<String>,
@@ -15,9 +19,18 @@ pub async fn check(
     let mut projects: Vec<Project> = vec![];
 
     // Load projects
-    if project_ids.is_empty() {
+    if options.all {
+        trace!(target: LOG_TARGET, "Running check on all projects");
+        projects.extend(workspace.projects.all_projects()?);
+    } else if project_ids.is_empty() {
+        trace!(target: LOG_TARGET, "Loading from path");
         projects.push(workspace.projects.load_from_path(env::current_dir()?)?);
     } else {
+        trace!(
+            target: LOG_TARGET,
+            "Running for specific projects: {}",
+            project_ids.join(", ")
+        );
         for id in project_ids {
             projects.push(workspace.projects.load(id)?);
         }

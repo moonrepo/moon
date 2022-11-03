@@ -1,0 +1,27 @@
+[package]
+name = "moon_node_lang"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_error = { path = "../../core/error" }
+moon_lang = { path = "../../core/lang" }
+moon_logger = { path = "../../core/logger" }
+moon_utils = { path = "../../core/utils" }
+cached = "0.40.0"
+content_inspector = "0.2.4"
+json = "0.12.4"
+lazy_static = "1.4.0"
+regex = "1.6.0"
+serde = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+yarn-lock-parser = "0.4.0"
+
+[dev-dependencies]
+assert_fs = "1.0.7"
+pretty_assertions = "1.3.0"
+reqwest = { version = "0.11.12", features = ["blocking"] }
+serial_test = "0.9.0"
+tokio = { workspace = true, features = ["test-util"] }

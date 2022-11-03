@@ -1,0 +1,111 @@
+---
+title: Nuxt example
+sidebar_label: Nuxt
+---
+
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+
+<HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/nuxt-app" />
+
+In this guide, you'll learn how to integrate [Nuxt v3](https://v3.nuxtjs.org), a [Vue](./vue)
+framework, into moon.
+
+Begin by creating a new Nuxt project at a specified folder path (this should not be created in the
+workspace root, unless a polyrepo).
+
+```shell
+cd apps && npx nuxi init <project>
+```
+
+> View the [official Nuxt docs](https://v3.nuxtjs.org/getting-started/installation/) for a more
+> in-depth guide to getting started!
+
+## Setup
+
+Since Nuxt is per-project, the associated moon tasks should be defined in each project's
+[`moon.yml`](../../config/project) file.
+
+```yaml title="<project>/moon.yml"
+fileGroups:
+  nuxt:
+    - 'assets/**/*'
+    - 'components/**/*'
+    - 'composables/**/*'
+    - 'content/**/*'
+    - 'layouts/**/*'
+    - 'middleware/**/*'
+    - 'pages/**/*'
+    - 'plugins/**/*'
+    - 'server/**/*'
+    - '.nuxtignore'
+    - 'app.config.*'
+    - 'app.vue'
+    - 'nuxt.config.*'
+
+tasks:
+  nuxt:
+    command: 'nuxt'
+    local: true
+
+  # Production build
+  build:
+    command: 'nuxt build'
+    inputs:
+      - '@group(nuxt)'
+    outputs:
+      - '.output'
+
+  # Development server
+  dev:
+    command: 'nuxt dev'
+    local: true
+
+  # Preview production build locally
+  preview:
+    command: 'nuxt preview'
+    deps:
+      - '~:build'
+    local: true
+```
+
+Be sure to keep the `postinstall` script in your project's `package.json`.
+
+```json title="<project>/package.json"
+{
+  // ...
+  "scripts": {
+    "postinstall": "nuxt prepare"
+  }
+}
+```
+
+### ESLint integration
+
+Refer to our [Vue documentation](./vue#eslint-integration) for more information on linting.
+
+### TypeScript integration
+
+Nuxt requires `vue-tsc` for type-checking, so refer to our
+[Vue documentation](./vue#typescript-integration) for more information.
+
+## Configuration
+
+### Root-level
+
+We suggest _against_ root-level configuration, as Nuxt should be installed per-project, and the
+`nuxt` command expects the configuration to live relative to the project root.
+
+### Project-level
+
+When creating a new Nuxt project, a
+[`nuxt.config.ts`](https://v3.nuxtjs.org/api/configuration/nuxt-config) is created, and _must_ exist
+in the project root. This allows each project to configure Next.js for their needs.
+
+```js title="<project>/nuxt.config.ts"
+export default defineNuxtConfig({});
+```
+
+## Testing
+
+Nuxt supports testing through [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/). Refer to
+our [Jest documentation](./jest) or [Vitest documentation](./vite) for more information on testing.

@@ -1,0 +1,30 @@
+[package]
+name = "moon_project_graph"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "project_graph_benchmark"
+harness = false
+
+[dependencies]
+moon_cache = { path = "../cache" }
+moon_config = { path = "../config" }
+moon_error = { path = "../error" }
+moon_logger = { path = "../logger" }
+moon_platform = { path = "../platform" }
+moon_project = { path = "../project" }
+moon_task = { path = "../task" }
+moon_utils = { path = "../utils" }
+petgraph = "0.6.2"
+thiserror = { workspace = true }
+
+[dev-dependencies]
+moon_node_platform = { path = "../../node/platform" }
+criterion = { workspace = true }
+insta = "1.21.0"
+tokio = { workspace = true, features = ["test-util"] }
+

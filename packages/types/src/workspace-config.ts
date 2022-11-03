@@ -32,6 +32,7 @@ export interface YarnConfig extends NodePackageManagerConfig {
 export interface NodeConfig {
 	addEnginesConstraint: boolean;
 	aliasPackageNames: 'name-and-scope' | 'name-only' | null;
+	binExecArgs: string[];
 	dedupeOnLockfileChange: boolean;
 	dependencyVersionFormat: NodeVersionFormat;
 	inferTasksFromScripts: boolean;
@@ -70,7 +71,10 @@ export interface WorkspaceConfig {
 	generator: GeneratorConfig;
 	hasher: HasherConfig;
 	notifier: NotifierConfig;
-	projects: Record<string, string> | string[];
+	projects:
+		| Record<string, string>
+		| string[]
+		| { globs: string[]; sources: Record<string, string> };
 	runner: RunnerConfig;
 	vcs: VcsConfig;
 	// Languages

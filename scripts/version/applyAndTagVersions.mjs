@@ -65,7 +65,7 @@ async function removeLocalBuilds() {
 		);
 
 		if (existsSync('target/release')) {
-			await fs.rmdir('target/release');
+			await fs.rm('target/release', { force: true, recursive: true });
 		}
 		// eslint-disable-next-line @typescript-eslint/no-implicit-any-catch
 	} catch (error) {

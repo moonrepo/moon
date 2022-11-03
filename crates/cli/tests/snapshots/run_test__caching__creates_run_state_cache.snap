@@ -1,7 +1,7 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 245
-expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.item.hash))).unwrap()"
+assertion_line: 243
+expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.hash))).unwrap()"
 ---
 [
   {
@@ -13,6 +13,7 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
     "envVars": {},
     "inputs": {
       ".moon/workspace.yml": "ec07941c11e1b121e5fcbf07a3d4e193a1e3c3b8",
+      "node/binExecArgs.js": "efbc46d56304f43ae64c5616b2135d7a95d55263",
       "node/cjsFile.cjs": "91382f667258361b9397214d0aec54d8d576ae19",
       "node/cwd.js": "47d4aa44cd6363251821ab9c59f4c68df455445c",
       "node/envVars.js": "44b0fda6bce364122223fbfc67b65ecbc52aec91",
@@ -20,7 +21,7 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
       "node/exitCodeNonZero.js": "1cea9d1c8c3776318c20d54a86c1b492df443397",
       "node/exitCodeZero.js": "887c40bee2815c60cf4efde58a52716e4c393a24",
       "node/mjsFile.mjs": "a5b6817de5cfa541e430072598de3f42d83bd6cf",
-      "node/moon.yml": "bf13cfa10475309d8b7376b79391ccbc5741fde6",
+      "node/moon.yml": "3f0f97085f3e28b65a42c5d984ea4564b3ee16ab",
       "node/passthroughArgs.js": "83cf03c37aa75b33592735611860e32c6f338693",
       "node/processExitNonZero.js": "2fe41b280bb08f250ca7bf2263ec0b17fa7010f1",
       "node/processExitZero.js": "eb885b8c763ab8b5d4e1da46494d965078c98e8b",
@@ -36,9 +37,7 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
   },
   {
     "nodeVersion": "16.0.0",
-    "packageDependencies": {},
-    "packageDevDependencies": {},
-    "packagePeerDependencies": {},
+    "dependencies": {},
     "tsconfigCompilerOptions": {},
     "version": "1"
   }

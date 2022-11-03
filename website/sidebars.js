@@ -154,6 +154,7 @@ const sidebars = {
 				'guides/examples/eslint',
 				'guides/examples/jest',
 				'guides/examples/next',
+				'guides/examples/nuxt',
 				'guides/examples/packemon',
 				'guides/examples/prettier',
 				'guides/examples/react',

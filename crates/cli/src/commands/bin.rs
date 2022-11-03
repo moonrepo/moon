@@ -4,7 +4,8 @@ use moon_terminal::safe_exit;
 use moon_toolchain::{Executable, Installable};
 
 #[derive(ValueEnum, Clone, Debug)]
-pub enum BinTools {
+#[value(rename_all = "lowercase")]
+pub enum BinTool {
     Node,
     Npm,
     Pnpm,
@@ -32,29 +33,29 @@ fn log_bin_path<T: Send + Sync>(tool: &dyn Executable<T>) {
     println!("{}", tool.get_bin_path().display());
 }
 
-pub async fn bin(tool_type: &BinTools) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn bin(tool_type: &BinTool) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let toolchain = &workspace.toolchain;
 
     match tool_type {
-        BinTools::Node => {
+        BinTool::Node => {
             let node = toolchain.node.get()?;
 
             is_installed(node, &()).await;
             log_bin_path(node);
         }
-        BinTools::Npm | BinTools::Pnpm | BinTools::Yarn => {
+        BinTool::Npm | BinTool::Pnpm | BinTool::Yarn => {
             let node = toolchain.node.get()?;
 
             match tool_type {
-                BinTools::Pnpm => match node.get_pnpm() {
+                BinTool::Pnpm => match node.get_pnpm() {
                     Some(pnpm) => {
                         is_installed(pnpm, node).await;
                         log_bin_path(pnpm);
                     }
                     None => not_configured(),
                 },
-                BinTools::Yarn => match node.get_yarn() {
+                BinTool::Yarn => match node.get_yarn() {
                     Some(yarn) => {
                         is_installed(yarn, node).await;
                         log_bin_path(yarn);

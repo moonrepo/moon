@@ -1,13 +1,15 @@
 use console::{set_colors_enabled, set_colors_enabled_stderr};
 use indicatif::{ProgressBar, ProgressStyle};
-use moon_contract::Platformable;
 use moon_logger::color::{no_color, supports_color};
-use moon_platform_node::NodePlatform;
-use moon_platform_system::SystemPlatform;
+use moon_node_platform::NodePlatform;
+use moon_platform::Platformable;
+use moon_system_platform::SystemPlatform;
 use moon_terminal::create_theme;
 use moon_workspace::{Workspace, WorkspaceError};
 use std::env;
 use std::time::Duration;
+
+pub type AnyError = Box<dyn std::error::Error>;
 
 /// Loads the workspace and registers all available platforms!
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {

@@ -5,6 +5,9 @@ sidebar_label: Vite & Vitest
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import CreateDepTabs from '@site/src/components/CreateDepTabs';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+
+<HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/vue-vite-app" />
 
 In this guide, you'll learn how to integrate [Vite](https://vitejs.dev/) and
 [Vitest](https://vitest.dev/) into moon.
@@ -36,8 +39,6 @@ tasks:
 	# Development server
 	dev:
 		command: 'vite dev'
-		inputs:
-			- '@group(vite)'
 		local: true
 
 	# Production build
@@ -51,8 +52,6 @@ tasks:
 	# Preview production build locally
 	preview:
 		command: 'vite preview'
-		inputs:
-			- '@group(vite)'
 		deps:
 			- '~:build'
 		local: true

@@ -2,8 +2,8 @@
 
 use std::path::PathBuf;
 
-use crate::commands::bin::BinTools;
-use crate::commands::init::{InheritProjectsAs, PackageManager};
+use crate::commands::bin::BinTool;
+use crate::commands::init::InitTool;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use moon_action::ProfileType;
@@ -135,7 +135,7 @@ pub enum Commands {
     // moon init
     #[command(
         name = "init",
-        about = "Initialize a new moon repository and scaffold config files.",
+        about = "Initialize a new tool or a new moon repository, and scaffold config files.",
         rename_all = "camelCase"
     )]
     Init {
@@ -145,24 +145,11 @@ pub enum Commands {
         #[arg(long, help = "Overwrite existing configurations")]
         force: bool,
 
-        #[arg(
-            value_enum,
-            long,
-            help = "Inherit projects from `package.json` workspaces",
-            default_value_t
-        )]
-        inherit_projects: InheritProjectsAs,
-
-        #[arg(
-            value_enum,
-            long,
-            help = "Package manager to configure and use",
-            default_value_t
-        )]
-        package_manager: PackageManager,
-
         #[arg(long, help = "Skip prompts and use default values")]
         yes: bool,
+
+        #[arg(long, value_enum, help = "Specific tool to initialize")]
+        tool: Option<InitTool>,
     },
 
     // TOOLCHAIN
@@ -175,7 +162,7 @@ pub enum Commands {
     )]
     Bin {
         #[arg(value_enum, help = "The tool to query")]
-        tool: BinTools,
+        tool: BinTool,
     },
 
     // moon node <command>
@@ -289,10 +276,15 @@ pub enum Commands {
     )]
     Check {
         #[arg(help = "List of project IDs to explicitly check")]
+        #[clap(group = "projects")]
         ids: Vec<ProjectID>,
 
         #[arg(long, help = "Generate a run report for the current actions")]
         report: bool,
+
+        #[arg(long, help = "Run check for all projects in the workspace")]
+        #[clap(group = "projects")]
+        all: bool,
     },
 
     // moon ci

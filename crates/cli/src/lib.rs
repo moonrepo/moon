@@ -80,7 +80,16 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::Check { ids, report } => check(ids, CheckOptions { report: *report }).await,
+        Commands::Check { ids, report, all } => {
+            check(
+                ids,
+                CheckOptions {
+                    report: *report,
+                    all: *all,
+                },
+            )
+            .await
+        }
         Commands::Clean { lifetime } => {
             clean(CleanOptions {
                 cache_lifetime: lifetime.to_owned(),
@@ -117,16 +126,14 @@ pub async fn run_cli() {
         Commands::Init {
             dest,
             force,
-            inherit_projects,
-            package_manager,
+            tool,
             yes,
         } => {
             init(
                 dest,
+                tool.as_ref(),
                 InitOptions {
                     force: *force,
-                    inherit_projects: inherit_projects.clone(),
-                    package_manager: package_manager.clone(),
                     yes: *yes,
                 },
             )

@@ -1,0 +1,25 @@
+[package]
+name = "moon_toolchain"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_archive = { path = "../archive" }
+moon_config = { path = "../config" }
+moon_constants = { path = "../constants" }
+moon_error = { path = "../error" }
+moon_lang = { path = "../lang" }
+moon_logger = { path = "../logger" }
+moon_node_lang = { path = "../../node/lang" }
+moon_platform = { path = "../platform" }
+moon_utils = { path = "../utils" }
+async-trait = "0.1.58"
+reqwest = { version = "0.11.12", features = ["native-tls-vendored"] }
+sha2 = "0.10.6"
+thiserror = { workspace = true }
+
+[dev-dependencies]
+assert_fs = "1.0.7"
+mockito = "0.31.0"
+predicates = "2.1.1"
+tokio = { workspace = true, features = ["test-util"] }

@@ -4,7 +4,7 @@ use futures::future::try_join_all;
 use moon_config::{NodePackageManager, ProjectID, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
-use moon_lang_node::{NODE, NPM, PNPM, YARN};
+use moon_node_lang::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
 use moon_utils::{fs, glob, path};
 use moon_workspace::Workspace;
@@ -48,11 +48,12 @@ async fn copy_files<T: AsRef<str>>(
 async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result<(), ProjectError> {
     let docker_workspace_root = docker_root.join("workspace");
 
+    fs::create_dir_all(&docker_workspace_root).await?;
+
     // Copy each project and mimic the folder structure
     for project_source in workspace.projects.projects_map.values() {
         let docker_project_root = docker_workspace_root.join(&project_source);
 
-        // Create the project root
         fs::create_dir_all(&docker_project_root).await?;
 
         // Copy manifest and config files

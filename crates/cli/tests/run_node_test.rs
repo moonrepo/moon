@@ -815,10 +815,10 @@ mod yarn {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("yarn:version")
+            .arg("base:version")
             .assert();
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert!(predicate::str::contains("3.0.0").eval(&get_assert_output(&assert)));
     }
 
     #[test]
@@ -828,8 +828,23 @@ mod yarn {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("yarn:installDep")
+            .arg("base:installDep")
             .assert();
+
+        assert.success();
+    }
+
+    #[test]
+    #[serial]
+    fn can_run_a_script() {
+        let fixture = create_sandbox_with_git("node-yarn");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("base:runScript")
+            .assert();
+
+        assert!(predicate::str::contains("build").eval(&get_assert_output(&assert)));
 
         assert.success();
     }
@@ -841,7 +856,7 @@ mod yarn {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("yarn:runDep")
+            .arg("base:runDep")
             .assert();
 
         assert!(
@@ -861,7 +876,7 @@ mod yarn {
             .arg("run")
             .arg("notInWorkspace:noop")
             // Run other package so we can see both working
-            .arg("yarn:noop")
+            .arg("base:noop")
             .assert();
 
         assert!(predicate::str::contains("yarn install")

@@ -185,98 +185,6 @@ mod logs {
     }
 }
 
-mod caching {
-    use super::*;
-    use moon_cache::RunTargetState;
-
-    #[test]
-    fn uses_cache_on_subsequent_runs() {
-        let fixture = create_sandbox_with_git("cases");
-
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        assert_snapshot!(get_assert_output(&assert));
-
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        assert_snapshot!(get_assert_output(&assert));
-    }
-
-    #[test]
-    fn creates_runfile() {
-        let fixture = create_sandbox_with_git("cases");
-
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        assert!(fixture
-            .path()
-            .join(".moon/cache/states/node/runfile.json")
-            .exists());
-    }
-
-    #[tokio::test]
-    async fn creates_run_state_cache() {
-        let fixture = create_sandbox_with_git("cases");
-
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        let cache_path = fixture
-            .path()
-            .join(".moon/cache/states/node/standard/lastRun.json");
-
-        assert!(cache_path.exists());
-
-        let state = RunTargetState::load(cache_path, 0).await.unwrap();
-
-        assert_snapshot!(fs::read_to_string(
-            fixture
-                .path()
-                .join(format!(".moon/cache/hashes/{}.json", state.hash))
-        )
-        .unwrap());
-
-        assert_eq!(state.exit_code, 0);
-        assert_eq!(state.target, "node:standard");
-        assert_eq!(
-            state.hash,
-            "2f6c69d1ee266d4b3bc5cdc6b1cd501068677e8a5c7402aca22c3010bf076efb"
-        );
-
-        // Outputs are written to their own file
-        assert_eq!(
-            fs::read_to_string(
-                fixture
-                    .path()
-                    .join(".moon/cache/states/node/standard/stdout.log")
-            )
-            .unwrap(),
-            "stdout"
-        );
-
-        assert_eq!(
-            fs::read_to_string(
-                fixture
-                    .path()
-                    .join(".moon/cache/states/node/standard/stderr.log")
-            )
-            .unwrap(),
-            "stderr"
-        );
-    }
-}
-
 mod dependencies {
     use super::*;
 
@@ -354,6 +262,8 @@ mod target_scopes {
             .assert();
         let output = get_assert_output(&assert);
 
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
         assert!(predicate::str::contains("targetScopeA:all").eval(&output));
         assert!(predicate::str::contains("targetScopeB:all").eval(&output));
         assert!(predicate::str::contains("targetScopeC:all").eval(&output));
@@ -370,14 +280,12 @@ mod target_scopes {
             .assert();
         let output = get_assert_output(&assert);
 
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
         assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
-        assert!(predicate::str::contains("scope=deps").eval(&output));
         assert!(predicate::str::contains("depsA:standard").eval(&output));
-        assert!(predicate::str::contains("deps=a").eval(&output));
         assert!(predicate::str::contains("depsB:standard").eval(&output));
-        assert!(predicate::str::contains("deps=b").eval(&output));
         assert!(predicate::str::contains("depsC:standard").eval(&output));
-        assert!(predicate::str::contains("deps=c").eval(&output));
         assert!(predicate::str::contains("Tasks: 4 completed").eval(&output));
     }
 

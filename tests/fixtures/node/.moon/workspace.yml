@@ -1,11 +1,19 @@
 extends: '../shared-workspace.yml'
 
 projects:
-  base: base
+  node: base
   esbuild: esbuild
   lifecycles: lifecycles
   swc: swc
   versionOverride: version-override
+
+  # Project/task deps
+  depsA: 'deps-a'
+  depsB: 'deps-b'
+  depsC: 'deps-c'
+  depsD: 'deps-d'
+  dependsOn: 'depends-on'
+  dependsOnScopes: 'depends-on-scopes'
 
 typescript:
   syncProjectReferences: false

@@ -1,14 +1,10 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 75
+assertion_line: 201
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
-▪▪▪▪ node:standard
-stdout
 
-Tasks: 1 completed
- Time: 100ms
+ ERROR  No project has been configured with the ID node.
 
-stderr
+
 

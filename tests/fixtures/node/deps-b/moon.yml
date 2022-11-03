@@ -2,10 +2,12 @@ language: javascript
 
 tasks:
   standard:
-    command: noop
+    command: node
+    args: -e "console.log('deps=b')"
 
   dependencyOrder:
-    command: noop
+    command: node
+    args: -e "console.log('deps=b')"
     deps:
       - 'depsC:dependencyOrder'
 

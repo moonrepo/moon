@@ -14,6 +14,7 @@
 
 - Fixed an issue where passthrough args were incorrectly being passed to non-primary targets when
   using `moon run`.
+- Fixed some npm + corepack issues.
 
 #### ⚙️ Internal
 

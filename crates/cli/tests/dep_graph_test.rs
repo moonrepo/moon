@@ -3,7 +3,7 @@ use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output};
 
 #[test]
 fn all_by_default() {
-    let fixture = create_sandbox("cases");
+    let fixture = create_sandbox("tasks");
 
     let assert = create_moon_command(fixture.path())
         .arg("dep-graph")
@@ -11,16 +11,16 @@ fn all_by_default() {
     let dot = get_assert_output(&assert);
 
     // Snapshot is not deterministic
-    assert_eq!(dot.split('\n').count(), 336);
+    assert_eq!(dot.split('\n').count(), 283);
 }
 
 #[test]
 fn focused_by_target() {
-    let fixture = create_sandbox("cases");
+    let fixture = create_sandbox("tasks");
 
     let assert = create_moon_command(fixture.path())
         .arg("dep-graph")
-        .arg("node:standard")
+        .arg("basic:lint")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -28,11 +28,11 @@ fn focused_by_target() {
 
 #[test]
 fn includes_dependencies_when_focused() {
-    let fixture = create_sandbox("cases");
+    let fixture = create_sandbox("tasks");
 
     let assert = create_moon_command(fixture.path())
         .arg("dep-graph")
-        .arg("dependsOn:standard")
+        .arg("chain:e")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -40,11 +40,11 @@ fn includes_dependencies_when_focused() {
 
 #[test]
 fn includes_dependents_when_focused() {
-    let fixture = create_sandbox("cases");
+    let fixture = create_sandbox("tasks");
 
     let assert = create_moon_command(fixture.path())
         .arg("dep-graph")
-        .arg("depsC:standard")
+        .arg("basic:build")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));

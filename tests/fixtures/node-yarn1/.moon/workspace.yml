@@ -9,6 +9,6 @@ node:
   addEnginesConstraint: false
 
 projects:
-  base: base
+  yarn: base
   other: other
   notInWorkspace: not-in-workspace

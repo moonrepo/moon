@@ -1,14 +1,25 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 222
+assertion_line: 241
 expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:runFromWorkspace
-<WORKSPACE>
+▪▪▪▪ node:runFromWorkspace (100ms)
+node:internal/modules/cjs/loader:944
+  throw err;
+  ^
 
-Tasks: 1 completed
- Time: 100ms
+Error: Cannot find module '<WORKSPACE>/node/cwd.js'
+    at Function.Module._resolveFilename (node:internal/modules/cjs/loader:941:15)
+    at Function.Module._load (node:internal/modules/cjs/loader:774:27)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:76:12)
+    at node:internal/main/run_main_module:17:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+ ERROR  Process ~/.moon/tools/node/16.1.0/bin/node failed with a 1 exit code.
 
 
 

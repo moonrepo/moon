@@ -13,7 +13,7 @@ fn runs_package_managers() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:npm")
+        .arg("node:npm")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -25,7 +25,7 @@ fn runs_standard_script() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:standard")
+        .arg("node:standard")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -37,7 +37,7 @@ fn runs_cjs_files() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:cjs")
+        .arg("node:cjs")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -49,7 +49,7 @@ fn runs_mjs_files() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:mjs")
+        .arg("node:mjs")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -61,7 +61,7 @@ fn supports_top_level_await() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:topLevelAwait")
+        .arg("node:topLevelAwait")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -73,7 +73,7 @@ fn handles_process_exit_zero() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:processExitZero")
+        .arg("node:processExitZero")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -85,7 +85,7 @@ fn handles_process_exit_nonzero() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:processExitNonZero")
+        .arg("node:processExitNonZero")
         .assert();
 
     if cfg!(windows) {
@@ -101,7 +101,7 @@ fn handles_process_exit_code_zero() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:exitCodeZero")
+        .arg("node:exitCodeZero")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -113,7 +113,7 @@ fn handles_process_exit_code_nonzero() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:exitCodeNonZero")
+        .arg("node:exitCodeNonZero")
         .assert();
 
     if cfg!(windows) {
@@ -129,7 +129,7 @@ fn handles_throw_error() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:throwError")
+        .arg("node:throwError")
         .assert();
     let output = get_assert_output(&assert);
 
@@ -143,7 +143,7 @@ fn handles_unhandled_promise() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:unhandledPromise")
+        .arg("node:unhandledPromise")
         .assert();
 
     if cfg!(windows) {
@@ -159,7 +159,7 @@ fn passes_args_through() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:passthroughArgs")
+        .arg("node:passthroughArgs")
         .arg("--")
         .arg("-aBc")
         .arg("--opt")
@@ -185,7 +185,7 @@ fn passes_args_to_the_node_bin() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:binExecArgs")
+        .arg("node:binExecArgs")
         .arg("--")
         .arg("--extraArg")
         .assert();
@@ -199,7 +199,7 @@ fn sets_env_vars() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:envVars")
+        .arg("node:envVars")
         .assert();
 
     assert_snapshot!(get_assert_output(&assert));
@@ -211,7 +211,7 @@ fn inherits_moon_env_vars() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:envVarsMoon")
+        .arg("node:envVarsMoon")
         .assert();
 
     assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
@@ -223,7 +223,7 @@ fn runs_from_project_root() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:runFromProject")
+        .arg("node:runFromProject")
         .assert();
 
     assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
@@ -235,7 +235,7 @@ fn runs_from_workspace_root() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:runFromWorkspace")
+        .arg("node:runFromWorkspace")
         .assert();
 
     assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
@@ -247,11 +247,11 @@ fn retries_on_failure_till_count() {
 
     let assert = create_moon_command(fixture.path())
         .arg("run")
-        .arg("base:retryCount")
+        .arg("node:retryCount")
         .assert();
     let output = get_assert_output(&assert);
 
-    assert!(predicate::str::contains("Process ~/.moon/tools/node/16.0.0").eval(&output));
+    assert!(predicate::str::contains("Process ~/.moon/tools/node/16.1.0").eval(&output));
 }
 
 mod install_deps {
@@ -265,14 +265,14 @@ mod install_deps {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
             .assert();
         let output = get_assert_output(&assert);
 
         assert!(fixture.path().join("node_modules").exists());
 
-        assert!(predicate::str::contains("added 9 packages").eval(&output));
+        assert!(predicate::str::contains("added 31 packages").eval(&output));
     }
 
     #[test]
@@ -281,21 +281,21 @@ mod install_deps {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
             .assert();
         let output1 = get_assert_output(&assert);
 
-        assert!(predicate::str::contains("added 9 packages").eval(&output1));
+        assert!(predicate::str::contains("added 31 packages").eval(&output1));
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
             .assert();
         let output2 = get_assert_output(&assert);
 
-        assert!(!predicate::str::contains("added 9 packages").eval(&output2));
+        assert!(!predicate::str::contains("added 31 packages").eval(&output2));
     }
 
     #[test]
@@ -304,12 +304,12 @@ mod install_deps {
 
         create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         assert!(fixture
             .path()
-            .join(".moon/cache/states/toolNode-16.0.0.json")
+            .join(".moon/cache/states/toolNode-16.1.0.json")
             .exists());
     }
 
@@ -349,7 +349,7 @@ mod engines {
 
         create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         assert_snapshot!(read_to_string(fixture.path().join("package.json")).unwrap());
@@ -363,7 +363,7 @@ mod engines {
 
         create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         assert_snapshot!(read_to_string(fixture.path().join("package.json")).unwrap());
@@ -379,7 +379,7 @@ mod version_manager {
 
         create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         assert!(!fixture.path().join(".nvmrc").exists());
@@ -394,7 +394,7 @@ mod version_manager {
 
         create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         assert!(fixture.path().join(".nvmrc").exists());
@@ -413,7 +413,7 @@ mod version_manager {
 
         create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         assert!(fixture.path().join(".node-version").exists());
@@ -432,7 +432,7 @@ mod version_manager {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         let output = get_assert_output(&assert);
@@ -550,7 +550,7 @@ mod npm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:version")
+            .arg("npm:version")
             .assert();
 
         assert!(predicate::str::contains("8.0.0").eval(&get_assert_output(&assert)));
@@ -563,7 +563,7 @@ mod npm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:installDep")
+            .arg("npm:installDep")
             .assert();
 
         assert.success();
@@ -576,7 +576,7 @@ mod npm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runScript")
+            .arg("npm:runScript")
             .assert();
 
         assert!(predicate::str::contains("test").eval(&get_assert_output(&assert)));
@@ -591,7 +591,7 @@ mod npm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runDep")
+            .arg("npm:runDep")
             .assert();
 
         assert!(
@@ -611,7 +611,7 @@ mod npm {
             .arg("run")
             .arg("notInWorkspace:noop")
             // Run other package so we can see both working
-            .arg("base:noop")
+            .arg("npm:noop")
             .assert();
 
         assert!(predicate::str::contains("npm install")
@@ -643,7 +643,7 @@ mod pnpm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:version")
+            .arg("pnpm:version")
             .assert();
 
         assert!(predicate::str::contains("7.5.0").eval(&get_assert_output(&assert)));
@@ -656,7 +656,7 @@ mod pnpm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:installDep")
+            .arg("pnpm:installDep")
             .assert();
 
         assert.success();
@@ -669,7 +669,7 @@ mod pnpm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runScript")
+            .arg("pnpm:runScript")
             .assert();
 
         assert!(predicate::str::contains("lint").eval(&get_assert_output(&assert)));
@@ -686,7 +686,7 @@ mod pnpm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runDep")
+            .arg("pnpm:runDep")
             .assert();
 
         assert!(
@@ -706,7 +706,7 @@ mod pnpm {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runDep")
+            .arg("pnpm:runDep")
             .assert();
 
         assert!(
@@ -756,7 +756,7 @@ mod yarn1 {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:version")
+            .arg("yarn:version")
             .assert();
 
         assert!(predicate::str::contains("1.22.0").eval(&get_assert_output(&assert)));
@@ -769,7 +769,7 @@ mod yarn1 {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:installDep")
+            .arg("yarn:installDep")
             .assert();
 
         assert.success();
@@ -782,7 +782,7 @@ mod yarn1 {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runScript")
+            .arg("yarn:runScript")
             .assert();
 
         assert!(predicate::str::contains("build").eval(&get_assert_output(&assert)));
@@ -797,7 +797,7 @@ mod yarn1 {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runDep")
+            .arg("yarn:runDep")
             .assert();
 
         assert!(
@@ -817,7 +817,7 @@ mod yarn1 {
             .arg("run")
             .arg("notInWorkspace:noop")
             // Run other package so we can see both working
-            .arg("base:noop")
+            .arg("yarn:noop")
             .assert();
 
         assert!(predicate::str::contains("yarn install")
@@ -845,7 +845,7 @@ mod yarn {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:version")
+            .arg("yarn:version")
             .assert();
 
         assert!(predicate::str::contains("3.0.0").eval(&get_assert_output(&assert)));
@@ -858,7 +858,7 @@ mod yarn {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:installDep")
+            .arg("yarn:installDep")
             .assert();
 
         assert.success();
@@ -871,7 +871,7 @@ mod yarn {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runScript")
+            .arg("yarn:runScript")
             .assert();
 
         assert!(predicate::str::contains("build").eval(&get_assert_output(&assert)));
@@ -886,7 +886,7 @@ mod yarn {
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
-            .arg("base:runDep")
+            .arg("yarn:runDep")
             .assert();
 
         assert!(
@@ -906,7 +906,7 @@ mod yarn {
             .arg("run")
             .arg("notInWorkspace:noop")
             // Run other package so we can see both working
-            .arg("base:noop")
+            .arg("yarn:noop")
             .assert();
 
         assert!(predicate::str::contains("yarn install")
@@ -935,7 +935,7 @@ mod profile {
             .arg("run")
             .arg("--profile")
             .arg("cpu")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         let profile = fixture
@@ -953,7 +953,7 @@ mod profile {
             .arg("run")
             .arg("--profile")
             .arg("heap")
-            .arg("base:standard")
+            .arg("node:standard")
             .assert();
 
         let profile = fixture
@@ -988,32 +988,34 @@ mod non_js_bins {
     fn works_with_esbuild() {
         let fixture = create_sandbox_with_git("node");
 
-        create_moon_command(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("esbuild:build")
-            .assert()
-            .success();
+            .assert();
 
         assert_eq!(
-            fs::read_to_string(fixture.path().join("esbuild/out.js")).unwrap(),
-            "(() => {\n  // index.js\n  var ESBUILD = \"esbuild\";\n})();\n"
+            fs::read_to_string(fixture.path().join("esbuild/output.js")).unwrap(),
+            "(() => {\n  // input.js\n  var ESBUILD = \"esbuild\";\n})();\n"
         );
+
+        assert.success();
     }
 
     #[test]
     fn works_with_swc() {
         let fixture = create_sandbox_with_git("node");
 
-        create_moon_command(fixture.path())
+        let assert = create_moon_command(fixture.path())
             .arg("run")
             .arg("swc:build")
-            .assert()
-            .success();
+            .assert();
 
         assert_eq!(
-            fs::read_to_string(fixture.path().join("swc/out.js")).unwrap(),
-            "export var SWC = \"swc\";\n\n\n//# sourceMappingURL=out.js.map"
+            fs::read_to_string(fixture.path().join("swc/output.js")).unwrap(),
+            "export var SWC = \"swc\";\n\n\n//# sourceMappingURL=output.js.map"
         );
+
+        assert.success();
     }
 }
 

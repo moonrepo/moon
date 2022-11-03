@@ -6,8 +6,8 @@ expression: get_assert_output(&assert)
 digraph {
     0 [ label="SetupNodeTool(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 [ label="InstallNodeDeps(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    2 [ label="SyncNodeProject(node)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    3 [ label="RunTarget(node:standard)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="SyncNodeProject(basic)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="RunTarget(basic:lint)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 -> 0 [ arrowhead=box, arrowtail=box]
     2 -> 0 [ arrowhead=box, arrowtail=box]
     3 -> 1 [ arrowhead=box, arrowtail=box]

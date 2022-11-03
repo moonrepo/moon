@@ -251,7 +251,7 @@ mod caching {
         assert_eq!(state.target, "node:standard");
         assert_eq!(
             state.hash,
-            "d6d8b9ac59dd7d574c7f38b6ed646b3237537b590c21520f4ae960e988715f57"
+            "2f6c69d1ee266d4b3bc5cdc6b1cd501068677e8a5c7402aca22c3010bf076efb"
         );
 
         // Outputs are written to their own file
@@ -542,6 +542,24 @@ mod system {
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
+    }
+
+    mod passthrough {
+        use super::*;
+
+        #[test]
+        fn doesnt_pass_to_non_primary() {
+            let fixture = create_sandbox_with_git("cases");
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("passthroughArgs:b")
+                .arg("--")
+                .arg("-aBc")
+                .assert();
+
+            assert_snapshot!(get_assert_output(&assert));
+        }
     }
 }
 

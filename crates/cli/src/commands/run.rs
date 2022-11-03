@@ -83,6 +83,7 @@ pub async fn run(
 
     // Process all tasks in the graph
     let context = ActionContext {
+        initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: options.profile,

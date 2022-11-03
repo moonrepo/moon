@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where passthrough args were incorrectly being passed to non-primary targets when
+  using `moon run`.
+
 ## 0.18.2
 
 #### 🐞 Fixes

@@ -133,9 +133,8 @@ impl Workspace {
 
     pub async fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
         let working_dir = working_dir.as_ref();
-        let root_dir = match find_workspace_root(working_dir) {
-            Some(dir) => dir,
-            None => return Err(WorkspaceError::MissingConfigDir),
+        let Some(root_dir) = find_workspace_root(working_dir) else {
+            return Err(WorkspaceError::MissingConfigDir);
         };
 
         debug!(

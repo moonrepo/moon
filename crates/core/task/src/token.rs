@@ -260,11 +260,8 @@ impl<'a> TokenResolver<'a> {
     }
 
     pub fn resolve_var(&self, value: &str, task: &Task) -> Result<String, TokenError> {
-        let matches = match TOKEN_VAR_PATTERN.captures(value) {
-            Some(value) => value,
-            None => {
-                return Ok(value.to_owned());
-            }
+        let Some(matches) = TOKEN_VAR_PATTERN.captures(value) else {
+            return Ok(value.to_owned());
         };
 
         let token = matches.get(0).unwrap().as_str(); // $var
@@ -360,11 +357,8 @@ impl<'a> TokenResolver<'a> {
 
         if let TokenType::In(token, index) = token_type {
             let error = TokenError::InvalidInIndex(token, index);
-            let input = match task.inputs.get(index as usize) {
-                Some(i) => i,
-                None => {
-                    return Err(error);
-                }
+            let Some(input) = task.inputs.get(index as usize) else {
+                return Err(error);
             };
 
             if glob::is_glob(input) {
@@ -407,11 +401,8 @@ impl<'a> TokenResolver<'a> {
 
         if let TokenType::Out(token, index) = token_type {
             let error = TokenError::InvalidOutIndex(token, index);
-            let output = match task.outputs.get(index as usize) {
-                Some(i) => i,
-                None => {
-                    return Err(error);
-                }
+            let Some(output) = task.outputs.get(index as usize) else {
+                return Err(error);
             };
 
             if glob::is_glob(output) {

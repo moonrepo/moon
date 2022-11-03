@@ -25,6 +25,9 @@ projects:
   outputs: 'outputs'
   outputStyles: 'output-styles'
 
+  # Runner
+  passthroughArgs: 'passthrough-args'
+
 typescript:
   syncProjectReferences: false
 

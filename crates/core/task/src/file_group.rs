@@ -47,7 +47,7 @@ impl FileGroup {
         for file in &self.files {
             let result = path::expand_root_path(file, workspace_root, project_root);
 
-            if glob::is_glob(&file) {
+            if glob::is_glob(file) {
                 globs.push(glob::normalize(result)?);
             } else {
                 paths.push(result);
@@ -111,8 +111,8 @@ impl FileGroup {
         if !dirs.is_empty() {
             let paths: Vec<&Path> = dirs
                 .iter()
-                .filter(|d| d.starts_with(&project_root))
-                .map(|d| d.strip_prefix(&project_root).unwrap())
+                .filter(|d| d.starts_with(project_root))
+                .map(|d| d.strip_prefix(project_root).unwrap())
                 .collect();
             let common_dir = common_path_all(paths);
 

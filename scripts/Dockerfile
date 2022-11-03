@@ -5,7 +5,7 @@
 
 # glibc
 
-FROM rust:1.64.0 AS base-gnu
+FROM rust:1.65.0 AS base-gnu
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
 COPY .cargo .cargo

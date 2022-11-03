@@ -57,12 +57,12 @@ impl<'l> TarArchiver<'l> {
         debug!(
             target: LOG_TARGET,
             "Packing tar archive from {} to {}",
-            color::path(&self.input_root),
-            color::path(&self.output_file),
+            color::path(self.input_root),
+            color::path(self.output_file),
         );
 
         // Create .tar
-        let tar = File::create(&self.output_file)
+        let tar = File::create(self.output_file)
             .map_err(|e| map_io_to_fs_error(e, self.output_file.to_owned()))?;
 
         // Compress to .tar.gz
@@ -76,24 +76,24 @@ impl<'l> TarArchiver<'l> {
                 trace!(
                     target: LOG_TARGET,
                     "Source file {} does not exist, skipping",
-                    color::path(&source)
+                    color::path(source)
                 );
 
                 continue;
             }
 
             if source.is_file() {
-                trace!(target: LOG_TARGET, "Packing file {}", color::path(&source));
+                trace!(target: LOG_TARGET, "Packing file {}", color::path(source));
 
                 let mut fh =
-                    File::open(&source).map_err(|e| map_io_to_fs_error(e, source.to_path_buf()))?;
+                    File::open(source).map_err(|e| map_io_to_fs_error(e, source.to_path_buf()))?;
 
                 archive.append_file(prepend_name(file, self.prefix), &mut fh)?;
             } else {
                 trace!(
                     target: LOG_TARGET,
                     "Packing directory {}",
-                    color::path(&source)
+                    color::path(source)
                 );
 
                 archive.append_dir_all(prepend_name(file, self.prefix), source)?;
@@ -159,12 +159,12 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 
     for entry_result in archive.entries()? {
         let mut entry = entry_result?;
-        let mut path: PathBuf = entry.path()?.to_owned().to_path_buf();
+        let mut path: PathBuf = entry.path()?.into_owned();
 
         // Remove the prefix
         if let Some(prefix) = remove_prefix {
             if path.starts_with(prefix) {
-                path = path.strip_prefix(&prefix).unwrap().to_owned();
+                path = path.strip_prefix(prefix).unwrap().to_owned();
             }
         }
 

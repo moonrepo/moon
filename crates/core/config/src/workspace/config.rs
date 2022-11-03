@@ -110,13 +110,13 @@ impl WorkspaceConfig {
     pub fn load(path: PathBuf) -> Result<WorkspaceConfig, ConfigError> {
         let profile_name = "workspace";
         let mut figment =
-            Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(&profile_name));
+            Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(profile_name));
 
         for source in gather_extended_sources(&path)? {
-            figment = figment.merge(YamlExtended::file(source).profile(&profile_name));
+            figment = figment.merge(YamlExtended::file(source).profile(profile_name));
         }
 
-        let mut config = WorkspaceConfig::load_config(figment.select(&profile_name))?;
+        let mut config = WorkspaceConfig::load_config(figment.select(profile_name))?;
         config.extends = None;
 
         if let Some(node_config) = &mut config.node {

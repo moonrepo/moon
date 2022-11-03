@@ -25,7 +25,7 @@ args = ["fmt", "--all", "--", "--emit=files"]
 
 [tasks.lint]
 command = "cargo"
-args = ["clippy", "--workspace", "--all-targets"]
+args = ["clippy", "--workspace", "--all-targets", "--fix"]
 
 # TESTING
 

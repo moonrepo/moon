@@ -138,9 +138,8 @@ pub async fn init(
     }
 
     // Extract template variables
-    let moon_dir = match verify_dest_dir(&dest_dir, &options, &theme).await? {
-        Some(dir) => dir,
-        None => return Ok(()),
+    let Some(moon_dir) = verify_dest_dir(&dest_dir, &options, &theme).await? else {
+        return Ok(())
     };
     let mut context = create_default_context();
 

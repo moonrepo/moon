@@ -158,7 +158,7 @@ fn clean_path<T: AsRef<str>>(path: T) -> String {
     if let Some(home_dir) = get_home_dir() {
         let home_dir_str = home_dir.to_str().unwrap_or_default();
 
-        if !home_dir_str.is_empty() && path.starts_with(&home_dir_str) {
+        if !home_dir_str.is_empty() && path.starts_with(home_dir_str) {
             path_str = path_str.replace(home_dir_str, "~");
         }
     }

@@ -28,10 +28,10 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
     trace!(
         target: "moon:workspace",
         "Attempting to find workspace root at {}",
-        color::path(&current_dir),
+        color::path(current_dir),
     );
 
-    fs::find_upwards(constants::CONFIG_DIRNAME, &current_dir)
+    fs::find_upwards(constants::CONFIG_DIRNAME, current_dir)
         .map(|dir| dir.parent().unwrap().to_path_buf())
 }
 
@@ -133,16 +133,15 @@ impl Workspace {
 
     pub async fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
         let working_dir = working_dir.as_ref();
-        let root_dir = match find_workspace_root(working_dir) {
-            Some(dir) => dir,
-            None => return Err(WorkspaceError::MissingConfigDir),
+        let Some(root_dir) = find_workspace_root(working_dir) else {
+            return Err(WorkspaceError::MissingConfigDir);
         };
 
         debug!(
             target: LOG_TARGET,
             "Creating workspace at {} (from working directory {})",
             color::path(&root_dir),
-            color::path(&working_dir)
+            color::path(working_dir)
         );
 
         // Load configs

@@ -179,9 +179,9 @@ impl ProjectConfig {
         let path = path.as_ref();
         let profile_name = "project";
         let figment =
-            Figment::from(Serialized::defaults(ProjectConfig::default()).profile(&profile_name))
-                .merge(YamlExtended::file(path).profile(&profile_name))
-                .select(&profile_name);
+            Figment::from(Serialized::defaults(ProjectConfig::default()).profile(profile_name))
+                .merge(YamlExtended::file(path).profile(profile_name))
+                .select(profile_name);
 
         let mut config: ProjectConfig = figment.extract()?;
 

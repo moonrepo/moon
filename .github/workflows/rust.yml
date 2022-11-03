@@ -25,7 +25,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
-          toolchain: 1.64.0
+          toolchain: 1.65.0
           profile: minimal
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
@@ -46,7 +46,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
-          toolchain: 1.64.0
+          toolchain: 1.65.0
           profile: minimal
           components: clippy
       - uses: Swatinem/rust-cache@v2
@@ -65,7 +65,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
-          toolchain: 1.64.0
+          toolchain: 1.65.0
           profile: minimal
           components: llvm-tools-preview
       - uses: Swatinem/rust-cache@v2

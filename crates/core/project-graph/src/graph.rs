@@ -439,9 +439,8 @@ impl ProjectGraph {
         );
 
         // Create project based on ID and source
-        let source = match self.projects_map.get(&id) {
-            Some(path) => path,
-            None => return Err(ProjectError::UnconfiguredID(id)),
+        let Some(source) = self.projects_map.get(&id) else {
+            return Err(ProjectError::UnconfiguredID(id));
         };
 
         let project = self.create_project(&id, source)?;

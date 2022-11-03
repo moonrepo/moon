@@ -4,13 +4,17 @@ assertion_line: 355
 expression: "read_to_string(fixture.path().join(\"package.json\")).unwrap()"
 ---
 {
-  "name": "test-cases",
+  "name": "test-node",
   "private": true,
   "workspaces": [
-    "*"
+    "base",
+    "esbuild",
+    "lifecycles",
+    "swc",
+    "version-override"
   ],
   "engines": {
-    "node": "16.0.0"
+    "node": "16.1.0"
   },
   "packageManager": "npm@8.19.2"
 }

@@ -2,11 +2,13 @@ language: javascript
 
 tasks:
   version:
-    command: yarn
+    command: npm
     args: --version
   installDep:
-    command: yarn
-    args: add react@17.0.0
+    command: npm
+    args: install react@17.0.0
   runDep:
     command: prettier
     args: --check *.yml
+  runScript:
+    command: npm run test

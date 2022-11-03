@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 4
+  version: 6
   cacheKey: 8
 
 "@babel/helper-module-imports@npm:7.16.0":
@@ -149,20 +149,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"test-node-npm-other@workspace:other":
+"test-node-yarn-base@workspace:base":
   version: 0.0.0-use.local
-  resolution: "test-node-npm-other@workspace:other"
+  resolution: "test-node-yarn-base@workspace:base"
   dependencies:
-    babel-preset-solid: 1.5.6
-    solid-js: 1.5.6
+    react: 17.0.0
   languageName: unknown
   linkType: soft
 
-"test-node-yarn-yarn@workspace:yarn":
+"test-node-yarn-other@workspace:other":
   version: 0.0.0-use.local
-  resolution: "test-node-yarn-yarn@workspace:yarn"
+  resolution: "test-node-yarn-other@workspace:other"
   dependencies:
-    react: 17.0.0
+    babel-preset-solid: 1.5.6
+    solid-js: 1.5.6
   languageName: unknown
   linkType: soft
 

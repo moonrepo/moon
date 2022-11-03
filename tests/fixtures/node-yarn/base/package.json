@@ -1,5 +1,5 @@
 {
-  "name": "test-node-yarn-yarn",
+  "name": "test-node-yarn-base",
   "version": "1.0.0",
   "scripts": {
     "build": "echo 'build'"

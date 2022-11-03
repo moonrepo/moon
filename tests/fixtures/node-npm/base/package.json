@@ -1,8 +1,8 @@
 {
-  "name": "test-node-pnpm-pnpm",
+  "name": "test-node-npm-base",
   "version": "1.0.0",
   "scripts": {
-    "lint": "echo 'lint'"
+    "test": "echo 'test'"
   },
   "dependencies": {
     "react": "17.0.0"

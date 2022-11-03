@@ -9,6 +9,6 @@ node:
   addEnginesConstraint: false
 
 projects:
-  pnpm: pnpm
+  base: base
   other: other
   notInWorkspace: not-in-workspace

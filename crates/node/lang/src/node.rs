@@ -208,6 +208,19 @@ pub fn get_download_file<T: AsRef<str>>(version: T) -> Result<String, LangError>
 }
 
 #[inline]
+pub fn get_package_download_file<A, B>(package: A, version: B) -> String
+where
+    A: AsRef<str>,
+    B: AsRef<str>,
+{
+    format!(
+        "{package}-{version}.tgz",
+        package = package.as_ref(),
+        version = version.as_ref(),
+    )
+}
+
+#[inline]
 pub fn get_nodejs_url<A, B, C>(version: A, host: B, path: C) -> String
 where
     A: AsRef<str>,
@@ -218,6 +231,19 @@ where
         "{host}/dist/v{version}/{path}",
         host = host.as_ref(),
         version = version.as_ref(),
+        path = path.as_ref(),
+    )
+}
+
+#[inline]
+pub fn get_npm_registry_url<A, B>(package: A, path: B) -> String
+where
+    A: AsRef<str>,
+    B: AsRef<str>,
+{
+    format!(
+        "https://registry.npmjs.org/{package}/-/{path}",
+        package = package.as_ref(),
         path = path.as_ref(),
     )
 }

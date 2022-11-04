@@ -70,7 +70,11 @@ pub fn get_path_env_var(bin_dir: &Path) -> std::ffi::OsString {
     env::join_paths(paths).unwrap()
 }
 
-pub async fn download_file_from_url(url: &str, dest: &Path) -> Result<(), ToolchainError> {
+pub async fn download_file_from_url<T: AsRef<str>>(
+    url: T,
+    dest: &Path,
+) -> Result<(), ToolchainError> {
+    let url = url.as_ref();
     let handle_error = |e: io::Error| map_io_to_fs_error(e, dest.to_path_buf());
 
     trace!(

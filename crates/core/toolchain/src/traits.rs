@@ -194,13 +194,7 @@ pub trait PackageManager<T: Send + Sync>:
     Send + Sync + Logable + Installable<T> + Executable<T> + Lifecycle<T>
 {
     /// Create a command to run that wraps the binary.
-    fn create_command(&self) -> Command {
-        let bin_path = self.get_bin_path();
-
-        let mut cmd = Command::new(bin_path);
-        cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
-        cmd
-    }
+    fn create_command(&self, parent: &T) -> Command;
 
     /// Dedupe dependencies after they have been installed.
     async fn dedupe_dependencies(

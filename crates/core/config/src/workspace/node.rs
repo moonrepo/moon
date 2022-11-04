@@ -1,5 +1,5 @@
 use crate::validators::validate_semver_version;
-use moon_node_lang::{NODE, NODENV, NVMRC, PNPM, YARN};
+use moon_node_lang::{NODE, NODENV, NPM, NVMRC, PNPM, YARN};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -11,7 +11,7 @@ pub fn default_node_version() -> String {
 
 pub fn default_npm_version() -> String {
     // Use the version bundled with node by default
-    env::var("MOON_NPM_VERSION").unwrap_or_else(|_| String::from("inherit"))
+    env::var("MOON_NPM_VERSION").unwrap_or_else(|_| NPM.default_version.to_string())
 }
 
 pub fn default_pnpm_version() -> String {
@@ -27,11 +27,7 @@ fn validate_node_version(value: &str) -> Result<(), ValidationError> {
 }
 
 fn validate_npm_version(value: &str) -> Result<(), ValidationError> {
-    if value != "inherit" {
-        return validate_semver_version("node.npm.version", value);
-    }
-
-    Ok(())
+    validate_semver_version("node.npm.version", value)
 }
 
 fn validate_pnpm_version(value: &str) -> Result<(), ValidationError> {

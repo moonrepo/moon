@@ -83,16 +83,18 @@ impl NodeTool {
             yarn: None,
         };
 
-        node.npm = Some(NpmTool::new(&node, &config.npm)?);
+        node.npm = Some(NpmTool::new(&paths, &config.npm)?);
 
         match config.package_manager {
+            NodePackageManager::Npm => {
+                node.npm = Some(NpmTool::new(&paths, &config.npm)?);
+            }
             NodePackageManager::Pnpm => {
                 node.pnpm = Some(PnpmTool::new(&node, &config.pnpm)?);
             }
             NodePackageManager::Yarn => {
                 node.yarn = Some(YarnTool::new(&node, &config.yarn)?);
             }
-            _ => {}
         };
 
         Ok(node)

@@ -54,7 +54,7 @@ tasks:
     args: ./cwd.js
   runFromWorkspace:
     command: node
-    args: ./node/cwd.js
+    args: ./base/cwd.js
     options:
       runFromWorkspaceRoot: true
   retryCount:

@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 561
+assertion_line: 465
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ passthroughArgs:dep

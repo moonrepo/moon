@@ -262,8 +262,6 @@ mod target_scopes {
             .assert();
         let output = get_assert_output(&assert);
 
-        moon_utils::test::debug_sandbox(&fixture, &assert);
-
         assert!(predicate::str::contains("targetScopeA:all").eval(&output));
         assert!(predicate::str::contains("targetScopeB:all").eval(&output));
         assert!(predicate::str::contains("targetScopeC:all").eval(&output));
@@ -279,8 +277,6 @@ mod target_scopes {
             .arg("targetScopeA:deps")
             .assert();
         let output = get_assert_output(&assert);
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
         assert!(predicate::str::contains("depsA:standard").eval(&output));

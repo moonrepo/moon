@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 97
+assertion_line: 99
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ base:runFromWorkspace

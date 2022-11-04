@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 840
+assertion_line: 803
 expression: get_assert_output(&assert2)
 ---
 ▪▪▪▪ outputs:generateFileAndFolder (cached)

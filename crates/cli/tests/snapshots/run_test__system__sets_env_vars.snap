@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 456
+assertion_line: 400
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ system:envVars

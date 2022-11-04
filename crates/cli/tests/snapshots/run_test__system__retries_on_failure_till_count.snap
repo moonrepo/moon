@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 531
+assertion_line: 448
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ system:retryCount

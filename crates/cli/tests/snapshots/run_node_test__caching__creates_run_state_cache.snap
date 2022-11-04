@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 1415
+assertion_line: 1429
 expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.hash))).unwrap()"
 ---
 [
@@ -22,7 +22,7 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
       "base/exitCodeNonZero.js": "1cea9d1c8c3776318c20d54a86c1b492df443397",
       "base/exitCodeZero.js": "887c40bee2815c60cf4efde58a52716e4c393a24",
       "base/mjsFile.mjs": "a5b6817de5cfa541e430072598de3f42d83bd6cf",
-      "base/moon.yml": "8daa4faa58a32e6282a85631d5dd556a709ed8b1",
+      "base/moon.yml": "e57da0ccaa202b7c0c29c7bb7382c03130380412",
       "base/package.json": "90337835dcee45f8ad63cf77540c5b762e9e7255",
       "base/passthroughArgs.js": "83cf03c37aa75b33592735611860e32c6f338693",
       "base/processExitNonZero.js": "2fe41b280bb08f250ca7bf2263ec0b17fa7010f1",

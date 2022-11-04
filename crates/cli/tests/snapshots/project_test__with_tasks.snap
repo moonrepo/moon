@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/project_test.rs
-assertion_line: 76
+assertion_line: 92
 expression: get_assert_output(&assert)
 ---
 

@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 897
+assertion_line: 1126
 expression: "read_to_string(fixture.path().join(\"create-config/tsconfig.json\")).unwrap()"
 ---
 {
@@ -10,3 +10,4 @@ expression: "read_to_string(fixture.path().join(\"create-config/tsconfig.json\")
   ],
   "references": []
 }
+

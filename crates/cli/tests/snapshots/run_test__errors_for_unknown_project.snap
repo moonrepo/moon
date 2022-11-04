@@ -1,9 +1,10 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 39
+assertion_line: 30
 expression: get_assert_output(&assert)
 ---
 
  ERROR  No project has been configured with the ID unknown.
+
 
 

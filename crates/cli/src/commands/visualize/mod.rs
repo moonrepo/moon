@@ -1,5 +1,7 @@
-mod resolvers;
-mod state;
+mod dto;
+mod resolver;
+mod schema;
+mod service;
 
 use crate::helpers::AnyError;
 
@@ -14,7 +16,7 @@ use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
-use self::resolvers::QueryRoot;
+use self::resolver::QueryRoot;
 
 const INDEX_HTML: &str = "index.html";
 pub type AppSchema = Schema<QueryRoot, EmptyMutation, EmptySubscription>;
@@ -26,12 +28,10 @@ struct Assets;
 pub async fn visualize() -> Result<(), AnyError> {
     info!("Starting visualizer on {}", "http://127.0.0.1:8000");
 
-    let schema = Schema::build(QueryRoot, EmptyMutation, EmptySubscription).finish();
-    let app_state = state::init().await?;
+    let schema = schema::build_schema().await?;
     #[allow(unused_must_use)]
     let _rocket = rocket::build()
         .manage(schema)
-        .manage(app_state.workspace)
         .mount("/", routes![index, other_files, graphiql, graphql_request])
         .launch()
         .await?;

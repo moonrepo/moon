@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{download_file_from_url, get_bin_version, unpack};
+use crate::helpers::{download_file_from_url, unpack};
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::ToolchainPaths;
@@ -65,10 +65,6 @@ impl Lifecycle<NodeTool> for NpmTool {
 impl Installable<NodeTool> for NpmTool {
     fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError> {
         Ok(&self.install_dir)
-    }
-
-    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
-        get_bin_version(self.get_bin_path()).await
     }
 
     async fn is_installed(

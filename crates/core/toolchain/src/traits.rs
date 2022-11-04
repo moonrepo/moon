@@ -67,10 +67,6 @@ pub trait Installable<T: Send + Sync>: Send + Sync + Logable {
     /// This is typically ~/.moon/tools/<tool>/<version>.
     fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError>;
 
-    /// Returns a semver version for the currently installed binary.
-    /// This is typically acquired by executing the binary with a `--version` argument.
-    async fn get_installed_version(&self) -> Result<String, ToolchainError>;
-
     /// Determine whether the tool has already been installed.
     /// If `check_version` is false, avoid running the binaries as child processes
     /// to extract the current version.

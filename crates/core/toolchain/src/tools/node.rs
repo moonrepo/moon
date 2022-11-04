@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{download_file_from_url, get_bin_version, get_file_sha256_hash, unpack};
+use crate::helpers::{download_file_from_url, get_file_sha256_hash, unpack};
 use crate::pms::npm::NpmTool;
 use crate::pms::pnpm::PnpmTool;
 use crate::pms::yarn::YarnTool;
@@ -198,10 +198,6 @@ impl Downloadable<()> for NodeTool {
 impl Installable<()> for NodeTool {
     fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError> {
         Ok(&self.install_dir)
-    }
-
-    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
-        Ok(get_bin_version(self.get_bin_path()).await?)
     }
 
     async fn is_installed(

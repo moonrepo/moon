@@ -1,5 +1,4 @@
 use moon_config::{NodeConfig, NodePackageManager, WorkspaceConfig, YarnConfig};
-use moon_node_lang::node;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
@@ -14,7 +13,7 @@ async fn create_yarn_tool() -> (NodeTool, assert_fs::TempDir) {
             package_manager: NodePackageManager::Yarn,
             yarn: Some(YarnConfig {
                 plugins: None,
-                version: String::from("6.0.0"),
+                version: String::from("1.0.0"),
             }),
             ..NodeConfig::default()
         }),
@@ -39,7 +38,7 @@ async fn generates_paths() {
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")
             .join("tools")
-            .join("node")
+            .join("yarn")
             .join("1.0.0")
             .to_str()
             .unwrap()
@@ -48,9 +47,10 @@ async fn generates_paths() {
 
     let bin_path = PathBuf::from(".moon")
         .join("tools")
-        .join("node")
+        .join("yarn")
         .join("1.0.0")
-        .join(node::get_bin_name_suffix("yarn", "cmd", false));
+        .join("bin")
+        .join("yarn.js");
 
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(yarn.get_bin_path().to_str().unwrap()));

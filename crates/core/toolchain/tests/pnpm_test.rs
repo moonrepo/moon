@@ -1,5 +1,4 @@
 use moon_config::{NodeConfig, NodePackageManager, PnpmConfig, WorkspaceConfig};
-use moon_node_lang::node;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Executable, Installable, Toolchain};
 use predicates::prelude::*;
@@ -38,8 +37,8 @@ async fn generates_paths() {
     assert!(predicates::str::ends_with(
         PathBuf::from(".moon")
             .join("tools")
-            .join("node")
-            .join("1.0.0")
+            .join("pnpm")
+            .join("6.0.0")
             .to_str()
             .unwrap()
     )
@@ -47,9 +46,10 @@ async fn generates_paths() {
 
     let bin_path = PathBuf::from(".moon")
         .join("tools")
-        .join("node")
-        .join("1.0.0")
-        .join(node::get_bin_name_suffix("pnpm", "cmd", false));
+        .join("pnpm")
+        .join("6.0.0")
+        .join("bin")
+        .join("pnpm.cjs");
 
     assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
         .eval(pnpm.get_bin_path().to_str().unwrap()));

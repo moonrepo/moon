@@ -35,6 +35,7 @@ impl NpmTool {
             bin_path: install_dir.join("bin/npm-cli.js"),
             download_path: paths
                 .temp
+                .join("npm")
                 .join(node::get_package_download_file("npm", &config.version)),
             install_dir,
             log_target: String::from("moon:toolchain:npm"),
@@ -95,7 +96,7 @@ impl Installable<NodeTool> for NpmTool {
             .await?;
         }
 
-        unpack(&self.download_path, &self.install_dir, "").await?;
+        unpack(&self.download_path, &self.install_dir, "package").await?;
 
         Ok(())
     }

@@ -52,6 +52,7 @@ impl YarnTool {
             bin_path: install_dir.join("bin/yarn.js"),
             download_path: paths
                 .temp
+                .join("yarn")
                 .join(node::get_package_download_file("yarn", &download_version)),
             download_version,
             install_dir,
@@ -136,11 +137,6 @@ impl Installable<NodeTool> for YarnTool {
         Ok(self.bin_path.exists())
     }
 
-    // Yarn is installed through npm, but only v1 exists in the npm registry,
-    // even if a consumer is using Yarn 2/3. https://www.npmjs.com/package/yarn
-    // Yarn >= 2 work differently than normal packages, as their runtime code
-    // is stored *within* the repository, and the v1 package detects it.
-    // Because of this, we need to always install the v1 package!
     async fn install(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
         if self.download_version == self.config.version {
             debug!(
@@ -150,22 +146,27 @@ impl Installable<NodeTool> for YarnTool {
         } else {
             debug!(
                 target: self.get_log_target(),
-                "Installing yarn v{} (via {})", self.config.version, self.download_version
+                "Installing yarn v{} (via v{})", self.config.version, self.download_version
             );
         }
 
         if !self.download_path.exists() {
             download_file_from_url(
                 node::get_npm_registry_url(
-                    "npm",
-                    node::get_package_download_file("npm", &self.download_version),
+                    "yarn",
+                    node::get_package_download_file("yarn", &self.download_version),
                 ),
                 &self.download_path,
             )
             .await?;
         }
 
-        unpack(&self.download_path, &self.install_dir, "").await?;
+        unpack(
+            &self.download_path,
+            &self.install_dir,
+            &format!("yarn-v{}", self.download_version),
+        )
+        .await?;
 
         Ok(())
     }

@@ -1,7 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{
-    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack,
-};
+use crate::helpers::{download_file_from_url, get_bin_version, get_file_sha256_hash, unpack};
 use crate::pms::npm::NpmTool;
 use crate::pms::pnpm::PnpmTool;
 use crate::pms::yarn::YarnTool;
@@ -14,9 +12,6 @@ use moon_lang::LangError;
 use moon_logger::{color, debug, error, Logable};
 use moon_node_lang::node;
 use moon_utils::fs;
-use moon_utils::process::Command;
-use moon_utils::semver::{Version, VersionReq};
-use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -98,22 +93,6 @@ impl NodeTool {
         Ok(node)
     }
 
-    pub async fn exec_corepack<I, S>(&self, args: I) -> Result<(), ToolchainError>
-    where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
-    {
-        let corepack_path = node::find_package_manager_bin(&self.install_dir, "corepack");
-
-        Command::new(&corepack_path)
-            .args(args)
-            .env("PATH", get_path_env_var(corepack_path.parent().unwrap()))
-            .exec_capture_output()
-            .await?;
-
-        Ok(())
-    }
-
     pub fn find_package_bin(
         &self,
         starting_dir: &Path,
@@ -154,14 +133,6 @@ impl NodeTool {
         }
 
         panic!("No package manager, how's this possible?");
-    }
-
-    #[track_caller]
-    pub fn is_corepack_aware(&self) -> bool {
-        let cfg_version = Version::parse(&self.config.version).unwrap();
-
-        VersionReq::parse(">=16.9.0").unwrap().matches(&cfg_version)
-            || VersionReq::parse("^14.19.0").unwrap().matches(&cfg_version)
     }
 }
 
@@ -276,15 +247,6 @@ impl Executable<()> for NodeTool {
 #[async_trait]
 impl Lifecycle<()> for NodeTool {
     async fn setup(&mut self, _parent: &(), check_version: bool) -> Result<u8, ToolchainError> {
-        if self.is_corepack_aware() && check_version {
-            debug!(
-                target: self.get_log_target(),
-                "Enabling corepack for package manager control"
-            );
-
-            self.exec_corepack(["enable"]).await?;
-        }
-
         let mut installed = 0;
 
         if self.npm.is_some() {

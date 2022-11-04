@@ -39,6 +39,7 @@ impl PnpmTool {
             bin_path: install_dir.join("bin/pnpm.cjs"),
             download_path: paths
                 .temp
+                .join("pnpm")
                 .join(node::get_package_download_file("pnpm", &config.version)),
             install_dir,
             log_target: String::from("moon:toolchain:pnpm"),
@@ -90,7 +91,7 @@ impl Installable<NodeTool> for PnpmTool {
             .await?;
         }
 
-        unpack(&self.download_path, &self.install_dir, "").await?;
+        unpack(&self.download_path, &self.install_dir, "package").await?;
 
         Ok(())
     }

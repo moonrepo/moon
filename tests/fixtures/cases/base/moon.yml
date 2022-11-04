@@ -2,14 +2,14 @@ tasks:
   base:
     command: noop
   runFromProject:
-    command: noop
-    platform: system
+    command: node --version
+    platform: node
   runFromWorkspace:
-    command: noop
-    platform: system
+    command: node --version
+    platform: node
     options:
       runFromWorkspaceRoot: true
   localOnly:
-    command: noop
-    platform: system
+    command: node --version
+    platform: node
     local: true

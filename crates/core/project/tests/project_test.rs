@@ -619,7 +619,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: Some(TaskCommandArgs::String("newcmd".to_owned())),
-                            deps: Some(string_vec!["b:standard"]),
+                            deps: Some(string_vec!["buildB:standard"]),
                             env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             local: false,
                             inputs: Some(string_vec!["b.*"]),
@@ -640,7 +640,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: Some(TaskCommandArgs::String("newcmd".to_owned())),
-                            deps: Some(string_vec!["b:standard"]),
+                            deps: Some(string_vec!["buildB:standard"]),
                             env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             local: false,
                             inputs: Some(string_vec!["b.*"]),
@@ -695,7 +695,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: None,
-                            deps: Some(string_vec!["b:standard"]),
+                            deps: Some(string_vec!["buildB:standard"]),
                             env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             local: false,
                             inputs: Some(string_vec!["b.*"]),
@@ -716,7 +716,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--a", "--b"])),
                             command: Some(TaskCommandArgs::String("standard".to_owned())),
-                            deps: Some(string_vec!["a:standard", "b:standard"]),
+                            deps: Some(string_vec!["a:standard", "buildB:standard"]),
                             env: Some(FxHashMap::from_iter([
                                 ("GLOBAL".to_owned(), "1".to_owned()),
                                 ("KEY".to_owned(), "b".to_owned())
@@ -774,7 +774,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: Some(TaskCommandArgs::String("newcmd".to_owned())),
-                            deps: Some(string_vec!["b:standard"]),
+                            deps: Some(string_vec!["buildB:standard"]),
                             env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             local: false,
@@ -795,7 +795,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b", "--a"])),
                             command: Some(TaskCommandArgs::String("newcmd".to_owned())),
-                            deps: Some(string_vec!["b:standard", "a:standard"]),
+                            deps: Some(string_vec!["buildB:standard", "a:standard"]),
                             env: Some(FxHashMap::from_iter([
                                 ("GLOBAL".to_owned(), "1".to_owned()),
                                 ("KEY".to_owned(), "a".to_owned())
@@ -848,7 +848,7 @@ mod tasks {
             TaskConfig {
                 args: Some(TaskCommandArgs::Sequence(string_vec!["--a", "--b"])),
                 command: Some(TaskCommandArgs::String("standard".to_owned())),
-                deps: Some(string_vec!["b:standard", "a:standard"]),
+                deps: Some(string_vec!["buildB:standard", "a:standard"]),
                 env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                 inputs: Some(string_vec!["b.*"]),
                 local: false,
@@ -884,7 +884,7 @@ mod tasks {
                         TaskConfig {
                             args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
                             command: None,
-                            deps: Some(string_vec!["b:standard"]),
+                            deps: Some(string_vec!["buildB:standard"]),
                             env: Some(FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned())])),
                             inputs: Some(string_vec!["b.*"]),
                             local: false,

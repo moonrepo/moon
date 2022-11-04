@@ -254,6 +254,24 @@ fn retries_on_failure_till_count() {
     assert!(predicate::str::contains("Process ~/.moon/tools/node/16.1.0").eval(&output));
 }
 
+#[test]
+fn can_run_many_targets() {
+    let fixture = create_sandbox_with_git("node");
+
+    let assert = create_moon_command(fixture.path())
+        .arg("run")
+        .arg("node:cjs")
+        .arg("node:mjs")
+        .assert();
+
+    let output = get_assert_output(&assert);
+
+    assert!(predicate::str::contains("node:cjs | stdout").eval(&output));
+    assert!(predicate::str::contains("node:mjs | stdout").eval(&output));
+    assert!(predicate::str::contains("node:cjs | stderr").eval(&output));
+    assert!(predicate::str::contains("node:mjs | stderr").eval(&output));
+}
+
 mod install_deps {
     use super::*;
 

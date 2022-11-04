@@ -22,6 +22,8 @@ pub struct YarnTool {
 
     download_path: PathBuf,
 
+    download_version: String,
+
     install_dir: PathBuf,
 
     log_target: String,
@@ -35,11 +37,23 @@ impl YarnTool {
         let config = config.to_owned().unwrap_or_default();
         let install_dir = paths.tools.join("yarn").join(&config.version);
 
+        // Yarn is installed through npm, but only v1 exists in the npm registry,
+        // even if a consumer is using Yarn 2/3. https://www.npmjs.com/package/yarn
+        // Yarn >= 2 work differently than normal packages, as their runtime code
+        // is stored *within* the repository, and the v1 package detects it.
+        // Because of this, we need to always install the v1 package!
+        let download_version = if config.version.starts_with('1') {
+            config.version.to_owned()
+        } else {
+            "1.22.19".to_owned()
+        };
+
         Ok(YarnTool {
             bin_path: install_dir.join("bin/yarn.js"),
             download_path: paths
                 .temp
-                .join(node::get_package_download_file("yarn", &config.version)),
+                .join(node::get_package_download_file("yarn", &download_version)),
+            download_version,
             install_dir,
             log_target: String::from("moon:toolchain:yarn"),
             config,
@@ -128,16 +142,23 @@ impl Installable<NodeTool> for YarnTool {
     // is stored *within* the repository, and the v1 package detects it.
     // Because of this, we need to always install the v1 package!
     async fn install(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
-        debug!(
-            target: self.get_log_target(),
-            "Installing yarn v{}", self.config.version
-        );
+        if self.download_version == self.config.version {
+            debug!(
+                target: self.get_log_target(),
+                "Installing yarn v{}", self.config.version
+            );
+        } else {
+            debug!(
+                target: self.get_log_target(),
+                "Installing yarn v{} (via {})", self.config.version, self.download_version
+            );
+        }
 
         if !self.download_path.exists() {
             download_file_from_url(
                 node::get_npm_registry_url(
                     "npm",
-                    node::get_package_download_file("npm", &self.config.version),
+                    node::get_package_download_file("npm", &self.download_version),
                 ),
                 &self.download_path,
             )
@@ -145,41 +166,6 @@ impl Installable<NodeTool> for YarnTool {
         }
 
         unpack(&self.download_path, &self.install_dir, "").await?;
-
-        // let log_target = self.get_log_target();
-        // let npm = node.get_npm();
-        // let package = format!("yarn@{}", self.config.version);
-
-        // if node.is_corepack_aware() {
-        //     debug!(
-        //         target: log_target,
-        //         "Enabling package manager with {}",
-        //         color::shell(format!("corepack prepare {} --activate", package))
-        //     );
-
-        //     node.exec_corepack(["prepare", &package, "--activate"])
-        //         .await?;
-
-        //     // v1
-        // } else if self.is_v1() {
-        //     debug!(
-        //         target: log_target,
-        //         "Installing package with {}",
-        //         color::shell(format!("npm install -g {}", package))
-        //     );
-
-        //     npm.install_global_dep("yarn", &self.config.version).await?;
-
-        //     // v2, v3
-        // } else {
-        //     debug!(
-        //         target: log_target,
-        //         "Installing legacy package with {}",
-        //         color::shell("npm install -g yarn@latest")
-        //     );
-
-        //     npm.install_global_dep("yarn", "latest").await?;
-        // }
 
         Ok(())
     }

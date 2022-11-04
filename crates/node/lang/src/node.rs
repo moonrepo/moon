@@ -1,4 +1,4 @@
-use crate::package::{PackageJson, PackageWorkspaces};
+use crate::package::{PackageJson, PackageWorkspaces, StringOrObject};
 use crate::pnpm::workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
@@ -28,6 +28,29 @@ pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
         Ok(old_value) => format!("{}{}{}", value, delimiter, old_value),
         Err(_) => value.to_owned(),
     }
+}
+
+pub fn extract_bin_path_from_package(
+    package_root: &Path,
+    bin_name: &str,
+) -> Result<Option<String>, MoonError> {
+    let mut bin_path = None;
+
+    if let Some(package_json) = PackageJson::read(package_root)? {
+        match &package_json.bin {
+            Some(StringOrObject::String(bin)) => {
+                bin_path = Some(bin.to_owned());
+            }
+            Some(StringOrObject::Object(bins)) => {
+                if let Some(bin) = bins.get(bin_name) {
+                    bin_path = Some(bin.to_owned());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Ok(bin_path)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

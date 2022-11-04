@@ -2,7 +2,7 @@ use crate::errors::ToolchainError;
 use crate::helpers::{download_file_from_url, unpack};
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
-use crate::ToolchainPaths;
+use crate::{get_path_env_var, ToolchainPaths};
 use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_lang::LockfileDependencyVersions;
@@ -101,6 +101,12 @@ impl Installable<NodeTool> for NpmTool {
 #[async_trait]
 impl Executable<NodeTool> for NpmTool {
     async fn find_bin_path(&mut self, _node: &NodeTool) -> Result<(), ToolchainError> {
+        let install_dir = self.get_install_dir()?;
+
+        if let Some(bin_path) = node::extract_bin_path_from_package(install_dir, "npm")? {
+            self.bin_path = install_dir.join(bin_path);
+        }
+
         Ok(())
     }
 
@@ -116,9 +122,11 @@ impl Executable<NodeTool> for NpmTool {
 #[async_trait]
 impl PackageManager<NodeTool> for NpmTool {
     fn create_command(&self, node: &NodeTool) -> Command {
+        let bin_path = self.get_bin_path();
+
         let mut cmd = Command::new(node.get_bin_path());
-        cmd.arg(self.get_bin_path());
-        // cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
+        cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
+        cmd.arg(bin_path);
         cmd
     }
 

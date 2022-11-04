@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import Flow from './components/Flow';
+import React, { useState } from 'react';
+import { Flow } from './components/Flow';
 
 function App() {
 	const [count, setCount] = useState(0);
@@ -8,10 +8,11 @@ function App() {
 		<div className="App">
 			<div>Hello</div>
 			<p>You have clicked {count} times</p>
-			<button onClick={() => setCount(count + 1)}>Click</button>
+			<button onClick={() => void setCount(count + 1)}>Click</button>
 			<Flow />
 		</div>
 	);
 }
 
+// eslint-disable-next-line import/no-default-export
 export default App;

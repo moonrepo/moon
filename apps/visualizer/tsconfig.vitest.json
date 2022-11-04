@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "exclude": [],
+    "compilerOptions": {
+        "composite": true,
+        "lib": [],
+        "types": [
+            "node",
+            "jsdom"
+        ]
+    }
+}

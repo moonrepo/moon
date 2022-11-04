@@ -15,3 +15,6 @@ umd/
 
 # Test fixtures
 /tests
+
+# visualizer
+apps/visualizer/vite.config.ts

@@ -4,6 +4,7 @@ coverage/
 .docusaurus/
 coverage/
 build/
+dist/
 cjs/
 dts/
 esm/
@@ -17,3 +18,6 @@ umd/
 
 # These are Tera templates
 crates/config/templates/
+
+# visualizer
+apps/visualizer/*timestamp*

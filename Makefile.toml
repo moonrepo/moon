@@ -37,14 +37,19 @@ cwd = "./tests/fixtures/cases"
 
 [tasks.test-nocoverage]
 command = "cargo"
-args = ["test", "--workspace"]
+args = ["nextest", "run", "test", "--workspace", "--no-fail-fast"]
 
 [tasks.clean-test]
 script = "rm -rf ./tests/fixtures/cases/.moon/cache"
 condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
-run_task = { name = ["clean-test", "setup-test", "test-nocoverage", "clean-test"] }
+run_task = { name = [
+    "clean-test",
+    "setup-test",
+    "test-nocoverage",
+    "clean-test",
+] }
 
 [tasks.test-output]
 command = "cargo"
@@ -58,11 +63,43 @@ run_task = { name = ["build", "test"] }
 
 [tasks.generate-report]
 command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "lcov", "--branch", "--ignore-not-existing", "--ignore", "**/errors.rs", "--ignore", "error/src/lib.rs", "-o", "./report.txt"]
+args = [
+    ".",
+    "-s",
+    "./crates",
+    "--binary-path",
+    "./target/debug",
+    "-t",
+    "lcov",
+    "--branch",
+    "--ignore-not-existing",
+    "--ignore",
+    "**/errors.rs",
+    "--ignore",
+    "error/src/lib.rs",
+    "-o",
+    "./report.txt",
+]
 
 [tasks.generate-html]
 command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "html", "--branch", "--ignore-not-existing", "--ignore", "**/errors.rs", "--ignore", "error/src/lib.rs", "-o", "./coverage"]
+args = [
+    ".",
+    "-s",
+    "./crates",
+    "--binary-path",
+    "./target/debug",
+    "-t",
+    "html",
+    "--branch",
+    "--ignore-not-existing",
+    "--ignore",
+    "**/errors.rs",
+    "--ignore",
+    "error/src/lib.rs",
+    "-o",
+    "./coverage",
+]
 
 [tasks.clean-profraw]
 script = "rm -rf *.profraw"
@@ -74,10 +111,4 @@ command = "cargo"
 args = ["run", "-p", "moon_config"]
 
 [tasks.check]
-dependencies = [
-    "format",
-    "lint",
-    "build",
-    "test"
-]
-
+dependencies = ["format", "lint", "build", "test"]

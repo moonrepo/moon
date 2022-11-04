@@ -1,5 +1,5 @@
----
-language: typescript
+type: 'application'
+
 tasks:
   build:
     command: vite build
@@ -29,3 +29,5 @@ workspace:
   inheritedTasks:
     exclude:
       - 'build'
+      - 'test'
+      - 'typecheck'

@@ -54,6 +54,7 @@ tokio = { workspace = true }
 yaml-rust = { version = "0.5.1", package = "yaml-rust-davvid" }
 async-graphql = "4.0.16"
 async-graphql-rocket = "4.0.16"
+async-trait = { workspace = true }
 
 [dev-dependencies]
 moon_archive = { path = "../core/archive" }

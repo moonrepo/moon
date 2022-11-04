@@ -5,11 +5,12 @@ members = [
 	"crates/core/*",
 	"crates/node/*",
 	"crates/system/*",
-	"crates/typescript/*"
+	"crates/typescript/*",
 ]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
+async-trait = "0.1.58"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
 serde = { version = "1.0.145", features = ["derive"] }
 serde_json = "1.0.86"

@@ -2141,6 +2141,7 @@ dependencies = [
  "async-graphql",
  "async-graphql-rocket",
  "async-recursion",
+ "async-trait",
  "clap 4.0.18",
  "clap_lex 0.3.0",
  "console",

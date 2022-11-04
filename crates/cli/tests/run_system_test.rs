@@ -2,6 +2,7 @@ mod utils;
 
 use insta::assert_snapshot;
 use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_assert_output};
+use predicates::prelude::*;
 use utils::get_path_safe_output;
 
 #[cfg(not(windows))]
@@ -149,6 +150,24 @@ mod unix {
         assert_snapshot!(get_assert_output(&assert));
     }
 
+    #[test]
+    fn can_run_many_targets() {
+        let fixture = create_sandbox_with_git("system");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("unix:foo")
+            .arg("unix:bar")
+            .arg("unix:baz")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("unix:foo | foo").eval(&output));
+        assert!(predicate::str::contains("unix:bar | bar").eval(&output));
+        assert!(predicate::str::contains("unix:baz | baz").eval(&output));
+    }
+
     mod passthrough {
         use super::*;
 
@@ -164,6 +183,85 @@ mod unix {
                 .assert();
 
             assert_snapshot!(get_assert_output(&assert));
+        }
+    }
+
+    mod caching {
+        use super::*;
+        use moon_cache::RunTargetState;
+        use std::fs;
+
+        #[test]
+        fn uses_cache_on_subsequent_runs() {
+            let fixture = create_sandbox_with_git("system");
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("unix:outputs")
+                .assert();
+
+            assert_snapshot!(get_assert_output(&assert));
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("unix:outputs")
+                .assert();
+
+            assert_snapshot!(get_assert_output(&assert));
+        }
+
+        #[test]
+        fn creates_runfile() {
+            let fixture = create_sandbox_with_git("system");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("unix:outputs")
+                .assert();
+
+            assert!(fixture
+                .path()
+                .join(".moon/cache/states/unix/runfile.json")
+                .exists());
+        }
+
+        #[tokio::test]
+        async fn creates_run_state_cache() {
+            let fixture = create_sandbox_with_git("system");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("unix:outputs")
+                .assert();
+
+            let cache_path = fixture
+                .path()
+                .join(".moon/cache/states/unix/outputs/lastRun.json");
+
+            assert!(cache_path.exists());
+
+            let state = RunTargetState::load(cache_path, 0).await.unwrap();
+
+            assert_snapshot!(fs::read_to_string(
+                fixture
+                    .path()
+                    .join(format!(".moon/cache/hashes/{}.json", state.hash))
+            )
+            .unwrap());
+
+            assert!(fixture
+                .path()
+                .join(".moon/cache/outputs")
+                .join(format!("{}.tar.gz", state.hash))
+                .exists());
+            assert!(fixture
+                .path()
+                .join(".moon/cache/states/unix/outputs/stdout.log")
+                .exists());
+            assert!(fixture
+                .path()
+                .join(".moon/cache/states/unix/outputs/stderr.log")
+                .exists());
         }
     }
 }
@@ -287,5 +385,23 @@ mod system_windows {
             .assert();
 
         assert_snapshot!(get_assert_output(&assert));
+    }
+
+    #[test]
+    fn can_run_many_targets() {
+        let fixture = create_sandbox_with_git("system");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("windows:foo")
+            .arg("windows:bar")
+            .arg("windows:baz")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("windows:foo | foo").eval(&output));
+        assert!(predicate::str::contains("windows:bar | bar").eval(&output));
+        assert!(predicate::str::contains("windows:baz | baz").eval(&output));
     }
 }

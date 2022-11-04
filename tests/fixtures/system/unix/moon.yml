@@ -53,3 +53,20 @@ tasks:
     platform: system
     options:
       retryCount: 3
+  outputs:
+    command: bash ./outputs.sh
+    platform: system
+    outputs:
+      - 'file.txt'
+      - 'folder'
+
+  # Misc
+  foo:
+    command: echo 'foo'
+    platform: system
+  bar:
+    command: echo 'bar'
+    platform: system
+  baz:
+    command: echo 'baz'
+    platform: system

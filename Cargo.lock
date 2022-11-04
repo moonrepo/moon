@@ -2024,7 +2024,6 @@ dependencies = [
  "moon_utils",
  "moon_vcs",
  "moon_workspace",
- "portpicker",
  "predicates",
  "pretty_assertions",
  "rocket",
@@ -2923,15 +2922,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4a63d338dec139f56dacc692ca63ad35a6be6a797442479b55acd611d79e906"
 dependencies = [
  "nom",
-]
-
-[[package]]
-name = "portpicker"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be97d76faf1bfab666e1375477b23fde79eccf0276e9b63b92a39d676a889ba9"
-dependencies = [
- "rand 0.8.5",
 ]
 
 [[package]]

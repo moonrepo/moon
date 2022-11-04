@@ -1,42 +1,27 @@
+mod init;
+
 use crate::helpers::AnyError;
 
-use moon_logger::{info, trace};
-use portpicker::is_free;
+use moon_logger::info;
 use rocket::http::ContentType;
 use rocket::response::content::RawHtml;
 use rocket::{get, routes};
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
 use std::ffi::OsStr;
-use std::{env, net::SocketAddr, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(RustEmbed)]
 #[folder = "../../apps/visualizer/dist"]
 struct Assets;
 
 pub async fn visualize() -> Result<(), AnyError> {
-    trace!("Trying to get $PORT from environment variables");
-    let mut port = env::var("PORT")
-        .map(|p| p.parse::<u16>().expect("Expected $PORT to be a number"))
-        .ok();
-    if port.is_none() {
-        trace!("No environment variable $PORT found, trying to find a random free port");
-        for possible_port in 8000..9000 {
-            trace!("Checking if {} is free", possible_port);
-            if is_free(possible_port) {
-                port = Some(possible_port);
-                break;
-            } else {
-                trace!("Port {} is not free, trying next port", possible_port);
-            }
-        }
-    }
-    let address = ([0, 0, 0, 0], port.unwrap());
-    let addr = SocketAddr::from(address);
-    info!("Starting visualizer on {}", addr);
+    info!("Starting visualizer on {}", "http://127.0.0.1:8000");
+    let workspace = init::init().await?;
 
     #[allow(unused_must_use)]
     let _rocket = rocket::build()
+        .manage(workspace)
         .mount("/", routes![index, other_files])
         .launch()
         .await?;

@@ -52,6 +52,8 @@ strum = { version = "0.24.1", features = ["derive"] }
 tera = { version = "1.17.1", features = ["preserve_order"] }
 tokio = { workspace = true }
 yaml-rust = { version = "0.5.1", package = "yaml-rust-davvid" }
+async-graphql = "4.0.16"
+async-graphql-rocket = "4.0.16"
 
 [dev-dependencies]
 moon_archive = { path = "../core/archive" }

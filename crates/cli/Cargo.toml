@@ -34,7 +34,6 @@ moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../core/vcs" }
 moon_workspace = { path = "../core/workspace" }
 async-recursion = "1.0.0"
-axum = "0.5.17"
 clap = { version = "4.0.18", features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.3.0"
 console = "0.15.2"
@@ -44,8 +43,8 @@ futures = "0.3.25"
 indicatif = "0.17.1"
 itertools = "0.10.5"
 mimalloc = { version = "0.1.30", default-features = false }
-mime_guess = "2.0.4"
 portpicker = "0.1.1"
+rocket = "0.5.0-rc.2"
 rust-embed = { version = "6.4.2", features = ["include-exclude"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

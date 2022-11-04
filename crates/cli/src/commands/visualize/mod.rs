@@ -1,17 +1,14 @@
 use crate::helpers::AnyError;
-use axum::{
-    body::{boxed, Full},
-    handler::Handler,
-    http::{header, StatusCode, Uri},
-    response::Response,
-    Router, Server,
-};
+
 use moon_logger::{info, trace};
 use portpicker::is_free;
+use rocket::http::ContentType;
+use rocket::response::content::RawHtml;
+use rocket::{get, routes};
 use rust_embed::RustEmbed;
-use std::{env, net::SocketAddr};
-
-static INDEX_HTML: &str = "index.html";
+use std::borrow::Cow;
+use std::ffi::OsStr;
+use std::{env, net::SocketAddr, path::PathBuf};
 
 #[derive(RustEmbed)]
 #[folder = "../../apps/visualizer/dist"]
@@ -37,50 +34,30 @@ pub async fn visualize() -> Result<(), AnyError> {
     let address = ([0, 0, 0, 0], port.unwrap());
     let addr = SocketAddr::from(address);
     info!("Starting visualizer on {}", addr);
-    let app = Router::new().fallback(static_handler.into_service());
-    Server::bind(&addr).serve(app.into_make_service()).await?;
+
+    #[allow(unused_must_use)]
+    let _rocket = rocket::build()
+        .mount("/", routes![index, other_files])
+        .launch()
+        .await?;
+
     Ok(())
 }
 
-async fn static_handler(uri: Uri) -> Response {
-    let path = uri.path().trim_start_matches('/');
-    if path.is_empty() || path == INDEX_HTML {
-        return index_html().await;
-    }
-    match Assets::get(path) {
-        Some(content) => {
-            let body = boxed(Full::from(content.data));
-            let mime = mime_guess::from_path(path).first_or_octet_stream();
-            Response::builder()
-                .header(header::CONTENT_TYPE, mime.as_ref())
-                .body(body)
-                .unwrap()
-        }
-        None => {
-            if path.contains('.') {
-                return not_found().await;
-            }
-            index_html().await
-        }
-    }
+#[get("/")]
+fn index() -> Option<RawHtml<Cow<'static, [u8]>>> {
+    let asset = Assets::get("index.html")?;
+    Some(RawHtml(asset.data))
 }
 
-async fn index_html() -> Response {
-    match Assets::get(INDEX_HTML) {
-        Some(content) => {
-            let body = boxed(Full::from(content.data));
-            Response::builder()
-                .header(header::CONTENT_TYPE, "text/html")
-                .body(body)
-                .unwrap()
-        }
-        None => not_found().await,
-    }
-}
-
-async fn not_found() -> Response {
-    Response::builder()
-        .status(StatusCode::NOT_FOUND)
-        .body(boxed(Full::from("404")))
-        .unwrap()
+#[get("/<file..>")]
+fn other_files(file: PathBuf) -> Option<(ContentType, Cow<'static, [u8]>)> {
+    let filename = file.display().to_string();
+    let asset = Assets::get(&filename)?;
+    let content_type = file
+        .extension()
+        .and_then(OsStr::to_str)
+        .and_then(ContentType::from_extension)
+        .unwrap_or(ContentType::Bytes);
+    Some((content_type, asset.data))
 }

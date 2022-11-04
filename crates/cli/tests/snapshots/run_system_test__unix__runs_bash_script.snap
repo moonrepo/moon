@@ -1,9 +1,9 @@
 ---
-source: crates/cli/tests/run_test.rs
-assertion_line: 343
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 44
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ system:bash
+▪▪▪▪ unix:bash
 stdout
 
 Tasks: 1 completed

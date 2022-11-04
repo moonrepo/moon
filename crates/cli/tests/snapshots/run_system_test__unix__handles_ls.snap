@@ -1,9 +1,9 @@
 ---
-source: crates/cli/tests/run_test.rs
-assertion_line: 331
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 32
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ system:ls
+▪▪▪▪ unix:ls
 cwd.sh
 envVars.sh
 envVarsMoon.sh

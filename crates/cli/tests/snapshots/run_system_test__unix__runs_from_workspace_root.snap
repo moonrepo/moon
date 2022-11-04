@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 137
+expression: "get_path_safe_output(&assert, fixture.path())"
+---
+▪▪▪▪ unix:runFromWorkspace
+▪▪▪▪ unix:runFromWorkspace (100ms)
+bash: ./system/cwd.sh: No such file or directory
+
+ ERROR  Process bash failed with a 127 exit code.
+
+
+

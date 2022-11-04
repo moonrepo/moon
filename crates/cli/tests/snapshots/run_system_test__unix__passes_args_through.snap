@@ -1,9 +1,9 @@
 ---
-source: crates/cli/tests/run_test.rs
-assertion_line: 388
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 89
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ system:passthroughArgs
+▪▪▪▪ unix:passthroughArgs
 -aBc --opt value --optCamel=value foo 'bar baz' --opt-kebab 123
 
 Tasks: 1 completed

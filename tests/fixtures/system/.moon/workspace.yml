@@ -1,0 +1,3 @@
+projects:
+  unix: 'unix'
+  windows: 'windows'

@@ -1,0 +1,10 @@
+---
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 166
+expression: get_assert_output(&assert)
+---
+
+ ERROR  No project has been configured with the ID passthroughArgs.
+
+
+

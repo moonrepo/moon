@@ -14,19 +14,12 @@ projects:
   targetScopeB: 'target-scope-b'
   targetScopeC: 'target-scope-c'
 
-  # Tool types
-  system: 'system'
-  systemWindows: 'system-windows'
-
   # Outputs
   outputs: 'outputs'
   outputStyles: 'output-styles'
 
   # Runner
   passthroughArgs: 'passthrough-args'
-
-typescript:
-  syncProjectReferences: false
 
 # Put at the bottom so we can append settings to test
 node:

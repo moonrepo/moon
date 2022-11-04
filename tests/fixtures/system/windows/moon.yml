@@ -27,7 +27,7 @@ tasks:
     command: cmd.exe /q /c ./cwd.bat
     platform: system
   runFromWorkspace:
-    command: cmd /q /c ./system-windows/cwd.bat
+    command: cmd /q /c ./windows/cwd.bat
     platform: system
     options:
       runFromWorkspaceRoot: true
@@ -36,6 +36,12 @@ tasks:
     platform: system
     options:
       retryCount: 3
+  outputs:
+    command: cmd.exe /q /c ./outputs.bat
+    platform: system
+    outputs:
+      - 'file.txt'
+      - 'folder'
 
   # Misc
   foo:

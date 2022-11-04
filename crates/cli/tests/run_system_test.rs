@@ -168,24 +168,6 @@ mod unix {
         assert!(predicate::str::contains("unix:baz | baz").eval(&output));
     }
 
-    mod passthrough {
-        use super::*;
-
-        #[test]
-        fn doesnt_pass_to_non_primary() {
-            let fixture = create_sandbox_with_git("system");
-
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("passthroughArgs:b")
-                .arg("--")
-                .arg("-aBc")
-                .assert();
-
-            assert_snapshot!(get_assert_output(&assert));
-        }
-    }
-
     mod caching {
         use super::*;
         use moon_cache::RunTargetState;
@@ -403,5 +385,84 @@ mod system_windows {
         assert!(predicate::str::contains("windows:foo | foo").eval(&output));
         assert!(predicate::str::contains("windows:bar | bar").eval(&output));
         assert!(predicate::str::contains("windows:baz | baz").eval(&output));
+    }
+
+    mod caching {
+        use super::*;
+        use moon_cache::RunTargetState;
+        use std::fs;
+
+        #[test]
+        fn uses_cache_on_subsequent_runs() {
+            let fixture = create_sandbox_with_git("system");
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("windows:outputs")
+                .assert();
+
+            assert_snapshot!(get_assert_output(&assert));
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("windows:outputs")
+                .assert();
+
+            assert_snapshot!(get_assert_output(&assert));
+        }
+
+        #[test]
+        fn creates_runfile() {
+            let fixture = create_sandbox_with_git("system");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("windows:outputs")
+                .assert();
+
+            assert!(fixture
+                .path()
+                .join(".moon/cache/states/windows/runfile.json")
+                .exists());
+        }
+
+        #[tokio::test]
+        async fn creates_run_state_cache() {
+            let fixture = create_sandbox_with_git("system");
+
+            create_moon_command(fixture.path())
+                .arg("run")
+                .arg("windows:outputs")
+                .assert();
+
+            let cache_path = fixture
+                .path()
+                .join(".moon/cache/states/windows/outputs/lastRun.json");
+
+            assert!(cache_path.exists());
+
+            let state = RunTargetState::load(cache_path, 0).await.unwrap();
+
+            assert_snapshot!(fs::read_to_string(
+                fixture
+                    .path()
+                    .join(format!(".moon/cache/hashes/{}.json", state.hash))
+            )
+            .unwrap());
+
+            assert!(fixture
+                .path()
+                .join(".moon/cache/outputs")
+                .join(format!("{}.tar.gz", state.hash))
+                .exists());
+            assert!(fixture
+                .path()
+                .join(".moon/cache/states/windows/outputs/stdout.log")
+                .exists());
+            assert!(fixture
+                .path()
+                .join(".moon/cache/states/windows/outputs/stderr.log")
+                .exists());
+        }
     }
 }

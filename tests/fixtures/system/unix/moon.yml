@@ -43,7 +43,7 @@ tasks:
     platform: system
   runFromWorkspace:
     command: bash
-    args: ./system/cwd.sh
+    args: ./unix/cwd.sh
     platform: system
     options:
       runFromWorkspaceRoot: true

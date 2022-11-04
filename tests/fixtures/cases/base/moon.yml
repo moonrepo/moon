@@ -2,16 +2,14 @@ tasks:
   base:
     command: noop
   runFromProject:
-    command: echo
-    args: '"in project"'
+    command: noop
     platform: system
   runFromWorkspace:
-    command: echo
-    args: '"in workspace"'
+    command: noop
+    platform: system
     options:
       runFromWorkspaceRoot: true
-    platform: system
   localOnly:
-    command: 'echo "local only"'
+    command: noop
     platform: system
     local: true

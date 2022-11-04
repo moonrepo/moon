@@ -83,17 +83,15 @@ impl NodeTool {
             yarn: None,
         };
 
-        node.npm = Some(NpmTool::new(&paths, &config.npm)?);
-
         match config.package_manager {
             NodePackageManager::Npm => {
-                node.npm = Some(NpmTool::new(&paths, &config.npm)?);
+                node.npm = Some(NpmTool::new(paths, &config.npm)?);
             }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(&node, &config.pnpm)?);
+                node.pnpm = Some(PnpmTool::new(paths, &config.pnpm)?);
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(&node, &config.yarn)?);
+                node.yarn = Some(YarnTool::new(paths, &config.yarn)?);
             }
         };
 
@@ -128,8 +126,8 @@ impl NodeTool {
     }
 
     /// Return the `npm` package manager.
-    pub fn get_npm(&self) -> &NpmTool {
-        self.npm.as_ref().unwrap()
+    pub fn get_npm(&self) -> Option<&NpmTool> {
+        self.npm.as_ref()
     }
 
     /// Return the `pnpm` package manager.
@@ -151,7 +149,11 @@ impl NodeTool {
             return self.get_yarn().unwrap();
         }
 
-        self.get_npm()
+        if self.npm.is_some() {
+            return self.get_npm().unwrap();
+        }
+
+        panic!("No package manager, how's this possible?");
     }
 
     #[track_caller]

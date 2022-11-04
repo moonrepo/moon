@@ -1,12 +1,14 @@
 use crate::errors::ToolchainError;
-use crate::helpers::get_bin_version;
+use crate::helpers::{download_file_from_url, get_bin_version, unpack};
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
+use crate::ToolchainPaths;
 use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_lang::LockfileDependencyVersions;
 use moon_logger::{color, debug, Logable};
 use moon_node_lang::{node, yarn, YARN};
+use moon_utils::process::Command;
 use moon_utils::{fs, get_workspace_root, is_ci};
 use rustc_hash::FxHashMap;
 use std::env;
@@ -18,20 +20,29 @@ pub struct YarnTool {
 
     pub config: YarnConfig,
 
+    download_path: PathBuf,
+
     install_dir: PathBuf,
 
     log_target: String,
 }
 
 impl YarnTool {
-    pub fn new(node: &NodeTool, config: &Option<YarnConfig>) -> Result<YarnTool, ToolchainError> {
-        let install_dir = node.get_install_dir()?.clone();
+    pub fn new(
+        paths: &ToolchainPaths,
+        config: &Option<YarnConfig>,
+    ) -> Result<YarnTool, ToolchainError> {
+        let config = config.to_owned().unwrap_or_default();
+        let install_dir = paths.tools.join("yarn").join(&config.version);
 
         Ok(YarnTool {
-            bin_path: node::find_package_manager_bin(&install_dir, "yarn"),
-            config: config.to_owned().unwrap_or_default(),
+            bin_path: install_dir.join("bin/yarn.js"),
+            download_path: paths
+                .temp
+                .join(node::get_package_download_file("yarn", &config.version)),
             install_dir,
             log_target: String::from("moon:toolchain:yarn"),
+            config,
         })
     }
 
@@ -48,7 +59,7 @@ impl Logable for YarnTool {
 
 #[async_trait]
 impl Lifecycle<NodeTool> for YarnTool {
-    async fn setup(&mut self, _node: &NodeTool, check_version: bool) -> Result<u8, ToolchainError> {
+    async fn setup(&mut self, node: &NodeTool, check_version: bool) -> Result<u8, ToolchainError> {
         if !check_version || self.is_v1() {
             return Ok(0);
         }
@@ -74,14 +85,14 @@ impl Lifecycle<NodeTool> for YarnTool {
                 color::shell(format!("yarn set version {}", self.config.version))
             );
 
-            self.create_command()
+            self.create_command(node)
                 .args(["set", "version", &self.config.version])
                 .exec_capture_output()
                 .await?;
 
             if let Some(plugins) = &self.config.plugins {
                 for plugin in plugins {
-                    self.create_command()
+                    self.create_command(node)
                         .args(["plugin", "import", plugin])
                         .exec_capture_output()
                         .await?;
@@ -105,38 +116,10 @@ impl Installable<NodeTool> for YarnTool {
 
     async fn is_installed(
         &self,
-        node: &NodeTool,
-        check_version: bool,
+        _node: &NodeTool,
+        _check_version: bool,
     ) -> Result<bool, ToolchainError> {
-        if !self.is_executable()
-            || (!node.is_corepack_aware()
-                && !node.get_npm().is_global_dep_installed("yarn").await?)
-        {
-            return Ok(false);
-        }
-
-        if !check_version {
-            return Ok(true);
-        }
-
-        let log_target = self.get_log_target();
-        let version = self.get_installed_version().await?;
-
-        if version != self.config.version {
-            debug!(
-                target: log_target,
-                "Package is on the wrong version ({}), attempting to reinstall", version
-            );
-
-            return Ok(false);
-        }
-
-        debug!(
-            target: log_target,
-            "Package has already been installed and is on the correct version",
-        );
-
-        Ok(true)
+        Ok(self.bin_path.exists())
     }
 
     // Yarn is installed through npm, but only v1 exists in the npm registry,
@@ -144,41 +127,59 @@ impl Installable<NodeTool> for YarnTool {
     // Yarn >= 2 work differently than normal packages, as their runtime code
     // is stored *within* the repository, and the v1 package detects it.
     // Because of this, we need to always install the v1 package!
-    async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
-        let log_target = self.get_log_target();
-        let npm = node.get_npm();
-        let package = format!("yarn@{}", self.config.version);
+    async fn install(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
+        debug!(
+            target: self.get_log_target(),
+            "Installing yarn v{}", self.config.version
+        );
 
-        if node.is_corepack_aware() {
-            debug!(
-                target: log_target,
-                "Enabling package manager with {}",
-                color::shell(format!("corepack prepare {} --activate", package))
-            );
-
-            node.exec_corepack(["prepare", &package, "--activate"])
-                .await?;
-
-            // v1
-        } else if self.is_v1() {
-            debug!(
-                target: log_target,
-                "Installing package with {}",
-                color::shell(format!("npm install -g {}", package))
-            );
-
-            npm.install_global_dep("yarn", &self.config.version).await?;
-
-            // v2, v3
-        } else {
-            debug!(
-                target: log_target,
-                "Installing legacy package with {}",
-                color::shell("npm install -g yarn@latest")
-            );
-
-            npm.install_global_dep("yarn", "latest").await?;
+        if !self.download_path.exists() {
+            download_file_from_url(
+                node::get_npm_registry_url(
+                    "npm",
+                    node::get_package_download_file("npm", &self.config.version),
+                ),
+                &self.download_path,
+            )
+            .await?;
         }
+
+        unpack(&self.download_path, &self.install_dir, "").await?;
+
+        // let log_target = self.get_log_target();
+        // let npm = node.get_npm();
+        // let package = format!("yarn@{}", self.config.version);
+
+        // if node.is_corepack_aware() {
+        //     debug!(
+        //         target: log_target,
+        //         "Enabling package manager with {}",
+        //         color::shell(format!("corepack prepare {} --activate", package))
+        //     );
+
+        //     node.exec_corepack(["prepare", &package, "--activate"])
+        //         .await?;
+
+        //     // v1
+        // } else if self.is_v1() {
+        //     debug!(
+        //         target: log_target,
+        //         "Installing package with {}",
+        //         color::shell(format!("npm install -g {}", package))
+        //     );
+
+        //     npm.install_global_dep("yarn", &self.config.version).await?;
+
+        //     // v2, v3
+        // } else {
+        //     debug!(
+        //         target: log_target,
+        //         "Installing legacy package with {}",
+        //         color::shell("npm install -g yarn@latest")
+        //     );
+
+        //     npm.install_global_dep("yarn", "latest").await?;
+        // }
 
         Ok(())
     }
@@ -186,13 +187,13 @@ impl Installable<NodeTool> for YarnTool {
 
 #[async_trait]
 impl Executable<NodeTool> for YarnTool {
-    async fn find_bin_path(&mut self, node: &NodeTool) -> Result<(), ToolchainError> {
+    async fn find_bin_path(&mut self, _node: &NodeTool) -> Result<(), ToolchainError> {
         // If the global has moved, be sure to reference it
-        let bin_path = node::find_package_manager_bin(node.get_npm().get_global_dir()?, "yarn");
+        // let bin_path = node::find_package_manager_bin(node.get_npm().get_global_dir()?, "yarn");
 
-        if bin_path.exists() {
-            self.bin_path = bin_path;
-        }
+        // if bin_path.exists() {
+        //     self.bin_path = bin_path;
+        // }
 
         Ok(())
     }
@@ -208,6 +209,13 @@ impl Executable<NodeTool> for YarnTool {
 
 #[async_trait]
 impl PackageManager<NodeTool> for YarnTool {
+    fn create_command(&self, node: &NodeTool) -> Command {
+        let mut cmd = Command::new(node.get_bin_path());
+        cmd.arg(self.get_bin_path());
+        // cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
+        cmd
+    }
+
     async fn dedupe_dependencies(
         &self,
         node: &NodeTool,
@@ -216,46 +224,14 @@ impl PackageManager<NodeTool> for YarnTool {
     ) -> Result<(), ToolchainError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
-        if self.is_v1() {
-            // Will error if the lockfile does not exist!
-            if working_dir.join(self.get_lock_filename()).exists() {
-                node.get_npm()
-                    .exec_package(
-                        "yarn-deduplicate",
-                        vec!["yarn-deduplicate", YARN.lock_filename],
-                        working_dir,
-                    )
-                    .await?;
-            }
-
-        // yarn dedupe
-        } else {
-            self.create_command()
+        if !self.is_v1() {
+            self.create_command(node)
                 .arg("dedupe")
                 .cwd(working_dir)
                 .log_running_command(log)
                 .exec_capture_output()
                 .await?;
         }
-
-        Ok(())
-    }
-
-    async fn exec_package(
-        &self,
-        package: &str,
-        args: Vec<&str>,
-        working_dir: &Path,
-    ) -> Result<(), ToolchainError> {
-        // https://yarnpkg.com/cli/dlx
-        let mut exec_args = vec!["dlx", "--package", package];
-        exec_args.extend(args);
-
-        self.create_command()
-            .args(exec_args)
-            .cwd(working_dir)
-            .exec_stream_output()
-            .await?;
 
         Ok(())
     }
@@ -281,7 +257,7 @@ impl PackageManager<NodeTool> for YarnTool {
 
     async fn install_dependencies(
         &self,
-        _node: &NodeTool,
+        node: &NodeTool,
         working_dir: &Path,
         log: bool,
     ) -> Result<(), ToolchainError> {
@@ -301,7 +277,7 @@ impl PackageManager<NodeTool> for YarnTool {
             }
         }
 
-        let mut cmd = self.create_command();
+        let mut cmd = self.create_command(node);
 
         cmd.args(args).cwd(working_dir).log_running_command(log);
 
@@ -316,11 +292,11 @@ impl PackageManager<NodeTool> for YarnTool {
 
     async fn install_focused_dependencies(
         &self,
-        _node: &NodeTool,
+        node: &NodeTool,
         packages: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError> {
-        let mut cmd = self.create_command();
+        let mut cmd = self.create_command(node);
 
         if self.is_v1() {
             cmd.arg("install");

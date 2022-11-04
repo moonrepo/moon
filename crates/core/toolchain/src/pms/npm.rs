@@ -1,5 +1,5 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{download_file_from_url, get_bin_version, get_path_env_var, unpack};
+use crate::helpers::{download_file_from_url, get_bin_version, unpack};
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
 use crate::ToolchainPaths;
@@ -33,13 +33,12 @@ impl NpmTool {
 
         Ok(NpmTool {
             bin_path: install_dir.join("bin/npm-cli.js"),
-            config: config.to_owned(),
-            download_path: paths.temp.join(node::get_package_download_file(
-                "npm",
-                config.version.to_owned(),
-            )),
+            download_path: paths
+                .temp
+                .join(node::get_package_download_file("npm", &config.version)),
             install_dir,
             log_target: String::from("moon:toolchain:npm"),
+            config: config.to_owned(),
         })
     }
 }
@@ -79,7 +78,7 @@ impl Installable<NodeTool> for NpmTool {
         Ok(self.bin_path.exists())
     }
 
-    async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
+    async fn install(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
         debug!(
             target: self.get_log_target(),
             "Installing npm v{}", self.config.version
@@ -137,28 +136,6 @@ impl PackageManager<NodeTool> for NpmTool {
             .cwd(working_dir)
             .log_running_command(log)
             .exec_capture_output()
-            .await?;
-
-        Ok(())
-    }
-
-    async fn exec_package(
-        &self,
-        package: &str,
-        args: Vec<&str>,
-        working_dir: &Path,
-    ) -> Result<(), ToolchainError> {
-        let mut exec_args = vec!["--silent", "--package", package, "--"];
-
-        exec_args.extend(args);
-
-        let npx_path = node::find_package_manager_bin(&self.install_dir, "npx");
-
-        Command::new(&npx_path)
-            .args(exec_args)
-            .cwd(working_dir)
-            .env("PATH", get_path_env_var(&self.install_dir))
-            .exec_stream_output()
             .await?;
 
         Ok(())

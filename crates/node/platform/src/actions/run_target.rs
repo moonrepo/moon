@@ -109,7 +109,11 @@ pub async fn create_target_command(
             args.extend(create_node_options(context, workspace, task)?);
         }
         "npm" => {
-            cmd = node.get_npm().get_bin_path().clone();
+            cmd = node
+                .get_npm()
+                .expect("npm must be enabled")
+                .get_bin_path()
+                .clone();
         }
         "pnpm" => {
             cmd = node

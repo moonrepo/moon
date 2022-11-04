@@ -1,5 +1,4 @@
 use crate::errors::ToolchainError;
-use crate::helpers::get_path_env_var;
 use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_logger::{debug, Logable};
@@ -202,14 +201,6 @@ pub trait PackageManager<T: Send + Sync>:
         parent: &T,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolchainError>;
-
-    /// Download and execute a one-off package.
-    async fn exec_package(
-        &self,
-        package: &str,
-        args: Vec<&str>,
-        working_dir: &Path,
     ) -> Result<(), ToolchainError>;
 
     /// Return the name of the lockfile.

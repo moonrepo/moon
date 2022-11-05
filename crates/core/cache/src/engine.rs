@@ -5,7 +5,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
 use moon_platform::Runtime;
-use moon_utils::{fs, time};
+use moon_utils::{fs, json, time};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -153,7 +153,7 @@ impl CacheEngine {
                 color::path(&path)
             );
 
-            fs::write_json(&path, &hasher, true).await?;
+            json::write(&path, &hasher, true)?;
         }
 
         Ok(())
@@ -168,7 +168,7 @@ impl CacheEngine {
 
         trace!(target: LOG_TARGET, "Writing report {}", color::path(&path));
 
-        fs::write_json(path, &data, true).await?;
+        json::write(path, &data, true)?;
 
         Ok(())
     }

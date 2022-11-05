@@ -1,3 +1,5 @@
+use super::check_dirty_repo;
+use crate::helpers::load_workspace;
 use moon_config::{
     DependencyConfig, DependencyScope, PlatformType, ProjectConfig, ProjectDependsOn,
     TaskCommandArgs,
@@ -7,18 +9,12 @@ use moon_error::MoonError;
 use moon_logger::info;
 use moon_node_lang::package::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
-use moon_utils::fs;
+use moon_utils::yaml::{self, Hash, Yaml};
 use rustc_hash::FxHashMap;
 use serde_yaml::to_string;
-use yaml_rust::yaml::{Hash, Yaml};
-use yaml_rust::YamlEmitter;
-
-use crate::helpers::load_workspace;
-
-use super::check_dirty_repo;
 
 // Don't use serde since it writes *everything*, which is a ton of nulled fields!
-pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::error::Error>> {
+pub fn convert_to_yaml(config: &ProjectConfig) -> Result<Yaml, Box<dyn std::error::Error>> {
     let mut root = Hash::new();
 
     root.insert(
@@ -121,12 +117,7 @@ pub fn convert_to_yaml(config: &ProjectConfig) -> Result<String, Box<dyn std::er
         root.insert(Yaml::String("tasks".to_owned()), Yaml::Hash(tasks));
     }
 
-    let mut out = String::new();
-    let mut emitter = YamlEmitter::new(&mut out);
-
-    emitter.dump(&Yaml::Hash(root))?;
-
-    Ok(out)
+    Ok(Yaml::Hash(root))
 }
 
 pub async fn from_package_json(
@@ -198,11 +189,10 @@ pub async fn from_package_json(
         Ok(())
     })?;
 
-    fs::write(
+    yaml::write_raw(
         project.root.join(CONFIG_PROJECT_FILENAME),
         convert_to_yaml(&project.config)?,
-    )
-    .await?;
+    )?;
 
     Ok(())
 }

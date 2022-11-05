@@ -10,6 +10,11 @@
   individually as their own tools at `~/.moon/tools/npm`, etc. This change should be transparent to
   you, but we're documenting it just in case something breaks!
 
+#### 🚀 Updates
+
+- When writing JSON files, indentation and formatting will be inferred from the closest
+  `.editorconfig` as best as possible.
+
 #### 🐞 Fixes
 
 - Fixed an issue where passthrough args were incorrectly being passed to non-primary targets when

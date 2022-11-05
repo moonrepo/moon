@@ -16,8 +16,10 @@ chrono-humanize = "0.2.2"
 clean-path = "0.2.1"
 dirs = "4.0.0"
 dunce = "1.0.3"
+ec4rs = "1.0.1"
 futures = "0.3.25"
 humantime = "2.1.0"
+json = "0.12.4"
 json_comments = "0.2.1"
 lazy_static = "1.4.0"
 md5 = "0.7.0"
@@ -30,4 +32,7 @@ serde_yaml = { workspace = true }
 shell-words = "1.1.0"
 tokio = { workspace = true }
 wax = "0.5.0"
+yaml-rust = { version = "0.5.1", package = "yaml-rust-davvid" }
 
+[dev-dependencies]
+insta = "1.21.0"

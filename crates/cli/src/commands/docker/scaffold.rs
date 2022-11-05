@@ -6,7 +6,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_node_lang::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
-use moon_utils::{fs, glob, path};
+use moon_utils::{fs, glob, json, path};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
@@ -185,12 +185,11 @@ async fn scaffold_sources(
         copy_files(&files, &workspace.root, &docker_sources_root).await?;
     }
 
-    fs::write_json(
+    json::write(
         docker_sources_root.join("dockerManifest.json"),
         &manifest,
         true,
-    )
-    .await?;
+    )?;
 
     Ok(())
 }

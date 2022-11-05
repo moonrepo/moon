@@ -1,13 +1,11 @@
 use moon_utils::test::{create_moon_command, create_sandbox};
 use predicates::prelude::*;
-use serial_test::serial;
 use std::fs;
 
 mod init_node {
     use super::*;
 
     #[test]
-    #[serial]
     fn infers_version_from_nvm() {
         let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
@@ -27,7 +25,6 @@ mod init_node {
     }
 
     #[test]
-    #[serial]
     fn infers_version_from_nodenv() {
         let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
@@ -47,7 +44,6 @@ mod init_node {
     }
 
     #[test]
-    #[serial]
     fn infers_globs_from_workspaces() {
         let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
@@ -77,7 +73,6 @@ mod init_node {
     }
 
     #[test]
-    #[serial]
     fn infers_globs_from_workspaces_expanded() {
         let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
@@ -110,7 +105,6 @@ mod init_node {
         use super::*;
 
         #[test]
-        #[serial]
         fn infers_npm() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
@@ -130,7 +124,6 @@ mod init_node {
         }
 
         #[test]
-        #[serial]
         fn infers_npm_from_package() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
@@ -155,7 +148,6 @@ mod init_node {
         }
 
         #[test]
-        #[serial]
         fn infers_pnpm() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
@@ -175,7 +167,6 @@ mod init_node {
         }
 
         #[test]
-        #[serial]
         fn infers_pnpm_from_package() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
@@ -200,7 +191,6 @@ mod init_node {
         }
 
         #[test]
-        #[serial]
         fn infers_yarn() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
@@ -220,7 +210,6 @@ mod init_node {
         }
 
         #[test]
-        #[serial]
         fn infers_yarn_from_package() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();

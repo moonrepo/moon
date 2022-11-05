@@ -3,7 +3,6 @@ mod utils;
 use insta::assert_snapshot;
 use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_assert_output};
 use predicates::prelude::*;
-use serial_test::serial;
 use std::fs::read_to_string;
 use utils::{append_workspace_config, get_path_safe_output, update_workspace_config};
 
@@ -562,7 +561,6 @@ mod npm {
     use super::*;
 
     #[test]
-    #[serial]
     fn installs_correct_version() {
         let fixture = create_sandbox_with_git("node-npm");
 
@@ -575,7 +573,6 @@ mod npm {
     }
 
     #[test]
-    #[serial]
     fn can_install_a_dep() {
         let fixture = create_sandbox_with_git("node-npm");
 
@@ -588,7 +585,6 @@ mod npm {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_script() {
         let fixture = create_sandbox_with_git("node-npm");
 
@@ -603,7 +599,6 @@ mod npm {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_deps_bin() {
         let fixture = create_sandbox_with_git("node-npm");
 
@@ -621,7 +616,6 @@ mod npm {
     }
 
     #[test]
-    #[serial]
     fn installs_deps_in_non_workspace_project() {
         let fixture = create_sandbox_with_git("node-npm");
 
@@ -655,7 +649,6 @@ mod pnpm {
     use std::fs;
 
     #[test]
-    #[serial]
     fn installs_correct_version() {
         let fixture = create_sandbox_with_git("node-pnpm");
 
@@ -668,7 +661,6 @@ mod pnpm {
     }
 
     #[test]
-    #[serial]
     fn can_install_a_dep() {
         let fixture = create_sandbox_with_git("node-pnpm");
 
@@ -681,7 +673,6 @@ mod pnpm {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_script() {
         let fixture = create_sandbox_with_git("node-pnpm");
 
@@ -696,7 +687,6 @@ mod pnpm {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_deps_bin_isolated() {
         let fixture = create_sandbox_with_git("node-pnpm");
 
@@ -716,7 +706,6 @@ mod pnpm {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_deps_bin_hoisted() {
         let fixture = create_sandbox_with_git("node-pnpm");
 
@@ -737,7 +726,6 @@ mod pnpm {
 
     // NOTE: pnpm does not support nested lockfiles.
     // #[test]
-    // #[serial]
     // fn installs_deps_in_non_workspace_project() {
     //     let fixture = create_sandbox_with_git("node-pnpm");
 
@@ -768,7 +756,6 @@ mod yarn1 {
     use super::*;
 
     #[test]
-    #[serial]
     fn installs_correct_version() {
         let fixture = create_sandbox_with_git("node-yarn1");
 
@@ -781,7 +768,6 @@ mod yarn1 {
     }
 
     #[test]
-    #[serial]
     fn can_install_a_dep() {
         let fixture = create_sandbox_with_git("node-yarn1");
 
@@ -794,7 +780,6 @@ mod yarn1 {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_script() {
         let fixture = create_sandbox_with_git("node-yarn1");
 
@@ -809,7 +794,6 @@ mod yarn1 {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_deps_bin() {
         let fixture = create_sandbox_with_git("node-yarn1");
 
@@ -827,7 +811,6 @@ mod yarn1 {
     }
 
     #[test]
-    #[serial]
     fn installs_deps_in_non_workspace_project() {
         let fixture = create_sandbox_with_git("node-yarn1");
 
@@ -857,7 +840,6 @@ mod yarn {
     use super::*;
 
     #[test]
-    #[serial]
     fn installs_correct_version() {
         let fixture = create_sandbox_with_git("node-yarn");
 
@@ -870,7 +852,6 @@ mod yarn {
     }
 
     #[test]
-    #[serial]
     fn can_install_a_dep() {
         let fixture = create_sandbox_with_git("node-yarn");
 
@@ -883,7 +864,6 @@ mod yarn {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_script() {
         let fixture = create_sandbox_with_git("node-yarn");
 
@@ -898,7 +878,6 @@ mod yarn {
     }
 
     #[test]
-    #[serial]
     fn can_run_a_deps_bin() {
         let fixture = create_sandbox_with_git("node-yarn");
 
@@ -916,7 +895,6 @@ mod yarn {
     }
 
     #[test]
-    #[serial]
     fn installs_deps_in_non_workspace_project() {
         let fixture = create_sandbox_with_git("node-yarn");
 
@@ -1286,7 +1264,6 @@ mod typescript {
 //     use super::*;
 
 //     #[test]
-//     #[serial]
 //     fn can_override_version() {
 //         let fixture = create_sandbox_with_git("node");
 

@@ -2,8 +2,7 @@ language: javascript
 
 tasks:
   npm:
-    command: npm
-    args: config get tag
+    command: npm --version
   standard:
     command: node
     args: ./standard.js

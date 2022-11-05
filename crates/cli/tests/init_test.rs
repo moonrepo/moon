@@ -3,11 +3,9 @@ use moon_utils::test::{
     create_moon_command, create_sandbox, create_sandbox_with_git, run_git_command,
 };
 use predicates::prelude::*;
-use serial_test::serial;
 use std::fs;
 
 #[test]
-#[serial]
 fn creates_files_in_dest() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
@@ -35,7 +33,6 @@ fn creates_files_in_dest() {
 }
 
 #[test]
-#[serial]
 fn creates_workspace_config_from_template() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
@@ -54,7 +51,6 @@ fn creates_workspace_config_from_template() {
 }
 
 #[test]
-#[serial]
 fn creates_project_config_from_template() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
@@ -75,7 +71,6 @@ fn creates_project_config_from_template() {
 }
 
 #[test]
-#[serial]
 fn creates_gitignore_file() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
@@ -94,7 +89,6 @@ fn creates_gitignore_file() {
 }
 
 #[test]
-#[serial]
 fn appends_existing_gitignore_file() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
@@ -115,7 +109,6 @@ fn appends_existing_gitignore_file() {
 }
 
 #[test]
-#[serial]
 fn does_overwrite_existing_config_if_force_passed() {
     let fixture = create_sandbox("init-sandbox");
     let root = fixture.path();
@@ -143,7 +136,7 @@ mod vcs {
     use super::*;
 
     #[test]
-    #[serial]
+
     fn detects_git() {
         let fixture = create_sandbox_with_git("init-sandbox");
         let root = fixture.path();

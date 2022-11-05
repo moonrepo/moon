@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- We've refactored how npm/pnpm/yarn work in the toolchain. Previously, they were installed as
+  global packages (or via corepack) within the configured `~/.moon/tools/node` version. This
+  approach worked but was susceptible to collisions, so now, these package managers are installed
+  individually as their own tools at `~/.moon/tools/npm`, etc. This change should be transparent to
+  you, but we're documenting it just in case something breaks!
+
 #### 🐞 Fixes
 
 - Fixed an issue where passthrough args were incorrectly being passed to non-primary targets when

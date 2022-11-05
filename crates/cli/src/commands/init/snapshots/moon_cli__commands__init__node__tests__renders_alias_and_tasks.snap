@@ -1,6 +1,6 @@
 ---
 source: crates/cli/src/commands/init/node.rs
-assertion_line: 319
+assertion_line: 328
 expression: render_template(context).unwrap()
 ---
 # Configures Node.js within the toolchain. moon manages its own version of Node.js
@@ -14,6 +14,10 @@ node:
   # The package manager to use when managing dependencies.
   # Accepts "npm" (default), "pnpm", or "yarn".
   packageManager: 'npm'
+
+  # The version of the package manager (above) to use.
+  npm:
+    version: '8.0.0'
 
   # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true

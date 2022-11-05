@@ -1,9 +1,6 @@
 use moon_config::{NodeConfig, NpmConfig, WorkspaceConfig};
-use moon_node_lang::node;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Executable, Installable, Toolchain};
-use predicates::prelude::*;
-use std::path::PathBuf;
 
 async fn create_npm_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
@@ -32,26 +29,27 @@ async fn create_npm_tool() -> (NodeTool, assert_fs::TempDir) {
 #[tokio::test]
 async fn generates_paths() {
     let (node, temp_dir) = create_npm_tool().await;
-    let npm = node.get_npm();
+    let npm = node.get_npm().unwrap();
 
-    assert!(predicates::str::ends_with(
-        PathBuf::from(".moon")
+    assert_eq!(
+        npm.get_install_dir().unwrap(),
+        &temp_dir
+            .join(".moon")
             .join("tools")
-            .join("node")
-            .join("1.0.0")
-            .to_str()
-            .unwrap()
-    )
-    .eval(npm.get_install_dir().unwrap().to_str().unwrap()));
+            .join("npm")
+            .join("6.0.0")
+    );
 
-    let bin_path = PathBuf::from(".moon")
-        .join("tools")
-        .join("node")
-        .join("1.0.0")
-        .join(node::get_bin_name_suffix("npm", "cmd", false));
-
-    assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
-        .eval(npm.get_bin_path().to_str().unwrap()));
+    assert_eq!(
+        npm.get_bin_path(),
+        &temp_dir
+            .join(".moon")
+            .join("tools")
+            .join("npm")
+            .join("6.0.0")
+            .join("bin")
+            .join("npm-cli.js")
+    );
 
     temp_dir.close().unwrap();
 }

@@ -54,7 +54,10 @@ pub fn read_raw<T: AsRef<Path>>(path: T) -> Result<JsonValue, MoonError> {
 
 #[inline]
 pub fn read_to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
-    clean(crate::fs::sync::read(path.as_ref())?)
+    let path = path.as_ref();
+    let data = fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    clean(data)
 }
 
 // This function is primarily used internally for non-consumer facing files.

@@ -1861,7 +1861,6 @@ dependencies = [
  "tera",
  "tokio",
  "wiremock",
- "yaml-rust-davvid",
 ]
 
 [[package]]
@@ -2234,6 +2233,7 @@ dependencies = [
  "shell-words",
  "tokio",
  "wax",
+ "yaml-rust-davvid",
 ]
 
 [[package]]

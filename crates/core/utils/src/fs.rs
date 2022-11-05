@@ -1,8 +1,6 @@
 use async_recursion::async_recursion;
 use futures::future::try_join_all;
-use moon_error::{map_io_to_fs_error, map_yaml_to_error, MoonError};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use moon_error::{map_io_to_fs_error, MoonError};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use tokio::fs;
@@ -147,23 +145,6 @@ pub async fn read<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
 }
 
 #[inline]
-pub async fn read_yaml<P, D>(path: P) -> Result<D, MoonError>
-where
-    P: AsRef<Path>,
-    D: DeserializeOwned,
-{
-    let path = path.as_ref();
-    let contents = fs::read_to_string(path)
-        .await
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-    let yaml: D =
-        serde_yaml::from_str(&contents).map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
-
-    Ok(yaml)
-}
-
-#[inline]
 pub async fn remove<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
     let path = path.as_ref();
 
@@ -264,23 +245,6 @@ pub async fn write<T: AsRef<Path>>(path: T, data: impl AsRef<[u8]>) -> Result<()
     Ok(())
 }
 
-#[inline]
-pub async fn write_yaml<P, D>(path: P, yaml: &D) -> Result<(), MoonError>
-where
-    P: AsRef<Path>,
-    D: ?Sized + Serialize,
-{
-    let path = path.as_ref();
-    let data =
-        serde_yaml::to_string(&yaml).map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
-
-    fs::write(path, data)
-        .await
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-    Ok(())
-}
-
 pub mod temp {
     use super::*;
     use moon_constants::CONFIG_DIRNAME;
@@ -329,37 +293,5 @@ pub mod temp {
         fs::write(path, data.as_ref())?;
 
         Ok(())
-    }
-}
-
-pub mod sync {
-    use super::*;
-    use std::fs::read_to_string;
-
-    #[inline]
-    pub fn read<P>(path: P) -> Result<String, MoonError>
-    where
-        P: AsRef<Path>,
-    {
-        let path = path.as_ref();
-        let data = read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-        Ok(data)
-    }
-
-    #[inline]
-    pub fn read_yaml<P, D>(path: P) -> Result<D, MoonError>
-    where
-        P: AsRef<Path>,
-        D: DeserializeOwned,
-    {
-        let path = path.as_ref();
-        let contents =
-            read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-        let yaml: D = serde_yaml::from_str(&contents)
-            .map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
-
-        Ok(yaml)
     }
 }

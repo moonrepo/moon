@@ -1,11 +1,11 @@
 use crate::errors::ConfigError;
 use moon_utils::{
-    fs::{self, temp},
+    fs::temp,
     path, time,
+    yaml::{self, Yaml},
 };
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-use yaml_rust::{Yaml, YamlLoader};
 
 pub fn download_and_cache_config(url: &str) -> Result<PathBuf, ConfigError> {
     let file = temp::get_file(url, "yml");
@@ -65,10 +65,8 @@ pub fn gather_extended_sources<T: AsRef<Path>>(
             // Parse the YAML document and attempt to extract the `extends` field.
             // We can't use serde here as the shape of the document may be invalid
             // or incomplete.
-            let yaml = YamlLoader::load_from_str(&fs::sync::read(&config_path)?)
+            let doc = yaml::read_raw(&config_path)
                 .map_err(|e| ConfigError::InvalidYaml(config_path.clone(), e.to_string()))?;
-
-            let doc = &yaml[0];
 
             // Field does not exist!
             if doc["extends"].is_badvalue() {

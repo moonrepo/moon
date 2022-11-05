@@ -8,6 +8,7 @@ pub mod semver;
 pub mod shell;
 pub mod test;
 pub mod time;
+pub mod yaml;
 
 use cached::proc_macro::cached;
 use moon_constants as constants;

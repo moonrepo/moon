@@ -2,8 +2,6 @@ use moon_config::{NodeConfig, WorkspaceConfig};
 use moon_node_lang::node;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Downloadable, Executable, Installable, Toolchain};
-use predicates::prelude::*;
-use std::path::PathBuf;
 
 async fn create_node_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
@@ -38,34 +36,24 @@ fn create_shasums(hash: &str) -> String {
 async fn generates_paths() {
     let (node, temp_dir) = create_node_tool().await;
 
-    assert!(predicates::str::ends_with(
-        PathBuf::from(".moon")
+    assert_eq!(
+        node.get_install_dir().unwrap(),
+        &temp_dir
+            .join(".moon")
             .join("tools")
             .join("node")
             .join("1.0.0")
-            .to_str()
-            .unwrap()
-    )
-    .eval(node.get_install_dir().unwrap().to_str().unwrap()));
+    );
 
-    let bin_path = PathBuf::from(".moon")
-        .join("tools")
-        .join("node")
-        .join("1.0.0")
-        .join(node::get_bin_name_suffix("node", "exe", false));
-
-    assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
-        .eval(node.get_bin_path().to_str().unwrap()));
-
-    assert!(predicates::str::ends_with(
-        PathBuf::from(".moon")
-            .join("temp")
+    assert_eq!(
+        node.get_bin_path(),
+        &temp_dir
+            .join(".moon")
+            .join("tools")
             .join("node")
-            .join(get_download_file())
-            .to_str()
-            .unwrap()
-    )
-    .eval(node.get_download_path().unwrap().to_str().unwrap()));
+            .join("1.0.0")
+            .join(node::get_bin_name_suffix("node", "exe", false))
+    );
 
     temp_dir.close().unwrap();
 }

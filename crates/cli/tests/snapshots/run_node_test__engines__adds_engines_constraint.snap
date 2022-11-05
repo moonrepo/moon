@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 347
+assertion_line: 355
 expression: "read_to_string(fixture.path().join(\"package.json\")).unwrap()"
 ---
 {
@@ -11,6 +11,7 @@ expression: "read_to_string(fixture.path().join(\"package.json\")).unwrap()"
   ],
   "engines": {
     "node": "16.0.0"
-  }
+  },
+  "packageManager": "npm@8.19.2"
 }
 

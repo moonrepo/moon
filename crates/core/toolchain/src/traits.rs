@@ -1,5 +1,4 @@
 use crate::errors::ToolchainError;
-use crate::helpers::get_path_env_var;
 use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_logger::{debug, Logable};
@@ -67,10 +66,6 @@ pub trait Installable<T: Send + Sync>: Send + Sync + Logable {
     /// Returns an absolute file path to the directory containing the installed tool.
     /// This is typically ~/.moon/tools/<tool>/<version>.
     fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError>;
-
-    /// Returns a semver version for the currently installed binary.
-    /// This is typically acquired by executing the binary with a `--version` argument.
-    async fn get_installed_version(&self) -> Result<String, ToolchainError>;
 
     /// Determine whether the tool has already been installed.
     /// If `check_version` is false, avoid running the binaries as child processes
@@ -194,13 +189,7 @@ pub trait PackageManager<T: Send + Sync>:
     Send + Sync + Logable + Installable<T> + Executable<T> + Lifecycle<T>
 {
     /// Create a command to run that wraps the binary.
-    fn create_command(&self) -> Command {
-        let bin_path = self.get_bin_path();
-
-        let mut cmd = Command::new(bin_path);
-        cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
-        cmd
-    }
+    fn create_command(&self, parent: &T) -> Command;
 
     /// Dedupe dependencies after they have been installed.
     async fn dedupe_dependencies(
@@ -208,14 +197,6 @@ pub trait PackageManager<T: Send + Sync>:
         parent: &T,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolchainError>;
-
-    /// Download and execute a one-off package.
-    async fn exec_package(
-        &self,
-        package: &str,
-        args: Vec<&str>,
-        working_dir: &Path,
     ) -> Result<(), ToolchainError>;
 
     /// Return the name of the lockfile.

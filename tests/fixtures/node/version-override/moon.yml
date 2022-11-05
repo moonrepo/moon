@@ -2,4 +2,4 @@ language: javascript
 
 workspace:
   node:
-    version: '14.0.0'
+    version: '18.0.0'

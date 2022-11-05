@@ -40,10 +40,7 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
         ),
     };
 
-    if manager_version != "npm@inherit"
-        && node.is_corepack_aware()
-        && package_json.set_package_manager(&manager_version)
-    {
+    if package_json.set_package_manager(&manager_version) {
         debug!(
             target: LOG_TARGET,
             "Adding package manager version to root {}",

@@ -1,5 +1,6 @@
 use crate::helpers::load_workspace;
 use moon_error::MoonError;
+use moon_toolchain::Executable;
 use moon_utils::process::Command;
 use std::env;
 
@@ -8,16 +9,13 @@ pub async fn run_script(
     project: &Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
-    let mut command = Command::new(
-        workspace
-            .toolchain
-            .node
-            .get()?
-            .get_package_manager()
-            .get_bin_path(),
-    );
+    let node = workspace.toolchain.node.get()?;
+    let mut command = Command::new(node.get_bin_path());
 
-    command.arg("run").arg(name);
+    command
+        .arg(node.get_package_manager().get_bin_path())
+        .arg("run")
+        .arg(name);
 
     if let Ok(project_root) = env::var("MOON_PROJECT_ROOT") {
         command.cwd(project_root);

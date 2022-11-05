@@ -109,25 +109,28 @@ pub async fn create_target_command(
             args.extend(create_node_options(context, workspace, task)?);
         }
         "npm" => {
-            cmd = node
-                .get_npm()
-                .expect("npm must be enabled")
-                .get_bin_path()
-                .clone();
+            args.push(path::to_string(
+                node.get_npm()
+                    .expect("npm must be enabled")
+                    .get_bin_path()
+                    .clone(),
+            )?);
         }
         "pnpm" => {
-            cmd = node
-                .get_pnpm()
-                .expect("pnpm must be enabled")
-                .get_bin_path()
-                .clone();
+            args.push(path::to_string(
+                node.get_pnpm()
+                    .expect("pnpm must be enabled")
+                    .get_bin_path()
+                    .clone(),
+            )?);
         }
         "yarn" => {
-            cmd = node
-                .get_yarn()
-                .expect("yarn must be enabled")
-                .get_bin_path()
-                .clone();
+            args.push(path::to_string(
+                node.get_yarn()
+                    .expect("yarn must be enabled")
+                    .get_bin_path()
+                    .clone(),
+            )?);
         }
         bin => {
             match node.find_package_bin(&project.root, bin)? {

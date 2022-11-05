@@ -45,11 +45,11 @@ tasks:
 
   # Misc
   foo:
-    command: echo 'foo'
+    command: cmd /q /c ./echo.bat 'foo'
     platform: system
   bar:
-    command: echo 'bar'
+    command: cmd /q /c ./echo.bat 'bar'
     platform: system
   baz:
-    command: echo 'baz'
+    command: cmd /q /c ./echo.bat 'baz'
     platform: system

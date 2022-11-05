@@ -9,7 +9,7 @@ use moon_lang::LockfileDependencyVersions;
 use moon_logger::{color, debug, Logable};
 use moon_node_lang::{node, yarn, YARN};
 use moon_utils::process::Command;
-use moon_utils::{fs, get_workspace_root, is_ci};
+use moon_utils::{fs, get_workspace_root, is_ci, path};
 use rustc_hash::FxHashMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -174,7 +174,7 @@ impl Executable<NodeTool> for YarnTool {
         let install_dir = self.get_install_dir()?;
 
         if let Some(bin_path) = node::extract_bin_path_from_package(install_dir, "yarn")? {
-            self.bin_path = install_dir.join(bin_path);
+            self.bin_path = path::normalize(install_dir.join(bin_path))
         }
 
         Ok(())

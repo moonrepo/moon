@@ -9,7 +9,7 @@ use moon_lang::LockfileDependencyVersions;
 use moon_logger::{debug, Logable};
 use moon_node_lang::{node, pnpm, PNPM};
 use moon_utils::process::Command;
-use moon_utils::{fs, is_ci};
+use moon_utils::{fs, is_ci, path};
 use rustc_hash::FxHashMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -99,7 +99,7 @@ impl Executable<NodeTool> for PnpmTool {
         let install_dir = self.get_install_dir()?;
 
         if let Some(bin_path) = node::extract_bin_path_from_package(install_dir, "pnpm")? {
-            self.bin_path = install_dir.join(bin_path);
+            self.bin_path = path::normalize(install_dir.join(bin_path))
         }
 
         Ok(())

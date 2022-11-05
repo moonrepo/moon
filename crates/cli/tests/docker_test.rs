@@ -192,9 +192,9 @@ mod scaffold_sources {
             .arg("base")
             // Janky but works
             .arg("--include")
-            .arg("system/*.sh")
+            .arg("outputs/generate.js")
             .arg("--include")
-            .arg("system-windows/*.bat")
+            .arg("passthrough-args/*.sh")
             .assert();
 
         let docker = fixture.join(".moon/docker/sources");
@@ -202,11 +202,11 @@ mod scaffold_sources {
         moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert!(docker.join("base").exists());
-        assert!(docker.join("system/cwd.sh").exists());
-        assert!(docker.join("system-windows/cwd.bat").exists());
+        assert!(docker.join("outputs/generate.js").exists());
+        assert!(docker.join("passthrough-args/passthroughArgs.sh").exists());
 
         // Check that some others DO NOT exist
-        assert!(!docker.join("node/cwd.js").exists());
+        assert!(!docker.join("output-styles/style.js").exists());
     }
 }
 

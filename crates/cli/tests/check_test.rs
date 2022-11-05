@@ -53,7 +53,7 @@ fn runs_tasks_from_multiple_project() {
 
     assert!(predicate::str::contains("noop:noop").eval(&output));
     assert!(predicate::str::contains("noop:noopWithDeps").eval(&output));
-    assert!(predicate::str::contains("depsA:dependencyOrder").eval(&output)); // dep of noop
+    assert!(predicate::str::contains("outputs:generateFile").eval(&output)); // dep of noop
 }
 
 #[test]

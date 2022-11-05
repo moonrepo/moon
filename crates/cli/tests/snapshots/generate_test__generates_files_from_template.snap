@@ -1,7 +1,7 @@
 ---
 source: crates/cli/tests/generate_test.rs
-assertion_line: 32
-expression: get_assert_output(&assert)
+assertion_line: 37
+expression: get_path_safe_output(&assert)
 ---
 
 Template title 

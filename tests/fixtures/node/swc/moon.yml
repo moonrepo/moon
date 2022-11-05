@@ -3,8 +3,8 @@ language: javascript
 tasks:
   build:
     command: swc
-    args: './index.js -o ./out.js'
+    args: './input.js -o ./output.js'
     inputs:
-      - 'index.js'
+      - 'input.js'
     outputs:
-      - 'out.js'
+      - 'output.js'

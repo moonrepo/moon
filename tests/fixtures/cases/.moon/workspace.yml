@@ -1,25 +1,18 @@
 projects:
   root: '.'
   base: 'base'
+  noop: 'noop'
 
   # Project/task deps
   depsA: 'deps-a'
   depsB: 'deps-b'
   depsC: 'deps-c'
-  depsD: 'deps-d'
   dependsOn: 'depends-on'
-  dependsOnScopes: 'depends-on-scopes'
-  noop: 'noop'
 
   # Target scopes
   targetScopeA: 'target-scope-a'
   targetScopeB: 'target-scope-b'
   targetScopeC: 'target-scope-c'
-
-  # Tool types
-  node: 'node'
-  system: 'system'
-  systemWindows: 'system-windows'
 
   # Outputs
   outputs: 'outputs'
@@ -27,9 +20,6 @@ projects:
 
   # Runner
   passthroughArgs: 'passthrough-args'
-
-typescript:
-  syncProjectReferences: false
 
 # Put at the bottom so we can append settings to test
 node:

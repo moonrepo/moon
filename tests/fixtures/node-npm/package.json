@@ -6,6 +6,6 @@
   },
   "workspaces": [
     "other",
-    "npm"
+    "base"
   ]
 }

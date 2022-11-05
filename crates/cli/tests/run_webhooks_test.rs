@@ -9,7 +9,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 #[tokio::test]
 async fn sends_webhooks() {
     let server = MockServer::start().await;
-    let fixture = create_sandbox_with_git("cases");
+    let fixture = create_sandbox_with_git("node");
 
     Mock::given(method("POST"))
         .and(path("/webhook"))
@@ -32,7 +32,7 @@ async fn sends_webhooks() {
 #[tokio::test]
 async fn sends_webhooks_for_cache_events() {
     let server = MockServer::start().await;
-    let fixture = create_sandbox_with_git("cases");
+    let fixture = create_sandbox_with_git("node");
 
     Mock::given(method("POST"))
         .and(path("/webhook"))
@@ -61,7 +61,7 @@ async fn sends_webhooks_for_cache_events() {
 #[tokio::test]
 async fn doesnt_send_webhooks_if_first_fails() {
     let server = MockServer::start().await;
-    let fixture = create_sandbox_with_git("cases");
+    let fixture = create_sandbox_with_git("node");
 
     Mock::given(method("POST"))
         .and(path("/webhook"))
@@ -84,7 +84,7 @@ async fn doesnt_send_webhooks_if_first_fails() {
 #[tokio::test]
 async fn all_webhooks_have_same_uuid() {
     let server = MockServer::start().await;
-    let fixture = create_sandbox_with_git("cases");
+    let fixture = create_sandbox_with_git("node");
 
     Mock::given(method("POST"))
         .and(path("/webhook"))

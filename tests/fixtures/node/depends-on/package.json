@@ -1,0 +1,6 @@
+{
+  "name": "test-node-depends-on",
+  "dependencies": {
+    "react": "17.0.0"
+  }
+}

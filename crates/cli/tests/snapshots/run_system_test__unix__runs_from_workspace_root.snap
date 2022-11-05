@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 138
+expression: "get_path_safe_output(&assert, fixture.path())"
+---
+▪▪▪▪ unix:runFromWorkspace
+<WORKSPACE>
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

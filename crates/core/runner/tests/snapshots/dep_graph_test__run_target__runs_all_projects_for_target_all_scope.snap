@@ -1,5 +1,5 @@
 ---
-source: crates/runner/tests/dep_graph_test.rs
+source: crates/core/runner/tests/dep_graph_test.rs
 assertion_line: 277
 expression: graph.to_dot()
 ---
@@ -8,12 +8,12 @@ digraph {
     1 [ label="InstallNodeDeps(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     2 [ label="SyncNodeProject(basic)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     3 [ label="RunTarget(basic:build)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    4 [ label="SyncNodeProject(build-a)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    5 [ label="SyncNodeProject(build-c)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    6 [ label="RunTarget(build-a:build)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    7 [ label="RunTarget(build-c:build)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    8 [ label="SyncNodeProject(build-b)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    9 [ label="RunTarget(build-b:build)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="SyncNodeProject(buildA)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    5 [ label="SyncNodeProject(buildC)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    6 [ label="RunTarget(buildA:build)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    7 [ label="RunTarget(buildC:build)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    8 [ label="SyncNodeProject(buildB)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    9 [ label="RunTarget(buildB:build)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 -> 0 [ arrowhead=box, arrowtail=box]
     2 -> 0 [ arrowhead=box, arrowtail=box]
     3 -> 1 [ arrowhead=box, arrowtail=box]

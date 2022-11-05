@@ -1,0 +1,14 @@
+language: javascript
+
+tasks:
+  version:
+    command: pnpm
+    args: --version
+  installDep:
+    command: pnpm
+    args: add react@17.0.0
+  runDep:
+    command: prettier
+    args: --check *.yml
+  runScript:
+    command: pnpm run lint

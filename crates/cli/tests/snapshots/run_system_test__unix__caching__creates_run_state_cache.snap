@@ -1,0 +1,37 @@
+---
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 227
+expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.hash))).unwrap()"
+---
+[
+  {
+    "command": "bash",
+    "args": [
+      "./outputs.sh"
+    ],
+    "deps": [],
+    "envVars": {},
+    "inputs": {
+      ".moon/workspace.yml": "c448710a2eaaec20fe6897f6d62d1e77f39edf4e",
+      "unix/cwd.sh": "9a5ea47dd8809abadf1c61817ffe6be07883af0d",
+      "unix/envVars.sh": "63cd12999af89a6823e908f32f2a08bf7f27182e",
+      "unix/envVarsMoon.sh": "357c556827eaccb9fc7cc96fe882c073068b112f",
+      "unix/exitNonZero.sh": "73cb4653d441d323178c51ea1ba9c4d82e169a91",
+      "unix/exitZero.sh": "1ad12d878a9eac999c1bfd3b033158e22f147918",
+      "unix/moon.yml": "2c8630a34b743dd5f76b59deab92a28bf00bc6d7",
+      "unix/outputs.sh": "9eb7ff5d58f831c346d39e41f98aac3f937a7e1d",
+      "unix/passthroughArgs.sh": "a0b35aa7e9ed94f337760637aab0ec634f5376df",
+      "unix/standard.sh": "5d6a286c841c122f2dcc0df70cbf7cc17629d8c0"
+    },
+    "outputs": [
+      "file.txt",
+      "folder"
+    ],
+    "projectDeps": [],
+    "target": "unix:outputs",
+    "version": "1"
+  },
+  {
+    "version": "1"
+  }
+]

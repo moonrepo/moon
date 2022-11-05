@@ -61,9 +61,9 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".to_owned(), "basic".to_owned()),
-            ("build-a".to_owned(), "build-a".to_owned()),
-            ("build-b".to_owned(), "build-b".to_owned()),
-            ("build-c".to_owned(), "build-c".to_owned()),
+            ("buildA".to_owned(), "build-a".to_owned()),
+            ("buildB".to_owned(), "build-b".to_owned()),
+            ("buildC".to_owned(), "build-c".to_owned()),
             ("chain".to_owned(), "chain".to_owned()),
             ("cycle".to_owned(), "cycle".to_owned()),
             ("inputA".to_owned(), "input-a".to_owned()),
@@ -72,7 +72,7 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
             ("mergeAppend".to_owned(), "merge-append".to_owned()),
             ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
-            ("no-tasks".to_owned(), "no-tasks".to_owned()),
+            ("noTasks".to_owned(), "no-tasks".to_owned()),
         ])),
         node: Some(NodeConfig {
             // Consistent snapshots

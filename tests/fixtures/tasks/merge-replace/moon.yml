@@ -3,7 +3,7 @@ tasks:
     platform: system
     command: newcmd
     deps:
-      - b:standard
+      - buildB:standard
     args:
       - --b
     inputs:

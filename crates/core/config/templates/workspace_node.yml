@@ -10,12 +10,9 @@ node:
   # Accepts "npm" (default), "pnpm", or "yarn".
   packageManager: '{{ package_manager }}'
 
-{%- if package_manager_version != "inherit" %}
-
   # The version of the package manager (above) to use.
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
-{%- endif %}
 
   # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true

@@ -1,13 +1,15 @@
 use crate::errors::ToolchainError;
-use crate::helpers::get_bin_version;
+use crate::helpers::{download_file_from_url, unpack};
 use crate::tools::node::NodeTool;
 use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
+use crate::{get_path_env_var, ToolchainPaths};
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_lang::LockfileDependencyVersions;
-use moon_logger::{color, debug, Logable};
+use moon_logger::{debug, Logable};
 use moon_node_lang::{node, pnpm, PNPM};
-use moon_utils::{fs, is_ci};
+use moon_utils::process::Command;
+use moon_utils::{fs, is_ci, path};
 use rustc_hash::FxHashMap;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -18,20 +20,30 @@ pub struct PnpmTool {
 
     pub config: PnpmConfig,
 
+    download_path: PathBuf,
+
     install_dir: PathBuf,
 
     log_target: String,
 }
 
 impl PnpmTool {
-    pub fn new(node: &NodeTool, config: &Option<PnpmConfig>) -> Result<PnpmTool, ToolchainError> {
-        let install_dir = node.get_install_dir()?.clone();
+    pub fn new(
+        paths: &ToolchainPaths,
+        config: &Option<PnpmConfig>,
+    ) -> Result<PnpmTool, ToolchainError> {
+        let config = config.to_owned().unwrap_or_default();
+        let install_dir = paths.tools.join("pnpm").join(&config.version);
 
         Ok(PnpmTool {
-            bin_path: node::find_package_manager_bin(&install_dir, "pnpm"),
-            config: config.to_owned().unwrap_or_default(),
+            bin_path: install_dir.join("bin/pnpm.cjs"),
+            download_path: paths
+                .temp
+                .join("pnpm")
+                .join(node::get_package_download_file("pnpm", &config.version)),
             install_dir,
             log_target: String::from("moon:toolchain:pnpm"),
+            config,
         })
     }
 }
@@ -50,69 +62,32 @@ impl Installable<NodeTool> for PnpmTool {
         Ok(&self.install_dir)
     }
 
-    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
-        get_bin_version(self.get_bin_path()).await
-    }
-
     async fn is_installed(
         &self,
-        node: &NodeTool,
-        check_version: bool,
+        _node: &NodeTool,
+        _check_version: bool,
     ) -> Result<bool, ToolchainError> {
-        if !self.is_executable()
-            || (!node.is_corepack_aware()
-                && !node.get_npm().is_global_dep_installed("pnpm").await?)
-        {
-            return Ok(false);
-        }
-
-        if !check_version {
-            return Ok(true);
-        }
-
-        let log_target = self.get_log_target();
-        let version = self.get_installed_version().await?;
-
-        if version != self.config.version {
-            debug!(
-                target: log_target,
-                "Package is on the wrong version ({}), attempting to reinstall", version
-            );
-
-            return Ok(false);
-        }
-
-        debug!(
-            target: log_target,
-            "Package has already been installed and is on the correct version",
-        );
-
-        Ok(true)
+        Ok(self.bin_path.exists())
     }
 
-    async fn install(&self, node: &NodeTool) -> Result<(), ToolchainError> {
-        let log_target = self.get_log_target();
-        let npm = node.get_npm();
-        let package = format!("pnpm@{}", self.config.version);
+    async fn install(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
+        debug!(
+            target: self.get_log_target(),
+            "Installing pnpm v{}", self.config.version
+        );
 
-        if node.is_corepack_aware() {
-            debug!(
-                target: log_target,
-                "Enabling package manager with {}",
-                color::shell(format!("corepack prepare {} --activate", package))
-            );
-
-            node.exec_corepack(["prepare", &package, "--activate"])
-                .await?;
-        } else {
-            debug!(
-                target: log_target,
-                "Installing package manager with {}",
-                color::shell(format!("npm install -g {}", package))
-            );
-
-            npm.install_global_dep("pnpm", &self.config.version).await?;
+        if !self.download_path.exists() {
+            download_file_from_url(
+                node::get_npm_registry_url(
+                    "pnpm",
+                    node::get_package_download_file("pnpm", &self.config.version),
+                ),
+                &self.download_path,
+            )
+            .await?;
         }
+
+        unpack(&self.download_path, &self.install_dir, "package").await?;
 
         Ok(())
     }
@@ -120,12 +95,11 @@ impl Installable<NodeTool> for PnpmTool {
 
 #[async_trait]
 impl Executable<NodeTool> for PnpmTool {
-    async fn find_bin_path(&mut self, node: &NodeTool) -> Result<(), ToolchainError> {
-        // If the global has moved, be sure to reference it
-        let bin_path = node::find_package_manager_bin(node.get_npm().get_global_dir()?, "pnpm");
+    async fn find_bin_path(&mut self, _node: &NodeTool) -> Result<(), ToolchainError> {
+        let install_dir = self.get_install_dir()?;
 
-        if bin_path.exists() {
-            self.bin_path = bin_path;
+        if let Some(bin_path) = node::extract_bin_path_from_package(install_dir, "pnpm")? {
+            self.bin_path = path::normalize(install_dir.join(bin_path))
         }
 
         Ok(())
@@ -142,38 +116,28 @@ impl Executable<NodeTool> for PnpmTool {
 
 #[async_trait]
 impl PackageManager<NodeTool> for PnpmTool {
+    fn create_command(&self, node: &NodeTool) -> Command {
+        let bin_path = self.get_bin_path();
+
+        let mut cmd = Command::new(node.get_bin_path());
+        cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
+        cmd.arg(bin_path);
+        cmd
+    }
+
     async fn dedupe_dependencies(
         &self,
-        _node: &NodeTool,
+        node: &NodeTool,
         working_dir: &Path,
         log: bool,
     ) -> Result<(), ToolchainError> {
         // pnpm doesn't support deduping, but maybe prune is good here?
         // https://pnpm.io/cli/prune
-        self.create_command()
+        self.create_command(node)
             .arg("prune")
             .cwd(working_dir)
             .log_running_command(log)
             .exec_capture_output()
-            .await?;
-
-        Ok(())
-    }
-
-    async fn exec_package(
-        &self,
-        package: &str,
-        args: Vec<&str>,
-        working_dir: &Path,
-    ) -> Result<(), ToolchainError> {
-        // https://pnpm.io/cli/dlx
-        let mut exec_args = vec!["--package", package, "dlx"];
-        exec_args.extend(args);
-
-        self.create_command()
-            .args(exec_args)
-            .cwd(working_dir)
-            .exec_stream_output()
             .await?;
 
         Ok(())
@@ -200,7 +164,7 @@ impl PackageManager<NodeTool> for PnpmTool {
 
     async fn install_dependencies(
         &self,
-        _node: &NodeTool,
+        node: &NodeTool,
         working_dir: &Path,
         log: bool,
     ) -> Result<(), ToolchainError> {
@@ -215,7 +179,7 @@ impl PackageManager<NodeTool> for PnpmTool {
             }
         }
 
-        let mut cmd = self.create_command();
+        let mut cmd = self.create_command(node);
 
         cmd.args(args).cwd(working_dir).log_running_command(log);
 
@@ -230,11 +194,11 @@ impl PackageManager<NodeTool> for PnpmTool {
 
     async fn install_focused_dependencies(
         &self,
-        _node: &NodeTool,
+        node: &NodeTool,
         packages: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError> {
-        let mut cmd = self.create_command();
+        let mut cmd = self.create_command(node);
         cmd.arg("install");
 
         if production_only {

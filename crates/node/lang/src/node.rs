@@ -1,4 +1,4 @@
-use crate::package::{PackageJson, PackageWorkspaces};
+use crate::package::{PackageJson, PackageWorkspaces, StringOrObject};
 use crate::pnpm::workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
@@ -28,6 +28,29 @@ pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
         Ok(old_value) => format!("{}{}{}", value, delimiter, old_value),
         Err(_) => value.to_owned(),
     }
+}
+
+pub fn extract_bin_path_from_package(
+    package_root: &Path,
+    bin_name: &str,
+) -> Result<Option<String>, MoonError> {
+    let mut bin_path = None;
+
+    if let Some(package_json) = PackageJson::read(package_root)? {
+        match &package_json.bin {
+            Some(StringOrObject::String(bin)) => {
+                bin_path = Some(bin.to_owned());
+            }
+            Some(StringOrObject::Object(bins)) => {
+                if let Some(bin) = bins.get(bin_name) {
+                    bin_path = Some(bin.to_owned());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Ok(bin_path)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -208,6 +231,19 @@ pub fn get_download_file<T: AsRef<str>>(version: T) -> Result<String, LangError>
 }
 
 #[inline]
+pub fn get_package_download_file<A, B>(package: A, version: B) -> String
+where
+    A: AsRef<str>,
+    B: AsRef<str>,
+{
+    format!(
+        "{package}-{version}.tgz",
+        package = package.as_ref(),
+        version = version.as_ref(),
+    )
+}
+
+#[inline]
 pub fn get_nodejs_url<A, B, C>(version: A, host: B, path: C) -> String
 where
     A: AsRef<str>,
@@ -218,6 +254,19 @@ where
         "{host}/dist/v{version}/{path}",
         host = host.as_ref(),
         version = version.as_ref(),
+        path = path.as_ref(),
+    )
+}
+
+#[inline]
+pub fn get_npm_registry_url<A, B>(package: A, path: B) -> String
+where
+    A: AsRef<str>,
+    B: AsRef<str>,
+{
+    format!(
+        "https://registry.npmjs.org/{package}/-/{path}",
+        package = package.as_ref(),
         path = path.as_ref(),
     )
 }

@@ -48,6 +48,13 @@ pub async fn bin(tool_type: &BinTool) -> Result<(), Box<dyn std::error::Error>> 
             let node = toolchain.node.get()?;
 
             match tool_type {
+                BinTool::Npm => match node.get_npm() {
+                    Some(npm) => {
+                        is_installed(npm, node).await;
+                        log_bin_path(npm);
+                    }
+                    None => not_configured(),
+                },
                 BinTool::Pnpm => match node.get_pnpm() {
                     Some(pnpm) => {
                         is_installed(pnpm, node).await;
@@ -62,12 +69,7 @@ pub async fn bin(tool_type: &BinTool) -> Result<(), Box<dyn std::error::Error>> 
                     }
                     None => not_configured(),
                 },
-                _ => {
-                    let npm = node.get_npm();
-
-                    is_installed(npm, node).await;
-                    log_bin_path(npm);
-                }
+                _ => {}
             };
         }
     };

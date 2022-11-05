@@ -1,12 +1,10 @@
 use crate::errors::ToolchainError;
-use crate::helpers::{
-    download_file_from_url, get_bin_version, get_file_sha256_hash, get_path_env_var, unpack,
-};
+use crate::helpers::{download_file_from_url, get_file_sha256_hash, unpack};
 use crate::pms::npm::NpmTool;
 use crate::pms::pnpm::PnpmTool;
 use crate::pms::yarn::YarnTool;
 use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageManager, Tool};
-use crate::ToolchainPaths;
+use crate::{get_path_env_var, ToolchainPaths};
 use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_error::map_io_to_fs_error;
@@ -15,8 +13,6 @@ use moon_logger::{color, debug, error, Logable};
 use moon_node_lang::node;
 use moon_utils::fs;
 use moon_utils::process::Command;
-use moon_utils::semver::{Version, VersionReq};
-use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -83,32 +79,38 @@ impl NodeTool {
             yarn: None,
         };
 
-        node.npm = Some(NpmTool::new(&node, &config.npm)?);
-
         match config.package_manager {
+            NodePackageManager::Npm => {
+                node.npm = Some(NpmTool::new(paths, &config.npm)?);
+            }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(&node, &config.pnpm)?);
+                node.pnpm = Some(PnpmTool::new(paths, &config.pnpm)?);
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(&node, &config.yarn)?);
+                node.yarn = Some(YarnTool::new(paths, &config.yarn)?);
             }
-            _ => {}
         };
 
         Ok(node)
     }
 
-    pub async fn exec_corepack<I, S>(&self, args: I) -> Result<(), ToolchainError>
-    where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
-    {
-        let corepack_path = node::find_package_manager_bin(&self.install_dir, "corepack");
+    pub async fn exec_package(
+        &self,
+        package: &str,
+        args: Vec<&str>,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError> {
+        let mut exec_args = vec!["--silent", "--package", package, "--"];
 
-        Command::new(&corepack_path)
-            .args(args)
-            .env("PATH", get_path_env_var(corepack_path.parent().unwrap()))
-            .exec_capture_output()
+        exec_args.extend(args);
+
+        let npx_path = node::find_package_manager_bin(&self.install_dir, "npx");
+
+        Command::new(&npx_path)
+            .args(exec_args)
+            .cwd(working_dir)
+            .env("PATH", get_path_env_var(&self.install_dir))
+            .exec_stream_output()
             .await?;
 
         Ok(())
@@ -126,8 +128,8 @@ impl NodeTool {
     }
 
     /// Return the `npm` package manager.
-    pub fn get_npm(&self) -> &NpmTool {
-        self.npm.as_ref().unwrap()
+    pub fn get_npm(&self) -> Option<&NpmTool> {
+        self.npm.as_ref()
     }
 
     /// Return the `pnpm` package manager.
@@ -149,15 +151,11 @@ impl NodeTool {
             return self.get_yarn().unwrap();
         }
 
-        self.get_npm()
-    }
+        if self.npm.is_some() {
+            return self.get_npm().unwrap();
+        }
 
-    #[track_caller]
-    pub fn is_corepack_aware(&self) -> bool {
-        let cfg_version = Version::parse(&self.config.version).unwrap();
-
-        VersionReq::parse(">=16.9.0").unwrap().matches(&cfg_version)
-            || VersionReq::parse("^14.19.0").unwrap().matches(&cfg_version)
+        panic!("No package manager, how's this possible?");
     }
 }
 
@@ -225,10 +223,6 @@ impl Installable<()> for NodeTool {
         Ok(&self.install_dir)
     }
 
-    async fn get_installed_version(&self) -> Result<String, ToolchainError> {
-        Ok(get_bin_version(self.get_bin_path()).await?)
-    }
-
     async fn is_installed(
         &self,
         _parent: &(),
@@ -272,15 +266,6 @@ impl Executable<()> for NodeTool {
 #[async_trait]
 impl Lifecycle<()> for NodeTool {
     async fn setup(&mut self, _parent: &(), check_version: bool) -> Result<u8, ToolchainError> {
-        if self.is_corepack_aware() && check_version {
-            debug!(
-                target: self.get_log_target(),
-                "Enabling corepack for package manager control"
-            );
-
-            self.exec_corepack(["enable"]).await?;
-        }
-
         let mut installed = 0;
 
         if self.npm.is_some() {

@@ -243,7 +243,7 @@ mod tests {
         context.insert("node_version", &"16.0.0");
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"npm");
-        context.insert("package_manager_version", &"inherit");
+        context.insert("package_manager_version", &"8.0.0");
         context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
@@ -256,7 +256,7 @@ mod tests {
         context.insert("node_version", &"18.1.0");
         context.insert("node_version_manager", &"nvm");
         context.insert("package_manager", &"npm");
-        context.insert("package_manager_version", &"inherit");
+        context.insert("package_manager_version", &"8.0.0");
         context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
@@ -269,7 +269,7 @@ mod tests {
         context.insert("node_version", &"18.1.0");
         context.insert("node_version_manager", &"nodenv");
         context.insert("package_manager", &"npm");
-        context.insert("package_manager_version", &"inherit");
+        context.insert("package_manager_version", &"8.0.0");
         context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
@@ -321,7 +321,7 @@ mod tests {
         context.insert("node_version", &"16.0.0");
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"npm");
-        context.insert("package_manager_version", &"inherit");
+        context.insert("package_manager_version", &"8.0.0");
         context.insert("alias_names", &true);
         context.insert("infer_tasks", &true);
 

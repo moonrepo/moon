@@ -1,9 +1,6 @@
 use moon_config::{NodeConfig, NodePackageManager, WorkspaceConfig, YarnConfig};
-use moon_node_lang::node;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Executable, Installable, Toolchain};
-use predicates::prelude::*;
-use std::path::PathBuf;
 
 async fn create_yarn_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
@@ -14,7 +11,7 @@ async fn create_yarn_tool() -> (NodeTool, assert_fs::TempDir) {
             package_manager: NodePackageManager::Yarn,
             yarn: Some(YarnConfig {
                 plugins: None,
-                version: String::from("6.0.0"),
+                version: String::from("1.0.0"),
             }),
             ..NodeConfig::default()
         }),
@@ -36,24 +33,25 @@ async fn generates_paths() {
     let (node, temp_dir) = create_yarn_tool().await;
     let yarn = node.get_yarn().unwrap();
 
-    assert!(predicates::str::ends_with(
-        PathBuf::from(".moon")
+    assert_eq!(
+        yarn.get_install_dir().unwrap(),
+        &temp_dir
+            .join(".moon")
             .join("tools")
-            .join("node")
+            .join("yarn")
             .join("1.0.0")
-            .to_str()
-            .unwrap()
-    )
-    .eval(yarn.get_install_dir().unwrap().to_str().unwrap()));
+    );
 
-    let bin_path = PathBuf::from(".moon")
-        .join("tools")
-        .join("node")
-        .join("1.0.0")
-        .join(node::get_bin_name_suffix("yarn", "cmd", false));
-
-    assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
-        .eval(yarn.get_bin_path().to_str().unwrap()));
+    assert_eq!(
+        yarn.get_bin_path(),
+        &temp_dir
+            .join(".moon")
+            .join("tools")
+            .join("yarn")
+            .join("1.0.0")
+            .join("bin")
+            .join("yarn.js")
+    );
 
     temp_dir.close().unwrap();
 }

@@ -1,9 +1,6 @@
 use moon_config::{NodeConfig, NodePackageManager, PnpmConfig, WorkspaceConfig};
-use moon_node_lang::node;
 use moon_toolchain::tools::node::NodeTool;
 use moon_toolchain::{Executable, Installable, Toolchain};
-use predicates::prelude::*;
-use std::path::PathBuf;
 
 async fn create_pnpm_tool() -> (NodeTool, assert_fs::TempDir) {
     let base_dir = assert_fs::TempDir::new().unwrap();
@@ -35,24 +32,25 @@ async fn generates_paths() {
     let (node, temp_dir) = create_pnpm_tool().await;
     let pnpm = node.get_pnpm().unwrap();
 
-    assert!(predicates::str::ends_with(
-        PathBuf::from(".moon")
+    assert_eq!(
+        pnpm.get_install_dir().unwrap(),
+        &temp_dir
+            .join(".moon")
             .join("tools")
-            .join("node")
-            .join("1.0.0")
-            .to_str()
-            .unwrap()
-    )
-    .eval(pnpm.get_install_dir().unwrap().to_str().unwrap()));
+            .join("pnpm")
+            .join("6.0.0")
+    );
 
-    let bin_path = PathBuf::from(".moon")
-        .join("tools")
-        .join("node")
-        .join("1.0.0")
-        .join(node::get_bin_name_suffix("pnpm", "cmd", false));
-
-    assert!(predicates::str::ends_with(bin_path.to_str().unwrap())
-        .eval(pnpm.get_bin_path().to_str().unwrap()));
+    assert_eq!(
+        pnpm.get_bin_path(),
+        &temp_dir
+            .join(".moon")
+            .join("tools")
+            .join("pnpm")
+            .join("6.0.0")
+            .join("bin")
+            .join("pnpm.cjs")
+    );
 
     temp_dir.close().unwrap();
 }

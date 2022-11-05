@@ -208,7 +208,17 @@ impl PackageManager<NodeTool> for YarnTool {
     ) -> Result<(), ToolchainError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
-        if !self.is_v1() {
+        if self.is_v1() {
+            // Will error if the lockfile does not exist!
+            if working_dir.join(self.get_lock_filename()).exists() {
+                node.exec_package(
+                    "yarn-deduplicate",
+                    vec!["yarn-deduplicate", YARN.lock_filename],
+                    working_dir,
+                )
+                .await?;
+            }
+        } else {
             self.create_command(node)
                 .arg("dedupe")
                 .cwd(working_dir)

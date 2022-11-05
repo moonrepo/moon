@@ -4,7 +4,7 @@ use crate::pms::npm::NpmTool;
 use crate::pms::pnpm::PnpmTool;
 use crate::pms::yarn::YarnTool;
 use crate::traits::{Downloadable, Executable, Installable, Lifecycle, PackageManager, Tool};
-use crate::ToolchainPaths;
+use crate::{get_path_env_var, ToolchainPaths};
 use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_error::map_io_to_fs_error;
@@ -12,6 +12,7 @@ use moon_lang::LangError;
 use moon_logger::{color, debug, error, Logable};
 use moon_node_lang::node;
 use moon_utils::fs;
+use moon_utils::process::Command;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -91,6 +92,28 @@ impl NodeTool {
         };
 
         Ok(node)
+    }
+
+    pub async fn exec_package(
+        &self,
+        package: &str,
+        args: Vec<&str>,
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError> {
+        let mut exec_args = vec!["--silent", "--package", package, "--"];
+
+        exec_args.extend(args);
+
+        let npx_path = node::find_package_manager_bin(&self.install_dir, "npx");
+
+        Command::new(&npx_path)
+            .args(exec_args)
+            .cwd(working_dir)
+            .env("PATH", get_path_env_var(&self.install_dir))
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 
     pub fn find_package_bin(

@@ -1,5 +1,5 @@
 {
-  "name": "test-node-npm-other",
+  "name": "test-node-yarn-other",
   "version": "1.0.0",
   "dependencies": {
     "solid-js": "1.5.6"

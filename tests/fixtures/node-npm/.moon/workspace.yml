@@ -5,10 +5,10 @@ node:
   version: '16.1.0'
   packageManager: 'npm'
   npm:
-    version: '7.0.0'
+    version: '8.0.0'
   addEnginesConstraint: false
 
 projects:
-  npm: npm
+  npm: base
   other: other
   notInWorkspace: not-in-workspace

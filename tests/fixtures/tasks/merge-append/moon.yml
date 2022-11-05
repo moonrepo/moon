@@ -2,7 +2,7 @@ tasks:
   standard:
     platform: system
     deps:
-      - b:standard
+      - buildB:standard
     args:
       - --b
     inputs:

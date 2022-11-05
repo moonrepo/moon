@@ -1,0 +1,18 @@
+language: javascript
+
+tasks:
+  standard:
+    command: node
+    args: -e "console.log('deps=a')"
+
+  dependencyOrder:
+    command: node
+    args: -e "console.log('deps=a')"
+    deps:
+      - 'depsB:dependencyOrder'
+
+  # Cycle detection
+  taskCycle:
+    command: unknown
+    deps:
+      - 'depsB:taskCycle'

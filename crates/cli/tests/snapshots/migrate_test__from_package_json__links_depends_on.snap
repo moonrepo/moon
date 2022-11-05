@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/migrate_test.rs
-assertion_line: 37
+assertion_line: 62
 expression: "fs::read_to_string(fixture.path().join(\"package-json/deps/package.json\")).unwrap()"
 ---
 {

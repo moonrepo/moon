@@ -1,0 +1,10 @@
+{
+  "name": "test-node-npm-base",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "echo 'test'"
+  },
+  "dependencies": {
+    "react": "17.0.0"
+  }
+}

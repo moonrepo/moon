@@ -1,11 +1,11 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 97
+assertion_line: 99
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ base:runFromWorkspace
-echo 'in workspace' (in workspace)
-in workspace
+node --version (in workspace)
+v16.0.0
 
 Tasks: 1 completed
  Time: 100ms

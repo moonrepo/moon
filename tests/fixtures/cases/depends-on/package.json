@@ -1,6 +1,0 @@
-{
-  "name": "test-cases-depends-on",
-  "dependencies": {
-    "react": "17.0.0"
-  }
-}

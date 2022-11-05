@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_system_test.rs
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ windows:outputs
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

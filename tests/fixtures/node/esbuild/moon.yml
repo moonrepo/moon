@@ -3,8 +3,8 @@ language: javascript
 tasks:
   build:
     command: esbuild
-    args: 'index.js --bundle --outfile=out.js'
+    args: 'input.js --bundle --outfile=output.js'
     inputs:
-      - 'index.js'
+      - 'input.js'
     outputs:
-      - 'out.js'
+      - 'output.js'

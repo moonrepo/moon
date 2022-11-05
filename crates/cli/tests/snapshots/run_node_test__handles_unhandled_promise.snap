@@ -16,7 +16,7 @@ node:internal/process/promises:246
   code: 'ERR_UNHANDLED_REJECTION'
 }
 
- ERROR  Process ~/.moon/tools/node/16.0.0/bin/node failed with a 1 exit code.
+ ERROR  Process ~/.moon/tools/node/16.1.0/bin/node failed with a 1 exit code.
 
 
 

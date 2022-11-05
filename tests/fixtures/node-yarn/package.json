@@ -6,6 +6,6 @@
   },
   "workspaces": [
     "other",
-    "yarn"
+    "base"
   ]
 }

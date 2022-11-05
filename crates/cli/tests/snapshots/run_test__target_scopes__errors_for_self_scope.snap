@@ -1,9 +1,10 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 229
+assertion_line: 252
 expression: get_assert_output(&assert)
 ---
 
  ERROR  Project self scope (~:) is not supported in run contexts.
+
 
 

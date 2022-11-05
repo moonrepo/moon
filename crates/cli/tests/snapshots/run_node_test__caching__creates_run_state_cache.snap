@@ -1,0 +1,46 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 1429
+expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.hash))).unwrap()"
+---
+[
+  {
+    "command": "node",
+    "args": [
+      "./standard.js"
+    ],
+    "deps": [],
+    "envVars": {},
+    "inputs": {
+      ".moon/project.yml": "744b4e94f56e537dc5a970135a1403762ee7f31c",
+      ".moon/workspace.yml": "31f07fc8b6507fcabff648f0e5c959fd7a434dd1",
+      "base/binExecArgs.js": "efbc46d56304f43ae64c5616b2135d7a95d55263",
+      "base/cjsFile.cjs": "91382f667258361b9397214d0aec54d8d576ae19",
+      "base/cwd.js": "47d4aa44cd6363251821ab9c59f4c68df455445c",
+      "base/envVars.js": "44b0fda6bce364122223fbfc67b65ecbc52aec91",
+      "base/envVarsMoon.js": "69357e53fddeb9270d92a076e7edab3ebf004957",
+      "base/exitCodeNonZero.js": "1cea9d1c8c3776318c20d54a86c1b492df443397",
+      "base/exitCodeZero.js": "887c40bee2815c60cf4efde58a52716e4c393a24",
+      "base/mjsFile.mjs": "a5b6817de5cfa541e430072598de3f42d83bd6cf",
+      "base/moon.yml": "e57da0ccaa202b7c0c29c7bb7382c03130380412",
+      "base/package.json": "90337835dcee45f8ad63cf77540c5b762e9e7255",
+      "base/passthroughArgs.js": "83cf03c37aa75b33592735611860e32c6f338693",
+      "base/processExitNonZero.js": "2fe41b280bb08f250ca7bf2263ec0b17fa7010f1",
+      "base/processExitZero.js": "eb885b8c763ab8b5d4e1da46494d965078c98e8b",
+      "base/standard.js": "8d4f87187c238d808f0505268febb619f2978c47",
+      "base/throwError.js": "9c5b8d2297fe4a6c23e8c18f1efb6871bec6faf4",
+      "base/topLevelAwait.mjs": "50945a9865eddbd52f7e648743d627749623da22",
+      "base/unhandledPromise.js": "909d23eeb442f4daff733fe3b601a1a1613c1282"
+    },
+    "outputs": [],
+    "projectDeps": [],
+    "target": "node:standard",
+    "version": "1"
+  },
+  {
+    "nodeVersion": "16.1.0",
+    "dependencies": {},
+    "tsconfigCompilerOptions": {},
+    "version": "1"
+  }
+]

@@ -1,11 +1,11 @@
 // tsconfig.json
 
 use cached::proc_macro::cached;
-use json;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use moon_lang::config_cache;
 use moon_utils::{
     fs::{self, sync::read_json},
+    json,
     path::standardize_separators,
 };
 use serde::{Deserialize, Deserializer, Serialize};
@@ -739,10 +739,7 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), Moon
         }
     }
 
-    let mut data = json::stringify_pretty(data, 2);
-    data += "\n"; // Always add trailing newline
-
-    std::fs::write(path, data)?;
+    json::write(path, data, true)?;
 
     Ok(())
 }

@@ -1,5 +1,6 @@
 pub mod fs;
 pub mod glob;
+pub mod json;
 pub mod path;
 pub mod process;
 pub mod regex;

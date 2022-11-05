@@ -689,7 +689,6 @@ dependencies = [
  "ciborium",
  "clap 3.2.22",
  "criterion-plot",
- "futures",
  "itertools",
  "lazy_static",
  "num-traits",
@@ -701,7 +700,6 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "tinytemplate",
- "tokio",
  "walkdir",
 ]
 
@@ -928,6 +926,12 @@ name = "dyn-clone"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "140206b78fb2bc3edbcfc9b5ccbd0b30699cfe8d348b8b31b330e47df5291a5a"
+
+[[package]]
+name = "ec4rs"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db540f6c584d6e2960617a2b550632715bbe0a50a4d79c0f682a13da100b34eb"
 
 [[package]]
 name = "either"
@@ -1855,7 +1859,6 @@ dependencies = [
  "tera",
  "tokio",
  "wiremock",
- "yaml-rust-davvid",
 ]
 
 [[package]]
@@ -1864,7 +1867,6 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "figment",
- "json",
  "moon_constants",
  "moon_error",
  "moon_node_lang",
@@ -1972,7 +1974,6 @@ dependencies = [
  "assert_fs",
  "cached",
  "content_inspector",
- "json",
  "lazy_static",
  "moon_error",
  "moon_lang",
@@ -2189,7 +2190,6 @@ name = "moon_typescript_lang"
 version = "0.1.0"
 dependencies = [
  "cached",
- "json",
  "moon_error",
  "moon_lang",
  "moon_logger",
@@ -2212,8 +2212,11 @@ dependencies = [
  "clean-path",
  "dirs",
  "dunce",
+ "ec4rs",
  "futures",
  "humantime",
+ "insta",
+ "json",
  "json_comments",
  "lazy_static",
  "md5",
@@ -2229,6 +2232,7 @@ dependencies = [
  "shell-words",
  "tokio",
  "wax",
+ "yaml-rust-davvid",
 ]
 
 [[package]]
@@ -3252,15 +3256,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24188a676b6ae68c3b2cb3a01be17fbf7240ce009799bb56d5b1409051e78fde"
 
 [[package]]
-name = "signal-hook-registry"
-version = "1.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "similar"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3538,9 +3533,7 @@ dependencies = [
  "mio",
  "num_cpus",
  "once_cell",
- "parking_lot",
  "pin-project-lite",
- "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "tracing",

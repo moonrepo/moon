@@ -2,7 +2,7 @@ use crate::NPM;
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
-use moon_utils::fs::sync::read_json;
+use moon_utils::json::read as read_json;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

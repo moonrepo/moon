@@ -5,7 +5,7 @@ use moon_node_lang::{PackageJson, NPM};
 use moon_project::Project;
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_typescript_lang::TsConfigJson;
-use moon_utils::{fs, is_ci, path, semver, string_vec};
+use moon_utils::{is_ci, json, path, semver, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
@@ -43,7 +43,7 @@ async fn create_missing_tsconfig(
         ..TsConfigJson::default()
     };
 
-    fs::write_json(&tsconfig_path, &json, true).await?;
+    json::write(&tsconfig_path, &json, true)?;
 
     Ok(true)
 }

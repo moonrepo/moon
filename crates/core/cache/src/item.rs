@@ -30,7 +30,7 @@ macro_rules! cache_item {
                                 color::path(&path)
                             );
 
-                            item = fs::read_json(&path).await?;
+                            item = json::read(&path)?;
                         }
                     } else {
                         trace!(
@@ -56,7 +56,7 @@ macro_rules! cache_item {
                         color::path(&self.path)
                     );
 
-                    fs::write_json(&self.path, &self, false).await?;
+                    json::write(&self.path, &self, false)?;
                 }
 
                 Ok(())

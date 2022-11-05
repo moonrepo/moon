@@ -4,8 +4,7 @@ use cached::proc_macro::cached;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use moon_lang::config_cache;
 use moon_utils::{
-    fs::{self, sync::read_json},
-    json,
+    json::{self, read as read_json},
     path::standardize_separators,
 };
 use serde::{Deserialize, Deserializer, Serialize};
@@ -164,7 +163,7 @@ pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<Value, Moo
     let json =
         std::fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
-    let mut json: Value = serde_json::from_str(&fs::clean_json(json)?)
+    let mut json: Value = serde_json::from_str(&json::clean(json)?)
         .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
     if extend {
@@ -701,8 +700,7 @@ impl<'de> Deserialize<'de> for Target {
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
 fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), MoonError> {
-    let contents = fs::sync::read_json_string(path)?;
-    let mut data = json::parse(&contents).expect("Unable to parse tsconfig.json");
+    let mut data = json::read_raw(path)?;
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!
@@ -739,7 +737,7 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), Moon
         }
     }
 
-    json::write(path, data, true)?;
+    json::write_raw(path, data, true)?;
 
     Ok(())
 }

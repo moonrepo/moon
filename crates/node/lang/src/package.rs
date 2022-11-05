@@ -2,10 +2,9 @@
 
 use crate::NPM;
 use cached::proc_macro::cached;
-use json;
 use moon_error::MoonError;
 use moon_lang::config_cache;
-use moon_utils::fs::{self, sync::read_json};
+use moon_utils::json::{self, read as read_json};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -468,8 +467,7 @@ pub enum PackageWorkspaces {
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
 fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
-    let contents = fs::sync::read_json_string(path)?;
-    let mut data = json::parse(&contents).expect("Unable to parse package.json");
+    let mut data = json::read_raw(path)?;
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!
@@ -505,10 +503,7 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonEr
         data.remove("scripts");
     }
 
-    let mut data = json::stringify_pretty(data, 2);
-    data += "\n"; // Always add trailing newline
-
-    std::fs::write(path, data)?;
+    json::write_raw(path, data, true)?;
 
     Ok(())
 }
@@ -518,8 +513,8 @@ mod test {
     use super::*;
     use assert_fs::prelude::*;
 
-    #[tokio::test]
-    async fn preserves_order_when_de_to_ser() {
+    #[test]
+    fn preserves_order_when_de_to_ser() {
         let json = r#"{"name": "hello", "description": "world", "private": true}"#;
 
         let dir = assert_fs::TempDir::new().unwrap();
@@ -530,7 +525,7 @@ mod test {
 
         package.save().unwrap();
 
-        assert_eq!(fs::read_json_string(file.path()).await.unwrap(), json,);
+        assert_eq!(json::read_to_string(file.path()).unwrap(), json,);
     }
 
     mod add_dependency {

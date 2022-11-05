@@ -1870,7 +1870,6 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "figment",
- "json",
  "moon_constants",
  "moon_error",
  "moon_node_lang",
@@ -1978,7 +1977,6 @@ dependencies = [
  "assert_fs",
  "cached",
  "content_inspector",
- "json",
  "lazy_static",
  "moon_error",
  "moon_lang",

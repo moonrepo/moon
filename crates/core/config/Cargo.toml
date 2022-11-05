@@ -18,7 +18,6 @@ moon_error = { path = "../error" }
 moon_node_lang = { path = "../../node/lang" }
 moon_utils = { path = "../utils" }
 figment = { version = "0.10.8", features = ["test", "yaml"] }
-json = "0.12.4"
 reqwest = { version = "0.11.12", features = ["blocking", "native-tls-vendored"] }
 rustc-hash = { workspace = true }
 schemars = "0.8.11"

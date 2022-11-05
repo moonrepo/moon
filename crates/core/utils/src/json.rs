@@ -1,11 +1,63 @@
 use ec4rs::property::*;
-use moon_error::{map_io_to_fs_error, MoonError};
+use json_comments::StripComments;
+use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
+use regex::Regex;
+use serde::de::DeserializeOwned;
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 
 pub use json::{from, parse, JsonValue};
 
-pub fn write<P: AsRef<Path>>(path: P, json: JsonValue, pretty: bool) -> Result<(), MoonError> {
+#[inline]
+pub fn clean<T: AsRef<str>>(json: T) -> Result<String, MoonError> {
+    let json = json.as_ref();
+
+    // Remove comments
+    let mut stripped = String::with_capacity(json.len());
+
+    StripComments::new(json.as_bytes())
+        .read_to_string(&mut stripped)
+        .map_err(MoonError::Unknown)?;
+
+    // Remove trailing commas
+    let stripped = Regex::new(r",(?P<valid>\s*})")
+        .unwrap()
+        .replace_all(&stripped, "$valid");
+
+    Ok(String::from(stripped))
+}
+
+#[inline]
+pub fn read<P, D>(path: P) -> Result<D, MoonError>
+where
+    P: AsRef<Path>,
+    D: DeserializeOwned,
+{
+    let path = path.as_ref();
+    let contents = read_to_string(path)?;
+
+    let json: D =
+        serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+
+    Ok(json)
+}
+
+#[inline]
+pub fn read_raw<T: AsRef<Path>>(path: T) -> Result<JsonValue, MoonError> {
+    let path = path.as_ref();
+    let data = read_to_string(path)?;
+
+    parse(&data).map_err(|e| MoonError::Generic(e.to_string()))
+}
+
+#[inline]
+pub fn read_to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+    clean(crate::fs::sync::read(path.as_ref())?)
+}
+
+#[inline]
+pub fn write_raw<P: AsRef<Path>>(path: P, json: JsonValue, pretty: bool) -> Result<(), MoonError> {
     let path = path.as_ref();
 
     if !pretty {
@@ -37,5 +89,5 @@ pub fn write<P: AsRef<Path>>(path: P, json: JsonValue, pretty: bool) -> Result<(
 
     fs::write(path, data).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
-    return Ok(());
+    Ok(())
 }

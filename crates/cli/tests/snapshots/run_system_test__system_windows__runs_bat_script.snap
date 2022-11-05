@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_system_test.rs
+expression: "get_path_safe_output(&assert, fixture.path())"
+---
+▪▪▪▪ windows:bat
+stdout
+
+Tasks: 1 completed
+ Time: 100ms
+
+stderr 
+
+

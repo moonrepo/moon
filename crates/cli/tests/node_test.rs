@@ -46,7 +46,7 @@ mod run_script {
 
         assert
             .failure()
-            .stderr(predicate::str::contains("missing script"));
+            .stderr(predicate::str::contains("Missing script"));
     }
 
     #[test]
@@ -74,7 +74,7 @@ mod run_script {
             .args(["node", "run-script", "test"])
             .env(
                 "MOON_PROJECT_ROOT",
-                get_fixtures_dir("node-npm").join("npm"),
+                get_fixtures_dir("node-npm").join("base"),
             )
             .assert();
 

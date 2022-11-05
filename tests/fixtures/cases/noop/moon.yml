@@ -6,4 +6,4 @@ tasks:
   noopWithDeps:
     command: noop
     deps:
-      - 'depsA:dependencyOrder'
+      - 'outputs:generateFile'

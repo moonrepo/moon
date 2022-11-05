@@ -1,0 +1,66 @@
+language: javascript
+
+tasks:
+  npm:
+    command: npm --version
+  standard:
+    command: node
+    args: ./standard.js
+  cjs:
+    command: node
+    args: ./cjsFile.cjs
+  mjs:
+    command: node
+    args: ./mjsFile.mjs
+
+  # Runner cases
+  exitCodeNonZero:
+    command: node
+    args: ./exitCodeNonZero.js
+  exitCodeZero:
+    command: node
+    args: ./exitCodeZero.js
+  processExitNonZero:
+    command: node
+    args: ./processExitNonZero.js
+  processExitZero:
+    command: node
+    args: ./processExitZero.js
+  throwError:
+    command: node
+    args: ./throwError.js
+  unhandledPromise:
+    command: node
+    args: ./unhandledPromise.js
+  topLevelAwait:
+    command: node
+    args: ./topLevelAwait.mjs
+  passthroughArgs:
+    command: node
+    args: ./passthroughArgs.js
+  envVars:
+    command: node
+    args: ./envVars.js
+    env:
+      MOON_FOO: abc
+      MOON_BAR: '123'
+      MOON_BAZ: 'true'
+  envVarsMoon:
+    command: node
+    args: ./envVarsMoon.js
+  runFromProject:
+    command: node
+    args: ./cwd.js
+  runFromWorkspace:
+    command: node
+    args: ./base/cwd.js
+    options:
+      runFromWorkspaceRoot: true
+  retryCount:
+    command: node
+    args: ./processExitNonZero.js
+    options:
+      retryCount: 3
+  binExecArgs:
+    command: node
+    args: ./binExecArgs.js

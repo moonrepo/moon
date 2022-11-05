@@ -7,12 +7,10 @@ dependsOn:
 
 tasks:
   standard:
-    command: node
-    args: -e "'noop'"
+    command: noop
 
   serialDeps:
-    command: node
-    args: -e "'serial'"
+    command: noop
     deps:
       - 'depsB:standard'
       - 'depsC:standard'

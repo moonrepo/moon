@@ -341,7 +341,7 @@ mod tests {
 
     #[tokio::test]
     async fn creates_tsconfig() {
-        let fixture = create_sandbox("cases");
+        let fixture = create_sandbox("node");
 
         let project = Project::new(
             "deps-a",
@@ -372,7 +372,7 @@ mod tests {
 
     #[tokio::test]
     async fn creates_tsconfig_with_custom_settings() {
-        let fixture = create_sandbox("cases");
+        let fixture = create_sandbox("node");
 
         let project = Project::new(
             "deps-a",
@@ -410,7 +410,7 @@ mod tests {
 
     #[tokio::test]
     async fn doesnt_create_if_a_config_exists() {
-        let fixture = create_sandbox("cases");
+        let fixture = create_sandbox("node");
 
         let project = Project::new(
             "deps-b",

@@ -1,0 +1,26 @@
+---
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 149
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ unix:retryCount
+stdout
+▪▪▪▪ unix:retryCount (100ms)
+▪▪▪▪ unix:retryCount (2/4)
+stdout
+▪▪▪▪ unix:retryCount (2/4, 100ms)
+▪▪▪▪ unix:retryCount (3/4)
+stdout
+▪▪▪▪ unix:retryCount (3/4, 100ms)
+▪▪▪▪ unix:retryCount (4/4)
+stdout
+▪▪▪▪ unix:retryCount (4/4, 100ms)
+stderr
+stderr
+stderr
+stderr
+
+ ERROR  Process bash failed with a 1 exit code.
+
+
+

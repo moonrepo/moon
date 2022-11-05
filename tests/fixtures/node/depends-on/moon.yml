@@ -1,0 +1,21 @@
+language: javascript
+
+dependsOn:
+  - depsA
+  - depsB
+  - depsC
+
+tasks:
+  standard:
+    command: node
+    args: -e "'noop'"
+
+  serialDeps:
+    command: node
+    args: -e "'serial'"
+    deps:
+      - 'depsB:standard'
+      - 'depsC:standard'
+      - 'depsA:standard'
+    options:
+      runDepsInParallel: false

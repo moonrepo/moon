@@ -390,9 +390,7 @@ tasks:
 "#,
             )?;
 
-            let config: ProjectConfig = super::load_jailed_config()?; // jail.directory())?;
-
-            dbg!(&config);
+            let config: ProjectConfig = super::load_jailed_config()?;
 
             assert_eq!(
                 config.tasks.get("build").unwrap(),

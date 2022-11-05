@@ -1,0 +1,21 @@
+---
+source: crates/cli/tests/run_system_test.rs
+assertion_line: 33
+expression: get_assert_output(&assert)
+---
+▪▪▪▪ unix:ls
+cwd.sh
+envVars.sh
+envVarsMoon.sh
+exitNonZero.sh
+exitZero.sh
+moon.yml
+outputs.sh
+passthroughArgs.sh
+standard.sh
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

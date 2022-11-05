@@ -26,7 +26,7 @@ lazy_static! {
 
     // Task commands (these are not exhaustive)
     pub static ref NODE_COMMAND: regex::Regex =
-                Regex::new("^(node|nodejs|npm|npx|yarn|pnpm|corepack)$").unwrap();
+                Regex::new("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap();
 
     pub static ref UNIX_SYSTEM_COMMAND: regex::Regex =
                 Regex::new("^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$").unwrap();

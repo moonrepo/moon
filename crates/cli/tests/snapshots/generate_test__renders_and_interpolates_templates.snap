@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/generate_test.rs
-assertion_line: 102
+assertion_line: 127
 expression: "fs::read_to_string(fixture.path().join(\"./test/expressions.txt\")).unwrap()"
 ---
 boolTrue = true

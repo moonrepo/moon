@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 1202
+assertion_line: 1329
 expression: "read_to_string(fixture.path().join(\"syncs-paths-refs/tsconfig.json\")).unwrap()"
 ---
 {}

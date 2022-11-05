@@ -34,3 +34,5 @@ tokio = { workspace = true }
 wax = "0.5.0"
 yaml-rust = { version = "0.5.1", package = "yaml-rust-davvid" }
 
+[dev-dependencies]
+insta = "1.21.0"

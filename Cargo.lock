@@ -2217,6 +2217,7 @@ dependencies = [
  "ec4rs",
  "futures",
  "humantime",
+ "insta",
  "json",
  "json_comments",
  "lazy_static",

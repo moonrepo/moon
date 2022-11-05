@@ -1,6 +1,6 @@
 use moon_error::MoonError;
 use moon_logger::{color, trace};
-use moon_utils::fs;
+use moon_utils::{fs, json};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::path::PathBuf;
@@ -20,7 +20,7 @@ impl Runfile {
 
         // Always write a runfile, regardless of MOON_CACHE,
         // since consumers expect this to exist at runtime
-        fs::write_json(&path, data, true).await?;
+        json::write(&path, data, true)?;
 
         Ok(Runfile { path })
     }

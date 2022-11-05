@@ -4,7 +4,7 @@ use futures::future::try_join_all;
 use moon_config::ProjectLanguage;
 use moon_node_lang::{PackageJson, NODE};
 use moon_terminal::safe_exit;
-use moon_utils::fs;
+use moon_utils::{fs, json};
 use moon_workspace::Workspace;
 
 pub async fn prune_node(
@@ -67,7 +67,7 @@ pub async fn prune() -> Result<(), Box<dyn std::error::Error>> {
         safe_exit(1);
     }
 
-    let manifest: DockerManifest = fs::read_json(manifest_path).await?;
+    let manifest: DockerManifest = json::read(manifest_path)?;
     let mut is_using_node = false;
 
     for project_id in &manifest.focused_projects {

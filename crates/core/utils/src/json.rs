@@ -3,6 +3,7 @@ use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
@@ -10,7 +11,7 @@ use std::path::Path;
 pub use json::{from, parse, JsonValue};
 
 #[inline]
-pub fn clean<T: AsRef<str>>(json: T) -> Result<String, MoonError> {
+pub fn clean<D: AsRef<str>>(json: D) -> Result<String, MoonError> {
     let json = json.as_ref();
 
     // Remove comments
@@ -56,6 +57,26 @@ pub fn read_to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     clean(crate::fs::sync::read(path.as_ref())?)
 }
 
+// This function is primarily used internally for non-consumer facing files.
+#[inline]
+pub fn write<P, D>(path: P, json: &D, pretty: bool) -> Result<(), MoonError>
+where
+    P: AsRef<Path>,
+    D: ?Sized + Serialize,
+{
+    let path = path.as_ref();
+    let data = if pretty {
+        serde_json::to_string_pretty(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?
+    } else {
+        serde_json::to_string(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?
+    };
+
+    fs::write(path, data).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+
+    Ok(())
+}
+
+// This function is used for consumer facing files, like configs.
 #[inline]
 pub fn write_raw<P: AsRef<Path>>(path: P, json: JsonValue, pretty: bool) -> Result<(), MoonError> {
     let path = path.as_ref();

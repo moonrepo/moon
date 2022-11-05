@@ -1,6 +1,6 @@
 use async_recursion::async_recursion;
 use futures::future::try_join_all;
-use moon_error::{map_io_to_fs_error, map_json_to_error, map_yaml_to_error, MoonError};
+use moon_error::{map_io_to_fs_error, map_yaml_to_error, MoonError};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -147,26 +147,6 @@ pub async fn read<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
 }
 
 #[inline]
-pub async fn read_json<P, D>(path: P) -> Result<D, MoonError>
-where
-    P: AsRef<Path>,
-    D: DeserializeOwned,
-{
-    let path = path.as_ref();
-    let contents = read_json_string(path).await?;
-
-    let json: D =
-        serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
-
-    Ok(json)
-}
-
-#[inline]
-pub async fn read_json_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
-    crate::json::clean(read(path).await?)
-}
-
-#[inline]
 pub async fn read_yaml<P, D>(path: P) -> Result<D, MoonError>
 where
     P: AsRef<Path>,
@@ -177,10 +157,10 @@ where
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
-    let json: D =
+    let yaml: D =
         serde_yaml::from_str(&contents).map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
 
-    Ok(json)
+    Ok(yaml)
 }
 
 #[inline]
@@ -285,26 +265,6 @@ pub async fn write<T: AsRef<Path>>(path: T, data: impl AsRef<[u8]>) -> Result<()
 }
 
 #[inline]
-pub async fn write_json<P, D>(path: P, json: &D, pretty: bool) -> Result<(), MoonError>
-where
-    P: AsRef<Path>,
-    D: ?Sized + Serialize,
-{
-    let path = path.as_ref();
-    let data = if pretty {
-        serde_json::to_string_pretty(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?
-    } else {
-        serde_json::to_string(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?
-    };
-
-    fs::write(path, data)
-        .await
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-    Ok(())
-}
-
-#[inline]
 pub async fn write_yaml<P, D>(path: P, yaml: &D) -> Result<(), MoonError>
 where
     P: AsRef<Path>,
@@ -397,9 +357,9 @@ pub mod sync {
         let contents =
             read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
-        let json: D = serde_yaml::from_str(&contents)
+        let yaml: D = serde_yaml::from_str(&contents)
             .map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
 
-        Ok(json)
+        Ok(yaml)
     }
 }

@@ -287,6 +287,8 @@ mod install_deps {
             .assert();
         let output = get_assert_output(&assert);
 
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
         assert!(fixture.path().join("node_modules").exists());
 
         assert!(predicate::str::contains("added 31 packages").eval(&output));
@@ -303,6 +305,8 @@ mod install_deps {
             .assert();
         let output1 = get_assert_output(&assert);
 
+        moon_utils::test::debug_sandbox(&fixture, &assert);
+
         assert!(predicate::str::contains("added 31 packages").eval(&output1));
 
         let assert = create_moon_command(fixture.path())
@@ -311,6 +315,8 @@ mod install_deps {
             .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
             .assert();
         let output2 = get_assert_output(&assert);
+
+        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert!(!predicate::str::contains("added 31 packages").eval(&output2));
     }

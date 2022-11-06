@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flow } from './components/Flow';
+import { Graph } from './components/Graph';
 
 function App() {
 	const [count, setCount] = useState(0);
@@ -9,7 +9,7 @@ function App() {
 			<div>Hello</div>
 			<p>You have clicked {count} times</p>
 			<button onClick={() => void setCount(count + 1)}>Click</button>
-			<Flow />
+			<Graph />
 		</div>
 	);
 }

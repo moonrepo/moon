@@ -2,11 +2,14 @@ use std::env::VarError;
 
 #[derive(Default)]
 pub enum PipelineProvider {
-    #[default]
+    AppVeyor,
+    Bitbucket,
     Buildkite,
     CircleCI,
     GithubActions,
     TravisCI,
+    #[default]
+    Unknown,
 }
 
 #[derive(Default)]

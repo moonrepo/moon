@@ -1,4 +1,3 @@
-use crate::edge::GraphEdge;
 use moon_cache::CacheEngine;
 use moon_config::{
     GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
@@ -15,7 +14,7 @@ use moon_utils::path;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
-use petgraph::Direction;
+use petgraph::{Direction, Graph};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockWriteGuard};
@@ -221,23 +220,6 @@ impl ProjectGraph {
         Ok(graph.raw_nodes().iter().map(|n| n.weight.clone()).collect())
     }
 
-    /// Return a list of all edges in the graph.
-    #[track_caller]
-    pub fn all_edges(&self) -> Result<Vec<GraphEdge>, ProjectError> {
-        self.load_all()?;
-        let graph = self.graph.read().expect(READ_ERROR);
-        let edges = graph
-            .raw_edges()
-            .iter()
-            .map(|e| {
-                let source = graph.node_weight(e.source()).unwrap().clone().id;
-                let target = graph.node_weight(e.target()).unwrap().clone().id;
-                GraphEdge { source, target }
-            })
-            .collect();
-        Ok(edges)
-    }
-
     /// Find and return a project based on the initial path location.
     /// This will attempt to find the closest matching project source.
     #[track_caller]
@@ -324,11 +306,15 @@ impl ProjectGraph {
         }
     }
 
+    /// Get a labelled representation of the project graph (which can be serialized easily).
+    pub fn labeled_graph(&self) -> Graph<String, ()> {
+        let graph = self.graph.read().expect(READ_ERROR).clone();
+        graph.map(|_, n| n.id.clone(), |_, e| *e)
+    }
+
     /// Format as a DOT string.
     pub fn to_dot(&self) -> String {
-        let graph = self.graph.read().expect(READ_ERROR);
-        let labeled_graph = graph.map(|_, n| n.id.clone(), |_, e| e);
-        // let highlight_id = highlight_id.clone().unwrap_or_default();
+        let labeled_graph = self.labeled_graph();
 
         let dot = Dot::with_attr_getters(
             &labeled_graph,

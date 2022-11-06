@@ -1,4 +1,3 @@
-mod edge;
 mod graph;
 
 pub use graph::ProjectGraph;

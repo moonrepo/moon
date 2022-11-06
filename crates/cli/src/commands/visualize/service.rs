@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use async_trait::async_trait;
 use moon_workspace::Workspace;
 
@@ -29,29 +31,36 @@ impl ServiceTrait for Service {
     }
 
     async fn workspace_info(&self) -> WorkspaceInfoDto {
-        let all_projects = self
-            .workspace
-            .projects
-            .all_projects()
-            .expect("Unable to get all projects");
-        let nodes = all_projects
-            .into_iter()
-            .map(|project| WorkspaceNodeDto { id: project.id })
-            .collect();
-        let all_edges = self
-            .workspace
-            .projects
-            .all_edges()
-            .expect("Unable to get all edges");
-        let edges = all_edges
-            .into_iter()
-            .map(|edge| {
-                let source = edge.source;
-                let target = edge.target;
-                let id = format!("{}->{}", source, target);
-                WorkspaceEdgeDto { id, source, target }
+        let labeled_graph = self.workspace.projects.labeled_graph();
+        let edges = labeled_graph
+            .raw_edges()
+            .iter()
+            .map(|e| WorkspaceEdgeDto {
+                source: e.source().index(),
+                target: e.target().index(),
+                id: format!("{}->{}", e.source().index(), e.target().index()),
             })
-            .collect();
+            .collect::<Vec<_>>();
+        let mut nodes = HashSet::new();
+        for edge in labeled_graph.raw_edges().iter() {
+            let source = labeled_graph
+                .node_weight(edge.source())
+                .expect("Unable to get node")
+                .clone();
+            let target = labeled_graph
+                .node_weight(edge.target())
+                .expect("Unable to get node")
+                .clone();
+            nodes.insert(WorkspaceNodeDto {
+                id: edge.source().index(),
+                label: source,
+            });
+            nodes.insert(WorkspaceNodeDto {
+                id: edge.target().index(),
+                label: target,
+            });
+        }
+        let nodes = nodes.into_iter().collect();
         WorkspaceInfoDto { edges, nodes }
     }
 }

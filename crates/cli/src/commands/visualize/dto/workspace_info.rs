@@ -1,16 +1,17 @@
 use async_graphql::SimpleObject;
 use moon_config::ProjectID;
 
-#[derive(SimpleObject)]
+#[derive(Hash, Eq, PartialEq, SimpleObject)]
 pub struct WorkspaceNodeDto {
-    pub id: ProjectID,
+    pub id: usize,
+    pub label: String,
 }
 
 #[derive(SimpleObject)]
 pub struct WorkspaceEdgeDto {
-    pub id: String,
-    pub source: ProjectID,
-    pub target: ProjectID,
+    pub id: ProjectID,
+    pub source: usize,
+    pub target: usize,
 }
 
 #[derive(SimpleObject)]

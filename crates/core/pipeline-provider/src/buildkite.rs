@@ -8,8 +8,8 @@ pub fn create_environment() -> PipelineEnvironment {
         id: env::var("BUILDKITE_BUILD_ID").unwrap_or_default(),
         name: PipelineProvider::Buildkite,
         request_id: handle_falsy_value(env::var("BUILDKITE_PULL_REQUEST")),
-        request_url: handle_falsy_value(env::var("BUILDKITE_PULL_REQUEST_REPO")),
+        request_url: None,
         revision: env::var("BUILDKITE_COMMIT").unwrap_or_default(),
-        url: env::var("BUILDKITE_BUILD_URL").unwrap_or_default(),
+        url: handle_falsy_value(env::var("BUILDKITE_BUILD_URL")),
     }
 }

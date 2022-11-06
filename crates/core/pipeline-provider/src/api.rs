@@ -5,6 +5,8 @@ pub enum PipelineProvider {
     #[default]
     Buildkite,
     CircleCI,
+    GithubActions,
+    TravisCI,
 }
 
 #[derive(Default)]
@@ -31,7 +33,7 @@ pub struct PipelineEnvironment {
     pub revision: String,
 
     /// Link to the pipeline.
-    pub url: String,
+    pub url: Option<String>,
 }
 
 pub fn handle_falsy_value(result: Result<String, VarError>) -> Option<String> {

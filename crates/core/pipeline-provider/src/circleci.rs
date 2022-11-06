@@ -10,6 +10,6 @@ pub fn create_environment() -> PipelineEnvironment {
         request_id: handle_falsy_value(env::var("CIRCLE_PR_NUMBER")),
         request_url: handle_falsy_value(env::var("CIRCLE_PULL_REQUEST")),
         revision: env::var("CIRCLE_SHA1").unwrap_or_default(),
-        url: env::var("CIRCLE_BUILD_URL").unwrap_or_default(),
+        url: handle_falsy_value(env::var("CIRCLE_BUILD_URL")),
     }
 }

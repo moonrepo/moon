@@ -3,8 +3,6 @@ type: 'application'
 tasks:
   build:
     command: vite build
-    deps:
-      - '~:codegen'
     outputs:
       - dist
 
@@ -13,15 +11,13 @@ tasks:
       - 'graphql-codegen'
       - '--config'
       - 'codegen.yaml'
+    outputs:
+      - 'src/generated/graphql'
     local: true
 
   dev:
     command: vite dev
     local: true
-
-  lint:
-    deps:
-      - '~:codegen'
 
   preview:
     command: vite preview

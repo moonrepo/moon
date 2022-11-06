@@ -1,15 +1,14 @@
-use crate::api::{handle_falsy_value, PipelineEnvironment, PipelineProvider};
-use std::env;
+use crate::api::{opt_var, var, PipelineEnvironment, PipelineProvider};
 
 pub fn create_environment() -> PipelineEnvironment {
     PipelineEnvironment {
         base_branch: None,
-        branch: env::var("CIRCLE_BRANCH").unwrap_or_default(),
-        id: env::var("CIRCLE_WORKFLOW_ID").unwrap_or_default(),
-        name: PipelineProvider::CircleCI,
-        request_id: handle_falsy_value(env::var("CIRCLE_PR_NUMBER")),
-        request_url: handle_falsy_value(env::var("CIRCLE_PULL_REQUEST")),
-        revision: env::var("CIRCLE_SHA1").unwrap_or_default(),
-        url: handle_falsy_value(env::var("CIRCLE_BUILD_URL")),
+        branch: var("CIRCLE_BRANCH"),
+        id: var("CIRCLE_WORKFLOW_ID"),
+        provider: PipelineProvider::CircleCI,
+        request_id: opt_var("CIRCLE_PR_NUMBER"),
+        request_url: opt_var("CIRCLE_PULL_REQUEST"),
+        revision: var("CIRCLE_SHA1"),
+        url: opt_var("CIRCLE_BUILD_URL"),
     }
 }

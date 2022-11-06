@@ -1,26 +1,25 @@
-use crate::api::{handle_falsy_value, PipelineEnvironment, PipelineProvider};
-use std::env;
+use crate::api::{opt_var, var, PipelineEnvironment, PipelineProvider};
 
 pub fn create_environment() -> PipelineEnvironment {
     let base_branch;
     let branch;
 
-    if let Ok(pr_branch) = env::var("APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH") {
-        base_branch = handle_falsy_value(env::var("APPVEYOR_REPO_BRANCH"));
+    if let Some(pr_branch) = opt_var("APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH") {
+        base_branch = opt_var("APPVEYOR_REPO_BRANCH");
         branch = pr_branch;
     } else {
         base_branch = None;
-        branch = env::var("APPVEYOR_REPO_BRANCH").unwrap_or_default();
+        branch = var("APPVEYOR_REPO_BRANCH");
     }
 
     PipelineEnvironment {
         base_branch,
         branch,
-        id: env::var("APPVEYOR_BUILD_ID").unwrap_or_default(),
-        name: PipelineProvider::AppVeyor,
-        request_id: handle_falsy_value(env::var("APPVEYOR_PULL_REQUEST_NUMBER")),
+        id: var("APPVEYOR_BUILD_ID"),
+        provider: PipelineProvider::AppVeyor,
+        request_id: opt_var("APPVEYOR_PULL_REQUEST_NUMBER"),
         request_url: None,
-        revision: env::var("APPVEYOR_PULL_REQUEST_HEAD_COMMIT").unwrap_or_default(),
+        revision: var("APPVEYOR_PULL_REQUEST_HEAD_COMMIT"),
         url: None,
     }
 }

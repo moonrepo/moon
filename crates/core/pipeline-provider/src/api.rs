@@ -1,4 +1,4 @@
-use std::env::VarError;
+use std::env;
 
 #[derive(Default)]
 pub enum PipelineProvider {
@@ -11,6 +11,7 @@ pub enum PipelineProvider {
     Drone,
     GithubActions,
     Gitlab,
+    Semaphore,
     TravisCI,
     #[default]
     Unknown,
@@ -21,14 +22,14 @@ pub struct PipelineEnvironment {
     /// Base branch of the pull/merge request.
     pub base_branch: Option<String>,
 
-    /// Branch that triggered the pipeline.
+    /// Branch of the triggered pipeline.
     pub branch: String,
 
-    /// Unique ID of the current build/run.
+    /// Unique ID of the current pipeline.
     pub id: String,
 
     /// Name of the provider.
-    pub name: PipelineProvider,
+    pub provider: PipelineProvider,
 
     /// ID of an associated pull/merge request.
     pub request_id: Option<String>,
@@ -36,20 +37,24 @@ pub struct PipelineEnvironment {
     /// Link to the pull/merge request.
     pub request_url: Option<String>,
 
-    /// Revision of the triggered pipeline.
+    /// Revision that triggered the pipeline.
     pub revision: String,
 
     /// Link to the pipeline.
     pub url: Option<String>,
 }
 
-pub fn handle_falsy_value(result: Result<String, VarError>) -> Option<String> {
-    match result {
-        Ok(var) => {
-            if var == "false" || var == "" {
+pub fn var(key: &str) -> String {
+    env::var(key).unwrap_or_default()
+}
+
+pub fn opt_var(key: &str) -> Option<String> {
+    match env::var(key) {
+        Ok(value) => {
+            if value == "false" || value == "" {
                 None
             } else {
-                Some(var)
+                Some(value)
             }
         }
         Err(_) => None,

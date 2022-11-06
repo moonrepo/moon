@@ -1,15 +1,14 @@
-use crate::api::{handle_falsy_value, PipelineEnvironment, PipelineProvider};
-use std::env;
+use crate::api::{opt_var, var, PipelineEnvironment, PipelineProvider};
 
 pub fn create_environment() -> PipelineEnvironment {
     PipelineEnvironment {
         base_branch: None,
-        branch: env::var("CI_BRANCH").unwrap_or_default(),
-        id: env::var("CI_BUILD_ID").unwrap_or_default(),
-        name: PipelineProvider::Codeship,
-        request_id: handle_falsy_value(env::var("CI_PR_NUMBER")),
-        request_url: handle_falsy_value(env::var("CI_PULL_REQUEST")),
-        revision: env::var("CI_COMMIT_ID").unwrap_or_default(),
+        branch: var("CI_BRANCH"),
+        id: var("CI_BUILD_ID"),
+        provider: PipelineProvider::Codeship,
+        request_id: opt_var("CI_PR_NUMBER"),
+        request_url: opt_var("CI_PULL_REQUEST"),
+        revision: var("CI_COMMIT_ID"),
         url: None,
     }
 }

@@ -8,12 +8,17 @@ mod codeship;
 mod drone;
 mod github;
 mod gitlab;
+mod semaphore;
 mod travisci;
 
 use api::PipelineEnvironment;
 use std::env;
 
 pub fn get_pipeline_environment() -> Option<PipelineEnvironment> {
+    if env::var("CI").is_err() {
+        return None;
+    }
+
     if env::var("APPVEYOR").is_ok() {
         return Some(appveyor::create_environment());
     }
@@ -50,6 +55,10 @@ pub fn get_pipeline_environment() -> Option<PipelineEnvironment> {
 
     if env::var("GITLAB_CI").is_ok() {
         return Some(gitlab::create_environment());
+    }
+
+    if env::var("SEMAPHORE").is_ok() {
+        return Some(semaphore::create_environment());
     }
 
     if env::var("TRAVIS").is_ok() {

@@ -1,15 +1,14 @@
-use crate::api::{handle_falsy_value, PipelineEnvironment, PipelineProvider};
-use std::env;
+use crate::api::{opt_var, var, PipelineEnvironment, PipelineProvider};
 
 pub fn create_environment() -> PipelineEnvironment {
     PipelineEnvironment {
-        base_branch: handle_falsy_value(env::var("GITHUB_BASE_REF")),
-        branch: env::var("GITHUB_HEAD_REF").unwrap_or_default(),
-        id: env::var("GITHUB_RUN_ID").unwrap_or_default(),
-        name: PipelineProvider::GithubActions,
+        base_branch: opt_var("GITHUB_BASE_REF"),
+        branch: var("GITHUB_HEAD_REF"),
+        id: var("GITHUB_RUN_ID"),
+        provider: PipelineProvider::GithubActions,
         request_id: None,
         request_url: None,
-        revision: env::var("GITHUB_SHA").unwrap_or_default(),
+        revision: var("GITHUB_SHA"),
         url: None,
     }
 }

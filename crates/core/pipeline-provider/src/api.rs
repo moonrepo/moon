@@ -6,7 +6,9 @@ pub enum PipelineProvider {
     Bitbucket,
     Buildkite,
     CircleCI,
+    Codeship,
     GithubActions,
+    Gitlab,
     TravisCI,
     #[default]
     Unknown,

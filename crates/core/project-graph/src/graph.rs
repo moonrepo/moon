@@ -1,3 +1,4 @@
+use crate::edge::GraphEdge;
 use moon_cache::CacheEngine;
 use moon_config::{
     GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
@@ -218,6 +219,23 @@ impl ProjectGraph {
         self.load_all()?;
         let graph = self.graph.read().expect(READ_ERROR);
         Ok(graph.raw_nodes().iter().map(|n| n.weight.clone()).collect())
+    }
+
+    /// Return a list of all edges in the graph.
+    #[track_caller]
+    pub fn all_edges(&self) -> Result<Vec<GraphEdge>, ProjectError> {
+        self.load_all()?;
+        let graph = self.graph.read().expect(READ_ERROR);
+        let edges = graph
+            .raw_edges()
+            .iter()
+            .map(|e| {
+                let source = graph.node_weight(e.source()).unwrap().clone().id;
+                let target = graph.node_weight(e.target()).unwrap().clone().id;
+                GraphEdge { source, target }
+            })
+            .collect();
+        Ok(edges)
     }
 
     /// Find and return a project based on the initial path location.

@@ -19,7 +19,9 @@ pub fn create_environment() -> PipelineEnvironment {
         provider: PipelineProvider::AppVeyor,
         request_id: opt_var("APPVEYOR_PULL_REQUEST_NUMBER"),
         request_url: None,
-        revision: var("APPVEYOR_PULL_REQUEST_HEAD_COMMIT"),
+        revision: opt_var("APPVEYOR_PULL_REQUEST_HEAD_COMMIT")
+            .or_else(|| opt_var("APPVEYOR_REPO_COMMIT"))
+            .unwrap_or_default(),
         url: None,
     }
 }

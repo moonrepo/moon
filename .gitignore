@@ -16,7 +16,6 @@ build/
 cjs/
 dts/
 esm/
-lib/
 mjs/
 umd/
 dist/

@@ -1,0 +1,12 @@
+overwrite: true
+schema: 'http://127.0.0.1:8000/graphql'
+documents: 'src/**/*.ts'
+generates:
+  src/generated/graphql.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-react-query
+    config:
+      fetcher:
+        endpoint: 'http://127.0.0.1:8000/graphql'

@@ -3,18 +3,28 @@ type: 'application'
 tasks:
   build:
     command: vite build
+    deps:
+      - '~:codegen'
     outputs:
       - dist
-    platform: unknown
+
+  codegen:
+    command:
+      - 'graphql-codegen'
+      - '--config'
+      - 'codegen.yaml'
+    local: true
 
   dev:
     command: vite dev
-    platform: unknown
     local: true
+
+  lint:
+    deps:
+      - '~:codegen'
 
   preview:
     command: vite preview
-    platform: unknown
     local: true
 
   test:
@@ -23,7 +33,6 @@ tasks:
       - run
       - '--coverage'
       - '--passWithNoTests'
-    platform: unknown
 
 workspace:
   inheritedTasks:

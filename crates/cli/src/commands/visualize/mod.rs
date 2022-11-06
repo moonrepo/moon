@@ -1,4 +1,5 @@
 mod dto;
+mod fairing;
 mod resolver;
 mod schema;
 mod service;
@@ -10,7 +11,7 @@ use async_graphql_rocket::{GraphQLRequest, GraphQLResponse};
 use moon_logger::info;
 use rocket::http::ContentType;
 use rocket::response::content::RawHtml;
-use rocket::{get, post, routes, State};
+use rocket::{get, options, post, routes, State};
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
 use std::ffi::OsStr;
@@ -31,8 +32,12 @@ pub async fn visualize() -> Result<(), AnyError> {
     let schema = schema::build_schema().await?;
     #[allow(unused_must_use)]
     let _rocket = rocket::build()
+        .attach(fairing::Cors)
         .manage(schema)
-        .mount("/", routes![index, other_files, graphiql, graphql_request])
+        .mount(
+            "/",
+            routes![index, other_files, graphiql, graphql_request, all_options],
+        )
         .launch()
         .await?;
 
@@ -65,4 +70,10 @@ fn graphiql() -> RawHtml<String> {
 #[post("/graphql", data = "<request>", format = "application/json")]
 async fn graphql_request(schema: &State<AppSchema>, request: GraphQLRequest) -> GraphQLResponse {
     request.execute(schema).await
+}
+
+/// Catches all OPTION requests in order to get the CORS related Fairing triggered.
+#[options("/<_..>")]
+async fn all_options() {
+    /* Intentionally left empty */
 }

@@ -1,54 +1,43 @@
-import React, { Fragment, useEffect, useRef } from 'react';
-import cytoscape from 'cytoscape';
+import React, { useEffect, useRef } from 'react';
+import cytoscape, { ElementDefinition } from 'cytoscape';
+import { useQuery } from '@tanstack/react-query';
+import { client } from '../lib/graphql/client';
+import { ProjectInformation } from '../lib/graphql/queries';
 
 export const Graph = () => {
-	const graphRef = useRef(null);
+	const { data, isLoading } = useQuery(['projectInformation'], () =>
+		client.request(ProjectInformation),
+	);
+	const graphRef = useRef<HTMLDivElement>(null);
 
 	const drawGraph = () => {
+		const elements: ElementDefinition[] = [];
+		data?.workspaceInfo.nodes.forEach((project) => {
+			elements.push({
+				data: { id: project.id.toString(), label: project.label },
+				group: 'nodes',
+			});
+		});
+		data?.workspaceInfo.edges.forEach((edge) => {
+			elements.push({
+				data: { id: edge.id, source: edge.source, target: edge.target },
+				group: 'edges',
+			});
+		});
 		const cy = cytoscape({
 			container: graphRef.current,
-			elements: [
-				{
-					data: { id: 'n0' },
-					group: 'nodes',
-				},
-				{
-					data: { id: 'n1' },
-					group: 'nodes',
-				},
-				{
-					data: { id: 'n2' },
-					group: 'nodes',
-				},
-				{
-					data: { id: 'e0', source: 'n0', target: 'n1' },
-					group: 'edges',
-				},
-				{
-					data: { id: 'e1', source: 'n2', target: 'n1' },
-					group: 'edges',
-				},
-				{
-					data: { id: 'e2', source: 'n2', target: 'n2' },
-					group: 'edges',
-				},
-			],
-			style: [
-				{
-					selector: 'node',
-					style: { label: 'data(id)' },
-				},
-			],
+			elements,
+			style: [{ selector: 'node', style: { label: 'data(label)' } }],
 		});
 		return cy;
 	};
 
-	useEffect(() => void drawGraph(), []);
+	useEffect(() => void drawGraph(), [isLoading]);
 
 	return (
-		<Fragment>
+		<>
 			<h2>Graph Test</h2>
-			<div ref={graphRef} style={{ height: '80vh', width: '100%' }}></div>
-		</Fragment>
+			<div ref={graphRef} style={{ height: '80vh', width: '100%' }} />
+		</>
 	);
 };

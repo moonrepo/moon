@@ -1,6 +1,6 @@
-import { gql } from 'graphql-tag';
+import { graphql } from '../../generated/graphql';
 
-export const ProjectInformation = gql`
+export const ProjectInformation = graphql(`
 	query GetProjectInformation {
 		workspaceInfo {
 			edges {
@@ -10,7 +10,8 @@ export const ProjectInformation = gql`
 			}
 			nodes {
 				id
+				label
 			}
 		}
 	}
-`;
+`);

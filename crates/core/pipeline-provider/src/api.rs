@@ -4,7 +4,6 @@ use std::env;
 pub struct PipelineOutput {
     pub close_log_group: &'static str,
     pub open_log_group: &'static str,
-    pub open_log_group_collapsed: &'static str,
 }
 
 impl Default for PipelineOutput {
@@ -12,7 +11,6 @@ impl Default for PipelineOutput {
         PipelineOutput {
             close_log_group: "",
             open_log_group: "▪▪▪▪ ",
-            open_log_group_collapsed: "▪▪▪▪ ",
         }
     }
 }

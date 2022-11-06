@@ -3,8 +3,7 @@ use crate::api::{opt_var, var, PipelineEnvironment, PipelineOutput, PipelineProv
 // https://buildkite.com/docs/pipelines/managing-log-output
 pub const BUILDKITE: PipelineOutput = PipelineOutput {
     close_log_group: "",
-    open_log_group: "+++",
-    open_log_group_collapsed: "---",
+    open_log_group: "--- ",
 };
 
 pub fn create_environment() -> PipelineEnvironment {

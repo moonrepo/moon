@@ -16,7 +16,7 @@ type TargetList = Vec<Target>;
 const LOG_TARGET: &str = "moon:ci";
 
 fn print_header(provider: &PipelineOutput, title: &str) {
-    println!("{}{}", provider.open_log_group_collapsed, title);
+    println!("{}{}", provider.open_log_group, title);
 }
 
 fn print_footer(provider: &PipelineOutput) {

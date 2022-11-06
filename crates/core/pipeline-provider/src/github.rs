@@ -4,7 +4,6 @@ use crate::api::{opt_var, var, PipelineEnvironment, PipelineOutput, PipelineProv
 pub const GITHUB: PipelineOutput = PipelineOutput {
     close_log_group: "::endgroup::",
     open_log_group: "::group::",
-    open_log_group_collapsed: "::group::",
 };
 
 pub fn create_environment() -> PipelineEnvironment {

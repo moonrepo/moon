@@ -14,6 +14,8 @@
 
 - When writing JSON files, indentation and formatting will be inferred from the closest
   `.editorconfig` as best as possible.
+- Updated webhook payloads to contain information about the current CI/CD environment under the
+  `environment` field.
 
 #### 🐞 Fixes
 

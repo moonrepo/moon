@@ -3,7 +3,9 @@ mod appveyor;
 mod bitbucket;
 mod buildkite;
 mod circleci;
+mod codefresh;
 mod codeship;
+mod drone;
 mod github;
 mod gitlab;
 mod travisci;
@@ -28,10 +30,18 @@ pub fn get_pipeline_environment() -> Option<PipelineEnvironment> {
         return Some(circleci::create_environment());
     }
 
+    if env::var("CF_ACCOUNT").is_ok() {
+        return Some(codefresh::create_environment());
+    }
+
     if let Ok(var) = env::var("CI_NAME") {
         if var == "codeship" {
             return Some(codeship::create_environment());
         }
+    }
+
+    if env::var("DRONE").is_ok() {
+        return Some(drone::create_environment());
     }
 
     if env::var("GITHUB_ACTIONS").is_ok() {

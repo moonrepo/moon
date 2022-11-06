@@ -29,7 +29,7 @@ args = ["clippy", "--workspace", "--all-targets"]
 
 [tasks.lint-fix]
 command = "cargo"
-args = ["clippy", "--workspace", "--all-targets", "--fix", "--allow-dirty"]
+args = ["clippy", "--workspace", "--all-targets", "--fix", "--allow-dirty", "--allow-staged"]
 
 # TESTING
 

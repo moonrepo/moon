@@ -1,6 +1,22 @@
 use serde::{Deserialize, Serialize};
 use std::env;
 
+pub struct PipelineOutput {
+    pub close_log_group: &'static str,
+    pub open_log_group: &'static str,
+    pub open_log_group_collapsed: &'static str,
+}
+
+impl Default for PipelineOutput {
+    fn default() -> Self {
+        PipelineOutput {
+            close_log_group: "",
+            open_log_group: "▪▪▪▪ ",
+            open_log_group_collapsed: "▪▪▪▪ ",
+        }
+    }
+}
+
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub enum PipelineProvider {
     AppVeyor,

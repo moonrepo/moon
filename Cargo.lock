@@ -1839,6 +1839,7 @@ dependencies = [
  "moon_node_lang",
  "moon_node_platform",
  "moon_notifier",
+ "moon_pipeline_provider",
  "moon_platform",
  "moon_project",
  "moon_runner",

@@ -1,4 +1,11 @@
-use crate::api::{opt_var, var, PipelineEnvironment, PipelineProvider};
+use crate::api::{opt_var, var, PipelineEnvironment, PipelineOutput, PipelineProvider};
+
+// https://buildkite.com/docs/pipelines/managing-log-output
+pub const BUILDKITE: PipelineOutput = PipelineOutput {
+    close_log_group: "",
+    open_log_group: "+++",
+    open_log_group_collapsed: "---",
+};
 
 pub fn create_environment() -> PipelineEnvironment {
     PipelineEnvironment {

@@ -2031,6 +2031,7 @@ dependencies = [
  "moon_emitter",
  "moon_error",
  "moon_logger",
+ "moon_pipeline_provider",
  "moon_utils",
  "moon_workspace",
  "reqwest",
@@ -2043,6 +2044,9 @@ dependencies = [
 [[package]]
 name = "moon_pipeline_provider"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "moon_platform"

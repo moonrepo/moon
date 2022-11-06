@@ -60,7 +60,7 @@ mod editor_config {
 
         json::write_raw(&path, json::read_raw(&path).unwrap(), true).unwrap();
 
-        assert!(fs::read_to_string(&path).unwrap().ends_with("\n"));
+        assert!(fs::read_to_string(&path).unwrap().ends_with('\n'));
     }
 
     #[test]
@@ -72,6 +72,6 @@ mod editor_config {
 
         json::write_raw(&path, json::read_raw(&path).unwrap(), true).unwrap();
 
-        assert!(!fs::read_to_string(&path).unwrap().ends_with("\n"));
+        assert!(!fs::read_to_string(&path).unwrap().ends_with('\n'));
     }
 }

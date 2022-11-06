@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::env;
 
-#[derive(Default)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 pub enum PipelineProvider {
     AppVeyor,
     Bitbucket,
@@ -17,7 +18,7 @@ pub enum PipelineProvider {
     Unknown,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 pub struct PipelineEnvironment {
     /// Base branch of the pull/merge request.
     pub base_branch: Option<String>,
@@ -51,7 +52,7 @@ pub fn var(key: &str) -> String {
 pub fn opt_var(key: &str) -> Option<String> {
     match env::var(key) {
         Ok(value) => {
-            if value == "false" || value == "" {
+            if value == "false" || value.is_empty() {
                 None
             } else {
                 Some(value)

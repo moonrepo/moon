@@ -11,7 +11,7 @@ mod gitlab;
 mod semaphore;
 mod travisci;
 
-use api::PipelineEnvironment;
+pub use api::PipelineEnvironment;
 use std::env;
 
 pub fn get_pipeline_environment() -> Option<PipelineEnvironment> {

@@ -20,3 +20,4 @@ crates/config/templates/
 
 # visualizer
 apps/visualizer/*timestamp*
+apps/visualizer/src/generated

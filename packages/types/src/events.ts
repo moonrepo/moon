@@ -2,8 +2,20 @@ import type { Duration, Runtime } from './common';
 import type { Project, Task } from './project';
 import type { Action, ActionNode } from './runner';
 
+export interface ProviderEnvironment {
+	baseBranch: string | null;
+	branch: string;
+	id: string;
+	provider: string;
+	requestId: string | null;
+	requestUrl: string | null;
+	revision: string;
+	url: string | null;
+}
+
 export interface WebhookPayload<T extends EventType, E> {
 	createdAt: string;
+	environment: ProviderEnvironment | null;
 	event: E;
 	type: T;
 	uuid: string;

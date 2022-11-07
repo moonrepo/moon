@@ -4,21 +4,25 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use itertools::Itertools;
 use moon_action::ActionContext;
 use moon_logger::{color, debug};
+use moon_pipeline_provider::{get_pipeline_output, PipelineOutput};
 use moon_project::ProjectError;
 use moon_runner::{DepGraph, DepGraphError, Runner};
 use moon_task::{Target, TouchedFilePaths};
 use moon_terminal::safe_exit;
-use moon_utils::is_ci;
 use moon_workspace::{Workspace, WorkspaceError};
 
 type TargetList = Vec<Target>;
 
 const LOG_TARGET: &str = "moon:ci";
 
-fn print_header(title: &str) {
-    let prefix = if is_ci() { "--- " } else { "" };
+fn print_header(provider: &PipelineOutput, title: &str) {
+    println!("{}{}", provider.open_log_group, title);
+}
 
-    println!("{}{}", prefix, title);
+fn print_footer(provider: &PipelineOutput) {
+    if !provider.close_log_group.is_empty() {
+        println!("{}", provider.close_log_group);
+    }
 }
 
 fn print_targets(targets: &TargetList) {
@@ -36,12 +40,13 @@ fn print_targets(targets: &TargetList) {
 
 /// Gather a list of files that have been modified between branches.
 async fn gather_touched_files(
+    provider: &PipelineOutput,
     workspace: &Workspace,
     options: &CiOptions,
 ) -> Result<TouchedFilePaths, WorkspaceError> {
-    print_header("Gathering touched files");
+    print_header(provider, "Gathering touched files");
 
-    query_touched_files(
+    let results = query_touched_files(
         workspace,
         &mut QueryTouchedFilesOptions {
             default_branch: true,
@@ -52,15 +57,20 @@ async fn gather_touched_files(
             status: TouchedStatus::All,
         },
     )
-    .await
+    .await?;
+
+    print_footer(provider);
+
+    Ok(results)
 }
 
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
 fn gather_runnable_targets(
+    provider: &PipelineOutput,
     workspace: &Workspace,
     touched_files: &TouchedFilePaths,
 ) -> Result<TargetList, ProjectError> {
-    print_header("Gathering runnable targets");
+    print_header(provider, "Gathering runnable targets");
 
     let mut targets = vec![];
 
@@ -96,11 +106,17 @@ fn gather_runnable_targets(
         print_targets(&targets);
     }
 
+    print_footer(provider);
+
     Ok(targets)
 }
 
 /// Distribute targets across jobs if parallelism is enabled.
-fn distribute_targets_across_jobs(options: &CiOptions, targets: TargetList) -> TargetList {
+fn distribute_targets_across_jobs(
+    provider: &PipelineOutput,
+    options: &CiOptions,
+    targets: TargetList,
+) -> TargetList {
     if options.job.is_none() || options.job_total.is_none() {
         return targets;
     }
@@ -110,7 +126,7 @@ fn distribute_targets_across_jobs(options: &CiOptions, targets: TargetList) -> T
     let batch_size = targets.len() / job_total;
     let batched_targets;
 
-    print_header("Distributing targets across jobs");
+    print_header(provider, "Distributing targets across jobs");
     println!("Job index: {}", job_index);
     println!("Job total: {}", job_index);
     println!("Batch size: {}", batch_size);
@@ -126,16 +142,18 @@ fn distribute_targets_across_jobs(options: &CiOptions, targets: TargetList) -> T
     }
 
     print_targets(&batched_targets);
+    print_footer(provider);
 
     batched_targets
 }
 
 /// Generate a dependency graph with the runnable targets.
 fn generate_dep_graph(
+    provider: &PipelineOutput,
     workspace: &Workspace,
     targets: &TargetList,
 ) -> Result<DepGraph, DepGraphError> {
-    print_header("Generating dependency graph");
+    print_header(provider, "Generating dependency graph");
 
     let mut dep_graph = DepGraph::default();
 
@@ -149,6 +167,7 @@ fn generate_dep_graph(
 
     println!("Target count: {}", targets.len());
     println!("Action count: {}", dep_graph.graph.node_count());
+    print_footer(provider);
 
     Ok(dep_graph)
 }
@@ -162,18 +181,19 @@ pub struct CiOptions {
 
 pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
-    let touched_files = gather_touched_files(&workspace, &options).await?;
-    let targets = gather_runnable_targets(&workspace, &touched_files)?;
+    let ci_provider = get_pipeline_output();
+    let touched_files = gather_touched_files(&ci_provider, &workspace, &options).await?;
+    let targets = gather_runnable_targets(&ci_provider, &workspace, &touched_files)?;
 
     if targets.is_empty() {
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&options, targets);
-    let dep_graph = generate_dep_graph(&workspace, &targets)?;
+    let targets = distribute_targets_across_jobs(&ci_provider, &options, targets);
+    let dep_graph = generate_dep_graph(&ci_provider, &workspace, &targets)?;
 
     // Process all tasks in the graph
-    print_header("Running all targets");
+    print_header(&ci_provider, "Running all targets");
 
     let mut runner = Runner::new(workspace);
 
@@ -188,8 +208,10 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
+    print_footer(&ci_provider);
+
     // Print out the results and exit if an error occurs
-    print_header("Results");
+    print_header(&ci_provider, "Results");
 
     runner.render_results(&results)?;
     runner.render_stats(&results, false)?;

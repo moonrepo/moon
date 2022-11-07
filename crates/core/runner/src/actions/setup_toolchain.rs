@@ -13,7 +13,7 @@ const HOUR_MILLIS: u128 = 36000;
 
 pub async fn setup_toolchain(
     _action: &mut Action,
-    _context: &ActionContext,
+    _context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
 ) -> Result<ActionStatus, WorkspaceError> {

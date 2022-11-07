@@ -22,6 +22,7 @@
 
 - Fixed an issue where passthrough args were incorrectly being passed to non-primary targets when
   using `moon run`.
+- Task hashes will now properly invalidate if their dependencies hashes have also changed.
 
 #### ⚙️ Internal
 

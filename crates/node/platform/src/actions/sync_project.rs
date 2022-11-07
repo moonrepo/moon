@@ -75,7 +75,7 @@ fn sync_root_tsconfig(
 
 pub async fn sync_project(
     _action: &mut Action,
-    _context: &ActionContext,
+    _context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     project: &Project,
 ) -> Result<ActionStatus, WorkspaceError> {

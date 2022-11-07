@@ -3,11 +3,11 @@ const path = require('path');
 
 const type = process.argv[2];
 
-function createFile(file) {
+function createFile(file, content) {
 	const filePath = path.join(__dirname, file);
 
 	fs.mkdirSync(path.dirname(filePath), { recursive: true });
-	fs.writeFileSync(filePath, String(Date.now()), 'utf8');
+	fs.writeFileSync(filePath, content ?? String(Date.now()), 'utf8');
 }
 
 switch (type) {
@@ -23,5 +23,8 @@ switch (type) {
 	case 'both':
 		createFile('lib/one.js');
 		createFile('esm/two.js');
+		break;
+	case 'custom':
+		createFile(process.argv[3], 'fixed content');
 		break;
 }

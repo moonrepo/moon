@@ -6,7 +6,7 @@ use moon_logger::{color, map_list};
 use moon_runner::{DepGraph, Runner};
 use moon_task::Target;
 use moon_workspace::Workspace;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::string::ToString;
 
 #[derive(Default)]
@@ -87,6 +87,7 @@ pub async fn run(
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: options.profile,
+        target_hashes: FxHashMap::default(),
         touched_files: touched_files.unwrap_or_default(),
     };
 

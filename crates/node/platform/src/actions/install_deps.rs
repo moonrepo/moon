@@ -96,12 +96,13 @@ async fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), Mo
 
 pub async fn install_deps(
     _action: &mut Action,
-    context: &ActionContext,
+    context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
+    let context = context.read().await;
     let node = workspace.toolchain.node.get_for_runtime(runtime)?;
     let pm = node.get_package_manager();
     let lock_filename = pm.get_lock_filename();

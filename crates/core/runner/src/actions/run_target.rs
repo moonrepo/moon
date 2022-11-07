@@ -170,6 +170,7 @@ impl<'a> TargetRunner<'a> {
 
         hasher.hash_project_deps(self.project.get_dependency_ids());
         hasher.hash_task(task);
+        hasher.hash_task_deps(task, &context.target_hashes);
 
         if context.should_inherit_args(&task.target) {
             hasher.hash_args(&context.passthrough_args);
@@ -285,6 +286,7 @@ impl<'a> TargetRunner<'a> {
     /// of the target and project, determine the hydration strategy as well.
     pub async fn is_cached(
         &mut self,
+        context: &mut ActionContext,
         common_hasher: impl Hasher + Serialize,
         platform_hasher: impl Hasher + Serialize,
     ) -> Result<Option<HydrateFrom>, MoonError> {
@@ -296,6 +298,10 @@ impl<'a> TargetRunner<'a> {
             color::symbol(&hash),
             color::id(&self.task.target)
         );
+
+        context
+            .target_hashes
+            .insert(self.task.target.clone(), hash.clone());
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
@@ -688,7 +694,7 @@ impl<'a> TargetRunner<'a> {
 
 pub async fn run_target(
     action: &mut Action,
-    context: &ActionContext,
+    context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<Emitter>>,
     target_id: &str,
@@ -735,12 +741,14 @@ pub async fn run_target(
 
     // Abort early if this build has already been cached/hashed
     if should_cache {
-        let common_hasher = runner.create_common_hasher(context).await?;
+        let mut context = context.write().await;
+        let common_hasher = runner.create_common_hasher(&context).await?;
 
         let is_cached = match task.platform {
             PlatformType::Node => {
                 runner
                     .is_cached(
+                        &mut context,
                         common_hasher,
                         node_actions::create_target_hasher(&workspace, &project).await?,
                     )
@@ -749,6 +757,7 @@ pub async fn run_target(
             _ => {
                 runner
                     .is_cached(
+                        &mut context,
                         common_hasher,
                         system_actions::create_target_hasher(&workspace, &project)?,
                     )
@@ -787,9 +796,10 @@ pub async fn run_target(
         &project.root
     };
 
+    let context = context.read().await;
     let mut command = match task.platform {
         PlatformType::Node => {
-            node_actions::create_target_command(context, &workspace, &project, task).await?
+            node_actions::create_target_command(&context, &workspace, &project, task).await?
         }
         _ => system_actions::create_target_command(task, working_dir),
     };
@@ -807,7 +817,7 @@ pub async fn run_target(
     );
 
     // Execute the command and return the number of attempts
-    let attempts = runner.run_command(context, &mut command).await?;
+    let attempts = runner.run_command(&context, &mut command).await?;
     let status = if action.set_attempts(attempts) {
         ActionStatus::Passed
     } else {

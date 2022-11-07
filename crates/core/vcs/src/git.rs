@@ -1,18 +1,20 @@
 use crate::errors::VcsError;
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
+use cached::{CachedAsync, TimedCache};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use moon_error::MoonError;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
-use moon_utils::{fs, is_test_env, string_vec};
+use moon_utils::{fs, string_vec};
 use regex::Regex;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub struct Git {
-    cache: Arc<RwLock<FxHashMap<String, String>>>,
+    cache: Arc<RwLock<TimedCache<String, String>>>,
     default_branch: String,
     ignore: Option<Gitignore>,
     root: PathBuf,
@@ -39,7 +41,7 @@ impl Git {
         }
 
         Ok(Git {
-            cache: Arc::new(RwLock::new(FxHashMap::default())),
+            cache: Arc::new(RwLock::new(TimedCache::with_lifespan(15))),
             default_branch: default_branch.to_owned(),
             ignore,
             root,
@@ -95,36 +97,26 @@ impl Git {
     }
 
     async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {
+        let mut cache = self.cache.write().await;
         let (mut cache_key, _) = command.get_command_line();
 
         if trim {
             cache_key += " [trimmed]";
         }
 
-        // Read first before locking with a write
-        {
-            let cache = self.cache.read().await;
+        let value: Result<_, MoonError> = cache
+            .try_get_or_set_with(cache_key, || async {
+                let output = command.exec_capture_output().await?;
 
-            if cache.contains_key(&cache_key) {
-                return Ok(cache.get(&cache_key).unwrap().clone());
-            }
-        }
+                Ok(if trim {
+                    output_to_trimmed_string(&output.stdout)
+                } else {
+                    output_to_string(&output.stdout)
+                })
+            })
+            .await;
 
-        // Otherwise lock and calculate a new value to write
-        let mut cache = self.cache.write().await;
-        let output = command.exec_capture_output().await?;
-
-        let value = if trim {
-            output_to_trimmed_string(&output.stdout)
-        } else {
-            output_to_string(&output.stdout)
-        };
-
-        if !is_test_env() {
-            cache.insert(cache_key.to_owned(), value.clone());
-        }
-
-        Ok(value)
+        Ok(value?.to_owned())
     }
 }
 

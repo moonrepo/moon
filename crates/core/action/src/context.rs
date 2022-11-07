@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -19,6 +19,8 @@ pub struct ActionContext {
     pub primary_targets: FxHashSet<String>,
 
     pub profile: Option<ProfileType>,
+
+    pub target_hashes: FxHashMap<String, String>,
 
     pub touched_files: FxHashSet<PathBuf>,
 }

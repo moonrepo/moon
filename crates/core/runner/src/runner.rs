@@ -33,7 +33,7 @@ fn extract_run_error<T>(result: &Result<T, RunnerError>) -> Option<String> {
 async fn run_action(
     node: &ActionNode,
     action: &mut Action,
-    context: &ActionContext,
+    context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<Emitter>>,
 ) -> Result<(), RunnerError> {
@@ -260,7 +260,7 @@ impl Runner {
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));
-        let context = Arc::new(context.unwrap_or_default());
+        let context = Arc::new(RwLock::new(context.unwrap_or_default()));
         let emitter = Arc::new(RwLock::new(
             self.create_emitter(Arc::clone(&self.workspace)).await,
         ));
@@ -327,7 +327,7 @@ impl Runner {
                         let result = run_action(
                             node,
                             &mut action,
-                            &context_clone,
+                            context_clone,
                             workspace_clone,
                             Arc::clone(&emitter_clone),
                         )
@@ -444,7 +444,7 @@ impl Runner {
             .await?;
 
         self.duration = Some(duration);
-        self.create_run_report(&results, &context).await?;
+        self.create_run_report(&results, context).await?;
 
         Ok(results)
     }
@@ -594,15 +594,16 @@ impl Runner {
     async fn create_run_report(
         &self,
         actions: &ActionResults,
-        context: &ActionContext,
+        context: Arc<RwLock<ActionContext>>,
     ) -> Result<(), RunnerError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();
+            let context = context.read().await;
 
             workspace
                 .cache
-                .create_json_report(name, RunReport::new(actions, context, duration))
+                .create_json_report(name, RunReport::new(actions, &context, duration))
                 .await?;
         }
 

@@ -9,7 +9,7 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
     "args": [
       "./outputs.sh"
     ],
-    "deps": [],
+    "deps": {},
     "envVars": {},
     "inputs": {
       ".moon/workspace.yml": "c448710a2eaaec20fe6897f6d62d1e77f39edf4e",

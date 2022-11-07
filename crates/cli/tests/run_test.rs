@@ -223,6 +223,61 @@ mod dependencies {
 
         assert_snapshot!(get_assert_output(&assert));
     }
+
+    #[tokio::test]
+    async fn generates_unique_hashes_for_each_target() {
+        let fixture = create_sandbox_with_git("cases");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputs:withDeps")
+            .assert();
+
+        assert_eq!(
+            extract_hash_from_run(fixture.path(), "outputs:asDep").await,
+            "8c4f29b261310571691365de729b68696b5207a788e66067ea1bb5ab1c6a565c"
+        );
+        assert_eq!(
+            extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
+            "90aff7f55da5087893272cf6700819ec1f4935a2621de9d267780a6e05db99a9"
+        );
+    }
+
+    #[tokio::test]
+    async fn changes_primary_hash_if_deps_hash_changes() {
+        let fixture = create_sandbox_with_git("cases");
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputs:withDeps")
+            .assert();
+
+        assert_eq!(
+            extract_hash_from_run(fixture.path(), "outputs:asDep").await,
+            "8c4f29b261310571691365de729b68696b5207a788e66067ea1bb5ab1c6a565c"
+        );
+        assert_eq!(
+            extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
+            "90aff7f55da5087893272cf6700819ec1f4935a2621de9d267780a6e05db99a9"
+        );
+
+        // Create an `inputs` file for `outputs:asDep`
+        fs::write(fixture.path().join("outputs/random.js"), "").unwrap();
+
+        create_moon_command(fixture.path())
+            .arg("run")
+            .arg("outputs:withDeps")
+            .assert();
+
+        assert_eq!(
+            extract_hash_from_run(fixture.path(), "outputs:asDep").await,
+            "b64e5c6ed26764ff8d17aac51a230eb3b59320c3e3e76d3af2029b55c996155c"
+        );
+        assert_eq!(
+            extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
+            "b132a4ba5eb64f46c01392d4c0a762ef9f8e82e9f6099003729da5825267bb6b"
+        );
+    }
 }
 
 mod target_scopes {

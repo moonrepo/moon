@@ -1,6 +1,7 @@
 use crate::{hash_btree, hash_vec, Digest, Hasher, Sha256};
 use moon_task::Task;
 use moon_utils::path;
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::env;
@@ -14,8 +15,8 @@ pub struct TargetHasher {
     // Task `args`
     args: Vec<String>,
 
-    // Task `deps`
-    deps: Vec<String>,
+    // Task `deps` mapped to their hash
+    deps: BTreeMap<String, String>,
 
     // Environment variables
     env_vars: BTreeMap<String, String>,
@@ -77,13 +78,11 @@ impl TargetHasher {
         self.command = task.command.clone();
         self.args = task.args.clone();
         self.env_vars.extend(task.env.clone());
-        self.deps = task.deps.clone();
         self.outputs = task.outputs.clone();
         self.target = task.target.clone();
 
         // Sort vectors to be deterministic
         self.args.sort();
-        self.deps.sort();
         self.outputs.sort();
 
         // Inherits vars from inputs
@@ -91,6 +90,19 @@ impl TargetHasher {
             self.env_vars
                 .entry(var_name.to_owned())
                 .or_insert_with(|| env::var(var_name).unwrap_or_default());
+        }
+    }
+
+    /// Hash `deps` from a task and associate it with their current hash.
+    pub fn hash_task_deps(&mut self, task: &Task, hashes: &FxHashMap<String, String>) {
+        for dep in &task.deps {
+            self.deps.insert(
+                dep.to_owned(),
+                match hashes.get(dep) {
+                    Some(hash) => hash.to_owned(),
+                    None => String::new(),
+                },
+            );
         }
     }
 }
@@ -103,7 +115,7 @@ impl Hasher for TargetHasher {
         sha.update(self.command.as_bytes());
 
         hash_vec(&self.args, sha);
-        hash_vec(&self.deps, sha);
+        hash_btree(&self.deps, sha);
         hash_btree(&self.env_vars, sha);
         hash_btree(&self.inputs, sha);
         hash_vec(&self.outputs, sha);

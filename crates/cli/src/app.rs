@@ -319,7 +319,7 @@ pub enum Commands {
 
         #[arg(
             long,
-            help = "Run dependents of the same task, as well as dependencies"
+            help = "Run dependents of the primary targets, as well as dependencies"
         )]
         dependents: bool,
 
@@ -339,7 +339,8 @@ pub enum Commands {
         #[arg(
             long,
             help = "Only run target if affected by touched files",
-            help_heading = HEADING_AFFECTED
+            help_heading = HEADING_AFFECTED,
+            group = "affected-args"
         )]
         affected: bool,
 
@@ -348,6 +349,7 @@ pub enum Commands {
             long,
             help = "Filter affected files based on a touched status",
             help_heading = HEADING_AFFECTED,
+            requires = "affected-args",
             default_value_t
         )]
         status: TouchedStatus,
@@ -355,7 +357,8 @@ pub enum Commands {
         #[arg(
             long,
             help = "Determine affected against upstream by comparing against a base revision",
-            help_heading = HEADING_AFFECTED
+            help_heading = HEADING_AFFECTED,
+            requires = "affected-args",
         )]
         upstream: bool,
 

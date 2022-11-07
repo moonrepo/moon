@@ -34,6 +34,7 @@ export interface ActionContext {
 	passthroughArgs: string[];
 	primaryTargets: string[];
 	profile: 'cpu' | 'heap' | null;
+	targetHashes: Record<string, string>;
 	touchedFiles: string[];
 }
 

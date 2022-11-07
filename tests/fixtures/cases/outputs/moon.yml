@@ -39,6 +39,26 @@ tasks:
     outputs:
       - 'lib/one.js'
       - 'esm'
+
+  # Dependency hashing
+  asDep:
+    command: node
+    args: generate.js custom test.js
+    inputs:
+      - '*.js'
+    outputs:
+      - 'test.js'
+  withDeps:
+    command: node
+    args: generate.js custom test.mjs
+    deps:
+      - '~:asDep'
+    inputs:
+      - '*.mjs'
+    outputs:
+      - 'test.mjs'
+
+  # Other cases
   noCache:
     command: node
     args: generate.js both

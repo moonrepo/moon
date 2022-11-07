@@ -46,3 +46,5 @@ dockerManifest.json
 
 # vscode
 .vscode/settings.json
+
+!apps/visualizer/dist

@@ -43,7 +43,7 @@ const managementFeatures: Feature[] = [
 		title: 'Remote caching',
 		icon: faCloudArrowUp,
 		description: 'Persists builds, hashes, and caches between teammates and CI/CD environments.',
-		status: 'coming-soon',
+		status: 'in-development',
 	},
 	{
 		title: 'Integrated toolchain',

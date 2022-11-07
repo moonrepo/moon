@@ -1,5 +1,5 @@
 ---
-title: Webhooks
+title: Webhooks (experimental)
 toc_max_heading_level: 6
 ---
 
@@ -19,14 +19,18 @@ event in our pipeline.
 
 Every webhook event is posted with the following request body, known as a payload.
 
-- `type` - The type of [event](#events).
-- `event` - The event specific payload. View each event for an example of their structure.
-- `createdAt` - When the event was created, as a UTC timestamp in ISO 8601 (RFC 3339) format.
-- `uuid` - A unique identifier for all webhooks in the current run batch.
+- `type` (`string`) - The type of [event](#events).
+- `environment` (`object | null`) - Information about the current CI/CD pipeline environment.
+- `event` (`object`) - The event specific payload. View each event for an example of their
+  structure.
+- `createdAt` (`string`) - When the event was created, as a UTC timestamp in ISO 8601 (RFC 3339)
+  format.
+- `uuid` (`string`) - A unique identifier for all webhooks in the current run batch.
 
 ```json
 {
   "type": "...",
+  "environment": "...",
   "event": {
     // ...
   },
@@ -36,6 +40,25 @@ Every webhook event is posted with the following request body, known as a payloa
 ```
 
 > The `uuid` field can be used to differentiate concurrently running pipelines!
+
+### Pipeline environment
+
+When webhooks are sent from a CI/CD pipeline, we attempt to include information about the
+environment under the `environment` field. If information could not be detected, this field is null,
+otherwise it contains these fields.
+
+- `baseBranch` (`string | null`) - When a merge/pull request, the target (base) branch, otherwise
+  null.
+- `branch` (`string`) - When a merge/pull request, the source (head) branch, otherwise the
+  triggering branch.
+- `id` (`string`) - ID of the current pipeline instance.
+- `provider` (`string`) - Name of your CI/CD provider. GitHub Actions, GitLab, CircleCI, etc.
+- `requestId` (`string | null`) - The ID of the merge/pull request.
+- `requestUrl` (`string | null`) - Link to the merge/pull request.
+- `revision` (`string`) - The HEAD commit, revision, tag, ref, etc, that triggered the pipeline.
+- `url` (`string | null`) - Link to the current pipeline, when available.
+
+> [View list of supported CI/CD providers](https://github.com/moonrepo/moon/tree/master/crates/core/pipeline-provider).
 
 ## Events
 
@@ -57,6 +80,7 @@ detailed information about the actions. Use the [`action.*`](#actionstarted) eve
 {
   "type": "runner.started",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "actionsCount": 15
   },
@@ -79,6 +103,7 @@ catch crashes.
 {
   "type": "runner.finished",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "cachedCount": 10,
     "duration": {
@@ -103,6 +128,7 @@ action failing.
 {
   "type": "runner.aborted",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "error": "..."
   },
@@ -124,6 +150,7 @@ Triggered when an action within the runner has started to run.
 {
   "type": "action.started",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "action": {
       "attempts": null,
@@ -162,6 +189,7 @@ If the action failed, the `error` field will be set with the error message.
 {
   "type": "action.finished",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "action": {
       "attempts": null,
@@ -199,6 +227,7 @@ project, the `project` field will be set, otherwise `null` for the entire worksp
 {
   "type": "dependencies.installing",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "project": {
       "id": "server"
@@ -228,6 +257,7 @@ Installed deps can be scoped with the `InstallDeps(...)` labels.
 {
   "type": "dependencies.installed",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "error": null,
     "project": null,
@@ -251,6 +281,7 @@ automatically before a project's task is ran.
 {
   "type": "project.syncing",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "project": {
       "id": "client"
@@ -279,6 +310,7 @@ Synced projects can be scoped with the `SyncProject(...)` labels.
 {
   "type": "project.synced",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "error": null,
     "project": {
@@ -308,6 +340,7 @@ For an accurate state, use the [`action.finished`](#actionfinished) event. If th
 {
   "type": "tool.installing",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "runtime": {
       "platform": "Node",
@@ -332,6 +365,7 @@ Tools can be scoped with the `SetupTool(...)` labels.
 {
   "type": "tool.installed",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "error": null,
     "runtime": {
@@ -354,6 +388,7 @@ Triggered when a [target](../concepts/target) has started to run (via
 {
   "type": "target.running",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "target": "app:build"
   },
@@ -375,6 +410,7 @@ targets can be scoped with the `RunTarget(...)` labels.
 {
   "type": "target.ran",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "error": null,
     "target": "app:build"
@@ -398,6 +434,7 @@ Triggered when the runner is checking for a cached archive of the currently runn
 {
   "type": "target-output.cache-check",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
     "target": "app:build"
@@ -419,6 +456,7 @@ This event _does not_ trigger if the task has no `outputs`.
 {
   "type": "target-output.archiving",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
     "project": {
@@ -450,6 +488,7 @@ failed to run.
 {
   "type": "target-output.archived",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "archivePath": "...",
     "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
@@ -482,6 +521,7 @@ archive).
 {
   "type": "target-output.hydrating",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",
     "project": {
@@ -513,6 +553,7 @@ failed to run.
 {
   "type": "target-output.hydrated",
   "createdAt": "...",
+  "environment": "...",
   "event": {
     "archivePath": "...",
     "hash": "1f5205cdb0912e97190e08a6cf98e41804bf6824b0a325d315e8b488a12677b0",

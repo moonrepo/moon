@@ -235,11 +235,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:asDep").await,
-            "8c4f29b261310571691365de729b68696b5207a788e66067ea1bb5ab1c6a565c"
+            "eb42c930249c065743d1ad796c966c92c87f1a091e0a517fea957b983332ad4e"
         );
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
-            "90aff7f55da5087893272cf6700819ec1f4935a2621de9d267780a6e05db99a9"
+            "8ee5353d64ec1a5cf7b6dc9d453668ee5b504da90a0bdd975015a10b8a6577d4"
         );
     }
 
@@ -254,11 +254,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:asDep").await,
-            "8c4f29b261310571691365de729b68696b5207a788e66067ea1bb5ab1c6a565c"
+            "eb42c930249c065743d1ad796c966c92c87f1a091e0a517fea957b983332ad4e"
         );
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
-            "90aff7f55da5087893272cf6700819ec1f4935a2621de9d267780a6e05db99a9"
+            "8ee5353d64ec1a5cf7b6dc9d453668ee5b504da90a0bdd975015a10b8a6577d4"
         );
 
         // Create an `inputs` file for `outputs:asDep`
@@ -271,11 +271,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:asDep").await,
-            "b64e5c6ed26764ff8d17aac51a230eb3b59320c3e3e76d3af2029b55c996155c"
+            "56d28527480e18d56eaafb3316a374103db405b4ce91aee37b505556b44202d0"
         );
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
-            "b132a4ba5eb64f46c01392d4c0a762ef9f8e82e9f6099003729da5825267bb6b"
+            "c8be10745d2b5462452d49278e27b447c61a33c4049f025750d6ed9fb07a09fa"
         );
     }
 }
@@ -825,5 +825,147 @@ mod reports {
             .assert();
 
         assert!(fixture.path().join(".moon/cache/runReport.json").exists());
+    }
+}
+
+mod affected {
+    use super::*;
+    use moon_utils::test::run_git_command;
+
+    #[test]
+    fn doesnt_run_if_not_affected() {
+        let fixture = create_sandbox_with_git("cases");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("files:noop")
+            .arg("--affected")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(
+            predicate::str::contains("Target(s) files:noop not affected by touched files")
+                .eval(&output)
+        );
+    }
+
+    #[test]
+    fn runs_if_affected() {
+        let fixture = create_sandbox_with_git("cases");
+
+        fs::write(fixture.path().join("files/other.txt"), "").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("files:noop")
+            .arg("--affected")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
+    fn doesnt_run_if_affected_but_wrong_status() {
+        let fixture = create_sandbox_with_git("cases");
+
+        fs::write(fixture.path().join("files/other.txt"), "").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("files:noop")
+            .arg("--affected")
+            .arg("--status")
+            .arg("deleted")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains(
+            "Target(s) files:noop not affected by touched files (using status deleted)"
+        )
+        .eval(&output));
+    }
+
+    #[test]
+    fn handles_untracked() {
+        let fixture = create_sandbox_with_git("cases");
+
+        fs::write(fixture.path().join("files/other.txt"), "").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("files:noop")
+            .arg("--affected")
+            .arg("--status")
+            .arg("untracked")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
+    fn handles_added() {
+        let fixture = create_sandbox_with_git("cases");
+
+        fs::write(fixture.path().join("files/other.txt"), "").unwrap();
+
+        run_git_command(fixture.path(), |cmd| {
+            cmd.args(["add", "files/other.txt"]);
+        });
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("files:noop")
+            .arg("--affected")
+            .arg("--status")
+            .arg("added")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
+    fn handles_modified() {
+        let fixture = create_sandbox_with_git("cases");
+
+        fs::write(fixture.path().join("files/file.txt"), "modified").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("files:noop")
+            .arg("--affected")
+            .arg("--status")
+            .arg("modified")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
+    fn handles_deleted() {
+        let fixture = create_sandbox_with_git("cases");
+
+        fs::remove_file(fixture.path().join("files/file.txt")).unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("files:noop")
+            .arg("--affected")
+            .arg("--status")
+            .arg("deleted")
+            .assert();
+
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
     }
 }

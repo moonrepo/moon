@@ -2,6 +2,7 @@ projects:
   root: '.'
   base: 'base'
   noop: 'noop'
+  files: 'files'
 
   # Project/task deps
   depsA: 'deps-a'

@@ -10,6 +10,7 @@ members = [
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
+cached = "0.40.0"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
 rustc-hash = "1.1.0"
 serde = { version = "1.0.145", features = ["derive"] }

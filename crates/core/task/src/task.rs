@@ -533,19 +533,21 @@ impl Task {
     pub fn get_affected_files(
         &self,
         touched_files: &TouchedFilePaths,
-        root: &Path,
+        project_root: &Path,
     ) -> Result<Vec<PathBuf>, TaskError> {
         let mut files = vec![];
         let has_globs = !self.input_globs.is_empty();
         let globset = self.create_globset()?;
 
         for file in touched_files {
+            // Don't run on files outside of the project
+            if !file.starts_with(project_root) {
+                continue;
+            }
+
             if self.input_paths.contains(file) || (has_globs && globset.matches(file)?) {
-                files.push(match file.strip_prefix(root) {
-                    // Mimic relative from ("./")
-                    Ok(path) => PathBuf::from(".").join(path),
-                    Err(_) => file.clone(),
-                });
+                // Mimic relative from ("./")
+                files.push(PathBuf::from(".").join(file.strip_prefix(project_root).unwrap()));
             }
         }
 

@@ -10,7 +10,7 @@ moon_logger = { path = "../logger" }
 assert_cmd = "2.0.5"
 assert_fs = "1.0.7"
 async-recursion = "1.0.0"
-cached = "0.40.0"
+cached = { workspace = true }
 chrono = { version = "0.4.22", features = ["serde"] }
 chrono-humanize = "0.2.2"
 clean-path = "0.2.1"

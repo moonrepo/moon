@@ -8,7 +8,7 @@ moon_error = { path = "../../core/error" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }
-cached = "0.40.0"
+cached = { workspace = true }
 content_inspector = "0.2.4"
 lazy_static = "1.4.0"
 regex = "1.6.0"

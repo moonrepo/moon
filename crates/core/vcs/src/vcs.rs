@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 pub type VcsResult<T> = Result<T, VcsError>;
 
 #[allow(dead_code)]
-#[derive(Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct TouchedFiles {
     pub added: FxHashSet<String>,
     pub deleted: FxHashSet<String>,

@@ -2251,6 +2251,7 @@ name = "moon_vcs"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cached",
  "ignore",
  "moon_config",
  "moon_error",

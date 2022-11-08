@@ -390,7 +390,9 @@ impl<'a> TargetRunner<'a> {
 
         if self.task.options.affected_files {
             if context.affected {
-                let affected_files = self.task.get_affected_files(&context.touched_files)?;
+                let affected_files = self
+                    .task
+                    .get_affected_files(&context.touched_files, &self.project.root)?;
 
                 if affected_files.is_empty() {
                     command.arg_if_missing(".");

@@ -11,7 +11,7 @@ use moon_utils::{glob, is_ci, path, regex::ENV_VAR, string_vec};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use strum::Display;
 
 #[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
@@ -533,6 +533,7 @@ impl Task {
     pub fn get_affected_files(
         &self,
         touched_files: &TouchedFilePaths,
+        root: &Path,
     ) -> Result<Vec<PathBuf>, TaskError> {
         let mut files = vec![];
         let has_globs = !self.input_globs.is_empty();
@@ -540,7 +541,11 @@ impl Task {
 
         for file in touched_files {
             if self.input_paths.contains(file) || (has_globs && globset.matches(file)?) {
-                files.push(file.clone());
+                files.push(match file.strip_prefix(root) {
+                    // Mimic relative from ("./")
+                    Ok(path) => PathBuf::from(".").join(path),
+                    Err(_) => file.clone(),
+                });
             }
         }
 

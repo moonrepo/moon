@@ -139,6 +139,7 @@ const sidebars = {
 		'guides/ci',
 		'guides/codegen',
 		'guides/docker',
+		'guides/git-hooks',
 		'guides/open-source',
 		'guides/profile',
 		'guides/root-project',

@@ -412,6 +412,23 @@ tasks:
       runFromWorkspaceRoot: true
 ```
 
+#### `affectedFiles`<VersionLabel version="0.19" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#affectedFiles" />
+
+When enabled and the [`--affected` option](../run-task#running-based-on-affected-files-only) is
+provided, all affected files that match this task's [`inputs`](#inputs) will be passed as relative
+paths via command line arguments. If there are no affected files, an argument if `.` (current
+directory) will be passed instead.
+
+```yaml title="moon.yml" {6}
+tasks:
+  lint:
+    command: 'eslint'
+    options:
+      affectedFiles: true
+```
+
 #### `cache`<VersionLabel version="0.9" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cache" />

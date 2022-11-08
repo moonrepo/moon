@@ -14,6 +14,7 @@ export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 export type TaskOutputStyle = 'buffer-only-failure' | 'buffer' | 'hash' | 'none' | 'stream';
 
 export interface TaskOptionsConfig {
+	affectedFiles: boolean | null;
 	cache: boolean | null;
 	envFile: boolean | string | null;
 	mergeArgs: TaskMergeStrategy | null;

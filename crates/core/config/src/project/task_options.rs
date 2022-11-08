@@ -54,6 +54,8 @@ pub enum TaskOutputStyle {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
+    pub affected_files: Option<bool>,
+
     pub cache: Option<bool>,
 
     #[validate(custom = "validate_env_file")]

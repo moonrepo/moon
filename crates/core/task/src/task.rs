@@ -31,6 +31,8 @@ pub enum TaskType {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptions {
+    pub affected_files: bool,
+
     pub cache: bool,
 
     pub env_file: Option<String>,
@@ -59,6 +61,7 @@ pub struct TaskOptions {
 impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
+            affected_files: false,
             cache: true,
             env_file: None,
             merge_args: TaskMergeStrategy::Append,
@@ -77,6 +80,10 @@ impl Default for TaskOptions {
 
 impl TaskOptions {
     pub fn merge(&mut self, config: &TaskOptionsConfig) {
+        if let Some(affected_files) = &config.affected_files {
+            self.affected_files = *affected_files;
+        }
+
         if let Some(env_file) = &config.env_file {
             self.env_file = env_file.to_option();
         }
@@ -127,6 +134,10 @@ impl TaskOptions {
         let mut config = TaskOptionsConfig::default();
 
         // Skip merge options until we need them
+
+        if self.affected_files != default_options.affected_files {
+            config.affected_files = Some(self.affected_files);
+        }
 
         if let Some(env_file) = &self.env_file {
             config.env_file = Some(if env_file == ".env" {
@@ -227,6 +238,7 @@ impl Task {
             input_paths: FxHashSet::default(),
             log_target,
             options: TaskOptions {
+                affected_files: cloned_options.affected_files.unwrap_or_default(),
                 cache: cloned_options.cache.unwrap_or(!is_local),
                 env_file: cloned_options
                     .env_file

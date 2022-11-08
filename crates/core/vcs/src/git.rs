@@ -1,18 +1,20 @@
 use crate::errors::VcsError;
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
+use cached::{CachedAsync, TimedCache};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use moon_error::MoonError;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use moon_utils::{fs, string_vec};
 use regex::Regex;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub struct Git {
-    cache: Arc<RwLock<FxHashMap<String, String>>>,
+    cache: Arc<RwLock<TimedCache<String, String>>>,
     default_branch: String,
     ignore: Option<Gitignore>,
     root: PathBuf,
@@ -39,8 +41,8 @@ impl Git {
         }
 
         Ok(Git {
-            cache: Arc::new(RwLock::new(FxHashMap::default())),
-            default_branch: String::from(default_branch),
+            cache: Arc::new(RwLock::new(TimedCache::with_lifespan(15))),
+            default_branch: default_branch.to_owned(),
             ignore,
             root,
         })
@@ -95,30 +97,26 @@ impl Git {
     }
 
     async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {
-        let (cache_key, _) = command.get_command_line();
+        let mut cache = self.cache.write().await;
+        let (mut cache_key, _) = command.get_command_line();
 
-        // Read first before locking with a write
-        {
-            let cache = self.cache.read().await;
-
-            if cache.contains_key(&cache_key) {
-                return Ok(cache.get(&cache_key).unwrap().clone());
-            }
+        if trim {
+            cache_key += " [trimmed]";
         }
 
-        // Otherwise lock and calculate a new value to write
-        let mut cache = self.cache.write().await;
-        let output = command.exec_capture_output().await?;
+        let value: Result<_, MoonError> = cache
+            .try_get_or_set_with(cache_key, || async {
+                let output = command.exec_capture_output().await?;
 
-        let value = if trim {
-            output_to_trimmed_string(&output.stdout)
-        } else {
-            output_to_string(&output.stdout)
-        };
+                Ok(if trim {
+                    output_to_trimmed_string(&output.stdout)
+                } else {
+                    output_to_string(&output.stdout)
+                })
+            })
+            .await;
 
-        cache.insert(cache_key.to_owned(), value.clone());
-
-        Ok(value)
+        Ok(value?.to_owned())
     }
 }
 
@@ -370,6 +368,7 @@ impl Vcs for Git {
         let mut deleted = FxHashSet::default();
         let mut modified = FxHashSet::default();
         let mut staged = FxHashSet::default();
+        let mut unstaged = FxHashSet::default();
         let mut all = FxHashSet::default();
         let x_with_score_regex = Regex::new(r"^(C|M|R)(\d{3})$").unwrap();
         let x_regex = Regex::new(r"^(A|D|M|T|U|X)$").unwrap();
@@ -403,9 +402,12 @@ impl Vcs for Git {
                     deleted.insert(file.clone());
                     staged.insert(file.clone());
                 }
-                'M' | 'R' => {
+                'M' | 'R' | 'T' => {
                     modified.insert(file.clone());
                     staged.insert(file.clone());
+                }
+                'U' => {
+                    unstaged.insert(file.clone());
                 }
                 _ => {}
             }
@@ -419,7 +421,7 @@ impl Vcs for Git {
             deleted,
             modified,
             staged,
-            unstaged: FxHashSet::default(),
+            unstaged,
             untracked: FxHashSet::default(),
         })
     }
@@ -438,70 +440,5 @@ impl Vcs for Git {
 
     fn is_enabled(&self) -> bool {
         self.root.join(".git").exists()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use moon_utils::string_vec;
-    use moon_utils::test::create_sandbox_with_git;
-
-    mod get_file_hashes {
-        use super::*;
-
-        #[tokio::test]
-        async fn filters_ignored_files() {
-            let fixture = create_sandbox_with_git("ignore");
-            let git = Git::load("master", fixture.path()).unwrap();
-
-            assert_eq!(
-                git.get_file_hashes(&string_vec!["foo", "bar", "dir/baz", "dir/qux"])
-                    .await
-                    .unwrap(),
-                BTreeMap::from([
-                    (
-                        "dir/qux".to_owned(),
-                        "100b0dec8c53a40e4de7714b2c612dad5fad9985".to_owned()
-                    ),
-                    (
-                        "foo".to_owned(),
-                        "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
-                    )
-                ])
-            );
-        }
-    }
-
-    mod get_file_tree_hashes {
-        use super::*;
-
-        #[tokio::test]
-        async fn filters_ignored_files() {
-            let fixture = create_sandbox_with_git("ignore");
-            let git = Git::load("master", fixture.path()).unwrap();
-
-            assert_eq!(
-                git.get_file_tree_hashes(".").await.unwrap(),
-                BTreeMap::from([
-                    (
-                        ".gitignore".to_owned(),
-                        "589c59be54beff591804a008c972e76dea31d2d1".to_owned()
-                    ),
-                    (
-                        "dir/qux".to_owned(),
-                        "100b0dec8c53a40e4de7714b2c612dad5fad9985".to_owned()
-                    ),
-                    (
-                        "foo".to_owned(),
-                        "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
-                    ),
-                    (
-                        "shared-workspace.yml".to_owned(),
-                        "b4be93368a88e7038c02969b78d024a23ebe97a5".to_owned()
-                    )
-                ])
-            );
-        }
     }
 }

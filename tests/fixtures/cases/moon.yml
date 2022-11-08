@@ -1,4 +1,6 @@
 tasks:
+  noop:
+    command: noop
   oneOff:
     command: node
     args: -e "console.log('root one off')"

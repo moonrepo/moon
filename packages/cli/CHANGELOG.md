@@ -22,6 +22,8 @@
 
 - Fixed an issue where passthrough args were incorrectly being passed to non-primary targets when
   using `moon run`.
+- Fixed an issue where a root-level project was not being marked as affected based on touched files.
+- Fixed some CLI arguments that should be ran mutually exclusive with other arguments.
 - Task hashes will now properly invalidate if their dependencies hashes have also changed.
 
 #### ⚙️ Internal

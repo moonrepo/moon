@@ -328,8 +328,15 @@ impl Project {
         workspace_root: &Path,
         global_config: &GlobalProjectConfig,
     ) -> Result<Project, ProjectError> {
-        let root = workspace_root.join(path::normalize_separators(source));
         let log_target = format!("moon:project:{}", id);
+
+        // For the root-level project, the "." dot actually causes
+        // a ton of unwanted issues, so just use workspace root directly.
+        let root = if source.is_empty() || source == "." {
+            workspace_root.to_owned()
+        } else {
+            workspace_root.join(path::normalize_separators(source))
+        };
 
         debug!(
             target: &log_target,

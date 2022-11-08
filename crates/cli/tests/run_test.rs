@@ -968,4 +968,65 @@ mod affected {
 
         assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
     }
+
+    mod root_level {
+        use super::*;
+
+        #[test]
+        fn doesnt_run_if_not_affected() {
+            let fixture = create_sandbox_with_git("cases");
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("root:noop")
+                .arg("--affected")
+                .assert();
+
+            let output = get_assert_output(&assert);
+
+            assert!(
+                predicate::str::contains("Target(s) root:noop not affected by touched files")
+                    .eval(&output)
+            );
+        }
+
+        #[test]
+        fn runs_if_affected() {
+            let fixture = create_sandbox_with_git("cases");
+
+            fs::write(fixture.path().join("tsconfig.json"), "{}").unwrap();
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("root:noop")
+                .arg("--affected")
+                .assert();
+
+            let output = get_assert_output(&assert);
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn doesnt_run_if_affected_but_wrong_status() {
+            let fixture = create_sandbox_with_git("cases");
+
+            fs::write(fixture.path().join("tsconfig.json"), "{}").unwrap();
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("root:noop")
+                .arg("--affected")
+                .arg("--status")
+                .arg("deleted")
+                .assert();
+
+            let output = get_assert_output(&assert);
+
+            assert!(predicate::str::contains(
+                "Target(s) root:noop not affected by touched files (using status deleted)"
+            )
+            .eval(&output));
+        }
+    }
 }

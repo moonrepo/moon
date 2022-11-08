@@ -388,6 +388,20 @@ impl<'a> TargetRunner<'a> {
             command.args(&context.passthrough_args);
         }
 
+        if self.task.options.affected_files {
+            if context.affected {
+                let affected_files = self.task.get_affected_files(&context.touched_files)?;
+
+                if affected_files.is_empty() {
+                    command.arg_if_missing(".");
+                } else {
+                    command.args(affected_files);
+                }
+            } else {
+                command.arg_if_missing(".");
+            }
+        }
+
         if self.workspace.config.runner.inherit_colors_for_piped_tasks {
             command.inherit_colors();
         }

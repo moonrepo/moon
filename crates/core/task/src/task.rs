@@ -529,6 +529,24 @@ impl Task {
         Ok(())
     }
 
+    /// Return a list of affected files filtered down from the provided touched files list.
+    pub fn get_affected_files(
+        &self,
+        touched_files: &TouchedFilePaths,
+    ) -> Result<Vec<PathBuf>, TaskError> {
+        let mut files = vec![];
+        let has_globs = !self.input_globs.is_empty();
+        let globset = self.create_globset()?;
+
+        for file in touched_files {
+            if self.input_paths.contains(file) || (has_globs && globset.matches(file)?) {
+                files.push(file.clone());
+            }
+        }
+
+        Ok(files)
+    }
+
     /// Return true if this task is affected based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, TaskError> {

@@ -163,6 +163,9 @@ impl Vcs for Git {
             }
         }
 
+        // Sort for deterministic caching within the vcs layer
+        objects.sort();
+
         let output = self
             .create_command(vec!["hash-object", "--stdin-paths"])
             .input(objects.join("\n").as_bytes())

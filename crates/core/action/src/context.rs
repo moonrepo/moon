@@ -12,6 +12,8 @@ pub enum ProfileType {
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
+    pub affected: bool,
+
     pub initial_targets: FxHashSet<String>,
 
     pub passthrough_args: Vec<String>,

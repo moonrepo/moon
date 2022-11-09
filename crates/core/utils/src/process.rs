@@ -1,7 +1,7 @@
 use crate::{get_workspace_root, is_ci, is_test_env, path, shell};
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::path::Path;
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -67,7 +67,7 @@ pub struct Command {
     error_on_nonzero: bool,
 
     /// Values to pass to stdin.
-    input: Vec<u8>,
+    input: Vec<OsString>,
 
     /// Log the command to the terminal before running.
     log_command: bool,
@@ -110,11 +110,24 @@ impl Command {
 
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {
         if self.pass_args_stdin {
-            self.input
-                .extend(arg.as_ref().to_str().unwrap_or_default().as_bytes());
-            self.input.extend(b" "); // Space between args
+            self.input.push(arg.as_ref().to_owned());
         } else {
             self.cmd.arg(arg);
+        }
+
+        self
+    }
+
+    pub fn arg_if_missing<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {
+        let arg = arg.as_ref();
+        let present = if self.pass_args_stdin {
+            self.input.iter().any(|a| a == arg)
+        } else {
+            self.cmd.as_std().get_args().any(|a| a == arg)
+        };
+
+        if !present {
+            self.arg(arg);
         }
 
         self
@@ -160,8 +173,9 @@ impl Command {
         self
     }
 
-    pub fn input(&mut self, input: &[u8]) -> &mut Command {
-        self.input.extend(input);
+    pub fn input(&mut self, input: &[String]) -> &mut Command {
+        self.input
+            .extend(input.iter().map(|i| i.into()).collect::<Vec<_>>());
         self
     }
 
@@ -338,7 +352,9 @@ impl Command {
     }
 
     pub fn get_input_line(&self) -> String {
-        String::from_utf8(self.input.clone())
+        self.input
+            .join(OsStr::new(" "))
+            .to_str()
             .unwrap_or_default()
             .replace('\n', " ")
     }
@@ -470,7 +486,15 @@ impl Command {
             panic!("Unable to write stdin: {}", self.get_input_line());
         });
 
-        stdin.write_all(&self.input).await?;
+        stdin
+            .write_all(
+                self.input
+                    .join(OsStr::new(" "))
+                    .to_str()
+                    .unwrap_or_default()
+                    .as_bytes(),
+            )
+            .await?;
 
         drop(stdin);
 

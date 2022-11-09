@@ -246,6 +246,44 @@ mod unix {
                 .exists());
         }
     }
+
+    mod affected_files {
+        use super::*;
+        use std::fs;
+
+        #[test]
+        fn uses_dot_when_not_affected() {
+            let fixture = create_sandbox_with_git("system");
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("unix:affectedFiles")
+                .assert();
+            let output = get_assert_output(&assert);
+
+            assert!(predicate::str::contains("Args: .\n").eval(&output));
+        }
+
+        #[test]
+        fn uses_rel_paths_when_affected() {
+            let fixture = create_sandbox_with_git("system");
+
+            fs::write(fixture.path().join("unix/input1.txt"), "").unwrap();
+            fs::write(fixture.path().join("unix/input2.txt"), "").unwrap();
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("unix:affectedFiles")
+                .arg("--affected")
+                .assert();
+            let output = get_assert_output(&assert);
+
+            // Order is not deterministic
+            assert!(predicate::str::contains("Args:").eval(&output));
+            assert!(predicate::str::contains("./input1.txt").eval(&output));
+            assert!(predicate::str::contains("./input2.txt").eval(&output));
+        }
+    }
 }
 
 #[cfg(windows)]

@@ -23,7 +23,7 @@ tasks:
     platform: system
   passthroughArgs:
     command: bash
-    args: ./passthroughArgs.sh
+    args: ./args.sh
     platform: system
   envVars:
     command: bash
@@ -59,6 +59,10 @@ tasks:
     outputs:
       - 'file.txt'
       - 'folder'
+  affectedFiles:
+    command: bash ./args.sh
+    options:
+      affectedFiles: true
 
   # Misc
   foo:

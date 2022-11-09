@@ -1,0 +1,70 @@
+---
+slug: v0.19
+title: v0.19 - ???
+authors: [milesj]
+tags: [affected, remote-cache]
+# image: ./img/v0.19.png
+---
+
+import Image from '@site/src/components/Image';
+
+TODO
+
+<!--truncate-->
+
+## Affected files filtering
+
+We've spent a good portion of this release working on affected detection for projects and tasks,
+primarily through `--affected`, and have uncovered and fixed a handful of edge cases. With that
+being said, we asked ourselves, "How could we improve the developer experience even more"? What
+about passing the affected files list to the running task?
+
+And that's exactly what we've done through the new task option
+[`affectedFiles`](../docs/config/project#affectedfiles)! This option works in unison with the
+`--affected` option, enabling some awesome functionality. Given the following config:
+
+```yaml title="moon.yml" {6}
+tasks:
+  lint:
+    command: 'eslint'
+    options:
+      affectedFiles: true
+```
+
+When we run this task _without_ `--affected`, it will append an argument for the current directory
+(`.`). This will lint the entire project.
+
+```shell
+# moon run project:lint
+eslint .
+```
+
+However, when we run this task _with_ `--affected`, and have have touched files in the working tree,
+it will now append an argument for each file that matches the task's `inputs`. This will now only
+lint the provided files, _instead_ of the entire project.
+
+```shell
+# moon run project:lint --affected
+eslint ./file.ts ./another/file.ts
+```
+
+This functionality is _perfect_ pre-commit hooks, and as such, we've added a
+[guide for utilizing this pattern with git hooks](../docs/guides/git-hooks)!
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.19.0) for a
+full list of changes.
+
+- Package managers in the toolchain are now installed in isolation, instead of through Node.js.
+- JSON files will now respect the closest `.editorconfig` file.
+- Webhook payloads now include information about the running CI/CD environment.
+
+## What's next?
+
+Expect the following in the v0.20 release!
+
+- Continuation of remote caching work!
+- Performance improvements for output hydration.
+- Optimizations to our project and dependency graphs.

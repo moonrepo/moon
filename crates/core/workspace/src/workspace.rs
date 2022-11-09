@@ -173,12 +173,14 @@ impl Workspace {
         let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
             return Ok(());
         };
+
         let Ok(api_key) = env::var("MOONBASE_API_KEY") else {
             return Ok(());
         };
+
         let repo_slug = self.vcs.get_repository_slug().await?;
 
-        if let Ok(Some(token)) = moonbase::signin(secret_key, api_key, repo_slug).await {
+        if let Some(token) = moonbase::signin(secret_key, api_key, repo_slug).await? {
             self.auth_token = Some(token);
         }
 

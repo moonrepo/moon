@@ -429,6 +429,14 @@ tasks:
       affectedFiles: true
 ```
 
+:::caution
+
+When using this option, ensure that explicit files or `.` _are not present_ in the [`args`](#args)
+list. Furthermore, this functionality will only work if the task's command supports an arbitrary
+list of files being passed as arguments.
+
+:::
+
 #### `cache`<VersionLabel version="0.9" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cache" />

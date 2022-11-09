@@ -1,4 +1,3 @@
-//
 module.exports = {
 	ignorePatterns: ['prism.config.js', 'tailwind.config.js'],
 	rules: {

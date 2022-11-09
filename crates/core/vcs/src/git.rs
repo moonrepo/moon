@@ -130,8 +130,19 @@ impl Vcs for Git {
     }
 
     async fn get_local_branch(&self) -> VcsResult<String> {
+        // --show-current was added in 2.22.0
+        if let Ok(branch) = self
+            .run_command(
+                &mut self.create_command(vec!["branch", "--show-current"]),
+                true,
+            )
+            .await
+        {
+            return Ok(branch);
+        }
+
         self.run_command(
-            &mut self.create_command(vec!["branch", "--show-current"]),
+            &mut self.create_command(vec!["rev-parse --abbrev-ref HEAD"]),
             true,
         )
         .await

@@ -45,6 +45,9 @@ pub trait Vcs {
     /// Files are relative from the repository root.
     async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>>;
 
+    /// Return the repository slug ("moonrepo/moon") of the current checkout.
+    async fn get_repository_slug(&self) -> VcsResult<String>;
+
     /// Determine touched files from the local index / working tree.
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;
 

@@ -25,6 +25,8 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
             .register_platform(Box::new(NodePlatform::default()))?;
     }
 
+    workspace.signin_to_moonbase().await?;
+
     Ok(workspace)
 }
 

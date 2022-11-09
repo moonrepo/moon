@@ -102,6 +102,9 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
 }
 
 pub struct Workspace {
+    /// When logged in, the auth token for making API requests.
+    pub auth_token: Option<String>,
+
     /// Engine for reading and writing cache/outputs.
     pub cache: CacheEngine,
 
@@ -155,6 +158,7 @@ impl Workspace {
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {
+            auth_token: None,
             cache,
             config,
             projects,
@@ -163,5 +167,21 @@ impl Workspace {
             vcs,
             working_dir: working_dir.to_owned(),
         })
+    }
+
+    pub async fn signin_to_moonbase(&mut self) -> Result<(), WorkspaceError> {
+        let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
+            return Ok(());
+        };
+        let Ok(api_key) = env::var("MOONBASE_API_KEY") else {
+            return Ok(());
+        };
+        let repo_slug = self.vcs.get_repository_slug().await?;
+
+        if let Ok(Some(token)) = moonbase::signin(secret_key, api_key, repo_slug).await {
+            self.auth_token = Some(token);
+        }
+
+        Ok(())
     }
 }

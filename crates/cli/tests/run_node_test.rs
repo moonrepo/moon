@@ -1290,3 +1290,47 @@ mod typescript {
 //         assert.success();
 //     }
 // }
+
+mod affected_files {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn uses_dot_when_not_affected() {
+        let fixture = create_sandbox_with_git("node");
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("node:affectedFiles")
+            .assert();
+        let output = get_assert_output(&assert);
+
+        assert!(predicate::str::contains("Args: .\n").eval(&output));
+    }
+
+    #[test]
+    fn uses_rel_paths_when_affected() {
+        let fixture = create_sandbox_with_git("node");
+
+        fs::write(fixture.path().join("base/input1.js"), "").unwrap();
+        fs::write(fixture.path().join("base/input2.js"), "").unwrap();
+
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("node:affectedFiles")
+            .arg("--affected")
+            .assert();
+        let output = get_assert_output(&assert);
+
+        // Order is not deterministic
+        assert!(predicate::str::contains("Args:").eval(&output));
+
+        if cfg!(windows) {
+            assert!(predicate::str::contains(".\\input1.js").eval(&output));
+            assert!(predicate::str::contains(".\\input2.js").eval(&output));
+        } else {
+            assert!(predicate::str::contains("./input1.js").eval(&output));
+            assert!(predicate::str::contains("./input2.js").eval(&output));
+        }
+    }
+}

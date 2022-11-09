@@ -234,52 +234,36 @@ mod tasks {
 
     fn mock_merged_task_options_config(strategy: TaskMergeStrategy) -> TaskOptionsConfig {
         TaskOptionsConfig {
-            cache: None,
-            env_file: None,
             merge_args: Some(strategy.clone()),
             merge_deps: Some(strategy.clone()),
             merge_env: Some(strategy.clone()),
             merge_inputs: Some(strategy.clone()),
             merge_outputs: Some(strategy),
-            output_style: None,
             retry_count: Some(1),
             run_deps_in_parallel: Some(true),
             run_in_ci: Some(true),
-            run_from_workspace_root: None,
+            ..TaskOptionsConfig::default()
         }
     }
 
     fn mock_local_task_options_config(strategy: TaskMergeStrategy) -> TaskOptionsConfig {
         TaskOptionsConfig {
-            cache: None,
-            env_file: None,
             merge_args: Some(strategy.clone()),
             merge_deps: Some(strategy.clone()),
             merge_env: Some(strategy.clone()),
             merge_inputs: Some(strategy.clone()),
             merge_outputs: Some(strategy),
-            output_style: None,
-            retry_count: None,
-            run_deps_in_parallel: None,
-            run_in_ci: None,
-            run_from_workspace_root: None,
+            ..TaskOptionsConfig::default()
         }
     }
 
     fn stub_global_task_options_config() -> TaskOptionsConfig {
         TaskOptionsConfig {
             cache: Some(true),
-            env_file: None,
-            merge_args: None,
-            merge_deps: None,
-            merge_env: None,
-            merge_inputs: None,
-            merge_outputs: None,
-            output_style: None,
             retry_count: Some(1),
             run_deps_in_parallel: Some(true),
             run_in_ci: Some(true),
-            run_from_workspace_root: None,
+            ..TaskOptionsConfig::default()
         }
     }
 
@@ -890,18 +874,12 @@ mod tasks {
                             local: false,
                             outputs: Some(string_vec!["b.ts"]),
                             options: TaskOptionsConfig {
-                                cache: None,
-                                env_file: None,
                                 merge_args: Some(TaskMergeStrategy::Append),
                                 merge_deps: Some(TaskMergeStrategy::Prepend),
                                 merge_env: Some(TaskMergeStrategy::Replace),
                                 merge_inputs: Some(TaskMergeStrategy::Replace),
                                 merge_outputs: Some(TaskMergeStrategy::Append),
-                                output_style: None,
-                                retry_count: None,
-                                run_deps_in_parallel: None,
-                                run_in_ci: None,
-                                run_from_workspace_root: None,
+                                ..TaskOptionsConfig::default()
                             },
                             platform: PlatformType::Unknown,
                         }

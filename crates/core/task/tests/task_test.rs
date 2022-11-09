@@ -39,6 +39,7 @@ mod from_config {
         assert_eq!(
             task.options,
             TaskOptions {
+                affected_files: false,
                 cache: true,
                 env_file: None,
                 merge_args: TaskMergeStrategy::Append,

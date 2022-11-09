@@ -37,7 +37,7 @@ tasks:
     args: ./topLevelAwait.mjs
   passthroughArgs:
     command: node
-    args: ./passthroughArgs.js
+    args: ./args.js
   envVars:
     command: node
     args: ./envVars.js
@@ -64,3 +64,7 @@ tasks:
   binExecArgs:
     command: node
     args: ./binExecArgs.js
+  affectedFiles:
+    command: node ./args.js
+    options:
+      affectedFiles: true

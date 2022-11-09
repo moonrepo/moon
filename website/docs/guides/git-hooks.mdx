@@ -1,0 +1,25 @@
+---
+title: Git hooks
+---
+
+[Git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) are a mechanism for running
+scripts at pre-defined phases in git's lifecycle, most commonly pre-commit, pre-push, or pre-merge.
+
+While moon provides no functionality for managing hooks (_yet_), you can run moon itself from hooks!
+This is useful for ensuring that commit messages are formatted correctly, or that source code
+quality thresholds are met.
+
+## Pre-commit
+
+A perfect use case for the `pre-commit` hook is to check linting and formatting of the files being
+committed. If either of these tasks fail, the commit will abort until they are fixed. Be sure to use
+the [`--affected`](../run-task#running-based-on-affected-files-only) option so that we _only run_ on
+changed projects!
+
+```bash title=".git/hooks/pre-commit"
+#!/bin/sh
+./node_modules/@moonrepo/cli/moon run :lint :format --affected
+```
+
+> By default this will run on the _entire_ project (all files). If you want to filter it to only the
+> changed files, enable the [`affectedFiles`](../config/project#affectedfiles) task option.

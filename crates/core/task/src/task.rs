@@ -11,7 +11,7 @@ use moon_utils::{glob, is_ci, path, regex::ENV_VAR, string_vec};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use strum::Display;
 
 #[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
@@ -31,6 +31,8 @@ pub enum TaskType {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskOptions {
+    pub affected_files: bool,
+
     pub cache: bool,
 
     pub env_file: Option<String>,
@@ -59,6 +61,7 @@ pub struct TaskOptions {
 impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
+            affected_files: false,
             cache: true,
             env_file: None,
             merge_args: TaskMergeStrategy::Append,
@@ -77,6 +80,10 @@ impl Default for TaskOptions {
 
 impl TaskOptions {
     pub fn merge(&mut self, config: &TaskOptionsConfig) {
+        if let Some(affected_files) = &config.affected_files {
+            self.affected_files = *affected_files;
+        }
+
         if let Some(env_file) = &config.env_file {
             self.env_file = env_file.to_option();
         }
@@ -127,6 +134,10 @@ impl TaskOptions {
         let mut config = TaskOptionsConfig::default();
 
         // Skip merge options until we need them
+
+        if self.affected_files != default_options.affected_files {
+            config.affected_files = Some(self.affected_files);
+        }
 
         if let Some(env_file) = &self.env_file {
             config.env_file = Some(if env_file == ".env" {
@@ -227,6 +238,7 @@ impl Task {
             input_paths: FxHashSet::default(),
             log_target,
             options: TaskOptions {
+                affected_files: cloned_options.affected_files.unwrap_or_default(),
                 cache: cloned_options.cache.unwrap_or(!is_local),
                 env_file: cloned_options
                     .env_file
@@ -515,6 +527,31 @@ impl Task {
         }
 
         Ok(())
+    }
+
+    /// Return a list of affected files filtered down from the provided touched files list.
+    pub fn get_affected_files(
+        &self,
+        touched_files: &TouchedFilePaths,
+        project_root: &Path,
+    ) -> Result<Vec<PathBuf>, TaskError> {
+        let mut files = vec![];
+        let has_globs = !self.input_globs.is_empty();
+        let globset = self.create_globset()?;
+
+        for file in touched_files {
+            // Don't run on files outside of the project
+            if !file.starts_with(project_root) {
+                continue;
+            }
+
+            if self.input_paths.contains(file) || (has_globs && globset.matches(file)?) {
+                // Mimic relative from ("./")
+                files.push(PathBuf::from(".").join(file.strip_prefix(project_root).unwrap()));
+            }
+        }
+
+        Ok(files)
     }
 
     /// Return true if this task is affected based on touched files.

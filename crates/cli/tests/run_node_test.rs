@@ -1324,7 +1324,13 @@ mod affected_files {
 
         // Order is not deterministic
         assert!(predicate::str::contains("Args:").eval(&output));
-        assert!(predicate::str::contains("./input1.js").eval(&output));
-        assert!(predicate::str::contains("./input2.js").eval(&output));
+
+        if cfg!(windows) {
+            assert!(predicate::str::contains(".\\input1.js").eval(&output));
+            assert!(predicate::str::contains(".\\input2.js").eval(&output));
+        } else {
+            assert!(predicate::str::contains("./input1.js").eval(&output));
+            assert!(predicate::str::contains("./input2.js").eval(&output));
+        }
     }
 }

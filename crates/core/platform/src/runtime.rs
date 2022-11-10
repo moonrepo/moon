@@ -1,10 +1,25 @@
 use serde::Serialize;
 use std::fmt::{self, Debug};
 
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+pub struct Version(pub String, pub bool);
+
+impl Version {
+    pub fn is_overridden(&self) -> bool {
+        self.1
+    }
+}
+
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "platform", content = "version")]
 pub enum Runtime {
-    Node(String),
+    Node(Version),
     System,
 }
 
@@ -18,8 +33,8 @@ impl Runtime {
 
     pub fn version(&self) -> String {
         match self {
-            Runtime::Node(version) => version.into(),
-            Runtime::System => "latest".into(),
+            Runtime::Node(version) => version.to_string(),
+            _ => "latest".into(),
         }
     }
 }

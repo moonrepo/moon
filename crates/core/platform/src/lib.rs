@@ -7,7 +7,7 @@ use moon_config::{
     WorkspaceConfig,
 };
 use moon_error::MoonError;
-pub use runtime::Runtime;
+pub use runtime::{Runtime, Version};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
@@ -20,7 +20,7 @@ pub trait Platform: Debug + Send + Sync {
     /// Return a runtime with an appropriate version based on the provided configs.
     fn get_runtime_from_config(
         &self,
-        project_config: &ProjectConfig,
+        project_config: Option<&ProjectConfig>,
         workspace_config: &WorkspaceConfig,
     ) -> Option<Runtime>;
 

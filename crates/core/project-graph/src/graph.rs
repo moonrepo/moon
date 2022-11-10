@@ -272,12 +272,12 @@ impl ProjectGraph {
 
     /// Return a list of direct project IDs that the defined project depends on.
     #[track_caller]
-    pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
+    pub fn get_dependencies_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
         let indices = self.indices.read().expect(READ_ERROR);
         let graph = self.graph.read().expect(READ_ERROR);
 
         let deps = graph
-            .neighbors_directed(*indices.get(&project.id).unwrap(), Direction::Outgoing)
+            .neighbors_directed(*indices.get(id).unwrap(), Direction::Outgoing)
             .map(|idx| graph.node_weight(idx).unwrap().id.clone())
             .collect();
 
@@ -286,12 +286,12 @@ impl ProjectGraph {
 
     /// Return a list of project IDs that require the defined project.
     #[track_caller]
-    pub fn get_dependents_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
+    pub fn get_dependents_of(&self, id: &str) -> Result<Vec<ProjectID>, ProjectError> {
         let indices = self.indices.read().expect(READ_ERROR);
         let graph = self.graph.read().expect(READ_ERROR);
 
         let deps = graph
-            .neighbors_directed(*indices.get(&project.id).unwrap(), Direction::Incoming)
+            .neighbors_directed(*indices.get(id).unwrap(), Direction::Incoming)
             .map(|idx| graph.node_weight(idx).unwrap().id.clone())
             .filter(|id| id != ROOT_NODE_ID)
             .collect();

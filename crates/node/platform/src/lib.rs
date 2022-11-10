@@ -11,7 +11,7 @@ use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
 use moon_node_lang::{PackageJson, NPM};
-use moon_platform::{Platform, Runtime};
+use moon_platform::{Platform, Runtime, Version};
 use moon_task::TaskError;
 use moon_utils::glob::GlobSet;
 use rustc_hash::FxHashMap;
@@ -51,22 +51,27 @@ pub struct NodePlatform {
 
 impl Platform for NodePlatform {
     fn get_default_runtime(&self) -> Runtime {
-        Runtime::Node("latest".into())
+        Runtime::Node(Version("latest".into(), false))
     }
 
     fn get_runtime_from_config(
         &self,
-        project_config: &ProjectConfig,
+        project_config: Option<&ProjectConfig>,
         workspace_config: &WorkspaceConfig,
     ) -> Option<Runtime> {
-        if let Some(node_config) = &project_config.workspace.node {
-            if let Some(version) = &node_config.version {
-                return Some(Runtime::Node(version.to_owned()));
+        if let Some(config) = &project_config {
+            if let Some(node_config) = &config.workspace.node {
+                if let Some(version) = &node_config.version {
+                    return Some(Runtime::Node(Version(version.to_owned(), true)));
+                }
             }
         }
 
         if let Some(node_config) = &workspace_config.node {
-            return Some(Runtime::Node(node_config.version.to_owned()));
+            return Some(Runtime::Node(Version(
+                node_config.version.to_owned(),
+                false,
+            )));
         }
 
         None

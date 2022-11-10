@@ -118,9 +118,7 @@ impl Subscriber for WebhooksSubscriber {
         // For the last event, we want to ensure that all webhook requests have
         // actually sent, otherwise, when the program exists all of these requests
         // will be dropped!
-        if matches!(event, Event::RunnerAborted { .. })
-            || matches!(event, Event::RunnerFinished { .. })
-        {
+        if event.is_end() {
             for future in self.requests.drain(0..) {
                 let _ = future.await;
             }

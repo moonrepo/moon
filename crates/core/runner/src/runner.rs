@@ -575,11 +575,11 @@ impl Runner {
         let mut emitter = Emitter::new(Arc::clone(&workspace));
 
         {
-            let ws = workspace.read().await;
+            let local_workspace = workspace.read().await;
 
             // For security and privacy purposes, only send webhooks from a CI environment
             if is_ci() || is_test_env() {
-                if let Some(webhook_url) = &ws.config.notifier.webhook_url {
+                if let Some(webhook_url) = &local_workspace.config.notifier.webhook_url {
                     emitter
                         .subscribers
                         .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
@@ -588,7 +588,7 @@ impl Runner {
                 }
             }
 
-            if ws.session.is_some() {
+            if local_workspace.session.is_some() {
                 emitter
                     .subscribers
                     .push(Arc::new(RwLock::new(RemoteCacheSubscriber::new())));

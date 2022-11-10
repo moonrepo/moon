@@ -2,8 +2,7 @@ mod api;
 mod common;
 mod errors;
 
-use crate::common::get_host;
-use common::{get_request, parse_response, post_request, Response};
+use common::{get_host, get_request, parse_response, post_request, Response};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, warn};
 use reqwest::multipart::{Form, Part};
@@ -15,7 +14,7 @@ pub use errors::MoonbaseError;
 
 const LOG_TARGET: &str = "moonbase";
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Moonbase {
     auth_token: String,
 
@@ -45,7 +44,7 @@ impl Moonbase {
             Response::Failure { message, status } => {
                 warn!(
                     target: LOG_TARGET,
-                    "Failed to sign in to moonbase, please check your API keys. Process will still continue...\nFailure: {} ({})", color::muted_light(message), status
+                    "Failed to sign in to moonbase, please check your API keys. Pipeline will still continue...\nFailure: {} ({})", color::muted_light(message), status
                 );
 
                 Ok(None)

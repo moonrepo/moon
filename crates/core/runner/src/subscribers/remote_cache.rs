@@ -1,16 +1,16 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_workspace::Workspace;
 use moonbase::MoonbaseError;
+use tokio::task::JoinHandle;
 
-pub struct RemoteCacheSubscriber {}
+pub struct RemoteCacheSubscriber {
+    requests: Vec<JoinHandle<()>>,
+}
 
 impl RemoteCacheSubscriber {
     pub fn new() -> Self {
-        RemoteCacheSubscriber {}
+        RemoteCacheSubscriber { requests: vec![] }
     }
 }
 
@@ -28,7 +28,7 @@ impl Subscriber for RemoteCacheSubscriber {
         let error_handler = |e: MoonbaseError| MoonError::Generic(e.to_string());
 
         match event {
-            // Check if archive exists in moonbase (the remote) by quering the artifacts endpoint.
+            // Check if archive exists in moonbase (the remote) by querying the artifacts endpoint.
             Event::TargetOutputCacheCheck { hash, .. } => {
                 if moonbase
                     .get_artifact(hash)
@@ -45,22 +45,28 @@ impl Subscriber for RemoteCacheSubscriber {
             Event::TargetOutputArchived {
                 archive_path,
                 hash,
-                project,
                 target,
-                task,
+                ..
             } => {
                 if archive_path.exists() {
                     moonbase
-                        .upload_artifact(hash, target, archive_path)
+                        .upload_artifact(hash, target, &archive_path)
                         .await
                         .map_err(error_handler)?;
                 }
             }
 
             // Hydrate the cached archive into the task's outputs
-            Event::TargetOutputHydrating { hash, project, .. } => {}
+            Event::TargetOutputHydrating { .. } => {}
 
             _ => {}
+        }
+
+        // For the last event, we want to ensure that all uploads have been completed!
+        if event.is_end() {
+            for future in self.requests.drain(0..) {
+                let _ = future.await;
+            }
         }
 
         Ok(EventFlow::Continue)

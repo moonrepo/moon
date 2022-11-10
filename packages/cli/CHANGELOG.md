@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Another attempt at fixing missing cache issues.
+- Fixed an issue where moon would crash on old git versions (< 2.22.0) attempting to get the branch
+  name. We encourage everyone to use v2.22 as the git minimum version.
 
 ## 0.18.1
 

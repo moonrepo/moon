@@ -2,6 +2,7 @@ use crate::actions;
 use crate::dep_graph_new::DepGraph;
 use crate::errors::{DepGraphError, RunnerError};
 use crate::subscribers::local_cache::LocalCacheSubscriber;
+use crate::subscribers::remote_cache::RemoteCacheSubscriber;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionNode, ActionStatus};
 use moon_cache::RunReport;
@@ -573,14 +574,24 @@ impl Runner {
     async fn create_emitter(&self, workspace: Arc<RwLock<Workspace>>) -> Emitter {
         let mut emitter = Emitter::new(Arc::clone(&workspace));
 
-        // For security and privacy purposes, only send webhooks from a CI environment
-        if is_ci() || is_test_env() {
-            if let Some(webhook_url) = &workspace.read().await.config.notifier.webhook_url {
+        {
+            let ws = workspace.read().await;
+
+            // For security and privacy purposes, only send webhooks from a CI environment
+            if is_ci() || is_test_env() {
+                if let Some(webhook_url) = &ws.config.notifier.webhook_url {
+                    emitter
+                        .subscribers
+                        .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
+                            webhook_url.to_owned(),
+                        ))));
+                }
+            }
+
+            if ws.session.is_some() {
                 emitter
                     .subscribers
-                    .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
-                        webhook_url.to_owned(),
-                    ))));
+                    .push(Arc::new(RwLock::new(RemoteCacheSubscriber::new())));
             }
         }
 

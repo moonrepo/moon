@@ -5,7 +5,7 @@ use moon_workspace::Workspace;
 
 /// The local cache subscriber is in charge of managing archives
 /// (task output's archived as tarballs), by reading and writing them
-/// to the `.moon/cache/{out,hashes}` directories.
+/// to the `.moon/cache/{outputs,hashes}` directories.
 ///
 /// This is the last subscriber amongst all subscribers, as local
 /// cache is the last line of defense. However, other subscribers
@@ -26,7 +26,7 @@ impl Subscriber for LocalCacheSubscriber {
         workspace: &Workspace,
     ) -> Result<EventFlow, MoonError> {
         match event {
-            // Check to see if a build with the provided hash has been cached.
+            // Check to see if a build with the provided hash has been cached locally.
             // We only check for the archive, as the manifest is purely for local debugging!
             Event::TargetOutputCacheCheck { hash, .. } => {
                 let archive_file = workspace.cache.get_hash_archive_path(hash);
@@ -36,7 +36,7 @@ impl Subscriber for LocalCacheSubscriber {
                 }
             }
 
-            // Archive the task's outputs into the cache
+            // Archive the task's outputs into the cache.
             Event::TargetOutputArchiving {
                 cache,
                 hash,

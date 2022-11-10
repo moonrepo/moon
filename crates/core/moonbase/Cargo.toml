@@ -5,7 +5,8 @@ edition = "2021"
 
 [dependencies]
 moon_logger = { path = "../logger" }
-reqwest = { workspace = true }
+moon_utils = { path = "../utils" }
+reqwest = { workspace = true, features = ["multipart"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

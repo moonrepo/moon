@@ -114,20 +114,31 @@ impl DepGraph {
         index
     }
 
-    pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {
-        let node = ActionNode::SetupTool(runtime.clone());
-
-        if let Some(index) = self.get_index_from_node(&node) {
-            return *index;
-        }
+    pub fn run_dependents_for_target<T: AsRef<Target>>(
+        &mut self,
+        target: T,
+        project_graph: &ProjectGraph,
+    ) -> Result<(), DepGraphError> {
+        let target = target.as_ref();
 
         trace!(
             target: LOG_TARGET,
-            "Adding setup {} tool node to graph",
-            runtime.label()
+            "Adding dependents to run for target {}",
+            color::target(&target.id),
         );
 
-        self.insert_node(&node)
+        let (project_id, task_id) = target.ids()?;
+        let dependents = project_graph.get_dependents_of(&project_id)?;
+
+        for dependent_id in dependents {
+            let dependent = project_graph.load(&dependent_id)?;
+
+            if dependent.tasks.contains_key(&task_id) {
+                self.run_target(Target::new(&dependent_id, &task_id)?, project_graph, &None)?;
+            }
+        }
+
+        Ok(())
     }
 
     pub fn run_target<T: AsRef<Target>>(
@@ -316,6 +327,22 @@ impl DepGraph {
         }
 
         Ok(qualified_targets)
+    }
+
+    pub fn setup_tool(&mut self, runtime: &Runtime) -> NodeIndex {
+        let node = ActionNode::SetupTool(runtime.clone());
+
+        if let Some(index) = self.get_index_from_node(&node) {
+            return *index;
+        }
+
+        trace!(
+            target: LOG_TARGET,
+            "Adding setup {} tool node to graph",
+            runtime.label()
+        );
+
+        self.insert_node(&node)
     }
 
     pub fn sync_project(

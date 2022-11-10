@@ -50,6 +50,10 @@ pub struct NodePlatform {
 }
 
 impl Platform for NodePlatform {
+    fn get_default_runtime(&self) -> Runtime {
+        Runtime::Node("latest".into())
+    }
+
     fn get_runtime_from_config(
         &self,
         project_config: &ProjectConfig,

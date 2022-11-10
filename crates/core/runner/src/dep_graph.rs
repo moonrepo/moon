@@ -64,7 +64,7 @@ impl DepGraph {
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Runtime {
-        for platform in &project_graph.platforms {
+        for platform in project_graph.platforms.list() {
             if platform.matches(&project.config, None) {
                 if let Some(runtime) = platform
                     .get_runtime_from_config(&project.config, &project_graph.workspace_config)
@@ -107,20 +107,16 @@ impl DepGraph {
     ) -> Result<NodeIndex, DepGraphError> {
         let mut node = ActionNode::InstallDeps(runtime.clone());
 
-        for platform in &project_graph.platforms {
-            if platform.matches(&project.config, Some(runtime)) {
-                // If project is not in the package manager workspace,
-                // update the node to install deps into the project directly!
-                if !platform.is_project_in_package_manager_workspace(
-                    &project.id,
-                    &project.root,
-                    &project_graph.workspace_root,
-                    &project_graph.workspace_config,
-                )? {
-                    node = ActionNode::InstallProjectDeps(runtime.clone(), project.id.clone())
-                }
-
-                break;
+        if let Some(platform) = project_graph.platforms.get(runtime) {
+            // If project is not in the package manager workspace,
+            // update the node to install deps into the project directly!
+            if !platform.is_project_in_package_manager_workspace(
+                &project.id,
+                &project.root,
+                &project_graph.workspace_root,
+                &project_graph.workspace_config,
+            )? {
+                node = ActionNode::InstallProjectDeps(runtime.clone(), project.id.clone())
             }
         }
 

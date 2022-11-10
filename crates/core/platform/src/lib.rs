@@ -1,16 +1,22 @@
 #![allow(unused_variables)]
 
+mod runtime;
+
 use moon_config::{
     DependencyConfig, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
     WorkspaceConfig,
 };
 use moon_error::MoonError;
-use serde::Serialize;
+pub use runtime::Runtime;
+use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
-use std::fmt::{self, Debug};
+use std::fmt::Debug;
 use std::path::Path;
 
 pub trait Platform: Debug + Send + Sync {
+    /// Return a default runtime, which will be used as the hash key.
+    fn get_default_runtime(&self) -> Runtime;
+
     /// Return a runtime with an appropriate version based on the provided configs.
     fn get_runtime_from_config(
         &self,
@@ -71,41 +77,34 @@ pub trait Platform: Debug + Send + Sync {
     fn matches(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool;
 }
 
-pub type RegisteredPlatforms = Vec<Box<dyn Platform>>;
+pub type BoxedPlatform = Box<dyn Platform>;
 
 pub trait Platformable {
-    fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError>;
+    fn register_platform(&mut self, platform: BoxedPlatform) -> Result<(), MoonError>;
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-#[serde(tag = "platform", content = "version")]
-pub enum Runtime {
-    Node(String),
-    System,
+#[derive(Debug, Default)]
+pub struct PlatformManager {
+    cache: FxHashMap<String, BoxedPlatform>,
 }
 
-impl Runtime {
-    pub fn label(&self) -> String {
-        match self {
-            Runtime::Node(version) => format!("Node.js v{}", version),
+impl PlatformManager {
+    pub fn get(&self, runtime: &Runtime) -> Option<&BoxedPlatform> {
+        self.cache.get(&self.key(runtime))
+    }
+
+    pub fn key(&self, runtime: &Runtime) -> String {
+        match runtime {
+            Runtime::Node(_) => "node".into(),
             Runtime::System => "system".into(),
         }
     }
 
-    pub fn version(&self) -> String {
-        match self {
-            Runtime::Node(version) => version.into(),
-            Runtime::System => "latest".into(),
-        }
+    pub fn list(&self) -> std::collections::hash_map::Values<String, BoxedPlatform> {
+        self.cache.values()
     }
-}
 
-impl fmt::Display for Runtime {
-    // Primarily used in action graph node labels
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Runtime::Node(_) => write!(f, "Node"),
-            Runtime::System => write!(f, "System"),
-        }
+    pub fn register(&mut self, runtime: &Runtime, platform: BoxedPlatform) {
+        self.cache.insert(self.key(runtime), platform);
     }
 }

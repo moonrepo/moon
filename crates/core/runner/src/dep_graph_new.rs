@@ -1,6 +1,5 @@
 use crate::errors::DepGraphError;
 use moon_action::ActionNode;
-use moon_config::TargetID;
 use moon_logger::{color, debug, map_list, trace};
 use moon_platform::Runtime;
 use moon_project::Project;
@@ -23,41 +22,42 @@ pub type BatchedTopoSort = Vec<Vec<NodeIndex>>;
 /// A directed acyclic graph (DAG) for the work that needs to be processed, based on a
 /// project or task's dependency chain. This is also known as a "task graph" (not to
 /// be confused with our tasks) or a "dependency graph".
-pub struct DepGraph<'g> {
+pub struct DepGraph {
     pub graph: DepGraphType,
 
     indices: FxHashMap<ActionNode, NodeIndex>,
-
-    project_graph: &'g ProjectGraph,
 }
 
-impl<'g> DepGraph<'g> {
-    pub fn new(project_graph: &'g ProjectGraph) -> Self {
+impl DepGraph {
+    pub fn default() -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         DepGraph {
             graph: Graph::new(),
             indices: FxHashMap::default(),
-            project_graph,
         }
     }
 
     // Projects support overriding the the version of their language (tool),
     // so we need to account for this via the runtime. However, some actions require
     // the workspace version of the language, so we must extract 2 runtimes here.
-    pub fn get_runtimes_from_project(&self, project: &Project) -> (Runtime, Runtime) {
+    pub fn get_runtimes_from_project(
+        &self,
+        project: &Project,
+        project_graph: &ProjectGraph,
+    ) -> (Runtime, Runtime) {
         let mut project_runtime = None;
         let mut workspace_runtime = None;
 
-        for platform in self.project_graph.platforms.list() {
+        for platform in project_graph.platforms.list() {
             if platform.matches(&project.config, None) {
                 project_runtime = platform.get_runtime_from_config(
                     Some(&project.config),
-                    &self.project_graph.workspace_config,
+                    &project_graph.workspace_config,
                 );
 
                 workspace_runtime =
-                    platform.get_runtime_from_config(None, &self.project_graph.workspace_config);
+                    platform.get_runtime_from_config(None, &project_graph.workspace_config);
 
                 break;
             }
@@ -133,6 +133,7 @@ impl<'g> DepGraph<'g> {
     pub fn run_target<T: AsRef<Target>>(
         &mut self,
         target: T,
+        project_graph: &ProjectGraph,
         touched_files: &Option<TouchedFilePaths>,
     ) -> Result<Vec<Target>, DepGraphError> {
         let target = target.as_ref();
@@ -141,14 +142,19 @@ impl<'g> DepGraph<'g> {
         match &target.project {
             // :task
             TargetProjectScope::All => {
-                for project_id in self.project_graph.ids() {
-                    let project = self.project_graph.load(&project_id)?;
+                for project_id in project_graph.ids() {
+                    let project = project_graph.load(&project_id)?;
 
                     if project.tasks.contains_key(&target.task_id) {
                         let all_target = Target::new(&project.id, &target.task_id)?;
 
                         if self
-                            .run_target_by_project(&all_target, &project, touched_files)?
+                            .run_target_by_project(
+                                &all_target,
+                                &project,
+                                project_graph,
+                                touched_files,
+                            )?
                             .is_some()
                         {
                             inserted_targets.push(all_target);
@@ -162,11 +168,11 @@ impl<'g> DepGraph<'g> {
             }
             // project:task
             TargetProjectScope::Id(project_id) => {
-                let project = self.project_graph.load(project_id)?;
+                let project = project_graph.load(project_id)?;
                 let own_target = Target::new(&project.id, &target.task_id)?;
 
                 if self
-                    .run_target_by_project(&own_target, &project, touched_files)?
+                    .run_target_by_project(&own_target, &project, project_graph, touched_files)?
                     .is_some()
                 {
                     inserted_targets.push(own_target);
@@ -185,6 +191,7 @@ impl<'g> DepGraph<'g> {
         &mut self,
         target: T,
         project: &Project,
+        project_graph: &ProjectGraph,
         touched_files: &Option<TouchedFilePaths>,
     ) -> Result<Option<NodeIndex>, DepGraphError> {
         let target = target.as_ref();
@@ -213,11 +220,13 @@ impl<'g> DepGraph<'g> {
             color::target(&target.id),
         );
 
-        let (project_runtime, workspace_runtime) = self.get_runtimes_from_project(&project);
+        let (project_runtime, workspace_runtime) =
+            self.get_runtimes_from_project(&project, project_graph);
 
         // We should install deps & sync projects *before* running targets
         let index = self.insert_node(&node);
-        let sync_project_index = self.sync_project(&workspace_runtime, &project.id)?;
+        let sync_project_index =
+            self.sync_project(&workspace_runtime, &project.id, project_graph)?;
         let install_deps_index = if project_runtime == workspace_runtime {
             self.install_workspace_deps(&workspace_runtime)
         } else {
@@ -238,7 +247,9 @@ impl<'g> DepGraph<'g> {
                 color::target(&target.id),
             );
 
-            for dep_index in self.run_target_task_dependencies(task, touched_files)? {
+            for dep_index in
+                self.run_target_task_dependencies(task, project_graph, touched_files)?
+            {
                 self.graph.add_edge(index, dep_index, ());
             }
         }
@@ -249,6 +260,7 @@ impl<'g> DepGraph<'g> {
     pub fn run_target_task_dependencies(
         &mut self,
         task: &Task,
+        project_graph: &ProjectGraph,
         touched_files: &Option<TouchedFilePaths>,
     ) -> Result<Vec<NodeIndex>, DepGraphError> {
         let parallel = task.options.run_deps_in_parallel;
@@ -258,14 +270,14 @@ impl<'g> DepGraph<'g> {
         for dep_target_id in &task.deps {
             let dep_target = Target::parse(dep_target_id)?;
             let dep_project = match &dep_target.project_id {
-                Some(id) => self.project_graph.load(&id)?,
+                Some(id) => project_graph.load(&id)?,
                 None => {
                     continue;
                 }
             };
 
             if let Some(dep_index) =
-                self.run_target_by_project(&dep_target, &dep_project, touched_files)?
+                self.run_target_by_project(&dep_target, &dep_project, project_graph, touched_files)?
             {
                 // When parallel, parent depends on child
                 if parallel {
@@ -290,12 +302,17 @@ impl<'g> DepGraph<'g> {
     pub fn run_targets_by_id(
         &mut self,
         target_ids: &[String],
+        project_graph: &ProjectGraph,
         touched_files: &Option<TouchedFilePaths>,
     ) -> Result<Vec<Target>, DepGraphError> {
         let mut qualified_targets = vec![];
 
         for target_id in target_ids {
-            qualified_targets.extend(self.run_target(Target::parse(target_id)?, touched_files)?);
+            qualified_targets.extend(self.run_target(
+                Target::parse(target_id)?,
+                project_graph,
+                touched_files,
+            )?);
         }
 
         Ok(qualified_targets)
@@ -305,6 +322,7 @@ impl<'g> DepGraph<'g> {
         &mut self,
         runtime: &Runtime,
         project_id: &str,
+        project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
         let node = ActionNode::SyncProject(runtime.clone(), project_id.to_owned());
 
@@ -325,8 +343,8 @@ impl<'g> DepGraph<'g> {
         self.graph.add_edge(index, setup_tool_index, ());
 
         // And we should also depend on other projects
-        for dep_project_id in self.project_graph.get_dependencies_of(project_id)? {
-            let dep_index = self.sync_project(&runtime, &dep_project_id)?;
+        for dep_project_id in project_graph.get_dependencies_of(project_id)? {
+            let dep_index = self.sync_project(&runtime, &dep_project_id, project_graph)?;
 
             self.graph.add_edge(index, dep_index, ());
         }

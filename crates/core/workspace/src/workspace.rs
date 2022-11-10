@@ -9,6 +9,7 @@ use moon_project_graph::ProjectGraph;
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
 use moon_vcs::{Vcs, VcsLoader};
+use moonbase::Moonbase;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -102,9 +103,6 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
 }
 
 pub struct Workspace {
-    /// When logged in, the auth token for making API requests.
-    pub auth_token: Option<String>,
-
     /// Engine for reading and writing cache/outputs.
     pub cache: CacheEngine,
 
@@ -116,6 +114,9 @@ pub struct Workspace {
 
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
+
+    /// When logged in, the auth token and IDs for making API requests.
+    pub session: Option<Moonbase>,
 
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
@@ -158,11 +159,11 @@ impl Workspace {
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {
-            auth_token: None,
             cache,
             config,
             projects,
             root: root_dir,
+            session: None,
             toolchain,
             vcs,
             working_dir: working_dir.to_owned(),
@@ -180,8 +181,8 @@ impl Workspace {
 
         let repo_slug = self.vcs.get_repository_slug().await?;
 
-        if let Some(token) = moonbase::signin(secret_key, api_key, repo_slug).await? {
-            self.auth_token = Some(token);
+        if let Some(session) = Moonbase::signin(secret_key, api_key, repo_slug).await? {
+            self.session = Some(session);
         }
 
         Ok(())

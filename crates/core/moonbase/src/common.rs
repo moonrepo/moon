@@ -14,6 +14,13 @@ pub fn get_host() -> String {
     env::var("MOONBASE_HOST").unwrap_or_else(|_| "https://api.moonrepo.app".to_owned())
 }
 
+pub fn parse_response<O>(data: String) -> Result<Response<O>, MoonbaseError>
+where
+    O: DeserializeOwned,
+{
+    serde_json::from_str(&data).map_err(|e| MoonbaseError::JsonDeserializeFailure(e.to_string()))
+}
+
 pub async fn fetch<O>(
     request: RequestBuilder,
     token: Option<&str>,
@@ -28,14 +35,11 @@ where
         .header("Keep-Alive", "timeout=30, max=120");
 
     if let Some(token) = token {
-        request = request.header("Authorization", format!("Bearer {}", token));
+        request = request.bearer_auth(token);
     }
 
     let response = request.send().await?;
-    let text = response.text().await?;
-
-    let data: Response<O> = serde_json::from_str(&text)
-        .map_err(|e| MoonbaseError::JsonDeserializeFailure(e.to_string()))?;
+    let data: Response<O> = parse_response(response.text().await?)?;
 
     Ok(data)
 }

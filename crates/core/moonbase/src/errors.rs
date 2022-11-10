@@ -1,3 +1,4 @@
+use moon_error::MoonError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -10,4 +11,7 @@ pub enum MoonbaseError {
 
     #[error("Failed to send request to moonbase. {0}")]
     Http(#[from] reqwest::Error),
+
+    #[error(transparent)]
+    Moon(#[from] MoonError),
 }

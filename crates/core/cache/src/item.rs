@@ -4,8 +4,11 @@ macro_rules! cache_item {
         impl $struct {
             pub async fn load(path: PathBuf, stale_ms: u128) -> Result<Self, MoonError> {
                 let mut item = Self::default();
+                let log_target = "moon:cache:item";
 
-                const LOG_TARGET: &str = "moon:cache:item";
+                if let Some(parent) = path.parent() {
+                    fs::create_dir_all(parent).await?;
+                }
 
                 if is_readable() {
                     if path.exists() {
@@ -16,13 +19,13 @@ macro_rules! cache_item {
                                 > stale_ms
                         {
                             trace!(
-                                target: LOG_TARGET,
+                                target: log_target,
                                 "Cache skip for {}, marked as stale",
                                 color::path(&path)
                             );
                         } else {
                             trace!(
-                                target: LOG_TARGET,
+                                target: log_target,
                                 "Cache hit for {}, reading",
                                 color::path(&path)
                             );
@@ -31,12 +34,10 @@ macro_rules! cache_item {
                         }
                     } else {
                         trace!(
-                            target: LOG_TARGET,
+                            target: log_target,
                             "Cache miss for {}, does not exist",
                             color::path(&path)
                         );
-
-                        fs::create_dir_all(path.parent().unwrap()).await?;
                     }
                 }
 
@@ -46,11 +47,11 @@ macro_rules! cache_item {
             }
 
             pub async fn save(&self) -> Result<(), MoonError> {
-                const LOG_TARGET: &str = "moon:cache:item";
+                let log_target = "moon:cache:item";
 
                 if is_writable() {
                     trace!(
-                        target: LOG_TARGET,
+                        target: log_target,
                         "Writing cache {}",
                         color::path(&self.path)
                     );

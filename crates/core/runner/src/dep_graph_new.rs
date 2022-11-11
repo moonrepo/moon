@@ -18,6 +18,7 @@ const LOG_TARGET: &str = "moon:dep-graph";
 
 pub type DepGraphType = DiGraph<ActionNode, ()>;
 pub type BatchedTopoSort = Vec<Vec<NodeIndex>>;
+pub type RuntimePair = (Runtime, Runtime);
 
 /// A directed acyclic graph (DAG) for the work that needs to be processed, based on a
 /// project or task's dependency chain. This is also known as a "task graph" (not to
@@ -26,6 +27,8 @@ pub struct DepGraph {
     pub graph: DepGraphType,
 
     indices: FxHashMap<ActionNode, NodeIndex>,
+
+    runtimes: FxHashMap<String, RuntimePair>,
 }
 
 impl DepGraph {
@@ -35,6 +38,7 @@ impl DepGraph {
         DepGraph {
             graph: Graph::new(),
             indices: FxHashMap::default(),
+            runtimes: FxHashMap::default(),
         }
     }
 
@@ -50,10 +54,14 @@ impl DepGraph {
     // so we need to account for this via the runtime. However, some actions require
     // the workspace version of the language, so we must extract 2 runtimes here.
     pub fn get_runtimes_from_project(
-        &self,
+        &mut self,
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> (Runtime, Runtime) {
+        if let Some(pair) = self.runtimes.get(&project.id) {
+            return pair.clone();
+        }
+
         let mut project_runtime = None;
         let mut workspace_runtime = None;
 
@@ -71,24 +79,28 @@ impl DepGraph {
             }
         }
 
-        (
+        let pair = (
             project_runtime.unwrap_or(Runtime::System),
             workspace_runtime.unwrap_or(Runtime::System),
-        )
+        );
+
+        self.runtimes.insert(project.id.clone(), pair.clone());
+
+        pair
     }
 
     pub fn install_deps(
         &mut self,
         project: &Project,
         project_graph: &ProjectGraph,
-        project_runtime: &Runtime,
-        workspace_runtime: &Runtime,
     ) -> Result<NodeIndex, DepGraphError> {
+        let (project_runtime, workspace_runtime) =
+            self.get_runtimes_from_project(project, project_graph);
         let mut installs_in_project = false;
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Some(platform) = project_graph.platforms.get(project_runtime) {
+        if let Some(platform) = project_graph.platforms.get(&project_runtime) {
             if !platform.is_project_in_package_manager_workspace(
                 &project.id,
                 &project.root,
@@ -103,9 +115,9 @@ impl DepGraph {
         // overridden version if it is available. Otherwise when installing
         // in the root, we should *always* use the workspace version.
         Ok(if installs_in_project {
-            self.install_project_deps(project_runtime, &project.id)
+            self.install_project_deps(&project_runtime, &project.id)
         } else {
-            self.install_workspace_deps(workspace_runtime)
+            self.install_workspace_deps(&workspace_runtime)
         })
     }
 
@@ -275,15 +287,9 @@ impl DepGraph {
             color::target(&target.id),
         );
 
-        let (project_runtime, workspace_runtime) =
-            self.get_runtimes_from_project(project, project_graph);
-
         // We should install deps & sync projects *before* running targets
-        let install_deps_index =
-            self.install_deps(project, project_graph, &project_runtime, &workspace_runtime)?;
-
-        let sync_project_index = self.sync_project(&workspace_runtime, &project, project_graph)?;
-
+        let install_deps_index = self.install_deps(project, project_graph)?;
+        let sync_project_index = self.sync_project(project, project_graph)?;
         let index = self.insert_node(&node);
 
         self.graph.add_edge(index, install_deps_index, ());
@@ -381,10 +387,10 @@ impl DepGraph {
 
     pub fn sync_project(
         &mut self,
-        runtime: &Runtime,
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
+        let (runtime, _) = self.get_runtimes_from_project(project, project_graph);
         let node = ActionNode::SyncProject(runtime.clone(), project.id.to_owned());
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -398,7 +404,7 @@ impl DepGraph {
         );
 
         // Syncing depends on the language's tool to be installed
-        let setup_tool_index = self.setup_tool(runtime);
+        let setup_tool_index = self.setup_tool(&runtime);
         let index = self.insert_node(&node);
 
         self.graph.add_edge(index, setup_tool_index, ());
@@ -406,7 +412,7 @@ impl DepGraph {
         // And we should also depend on other projects
         for dep_project_id in project_graph.get_dependencies_of(project)? {
             let dep_project = project_graph.load(&dep_project_id)?;
-            let dep_index = self.sync_project(runtime, &dep_project, project_graph)?;
+            let dep_index = self.sync_project(&dep_project, project_graph)?;
 
             self.graph.add_edge(index, dep_index, ());
         }

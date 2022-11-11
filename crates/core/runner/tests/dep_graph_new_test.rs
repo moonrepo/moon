@@ -430,9 +430,8 @@ mod sync_project {
     fn sync_projects(graph: &mut DepGraph, projects: &ProjectGraph, ids: &[&str]) {
         for id in ids {
             let project = projects.load(id).unwrap();
-            let (runtime, _) = graph.get_runtimes_from_project(&project, projects);
 
-            graph.sync_project(&runtime, &project, projects).unwrap();
+            graph.sync_project(&project, projects).unwrap();
         }
     }
 

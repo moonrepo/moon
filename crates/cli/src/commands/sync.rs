@@ -10,9 +10,8 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
 
     for project_id in workspace.projects.ids() {
         let project = workspace.projects.load(&project_id)?;
-        let (runtime, _) = graph.get_runtimes_from_project(&project, &workspace.projects);
 
-        graph.sync_project(&runtime, &project, &workspace.projects)?;
+        graph.sync_project(&project, &workspace.projects)?;
         project_count += 1;
     }
 

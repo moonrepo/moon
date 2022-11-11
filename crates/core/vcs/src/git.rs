@@ -183,8 +183,7 @@ impl Vcs for Git {
 
         let output = self
             .run_command(
-                &mut self
-                    .create_command(vec!["hash-object", "--stdin-paths"])
+                self.create_command(vec!["hash-object", "--stdin-paths"])
                     .input(&[objects.join("\n")]),
                 true,
             )

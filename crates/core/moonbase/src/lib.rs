@@ -7,7 +7,8 @@ use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace, warn};
 use reqwest::multipart::{Form, Part};
 use reqwest::Body;
-use std::path::PathBuf;
+use std::io;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
@@ -28,11 +29,7 @@ pub struct Moonbase {
 }
 
 impl Moonbase {
-    pub async fn signin(
-        secret_key: String,
-        api_key: String,
-        slug: String,
-    ) -> Result<Option<Moonbase>, MoonbaseError> {
+    pub async fn signin(secret_key: String, api_key: String, slug: String) -> Option<Moonbase> {
         debug!(
             target: LOG_TARGET,
             "API keys detected, attempting to sign in to moonbase for repository {}",
@@ -55,18 +52,18 @@ impl Moonbase {
                 organization_id,
                 repository_id,
                 token,
-            })) => Ok(Some(Moonbase {
+            })) => Some(Moonbase {
                 auth_token: token,
                 organization_id,
                 repository_id,
-            })),
+            }),
             Ok(Response::Failure { message, status }) => {
                 warn!(
                     target: LOG_TARGET,
                     "Failed to sign in to moonbase, please verify your API keys. Pipeline will still continue... Failure: {} ({})", color::muted_light(message), status
                 );
 
-                Ok(None)
+                None
             }
             Err(error) => {
                 warn!(
@@ -74,24 +71,56 @@ impl Moonbase {
                     "Failed to sign in to moonbase, request has failed. Pipeline will still continue... Failure: {} ", color::muted_light(error.to_string()),
                 );
 
-                Ok(None)
+                None
             }
         }
     }
 
-    pub async fn get_artifact(&self, hash: &str) -> Result<Option<Artifact>, MoonbaseError> {
-        trace!(
-            target: LOG_TARGET,
-            "Checking if an artifact with hash {} exists in remote cache",
-            color::symbol(hash),
-        );
-
+    pub async fn get_artifact(&self, hash: &str) -> Result<Artifact, MoonbaseError> {
         let response = get_request(format!("artifacts/{}", hash), Some(&self.auth_token)).await?;
 
         match response {
-            Response::Success(ArtifactResponse { artifact }) => Ok(Some(artifact)),
-            _ => Ok(None),
+            Response::Success(ArtifactResponse { artifact }) => Ok(artifact),
+            Response::Failure { message, .. } => Err(MoonbaseError::ArtifactCheckFailure(
+                hash.to_string(),
+                message,
+            )),
         }
+    }
+
+    pub async fn download_artifact(
+        &self,
+        hash: &str,
+        dest_path: &Path,
+    ) -> Result<(), MoonbaseError> {
+        let response = reqwest::Client::new()
+            .get(format!("{}/artifacts/{}/download", get_host(), hash))
+            .bearer_auth(&self.auth_token)
+            .header("Accept", "application/json")
+            .send()
+            .await?;
+        let status = response.status();
+
+        if status.is_success() {
+            let error_handler = |e: io::Error| map_io_to_fs_error(e, dest_path.to_path_buf());
+            let mut contents = io::Cursor::new(response.bytes().await?);
+            let mut file = std::fs::File::create(dest_path).map_err(error_handler)?;
+
+            io::copy(&mut contents, &mut file).map_err(error_handler)?;
+
+            return Ok(());
+        }
+
+        let data: Response<ArtifactResponse> = parse_response(response.text().await?)?;
+        let error_message = match data {
+            Response::Failure { message, .. } => message,
+            _ => "Unknown failure!".into(),
+        };
+
+        Err(MoonbaseError::ArtifactDownloadFailure(
+            hash.to_string(),
+            error_message,
+        ))
     }
 }
 
@@ -103,7 +132,7 @@ pub async fn upload_artifact(
     hash: String,
     target: String,
     path: PathBuf,
-) -> Result<Option<Artifact>, MoonbaseError> {
+) -> Result<Artifact, MoonbaseError> {
     let file = fs::File::open(&path)
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
@@ -148,17 +177,10 @@ pub async fn upload_artifact(
     let data: Response<ArtifactResponse> = parse_response(response.text().await?)?;
 
     match data {
-        Response::Success(ArtifactResponse { artifact }) => Ok(Some(artifact)),
-        Response::Failure { message, status } => {
-            warn!(
-                target: LOG_TARGET,
-                "Failed to upload artifact {}: {} ({})",
-                color::file(&file_name),
-                color::muted_light(message),
-                status
-            );
-
-            Ok(None)
-        }
+        Response::Success(ArtifactResponse { artifact }) => Ok(artifact),
+        Response::Failure { message, .. } => Err(MoonbaseError::ArtifactUploadFailure(
+            hash.to_string(),
+            message,
+        )),
     }
 }

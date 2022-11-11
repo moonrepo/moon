@@ -181,9 +181,7 @@ impl Workspace {
 
         let repo_slug = self.vcs.get_repository_slug().await?;
 
-        if let Some(session) = Moonbase::signin(secret_key, api_key, repo_slug).await? {
-            self.session = Some(session);
-        }
+        self.session = Moonbase::signin(secret_key, api_key, repo_slug).await;
 
         Ok(())
     }

@@ -299,15 +299,15 @@ impl<'a> TargetRunner<'a> {
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
-        // if self.cache.hash == hash && self.has_outputs() {
-        //     debug!(
-        //         target: LOG_TARGET,
-        //         "Cache hit for hash {}, reusing previous build",
-        //         color::symbol(&hash),
-        //     );
+        if self.cache.hash == hash && self.has_outputs() {
+            debug!(
+                target: LOG_TARGET,
+                "Cache hit for hash {}, reusing previous build",
+                color::symbol(&hash),
+            );
 
-        //     return Ok(Some(HydrateFrom::PreviousOutput));
-        // }
+            return Ok(Some(HydrateFrom::PreviousOutput));
+        }
 
         self.cache.hash = hash.clone();
 
@@ -787,8 +787,9 @@ pub async fn run_target(
             runner.print_checkpoint(
                 Checkpoint::Pass,
                 match cache_location {
+                    HydrateFrom::LocalCache => "(cached)",
                     HydrateFrom::RemoteCache => "(cached from remote)",
-                    _ => "(cached)",
+                    HydrateFrom::PreviousOutput => "(cached from previous output)",
                 },
             )?;
 

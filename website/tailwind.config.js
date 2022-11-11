@@ -45,7 +45,7 @@ module.exports = {
 				sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
 			},
 		},
-		// These arent entirely accessible but work for now
+		// These aren't entirely accessible but work for now
 		colors: {
 			current: 'currentColor',
 			transparent: 'transparent',

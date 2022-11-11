@@ -1,0 +1,9 @@
+language: unknown
+
+tasks:
+  system:
+    command: noop
+    platform: system
+  node:
+    command: node --version
+    platform: node

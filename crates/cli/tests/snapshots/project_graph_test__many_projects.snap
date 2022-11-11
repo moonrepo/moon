@@ -14,8 +14,9 @@ digraph {
     7 [ label="emptyConfig" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     8 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     9 [ label="js" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    10 [ label="tasks" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    11 [ label="ts" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    10 [ label="platforms" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    11 [ label="tasks" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    12 [ label="ts" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     0 -> 1 [ arrowhead=none]
     0 -> 2 [ arrowhead=none]
     0 -> 3 [ arrowhead=none]
@@ -30,6 +31,7 @@ digraph {
     0 -> 9 [ arrowhead=none]
     0 -> 10 [ arrowhead=none]
     0 -> 11 [ arrowhead=none]
+    0 -> 12 [ arrowhead=none]
 }
 
 

@@ -32,6 +32,7 @@ async fn create_project_graph() -> (ProjectGraph, TempDir) {
             ("bar".to_owned(), "deps/bar".to_owned()),
             ("baz".to_owned(), "deps/baz".to_owned()),
             ("tasks".to_owned(), "tasks".to_owned()),
+            ("platforms".to_owned(), "platforms".to_owned()),
         ])),
         node: Some(NodeConfig {
             // Consistent snapshots
@@ -550,6 +551,30 @@ mod sync_project {
         let mut graph = DepGraph::default();
 
         sync_projects(&mut graph, &projects, &["unknown"]);
+
+        assert_snapshot!(graph.to_dot());
+    }
+}
+
+mod installs_deps {
+    use super::*;
+
+    #[tokio::test]
+    async fn tool_is_based_on_task_platform() {
+        let (projects, _fixture) = create_project_graph().await;
+        let mut graph = DepGraph::default();
+
+        graph
+            .run_target(
+                &Target::new("platforms", "system").unwrap(),
+                &projects,
+                &None,
+            )
+            .unwrap();
+
+        graph
+            .run_target(&Target::new("platforms", "node").unwrap(), &projects, &None)
+            .unwrap();
 
         assert_snapshot!(graph.to_dot());
     }

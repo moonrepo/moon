@@ -2,11 +2,11 @@ tasks:
   base:
     command: noop
   runFromProject:
-    command: node --version
-    platform: node
+    command: echo 'from project'
+    platform: system
   runFromWorkspace:
-    command: node --version
-    platform: node
+    command: echo 'from workspace'
+    platform: system
     options:
       runFromWorkspaceRoot: true
   localOnly:

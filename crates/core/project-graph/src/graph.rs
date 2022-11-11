@@ -127,8 +127,7 @@ impl Platformable for ProjectGraph {
             &mut self.aliases_map,
         )?;
 
-        self.platforms
-            .register(&platform.get_default_runtime(), platform);
+        self.platforms.register(platform.get_type(), platform);
 
         Ok(())
     }
@@ -350,7 +349,7 @@ impl ProjectGraph {
         project.alias = self.find_alias_for_id(id);
 
         for platform in self.platforms.list() {
-            if !platform.matches(&project.config, None) {
+            if !platform.matches(&project.config.language.to_platform(), None) {
                 continue;
             }
 

@@ -174,6 +174,7 @@ mod globs {
                 ("foo".to_owned(), "deps/foo".to_owned()),
                 ("js".to_owned(), "langs/js".to_owned()),
                 ("langs".to_owned(), "langs".to_owned()),
+                ("platforms".to_owned(), "platforms".to_owned()),
                 ("no-config".to_owned(), "no-config".to_owned()),
                 ("package-json".to_owned(), "package-json".to_owned()),
                 ("tasks".to_owned(), "tasks".to_owned()),

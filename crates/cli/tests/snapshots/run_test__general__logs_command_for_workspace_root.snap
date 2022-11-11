@@ -4,8 +4,8 @@ assertion_line: 99
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ base:runFromWorkspace
-node --version (in workspace)
-v16.0.0
+echo 'from workspace' (in workspace)
+from workspace
 
 Tasks: 1 completed
  Time: 100ms

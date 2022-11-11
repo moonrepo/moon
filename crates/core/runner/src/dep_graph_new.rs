@@ -112,7 +112,7 @@ impl DepGraph {
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Some(platform) = project_graph.platforms.get(&task.platform) {
+        if let Some(platform) = project_graph.platforms.get(&project.language.to_platform()) {
             if !platform.is_project_in_package_manager_workspace(
                 &project.id,
                 &project.root,

@@ -3,11 +3,9 @@ source: crates/cli/tests/run_test.rs
 assertion_line: 99
 expression: get_assert_output(&assert)
 ---
-▪▪▪▪ npm install
-~/.moon/tools/node/16.0.0/bin/node ~/.moon/tools/npm/8.19.2/bin/npm-cli.js install --no-audit --no-fund (in workspace)
 ▪▪▪▪ base:runFromWorkspace
-node --version (in workspace)
-v16.0.0
+echo 'from workspace' (in workspace)
+from workspace
 
 Tasks: 1 completed
  Time: 100ms

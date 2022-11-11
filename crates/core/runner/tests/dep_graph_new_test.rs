@@ -432,7 +432,7 @@ mod sync_project {
             let project = projects.load(id).unwrap();
             let (runtime, _) = graph.get_runtimes_from_project(&project, projects);
 
-            graph.sync_project(&runtime, &project.id, projects).unwrap();
+            graph.sync_project(&runtime, &project, projects).unwrap();
         }
     }
 

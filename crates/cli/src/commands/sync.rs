@@ -12,7 +12,7 @@ pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
         let project = workspace.projects.load(&project_id)?;
         let (runtime, _) = graph.get_runtimes_from_project(&project, &workspace.projects);
 
-        graph.sync_project(&runtime, &project.id, &workspace.projects)?;
+        graph.sync_project(&runtime, &project, &workspace.projects)?;
         project_count += 1;
     }
 

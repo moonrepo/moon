@@ -92,8 +92,8 @@ impl DepGraph {
         );
 
         // Before we install deps, we must ensure the language has been installed
-        let index = self.insert_node(&node);
         let setup_tool_index = self.setup_tool(runtime);
+        let index = self.insert_node(&node);
 
         self.graph.add_edge(index, setup_tool_index, ());
 
@@ -114,8 +114,8 @@ impl DepGraph {
         );
 
         // Before we install deps, we must ensure the language has been installed
-        let index = self.insert_node(&node);
         let setup_tool_index = self.setup_tool(runtime);
+        let index = self.insert_node(&node);
 
         self.graph.add_edge(index, setup_tool_index, ());
 
@@ -136,13 +136,18 @@ impl DepGraph {
         );
 
         let (project_id, task_id) = target.ids()?;
-        let dependents = project_graph.get_dependents_of(&project_id)?;
+        let project = project_graph.load(&project_id)?;
+        let dependents = project_graph.get_dependents_of(&project)?;
 
         for dependent_id in dependents {
-            let dependent = project_graph.load(&dependent_id)?;
+            let dep_project = project_graph.load(&dependent_id)?;
 
-            if dependent.tasks.contains_key(&task_id) {
-                self.run_target(Target::new(&dependent_id, &task_id)?, project_graph, &None)?;
+            if dep_project.tasks.contains_key(&task_id) {
+                self.run_target(
+                    Target::new(&dep_project.id, &task_id)?,
+                    project_graph,
+                    &None,
+                )?;
             }
         }
 
@@ -154,9 +159,10 @@ impl DepGraph {
         target: T,
         project_graph: &ProjectGraph,
         touched_files: &Option<TouchedFilePaths>,
-    ) -> Result<Vec<Target>, DepGraphError> {
+    ) -> Result<(FxHashSet<Target>, FxHashSet<NodeIndex>), DepGraphError> {
         let target = target.as_ref();
-        let mut inserted_targets = vec![];
+        let mut inserted_targets = FxHashSet::default();
+        let mut inserted_indexes = FxHashSet::default();
 
         match &target.project {
             // :task
@@ -167,16 +173,14 @@ impl DepGraph {
                     if project.tasks.contains_key(&target.task_id) {
                         let all_target = Target::new(&project.id, &target.task_id)?;
 
-                        if self
-                            .run_target_by_project(
-                                &all_target,
-                                &project,
-                                project_graph,
-                                touched_files,
-                            )?
-                            .is_some()
-                        {
-                            inserted_targets.push(all_target);
+                        if let Some(index) = self.run_target_by_project(
+                            &all_target,
+                            &project,
+                            project_graph,
+                            touched_files,
+                        )? {
+                            inserted_targets.insert(all_target);
+                            inserted_indexes.insert(index);
                         }
                     }
                 }
@@ -190,11 +194,11 @@ impl DepGraph {
                 let project = project_graph.load(project_id)?;
                 let own_target = Target::new(&project.id, &target.task_id)?;
 
-                if self
-                    .run_target_by_project(&own_target, &project, project_graph, touched_files)?
-                    .is_some()
+                if let Some(index) =
+                    self.run_target_by_project(&own_target, &project, project_graph, touched_files)?
                 {
-                    inserted_targets.push(own_target);
+                    inserted_targets.insert(own_target);
+                    inserted_indexes.insert(index);
                 }
             }
             // ~:task
@@ -203,7 +207,7 @@ impl DepGraph {
             }
         };
 
-        Ok(inserted_targets)
+        Ok((inserted_targets, inserted_indexes))
     }
 
     pub fn run_target_by_project<T: AsRef<Target>>(
@@ -243,14 +247,15 @@ impl DepGraph {
             self.get_runtimes_from_project(project, project_graph);
 
         // We should install deps & sync projects *before* running targets
-        let index = self.insert_node(&node);
-        let sync_project_index =
-            self.sync_project(&workspace_runtime, &project.id, project_graph)?;
         let install_deps_index = if project_runtime == workspace_runtime {
             self.install_workspace_deps(&workspace_runtime)
         } else {
             self.install_project_deps(&project_runtime, &project.id)
         };
+
+        let sync_project_index = self.sync_project(&workspace_runtime, &project, project_graph)?;
+
+        let index = self.insert_node(&node);
 
         self.graph.add_edge(index, install_deps_index, ());
         self.graph.add_edge(index, sync_project_index, ());
@@ -287,17 +292,10 @@ impl DepGraph {
         let mut previous_target_index = None;
 
         for dep_target_id in &task.deps {
-            let dep_target = Target::parse(dep_target_id)?;
-            let dep_project = match &dep_target.project_id {
-                Some(id) => project_graph.load(id)?,
-                None => {
-                    continue;
-                }
-            };
+            let (_, dep_indexes) =
+                self.run_target(Target::parse(dep_target_id)?, project_graph, touched_files)?;
 
-            if let Some(dep_index) =
-                self.run_target_by_project(&dep_target, &dep_project, project_graph, touched_files)?
-            {
+            for dep_index in dep_indexes {
                 // When parallel, parent depends on child
                 if parallel {
                     indexes.push(dep_index);
@@ -327,11 +325,10 @@ impl DepGraph {
         let mut qualified_targets = vec![];
 
         for target_id in target_ids {
-            qualified_targets.extend(self.run_target(
-                Target::parse(target_id)?,
-                project_graph,
-                touched_files,
-            )?);
+            let (targets, _) =
+                self.run_target(Target::parse(target_id)?, project_graph, touched_files)?;
+
+            qualified_targets.extend(targets);
         }
 
         Ok(qualified_targets)
@@ -356,10 +353,10 @@ impl DepGraph {
     pub fn sync_project(
         &mut self,
         runtime: &Runtime,
-        project_id: &str,
+        project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
-        let node = ActionNode::SyncProject(runtime.clone(), project_id.to_owned());
+        let node = ActionNode::SyncProject(runtime.clone(), project.id.to_owned());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(*index);
@@ -368,18 +365,19 @@ impl DepGraph {
         trace!(
             target: LOG_TARGET,
             "Adding sync project {} node to graph",
-            color::id(project_id),
+            color::id(&project.id),
         );
 
         // Syncing depends on the language's tool to be installed
-        let index = self.insert_node(&node);
         let setup_tool_index = self.setup_tool(runtime);
+        let index = self.insert_node(&node);
 
         self.graph.add_edge(index, setup_tool_index, ());
 
         // And we should also depend on other projects
-        for dep_project_id in project_graph.get_dependencies_of(project_id)? {
-            let dep_index = self.sync_project(runtime, &dep_project_id, project_graph)?;
+        for dep_project_id in project_graph.get_dependencies_of(project)? {
+            let dep_project = project_graph.load(&dep_project_id)?;
+            let dep_index = self.sync_project(runtime, &dep_project, project_graph)?;
 
             self.graph.add_edge(index, dep_index, ());
         }

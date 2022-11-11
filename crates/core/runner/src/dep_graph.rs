@@ -202,7 +202,8 @@ impl DepGraph {
         );
 
         let (project_id, task_id) = target.ids()?;
-        let dependents = project_graph.get_dependents_of(&project_id)?;
+        let project = project_graph.load(&project_id)?;
+        let dependents = project_graph.get_dependents_of(&project)?;
 
         for dependent_id in dependents {
             let dependent = project_graph.load(&dependent_id)?;
@@ -354,7 +355,7 @@ impl DepGraph {
             .add_edge(sync_project_index, setup_toolchain_index, ());
 
         // But we need to wait on all dependent nodes
-        for dep_id in project_graph.get_dependencies_of(&project.id)? {
+        for dep_id in project_graph.get_dependencies_of(&project)? {
             let dep_project = project_graph.load(&dep_id)?;
             let dep_runtime = self.get_runtime_from_project(&dep_project, project_graph);
 

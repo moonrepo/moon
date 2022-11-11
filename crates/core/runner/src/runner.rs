@@ -2,7 +2,7 @@ use crate::actions;
 use crate::dep_graph_new::DepGraph;
 use crate::errors::{DepGraphError, RunnerError};
 use crate::subscribers::local_cache::LocalCacheSubscriber;
-use crate::subscribers::remote_cache::RemoteCacheSubscriber;
+use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionNode, ActionStatus};
 use moon_cache::RunReport;
@@ -591,7 +591,7 @@ impl Runner {
             if local_workspace.session.is_some() {
                 emitter
                     .subscribers
-                    .push(Arc::new(RwLock::new(RemoteCacheSubscriber::new())));
+                    .push(Arc::new(RwLock::new(MoonbaseCacheSubscriber::new())));
             }
         }
 

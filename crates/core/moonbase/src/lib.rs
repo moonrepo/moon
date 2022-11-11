@@ -44,7 +44,7 @@ impl Moonbase {
             Response::Failure { message, status } => {
                 warn!(
                     target: LOG_TARGET,
-                    "Failed to sign in to moonbase, please check your API keys. Pipeline will still continue...\nFailure: {} ({})", color::muted_light(message), status
+                    "Failed to sign in to moonbase, please check your API keys. Pipeline will still continue... Failure: {} ({})", color::muted_light(message), status
                 );
 
                 Ok(None)
@@ -98,7 +98,17 @@ impl Moonbase {
 
         match data {
             Response::Success(ArtifactResponse { artifact }) => Ok(Some(artifact)),
-            _ => Ok(None),
+            Response::Failure { message, status } => {
+                warn!(
+                    target: LOG_TARGET,
+                    "Failed to upload artifact with hash {}. Failure: {} ({})",
+                    color::symbol(hash),
+                    color::muted_light(message),
+                    status
+                );
+
+                Ok(None)
+            }
         }
     }
 }

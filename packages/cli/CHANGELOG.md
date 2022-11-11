@@ -42,10 +42,6 @@
 - Fixed some CLI arguments that should be ran mutually exclusive with other arguments.
 - Task hashes will now properly invalidate if their dependencies hashes have also changed.
 
-#### ⚙️ Internal
-
-- Updated Rust to v1.65.
-
 ## 0.18.2
 
 #### 🐞 Fixes

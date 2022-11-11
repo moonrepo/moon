@@ -4,18 +4,18 @@ use moon_workspace::Workspace;
 use moonbase::MoonbaseError;
 use tokio::task::JoinHandle;
 
-pub struct RemoteCacheSubscriber {
+pub struct MoonbaseCacheSubscriber {
     requests: Vec<JoinHandle<()>>,
 }
 
-impl RemoteCacheSubscriber {
+impl MoonbaseCacheSubscriber {
     pub fn new() -> Self {
-        RemoteCacheSubscriber { requests: vec![] }
+        MoonbaseCacheSubscriber { requests: vec![] }
     }
 }
 
 #[async_trait::async_trait]
-impl Subscriber for RemoteCacheSubscriber {
+impl Subscriber for MoonbaseCacheSubscriber {
     async fn on_emit<'a>(
         &mut self,
         event: &Event<'a>,

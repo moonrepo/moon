@@ -5,7 +5,7 @@ use std::fmt::{self, Debug};
 pub struct Version(pub String, pub bool);
 
 impl Version {
-    pub fn is_overridden(&self) -> bool {
+    pub fn is_override(&self) -> bool {
         self.1
     }
 }

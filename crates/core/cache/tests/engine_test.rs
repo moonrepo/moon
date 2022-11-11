@@ -215,7 +215,7 @@ mod cache_run_target_state {
 
 mod cache_tool_state {
     use super::*;
-    use moon_platform::Runtime;
+    use moon_platform::{Runtime, Version};
 
     #[tokio::test]
     #[serial]
@@ -223,7 +223,7 @@ mod cache_tool_state {
         let dir = assert_fs::TempDir::new().unwrap();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache
-            .cache_tool_state(&Runtime::Node("1.2.3".into()))
+            .cache_tool_state(&Runtime::Node(Version("1.2.3".into(), false)))
             .await
             .unwrap();
 
@@ -244,7 +244,7 @@ mod cache_tool_state {
 
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache
-            .cache_tool_state(&Runtime::Node("1.2.3".into()))
+            .cache_tool_state(&Runtime::Node(Version("1.2.3".into(), false)))
             .await
             .unwrap();
 
@@ -269,7 +269,7 @@ mod cache_tool_state {
             .unwrap();
 
         let cache = CacheEngine::load(dir.path()).await.unwrap();
-        let runtime = Runtime::Node("4.5.6".into());
+        let runtime = Runtime::Node(Version("4.5.6".into(), false));
         let item = run_with_env("read", || cache.cache_tool_state(&runtime))
             .await
             .unwrap();
@@ -316,7 +316,7 @@ mod cache_tool_state {
         let dir = assert_fs::TempDir::new().unwrap();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache
-            .cache_tool_state(&Runtime::Node("7.8.9".into()))
+            .cache_tool_state(&Runtime::Node(Version("7.8.9".into(), false)))
             .await
             .unwrap();
 

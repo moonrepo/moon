@@ -4,7 +4,7 @@ use moon_config::{GlobalProjectConfig, NodeConfig, WorkspaceConfig, WorkspacePro
 use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
 use moon_project_graph::ProjectGraph;
-use moon_runner::{BatchedTopoSort, DepGraph, NodeIndex};
+use moon_runner::{BatchedTopoSort, DepGraphOld as DepGraph, NodeIndex};
 use moon_system_platform::SystemPlatform;
 use moon_task::Target;
 use moon_utils::test::{create_sandbox, TempDir};

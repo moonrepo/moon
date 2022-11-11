@@ -15,7 +15,7 @@ pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::er
         let target = Target::parse(id)?;
 
         graph.run_target(&target, &projects, &None)?;
-        graph.run_target_dependents(&target, &projects)?;
+        graph.run_dependents_for_target(&target, &projects)?;
 
     // Show all targets and actions
     } else {

@@ -12,10 +12,10 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(node) = &workspace.config.node {
         let runtime = Runtime::Node(Version(node.version.to_owned(), false));
 
-        dep_graph.setup_tool(&runtime);
-
-        if !is_test_env() {
-            dep_graph.install_deps(&runtime)?;
+        if is_test_env() {
+            dep_graph.setup_tool(&runtime);
+        } else {
+            dep_graph.install_workspace_deps(&runtime);
         }
     }
 

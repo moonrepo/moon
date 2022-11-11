@@ -38,6 +38,14 @@ impl DepGraph {
         }
     }
 
+    pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {
+        self.indices.get(node)
+    }
+
+    pub fn get_node_from_index(&self, index: &NodeIndex) -> Option<&ActionNode> {
+        self.graph.node_weight(*index)
+    }
+
     // Projects support overriding the the version of their language (tool),
     // so we need to account for this via the runtime. However, some actions require
     // the workspace version of the language, so we must extract 2 runtimes here.
@@ -232,7 +240,7 @@ impl DepGraph {
         );
 
         let (project_runtime, workspace_runtime) =
-            self.get_runtimes_from_project(&project, project_graph);
+            self.get_runtimes_from_project(project, project_graph);
 
         // We should install deps & sync projects *before* running targets
         let index = self.insert_node(&node);
@@ -281,7 +289,7 @@ impl DepGraph {
         for dep_target_id in &task.deps {
             let dep_target = Target::parse(dep_target_id)?;
             let dep_project = match &dep_target.project_id {
-                Some(id) => project_graph.load(&id)?,
+                Some(id) => project_graph.load(id)?,
                 None => {
                     continue;
                 }
@@ -360,7 +368,7 @@ impl DepGraph {
         trace!(
             target: LOG_TARGET,
             "Adding sync project {} node to graph",
-            color::id(&project_id),
+            color::id(project_id),
         );
 
         // Syncing depends on the language's tool to be installed
@@ -371,7 +379,7 @@ impl DepGraph {
 
         // And we should also depend on other projects
         for dep_project_id in project_graph.get_dependencies_of(project_id)? {
-            let dep_index = self.sync_project(&runtime, &dep_project_id, project_graph)?;
+            let dep_index = self.sync_project(runtime, &dep_project_id, project_graph)?;
 
             self.graph.add_edge(index, dep_index, ());
         }
@@ -491,14 +499,6 @@ impl DepGraph {
             .join(" → ");
 
         Err(DepGraphError::CycleDetected(cycle))
-    }
-
-    fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {
-        self.indices.get(node)
-    }
-
-    fn get_node_from_index(&self, index: &NodeIndex) -> Option<&ActionNode> {
-        self.graph.node_weight(*index)
     }
 
     fn insert_node(&mut self, node: &ActionNode) -> NodeIndex {

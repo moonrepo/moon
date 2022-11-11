@@ -162,7 +162,7 @@ fn generate_dep_graph(
         dep_graph.run_target(target, &workspace.projects, &None)?;
 
         // And also run its dependents to ensure consumers still work correctly
-        dep_graph.run_target_dependents(target, &workspace.projects)?;
+        dep_graph.run_dependents_for_target(target, &workspace.projects)?;
     }
 
     println!("Target count: {}", targets.len());

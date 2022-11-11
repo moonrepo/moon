@@ -3,8 +3,8 @@
 mod runtime;
 
 use moon_config::{
-    DependencyConfig, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
-    WorkspaceConfig,
+    DependencyConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
+    TasksConfigsMap, WorkspaceConfig,
 };
 use moon_error::MoonError;
 pub use runtime::{Runtime, Version};
@@ -14,8 +14,8 @@ use std::fmt::Debug;
 use std::path::Path;
 
 pub trait Platform: Debug + Send + Sync {
-    /// Return a default runtime, which will be used as the hash key.
-    fn get_default_runtime(&self) -> Runtime;
+    /// Return the type of platform.
+    fn get_type(&self) -> PlatformType;
 
     /// Return a runtime with an appropriate version based on the provided configs.
     fn get_runtime_from_config(
@@ -74,7 +74,7 @@ pub trait Platform: Debug + Send + Sync {
     }
 
     /// Return true if the current platform is for the provided project or runtime.
-    fn matches(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool;
+    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool;
 }
 
 pub type BoxedPlatform = Box<dyn Platform>;
@@ -85,26 +85,19 @@ pub trait Platformable {
 
 #[derive(Debug, Default)]
 pub struct PlatformManager {
-    cache: FxHashMap<String, BoxedPlatform>,
+    cache: FxHashMap<PlatformType, BoxedPlatform>,
 }
 
 impl PlatformManager {
-    pub fn get(&self, runtime: &Runtime) -> Option<&BoxedPlatform> {
-        self.cache.get(&self.key(runtime))
+    pub fn get(&self, type_of: &PlatformType) -> Option<&BoxedPlatform> {
+        self.cache.get(type_of)
     }
 
-    pub fn key(&self, runtime: &Runtime) -> String {
-        match runtime {
-            Runtime::Node(_) => "node".into(),
-            Runtime::System => "system".into(),
-        }
-    }
-
-    pub fn list(&self) -> std::collections::hash_map::Values<String, BoxedPlatform> {
+    pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {
         self.cache.values()
     }
 
-    pub fn register(&mut self, runtime: &Runtime, platform: BoxedPlatform) {
-        self.cache.insert(self.key(runtime), platform);
+    pub fn register(&mut self, type_of: PlatformType, platform: BoxedPlatform) {
+        self.cache.insert(type_of, platform);
     }
 }

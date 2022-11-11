@@ -57,8 +57,14 @@ impl DepGraph {
         &mut self,
         project: &Project,
         project_graph: &ProjectGraph,
+        task: Option<&Task>,
     ) -> (Runtime, Runtime) {
-        if let Some(pair) = self.runtimes.get(&project.id) {
+        let key = match task {
+            Some(task) => task.target.clone(),
+            None => project.id.clone(),
+        };
+
+        if let Some(pair) = self.runtimes.get(&key) {
             return pair.clone();
         }
 
@@ -66,7 +72,12 @@ impl DepGraph {
         let mut workspace_runtime = None;
 
         for platform in project_graph.platforms.list() {
-            if platform.matches(&project.config, None) {
+            let is_match = match task {
+                Some(task) => platform.matches(&task.platform, None),
+                None => platform.matches(&project.config.language.to_platform(), None),
+            };
+
+            if is_match {
                 project_runtime = platform.get_runtime_from_config(
                     Some(&project.config),
                     &project_graph.workspace_config,
@@ -84,23 +95,24 @@ impl DepGraph {
             workspace_runtime.unwrap_or(Runtime::System),
         );
 
-        self.runtimes.insert(project.id.clone(), pair.clone());
+        self.runtimes.insert(key, pair.clone());
 
         pair
     }
 
     pub fn install_deps(
         &mut self,
+        task: &Task,
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
         let (project_runtime, workspace_runtime) =
-            self.get_runtimes_from_project(project, project_graph);
+            self.get_runtimes_from_project(project, project_graph, Some(task));
         let mut installs_in_project = false;
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Some(platform) = project_graph.platforms.get(&project_runtime) {
+        if let Some(platform) = project_graph.platforms.get(&task.platform) {
             if !platform.is_project_in_package_manager_workspace(
                 &project.id,
                 &project.root,
@@ -268,9 +280,11 @@ impl DepGraph {
             return Ok(Some(*index));
         }
 
+        let task = project.get_task(&target.task_id)?;
+
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
-            if !project.get_task(&target.task_id)?.is_affected(touched)? {
+            if !task.is_affected(touched)? {
                 trace!(
                     target: LOG_TARGET,
                     "Target {} not affected based on touched files, skipping",
@@ -288,7 +302,7 @@ impl DepGraph {
         );
 
         // We should install deps & sync projects *before* running targets
-        let install_deps_index = self.install_deps(project, project_graph)?;
+        let install_deps_index = self.install_deps(task, project, project_graph)?;
         let sync_project_index = self.sync_project(project, project_graph)?;
         let index = self.insert_node(&node);
 
@@ -296,7 +310,6 @@ impl DepGraph {
         self.graph.add_edge(index, sync_project_index, ());
 
         // And we also need to wait on all dependent targets
-        let task = project.get_task(&target.task_id)?;
 
         if !task.deps.is_empty() {
             trace!(
@@ -390,7 +403,7 @@ impl DepGraph {
         project: &Project,
         project_graph: &ProjectGraph,
     ) -> Result<NodeIndex, DepGraphError> {
-        let (runtime, _) = self.get_runtimes_from_project(project, project_graph);
+        let (runtime, _) = self.get_runtimes_from_project(project, project_graph, None);
         let node = ActionNode::SyncProject(runtime.clone(), project.id.to_owned());
 
         if let Some(index) = self.get_index_from_node(&node) {

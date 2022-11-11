@@ -65,7 +65,7 @@ impl DepGraph {
         project_graph: &ProjectGraph,
     ) -> Runtime {
         for platform in project_graph.platforms.list() {
-            if platform.matches(&project.config, None) {
+            if platform.matches(&project.config.language.to_platform(), None) {
                 if let Some(runtime) = platform
                     .get_runtime_from_config(Some(&project.config), &project_graph.workspace_config)
                 {
@@ -107,7 +107,10 @@ impl DepGraph {
     ) -> Result<NodeIndex, DepGraphError> {
         let mut node = ActionNode::InstallDeps(runtime.clone());
 
-        if let Some(platform) = project_graph.platforms.get(runtime) {
+        if let Some(platform) = project_graph
+            .platforms
+            .get(&project.config.language.to_platform())
+        {
             // If project is not in the package manager workspace,
             // update the node to install deps into the project directly!
             if !platform.is_project_in_package_manager_workspace(
@@ -355,7 +358,7 @@ impl DepGraph {
             .add_edge(sync_project_index, setup_toolchain_index, ());
 
         // But we need to wait on all dependent nodes
-        for dep_id in project_graph.get_dependencies_of(&project)? {
+        for dep_id in project_graph.get_dependencies_of(project)? {
             let dep_project = project_graph.load(&dep_id)?;
             let dep_runtime = self.get_runtime_from_project(&dep_project, project_graph);
 

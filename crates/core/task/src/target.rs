@@ -4,7 +4,7 @@ use moon_utils::regex::TARGET_PATTERN;
 use std::cmp::Ordering;
 // use std::fmt;
 
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum TargetProjectScope {
     All,           // :task
     Deps,          // ^:task
@@ -38,7 +38,7 @@ pub enum TargetProjectScope {
 //     }
 // }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Target {
     pub id: String,
 

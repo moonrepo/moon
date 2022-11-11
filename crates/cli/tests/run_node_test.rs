@@ -1262,34 +1262,33 @@ mod typescript {
     }
 }
 
-// TODO: fix in a follow up
-// mod workspace_overrides {
-//     use super::*;
+mod workspace_overrides {
+    use super::*;
 
-//     #[test]
-//     fn can_override_version() {
-//         let fixture = create_sandbox_with_git("node");
+    #[test]
+    fn can_override_version() {
+        let fixture = create_sandbox_with_git("node");
 
-//         update_workspace_config(
-//             fixture.path(),
-//             "dedupeOnLockfileChange: true",
-//             "dedupeOnLockfileChange: false",
-//         );
+        update_workspace_config(
+            fixture.path(),
+            "dedupeOnLockfileChange: true",
+            "dedupeOnLockfileChange: false",
+        );
 
-//         let assert = create_moon_command(fixture.path())
-//             .arg("run")
-//             .arg("base:version")
-//             .arg("versionOverride:version")
-//             .assert();
+        let assert = create_moon_command(fixture.path())
+            .arg("run")
+            .arg("node:version")
+            .arg("versionOverride:version")
+            .assert();
 
-//         let output = get_assert_output(&assert);
+        let output = get_assert_output(&assert);
 
-//         assert!(predicate::str::contains("v18.0.0").eval(&output));
-//         assert!(predicate::str::contains("v16.1.0").eval(&output));
+        assert!(predicate::str::contains("v18.0.0").eval(&output));
+        assert!(predicate::str::contains("v16.1.0").eval(&output));
 
-//         assert.success();
-//     }
-// }
+        assert.success();
+    }
+}
 
 mod affected_files {
     use super::*;

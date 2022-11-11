@@ -22,9 +22,9 @@ digraph {
     5 -> 2 [ arrowhead=box, arrowtail=box]
     6 -> 1 [ arrowhead=box, arrowtail=box]
     6 -> 4 [ arrowhead=box, arrowtail=box]
-    5 -> 6 [ arrowhead=box, arrowtail=box]
     7 -> 1 [ arrowhead=box, arrowtail=box]
     7 -> 3 [ arrowhead=box, arrowtail=box]
+    5 -> 6 [ arrowhead=box, arrowtail=box]
     5 -> 7 [ arrowhead=box, arrowtail=box]
 }
 

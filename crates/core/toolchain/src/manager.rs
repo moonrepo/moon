@@ -1,5 +1,5 @@
 use crate::{Tool, ToolchainError};
-use moon_platform::Runtime;
+use moon_platform::{Runtime, Version};
 use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ impl<T: Tool> ToolManager<T> {
 
     pub fn get_for_runtime(&self, runtime: &Runtime) -> Result<&T, ToolchainError> {
         match &runtime {
-            Runtime::Node(version) => self.get_for_version(version),
+            Runtime::Node(version) => self.get_for_version(&version.0),
             _ => panic!("Unsupported toolchain runtime."),
         }
     }
@@ -49,7 +49,7 @@ impl<T: Tool> ToolManager<T> {
             #[allow(clippy::single_match)]
             match &mut self.runtime {
                 Runtime::Node(ref mut version) => {
-                    *version = tool.get_version();
+                    *version = Version(tool.get_version(), false);
                 }
                 _ => {
                     // Ignore

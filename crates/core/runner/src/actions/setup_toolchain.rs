@@ -46,12 +46,12 @@ pub async fn setup_toolchain(
             // The workspace version is pre-registered when the toolchain
             // is created, so any missing version must be an override at
             // the project-level. If so, use config defaults.
-            if !node.has(version) {
+            if !node.has(&version.0) {
                 node.register(
                     NodeTool::new(
                         &toolchain_paths,
                         &NodeConfig {
-                            version: version.to_owned(),
+                            version: version.0.to_owned(),
                             ..NodeConfig::default()
                         },
                     )?,
@@ -59,7 +59,7 @@ pub async fn setup_toolchain(
                 );
             }
 
-            node.setup(version, check_versions).await?
+            node.setup(&version.0, check_versions).await?
         }
         _ => 0,
     };

@@ -1,5 +1,5 @@
 use crate::actions;
-use crate::dep_graph::DepGraph;
+use crate::dep_graph_new::DepGraph;
 use crate::errors::{DepGraphError, RunnerError};
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use console::Term;

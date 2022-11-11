@@ -4,7 +4,7 @@ use moon_config::{GlobalProjectConfig, NodeConfig, WorkspaceConfig, WorkspacePro
 use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
 use moon_project_graph::ProjectGraph;
-use moon_runner::{BatchedTopoSort, DepGraphOld as DepGraph, NodeIndex};
+use moon_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_system_platform::SystemPlatform;
 use moon_task::Target;
 use moon_utils::test::{create_sandbox, TempDir};
@@ -430,9 +430,8 @@ mod sync_project {
     fn sync_projects(graph: &mut DepGraph, projects: &ProjectGraph, ids: &[&str]) {
         for id in ids {
             let project = projects.load(id).unwrap();
-            let runtime = graph.get_runtime_from_project(&project, projects);
 
-            graph.sync_project(&runtime, &project, projects).unwrap();
+            graph.sync_project(&project, projects).unwrap();
         }
     }
 

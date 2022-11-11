@@ -1,5 +1,5 @@
 ---
-source: crates/core/runner/tests/dep_graph_new_test.rs
+source: crates/core/runner/tests/dep_graph_old_test.rs
 assertion_line: 517
 expression: graph.to_dot()
 ---

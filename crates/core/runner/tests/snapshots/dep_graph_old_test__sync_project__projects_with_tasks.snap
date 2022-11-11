@@ -1,0 +1,14 @@
+---
+source: crates/core/runner/tests/dep_graph_old_test.rs
+assertion_line: 517
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SetupSystemTool" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="SyncSystemProject(noConfig)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="SetupNodeTool(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="SyncNodeProject(tasks)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 0 [ arrowhead=box, arrowtail=box]
+    3 -> 2 [ arrowhead=box, arrowtail=box]
+}
+

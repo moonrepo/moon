@@ -9,9 +9,13 @@ use moon_platform::{Platform, Runtime};
 pub struct SystemPlatform;
 
 impl Platform for SystemPlatform {
+    fn get_default_runtime(&self) -> Runtime {
+        Runtime::System
+    }
+
     fn get_runtime_from_config(
         &self,
-        _project_config: &ProjectConfig,
+        _project_config: Option<&ProjectConfig>,
         _workspace_config: &WorkspaceConfig,
     ) -> Option<Runtime> {
         Some(Runtime::System)

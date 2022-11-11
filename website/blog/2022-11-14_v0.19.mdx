@@ -51,6 +51,20 @@ eslint ./file.ts ./another/file.ts
 This functionality is _perfect_ pre-commit hooks, and as such, we've added a
 [guide for utilizing this pattern with git hooks](../docs/guides/git-hooks)!
 
+## Dependency graph optimizations
+
+Our dependency graph determines which targets to run, what tools to install, projects to sync, and
+in which order. It's a very complex directed acyclic graph, and has only gotten more complicated
+over the year, especially with the introduction of project-level tool overrides.
+
+We decided to rewrite the dependency graph from the ground up to mitigate many of these issues,
+optimize nodes and edges, reduce the number of data cloning, and to increase the overall
+performance. Everything will still work exactly the same (all of our existing tests passed with no
+issue)!
+
+On top of this, we've also migrated the internals of moon to a new hashing algorithm that should see
+a 5-10% increase in performance!
+
 ## Other changes
 
 View the
@@ -67,4 +81,3 @@ Expect the following in the v0.20 release!
 
 - Continuation of remote caching work!
 - Performance improvements for output hydration.
-- Optimizations to our project and dependency graphs.

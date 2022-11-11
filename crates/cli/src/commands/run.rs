@@ -4,7 +4,6 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use moon_action::{ActionContext, ProfileType};
 use moon_logger::{color, map_list};
 use moon_runner::{DepGraph, Runner};
-use moon_task::Target;
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::string::ToString;
@@ -49,10 +48,10 @@ pub async fn run(
     };
 
     // Run targets, optionally based on affected files
-    let (primary_targets, inserted_count) =
+    let primary_targets =
         dep_graph.run_targets_by_id(target_ids, &workspace.projects, &touched_files)?;
 
-    if inserted_count == 0 {
+    if primary_targets.is_empty() {
         let targets_list = map_list(target_ids, |id| color::target(id));
 
         if options.affected {
@@ -77,7 +76,7 @@ pub async fn run(
         workspace.projects.load_all()?;
 
         for target in &primary_targets {
-            dep_graph.run_target_dependents(Target::parse(target)?, &workspace.projects)?;
+            dep_graph.run_dependents_for_target(target, &workspace.projects)?;
         }
     }
 
@@ -86,7 +85,7 @@ pub async fn run(
         affected: options.affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         passthrough_args: options.passthrough,
-        primary_targets: FxHashSet::from_iter(primary_targets),
+        primary_targets: FxHashSet::from_iter(primary_targets.iter().map(|t| t.id.clone())),
         profile: options.profile,
         target_hashes: FxHashMap::default(),
         touched_files: touched_files.unwrap_or_default(),

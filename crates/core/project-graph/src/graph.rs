@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
-use moon_platform::{Platform, Platformable, RegisteredPlatforms};
+use moon_platform::{BoxedPlatform, PlatformManager, Platformable};
 use moon_project::{
     detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
 };
@@ -101,8 +101,8 @@ pub struct ProjectGraph {
     /// to query the graph by ID as it only supports it by index.
     indices: Arc<RwLock<IndicesType>>,
 
-    /// List of platforms that provide unique functionality.
-    pub platforms: RegisteredPlatforms,
+    /// Mapping of platforms that provide unique functionality.
+    pub platforms: PlatformManager,
 
     /// The mapping of projects by ID to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
@@ -117,7 +117,7 @@ pub struct ProjectGraph {
 }
 
 impl Platformable for ProjectGraph {
-    fn register_platform(&mut self, platform: Box<dyn Platform>) -> Result<(), MoonError> {
+    fn register_platform(&mut self, platform: BoxedPlatform) -> Result<(), MoonError> {
         let mut platform = platform;
 
         platform.load_project_graph_aliases(
@@ -127,7 +127,8 @@ impl Platformable for ProjectGraph {
             &mut self.aliases_map,
         )?;
 
-        self.platforms.push(platform);
+        self.platforms
+            .register(&platform.get_default_runtime(), platform);
 
         Ok(())
     }
@@ -155,7 +156,7 @@ impl ProjectGraph {
             global_config,
             graph: Arc::new(RwLock::new(graph)),
             indices: Arc::new(RwLock::new(FxHashMap::default())),
-            platforms: vec![],
+            platforms: PlatformManager::default(),
             projects_map: load_projects_from_cache(workspace_root, workspace_config, cache).await?,
             workspace_config: workspace_config.clone(),
             workspace_root: workspace_root.to_path_buf(),
@@ -348,7 +349,7 @@ impl ProjectGraph {
         let mut project = Project::new(id, source, &self.workspace_root, &self.global_config)?;
         project.alias = self.find_alias_for_id(id);
 
-        for platform in &self.platforms {
+        for platform in self.platforms.list() {
             if !platform.matches(&project.config, None) {
                 continue;
             }

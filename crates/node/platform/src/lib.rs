@@ -4,8 +4,8 @@ pub mod task;
 
 pub use hasher::NodeTargetHasher;
 use moon_config::{
-    DependencyConfig, DependencyScope, NodeProjectAliasFormat, ProjectConfig, ProjectID,
-    ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
+    DependencyConfig, DependencyScope, NodeProjectAliasFormat, PlatformType, ProjectConfig,
+    ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
@@ -50,8 +50,8 @@ pub struct NodePlatform {
 }
 
 impl Platform for NodePlatform {
-    fn get_default_runtime(&self) -> Runtime {
-        Runtime::Node(Version("latest".into(), false))
+    fn get_type(&self) -> PlatformType {
+        PlatformType::Node
     }
 
     fn get_runtime_from_config(
@@ -261,8 +261,8 @@ impl Platform for NodePlatform {
         Ok(tasks)
     }
 
-    fn matches(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool {
-        if project_config.language.is_node_platform() {
+    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
+        if matches!(platform, PlatformType::Node) {
             return true;
         }
 

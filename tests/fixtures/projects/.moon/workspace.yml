@@ -18,3 +18,4 @@ projects:
   js: langs/js
   ts: langs/ts
   bash: langs/bash
+  platforms: platforms

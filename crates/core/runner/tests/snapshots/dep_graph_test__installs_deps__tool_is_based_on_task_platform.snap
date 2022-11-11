@@ -1,0 +1,22 @@
+---
+source: crates/core/runner/tests/dep_graph_test.rs
+assertion_line: 579
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SetupSystemTool" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="InstallSystemDeps" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="SyncSystemProject(platforms)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="RunTarget(platforms:system)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="SetupNodeTool(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    5 [ label="InstallNodeDeps(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    6 [ label="RunTarget(platforms:node)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 0 [ arrowhead=box, arrowtail=box]
+    3 -> 1 [ arrowhead=box, arrowtail=box]
+    3 -> 2 [ arrowhead=box, arrowtail=box]
+    5 -> 4 [ arrowhead=box, arrowtail=box]
+    6 -> 5 [ arrowhead=box, arrowtail=box]
+    6 -> 2 [ arrowhead=box, arrowtail=box]
+}
+

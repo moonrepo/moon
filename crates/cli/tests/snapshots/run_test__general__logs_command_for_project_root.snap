@@ -4,8 +4,8 @@ assertion_line: 85
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ base:runFromProject
-node --version (in ./base)
-v16.0.0
+echo 'from project' (in ./base)
+from project
 
 Tasks: 1 completed
  Time: 100ms

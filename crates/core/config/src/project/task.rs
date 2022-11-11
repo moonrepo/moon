@@ -47,7 +47,9 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
+#[derive(
+    Clone, Debug, Default, Deserialize, Display, Eq, Hash, JsonSchema, PartialEq, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum PlatformType {
     #[strum(serialize = "node")]

@@ -2,15 +2,15 @@ pub mod actions;
 mod hasher;
 
 pub use hasher::SystemTargetHasher;
-use moon_config::{ProjectConfig, WorkspaceConfig};
+use moon_config::{PlatformType, ProjectConfig, WorkspaceConfig};
 use moon_platform::{Platform, Runtime};
 
 #[derive(Debug, Default)]
 pub struct SystemPlatform;
 
 impl Platform for SystemPlatform {
-    fn get_default_runtime(&self) -> Runtime {
-        Runtime::System
+    fn get_type(&self) -> PlatformType {
+        PlatformType::System
     }
 
     fn get_runtime_from_config(
@@ -21,8 +21,8 @@ impl Platform for SystemPlatform {
         Some(Runtime::System)
     }
 
-    fn matches(&self, project_config: &ProjectConfig, runtime: Option<&Runtime>) -> bool {
-        if project_config.language.is_system_platform() {
+    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
+        if matches!(platform, PlatformType::System) {
             return true;
         }
 

@@ -61,6 +61,7 @@ mod projects {
                 "foo",
                 "js",
                 "noConfig",
+                "platforms",
                 "tasks",
                 "ts"
             ]

@@ -9,6 +9,10 @@
   approach worked but was susceptible to collisions, so now, these package managers are installed
   individually as their own tools at `~/.moon/tools/npm`, etc. This change should be transparent to
   you, but we're documenting it just in case something breaks!
+- We've updated the dependency graph so that `InstallDeps` based actions use the task's `platform`
+  instead of the project's `language` as the tool to install. This allows for granular control at
+  the task level, and also unlocks the ability for project's to utilize multiple languages in the
+  future.
 
 #### 🚀 Updates
 

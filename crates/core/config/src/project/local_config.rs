@@ -8,6 +8,7 @@ use crate::project::task::TaskConfig;
 use crate::project::workspace::ProjectWorkspaceConfig;
 use crate::types::{FileGroups, ProjectID};
 use crate::validators::validate_id;
+use crate::PlatformType;
 use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
@@ -79,14 +80,12 @@ pub enum ProjectLanguage {
 }
 
 impl ProjectLanguage {
-    pub fn is_node_platform(&self) -> bool {
-        matches!(self, ProjectLanguage::JavaScript) || matches!(self, ProjectLanguage::TypeScript)
-    }
-
-    pub fn is_system_platform(&self) -> bool {
-        matches!(self, ProjectLanguage::Bash)
-            || matches!(self, ProjectLanguage::Batch)
-            || matches!(self, ProjectLanguage::Unknown)
+    pub fn to_platform(&self) -> PlatformType {
+        match self {
+            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
+            ProjectLanguage::Unknown => PlatformType::Unknown,
+            _ => PlatformType::System,
+        }
     }
 }
 

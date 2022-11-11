@@ -77,6 +77,38 @@ impl DepGraph {
         )
     }
 
+    pub fn install_deps(
+        &mut self,
+        project: &Project,
+        project_graph: &ProjectGraph,
+        project_runtime: &Runtime,
+        workspace_runtime: &Runtime,
+    ) -> Result<NodeIndex, DepGraphError> {
+        let mut installs_in_project = false;
+
+        // If project is NOT in the package manager workspace, then we should
+        // install dependencies in the project, not the workspace root.
+        if let Some(platform) = project_graph.platforms.get(project_runtime) {
+            if !platform.is_project_in_package_manager_workspace(
+                &project.id,
+                &project.root,
+                &project_graph.workspace_root,
+                &project_graph.workspace_config,
+            )? {
+                installs_in_project = true;
+            }
+        }
+
+        // When installing dependencies in the project, we will use the
+        // overridden version if it is available. Otherwise when installing
+        // in the root, we should *always* use the workspace version.
+        Ok(if installs_in_project {
+            self.install_project_deps(project_runtime, &project.id)
+        } else {
+            self.install_workspace_deps(workspace_runtime)
+        })
+    }
+
     pub fn install_project_deps(&mut self, runtime: &Runtime, project_id: &str) -> NodeIndex {
         let node = ActionNode::InstallProjectDeps(runtime.clone(), project_id.to_owned());
 
@@ -86,7 +118,7 @@ impl DepGraph {
 
         trace!(
             target: LOG_TARGET,
-            "Adding install {} dependencies (in project {}) node to graph",
+            "Adding node install {} dependencies (in project {}) to graph",
             runtime.label(),
             color::id(project_id)
         );
@@ -109,7 +141,7 @@ impl DepGraph {
 
         trace!(
             target: LOG_TARGET,
-            "Adding install {} dependencies (in workspace) node to graph",
+            "Adding node install {} dependencies (in workspace) to graph",
             runtime.label()
         );
 
@@ -239,7 +271,7 @@ impl DepGraph {
 
         trace!(
             target: LOG_TARGET,
-            "Adding run target {} node to graph",
+            "Adding node run target {} to graph",
             color::target(&target.id),
         );
 
@@ -247,11 +279,8 @@ impl DepGraph {
             self.get_runtimes_from_project(project, project_graph);
 
         // We should install deps & sync projects *before* running targets
-        let install_deps_index = if project_runtime == workspace_runtime {
-            self.install_workspace_deps(&workspace_runtime)
-        } else {
-            self.install_project_deps(&project_runtime, &project.id)
-        };
+        let install_deps_index =
+            self.install_deps(project, project_graph, &project_runtime, &workspace_runtime)?;
 
         let sync_project_index = self.sync_project(&workspace_runtime, &project, project_graph)?;
 
@@ -266,7 +295,7 @@ impl DepGraph {
         if !task.deps.is_empty() {
             trace!(
                 target: LOG_TARGET,
-                "Adding dependencies {} to target {}",
+                "Adding dependencies {} for target {}",
                 map_list(&task.deps, |f| color::symbol(f)),
                 color::target(&target.id),
             );
@@ -343,7 +372,7 @@ impl DepGraph {
 
         trace!(
             target: LOG_TARGET,
-            "Adding setup {} tool node to graph",
+            "Adding node setup {} tool to graph",
             runtime.label()
         );
 
@@ -364,7 +393,7 @@ impl DepGraph {
 
         trace!(
             target: LOG_TARGET,
-            "Adding sync project {} node to graph",
+            "Adding node sync project {} to graph",
             color::id(&project.id),
         );
 

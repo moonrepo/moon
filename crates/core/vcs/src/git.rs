@@ -166,6 +166,7 @@ impl Vcs for Git {
 
     async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
         let mut objects = vec![];
+        let mut map = BTreeMap::new();
 
         for file in files {
             if !self.is_file_ignored(file) {
@@ -173,17 +174,21 @@ impl Vcs for Git {
             }
         }
 
+        if objects.is_empty() {
+            return Ok(map);
+        }
+
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
         let output = self
-            .create_command(vec!["hash-object", "--stdin-paths"])
-            .input(&[objects.join("\n")])
-            .exec_capture_output()
+            .run_command(
+                &mut self
+                    .create_command(vec!["hash-object", "--stdin-paths"])
+                    .input(&[objects.join("\n")]),
+                true,
+            )
             .await?;
-        let output = output_to_trimmed_string(&output.stdout);
-
-        let mut map = BTreeMap::new();
 
         for (index, hash) in output.split('\n').enumerate() {
             if !hash.is_empty() {
@@ -240,7 +245,8 @@ impl Vcs for Git {
             output
         };
 
-        let url = url::Url::parse(&remote).unwrap(); // TODO
+        let url = url::Url::parse(&remote)
+            .map_err(|e| VcsError::FailedToParseGitRemote(e.to_string()))?;
         let mut slug = url.path();
 
         if slug.starts_with('/') {

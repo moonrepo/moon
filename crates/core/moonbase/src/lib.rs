@@ -6,8 +6,10 @@ use common::{get_host, get_request, parse_response, post_request, Response};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, warn};
 use reqwest::multipart::{Form, Part};
-use std::fs;
+use reqwest::Body;
 use std::path::Path;
+use tokio::fs;
+use tokio_util::codec::{BytesCodec, FramedRead};
 
 pub use api::*;
 pub use errors::MoonbaseError;
@@ -76,16 +78,24 @@ impl Moonbase {
         target: &str,
         path: &Path,
     ) -> Result<Option<Artifact>, MoonbaseError> {
-        let file = fs::read(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+        let file = fs::File::open(path)
+            .await
+            .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
         let file_name = match path.file_name() {
             Some(name) => name.to_string_lossy().to_string(),
             None => format!("{}.tar.gz", hash),
         };
+        let file_stream = FramedRead::new(file, BytesCodec::new());
 
         let form = Form::new()
             .text("repository", self.repository_id.to_string())
             .text("target", target.to_owned())
-            .part("file", Part::bytes(file).file_name(file_name));
+            .part(
+                "file",
+                Part::stream(Body::wrap_stream(file_stream))
+                    .file_name(file_name)
+                    .mime_str("application/gzip")?,
+            );
 
         let request = reqwest::Client::new()
             .post(format!("{}/artifacts/{}", get_host(), hash))

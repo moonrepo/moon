@@ -1,3 +1,4 @@
+use moon_cache::{is_readable, is_writable};
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_workspace::Workspace;
@@ -30,13 +31,14 @@ impl Subscriber for MoonbaseCacheSubscriber {
         match event {
             // Check if archive exists in moonbase (the remote) by querying the artifacts endpoint.
             Event::TargetOutputCacheCheck { hash, .. } => {
-                if moonbase
-                    .get_artifact(hash)
-                    .await
-                    .map_err(error_handler)?
-                    .is_some()
+                if is_readable()
+                    && moonbase
+                        .get_artifact(hash)
+                        .await
+                        .map_err(error_handler)?
+                        .is_some()
                 {
-                    return Ok(EventFlow::Return("remote-cache".into()));
+                    // return Ok(EventFlow::Return("remote-cache".into()));
                 }
             }
 
@@ -48,7 +50,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
                 target,
                 ..
             } => {
-                if archive_path.exists() {
+                if is_writable() && archive_path.exists() {
                     moonbase
                         .upload_artifact(hash, target, &archive_path)
                         .await

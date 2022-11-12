@@ -45,10 +45,13 @@ impl Subscriber for MoonbaseCacheSubscriber {
             Event::TargetOutputCacheCheck { hash, .. } => {
                 if is_readable() {
                     match moonbase.get_artifact(hash).await {
-                        Ok(artifact) => {
+                        Ok(Some(artifact)) => {
                             self.hash_exists.insert(artifact.hash);
 
                             return Ok(EventFlow::Return("remote-cache".into()));
+                        }
+                        Ok(None) => {
+                            // Not remote cached
                         }
                         Err(error) => {
                             handle_error(error);

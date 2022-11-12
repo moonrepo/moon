@@ -76,15 +76,21 @@ impl Moonbase {
         }
     }
 
-    pub async fn get_artifact(&self, hash: &str) -> Result<Artifact, MoonbaseError> {
+    pub async fn get_artifact(&self, hash: &str) -> Result<Option<Artifact>, MoonbaseError> {
         let response = get_request(format!("artifacts/{}", hash), Some(&self.auth_token)).await?;
 
         match response {
-            Response::Success(ArtifactResponse { artifact }) => Ok(artifact),
-            Response::Failure { message, .. } => Err(MoonbaseError::ArtifactCheckFailure(
-                hash.to_string(),
-                message,
-            )),
+            Response::Success(ArtifactResponse { artifact }) => Ok(Some(artifact)),
+            Response::Failure { message, status } => {
+                if status == 404 {
+                    Ok(None)
+                } else {
+                    Err(MoonbaseError::ArtifactCheckFailure(
+                        hash.to_string(),
+                        message,
+                    ))
+                }
+            }
         }
     }
 

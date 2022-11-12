@@ -100,6 +100,8 @@ impl Git {
         let mut cache = self.cache.write().await;
         let (mut cache_key, _) = command.get_command_line();
 
+        cache_key += command.get_input_line().as_ref();
+
         if trim {
             cache_key += " [trimmed]";
         }

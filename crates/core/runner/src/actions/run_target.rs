@@ -789,7 +789,7 @@ pub async fn run_target(
                 match cache_location {
                     HydrateFrom::LocalCache => "(cached)",
                     HydrateFrom::RemoteCache => "(cached from remote)",
-                    HydrateFrom::PreviousOutput => "(cached from previous output)",
+                    HydrateFrom::PreviousOutput => "(cached from previous build)",
                 },
             )?;
 

@@ -796,7 +796,11 @@ pub async fn run_target(
             runner.print_cache_item().await?;
             runner.flush_output()?;
 
-            return Ok(ActionStatus::Cached);
+            return Ok(if matches!(cache_location, HydrateFrom::RemoteCache) {
+                ActionStatus::CachedFromRemote
+            } else {
+                ActionStatus::Cached
+            });
         }
     }
 

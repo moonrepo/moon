@@ -10,7 +10,7 @@ fn has_failed(status: &ActionStatus) -> bool {
 #[serde(rename_all = "kebab-case")]
 pub enum ActionStatus {
     Cached,
-    // CachedFromRemote, // TODO
+    CachedFromRemote,
     Failed,
     FailedAndAbort,
     Invalid,
@@ -139,6 +139,9 @@ impl Action {
     }
 
     pub fn was_cached(&self) -> bool {
-        matches!(self.status, ActionStatus::Cached)
+        matches!(
+            self.status,
+            ActionStatus::Cached | ActionStatus::CachedFromRemote
+        )
     }
 }

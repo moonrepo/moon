@@ -1,5 +1,12 @@
 import './app.css';
+import { Graph } from './components/Graph';
 
 export function App() {
-	return <div>Hello world!</div>;
+	return (
+		<div>
+			<div>
+				<Graph />
+			</div>
+		</div>
+	);
 }

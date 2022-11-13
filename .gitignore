@@ -46,3 +46,6 @@ dockerManifest.json
 
 # vscode
 .vscode/settings.json
+
+# visualizer
+!packages/visualizer/src/lib

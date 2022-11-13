@@ -10,7 +10,7 @@ moon_utils = { path = "../utils" }
 async-trait = "0.1.58"
 cached = { workspace = true, features = ["async"] }
 ignore = "0.4.18"
-regex = "1.6.0"
+regex = "1.7.0"
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

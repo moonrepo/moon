@@ -14,6 +14,26 @@ lazy_static! {
 }
 
 #[inline]
+pub fn merge(prev: &Yaml, next: &Yaml) -> Yaml {
+    match (prev, next) {
+        (Yaml::Hash(prev_object), Yaml::Hash(next_object)) => {
+            let mut object = prev_object.clone();
+
+            for (key, value) in next_object.iter() {
+                if let Some(prev_value) = prev_object.get(key) {
+                    object.insert(key.to_owned(), merge(prev_value, value));
+                } else {
+                    object.insert(key.to_owned(), value.to_owned());
+                }
+            }
+
+            Yaml::Hash(object)
+        }
+        _ => next.to_owned(),
+    }
+}
+
+#[inline]
 pub fn read<P, D>(path: P) -> Result<D, MoonError>
 where
     P: AsRef<Path>,

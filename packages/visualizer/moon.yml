@@ -20,8 +20,12 @@ tasks:
     outputs:
       - 'dist'
 
-  preview:
-    command: 'vite preview'
+  serve:
+    command:
+      - vite
+      - preview
+      - '--port'
+      - '5000'
     deps:
       - '~:build'
     local: true

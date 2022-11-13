@@ -31,7 +31,6 @@ pub async fn project_graph(project_id: &Option<String>) -> Result<(), Box<dyn st
 
     for req in server.incoming_requests() {
         let response = match req.url() {
-            #[cfg(debug_assertions)]
             "/graph-data" => {
                 let mut response = Response::from_data(serde_json::to_string(&workspace_info)?);
                 response.add_header(
@@ -41,7 +40,12 @@ pub async fn project_graph(project_id: &Option<String>) -> Result<(), Box<dyn st
             }
             _ => {
                 let workspace_info = serde_json::to_string(&workspace_info)?;
-                let js_url = "/graph.js".to_string();
+                // FIXME: We should create a separate module to store these constants
+                let mut js_url = match cfg!(debug_assertions) {
+                    true => "http://localhost:5000".to_string(),
+                    false => "https://cdn.com".to_string(),
+                };
+                js_url.push_str("/assets/index.js");
                 let context = RenderContext {
                     workspace_info,
                     js_url,

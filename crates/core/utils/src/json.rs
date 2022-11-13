@@ -30,6 +30,26 @@ pub fn clean<D: AsRef<str>>(json: D) -> Result<String, MoonError> {
 }
 
 #[inline]
+pub fn merge(prev: &JsonValue, next: &JsonValue) -> JsonValue {
+    match (prev, next) {
+        (JsonValue::Object(prev_object), JsonValue::Object(next_object)) => {
+            let mut object = prev_object.clone();
+
+            for (key, value) in next_object.iter() {
+                if let Some(prev_value) = prev_object.get(key) {
+                    object.insert(key, merge(prev_value, value));
+                } else {
+                    object.insert(key, value.to_owned());
+                }
+            }
+
+            JsonValue::Object(object)
+        }
+        _ => next.to_owned(),
+    }
+}
+
+#[inline]
 pub fn read<P, D>(path: P) -> Result<D, MoonError>
 where
     P: AsRef<Path>,

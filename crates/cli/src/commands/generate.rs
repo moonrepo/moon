@@ -9,7 +9,6 @@ use moon_terminal::create_theme;
 use moon_utils::path;
 use rustc_hash::FxHashMap;
 use std::env;
-use std::ffi::OsStr;
 use std::fmt::Display;
 use std::path::PathBuf;
 
@@ -390,9 +389,7 @@ pub async fn generate(
             }
 
             // Merge files when applicable
-            let dest_ext = file.dest_path.extension().and_then(OsStr::to_str);
-
-            if matches!(dest_ext, Some("json") | Some("yaml") | Some("yml")) {
+            if file.is_mergeable().is_some() {
                 let operations = [
                     "Keep existing file",
                     "Merge new file into existing file",

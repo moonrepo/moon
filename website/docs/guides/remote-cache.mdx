@@ -5,6 +5,15 @@ toc_max_heading_level: 6
 
 import RemoteCacheBeta from '@site/src/components/forms/RemoteCacheBeta';
 
+Is your CI pipeline running slower than usual? Are you tired of running the same build over and over
+although nothing has changed? Do you wish to reuse the same local cache across other machines and
+environments? These are just a few scenarios that remote caching aims to solve.
+
+Remote caching is a system that shares artifacts to improve performance, reduce unnecessary
+computation time, and alleviate resources. It achieves this by uploading hashed artifacts to a cloud
+storage provider, like AWS S3 or Google Cloud, and downloading them on demand when a build matches a
+derived hash.
+
 ## Beta sign up
 
 Remote caching _is not yet_ available for general use and is currently in beta while we iron out the

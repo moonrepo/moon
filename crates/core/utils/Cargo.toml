@@ -7,8 +7,8 @@ edition = "2021"
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
-assert_cmd = "2.0.5"
-assert_fs = "1.0.7"
+assert_cmd = "2.0.6"
+assert_fs = "1.0.9"
 async-recursion = "1.0.0"
 cached = { workspace = true }
 chrono = { version = "0.4.22", features = ["serde"] }
@@ -24,7 +24,7 @@ json_comments = "0.2.1"
 lazy_static = "1.4.0"
 md5 = "0.7.0"
 pathdiff = "0.2.1"
-regex = "1.6.0"
+regex = "1.7.0"
 semver = "1.0.14"
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }

@@ -35,15 +35,15 @@ moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../core/vcs" }
 moon_workspace = { path = "../core/workspace" }
 async-recursion = "1.0.0"
-clap = { version = "4.0.18", features = ["derive", "env", "wrap_help"] }
+clap = { version = "4.0.23", features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.3.0"
 console = "0.15.2"
 console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
 futures = "0.3.25"
-indicatif = "0.17.1"
+indicatif = "0.17.2"
 itertools = "0.10.5"
-mimalloc = { version = "0.1.30", default-features = false }
+mimalloc = { version = "0.1.31", default-features = false }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -56,9 +56,9 @@ tokio = { workspace = true }
 moon_archive = { path = "../core/archive" }
 moon_cache = { path = "../core/cache" }
 moon_notifier = { path = "../core/notifier" }
-assert_cmd = "2.0.5"
+assert_cmd = "2.0.6"
 insta = "1.21.0"
-predicates = "2.1.1"
+predicates = "2.1.3"
 pretty_assertions = "1.3.0"
 serial_test = "0.9.0"
 wiremock = "0.5.15"

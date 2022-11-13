@@ -15,7 +15,7 @@ rustc-hash = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]
-assert_fs = "1.0.7"
+assert_fs = "1.0.9"
 filetime = "0.2.18"
 tokio = { workspace = true, features = ["test-util"] }
 serial_test = "0.9.0"

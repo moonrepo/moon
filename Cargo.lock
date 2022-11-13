@@ -68,11 +68,11 @@ dependencies = [
 
 [[package]]
 name = "assert_cmd"
-version = "2.0.5"
+version = "2.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5c2ca00549910ec251e3bd15f87aeeb206c9456b9a77b43ff6c97c54042a472"
+checksum = "ba45b8163c49ab5f972e59a8a5a03b6d2972619d486e19ec9fe744f7c2753d3c"
 dependencies = [
- "bstr",
+ "bstr 1.0.1",
  "doc-comment",
  "predicates",
  "predicates-core",
@@ -82,9 +82,9 @@ dependencies = [
 
 [[package]]
 name = "assert_fs"
-version = "1.0.7"
+version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf09bb72e00da477c2596865e8873227e2196d263cca35414048875dbbeea1be"
+checksum = "1429b32ede0cb31afd9f6cb1e8f06f1e32a4c75ed9290f9f4d3cda0c5981e061"
 dependencies = [
  "doc-comment",
  "globwalk",
@@ -273,6 +273,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bstr"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fca0852af221f458706eb0725c03e4ed6c46af9ac98e6a689d5e634215d594dd"
+dependencies = [
+ "memchr",
+ "once_cell",
+ "regex-automata",
+ "serde",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -377,9 +389,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.22"
+version = "0.4.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfd4d1b31faaa3a89d7934dbded3111da0d2ef28e3ebccdb4f0179f5929d1ef1"
+checksum = "16b0a3d9ed01224b22057780a37bb8c5dbfe1be8ba48678e7bf57ec4b385411f"
 dependencies = [
  "iana-time-zone",
  "js-sys",
@@ -472,9 +484,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.0.18"
+version = "4.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "335867764ed2de42325fafe6d18b8af74ba97ee0c590fa016f157535b42ab04b"
+checksum = "0eb41c13df48950b20eb4cd0eefa618819469df1bffc49d11e8487c4ba0037e5"
 dependencies = [
  "atty",
  "bitflags",
@@ -488,9 +500,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.0.18"
+version = "4.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16a1b0f6422af32d5da0c58e2703320f379216ee70198241c84173a8c5ac28f3"
+checksum = "0177313f9f02afc995627906bbd8967e2be069f5261954222dac78290c2b9014"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -1233,7 +1245,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a1e17342619edbc21a964c2afbeb6c820c6a2560032872f397bb97ea127bd0a"
 dependencies = [
  "aho-corasick",
- "bstr",
+ "bstr 0.2.17",
  "fnv",
  "log",
  "regex",
@@ -1513,12 +1525,13 @@ dependencies = [
 
 [[package]]
 name = "indicatif"
-version = "0.17.1"
+version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfddc9561e8baf264e0e45e197fd7696320026eb10a8180340debc27b18f535b"
+checksum = "4295cbb7573c16d310e99e713cf9e75101eb190ab31fccd35f2d2691b4352b19"
 dependencies = [
  "console",
  "number_prefix",
+ "portable-atomic",
  "unicode-width",
 ]
 
@@ -1627,9 +1640,9 @@ checksum = "c0f80d65747a3e43d1596c7c5492d95d5edddaabd45a7fcdb02b95f644164966"
 
 [[package]]
 name = "libmimalloc-sys"
-version = "0.1.26"
+version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fc093ab289b0bfda3aa1bdfab9c9542be29c7ef385cfcbe77f8c9813588eb48"
+checksum = "c37567b180c1af25924b303ddf1ee4467653783440c62360beb2b322a4d93361"
 dependencies = [
  "cc",
 ]
@@ -1709,9 +1722,9 @@ dependencies = [
 
 [[package]]
 name = "mimalloc"
-version = "0.1.30"
+version = "0.1.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76ce6a4b40d3bff9eb3ce9881ca0737a85072f9f975886082640cd46a75cdb35"
+checksum = "b32d6a9ac92d0239d7bfa31137fb47634ac7272a3c11bcee91379ac100781670"
 dependencies = [
  "libmimalloc-sys",
 ]
@@ -1771,7 +1784,7 @@ dependencies = [
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
- "clap 4.0.18",
+ "clap 4.0.23",
  "moon_platform",
  "moon_utils",
  "rustc-hash",
@@ -1817,7 +1830,7 @@ version = "0.18.2"
 dependencies = [
  "assert_cmd",
  "async-recursion",
- "clap 4.0.18",
+ "clap 4.0.23",
  "clap_lex 0.3.0",
  "console",
  "console-subscriber",
@@ -2373,9 +2386,9 @@ checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "once_cell"
-version = "1.13.1"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "074864da206b4973b84eb91683020dbefd6a8c3f0f38e054d93954e891935e4e"
+checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 
 [[package]]
 name = "oorandom"
@@ -2701,6 +2714,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "portable-atomic"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15eb2c6e362923af47e13c23ca5afb859e83d54452c55b0b9ac763b8f7c1ac16"
+
+[[package]]
 name = "ppv-lite86"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2708,9 +2727,9 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "predicates"
-version = "2.1.1"
+version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5aab5be6e4732b473071984b3164dbbfb7a3674d30ea5ff44410b6bcd960c3c"
+checksum = "ed6bd09a7f7e68f3f0bf710fb7ab9c4615a488b58b5f653382a687701e458c92"
 dependencies = [
  "difflib",
  "float-cmp",
@@ -2940,9 +2959,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.6.0"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c4eb3267174b8c6c2f654116623910a0fef09c4753f8dd83db29c48a0df988b"
+checksum = "e076559ef8e241f2ae3479e36f97bd5741c0330689e217ad51ce2c76808b868a"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -4092,7 +4111,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06c7a3bac6110ac062b7b422a442b7ee23e07209e2784a036654cab1e71bbafc"
 dependencies = [
- "bstr",
+ "bstr 0.2.17",
  "const_format",
  "itertools",
  "nom",

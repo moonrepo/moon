@@ -142,6 +142,7 @@ const sidebars = {
 		'guides/git-hooks',
 		'guides/open-source',
 		'guides/profile',
+		'guides/remote-cache',
 		'guides/root-project',
 		'guides/sharing-config',
 		'guides/webhooks',

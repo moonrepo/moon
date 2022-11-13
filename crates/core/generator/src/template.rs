@@ -20,6 +20,7 @@ const LOG_TARGET: &str = "moon:generator:template";
 #[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
     Create,
+    Merge,
     Replace,
     Skip,
 }

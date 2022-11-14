@@ -12,7 +12,10 @@
       "path": "packages/types"
     },
     {
-      "path": "packages/visualizer"
+      "path": "packages/visualizer-browser"
+    },
+    {
+      "path": "packages/visualizer-core"
     },
     {
       "path": "website"

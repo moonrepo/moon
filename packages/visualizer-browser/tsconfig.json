@@ -20,12 +20,15 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "outDir": "../../.moon/cache/types/packages/visualizer"
+    "outDir": "../../.moon/cache/types/packages/visualizer-browser"
   },
   "include": [
     "src"
   ],
   "references": [
+    {
+      "path": "../visualizer-core"
+    },
     {
       "path": "./tsconfig.node.json"
     }

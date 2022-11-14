@@ -3081,6 +3081,30 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@moonrepo/visualizer-browser@workspace:packages/visualizer-browser":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/visualizer-browser@workspace:packages/visualizer-browser"
+  dependencies:
+    "@moonrepo/visualizer-core": "workspace:*"
+    "@preact/preset-vite": 2.4.0
+    eslint-config-preact: 1.3.0
+    preact: 10.11.2
+    typescript: 4.6.4
+    vite: 3.2.3
+    vite-plugin-css-injected-by-js: 2.1.1
+  languageName: unknown
+  linkType: soft
+
+"@moonrepo/visualizer-core@workspace:*, @moonrepo/visualizer-core@workspace:packages/visualizer-core":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/visualizer-core@workspace:packages/visualizer-core"
+  dependencies:
+    "@types/cytoscape": 3.19.9
+    cytoscape: 3.23.0
+    packemon: ^2.4.1
+  languageName: unknown
+  linkType: soft
+
 "@nicolo-ribaudo/eslint-scope-5-internals@npm:5.1.1-v1":
   version: 5.1.1-v1
   resolution: "@nicolo-ribaudo/eslint-scope-5-internals@npm:5.1.1-v1"
@@ -15733,21 +15757,6 @@ __metadata:
   checksum: ee5726e10d170472cde778fc22e0f7499caa096eb85babea5d0ce0941455b721037ee1c9e6ae506ca2803250acd313d0f464328ead0b55cfe7cb6315f1b462d6
   languageName: node
   linkType: hard
-
-"visualizer@workspace:packages/visualizer":
-  version: 0.0.0-use.local
-  resolution: "visualizer@workspace:packages/visualizer"
-  dependencies:
-    "@preact/preset-vite": 2.4.0
-    "@types/cytoscape": 3.19.9
-    cytoscape: 3.23.0
-    eslint-config-preact: 1.3.0
-    preact: 10.11.2
-    typescript: 4.6.4
-    vite: 3.2.3
-    vite-plugin-css-injected-by-js: 2.1.1
-  languageName: unknown
-  linkType: soft
 
 "vite-plugin-css-injected-by-js@npm:2.1.1":
   version: 2.1.1

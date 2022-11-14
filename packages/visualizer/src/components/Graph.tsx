@@ -1,11 +1,12 @@
-import type { WorkspaceInfo } from '../lib/types';
-import React, { useEffect, useRef } from 'react';
 import cytoscape from 'cytoscape';
+import { useEffect, useRef } from 'preact/compat';
+import type { WorkspaceInfo } from '../lib/types';
 
 export const Graph = () => {
 	const graphRef = useRef<HTMLDivElement>(null);
 
 	const drawGraph = () => {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const data: WorkspaceInfo = JSON.parse(window.GRAPH_DATA);
 		const nodes = data.nodes.map((n) => ({
 			data: { id: n.id.toString(), label: n.label },

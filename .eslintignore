@@ -15,3 +15,7 @@ umd/
 
 # Test fixtures
 /tests
+
+# Vite
+vite-env.d.ts
+vite.config.ts

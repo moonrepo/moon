@@ -1,11 +1,11 @@
-use crate::helpers::AnyError;
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use crate::commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server};
+use moon_runner::DepGraph;
 use moon_task::Target;
 
-pub async fn dep_graph(target_id: &Option<String>) -> Result<(), AnyError> {
-    let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace)?;
-    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
+pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    let (server, mut tera, workspace) = setup_server().await?;
+    let projects = workspace.projects;
+    let mut graph = DepGraph::default();
 
     // Focus a target and its dependencies/dependents
     if let Some(id) = target_id {
@@ -23,7 +23,10 @@ pub async fn dep_graph(target_id: &Option<String>) -> Result<(), AnyError> {
         }
     }
 
-    println!("{}", dep_builder.build().to_dot());
+    let graph_info = dep_graph_repr(&graph).await;
+    respond_to_request(server, &mut tera, &graph_info)?;
+
+    println!("{}", graph.to_dot());
 
     Ok(())
 }

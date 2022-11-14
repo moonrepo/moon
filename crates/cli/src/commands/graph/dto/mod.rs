@@ -1,1 +1,1 @@
-pub mod workspace_info;
+pub mod graph;

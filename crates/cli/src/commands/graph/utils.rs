@@ -11,7 +11,7 @@ use tera::{Context, Tera};
 use tiny_http::{Header, Response, Server};
 
 const INDEX_HTML: &str = include_str!("index.html.tera");
-const LOG_TARGET: &str = "moon:graph";
+const LOG_TARGET: &str = "moon:graph::utils";
 
 #[derive(Debug, Serialize)]
 pub struct RenderContext {
@@ -86,7 +86,11 @@ pub fn respond_to_request(
     tera: &mut Tera,
     graph: &GraphInfoDto,
 ) -> Result<(), AnyError> {
-    info!(target: LOG_TARGET, "Starting server");
+    info!(
+        target: LOG_TARGET,
+        r#"Starting server on "{}""#,
+        server.server_addr()
+    );
     for req in server.incoming_requests() {
         let response = match req.url() {
             "/graph-data" => {

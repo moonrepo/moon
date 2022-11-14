@@ -382,17 +382,48 @@ pub async fn generate(
             continue;
         }
 
-        if file.dest_path.exists()
-            && (options.force
-                || file.is_forced()
-                || Confirm::with_theme(&theme)
+        if file.dest_path.exists() {
+            if options.force || file.is_forced() {
+                file.state = FileState::Replace;
+                continue;
+            }
+
+            // Merge files when applicable
+            if file.is_mergeable().is_some() {
+                let operations = [
+                    "Keep existing file",
+                    "Merge new file into existing file",
+                    "Replace existing with new file",
+                ];
+
+                let index = Select::with_theme(&theme)
                     .with_prompt(format!(
-                        "File {} already exists, overwrite?",
+                        "File {} already exists, what to do?",
                         color::path(&file.dest_path)
                     ))
-                    .interact()?)
-        {
-            file.state = FileState::Replace;
+                    .default(2)
+                    .items(&operations)
+                    .interact()?;
+
+                file.state = match index {
+                    0 => FileState::Skip,
+                    1 => FileState::Merge,
+                    _ => FileState::Replace,
+                };
+
+                continue;
+            }
+
+            // Confirm whether to replace file
+            if Confirm::with_theme(&theme)
+                .with_prompt(format!(
+                    "File {} already exists, overwrite?",
+                    color::path(&file.dest_path)
+                ))
+                .interact()?
+            {
+                file.state = FileState::Replace;
+            }
         }
     }
 
@@ -408,10 +439,12 @@ pub async fn generate(
             "{} {} {}",
             match &file.state {
                 FileState::Create => color::success("created"),
+                FileState::Merge => color::success("merged"),
                 FileState::Replace => color::failure("replaced"),
                 FileState::Skip => color::invalid("skipped"),
             },
             match &file.state {
+                FileState::Merge => color::muted("--->"),
                 FileState::Replace => color::muted("->"),
                 _ => color::muted("-->"),
             },

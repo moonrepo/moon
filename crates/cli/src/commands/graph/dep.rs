@@ -1,9 +1,16 @@
-use crate::commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server};
+use crate::{
+    commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server},
+    helpers::load_workspace,
+};
 use moon_runner::DepGraph;
 use moon_task::Target;
 
-pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
-    let (server, mut tera, workspace) = setup_server().await?;
+pub async fn dep_graph(
+    target_id: &Option<String>,
+    dot: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let workspace = load_workspace().await?;
+    let (server, mut tera) = setup_server().await?;
     let projects = workspace.projects;
     let mut graph = DepGraph::default();
 
@@ -24,9 +31,11 @@ pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::er
     }
 
     let graph_info = dep_graph_repr(&graph).await;
-    respond_to_request(server, &mut tera, &graph_info)?;
-
-    println!("{}", graph.to_dot());
+    if dot {
+        println!("{}", graph.to_dot());
+    } else {
+        respond_to_request(server, &mut tera, &graph_info)?;
+    }
 
     Ok(())
 }

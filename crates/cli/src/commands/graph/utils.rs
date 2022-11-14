@@ -1,7 +1,8 @@
 use std::{collections::HashSet, env};
 
 use super::dto::graph::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
-use crate::helpers::{load_workspace, AnyError};
+use crate::helpers::AnyError;
+use moon_logger::info;
 use moon_runner::DepGraph;
 use moon_workspace::Workspace;
 use petgraph::Graph;
@@ -10,6 +11,7 @@ use tera::{Context, Tera};
 use tiny_http::{Header, Response, Server};
 
 const INDEX_HTML: &str = include_str!("index.html.tera");
+const LOG_TARGET: &str = "moon:graph";
 
 #[derive(Debug, Serialize)]
 pub struct RenderContext {
@@ -17,7 +19,7 @@ pub struct RenderContext {
     pub js_url: String,
 }
 
-pub async fn setup_server() -> Result<(Server, Tera, Workspace), AnyError> {
+pub async fn setup_server() -> Result<(Server, Tera), AnyError> {
     let port = match env::var("PORT") {
         Ok(p) => p.parse::<u16>().unwrap(),
         Err(..) => 8000,
@@ -30,10 +32,8 @@ pub async fn setup_server() -> Result<(Server, Tera, Workspace), AnyError> {
     let server = Server::http(address).unwrap();
 
     let tera = Tera::default();
-    let workspace = load_workspace().await?;
-    workspace.projects.load_all()?;
 
-    Ok((server, tera, workspace))
+    Ok((server, tera))
 }
 
 pub fn extract_nodes_and_edges_from_graph(graph: &Graph<String, ()>) -> GraphInfoDto {
@@ -86,6 +86,7 @@ pub fn respond_to_request(
     tera: &mut Tera,
     graph: &GraphInfoDto,
 ) -> Result<(), AnyError> {
+    info!(target: LOG_TARGET, "Starting server");
     for req in server.incoming_requests() {
         let response = match req.url() {
             "/graph-data" => {

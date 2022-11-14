@@ -127,7 +127,7 @@ impl TemplateFile {
     }
 
     pub fn should_write(&self) -> bool {
-        matches!(self.state, FileState::Create) || matches!(self.state, FileState::Replace)
+        !matches!(self.state, FileState::Skip)
     }
 }
 
@@ -302,23 +302,16 @@ impl Template {
         if matches!(file.state, FileState::Merge) {
             match file.is_mergeable() {
                 Some("json") => {
-                    json::write_raw(
-                        &file.dest_path,
-                        json::merge(
-                            &json::read_raw(&file.dest_path)?,
-                            &json::read_raw(&file.source_path)?,
-                        ),
-                        true,
-                    )?;
+                    let prev = json::read_raw(&file.dest_path)?;
+                    let next = json::read_raw(&file.source_path)?;
+
+                    json::write_raw(&file.dest_path, json::merge(&prev, &next), true)?;
                 }
                 Some("yaml") => {
-                    yaml::write_raw(
-                        &file.dest_path,
-                        yaml::merge(
-                            &yaml::read_raw(&file.dest_path)?,
-                            &yaml::read_raw(&file.source_path)?,
-                        ),
-                    )?;
+                    let prev = yaml::read_raw(&file.dest_path)?;
+                    let next = yaml::read_raw(&file.source_path)?;
+
+                    yaml::write_raw(&file.dest_path, yaml::merge(&prev, &next))?;
                 }
                 _ => {}
             }

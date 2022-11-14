@@ -29,7 +29,8 @@
 - Fixed an issue where passthrough args were incorrectly being passed to non-primary targets when
   using `moon run`.
 - Fixed an issue where a root-level project was not being marked as affected based on touched files.
-- Fixed an issue where tool version overrides at the project-level were not properly being set.
+- Fixed an issue where tool version overrides at the project-level were not properly being set, and
+  configuration that is root-only was being referenced in projects.
 - Fixed some CLI arguments that should be ran mutually exclusive with other arguments.
 - Task hashes will now properly invalidate if their dependencies hashes have also changed.
 

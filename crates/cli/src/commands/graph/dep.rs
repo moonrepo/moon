@@ -13,6 +13,9 @@ pub async fn dep_graph(
     let projects = workspace.projects;
     let mut graph = DepGraph::default();
 
+    // Preload all projects
+    projects.load_all()?;
+
     // Focus a target and its dependencies/dependents
     if let Some(id) = target_id {
         let target = Target::parse(id)?;

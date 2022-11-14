@@ -119,7 +119,7 @@ side-effect. This is a necessary step in supporting new languages, especially fo
 install dependencies in the workspace for all projects, and must install them per project.</p><p>This also means that moon now supports non-<code>package.json</code> workspaces! If your repository <em>is not</em>
 using npm/pnpm/yarn workspaces, or a project <em>is not</em> listed within the workspaces glob list,
 dependencies will be installed within the project.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="typescript-improvements">TypeScript improvements<a class="hash-link" href="#typescript-improvements" title="Direct link to heading">​</a></h2><h3 class="anchor anchorWithStickyNavbar_JmGV" id="routing-outdir-to-the-cache">Routing <code>outDir</code> to the cache<a class="hash-link" href="#routing-outdir-to-the-cache" title="Direct link to heading">​</a></h3><p>A requirement for using project references is that each project must compile declarations (<code>.d.ts</code>)
-so that consumers/dependees can resolve type information. While this makes sense, it becomes rather
+so that consumers/dependents can resolve type information. While this makes sense, it becomes rather
 unfortunate as each project folder is now littered with the declaration outputs, which are typically
 gitignored.</p><p>To improve this experience, we're introducing a new setting
 <a href="/docs/config/workspace#routeoutdirtocache"><code>typescript.routeOutDirToCache</code></a>, that will update the

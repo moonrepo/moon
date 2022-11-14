@@ -10,7 +10,6 @@ pub async fn dep_graph(
     dot: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
-    let (server, mut tera) = setup_server().await?;
     let projects = workspace.projects;
     let mut graph = DepGraph::default();
 
@@ -30,10 +29,11 @@ pub async fn dep_graph(
         }
     }
 
-    let graph_info = dep_graph_repr(&graph).await;
     if dot {
         println!("{}", graph.to_dot());
     } else {
+        let (server, mut tera) = setup_server().await?;
+        let graph_info = dep_graph_repr(&graph).await;
         respond_to_request(server, &mut tera, &graph_info)?;
     }
 

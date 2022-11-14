@@ -1,5 +1,4 @@
 use moon_action::{Action, ActionContext, ActionStatus};
-use moon_config::NodeConfig;
 use moon_logger::debug;
 use moon_platform::Runtime;
 use moon_toolchain::tools::node::NodeTool;
@@ -45,15 +44,12 @@ pub async fn setup_toolchain(
 
             // The workspace version is pre-registered when the toolchain
             // is created, so any missing version must be an override at
-            // the project-level. If so, use config defaults.
+            // the project-level. If so clone, and update defaults.
             if !node.has(&version.0) {
                 node.register(
                     NodeTool::new(
                         &toolchain_paths,
-                        &NodeConfig {
-                            version: version.0.to_owned(),
-                            ..NodeConfig::default()
-                        },
+                        &node.get()?.config.with_project_override(&version.0),
                     )?,
                     false,
                 );

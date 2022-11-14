@@ -19,10 +19,18 @@
 - When writing JSON files, indentation and formatting will be inferred from the closest
   `.editorconfig` as best as possible.
 - When applicable, `moon ci` will group and collapse logs based on the current CI/CD environment.
-- Added an `affectedFiles` task option, allowing a filtered list of paths based on affected files to
-  be passed as command line arguments. Perfect for git hooks!
 - Updated webhook payloads to contain information about the current CI/CD environment under the
   `environment` field.
+
+##### Runner
+
+- Added an `affectedFiles` task option, allowing a filtered list of paths based on affected files to
+  be passed as command line arguments. Perfect for git hooks!
+
+##### Generator
+
+- When generating files and a JSON or YAML file exists at the destination, you now have the option
+  of merging files, instead of replacing entirely.
 
 #### 🐞 Fixes
 

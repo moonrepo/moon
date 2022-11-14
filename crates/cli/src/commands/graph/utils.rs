@@ -1,21 +1,21 @@
-use std::{collections::HashSet, env};
-
-use super::dto::graph::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
+use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use crate::helpers::AnyError;
 use moon_logger::info;
 use moon_runner::DepGraph;
 use moon_workspace::Workspace;
 use petgraph::Graph;
 use serde::Serialize;
+use std::{collections::HashSet, env};
 use tera::{Context, Tera};
 use tiny_http::{Header, Response, Server};
 
-const INDEX_HTML: &str = include_str!("index.html.tera");
+const INDEX_HTML: &str = include_str!("graph.html.tera");
 const LOG_TARGET: &str = "moon:graph::utils";
 
 #[derive(Debug, Serialize)]
 pub struct RenderContext {
     pub graph_data: String,
+
     pub js_url: String,
 }
 

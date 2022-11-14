@@ -64,8 +64,8 @@
 
 ##### Generator
 
-- Updated the generator to now support merging JSON and YAML files when it exists in both the
-  destination and source.
+- When generating files and a JSON or YAML file exists at the destination, you now have the option
+  of merging files, instead of replacing entirely.
 
 #### 🐞 Fixes
 

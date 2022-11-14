@@ -15,6 +15,7 @@ name = "runner_benchmark"
 harness = false
 
 [dependencies]
+moonbase = { path = "../moonbase" }
 moon_action = { path = "../action" }
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }

@@ -14,7 +14,7 @@ moon_node_lang = { path = "../../node/lang" }
 moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
 async-trait = "0.1.58"
-reqwest = { version = "0.11.12", features = ["native-tls-vendored"] }
+reqwest = { workspace = true, features = ["native-tls-vendored"] }
 sha2 = "0.10.6"
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }

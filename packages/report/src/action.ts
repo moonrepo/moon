@@ -7,8 +7,8 @@ export function getIconForStatus(status: ActionStatus): string {
 	switch (status) {
 		case 'cached':
 			return '🟪';
-		// case 'cached-remote':
-		// 	return '🟦';
+		case 'cached-from-remote':
+			return '🟦';
 		case 'failed':
 		case 'failed-and-abort':
 			return '🟥';
@@ -29,7 +29,7 @@ export function hasFailed(status: ActionStatus): boolean {
 }
 
 export function hasPassed(status: ActionStatus): boolean {
-	return status === 'passed' || status === 'cached';
+	return status === 'passed' || status === 'cached' || status === 'cached-from-remote';
 }
 
 export function isFlaky(action: Action): boolean {

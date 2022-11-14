@@ -1,6 +1,7 @@
 import type { Duration, Runtime } from './common';
 
 export type ActionStatus =
+	| 'cached-from-remote'
 	| 'cached'
 	| 'failed-and-abort'
 	| 'failed'

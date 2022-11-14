@@ -100,6 +100,8 @@ impl Git {
         let mut cache = self.cache.write().await;
         let (mut cache_key, _) = command.get_command_line();
 
+        cache_key += command.get_input_line().as_ref();
+
         if trim {
             cache_key += " [trimmed]";
         }
@@ -166,6 +168,7 @@ impl Vcs for Git {
 
     async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
         let mut objects = vec![];
+        let mut map = BTreeMap::new();
 
         for file in files {
             if !self.is_file_ignored(file) {
@@ -173,17 +176,20 @@ impl Vcs for Git {
             }
         }
 
+        if objects.is_empty() {
+            return Ok(map);
+        }
+
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
         let output = self
-            .create_command(vec!["hash-object", "--stdin-paths"])
-            .input(&[objects.join("\n")])
-            .exec_capture_output()
+            .run_command(
+                self.create_command(vec!["hash-object", "--stdin-paths"])
+                    .input(&[objects.join("\n")]),
+                true,
+            )
             .await?;
-        let output = output_to_trimmed_string(&output.stdout);
-
-        let mut map = BTreeMap::new();
 
         for (index, hash) in output.split('\n').enumerate() {
             if !hash.is_empty() {
@@ -222,6 +228,37 @@ impl Vcs for Git {
         }
 
         Ok(map)
+    }
+
+    async fn get_repository_slug(&self) -> VcsResult<String> {
+        let output = self
+            .run_command(
+                &mut self.create_command(vec!["remote", "get-url", "origin"]),
+                true,
+            )
+            .await?;
+
+        // git@github.com:moonrepo/moon.git
+        let remote = if output.starts_with("git@") {
+            format!("https://{}", output.replace(':', "/"))
+            // https://github.com/moonrepo/moon
+        } else {
+            output
+        };
+
+        let url = url::Url::parse(&remote)
+            .map_err(|e| VcsError::FailedToParseGitRemote(e.to_string()))?;
+        let mut slug = url.path();
+
+        if slug.starts_with('/') {
+            slug = &slug[1..];
+        }
+
+        if slug.ends_with(".git") {
+            slug = &slug[0..(slug.len() - 4)];
+        }
+
+        Ok(slug.to_owned())
     }
 
     // https://git-scm.com/docs/git-status#_short_format

@@ -1,0 +1,73 @@
+---
+title: Remote caching (experimental)
+toc_max_heading_level: 6
+---
+
+import RemoteCacheBeta from '@site/src/components/Forms/RemoteCacheBeta';
+
+Is your CI pipeline running slower than usual? Are you tired of running the same build over and over
+although nothing has changed? Do you wish to reuse the same local cache across other machines and
+environments? These are just a few scenarios that remote caching aims to solve.
+
+Remote caching is a system that shares artifacts to improve performance, reduce unnecessary
+computation time, and alleviate resources. It achieves this by uploading hashed artifacts to a cloud
+storage provider, like AWS S3 or Google Cloud, and downloading them on demand when a build matches a
+derived hash.
+
+## Beta sign up
+
+Remote caching _is not yet_ available for general use and is currently in beta while we iron out the
+systems. However, you may sign up for the beta and we'll notify you once you've been accepted!
+
+<RemoteCacheBeta />
+
+> We are only accepting beta sign ups for open source or public facing projects.
+
+## Enabling remote caching
+
+Once your beta signup has been accepted, you'll be granted 2 API keys. The first is the secret key
+for your entire organization, and the second is an access key specific to the repository you signed
+up for.
+
+In that repositories CI environment, set the following environment variables.
+
+```
+MOONBASE_SECRET_KEY=<secret key>
+MOONBASE_API_KEY=<api key>
+```
+
+moon will automatically authenticate the remote caching service when all credentials in the
+environment exist.
+
+## FAQ
+
+#### What is an artifact?
+
+In the context of moon and remote caching, an artifact is a tar archive (`.tar.gz`) that contains
+all [outputs of a task](../config/project#outputs), as well as the stdout and stderr of the task
+that generated the outputs. Artifacts are uniquely identified by the
+[moon generated hash](../concepts/cache#hashing).
+
+#### Do I have to use remote caching?
+
+No, remote caching is _optional_. It's intended purpose is to store long lived build artifacts to
+speed up CI pipelines, and optionally local development. For the most part,
+[`moon ci`](../commands/ci) does a great job of only running what's affected in pull requests, and
+is a great starting point.
+
+#### Does remote caching store source code?
+
+No, remote caching _does not_ store source code. It stores the
+[outputs of a task](../config/project#outputs), which is typically built and compiled code. To
+verify this, you can inspect the tar archives in `.moon/cache/outputs`.
+
+#### Does moon collect any personally identifiable information?
+
+No, moon does not collect any PII as part of the remote caching process.
+
+However, to use remote caching, you must create a moonrepo account in which we require an email
+address, and information about your organization and repository.
+
+#### What is an artifacts lifetime / retention policy?
+
+Public artifacts are stored for 1 month. Private artifacts are stored for 3 months.

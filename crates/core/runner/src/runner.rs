@@ -2,6 +2,7 @@ use crate::actions;
 use crate::dep_graph_new::DepGraph;
 use crate::errors::{DepGraphError, RunnerError};
 use crate::subscribers::local_cache::LocalCacheSubscriber;
+use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
 use console::Term;
 use moon_action::{Action, ActionContext, ActionNode, ActionStatus};
 use moon_cache::RunReport;
@@ -455,9 +456,10 @@ impl Runner {
 
         for result in results {
             let status = match result.status {
-                ActionStatus::Passed | ActionStatus::Cached | ActionStatus::Skipped => {
-                    color::success("pass")
-                }
+                ActionStatus::Passed
+                | ActionStatus::Cached
+                | ActionStatus::CachedFromRemote
+                | ActionStatus::Skipped => color::success("pass"),
                 ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
                 ActionStatus::Invalid => color::invalid("warn"),
                 _ => color::muted_light("oops"),
@@ -465,7 +467,10 @@ impl Runner {
 
             let mut meta: Vec<String> = vec![];
 
-            if matches!(result.status, ActionStatus::Cached) {
+            if matches!(
+                result.status,
+                ActionStatus::Cached | ActionStatus::CachedFromRemote
+            ) {
                 meta.push(String::from("cached"));
             } else if matches!(result.status, ActionStatus::Skipped) {
                 meta.push(String::from("skipped"));
@@ -508,7 +513,7 @@ impl Runner {
             }
 
             match result.status {
-                ActionStatus::Cached => {
+                ActionStatus::Cached | ActionStatus::CachedFromRemote => {
                     cached_count += 1;
                     pass_count += 1;
                 }
@@ -573,14 +578,24 @@ impl Runner {
     async fn create_emitter(&self, workspace: Arc<RwLock<Workspace>>) -> Emitter {
         let mut emitter = Emitter::new(Arc::clone(&workspace));
 
-        // For security and privacy purposes, only send webhooks from a CI environment
-        if is_ci() || is_test_env() {
-            if let Some(webhook_url) = &workspace.read().await.config.notifier.webhook_url {
+        {
+            let local_workspace = workspace.read().await;
+
+            // For security and privacy purposes, only send webhooks from a CI environment
+            if is_ci() || is_test_env() {
+                if let Some(webhook_url) = &local_workspace.config.notifier.webhook_url {
+                    emitter
+                        .subscribers
+                        .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
+                            webhook_url.to_owned(),
+                        ))));
+                }
+            }
+
+            if local_workspace.session.is_some() {
                 emitter
                     .subscribers
-                    .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
-                        webhook_url.to_owned(),
-                    ))));
+                    .push(Arc::new(RwLock::new(MoonbaseCacheSubscriber::new())));
             }
         }
 

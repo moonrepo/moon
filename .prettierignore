@@ -11,6 +11,7 @@ lib/
 mjs/
 node_modules/
 umd/
+dist/
 
 # Node.js formats differently
 *.json

@@ -18,7 +18,7 @@ for package in packages/*; do
 		echo "Not publishing"
 	else
 		cd "./$package" || exit
-		# We cant use npm because of: https://github.com/npm/cli/issues/2610
+		# We can't use npm because of: https://github.com/npm/cli/issues/2610
 		yarn npm publish --tag "$tag" --access public
 		cd ../..
 	fi

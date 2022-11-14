@@ -44,8 +44,9 @@ console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
 indicatif = "0.17.2"
 itertools = "0.10.5"
-lazy_static = { workspace = true }
 mimalloc = { version = "0.1.32", default-features = false }
+petgraph = { workspace = true }
+lazy_static = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

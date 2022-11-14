@@ -1916,6 +1916,7 @@ dependencies = [
  "moon_utils",
  "moon_vcs",
  "moon_workspace",
+ "petgraph",
  "rustc-hash",
  "serde",
  "serde_json",

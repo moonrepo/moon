@@ -138,6 +138,10 @@ impl<'e> Event<'e> {
 
         key.to_owned()
     }
+
+    pub fn is_end(&self) -> bool {
+        matches!(self, Event::RunnerAborted { .. }) || matches!(self, Event::RunnerFinished { .. })
+    }
 }
 
 pub enum EventFlow {

@@ -9,6 +9,7 @@ use moon_project_graph::ProjectGraph;
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
 use moon_vcs::{Vcs, VcsLoader};
+use moonbase::Moonbase;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -114,6 +115,9 @@ pub struct Workspace {
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
 
+    /// When logged in, the auth token and IDs for making API requests.
+    pub session: Option<Moonbase>,
+
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
 
@@ -159,9 +163,26 @@ impl Workspace {
             config,
             projects,
             root: root_dir,
+            session: None,
             toolchain,
             vcs,
             working_dir: working_dir.to_owned(),
         })
+    }
+
+    pub async fn signin_to_moonbase(&mut self) -> Result<(), WorkspaceError> {
+        let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
+            return Ok(());
+        };
+
+        let Ok(api_key) = env::var("MOONBASE_API_KEY") else {
+            return Ok(());
+        };
+
+        let repo_slug = self.vcs.get_repository_slug().await?;
+
+        self.session = Moonbase::signin(secret_key, api_key, repo_slug).await;
+
+        Ok(())
     }
 }

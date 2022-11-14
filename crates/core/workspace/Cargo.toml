@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moonbase = { path = "../moonbase" }
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
@@ -13,5 +14,6 @@ moon_project_graph = { path = "../project-graph" }
 moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
+reqwest = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

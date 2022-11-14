@@ -3,6 +3,7 @@ use moon_error::MoonError;
 use moon_project_graph::ProjectError;
 use moon_toolchain::ToolchainError;
 use moon_vcs::VcsError;
+use moonbase::MoonbaseError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -36,6 +37,9 @@ pub enum WorkspaceError {
 
     #[error(transparent)]
     Moon(#[from] MoonError),
+
+    #[error(transparent)]
+    Moonbase(#[from] MoonbaseError),
 
     #[error(transparent)]
     Project(#[from] ProjectError),

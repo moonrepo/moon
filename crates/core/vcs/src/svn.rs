@@ -220,6 +220,10 @@ impl Vcs for Svn {
         Ok(map)
     }
 
+    async fn get_repository_slug(&self) -> VcsResult<String> {
+        panic!("Not implemented!");
+    }
+
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self

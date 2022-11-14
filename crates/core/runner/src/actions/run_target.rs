@@ -787,15 +787,20 @@ pub async fn run_target(
             runner.print_checkpoint(
                 Checkpoint::Pass,
                 match cache_location {
+                    HydrateFrom::LocalCache => "(cached)",
                     HydrateFrom::RemoteCache => "(cached from remote)",
-                    _ => "(cached)",
+                    HydrateFrom::PreviousOutput => "(cached from previous build)",
                 },
             )?;
 
             runner.print_cache_item().await?;
             runner.flush_output()?;
 
-            return Ok(ActionStatus::Cached);
+            return Ok(if matches!(cache_location, HydrateFrom::RemoteCache) {
+                ActionStatus::CachedFromRemote
+            } else {
+                ActionStatus::Cached
+            });
         }
     }
 

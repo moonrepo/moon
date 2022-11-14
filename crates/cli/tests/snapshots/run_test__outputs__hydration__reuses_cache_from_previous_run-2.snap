@@ -1,9 +1,9 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 803
+assertion_line: 572
 expression: get_assert_output(&assert2)
 ---
-▪▪▪▪ outputs:generateFileAndFolder (cached)
+▪▪▪▪ outputs:generateFileAndFolder (cached from previous build)
 
 Tasks: 1 completed (1 cached)
  Time: 100ms ❯❯❯❯ to the moon

@@ -1,6 +1,6 @@
 ---
 slug: v0.19
-title: v0.19 - ???
+title: v0.19 - Remote caching beta, affected files, and graph optimization
 authors: [milesj]
 tags: [affected, remote-cache]
 # image: ./img/v0.19.png
@@ -8,9 +8,26 @@ tags: [affected, remote-cache]
 
 import Image from '@site/src/components/Image';
 
-TODO
+With this release, we've focused heavily on our remote caching architecture. Since this is a massive
+task that requires much work behind the scenes, this overall release is rather light.
 
 <!--truncate-->
+
+## Remote caching beta
+
+A major request for moon is to support remote caching. This is a critical feature that allows
+artifacts to be shared across machines and environments, by storing them in a cloud storage
+provider, like AWS S3.
+
+We've been working on this feature for months, primarily behind the scenes building the necessary
+services and tools, and we've finally reached a point where we could integrate it with moon
+directly! However, since this feature is very complex, it's not yet available to the public, but
+while you wait, you can sign up for beta access! Jump over to the
+[official remote caching documentation for more information](../docs/guides/remote-cache)!
+
+We'll be working on remote caching through every release, continually polishing the implementation,
+supporting new features, enabling new regions, calculating pricing, so on and so forth. So stay
+tuned!
 
 ## Affected files filtering
 
@@ -74,7 +91,6 @@ full list of changes.
 - Package managers in the toolchain are now installed in isolation, instead of through Node.js.
 - JSON files will now respect the closest `.editorconfig` file.
 - Webhook payloads now include information about the running CI/CD environment.
-- Generator can now merge JSON and YAML template files.
 
 ## What's next?
 
@@ -82,3 +98,4 @@ Expect the following in the v0.20 release!
 
 - Continuation of remote caching work!
 - Performance improvements for output hydration.
+- Toolchain improvements.

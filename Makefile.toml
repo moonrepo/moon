@@ -41,7 +41,7 @@ cwd = "./tests/fixtures/cases"
 
 [tasks.test-nocoverage]
 command = "cargo"
-args = ["test", "--workspace"]
+args = ["nextest", "run"]
 
 [tasks.clean-test]
 script = "rm -rf ./tests/fixtures/cases/.moon/cache"
@@ -49,10 +49,6 @@ condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
 run_task = { name = ["clean-test", "setup-test", "test-nocoverage", "clean-test"] }
-
-[tasks.test-output]
-command = "cargo"
-args = ["test", "--workspace", "--", "--nocapture", "--show-output"]
 
 # CODE COVERAGE
 

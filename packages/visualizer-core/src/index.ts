@@ -1,9 +1,9 @@
 import cytoscape from 'cytoscape';
-import { WorkspaceInfo } from './types';
+import { GraphInfo } from './types';
 
 export * from './types';
 
-export const render = (element: HTMLElement, data: WorkspaceInfo) => {
+export const render = (element: HTMLElement, data: GraphInfo) => {
 	const nodes = data.nodes.map((n) => ({
 		data: { id: n.id.toString(), label: n.label },
 	}));

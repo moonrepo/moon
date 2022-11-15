@@ -1,15 +1,15 @@
-export interface WorkspaceNode {
+export interface GraphNode {
 	id: number;
 	label: string;
 }
 
-export interface WorkspaceEdge {
+export interface GraphEdge {
 	id: string;
 	source: number;
 	target: number;
 }
 
-export interface WorkspaceInfo {
-	nodes: WorkspaceNode[];
-	edges: WorkspaceEdge[];
+export interface GraphInfo {
+	nodes: GraphNode[];
+	edges: GraphEdge[];
 }

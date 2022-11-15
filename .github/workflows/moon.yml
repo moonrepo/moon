@@ -53,6 +53,9 @@ jobs:
         with:
           command: run
           args: -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
+        env:
+          MOONBASE_SECRET_KEY: ${{ secrets.MOONBASE_SECRET_KEY }}
+          MOONBASE_API_KEY: ${{ secrets.MOONBASE_API_KEY }}
       - uses: moonrepo/run-report-action@v1
         with:
           access-token: ${{ secrets.GITHUB_TOKEN }}

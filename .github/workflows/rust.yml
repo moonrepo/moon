@@ -15,7 +15,7 @@ on:
       - rust-toolchain.toml
 env:
   # Windows fails to compile right now...
-  WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+  WITH_COVERAGE: 'true' # ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 jobs:
   format:
     name: Format
@@ -76,25 +76,25 @@ jobs:
         uses: taiki-e/install-action@nextest
       - name: Install grcov
         uses: SierraSoftworks/setup-grcov@v1
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run tests with coverage
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
         env:
           NEXTEST_PROFILE: ci
       - name: Run tests
-        if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
+        if: ${{ env.WITH_COVERAGE == 'false' }}
         run: cargo make test
         env:
           NEXTEST_PROFILE: ci
       - name: Generate code coverage
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
       - name: Upload coverage report
         uses: actions/upload-artifact@v2
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         with:
           name: coverage-${{ matrix.os }}
           path: ./report.txt
@@ -114,6 +114,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          files: ./coverage/coverage-ubuntu-latest/report.txt,./coverage/coverage-macos-latest/report.txt
+          files: ./coverage/coverage-ubuntu-latest/report.txt,./coverage/coverage-macos-latest/report.txt,./coverage/coverage-windows-latest/report.txt
           flags: rust
           verbose: true

@@ -4,11 +4,14 @@ use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde_json::ser::PrettyFormatter;
+use serde_json::Serializer;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 
-pub use json::{from, parse, JsonValue};
+pub use serde_json::Value as JsonValue;
+// pub use json::{from, parse, JsonValue};
 
 #[inline]
 pub fn clean<D: AsRef<str>>(json: D) -> Result<String, MoonError> {
@@ -49,7 +52,7 @@ pub fn read_raw<T: AsRef<Path>>(path: T) -> Result<JsonValue, MoonError> {
     let path = path.as_ref();
     let data = read_to_string(path)?;
 
-    parse(&data).map_err(|e| MoonError::Generic(e.to_string()))
+    serde_json::from_str(&data).map_err(|e| map_json_to_error(e, path.to_path_buf()))
 }
 
 #[inline]
@@ -85,8 +88,11 @@ pub fn write_raw<P: AsRef<Path>>(path: P, json: JsonValue, pretty: bool) -> Resu
     let path = path.as_ref();
 
     if !pretty {
-        fs::write(path, json::stringify(json))
-            .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+        fs::write(
+            path,
+            serde_json::to_string(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?,
+        )
+        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
         return Ok(());
     }
@@ -98,14 +104,20 @@ pub fn write_raw<P: AsRef<Path>>(path: P, json: JsonValue, pretty: bool) -> Resu
     let insert_final_newline = editor_config
         .get::<FinalNewline>()
         .unwrap_or(FinalNewline::Value(true));
-
-    // json crate doesnt support tabs, so always use space indentation
-    let spaces = match indent_size {
-        IndentSize::UseTabWidth => 2,
-        IndentSize::Value(value) => value,
+    let indent = match indent_size {
+        IndentSize::UseTabWidth => "\t".into(),
+        IndentSize::Value(value) => " ".repeat(value),
     };
 
-    let mut data = json::stringify_pretty(json, spaces as u16);
+    // Based on serde_json::to_string_pretty!
+    let mut writer = Vec::with_capacity(128);
+    let mut serializer =
+        Serializer::with_formatter(&mut writer, PrettyFormatter::with_indent(indent.as_bytes()));
+
+    json.serialize(&mut serializer)
+        .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+
+    let mut data = unsafe { String::from_utf8_unchecked(writer) };
 
     if matches!(insert_final_newline, FinalNewline::Value(true)) {
         data += "\n";

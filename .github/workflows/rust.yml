@@ -15,7 +15,7 @@ on:
       - rust-toolchain.toml
 env:
   # Windows fails to compile right now...
-  WITH_COVERAGE: 'true' # ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+  WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 jobs:
   format:
     name: Format
@@ -68,29 +68,33 @@ jobs:
           toolchain: 1.65.0
           profile: minimal
           components: llvm-tools-preview
-      - uses: Swatinem/rust-cache@v2
-      - uses: davidB/rust-cargo-make@v1
-      - uses: taiki-e/install-action@nextest
-      - uses: SierraSoftworks/setup-grcov@v1
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-make
+        uses: davidB/rust-cargo-make@v1
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+      - name: Install grcov
+        uses: SierraSoftworks/setup-grcov@v1
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        name: Run tests with coverage
+      - name: Run tests with coverage
+        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
         env:
           NEXTEST_PROFILE: ci
-      - if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
-        name: Run tests
+      - name: Run tests
+        if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
         run: cargo make test
         env:
           NEXTEST_PROFILE: ci
       - name: Generate code coverage
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
-      - uses: actions/upload-artifact@v2
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v2
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}
           path: ./report.txt

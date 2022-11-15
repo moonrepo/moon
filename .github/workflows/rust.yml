@@ -68,30 +68,33 @@ jobs:
           toolchain: 1.65.0
           profile: minimal
           components: llvm-tools-preview
-      - uses: Swatinem/rust-cache@v2
-      - uses: davidB/rust-cargo-make@v1
-      - uses: actions-rs/cargo@v1
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-make
+        uses: davidB/rust-cargo-make@v1
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+      - name: Install grcov
+        uses: SierraSoftworks/setup-grcov@v1
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        name: Install grcov
         with:
-          command: install
-          args: --force grcov
-      - name: Setup moon toolchain
-        run: cargo make setup-test
-      - if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        name: Run tests with coverage
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run tests with coverage
+        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
-      - if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
-        name: Run tests
-        run: cargo make test-nocoverage
+        env:
+          NEXTEST_PROFILE: ci
+      - name: Run tests
+        if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
+        run: cargo make test
+        env:
+          NEXTEST_PROFILE: ci
       - name: Generate code coverage
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
-        # run: |
-        #   grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
-      - uses: actions/upload-artifact@v2
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v2
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        name: Upload coverage report
         with:
           name: coverage-${{ matrix.os }}
           path: ./report.txt

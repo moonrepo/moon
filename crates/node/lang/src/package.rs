@@ -4,9 +4,8 @@ use crate::NPM;
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::config_cache;
-use moon_utils::json::{self, read as read_json};
+use moon_utils::json::{self, read as read_json, JsonValue};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -36,7 +35,7 @@ pub struct PackageJson {
     pub bundled_dependencies: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub config: Option<Value>,
+    pub config: Option<JsonValue>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub contributors: Option<Vec<Person>>,
@@ -105,7 +104,7 @@ pub struct PackageJson {
     pub private: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub publish_config: Option<Value>,
+    pub publish_config: Option<JsonValue>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub repository: Option<Repository>,
@@ -125,10 +124,10 @@ pub struct PackageJson {
 
     // Node.js specific: https://nodejs.org/api/packages.html#nodejs-packagejson-field-definitions
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub exports: Option<Value>,
+    pub exports: Option<JsonValue>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub imports: Option<Value>,
+    pub imports: Option<JsonValue>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub package_manager: Option<String>,
@@ -145,7 +144,7 @@ pub struct PackageJson {
     pub language_name: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub install_config: Option<Value>,
+    pub install_config: Option<JsonValue>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prefer_unplugged: Option<bool>,
@@ -155,7 +154,7 @@ pub struct PackageJson {
 
     // Unknown fields
     #[serde(flatten)]
-    pub unknown_fields: BTreeMap<String, Value>,
+    pub unknown_fields: BTreeMap<String, JsonValue>,
 
     // Non-standard
     #[serde(skip)]
@@ -428,7 +427,7 @@ pub struct Pnpm {
     pub overrides: Option<OverridesSet>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub package_extensions: Option<Value>,
+    pub package_extensions: Option<JsonValue>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -472,35 +471,35 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonEr
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!
     if let Some(dependencies) = &package.dependencies {
-        data["dependencies"] = json::from(dependencies.clone());
+        data["dependencies"] = JsonValue::from_iter(dependencies.clone());
     } else {
-        data.remove("dependencies");
+        // data.remove("dependencies");
     }
 
     if let Some(dev_dependencies) = &package.dev_dependencies {
-        data["devDependencies"] = json::from(dev_dependencies.clone());
+        data["devDependencies"] = JsonValue::from_iter(dev_dependencies.clone());
     } else {
-        data.remove("devDependencies");
+        // data.remove("devDependencies");
     }
 
     if let Some(peer_dependencies) = &package.peer_dependencies {
-        data["peerDependencies"] = json::from(peer_dependencies.clone());
+        data["peerDependencies"] = JsonValue::from_iter(peer_dependencies.clone());
     } else {
-        data.remove("peerDependencies");
+        // data.remove("peerDependencies");
     }
 
     if let Some(engines) = &package.engines {
-        data["engines"] = json::from(engines.clone());
+        data["engines"] = JsonValue::from_iter(engines.clone());
     }
 
     if let Some(package_manager) = &package.package_manager {
-        data["packageManager"] = json::from(package_manager.clone());
+        data["packageManager"] = JsonValue::from(package_manager.clone());
     }
 
     if let Some(scripts) = &package.scripts {
-        data["scripts"] = json::from(scripts.clone());
+        data["scripts"] = JsonValue::from_iter(scripts.clone());
     } else {
-        data.remove("scripts");
+        // data.remove("scripts");
     }
 
     json::write_raw(path, data, true)?;

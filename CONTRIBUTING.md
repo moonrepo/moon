@@ -21,6 +21,7 @@ We also require the following 3rd-party Cargo commands, which can be installed w
 
 ```
 cargo install --force cargo-make # Required
+cargo install --force cargo-nextest # Required for testing
 cargo install --force cargo-insta # For testing snapshots
 ```
 

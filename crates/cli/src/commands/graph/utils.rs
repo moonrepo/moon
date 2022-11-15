@@ -4,8 +4,9 @@ use moon_logger::info;
 use moon_runner::DepGraph;
 use moon_workspace::Workspace;
 use petgraph::Graph;
+use rustc_hash::FxHashSet;
 use serde::Serialize;
-use std::{collections::HashSet, env};
+use std::env;
 use tera::{Context, Tera};
 use tiny_http::{Header, Response, Server};
 
@@ -46,7 +47,7 @@ pub fn extract_nodes_and_edges_from_graph(graph: &Graph<String, ()>) -> GraphInf
             id: format!("{}->{}", e.source().index(), e.target().index()),
         })
         .collect::<Vec<_>>();
-    let mut nodes = HashSet::new();
+    let mut nodes = FxHashSet::default();
     for edge in graph.raw_edges().iter() {
         let source = graph
             .node_weight(edge.source())

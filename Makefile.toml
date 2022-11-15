@@ -39,16 +39,16 @@ args = ["run", "--", "--log", "debug", "setup"]
 env = { MOON_TEST = "true" }
 cwd = "./tests/fixtures/cases"
 
-[tasks.test-nocoverage]
+[tasks.run-tests]
 command = "cargo"
-args = ["nextest", "run"]
+args = ["nextest", "run", "--config-file", "./.cargo/nextest.toml"]
 
 [tasks.clean-test]
 script = "rm -rf ./tests/fixtures/cases/.moon/cache"
 condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
-run_task = { name = ["clean-test", "setup-test", "test-nocoverage", "clean-test"] }
+run_task = { name = ["clean-test", "setup-test", "run-tests", "clean-test"] }
 
 # CODE COVERAGE
 

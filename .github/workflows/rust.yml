@@ -70,6 +70,7 @@ jobs:
           components: llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
       - uses: davidB/rust-cargo-make@v1
+      - uses: taiki-e/install-action@nextest
       - uses: actions-rs/cargo@v1
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         name: Install grcov
@@ -81,9 +82,13 @@ jobs:
       - if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         name: Run tests with coverage
         run: cargo make test-coverage
+        env:
+          NEXTEST_PROFILE: ci
       - if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
         name: Run tests
-        run: cargo make test-nocoverage
+        run: cargo make test
+        env:
+          NEXTEST_PROFILE: ci
       - name: Generate code coverage
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report

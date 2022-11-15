@@ -15,7 +15,7 @@ on:
       - rust-toolchain.toml
 env:
   # Windows fails to compile right now...
-  WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+  WITH_COVERAGE: 'true' # ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 jobs:
   format:
     name: Format
@@ -71,14 +71,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: davidB/rust-cargo-make@v1
       - uses: taiki-e/install-action@nextest
-      - uses: actions-rs/cargo@v1
+      - uses: SierraSoftworks/setup-grcov@v1
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        name: Install grcov
         with:
-          command: install
-          args: --force grcov
-      - name: Setup moon toolchain
-        run: cargo make setup-test
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         name: Run tests with coverage
         run: cargo make test-coverage
@@ -92,8 +88,6 @@ jobs:
       - name: Generate code coverage
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
-        # run: |
-        #   grcov . -s ./crates --binary-path ./target/debug -t lcov --branch --ignore-not-existing -o ./report.txt
       - uses: actions/upload-artifact@v2
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         name: Upload coverage report

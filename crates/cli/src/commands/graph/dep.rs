@@ -1,7 +1,11 @@
 use crate::{
-    commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server},
+    commands::graph::{
+        utils::{dep_graph_repr, respond_to_request, setup_server},
+        LOG_TARGET,
+    },
     helpers::load_workspace,
 };
+use moon_logger::info;
 use moon_runner::DepGraph;
 use moon_task::Target;
 
@@ -37,7 +41,14 @@ pub async fn dep_graph(
     } else {
         let (server, mut tera) = setup_server().await?;
         let graph_info = dep_graph_repr(&graph).await;
-        respond_to_request(server, &mut tera, &graph_info)?;
+        info!(
+            target: LOG_TARGET,
+            r#"Starting server on "{}""#,
+            server.server_addr()
+        );
+        for req in server.incoming_requests() {
+            respond_to_request(req, &mut tera, &graph_info)?;
+        }
     }
 
     Ok(())

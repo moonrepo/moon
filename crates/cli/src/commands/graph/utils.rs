@@ -1,6 +1,5 @@
 use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use crate::helpers::AnyError;
-use moon_logger::info;
 use moon_runner::DepGraph;
 use moon_workspace::Workspace;
 use petgraph::Graph;
@@ -8,10 +7,9 @@ use rustc_hash::FxHashSet;
 use serde::Serialize;
 use std::env;
 use tera::{Context, Tera};
-use tiny_http::{Header, Response, Server};
+use tiny_http::{Header, Request, Response, Server};
 
 const INDEX_HTML: &str = include_str!("graph.html.tera");
-const LOG_TARGET: &str = "moon:graph::utils";
 
 #[derive(Debug, Serialize)]
 pub struct RenderContext {
@@ -83,46 +81,38 @@ pub async fn dep_graph_repr(graph: &DepGraph) -> GraphInfoDto {
 }
 
 pub fn respond_to_request(
-    server: Server,
+    req: Request,
     tera: &mut Tera,
     graph: &GraphInfoDto,
 ) -> Result<(), AnyError> {
-    info!(
-        target: LOG_TARGET,
-        r#"Starting server on "{}""#,
-        server.server_addr()
-    );
-    for req in server.incoming_requests() {
-        let response = match req.url() {
-            "/graph-data" => {
-                let mut response = Response::from_data(serde_json::to_string(graph)?);
-                response.add_header(
-                    Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap(),
-                );
-                response
-            }
-            _ => {
-                let graph_data = serde_json::to_string(graph)?;
-                // Use the local version of the JS file when in development mode otherwise
-                // the CDN url.
-                let mut js_url = match cfg!(debug_assertions) {
-                    // FIXME: We should create a separate module to store these constants
-                    true => "http://localhost:5000".to_string(),
-                    false => "https://cdn.com".to_string(),
-                };
-                js_url.push_str("/assets/index.js");
-                let context = RenderContext { graph_data, js_url };
-                let info = tera
-                    .render_str(INDEX_HTML, &Context::from_serialize(&context)?)
-                    .unwrap();
-                let mut response = Response::from_data(info);
-                response.add_header(
-                    Header::from_bytes(&b"Content-Type"[..], &b"text/html"[..]).unwrap(),
-                );
-                response
-            }
-        };
-        req.respond(response).unwrap_or_default();
-    }
+    let response = match req.url() {
+        "/graph-data" => {
+            let mut response = Response::from_data(serde_json::to_string(graph)?);
+            response.add_header(
+                Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap(),
+            );
+            response
+        }
+        _ => {
+            let graph_data = serde_json::to_string(graph)?;
+            // Use the local version of the JS file when in development mode otherwise
+            // the CDN url.
+            let mut js_url = match cfg!(debug_assertions) {
+                // FIXME: We should create a separate module to store these constants
+                true => "http://localhost:5000".to_string(),
+                false => "https://cdn.com".to_string(),
+            };
+            js_url.push_str("/assets/index.js");
+            let context = RenderContext { graph_data, js_url };
+            let info = tera
+                .render_str(INDEX_HTML, &Context::from_serialize(&context)?)
+                .unwrap();
+            let mut response = Response::from_data(info);
+            response
+                .add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/html"[..]).unwrap());
+            response
+        }
+    };
+    req.respond(response).unwrap_or_default();
     Ok(())
 }

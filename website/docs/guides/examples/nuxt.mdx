@@ -7,8 +7,8 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
 <HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/nuxt-app" />
 
-In this guide, you'll learn how to integrate [Nuxt v3](https://v3.nuxtjs.org), a [Vue](./vue)
-framework, into moon.
+In this guide, you'll learn how to integrate [Nuxt v3](https://nuxt.com), a [Vue](./vue) framework,
+into moon.
 
 Begin by creating a new Nuxt project at a specified folder path (this should not be created in the
 workspace root, unless a polyrepo).
@@ -17,7 +17,7 @@ workspace root, unless a polyrepo).
 cd apps && npx nuxi init <project>
 ```
 
-> View the [official Nuxt docs](https://v3.nuxtjs.org/getting-started/installation/) for a more
+> View the [official Nuxt docs](https://nuxt.com/docs/getting-started/installation) for a more
 > in-depth guide to getting started!
 
 ## Setup
@@ -36,7 +36,9 @@ fileGroups:
     - 'middleware/**/*'
     - 'pages/**/*'
     - 'plugins/**/*'
+    - 'public/**/*'
     - 'server/**/*'
+    - 'utils/**/*'
     - '.nuxtignore'
     - 'app.config.*'
     - 'app.vue'
@@ -53,6 +55,7 @@ tasks:
     inputs:
       - '@group(nuxt)'
     outputs:
+      - '.nuxt'
       - '.output'
 
   # Development server

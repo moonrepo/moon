@@ -24,7 +24,7 @@ mod editor_config {
         let fixture = create_sandbox("editor-config");
         let path = fixture.path().join("file.json");
 
-        json::write_raw(&path, json::read_raw(&path).unwrap(), true).unwrap();
+        json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 
         assert_snapshot!(fs::read_to_string(&path).unwrap());
     }
@@ -34,7 +34,7 @@ mod editor_config {
         let fixture = create_sandbox("editor-config");
         let path = fixture.path().join("file.json");
 
-        json::write_raw(&path, json::read_raw(&path).unwrap(), false).unwrap();
+        json::write_with_config(&path, json::read(&path).unwrap(), false).unwrap();
 
         assert_snapshot!(fs::read_to_string(&path).unwrap());
     }
@@ -46,7 +46,19 @@ mod editor_config {
 
         append_editor_config(fixture.path(), "[*.json]\nindent_size = 8");
 
-        json::write_raw(&path, json::read_raw(&path).unwrap(), true).unwrap();
+        json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
+
+        assert_snapshot!(fs::read_to_string(&path).unwrap());
+    }
+
+    #[test]
+    fn can_change_tab_indent() {
+        let fixture = create_sandbox("editor-config");
+        let path = fixture.path().join("file.json");
+
+        append_editor_config(fixture.path(), "[*.json]\nindent_style = tab");
+
+        json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 
         assert_snapshot!(fs::read_to_string(&path).unwrap());
     }
@@ -58,7 +70,7 @@ mod editor_config {
 
         append_editor_config(fixture.path(), "[*.json]\ninsert_final_newline = true");
 
-        json::write_raw(&path, json::read_raw(&path).unwrap(), true).unwrap();
+        json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 
         assert!(fs::read_to_string(&path).unwrap().ends_with('\n'));
     }
@@ -70,7 +82,7 @@ mod editor_config {
 
         append_editor_config(fixture.path(), "[*.json]\ninsert_final_newline = false");
 
-        json::write_raw(&path, json::read_raw(&path).unwrap(), true).unwrap();
+        json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 
         assert!(!fs::read_to_string(&path).unwrap().ends_with('\n'));
     }

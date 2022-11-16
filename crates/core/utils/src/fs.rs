@@ -89,6 +89,46 @@ where
     }
 }
 
+pub struct EditorConfigProps {
+    pub eof: String,
+    pub indent: String,
+}
+
+pub fn get_editor_config_props<T: AsRef<Path>>(path: T) -> EditorConfigProps {
+    use ec4rs::property::*;
+
+    let editor_config = ec4rs::properties_of(path).unwrap_or_default();
+    let tab_width = editor_config
+        .get::<TabWidth>()
+        .unwrap_or(TabWidth::Value(4));
+    let indent_size = editor_config
+        .get::<IndentSize>()
+        .unwrap_or(IndentSize::Value(2));
+    let indent_style = editor_config
+        .get::<IndentStyle>()
+        .unwrap_or(IndentStyle::Spaces);
+    let insert_final_newline = editor_config
+        .get::<FinalNewline>()
+        .unwrap_or(FinalNewline::Value(true));
+
+    EditorConfigProps {
+        eof: if matches!(insert_final_newline, FinalNewline::Value(true)) {
+            "\n".into()
+        } else {
+            "".into()
+        },
+        indent: match indent_style {
+            IndentStyle::Tabs => "\t".into(),
+            IndentStyle::Spaces => match indent_size {
+                IndentSize::UseTabWidth => match tab_width {
+                    TabWidth::Value(value) => " ".repeat(value),
+                },
+                IndentSize::Value(value) => " ".repeat(value),
+            },
+        },
+    }
+}
+
 #[inline]
 pub async fn metadata<T: AsRef<Path>>(path: T) -> Result<std::fs::Metadata, MoonError> {
     let path = path.as_ref();

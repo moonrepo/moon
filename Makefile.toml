@@ -48,7 +48,7 @@ script = "rm -rf ./tests/fixtures/cases/.moon/cache"
 condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
-run_task = { name = ["clean-test", "run-tests", "clean-test"] }
+run_task = { name = ["clean-test", "run-tests"] }
 
 # CODE COVERAGE
 
@@ -57,7 +57,7 @@ command = "cargo"
 args = ["llvm-cov", "nextest", "--config-file", "./.cargo/nextest.toml"]
 
 [tasks.test-coverage]
-run_task = { name = ["clean-test", "run-tests-with-coverage", "clean-test"] }
+run_task = { name = ["clean-test", "run-tests-with-coverage"] }
 # env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "${PWD}/moon-%p-%m.profraw" }
 # run_task = { name = ["build", "test"] }
 

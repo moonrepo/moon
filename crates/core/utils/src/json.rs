@@ -10,7 +10,7 @@ use std::fs;
 use std::io::Read;
 use std::path::Path;
 
-pub use serde_json::Value as JsonValue;
+pub use serde_json::{json, Value as JsonValue};
 // pub use json::{from, parse, JsonValue};
 
 #[inline]

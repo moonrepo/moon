@@ -148,7 +148,7 @@ const sidebars = {
 		'guides/webhooks',
 		{
 			type: 'category',
-			label: 'Examples',
+			label: 'Node.js examples',
 			collapsed: true,
 			collapsible: true,
 			items: [

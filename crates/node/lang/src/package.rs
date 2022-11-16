@@ -472,20 +472,20 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonEr
     // otherwise it's a ton of overhead and maintenance!
     if let Some(dependencies) = &package.dependencies {
         data["dependencies"] = JsonValue::from_iter(dependencies.clone());
-    } else {
-        // data.remove("dependencies");
+    } else if let Some(root) = data.as_object_mut() {
+        root.remove("dependencies");
     }
 
     if let Some(dev_dependencies) = &package.dev_dependencies {
         data["devDependencies"] = JsonValue::from_iter(dev_dependencies.clone());
-    } else {
-        // data.remove("devDependencies");
+    } else if let Some(root) = data.as_object_mut() {
+        root.remove("devDependencies");
     }
 
     if let Some(peer_dependencies) = &package.peer_dependencies {
         data["peerDependencies"] = JsonValue::from_iter(peer_dependencies.clone());
-    } else {
-        // data.remove("peerDependencies");
+    } else if let Some(root) = data.as_object_mut() {
+        root.remove("peerDependencies");
     }
 
     if let Some(engines) = &package.engines {
@@ -498,8 +498,8 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonEr
 
     if let Some(scripts) = &package.scripts {
         data["scripts"] = JsonValue::from_iter(scripts.clone());
-    } else {
-        // data.remove("scripts");
+    } else if let Some(root) = data.as_object_mut() {
+        root.remove("scripts");
     }
 
     json::write_with_config(path, data, true)?;

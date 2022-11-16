@@ -189,7 +189,7 @@ pub async fn from_package_json(
         Ok(())
     })?;
 
-    yaml::write_raw(
+    yaml::write_with_config(
         project.root.join(CONFIG_PROJECT_FILENAME),
         convert_to_yaml(&project.config)?,
     )?;

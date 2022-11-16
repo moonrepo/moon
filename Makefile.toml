@@ -44,8 +44,8 @@ command = "cargo"
 args = ["nextest", "run", "--config-file", "./.cargo/nextest.toml"]
 
 [tasks.clean-test]
-script_runner = "@shell"
 script = "rm -rf ./tests/fixtures/cases/.moon/cache"
+condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
 run_task = { name = ["clean-test", "run-tests", "clean-test"] }

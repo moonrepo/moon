@@ -4,11 +4,10 @@ use cached::proc_macro::cached;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use moon_lang::config_cache;
 use moon_utils::{
-    json::{self, read as read_json},
+    json::{self, read as read_json, JsonValue},
     path::standardize_separators,
 };
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -60,7 +59,7 @@ pub struct TsConfigJson {
 
     // Unknown fields
     #[serde(flatten)]
-    pub unknown_fields: BTreeMap<String, Value>,
+    pub unknown_fields: BTreeMap<String, JsonValue>,
 
     // Non-standard
     #[serde(skip)]
@@ -143,31 +142,31 @@ impl TsConfigJson {
     }
 }
 
-fn merge(a: &mut Value, b: Value) {
+fn merge(a: &mut JsonValue, b: JsonValue) {
     match (a, b) {
-        (&mut Value::Object(ref mut a), Value::Object(b)) => {
+        (&mut JsonValue::Object(ref mut a), JsonValue::Object(b)) => {
             for (k, v) in b {
-                merge(a.entry(k).or_insert(Value::Null), v);
+                merge(a.entry(k).or_insert(JsonValue::Null), v);
             }
         }
         (a, b) => {
-            if let Value::Null = a {
+            if let JsonValue::Null = a {
                 *a = b;
             }
         }
     }
 }
 
-pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<Value, MoonError> {
+pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<JsonValue, MoonError> {
     let path = path.as_ref();
     let json =
         std::fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 
-    let mut json: Value = serde_json::from_str(&json::clean(json)?)
+    let mut json: JsonValue = serde_json::from_str(&json::clean(json)?)
         .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
     if extend {
-        if let Value::String(s) = &json["extends"] {
+        if let JsonValue::String(s) = &json["extends"] {
             let extends_path = path.parent().unwrap_or_else(|| Path::new("")).join(s);
             let extends_value = load_to_value(&extends_path, extend)?;
 
@@ -410,7 +409,7 @@ pub struct CompilerOptions {
     pub paths: Option<CompilerOptionsPaths>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub plugins: Option<Vec<BTreeMap<String, Value>>>,
+    pub plugins: Option<Vec<BTreeMap<String, JsonValue>>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_const_enums: Option<bool>,
@@ -733,44 +732,44 @@ impl<'de> Deserialize<'de> for Target {
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
 fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), MoonError> {
-    let mut data = json::read_raw(path)?;
+    let mut data: JsonValue = json::read(path)?;
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!
     if let Some(references) = &tsconfig.references {
-        let mut list = json::JsonValue::new_array();
+        let mut list = vec![];
 
         for reference in references {
-            let mut item = json::JsonValue::new_object();
-            item["path"] = json::from(reference.path.clone());
+            let mut item = json::json!({});
+            item["path"] = JsonValue::from(reference.path.clone());
 
             if let Some(prepend) = reference.prepend {
-                item["prepend"] = json::from(prepend);
+                item["prepend"] = JsonValue::from(prepend);
             }
 
-            list.push(item).unwrap();
+            list.push(item);
         }
 
-        data["references"] = list;
+        data["references"] = JsonValue::Array(list);
     }
 
     if let Some(options) = &tsconfig.compiler_options {
         if (options.out_dir.is_some() || options.paths.is_some())
-            && data["compilerOptions"].is_empty()
+            && !data["compilerOptions"].is_object()
         {
-            data["compilerOptions"] = json::JsonValue::new_object();
+            data["compilerOptions"] = json::json!({});
         }
 
         if let Some(out_dir) = &options.out_dir {
-            data["compilerOptions"]["outDir"] = json::from(out_dir.to_owned());
+            data["compilerOptions"]["outDir"] = JsonValue::from(out_dir.to_owned());
         }
 
         if let Some(paths) = &options.paths {
-            data["compilerOptions"]["paths"] = json::from(paths.to_owned());
+            data["compilerOptions"]["paths"] = JsonValue::from_iter(paths.to_owned());
         }
     }
 
-    json::write_raw(path, data, true)?;
+    json::write_with_config(path, data, true)?;
 
     Ok(())
 }
@@ -881,8 +880,8 @@ mod test {
         let json_1 = r#"{"compilerOptions": {"jsx": "react", "noEmit": true}}"#;
         let json_2 = r#"{"compilerOptions": {"jsx": "preserve", "removeComments": true}}"#;
 
-        let mut value1: Value = serde_json::from_str(json_1).unwrap();
-        let value2: Value = serde_json::from_str(json_2).unwrap();
+        let mut value1: JsonValue = serde_json::from_str(json_1).unwrap();
+        let value2: JsonValue = serde_json::from_str(json_2).unwrap();
 
         merge(&mut value1, value2);
 

@@ -466,7 +466,7 @@ pub enum PackageWorkspaces {
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
 fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
-    let mut data = json::read_raw(path)?;
+    let mut data: JsonValue = json::read(path)?;
 
     // We only need to set fields that we modify within Moon,
     // otherwise it's a ton of overhead and maintenance!
@@ -502,7 +502,7 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonEr
         // data.remove("scripts");
     }
 
-    json::write_raw(path, data, true)?;
+    json::write_with_config(path, data, true)?;
 
     Ok(())
 }

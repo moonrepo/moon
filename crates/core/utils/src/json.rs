@@ -41,18 +41,7 @@ where
     let path = path.as_ref();
     let contents = read_to_string(path)?;
 
-    let json: D =
-        serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
-
-    Ok(json)
-}
-
-#[inline]
-pub fn read_raw<T: AsRef<Path>>(path: T) -> Result<JsonValue, MoonError> {
-    let path = path.as_ref();
-    let data = read_to_string(path)?;
-
-    serde_json::from_str(&data).map_err(|e| map_json_to_error(e, path.to_path_buf()))
+    serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))
 }
 
 #[inline]
@@ -84,7 +73,11 @@ where
 
 // This function is used for consumer facing files, like configs.
 #[inline]
-pub fn write_raw<P: AsRef<Path>>(path: P, json: JsonValue, pretty: bool) -> Result<(), MoonError> {
+pub fn write_with_config<P: AsRef<Path>>(
+    path: P,
+    json: JsonValue,
+    pretty: bool,
+) -> Result<(), MoonError> {
     let path = path.as_ref();
 
     if !pretty {

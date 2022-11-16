@@ -1815,6 +1815,7 @@ dependencies = [
  "rustc-hash",
  "tar",
  "thiserror",
+ "tokio",
  "zip",
 ]
 

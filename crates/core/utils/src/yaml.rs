@@ -4,12 +4,7 @@ use serde::Serialize;
 use std::fs;
 use std::path::Path;
 
-// pub use yaml_rust::{
-//     yaml::{Array, Hash},
-//     Yaml, YamlEmitter, YamlLoader,
-// };
-
-pub use serde_yaml::Value as YamlValue;
+pub use serde_yaml::{Mapping, Value as YamlValue};
 
 #[inline]
 pub fn read<P, D>(path: P) -> Result<D, MoonError>

@@ -58,23 +58,14 @@ args = ["llvm-cov", "nextest", "--config-file", "./.cargo/nextest.toml"]
 
 [tasks.test-coverage]
 run_task = { name = ["clean-test", "run-tests-with-coverage"] }
-# env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "${PWD}/moon-%p-%m.profraw" }
-# run_task = { name = ["build", "test"] }
 
 [tasks.generate-report]
 command = "cargo"
 args = ["llvm-cov", "report", "--lcov", "--ignore-filename-regex", "error", "--output-path", "./report.txt"]
-# command = "grcov"
-# args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "lcov", "--branch", "--ignore-not-existing", "--ignore", "**/errors.rs", "--ignore", "error/src/lib.rs", "-o", "./report.txt"]
 
 [tasks.generate-html]
 command = "cargo"
 args = ["llvm-cov", "report", "--html", "--ignore-filename-regex", "error", "--open"]
-# command = "grcov"
-# args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "html", "--branch", "--ignore-not-existing", "--ignore", "**/errors.rs", "--ignore", "error/src/lib.rs", "-o", "./coverage"]
-
-# [tasks.clean-profraw]
-# script = "rm -rf *.profraw"
 
 ## OTHER
 

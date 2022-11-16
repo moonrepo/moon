@@ -7,6 +7,11 @@
 - Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler
   options.
 
+#### 🐞 Fixes
+
+- When writing JSON files, it will now respect the `indent_style = tab` setting in the closest
+  `.editorconfig`.
+
 ## 0.19.1
 
 #### 🚀 Updates

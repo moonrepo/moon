@@ -1,14 +1,15 @@
-use ec4rs::property::*;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde_json::ser::PrettyFormatter;
+use serde_json::Serializer;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 
-pub use json::{from, parse, JsonValue};
+pub use serde_json::{json, Value as JsonValue};
 
 #[inline]
 pub fn clean<D: AsRef<str>>(json: D) -> Result<String, MoonError> {
@@ -38,18 +39,7 @@ where
     let path = path.as_ref();
     let contents = read_to_string(path)?;
 
-    let json: D =
-        serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
-
-    Ok(json)
-}
-
-#[inline]
-pub fn read_raw<T: AsRef<Path>>(path: T) -> Result<JsonValue, MoonError> {
-    let path = path.as_ref();
-    let data = read_to_string(path)?;
-
-    parse(&data).map_err(|e| MoonError::Generic(e.to_string()))
+    serde_json::from_str(&contents).map_err(|e| map_json_to_error(e, path.to_path_buf()))
 }
 
 #[inline]
@@ -81,35 +71,30 @@ where
 
 // This function is used for consumer facing files, like configs.
 #[inline]
-pub fn write_raw<P: AsRef<Path>>(path: P, json: JsonValue, pretty: bool) -> Result<(), MoonError> {
-    let path = path.as_ref();
-
+pub fn write_with_config<P: AsRef<Path>>(
+    path: P,
+    json: JsonValue,
+    pretty: bool,
+) -> Result<(), MoonError> {
     if !pretty {
-        fs::write(path, json::stringify(json))
-            .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-        return Ok(());
+        return write(path, &json, false);
     }
 
-    let editor_config = ec4rs::properties_of(path).unwrap_or_default();
-    let indent_size = editor_config
-        .get::<IndentSize>()
-        .unwrap_or(IndentSize::Value(2));
-    let insert_final_newline = editor_config
-        .get::<FinalNewline>()
-        .unwrap_or(FinalNewline::Value(true));
+    let path = path.as_ref();
+    let editor_config = crate::fs::get_editor_config_props(path);
 
-    // json crate doesnt support tabs, so always use space indentation
-    let spaces = match indent_size {
-        IndentSize::UseTabWidth => 2,
-        IndentSize::Value(value) => value,
-    };
+    // Based on serde_json::to_string_pretty!
+    let mut writer = Vec::with_capacity(128);
+    let mut serializer = Serializer::with_formatter(
+        &mut writer,
+        PrettyFormatter::with_indent(editor_config.indent.as_bytes()),
+    );
 
-    let mut data = json::stringify_pretty(json, spaces as u16);
+    json.serialize(&mut serializer)
+        .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
-    if matches!(insert_final_newline, FinalNewline::Value(true)) {
-        data += "\n";
-    }
+    let mut data = unsafe { String::from_utf8_unchecked(writer) };
+    data += &editor_config.eof;
 
     fs::write(path, data).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 

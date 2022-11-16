@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- When writing JSON files, it will now respect the `indent_style = tab` setting in the closest `.editorconfig`.
+
 ## 0.19.0
 
 #### 💥 Breaking

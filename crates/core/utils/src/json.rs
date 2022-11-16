@@ -1,4 +1,3 @@
-use ec4rs::property::*;
 use json_comments::StripComments;
 use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
 use regex::Regex;
@@ -78,43 +77,25 @@ pub fn write_with_config<P: AsRef<Path>>(
     json: JsonValue,
     pretty: bool,
 ) -> Result<(), MoonError> {
-    let path = path.as_ref();
-
     if !pretty {
-        fs::write(
-            path,
-            serde_json::to_string(&json).map_err(|e| map_json_to_error(e, path.to_path_buf()))?,
-        )
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-        return Ok(());
+        return write(path, &json, false);
     }
 
-    let editor_config = ec4rs::properties_of(path).unwrap_or_default();
-    let indent_size = editor_config
-        .get::<IndentSize>()
-        .unwrap_or(IndentSize::Value(2));
-    let insert_final_newline = editor_config
-        .get::<FinalNewline>()
-        .unwrap_or(FinalNewline::Value(true));
-    let indent = match indent_size {
-        IndentSize::UseTabWidth => "\t".into(),
-        IndentSize::Value(value) => " ".repeat(value),
-    };
+    let path = path.as_ref();
+    let editor_config = crate::fs::get_editor_config_props(path);
 
     // Based on serde_json::to_string_pretty!
     let mut writer = Vec::with_capacity(128);
-    let mut serializer =
-        Serializer::with_formatter(&mut writer, PrettyFormatter::with_indent(indent.as_bytes()));
+    let mut serializer = Serializer::with_formatter(
+        &mut writer,
+        PrettyFormatter::with_indent(editor_config.indent.as_bytes()),
+    );
 
     json.serialize(&mut serializer)
         .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
 
     let mut data = unsafe { String::from_utf8_unchecked(writer) };
-
-    if matches!(insert_final_newline, FinalNewline::Value(true)) {
-        data += "\n";
-    }
+    data += &editor_config.eof;
 
     fs::write(path, data).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
 

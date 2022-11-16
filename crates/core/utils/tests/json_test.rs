@@ -52,6 +52,18 @@ mod editor_config {
     }
 
     #[test]
+    fn can_change_tab_indent() {
+        let fixture = create_sandbox("editor-config");
+        let path = fixture.path().join("file.json");
+
+        append_editor_config(fixture.path(), "[*.json]\nindent_style = tab");
+
+        json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
+
+        assert_snapshot!(fs::read_to_string(&path).unwrap());
+    }
+
+    #[test]
     fn can_enable_trailing_line() {
         let fixture = create_sandbox("editor-config");
         let path = fixture.path().join("file.json");

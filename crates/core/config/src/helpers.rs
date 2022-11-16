@@ -2,7 +2,7 @@ use crate::errors::ConfigError;
 use moon_utils::{
     fs::temp,
     path, time,
-    yaml::{self, Yaml},
+    yaml::{self, YamlValue},
 };
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -65,26 +65,23 @@ pub fn gather_extended_sources<T: AsRef<Path>>(
             // Parse the YAML document and attempt to extract the `extends` field.
             // We can't use serde here as the shape of the document may be invalid
             // or incomplete.
-            let doc = yaml::read_raw(&config_path)
+            let doc: YamlValue = yaml::read(&config_path)
                 .map_err(|e| ConfigError::InvalidYaml(config_path.clone(), e.to_string()))?;
 
-            // Field does not exist!
-            if doc["extends"].is_badvalue() {
-                continue;
-            }
-
-            match &doc["extends"] {
-                Yaml::String(extends) => {
-                    if extends.starts_with("http") {
-                        queue.push_back(extends.to_owned());
-                    } else {
-                        queue.push_back(path::to_string(
-                            config_path.parent().unwrap().join(extends),
-                        )?);
+            if let Some(extends_field) = doc.get("extends") {
+                match &extends_field {
+                    YamlValue::String(extends) => {
+                        if extends.starts_with("http") {
+                            queue.push_back(extends.to_owned());
+                        } else {
+                            queue.push_back(path::to_string(
+                                config_path.parent().unwrap().join(extends),
+                            )?);
+                        }
                     }
-                }
-                _ => {
-                    return Err(ConfigError::InvalidExtendsField);
+                    _ => {
+                        return Err(ConfigError::InvalidExtendsField);
+                    }
                 }
             }
         }

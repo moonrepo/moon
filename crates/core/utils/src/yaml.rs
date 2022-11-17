@@ -47,8 +47,10 @@ pub fn write_with_config<P: AsRef<Path>>(path: P, yaml: YamlValue) -> Result<(),
     let path = path.as_ref();
     let editor_config = crate::fs::get_editor_config_props(path);
 
-    let mut data =
-        serde_yaml::to_string(&yaml).map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?;
+    let mut data = serde_yaml::to_string(&yaml)
+        .map_err(|e| map_yaml_to_error(e, path.to_path_buf()))?
+        .trim()
+        .to_string();
 
     // serde_yaml does not support customizing the indentation character. So to work around
     // this, we do it manually on the YAML string, but only if the indent is different than

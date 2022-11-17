@@ -1,0 +1,7 @@
+foo: true
+bar: 123
+qux:
+  baz: ['a', 'b', 'c']
+  nested: true
+  deep:
+    nested: 'yaaa'

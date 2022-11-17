@@ -11,6 +11,8 @@
 
 - When writing JSON files, it will now respect the `indent_style = tab` setting in the closest
   `.editorconfig`.
+- When writing YAML files, indentation and formatting will be inferred from the closest
+  `.editorconfig` as best as possible.
 
 ## 0.19.1
 

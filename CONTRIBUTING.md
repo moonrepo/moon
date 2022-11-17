@@ -104,12 +104,12 @@ common tasks.
 
 #### Code coverage
 
-We support source based code coverage with [grcov](https://github.com/mozilla/grcov) via unit and
-integration testing. To begin, install the necessary tooling:
+We support source based code coverage with [llvm-cov](https://github.com/taiki-e/cargo-llvm-cov) via
+unit and integration testing. To begin, install the necessary tooling:
 
 ```
 rustup component add llvm-tools-preview
-cargo install --force grcov
+cargo install cargo-llvm-cov
 ```
 
 Once installed, run `cargo make test-coverage`, which is a lengthy and time consuming process. This

@@ -92,17 +92,6 @@ pub fn tar_diff_benchmark(c: &mut Criterion) {
                     .unwrap();
             })
     });
-
-    c.bench_function("tar_diff_async", |b| {
-        b.to_async(tokio::runtime::Runtime::new().unwrap())
-            .iter(|| async {
-                let mut diff = TreeDiffer::load_async(&sources, &dirs).await.unwrap();
-
-                untar_with_diff(&mut diff, &archive_file, &sources, None)
-                    .await
-                    .unwrap();
-            })
-    });
 }
 
 pub fn tar_diff_remove_benchmark(c: &mut Criterion) {
@@ -127,34 +116,11 @@ pub fn tar_diff_remove_benchmark(c: &mut Criterion) {
     });
 }
 
-pub fn tar_diff_async_remove_benchmark(c: &mut Criterion) {
-    let temp_dir = create_tree();
-    let dirs = string_vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'];
-    let sources = temp_dir.path().join("sources");
-    let archive_file = temp_dir.path().join("archive.tar.gz");
-
-    tar(&sources, &dirs, &archive_file, None).unwrap();
-
-    c.bench_function("tar_diff_async_remove", |b| {
-        b.to_async(tokio::runtime::Runtime::new().unwrap())
-            .iter(|| async {
-                fs::remove_dir_all(&sources).unwrap();
-
-                let mut diff = TreeDiffer::load_async(&sources, &dirs).await.unwrap();
-
-                untar_with_diff(&mut diff, &archive_file, &sources, None)
-                    .await
-                    .unwrap();
-            })
-    });
-}
-
 criterion_group!(
     tar_archive,
     tar_benchmark,
     tar_remove_benchmark,
     tar_diff_benchmark,
     tar_diff_remove_benchmark,
-    tar_diff_async_remove_benchmark,
 );
 criterion_main!(tar_archive);

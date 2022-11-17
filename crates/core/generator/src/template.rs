@@ -171,7 +171,7 @@ impl Template {
     ) -> Result<(), GeneratorError> {
         let mut files = vec![];
 
-        for entry in fs::read_dir_all(&self.root).await? {
+        for entry in fs::read_dir_all(&self.root)? {
             // This is moon's schema, so skip it
             if entry.file_name() == CONFIG_TEMPLATE_FILENAME {
                 continue;

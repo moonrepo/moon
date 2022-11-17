@@ -2257,7 +2257,6 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "assert_fs",
- "async-recursion",
  "cached",
  "chrono",
  "chrono-humanize",

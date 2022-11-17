@@ -11,7 +11,7 @@ pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Err
     let config = &project.config;
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&project).unwrap());
+        println!("{}", serde_json::to_string_pretty(&project)?);
 
         return Ok(());
     }

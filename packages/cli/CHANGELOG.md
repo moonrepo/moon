@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed some unexpected panics in relation to non-installed tools.
+
 ## 0.19.0
 
 #### 💥 Breaking

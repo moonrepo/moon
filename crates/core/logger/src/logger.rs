@@ -74,7 +74,7 @@ impl Logger {
         // File logger
         if let Some(output) = output {
             if let Some(dir) = output.parent() {
-                fs::create_dir_all(dir).expect("Could not create log directory");
+                fs::create_dir_all(dir).expect("Could not create log directory.");
             }
 
             let file_logger = Dispatch::new()
@@ -86,11 +86,11 @@ impl Logger {
 
                     out.finish(format_args!("{}", message_without_colors))
                 })
-                .chain(log_file(output).expect("Could not create log file"));
+                .chain(log_file(output).expect("Could not create log file."));
 
             dispatcher = dispatcher.chain(file_logger);
         }
 
-        dispatcher.apply().expect("Could not create logger");
+        dispatcher.apply().expect("Could not create logger.");
     }
 }

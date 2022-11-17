@@ -63,11 +63,13 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
         for (package_name, details) in lockfile.packages {
             let parsed_dependency = PnpmDependencyPath::parse(&package_name)?;
             let entry = deps
-                .entry(parsed_dependency.name.expect("package should have a name"))
+                .entry(parsed_dependency.name.unwrap_or_default())
                 .or_default();
+
             if let Some(ver) = details.resolution.integrity {
                 entry.push(ver.clone());
             }
+
             if let Some(ver) = details.resolution.tarball {
                 entry.push(ver.clone());
             }

@@ -314,7 +314,7 @@ impl Command {
         }));
 
         for handle in handles {
-            handle.await.expect("Failed to capture stdout/stderr");
+            let _ = handle.await;
         }
 
         // Attempt to capture the child output

@@ -104,7 +104,7 @@ async fn main() {
 
                     run_bin(&moon_bin, &current_dir)
                         .await
-                        .expect("Failed to run moon binary");
+                        .expect("Failed to run moon binary!");
                 }
             }
         }

@@ -121,8 +121,8 @@ fn distribute_targets_across_jobs(
         return targets;
     }
 
-    let job_index = options.job.unwrap();
-    let job_total = options.job_total.unwrap();
+    let job_index = options.job.unwrap_or_default();
+    let job_total = options.job_total.unwrap_or_default();
     let batch_size = targets.len() / job_total;
     let batched_targets;
 

@@ -7,8 +7,6 @@ use std::{
     io::{BufReader, Read},
 };
 
-pub enum DiffState {}
-
 pub struct TreeDiffer {
     /// A mapping of all files in the destination directory
     /// to their current file sizes.
@@ -49,13 +47,24 @@ impl TreeDiffer {
         Ok(TreeDiffer { files: tracked })
     }
 
+    /// Remove all files in the destination directory that have not been
+    /// overwritten with a source file, or are the same size as a source file.
+    /// We can assume these are stale artifacts that should no longer exist!
+    pub async fn remove_stale_files(&mut self) -> Result<(), MoonError> {
+        for (file, _) in self.files.drain() {
+            fs::remove(file).await?;
+        }
+
+        Ok(())
+    }
+
     /// Determine whether the source should be written to the destination.
     /// If a file exists at the destination, run a handful of checks to
-    /// determine whether we overwrite the file or keep it.
+    /// determine whether we overwrite the file or keep it (equal content).
     pub fn should_write<T: Read>(
         &self,
         source_size: u64,
-        source: T,
+        source: &mut T,
         dest_path: &Path,
     ) -> Result<bool, MoonError> {
         // If the destination doesn't exist, always use the source
@@ -82,7 +91,11 @@ impl TreeDiffer {
     }
 
     /// Compare 2 files byte by byte and return true if both files are equal.
-    fn are_files_equal<T: Read>(&self, source: T, dest_path: &Path) -> Result<bool, MoonError> {
+    fn are_files_equal<T: Read>(
+        &self,
+        source: &mut T,
+        dest_path: &Path,
+    ) -> Result<bool, MoonError> {
         let mut areader = BufReader::new(source);
         let mut breader = BufReader::new(File::open(dest_path)?);
         let mut abuf = [0; 512];

@@ -231,11 +231,14 @@ pub async fn untar_new<I: AsRef<Path>, O: AsRef<Path>>(
         }
 
         // Unpack the file if different than destination
-        if diff.should_write(entry.size(), entry, &output_path)? {
+        if diff.should_write(entry.size(), &mut entry, &output_path)? {
             entry.unpack(&output_path)?;
-            diff.untrack(&output_path);
         }
+
+        diff.untrack(&output_path);
     }
+
+    diff.remove_stale_files().await?;
 
     Ok(())
 }

@@ -1,5 +1,6 @@
 use crate::errors::ArchiveError;
 use crate::helpers::{ensure_dir, prepend_name};
+use crate::tree_differ::TreeDiffer;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, map_list, trace};
 use moon_utils::path::to_string;
@@ -163,6 +164,88 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
             }
         }
     }
+
+    Ok(())
+}
+
+#[track_caller]
+pub async fn unzip_new<I: AsRef<Path>, O: AsRef<Path>>(
+    input_file: I,
+    files: &[String],
+    output_dir: O,
+    remove_prefix: Option<&str>,
+) -> Result<(), ArchiveError> {
+    let input_file = input_file.as_ref();
+    let output_dir = output_dir.as_ref();
+    let mut diff = TreeDiffer::load(&output_dir, files).await?;
+
+    debug!(
+        target: LOG_TARGET,
+        "Unzipping archive {} to {}",
+        color::path(input_file),
+        color::path(output_dir),
+    );
+
+    ensure_dir(output_dir)?;
+
+    // Open .zip file
+    let zip =
+        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+
+    // Unpack the archive into the output dir
+    let mut archive = ZipArchive::new(zip)?;
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+
+        let mut path = match file.enclosed_name() {
+            Some(path) => path.to_owned(),
+            None => continue,
+        };
+
+        // Remove the prefix
+        if let Some(prefix) = remove_prefix {
+            if path.starts_with(prefix) {
+                path = path.strip_prefix(prefix).unwrap().to_owned();
+            }
+        }
+
+        let output_path = output_dir.join(&path);
+        let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
+
+        // Create parent dirs
+        if let Some(parent_dir) = &output_path.parent() {
+            ensure_dir(parent_dir)?;
+        }
+
+        // If a folder, create the dir
+        if file.is_dir() {
+            ensure_dir(&output_path)?;
+        }
+
+        // If a file, copy it to the output dir and only
+        // unpack the file if different than destination
+        if file.is_file() && diff.should_write(file.size(), &mut file, &output_path)? {
+            let mut out = File::create(&output_path).map_err(handle_error)?;
+
+            io::copy(&mut file, &mut out).map_err(handle_error)?;
+
+            // Update permissions when on a nix machine
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+
+                if let Some(mode) = file.unix_mode() {
+                    fs::set_permissions(&output_path, fs::Permissions::from_mode(mode))
+                        .map_err(handle_error)?;
+                }
+            }
+
+            diff.untrack(&output_path);
+        }
+    }
+
+    diff.remove_stale_files().await?;
 
     Ok(())
 }

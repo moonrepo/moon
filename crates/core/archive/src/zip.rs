@@ -169,7 +169,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 }
 
 #[track_caller]
-pub async fn unzip_new<I: AsRef<Path>, O: AsRef<Path>>(
+pub async fn unzip_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
     input_file: I,
     files: &[String],
     output_dir: O,

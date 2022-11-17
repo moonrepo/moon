@@ -184,14 +184,13 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 
 #[track_caller]
 pub async fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
+    diff: &mut TreeDiffer,
     input_file: I,
-    files: &[String],
     output_dir: O,
     remove_prefix: Option<&str>,
 ) -> Result<(), ArchiveError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
-    let mut diff = TreeDiffer::load(&output_dir, files).await?;
 
     debug!(
         target: LOG_TARGET,

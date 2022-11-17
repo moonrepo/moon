@@ -7,6 +7,29 @@ use std::{
     io::{BufReader, Read},
 };
 
+pub fn read_dir_all<T: AsRef<Path> + Send>(
+    path: T,
+) -> Result<Vec<std::fs::DirEntry>, std::io::Error> {
+    let path = path.as_ref();
+
+    let mut entries = std::fs::read_dir(path)?;
+    let mut results = vec![];
+
+    for entry in entries {
+        let entry = entry?;
+
+        if let Ok(file_type) = entry.file_type() {
+            if file_type.is_dir() {
+                results.extend(read_dir_all(&entry.path())?);
+            } else {
+                results.push(entry);
+            }
+        }
+    }
+
+    Ok(results)
+}
+
 pub struct TreeDiffer {
     /// A mapping of all files in the destination directory
     /// to their current file sizes.
@@ -14,7 +37,40 @@ pub struct TreeDiffer {
 }
 
 impl TreeDiffer {
-    pub async fn load(dest_root: &Path, paths: &[String]) -> Result<Self, MoonError> {
+    pub fn load(dest_root: &Path, paths: &[String]) -> Result<Self, MoonError> {
+        let mut files = vec![];
+
+        for path in paths {
+            let path = dest_root.join(path);
+
+            if path.is_file() {
+                files.push(path);
+            } else if path.is_dir() {
+                for file in read_dir_all(path)? {
+                    files.push(file.path());
+                }
+            }
+        }
+
+        let mut tracked = FxHashMap::default();
+
+        for file in files {
+            if !file.exists() {
+                continue;
+            }
+
+            let size = match std::fs::metadata(&file) {
+                Ok(meta) => meta.len(),
+                Err(_) => 0,
+            };
+
+            tracked.insert(file, size);
+        }
+
+        Ok(TreeDiffer { files: tracked })
+    }
+
+    pub async fn load_async(dest_root: &Path, paths: &[String]) -> Result<Self, MoonError> {
         let mut files = vec![];
 
         for path in paths {

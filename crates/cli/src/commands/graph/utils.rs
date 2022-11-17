@@ -69,7 +69,7 @@ pub fn extract_nodes_and_edges_from_graph(graph: &Graph<String, ()>) -> GraphInf
 }
 
 /// Get a serialized representation of the workspace graph.
-pub async fn workspace_graph_repr(workspace: &Workspace) -> GraphInfoDto {
+pub async fn project_graph_repr(workspace: &Workspace) -> GraphInfoDto {
     let labeled_graph = workspace.projects.labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph)
 }

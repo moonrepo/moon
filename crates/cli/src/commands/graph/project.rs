@@ -2,7 +2,7 @@ use moon_logger::info;
 
 use crate::{
     commands::graph::{
-        utils::{respond_to_request, setup_server, workspace_graph_repr},
+        utils::{project_graph_repr, respond_to_request, setup_server},
         LOG_TARGET,
     },
     helpers::load_workspace,
@@ -24,7 +24,7 @@ pub async fn project_graph(
         println!("{}", workspace.projects.to_dot());
     } else {
         let (server, mut tera) = setup_server().await?;
-        let graph_info = workspace_graph_repr(&workspace).await;
+        let graph_info = project_graph_repr(&workspace).await;
         info!(
             target: LOG_TARGET,
             r#"Starting server on "{}""#,

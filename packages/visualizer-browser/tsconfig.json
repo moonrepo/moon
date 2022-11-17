@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.options.json",
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
@@ -17,7 +18,7 @@
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "emitDeclarationOnly": true,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
     "outDir": "../../.moon/cache/types/packages/visualizer-browser"

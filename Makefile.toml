@@ -48,24 +48,24 @@ script = "rm -rf ./tests/fixtures/cases/.moon/cache"
 condition = { platforms = ["mac", "linux"] }
 
 [tasks.test]
-run_task = { name = ["clean-test", "setup-test", "run-tests", "clean-test"] }
+run_task = { name = ["clean-test", "run-tests"] }
 
 # CODE COVERAGE
 
+[tasks.run-tests-with-coverage]
+command = "cargo"
+args = ["llvm-cov", "nextest", "--config-file", "./.cargo/nextest.toml"]
+
 [tasks.test-coverage]
-env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "${PWD}/moon-%p-%m.profraw" }
-run_task = { name = ["build", "test"] }
+run_task = { name = ["clean-test", "run-tests-with-coverage"] }
 
 [tasks.generate-report]
-command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "lcov", "--branch", "--ignore-not-existing", "--ignore", "**/errors.rs", "--ignore", "error/src/lib.rs", "-o", "./report.txt"]
+command = "cargo"
+args = ["llvm-cov", "report", "--lcov", "--ignore-filename-regex", "error", "--output-path", "./report.txt"]
 
 [tasks.generate-html]
-command = "grcov"
-args = [".", "-s", "./crates", "--binary-path", "./target/debug", "-t", "html", "--branch", "--ignore-not-existing", "--ignore", "**/errors.rs", "--ignore", "error/src/lib.rs", "-o", "./coverage"]
-
-[tasks.clean-profraw]
-script = "rm -rf *.profraw"
+command = "cargo"
+args = ["llvm-cov", "report", "--html", "--ignore-filename-regex", "error", "--open"]
 
 ## OTHER
 

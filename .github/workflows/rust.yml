@@ -74,8 +74,8 @@ jobs:
         uses: davidB/rust-cargo-make@v1
       - name: Install nextest
         uses: taiki-e/install-action@nextest
-      - name: Install grcov
-        uses: SierraSoftworks/setup-grcov@v1
+      - name: Install llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -76,6 +76,21 @@ utilizing language specific functionality, instead of migrating entirely to moon
 
 :::
 
+### How to stop moon formatting JSON and YAML files?
+
+To ensure a healthy repository state, moon constantly modifies JSON and YAML files, specifically
+`package.json` and `tsconfig.json`. This may result in a different formatting style in regards to
+indentation. While there is no way to stop or turn off this functionality, we respect
+[EditorConfig](https://editorconfig.org/) during this process.
+
+Create a root `.editorconfig` file to enforce a consistent syntax.
+
+```ini title=".editorconfig"
+[*.{json,yaml,yml}]
+indent_style = space
+indent_size = 4
+```
+
 ## Action runner
 
 ### What is `SetupNodeTool`, `InstallNodeDeps`, `RunTarget`, etc?

@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+<<<<<<< HEAD
 - Added `vcs.remoteCandidates` to `.moon/workspace.yml` to customize the remotes for git to query
   against.
 - Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler
@@ -45,6 +46,15 @@
 
 - The runner will no longer attempt to install dependencies if running against affected files.
 - Fixed some unexpected panics in relation to non-installed tools.
+=======
+- When writing YAML files, indentation and formatting will be inferred from the closest
+  `.editorconfig` as best as possible.
+
+#### 🐞 Fixes
+
+- When writing JSON files, it will now respect the `indent_style = tab` setting in the closest
+  `.editorconfig`.
+>>>>>>> 6408bfc4 (new: Support `.editorconfig` for YAML files. (#451))
 
 ## 0.19.0
 

@@ -65,11 +65,10 @@ impl<T: Tool> ToolManager<T> {
         version: &str,
         check_versions: bool,
     ) -> Result<u8, ToolchainError> {
-        self.cache
-            .get_mut(version)
-            .expect("Missing tool")
-            .run_setup(check_versions)
-            .await
+        match self.cache.get_mut(version) {
+            Some(cache) => cache.run_setup(check_versions).await,
+            None => Err(ToolchainError::MissingTool(self.runtime.to_string())),
+        }
     }
 
     pub async fn teardown(&mut self, version: &str) -> Result<(), ToolchainError> {

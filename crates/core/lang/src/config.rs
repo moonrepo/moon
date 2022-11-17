@@ -93,7 +93,9 @@ macro_rules! config_cache {
                     return Ok(false);
                 }
 
-                let mut cache = LOAD_CONFIG.lock().expect("Unable to acquire lock");
+                let mut cache = LOAD_CONFIG.lock()
+                    .map_err(|_| MoonError::Generic(format!("Unable to acquire lock on {:?}.", &path)))?;
+
                 let mut cfg: $struct;
 
                 if let Some(item) = cache.cache_get(&path) {
@@ -125,7 +127,8 @@ macro_rules! config_cache {
                 use cached::Cached;
                 use moon_logger::{color, trace};
 
-                let mut cache = LOAD_CONFIG.lock().expect("Unable to acquire lock");
+                let mut cache = LOAD_CONFIG.lock()
+                    .map_err(|_| MoonError::Generic(format!("Unable to acquire lock on {:?}.", &value.path)))?;
 
                 trace!(
                     target: "moon:lang:config",

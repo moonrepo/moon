@@ -31,7 +31,9 @@ pub fn read_raw<T: AsRef<Path>>(path: T) -> Result<Yaml, MoonError> {
     let data = fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
     let docs = YamlLoader::load_from_str(&data).map_err(|e| MoonError::Generic(e.to_string()))?;
 
-    Ok(docs.into_iter().next().expect("Invalid YAML document."))
+    docs.into_iter()
+        .next()
+        .ok_or_else(|| MoonError::Generic("Invalid YAML document.".into()))
 }
 
 #[inline]

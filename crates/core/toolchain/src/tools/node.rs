@@ -128,18 +128,27 @@ impl NodeTool {
     }
 
     /// Return the `npm` package manager.
-    pub fn get_npm(&self) -> Option<&NpmTool> {
-        self.npm.as_ref()
+    pub fn get_npm(&self) -> Result<&NpmTool, ToolchainError> {
+        match &self.npm {
+            Some(npm) => Ok(npm),
+            None => Err(ToolchainError::MissingTool("npm".into())),
+        }
     }
 
     /// Return the `pnpm` package manager.
-    pub fn get_pnpm(&self) -> Option<&PnpmTool> {
-        self.pnpm.as_ref()
+    pub fn get_pnpm(&self) -> Result<&PnpmTool, ToolchainError> {
+        match &self.pnpm {
+            Some(pnpm) => Ok(pnpm),
+            None => Err(ToolchainError::MissingTool("pnpm".into())),
+        }
     }
 
     /// Return the `yarn` package manager.
-    pub fn get_yarn(&self) -> Option<&YarnTool> {
-        self.yarn.as_ref()
+    pub fn get_yarn(&self) -> Result<&YarnTool, ToolchainError> {
+        match &self.yarn {
+            Some(yarn) => Ok(yarn),
+            None => Err(ToolchainError::MissingTool("yarn".into())),
+        }
     }
 
     pub fn get_package_manager(&self) -> &(dyn PackageManager<Self> + Send + Sync) {

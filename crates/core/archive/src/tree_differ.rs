@@ -12,7 +12,7 @@ pub fn read_dir_all<T: AsRef<Path> + Send>(
 ) -> Result<Vec<std::fs::DirEntry>, std::io::Error> {
     let path = path.as_ref();
 
-    let mut entries = std::fs::read_dir(path)?;
+    let entries = std::fs::read_dir(path)?;
     let mut results = vec![];
 
     for entry in entries {

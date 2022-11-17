@@ -177,7 +177,7 @@ pub async fn unzip_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
 ) -> Result<(), ArchiveError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
-    let mut diff = TreeDiffer::load(&output_dir, files).await?;
+    let mut diff = TreeDiffer::load(&output_dir, files)?;
 
     debug!(
         target: LOG_TARGET,

@@ -1,6 +1,6 @@
 use crate::cache_item;
 use crate::helpers::{is_readable, is_writable};
-use moon_archive::{untar_with_diff, TarArchiver};
+use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_utils::{fs, json, time};
@@ -65,7 +65,9 @@ impl RunTargetState {
         outputs: &[String],
     ) -> Result<bool, MoonError> {
         if is_readable() && archive_file.exists() {
-            untar_with_diff(archive_file, outputs, project_root, None)
+            let mut diff = TreeDiffer::load(project_root, outputs)?;
+
+            untar_with_diff(&mut diff, archive_file, project_root, None)
                 .await
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
 

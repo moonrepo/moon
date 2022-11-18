@@ -1,15 +1,13 @@
 import { useEffect, useRef } from 'preact/compat';
-import { GraphInfo, render } from '@moonrepo/visualizer-core';
+import { render } from '../lib/render';
+import type { GraphInfo } from '../lib/types';
 
 export const Graph = () => {
 	const graphRef = useRef<HTMLDivElement>(null);
 
 	const drawGraph = () => {
-		if (graphRef.current) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			const data: GraphInfo = JSON.parse(window.GRAPH_DATA);
-			return render(graphRef.current, data);
-		}
+		if (graphRef.current)
+			return render(graphRef.current, JSON.parse(window.GRAPH_DATA) as GraphInfo);
 		return null;
 	};
 

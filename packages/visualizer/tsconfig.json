@@ -9,16 +9,13 @@
       "DOM.Iterable",
       "ESNext"
     ],
-    "outDir": "../../.moon/cache/types/packages/visualizer-browser",
+    "outDir": "../../.moon/cache/types/packages/visualizer",
     "useDefineForClassFields": true
   },
   "include": [
     "src"
   ],
   "references": [
-    {
-      "path": "../visualizer-core"
-    },
     {
       "path": "./tsconfig.node.json"
     }

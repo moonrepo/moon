@@ -1,5 +1,6 @@
 use crate::downloader::Downloadable;
 use crate::errors::ProbeError;
+use log::trace;
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io;
@@ -29,14 +30,14 @@ pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
 }
 
 pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProbeError> {
-    // trace!(
-    //     target: LOG_TARGET,
-    //     "Calculating sha256 for file {}",
-    //     color::path(path),
-    // );
-
     let path = path.as_ref();
     let handle_error = |e: io::Error| ProbeError::FileSystem(path.to_path_buf(), e.to_string());
+
+    trace!(
+        target: "probe:verifier",
+        "Calculating SHA256 checksum for file {}",
+        path.to_string_lossy()
+    );
 
     let mut file = File::open(path).map_err(handle_error)?;
     let mut sha = Sha256::new();
@@ -45,11 +46,11 @@ pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProbeE
 
     let hash = format!("{:x}", sha.finalize());
 
-    // trace!(
-    //     target: LOG_TARGET,
-    //     "Calculated hash {}",
-    //     color::symbol(&hash)
-    // );
+    trace!(
+        target: "probe:verifier",
+        "Calculated hash {}",
+        hash
+    );
 
     Ok(hash)
 }

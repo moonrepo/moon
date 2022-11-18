@@ -12,6 +12,7 @@ pub use lenient_semver::Version;
 pub use resolver::*;
 pub use verifier::*;
 
+use log::trace;
 use std::path::PathBuf;
 
 pub struct Probe {
@@ -30,6 +31,7 @@ pub trait Tool<'tool>:
     async fn setup(&mut self, parent: &Probe, initial_version: &str) -> Result<(), ProbeError> {
         self.before_setup().await?;
 
+        // Resolve a semantic version
         self.resolve_version(initial_version, None).await?;
 
         // Download the archive

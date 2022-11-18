@@ -1,5 +1,6 @@
 use crate::errors::ProbeError;
 use flate2::read::GzDecoder;
+use log::trace;
 use std::fs::{self, File};
 use std::io;
 use std::path::{Path, PathBuf};
@@ -29,12 +30,12 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     let handle_output_error =
         |e: io::Error| ProbeError::FileSystem(output_dir.to_path_buf(), e.to_string());
 
-    // debug!(
-    //     target: LOG_TARGET,
-    //     "Unpacking tar archive {} to {}",
-    //     color::path(input_file),
-    //     color::path(output_dir),
-    // );
+    trace!(
+        target: "probe:installer",
+        "Unpacking tar archive {} to {}",
+        input_file.to_string_lossy(),
+        output_dir.to_string_lossy(),
+    );
 
     if !output_dir.exists() {
         fs::create_dir_all(output_dir).map_err(handle_output_error)?;
@@ -88,12 +89,12 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     let handle_output_error =
         |e: io::Error| ProbeError::FileSystem(output_dir.to_path_buf(), e.to_string());
 
-    // debug!(
-    //     target: LOG_TARGET,
-    //     "Unzipping archive {} to {}",
-    //     color::path(input_file),
-    //     color::path(output_dir),
-    // );
+    trace!(
+        target: "probe:installer",
+        "Unzipping zip archive {} to {}",
+        input_file.to_string_lossy(),
+        output_dir.to_string_lossy(),
+    );
 
     if !output_dir.exists() {
         fs::create_dir_all(output_dir).map_err(handle_output_error)?;

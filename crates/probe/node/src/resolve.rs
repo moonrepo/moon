@@ -1,6 +1,7 @@
 #![allow(clippy::disallowed_types)]
 
-use crate::tool::NodeLanguage;
+use crate::NodeLanguage;
+use log::debug;
 use probe_core::{async_trait, load_versions_manifest, parse_version, ProbeError, Resolvable};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -38,6 +39,13 @@ impl<'tool> Resolvable<'tool> for NodeLanguage<'tool> {
     ) -> Result<String, ProbeError> {
         let mut candidate = None;
         let mut initial_version = initial_version.to_lowercase();
+
+        debug!(
+            target: "probe:node:resolve",
+            "Resolving a semantic version for {}",
+            initial_version,
+        );
+
         let manifest: Vec<NodeDistVersion> =
             load_versions_manifest(manifest_url.unwrap_or("https://nodejs.org/dist/index.json"))
                 .await?;
@@ -90,6 +98,8 @@ impl<'tool> Resolvable<'tool> for NodeLanguage<'tool> {
         };
 
         let version = parse_version(candidate)?.to_string();
+
+        debug!(target: "probe:node:resolver", "Resolved to {}", version);
 
         self.version = version.clone();
 

@@ -2867,6 +2867,7 @@ dependencies = [
  "async-trait",
  "flate2",
  "lenient_semver",
+ "log",
  "reqwest",
  "serde",
  "serde_json",
@@ -2881,6 +2882,7 @@ dependencies = [
 name = "probe_node"
 version = "0.1.0"
 dependencies = [
+ "log",
  "probe_core",
  "serde",
 ]

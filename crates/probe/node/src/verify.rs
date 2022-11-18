@@ -1,4 +1,5 @@
-use crate::tool::NodeLanguage;
+use crate::NodeLanguage;
+use log::debug;
 use probe_core::{
     async_trait, download_from_url, get_sha256_hash_of_file, ProbeError, Resolvable, Verifiable,
 };
@@ -20,6 +21,8 @@ impl<'tool> Verifiable<'tool> for NodeLanguage<'tool> {
         from_url: Option<&str>,
     ) -> Result<(), ProbeError> {
         if to_file.exists() {
+            debug!(target: "probe:node:verify", "Already downloaded checksum, continuing");
+
             return Ok(());
         }
 
@@ -29,7 +32,11 @@ impl<'tool> Verifiable<'tool> for NodeLanguage<'tool> {
             None => format!("https://nodejs.org/dist/v{}/SHASUMS256.txt", version),
         };
 
+        debug!(target: "probe:node:verify", "Attempting to download from {}", from_url);
+
         download_from_url(&from_url, &to_file).await?;
+
+        debug!(target: "probe:node:verify", "Successfully downloaded");
 
         Ok(())
     }
@@ -39,6 +46,13 @@ impl<'tool> Verifiable<'tool> for NodeLanguage<'tool> {
         checksum_file: &Path,
         download_file: &Path,
     ) -> Result<bool, ProbeError> {
+        debug!(
+            target: "probe:node:verify",
+            "Verifiying checksum of downloaded file {} using {}",
+            download_file.to_string_lossy(),
+            checksum_file.to_string_lossy(),
+        );
+
         let checksum = get_sha256_hash_of_file(download_file)?;
 
         let file = File::open(checksum_file)
@@ -52,6 +66,8 @@ impl<'tool> Verifiable<'tool> for NodeLanguage<'tool> {
         for line in BufReader::new(file).lines().flatten() {
             // <checksum>  node-v<version>-<os>-<arch>.tar.gz
             if line.starts_with(&checksum) && line.ends_with(file_name) {
+                debug!(target: "probe:node:verify", "Successfully verified, checksum matches");
+
                 return Ok(true);
             }
         }

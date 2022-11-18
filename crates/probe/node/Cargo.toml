@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 probe_core = { path = "../core" }
+log = "0.4.17"
 serde = { workspace = true }

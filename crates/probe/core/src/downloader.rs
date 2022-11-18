@@ -1,5 +1,6 @@
 use crate::errors::ProbeError;
 use crate::resolver::Resolvable;
+use log::trace;
 use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -30,12 +31,12 @@ where
         |e: io::Error| ProbeError::FileSystem(dest_file.to_path_buf(), e.to_string());
     let handle_http_error = |e: reqwest::Error| ProbeError::Http(url.to_owned(), e.to_string());
 
-    // trace!(
-    //     target: LOG_TARGET,
-    //     "Downloading file {} to {}",
-    //     color::url(url),
-    //     color::path(dest),
-    // );
+    trace!(
+        target: "probe:downloader",
+        "Downloading {} from {}",
+        dest_file.to_string_lossy(),
+        url
+    );
 
     // Ensure parent directories exist
     if let Some(parent) = dest_file.parent() {

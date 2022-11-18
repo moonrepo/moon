@@ -1,5 +1,6 @@
 use crate::errors::ProbeError;
 use lenient_semver::Version;
+use log::trace;
 use serde::de::DeserializeOwned;
 
 #[async_trait::async_trait]
@@ -24,6 +25,12 @@ where
 {
     let url = url.as_ref();
     let handle_error = |e: reqwest::Error| ProbeError::Http(url.to_owned(), e.to_string());
+
+    trace!(
+        target: "probe:resolver",
+        "Loading versions manifest from {}",
+        url
+    );
 
     let response = reqwest::get(url).await.map_err(handle_error)?;
     let content = response.text().await.map_err(handle_error)?;

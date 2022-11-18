@@ -11,7 +11,7 @@ pub trait Resolvable<'tool>: Send + Sync {
     /// according to the tool's ecosystem. A custom manifest URL can be provided as
     /// the 2nd argument.
     async fn resolve_version(
-        &self,
+        &mut self,
         initial_version: &str,
         manifest_url: Option<&str>,
     ) -> Result<String, ProbeError>;

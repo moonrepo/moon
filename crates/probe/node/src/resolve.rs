@@ -29,7 +29,7 @@ impl<'tool> Resolvable<'tool> for NodeLanguage<'tool> {
     }
 
     async fn resolve_version(
-        &self,
+        &mut self,
         initial_version: &str,
         manifest_url: Option<&str>,
     ) -> Result<String, ProbeError> {
@@ -86,6 +86,10 @@ impl<'tool> Resolvable<'tool> for NodeLanguage<'tool> {
             return Err(ProbeError::VersionResolveFailed(initial_version))
         };
 
-        Ok(parse_version(candidate)?.to_string())
+        let version = parse_version(candidate)?.to_string();
+
+        self.version = version.clone();
+
+        Ok(version)
     }
 }

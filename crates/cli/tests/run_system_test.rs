@@ -278,10 +278,27 @@ mod unix {
                 .assert();
             let output = get_assert_output(&assert);
 
-            // Order is not deterministic
-            assert!(predicate::str::contains("Args:").eval(&output));
-            assert!(predicate::str::contains("./input1.txt").eval(&output));
-            assert!(predicate::str::contains("./input2.txt").eval(&output));
+            assert!(predicate::str::contains("Args: ./input1.txt ./input2.txt").eval(&output));
+        }
+
+        #[test]
+        fn sets_env_var() {
+            let fixture = create_sandbox_with_git("system");
+
+            fs::write(fixture.path().join("unix/input1.txt"), "").unwrap();
+            fs::write(fixture.path().join("unix/input2.txt"), "").unwrap();
+
+            let assert = create_moon_command(fixture.path())
+                .arg("run")
+                .arg("unix:affectedFilesEnvVar")
+                .arg("--affected")
+                .assert();
+            let output = get_assert_output(&assert);
+
+            assert!(
+                predicate::str::contains("MOON_AFFECTED_FILES=./input1.txt,./input2.txt")
+                    .eval(&output)
+            );
         }
     }
 }

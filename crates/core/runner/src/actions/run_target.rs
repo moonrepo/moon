@@ -223,6 +223,77 @@ impl<'a> TargetRunner<'a> {
         Ok(hasher)
     }
 
+    pub async fn create_command(&self, context: &ActionContext) -> Result<Command, RunnerError> {
+        let workspace = &self.workspace;
+        let project = &self.project;
+        let task = &self.task;
+        let working_dir = if task.options.run_from_workspace_root {
+            &workspace.root
+        } else {
+            &project.root
+        };
+
+        debug!(
+            target: LOG_TARGET,
+            "Creating {} command (in working directory {})",
+            color::target(&task.target),
+            color::path(working_dir)
+        );
+
+        let mut command = match task.platform {
+            PlatformType::Node => {
+                node_actions::create_target_command(context, workspace, project, task).await?
+            }
+            _ => system_actions::create_target_command(task, working_dir),
+        };
+
+        command
+            .cwd(working_dir)
+            .envs(self.create_env_vars().await?)
+            // We need to handle non-zero's manually
+            .no_error_on_failure();
+
+        // Passthrough args
+        if context.should_inherit_args(&self.task.target) {
+            command.args(&context.passthrough_args);
+        }
+
+        // Terminal colors
+        if self.workspace.config.runner.inherit_colors_for_piped_tasks {
+            command.inherit_colors();
+        }
+
+        // Affected files (must be last args)
+        if self.task.options.affected_files {
+            if context.affected {
+                let mut affected_files = self
+                    .task
+                    .get_affected_files(&context.touched_files, &self.project.root)?;
+
+                if affected_files.is_empty() {
+                    command.arg_if_missing(".");
+                } else {
+                    affected_files.sort();
+
+                    command.env(
+                        "MOON_AFFECTED_FILES",
+                        affected_files
+                            .iter()
+                            .map(|f| f.to_string_lossy())
+                            .collect::<Vec<_>>()
+                            .join(","),
+                    );
+
+                    command.args(affected_files);
+                }
+            } else {
+                command.arg_if_missing(".");
+            }
+        }
+
+        Ok(command)
+    }
+
     pub async fn create_env_vars(&self) -> Result<FxHashMap<String, String>, MoonError> {
         let mut env_vars = FxHashMap::default();
 
@@ -376,32 +447,6 @@ impl<'a> TargetRunner<'a> {
         context: &ActionContext,
         command: &mut Command,
     ) -> Result<Vec<Attempt>, RunnerError> {
-        command.envs(self.create_env_vars().await?);
-
-        if context.should_inherit_args(&self.task.target) {
-            command.args(&context.passthrough_args);
-        }
-
-        if self.task.options.affected_files {
-            if context.affected {
-                let affected_files = self
-                    .task
-                    .get_affected_files(&context.touched_files, &self.project.root)?;
-
-                if affected_files.is_empty() {
-                    command.arg_if_missing(".");
-                } else {
-                    command.args(affected_files);
-                }
-            } else {
-                command.arg_if_missing(".");
-            }
-        }
-
-        if self.workspace.config.runner.inherit_colors_for_piped_tasks {
-            command.inherit_colors();
-        }
-
         let attempt_total = self.task.options.retry_count + 1;
         let mut attempt_index = 1;
         let mut attempts = vec![];
@@ -805,31 +850,8 @@ pub async fn run_target(
     }
 
     // Create the command to run based on the task
-    let working_dir = if task.options.run_from_workspace_root {
-        &workspace.root
-    } else {
-        &project.root
-    };
-
     let context = context.read().await;
-    let mut command = match task.platform {
-        PlatformType::Node => {
-            node_actions::create_target_command(&context, &workspace, &project, task).await?
-        }
-        _ => system_actions::create_target_command(task, working_dir),
-    };
-
-    command
-        .cwd(working_dir)
-        // We need to handle non-zero's manually
-        .no_error_on_failure();
-
-    debug!(
-        target: LOG_TARGET,
-        "Creating {} command (in working directory {})",
-        color::target(&task.target),
-        color::path(working_dir)
-    );
+    let mut command = runner.create_command(&context).await?;
 
     // Execute the command and return the number of attempts
     let attempts = runner.run_command(&context, &mut command).await?;

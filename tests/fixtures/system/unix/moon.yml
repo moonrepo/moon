@@ -63,6 +63,10 @@ tasks:
     command: bash ./args.sh
     options:
       affectedFiles: true
+  affectedFilesEnvVar:
+    command: bash ./envVarsMoon.sh
+    options:
+      affectedFiles: true
 
   # Misc
   foo:

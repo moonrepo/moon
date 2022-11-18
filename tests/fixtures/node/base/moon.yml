@@ -68,3 +68,7 @@ tasks:
     command: node ./args.js
     options:
       affectedFiles: true
+  affectedFilesEnvVar:
+    command: node ./envVarsMoon.js
+    options:
+      affectedFiles: true

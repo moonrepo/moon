@@ -1,9 +1,16 @@
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProbeError {
     #[error("Failed to download tool from {0}. {1}")]
     DownloadFailed(String, String),
+
+    #[error("File system failure for {0}. {1}")]
+    FileSystem(PathBuf, String),
+
+    #[error("HTTP failure for {0}. {1}")]
+    Http(String, String),
 
     #[error("Internet connection required, unable to download and install tools.")]
     InternetConnectionRequired,

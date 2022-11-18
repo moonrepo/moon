@@ -2866,8 +2866,10 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "lenient_semver",
+ "reqwest",
  "serde",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]

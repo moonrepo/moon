@@ -6,5 +6,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.58"
 lenient_semver = { version = "0.4.2", features = ["version_lite", "version_serde"] }
+reqwest = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }

@@ -1,17 +1,9 @@
 use crate::tool::NodeLanguage;
-use probe_core::{async_trait, Downloadable, Probe, ProbeError, Resolvable};
+use probe_core::{async_trait, download_from_url, Downloadable, Probe, ProbeError, Resolvable};
 use std::env::consts;
 use std::path::PathBuf;
 
-pub fn get_download_file_ext() -> &'static str {
-    if consts::OS == "windows" {
-        "zip"
-    } else {
-        "tar.gz"
-    }
-}
-
-pub fn get_download_file_name(version: &str) -> Result<String, ProbeError> {
+pub fn get_archive_file_path(version: &str) -> Result<String, ProbeError> {
     let platform;
 
     if consts::OS == "linux" {
@@ -49,12 +41,22 @@ pub fn get_download_file_name(version: &str) -> Result<String, ProbeError> {
     Ok(format!("node-v{version}-{platform}-{arch}"))
 }
 
+pub fn get_archive_file(version: &str) -> Result<String, ProbeError> {
+    let ext = if consts::OS == "windows" {
+        "zip"
+    } else {
+        "tar.gz"
+    };
+
+    Ok(format!("{}.{}", get_archive_file_path(version)?, ext))
+}
+
 #[async_trait]
 impl<'tool> Downloadable<'tool, Probe> for NodeLanguage<'tool> {
     fn get_download_path(&self, parent: &Probe) -> Result<PathBuf, ProbeError> {
         Ok(parent
             .temp_dir
-            .join(get_download_file_name(self.get_resolved_version())?))
+            .join(get_archive_file(self.get_resolved_version())?))
     }
 
     async fn is_downloaded(&self, parent: &Probe) -> Result<bool, ProbeError> {
@@ -62,6 +64,16 @@ impl<'tool> Downloadable<'tool, Probe> for NodeLanguage<'tool> {
     }
 
     async fn download(&self, parent: &Probe) -> Result<(), ProbeError> {
+        let version = self.get_resolved_version();
+        let download_file = self.get_download_path(parent)?;
+        let download_url = format!(
+            "https://nodejs.org/dist/v{}/{}",
+            version,
+            get_archive_file(version)?
+        );
+
+        download_from_url(&download_url, &download_file).await?;
+
         Ok(())
     }
 }

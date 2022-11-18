@@ -1,8 +1,8 @@
 use crate::platform::NodeArch;
 use crate::tool::NodeLanguage;
-use probe_core::{async_trait, download_from_url, Downloadable, Probe, ProbeError, Resolvable};
+use probe_core::{async_trait, download_from_url, Downloadable, ProbeError, Resolvable};
 use std::env::consts;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 #[cfg(target_os = "macos")]
@@ -61,27 +61,20 @@ pub fn get_archive_file(version: &str) -> Result<String, ProbeError> {
 }
 
 #[async_trait]
-impl<'tool> Downloadable<'tool, Probe> for NodeLanguage<'tool> {
-    fn get_download_path(&self, parent: &Probe) -> Result<PathBuf, ProbeError> {
-        Ok(parent
-            .temp_dir
+impl<'tool> Downloadable<'tool> for NodeLanguage<'tool> {
+    fn get_download_path(&self, temp_dir: &Path) -> Result<PathBuf, ProbeError> {
+        Ok(temp_dir
             .join("node")
             .join(get_archive_file(self.get_resolved_version())?))
     }
 
-    async fn download(
-        &self,
-        parent: &Probe,
-        download_url: Option<&str>,
-    ) -> Result<PathBuf, ProbeError> {
-        let download_file = self.get_download_path(parent)?;
-
-        if download_file.exists() {
-            return Ok(download_file);
+    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<(), ProbeError> {
+        if to_file.exists() {
+            return Ok(());
         }
 
         let version = self.get_resolved_version();
-        let download_url = match download_url {
+        let from_url = match from_url {
             Some(url) => url.to_owned(),
             None => {
                 format!(
@@ -92,8 +85,8 @@ impl<'tool> Downloadable<'tool, Probe> for NodeLanguage<'tool> {
             }
         };
 
-        download_from_url(&download_url, &download_file).await?;
+        download_from_url(&from_url, &to_file).await?;
 
-        Ok(download_file)
+        Ok(())
     }
 }

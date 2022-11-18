@@ -6,22 +6,26 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 #[async_trait::async_trait]
-pub trait Verifiable<'tool, T: Send + Sync>: Send + Sync + Downloadable<'tool, T> {
+pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
     /// Returns an absolute file path to the checksum file.
     /// This may not exist, as the path is composed ahead of time.
     /// This is typically ~/.prove/temp/<file>.
-    fn get_checksum_path(&self, parent: &T) -> Result<PathBuf, ProbeError>;
+    fn get_checksum_path(&self, temp_dir: &Path) -> Result<PathBuf, ProbeError>;
 
     /// If applicable, download all files necessary for verifying checksums.
     async fn download_checksum(
         &self,
-        parent: &T,
-        checksum_url: Option<&str>,
+        to_file: &Path,
+        from_url: Option<&str>,
     ) -> Result<(), ProbeError>;
 
     /// Verify the downloaded file using the checksum strategy for the tool.
     /// Common strategies are SHA256 and MD5.
-    async fn verify_checksum(&self, parent: &T, download_file: &Path) -> Result<bool, ProbeError>;
+    async fn verify_checksum(
+        &self,
+        checksum_file: &Path,
+        download_file: &Path,
+    ) -> Result<bool, ProbeError>;
 }
 
 pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProbeError> {

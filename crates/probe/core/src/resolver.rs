@@ -3,7 +3,7 @@ use lenient_semver::Version;
 use serde::de::DeserializeOwned;
 
 #[async_trait::async_trait]
-pub trait Resolvable<'tool, T: Send + Sync>: Send + Sync {
+pub trait Resolvable<'tool>: Send + Sync {
     /// Return the resolved version.
     fn get_resolved_version(&self) -> &str;
 

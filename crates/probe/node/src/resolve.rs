@@ -1,7 +1,5 @@
 use crate::tool::NodeLanguage;
-use probe_core::{
-    async_trait, load_versions_manifest, parse_version, Probe, ProbeError, Resolvable,
-};
+use probe_core::{async_trait, load_versions_manifest, parse_version, ProbeError, Resolvable};
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -25,7 +23,7 @@ struct NodeDistVersion {
 }
 
 #[async_trait]
-impl<'tool> Resolvable<'tool, Probe> for NodeLanguage<'tool> {
+impl<'tool> Resolvable<'tool> for NodeLanguage<'tool> {
     fn get_resolved_version(&self) -> &str {
         &self.version
     }

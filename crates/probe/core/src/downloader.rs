@@ -6,18 +6,17 @@ use std::path::{Path, PathBuf};
 use tokio::fs;
 
 #[async_trait::async_trait]
-pub trait Downloadable<'tool, T: Send + Sync>: Send + Sync + Resolvable<'tool, T> {
+pub trait Downloadable<'tool>: Send + Sync + Resolvable<'tool> {
     /// Returns an absolute file path to the downloaded file.
     /// This may not exist, as the path is composed ahead of time.
     /// This is typically ~/.prove/temp/<file>.
-    fn get_download_path(&self, parent: &T) -> Result<PathBuf, ProbeError>;
+    fn get_download_path(&self, temp_dir: &Path) -> Result<PathBuf, ProbeError>;
 
     /// Download the tool (as an archive) from its distribution registry
     /// into the ~/.probe/temp folder and return an absolute file path.
     /// A custom URL that points to the downloadable archive can be
     /// provided as the 2nd argument.
-    async fn download(&self, parent: &T, download_url: Option<&str>)
-        -> Result<PathBuf, ProbeError>;
+    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<(), ProbeError>;
 }
 
 pub async fn download_from_url<U, F>(url: U, dest_file: F) -> Result<(), ProbeError>

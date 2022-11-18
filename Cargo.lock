@@ -1645,6 +1645,47 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
+name = "lenient_semver"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de8de3f4f3754c280ce1c8c42ed8dd26a9c8385c2e5ad4ec5a77e774cea9c1ec"
+dependencies = [
+ "lenient_semver_parser",
+ "lenient_version",
+ "semver",
+]
+
+[[package]]
+name = "lenient_semver_parser"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f650c1d024ddc26b4bb79c3076b30030f2cf2b18292af698c81f7337a64d7d6"
+dependencies = [
+ "lenient_semver_version_builder",
+ "semver",
+]
+
+[[package]]
+name = "lenient_semver_version_builder"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9049f8ff49f75b946f95557148e70230499c8a642bf2d6528246afc7d0282d17"
+dependencies = [
+ "semver",
+]
+
+[[package]]
+name = "lenient_version"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bad7b41cc0ad9b8a9f8d8fcb7c2ab6703a6da4b369cbb7e3a63ee0840769b4eb"
+dependencies = [
+ "lenient_semver_parser",
+ "lenient_semver_version_builder",
+ "serde",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.133"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2817,6 +2858,23 @@ dependencies = [
  "diff",
  "output_vt100",
  "yansi",
+]
+
+[[package]]
+name = "probe_core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "lenient_semver",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "probe_node"
+version = "0.1.0"
+dependencies = [
+ "probe_core",
 ]
 
 [[package]]

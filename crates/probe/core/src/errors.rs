@@ -37,4 +37,7 @@ pub enum ProbeError {
 
     #[error("Failed to parse version {0}. {1}")]
     VersionParseFailed(String, String),
+
+    #[error("Failed to resolve a semantic version for {0}.")]
+    VersionResolveFailed(String),
 }

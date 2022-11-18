@@ -2868,6 +2868,7 @@ dependencies = [
  "lenient_semver",
  "reqwest",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
 ]
@@ -2877,6 +2878,7 @@ name = "probe_node"
 version = "0.1.0"
 dependencies = [
  "probe_core",
+ "serde",
 ]
 
 [[package]]

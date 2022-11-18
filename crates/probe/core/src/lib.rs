@@ -21,9 +21,15 @@ pub struct Probe {
 
 #[async_trait::async_trait]
 pub trait Tool<'tool>:
-    Send + Sync + Resolvable<'tool> + Downloadable<'tool> + Verifiable<'tool>
+    Send + Sync + Resolvable<'tool> + Downloadable<'tool> + Verifiable<'tool> + Installable<'tool>
 {
+    async fn before_setup(&mut self) -> Result<(), ProbeError> {
+        Ok(())
+    }
+
     async fn setup(&mut self, parent: &Probe, initial_version: &str) -> Result<(), ProbeError> {
+        self.before_setup().await?;
+
         self.resolve_version(initial_version, None).await?;
 
         // Download the archive
@@ -37,8 +43,17 @@ pub trait Tool<'tool>:
         self.download_checksum(&checksum_path, None).await?;
         self.verify_checksum(&checksum_path, &download_path).await?;
 
-        // TODO install
+        // Install the tool
+        let install_dir = self.get_install_dir(&parent.tools_dir)?;
 
+        self.install(&install_dir, &download_path).await?;
+
+        self.after_setup().await?;
+
+        Ok(())
+    }
+
+    async fn after_setup(&mut self) -> Result<(), ProbeError> {
         Ok(())
     }
 }

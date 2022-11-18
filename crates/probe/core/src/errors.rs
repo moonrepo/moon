@@ -35,4 +35,7 @@ pub enum ProbeError {
 
     #[error("Failed to resolve a semantic version for {0}.")]
     VersionResolveFailed(String),
+
+    #[error("Failed zip archive. {0}")]
+    Zip(#[from] zip::result::ZipError),
 }

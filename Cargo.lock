@@ -2865,13 +2865,16 @@ name = "probe_core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "flate2",
  "lenient_semver",
  "reqwest",
  "serde",
  "serde_json",
  "sha2",
+ "tar",
  "thiserror",
  "tokio",
+ "zip",
 ]
 
 [[package]]

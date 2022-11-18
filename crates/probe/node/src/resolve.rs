@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_types)]
+
 use crate::tool::NodeLanguage;
 use probe_core::{async_trait, load_versions_manifest, parse_version, ProbeError, Resolvable};
 use serde::Deserialize;
@@ -11,6 +13,7 @@ enum NodeLTS {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct NodeDistVersion {
     date: String,
     files: Vec<String>,

@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 pub struct NodeLanguage<'tool> {
     pub version: String,
 
+    #[allow(dead_code)]
     data: &'tool PhantomData<()>,
 }
 

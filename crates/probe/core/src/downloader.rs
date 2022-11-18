@@ -9,7 +9,7 @@ use tokio::fs;
 pub trait Downloadable<'tool>: Send + Sync + Resolvable<'tool> {
     /// Returns an absolute file path to the downloaded file.
     /// This may not exist, as the path is composed ahead of time.
-    /// This is typically ~/.prove/temp/<file>.
+    /// This is typically ~/.probe/temp/<file>.
     fn get_download_path(&self, temp_dir: &Path) -> Result<PathBuf, ProbeError>;
 
     /// Download the tool (as an archive) from its distribution registry

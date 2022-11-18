@@ -41,7 +41,7 @@ impl<'tool> Verifiable<'tool> for NodeLanguage<'tool> {
     ) -> Result<bool, ProbeError> {
         let checksum = get_sha256_hash_of_file(download_file)?;
 
-        let file = File::open(&checksum_file)
+        let file = File::open(checksum_file)
             .map_err(|e| ProbeError::FileSystem(checksum_file.to_path_buf(), e.to_string()))?;
         let file_name = download_file
             .file_name()

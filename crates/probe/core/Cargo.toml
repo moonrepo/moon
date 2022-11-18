@@ -5,10 +5,13 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.58"
+flate2 = "1.0.24"
 lenient_semver = { version = "0.4.2", features = ["version_lite", "version_serde"] }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = "0.10.6"
+tar = "0.4.38"
 thiserror = { workspace = true }
 tokio = { workspace = true }
+zip = "0.6.3"

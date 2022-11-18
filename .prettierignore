@@ -20,4 +20,4 @@ dist/
 crates/config/templates/
 
 # visualizer
-packages/visualizer-browser/*timestamp*
+packages/visualizer/*timestamp*

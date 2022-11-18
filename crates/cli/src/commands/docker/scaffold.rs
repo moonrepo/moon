@@ -33,7 +33,7 @@ async fn copy_files<T: AsRef<str>>(
 
         if source_file.exists() {
             if source_file.is_dir() {
-                fs::copy_dir_all(&source_file, &source_file, &target.join(file))?;
+                fs::copy_dir_all(&source_file, &source_file, &target.join(file)).await?;
             } else {
                 futures.push(fs::copy_file(source_file, target.join(file)));
             }

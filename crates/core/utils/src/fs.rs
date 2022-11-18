@@ -1,3 +1,5 @@
+use async_recursion::async_recursion;
+use futures::future::try_join_all;
 use moon_error::{map_io_to_fs_error, MoonError};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
@@ -19,8 +21,8 @@ pub async fn copy_file<S: AsRef<Path>, D: AsRef<Path>>(from: S, to: D) -> Result
 }
 
 // Sync is much faster than async here because of recursion!
-#[inline]
-pub fn copy_dir_all<T: AsRef<Path> + Send>(
+#[async_recursion]
+pub async fn copy_dir_all<T: AsRef<Path> + Send>(
     from_root: T,
     from: T,
     to_root: T,
@@ -28,22 +30,29 @@ pub fn copy_dir_all<T: AsRef<Path> + Send>(
     let from_root = from_root.as_ref();
     let from = from.as_ref();
     let to_root = to_root.as_ref();
-    let entries = std::fs::read_dir(from)?;
+    let entries = read_dir(from).await?;
+    let mut files = vec![];
     let mut dirs = vec![];
 
     for entry in entries {
-        let path = entry?.path();
+        let path = entry.path();
 
         if path.is_file() {
-            std::fs::copy(&path, to_root.join(path.strip_prefix(from_root).unwrap()))?;
+            files.push(copy_file(
+                path.to_owned(),
+                to_root.join(path.strip_prefix(from_root).unwrap()),
+            ));
         } else {
             dirs.push(path);
         }
     }
 
+    // Copy files before dirs incase an error occurs
+    try_join_all(files).await?;
+
     // Copy dirs in sequence for the same reason
     for dir in dirs {
-        copy_dir_all(from_root, &dir, to_root)?;
+        copy_dir_all(from_root, &dir, to_root).await?;
     }
 
     Ok(())
@@ -145,7 +154,7 @@ pub async fn read_dir<T: AsRef<Path>>(path: T) -> Result<Vec<fs::DirEntry>, Moon
     Ok(results)
 }
 
-// Sync is much faster than async here because of recursion!
+// Sync is almost 5x faster than async here!
 #[inline]
 pub fn read_dir_all<T: AsRef<Path> + Send>(path: T) -> Result<Vec<std::fs::DirEntry>, MoonError> {
     let path = path.as_ref();

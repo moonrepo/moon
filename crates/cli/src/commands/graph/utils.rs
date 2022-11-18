@@ -3,7 +3,7 @@ use super::{
     dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto},
 };
 use crate::helpers::AnyError;
-use moon_runner::DepGraph;
+use moon_runner::{DepGraph, NodeIndex};
 use moon_workspace::Workspace;
 use petgraph::Graph;
 use rustc_hash::FxHashSet;
@@ -48,22 +48,15 @@ pub fn extract_nodes_and_edges_from_graph(graph: &Graph<String, ()>) -> GraphInf
         .collect::<Vec<_>>();
     let mut nodes = FxHashSet::default();
     for edge in graph.raw_edges().iter() {
-        let source = graph
-            .node_weight(edge.source())
-            .expect("Unable to get node")
-            .clone();
-        let target = graph
-            .node_weight(edge.target())
-            .expect("Unable to get node")
-            .clone();
-        nodes.insert(GraphNodeDto {
-            id: edge.source().index(),
-            label: source,
-        });
-        nodes.insert(GraphNodeDto {
-            id: edge.target().index(),
-            label: target,
-        });
+        let get_graph_node = |ni: NodeIndex| GraphNodeDto {
+            id: ni.index(),
+            label: graph
+                .node_weight(ni)
+                .expect("Unable to get node weight")
+                .clone(),
+        };
+        nodes.insert(get_graph_node(edge.source()));
+        nodes.insert(get_graph_node(edge.target()));
     }
     let nodes = nodes.into_iter().collect();
     GraphInfoDto { edges, nodes }

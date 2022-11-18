@@ -71,14 +71,19 @@ impl<'tool> Downloadable<'tool, Probe> for NodeLanguage<'tool> {
         Ok(self.get_download_path(parent)?.exists())
     }
 
-    async fn download(&self, parent: &Probe) -> Result<(), ProbeError> {
+    async fn download(&self, parent: &Probe, download_url: Option<&str>) -> Result<(), ProbeError> {
         let version = self.get_resolved_version();
         let download_file = self.get_download_path(parent)?;
-        let download_url = format!(
-            "https://nodejs.org/dist/v{}/{}",
-            version,
-            get_archive_file(version)?
-        );
+        let download_url = match download_url {
+            Some(url) => url.to_owned(),
+            None => {
+                format!(
+                    "https://nodejs.org/dist/v{}/{}",
+                    version,
+                    get_archive_file(version)?
+                )
+            }
+        };
 
         download_from_url(&download_url, &download_file).await?;
 

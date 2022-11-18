@@ -10,8 +10,9 @@ pub use errors::*;
 pub use installer::*;
 pub use lenient_semver::Version;
 pub use resolver::*;
-use std::path::PathBuf;
 pub use verifier::*;
+
+use std::path::PathBuf;
 
 pub struct Probe {
     pub temp_dir: PathBuf,

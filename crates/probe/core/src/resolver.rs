@@ -8,11 +8,21 @@ pub trait Resolvable<'tool, T: Send + Sync>: Send + Sync {
     fn get_resolved_version(&self) -> &str;
 
     /// Given an initial version, resolve it to a fully qualifed and semantic version
-    /// according to the tool's ecosystem.
-    async fn resolve_version(&self, initial_version: &str) -> Result<String, ProbeError>;
+    /// according to the tool's ecosystem. A custom manifest URL can be provided as
+    /// the 2nd argument.
+    async fn resolve_version(
+        &self,
+        initial_version: &str,
+        manifest_url: Option<&str>,
+    ) -> Result<String, ProbeError>;
 }
 
-pub async fn load_versions_manifest<T: DeserializeOwned>(url: &str) -> Result<T, ProbeError> {
+pub async fn load_versions_manifest<T, U>(url: U) -> Result<T, ProbeError>
+where
+    T: DeserializeOwned,
+    U: AsRef<str>,
+{
+    let url = url.as_ref();
     let handle_error = |e: reqwest::Error| ProbeError::Http(url.to_owned(), e.to_string());
 
     let response = reqwest::get(url).await.map_err(handle_error)?;

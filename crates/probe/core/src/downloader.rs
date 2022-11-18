@@ -16,12 +16,18 @@ pub trait Downloadable<'tool, T: Send + Sync>: Send + Sync + Resolvable<'tool, T
     async fn is_downloaded(&self, parent: &T) -> Result<bool, ProbeError>;
 
     /// Download the tool (as an archive) from its distribution registry
-    /// into the ~/.probe/temp folder.
-    async fn download(&self, parent: &T) -> Result<(), ProbeError>;
+    /// into the ~/.probe/temp folder. A custom URL that points to the
+    /// downloadable archive can be provided as the 2nd argument.
+    async fn download(&self, parent: &T, download_url: Option<&str>) -> Result<(), ProbeError>;
 }
 
-pub async fn download_from_url<T: AsRef<str>>(url: T, dest_file: &Path) -> Result<(), ProbeError> {
+pub async fn download_from_url<U, F>(url: U, dest_file: F) -> Result<(), ProbeError>
+where
+    U: AsRef<str>,
+    F: AsRef<Path>,
+{
     let url = url.as_ref();
+    let dest_file = dest_file.as_ref();
     let handle_io_error =
         |e: io::Error| ProbeError::FileSystem(dest_file.to_path_buf(), e.to_string());
     let handle_http_error = |e: reqwest::Error| ProbeError::Http(url.to_owned(), e.to_string());

@@ -30,11 +30,16 @@ impl<'tool> Resolvable<'tool, Probe> for NodeLanguage<'tool> {
         &self.version
     }
 
-    async fn resolve_version(&self, initial_version: &str) -> Result<String, ProbeError> {
+    async fn resolve_version(
+        &self,
+        initial_version: &str,
+        manifest_url: Option<&str>,
+    ) -> Result<String, ProbeError> {
         let mut candidate = None;
         let mut initial_version = initial_version.to_lowercase();
         let manifest: Vec<NodeDistVersion> =
-            load_versions_manifest("https://nodejs.org/dist/index.json").await?;
+            load_versions_manifest(manifest_url.unwrap_or("https://nodejs.org/dist/index.json"))
+                .await?;
 
         // Latest version is always at the top
         if initial_version == "node" || initial_version == "latest" {

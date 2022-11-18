@@ -15,10 +15,8 @@ pub enum ProbeError {
     #[error("Internet connection required, unable to download and install tools.")]
     InternetConnectionRequired,
 
-    #[error(
-        "Shashum check has failed for <file>{0}</file>, which was downloaded from <url>{1}</url>."
-    )]
-    InvalidShasum(String, String),
+    #[error("Checksum has failed for {0}, which was verified using {1}.")]
+    InvalidChecksum(PathBuf, PathBuf),
 
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,

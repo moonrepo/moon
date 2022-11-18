@@ -12,13 +12,12 @@ pub trait Downloadable<'tool, T: Send + Sync>: Send + Sync + Resolvable<'tool, T
     /// This is typically ~/.prove/temp/<file>.
     fn get_download_path(&self, parent: &T) -> Result<PathBuf, ProbeError>;
 
-    /// Determine whether the tool has already been downloaded.
-    async fn is_downloaded(&self, parent: &T) -> Result<bool, ProbeError>;
-
     /// Download the tool (as an archive) from its distribution registry
-    /// into the ~/.probe/temp folder. A custom URL that points to the
-    /// downloadable archive can be provided as the 2nd argument.
-    async fn download(&self, parent: &T, download_url: Option<&str>) -> Result<(), ProbeError>;
+    /// into the ~/.probe/temp folder and return an absolute file path.
+    /// A custom URL that points to the downloadable archive can be
+    /// provided as the 2nd argument.
+    async fn download(&self, parent: &T, download_url: Option<&str>)
+        -> Result<PathBuf, ProbeError>;
 }
 
 pub async fn download_from_url<U, F>(url: U, dest_file: F) -> Result<(), ProbeError>

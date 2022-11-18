@@ -9,7 +9,7 @@ use std::str::FromStr;
 pub fn get_archive_file_path(version: &str) -> Result<String, ProbeError> {
     let arch = NodeArch::from_str(consts::ARCH)?;
 
-    if !matches!(NodeArch::X64 | NodeArch::Arm64) {
+    if !matches!(arch, NodeArch::X64 | NodeArch::Arm64) {
         return Err(ProbeError::UnsupportedArchitecture(
             "Node.js".into(),
             arch.to_string(),
@@ -24,6 +24,7 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProbeError> {
     let arch = NodeArch::from_str(consts::ARCH)?;
 
     if !matches!(
+        arch,
         NodeArch::X64 | NodeArch::Arm64 | NodeArch::Armv7l | NodeArch::Ppc64le | NodeArch::S390x
     ) {
         return Err(ProbeError::UnsupportedArchitecture(
@@ -39,7 +40,7 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProbeError> {
 pub fn get_archive_file_path(version: &str) -> Result<String, ProbeError> {
     let arch = NodeArch::from_str(consts::ARCH)?;
 
-    if !matches!(NodeArch::X64 | NodeArch::X86) {
+    if !matches!(arch, NodeArch::X64 | NodeArch::X86) {
         return Err(ProbeError::UnsupportedArchitecture(
             "Node.js".into(),
             arch.to_string(),
@@ -64,16 +65,22 @@ impl<'tool> Downloadable<'tool, Probe> for NodeLanguage<'tool> {
     fn get_download_path(&self, parent: &Probe) -> Result<PathBuf, ProbeError> {
         Ok(parent
             .temp_dir
+            .join("node")
             .join(get_archive_file(self.get_resolved_version())?))
     }
 
-    async fn is_downloaded(&self, parent: &Probe) -> Result<bool, ProbeError> {
-        Ok(self.get_download_path(parent)?.exists())
-    }
-
-    async fn download(&self, parent: &Probe, download_url: Option<&str>) -> Result<(), ProbeError> {
-        let version = self.get_resolved_version();
+    async fn download(
+        &self,
+        parent: &Probe,
+        download_url: Option<&str>,
+    ) -> Result<PathBuf, ProbeError> {
         let download_file = self.get_download_path(parent)?;
+
+        if download_file.exists() {
+            return Ok(download_file);
+        }
+
+        let version = self.get_resolved_version();
         let download_url = match download_url {
             Some(url) => url.to_owned(),
             None => {
@@ -87,6 +94,6 @@ impl<'tool> Downloadable<'tool, Probe> for NodeLanguage<'tool> {
 
         download_from_url(&download_url, &download_file).await?;
 
-        Ok(())
+        Ok(download_file)
     }
 }

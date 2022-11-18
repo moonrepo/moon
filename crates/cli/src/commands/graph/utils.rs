@@ -1,4 +1,7 @@
-use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
+use super::{
+    common::get_js_url,
+    dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto},
+};
 use crate::helpers::AnyError;
 use moon_runner::DepGraph;
 use moon_workspace::Workspace;
@@ -93,12 +96,11 @@ pub fn respond_to_request(
         }
         _ => {
             let graph_data = serde_json::to_string(graph)?;
-            // Use the local version of the JS file when in development mode otherwise
-            // the CDN url.
+            // Use the local version of the JS file when in development mode otherwise the
+            // CDN url.
             let mut js_url = match cfg!(debug_assertions) {
-                // FIXME: We should create a separate module to store these constants
-                true => "http://localhost:5000".to_string(),
-                false => "https://cdn.com".to_string(),
+                true => get_js_url(false),
+                false => get_js_url(true),
             };
             js_url.push_str("/assets/index.js");
             let context = RenderContext { graph_data, js_url };

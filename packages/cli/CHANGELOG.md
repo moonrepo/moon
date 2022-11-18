@@ -8,6 +8,7 @@
 
 #### 🐞 Fixes
 
+- The runner will no longer attempt to install dependencies if running against affected files.
 - Fixed some unexpected panics in relation to non-installed tools.
 
 ## 0.19.0

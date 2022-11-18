@@ -266,13 +266,15 @@ impl<'a> TargetRunner<'a> {
         // Affected files (must be last args)
         if self.task.options.affected_files {
             if context.affected {
-                let affected_files = self
+                let mut affected_files = self
                     .task
                     .get_affected_files(&context.touched_files, &self.project.root)?;
 
                 if affected_files.is_empty() {
                     command.arg_if_missing(".");
                 } else {
+                    affected_files.sort();
+
                     command.env(
                         "MOON_AFFECTED_FILES",
                         affected_files

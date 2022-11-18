@@ -108,6 +108,16 @@ pub async fn install_deps(
     let lock_filename = pm.get_lock_filename();
     let manifest_filename = pm.get_manifest_filename();
 
+    // When running against affected files, avoid install as it interrupts the workflow
+    if context.affected {
+        debug!(
+            target: LOG_TARGET,
+            "Running against affected files, skipping install",
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
+
     // Determine the working directory and whether lockfiles and manifests have been modified
     let working_dir;
     let has_modified_files;

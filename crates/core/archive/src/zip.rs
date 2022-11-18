@@ -170,14 +170,13 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 
 #[track_caller]
 pub async fn unzip_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
+    differ: &mut TreeDiffer,
     input_file: I,
-    files: &[String],
     output_dir: O,
     remove_prefix: Option<&str>,
 ) -> Result<(), ArchiveError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
-    let mut diff = TreeDiffer::load(output_dir, files)?;
 
     debug!(
         target: LOG_TARGET,
@@ -225,7 +224,7 @@ pub async fn unzip_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
 
         // If a file, copy it to the output dir and only
         // unpack the file if different than destination
-        if file.is_file() && diff.should_write(file.size(), &mut file, &output_path)? {
+        if file.is_file() && differ.should_write_source(file.size(), &mut file, &output_path)? {
             let mut out = File::create(&output_path).map_err(handle_error)?;
 
             io::copy(&mut file, &mut out).map_err(handle_error)?;
@@ -241,11 +240,11 @@ pub async fn unzip_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
                 }
             }
 
-            diff.untrack(&output_path);
+            differ.untrack_file(&output_path);
         }
     }
 
-    diff.remove_stale_files().await?;
+    differ.remove_stale_tracked_files().await?;
 
     Ok(())
 }

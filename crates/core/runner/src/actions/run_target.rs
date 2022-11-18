@@ -14,7 +14,7 @@ use moon_task::{Target, Task, TaskError};
 use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
 use moon_utils::{
-    fs, is_ci, is_test_env, path,
+    is_ci, is_test_env, path,
     process::{self, format_running_command, output_to_string, Command, Output},
     time,
 };
@@ -119,11 +119,6 @@ impl<'a> TargetRunner<'a> {
 
         if hash.is_empty() {
             return Ok(());
-        }
-
-        // Remove previous outputs so we avoid stale artifacts
-        for output in &self.task.output_paths {
-            fs::remove(output).await?;
         }
 
         // Hydrate outputs from the cache

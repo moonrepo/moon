@@ -184,7 +184,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 
 #[track_caller]
 pub async fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
-    diff: &mut TreeDiffer,
+    differ: &mut TreeDiffer,
     input_file: I,
     output_dir: O,
     remove_prefix: Option<&str>,
@@ -230,14 +230,14 @@ pub async fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
         }
 
         // Unpack the file if different than destination
-        if diff.should_write(entry.size(), &mut entry, &output_path)? {
+        if differ.should_write_source(entry.size(), &mut entry, &output_path)? {
             entry.unpack(&output_path)?;
         }
 
-        diff.untrack(&output_path);
+        differ.untrack_file(&output_path);
     }
 
-    diff.remove_stale_files().await?;
+    differ.remove_stale_tracked_files().await?;
 
     Ok(())
 }

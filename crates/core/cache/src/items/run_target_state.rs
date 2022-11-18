@@ -65,9 +65,9 @@ impl RunTargetState {
         outputs: &[String],
     ) -> Result<bool, MoonError> {
         if is_readable() && archive_file.exists() {
-            let mut diff = TreeDiffer::load(project_root, outputs)?;
+            let mut differ = TreeDiffer::load(project_root, outputs)?;
 
-            untar_with_diff(&mut diff, archive_file, project_root, None)
+            untar_with_diff(&mut differ, archive_file, project_root, None)
                 .await
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
 

@@ -9,9 +9,9 @@ use std::path::{Path, PathBuf};
 
 #[async_trait]
 impl<'tool> Verifiable<'tool> for NodeLanguage<'tool> {
-    fn get_checksum_path(&self, temp_dir: &Path) -> Result<PathBuf, ProbeError> {
-        Ok(temp_dir
-            .join("node")
+    fn get_checksum_path(&self) -> Result<PathBuf, ProbeError> {
+        Ok(self
+            .temp_dir
             .join(format!("{}-SHASUMS256.txt", self.get_resolved_version())))
     }
 

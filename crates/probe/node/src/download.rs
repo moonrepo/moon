@@ -63,9 +63,9 @@ pub fn get_archive_file(version: &str) -> Result<String, ProbeError> {
 
 #[async_trait]
 impl<'tool> Downloadable<'tool> for NodeLanguage<'tool> {
-    fn get_download_path(&self, temp_dir: &Path) -> Result<PathBuf, ProbeError> {
-        Ok(temp_dir
-            .join("node")
+    fn get_download_path(&self) -> Result<PathBuf, ProbeError> {
+        Ok(self
+            .temp_dir
             .join(get_archive_file(self.get_resolved_version())?))
     }
 

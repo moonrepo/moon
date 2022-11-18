@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 
 #[async_trait]
 impl<'tool> Installable<'tool> for NodeLanguage<'tool> {
-    fn get_install_dir(&self, tools_dir: &Path) -> Result<PathBuf, ProbeError> {
-        Ok(tools_dir.join("node").join(self.get_resolved_version()))
+    fn get_install_dir(&self) -> Result<PathBuf, ProbeError> {
+        Ok(self.install_dir.join(self.get_resolved_version()))
     }
 
     async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<(), ProbeError> {

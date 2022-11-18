@@ -11,7 +11,7 @@ pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
     /// Returns an absolute file path to the checksum file.
     /// This may not exist, as the path is composed ahead of time.
     /// This is typically ~/.prove/temp/<file>.
-    fn get_checksum_path(&self, temp_dir: &Path) -> Result<PathBuf, ProbeError>;
+    fn get_checksum_path(&self) -> Result<PathBuf, ProbeError>;
 
     /// If applicable, download all files necessary for verifying checksums.
     async fn download_checksum(

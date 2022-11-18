@@ -11,7 +11,7 @@ use zip::ZipArchive;
 pub trait Installable<'tool>: Send + Sync {
     /// Returns an absolute file path to the directory containing the installed tool.
     /// This is typically ~/.probe/tools/<tool>/<version>.
-    fn get_install_dir(&self, tools_dir: &Path) -> Result<PathBuf, ProbeError>;
+    fn get_install_dir(&self) -> Result<PathBuf, ProbeError>;
 
     /// Run any installation steps after downloading and verifying the tool.
     /// This is typically unzipping an archive, and running any installers/binaries.

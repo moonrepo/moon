@@ -1,44 +1,52 @@
+use crate::platform::NodeArch;
 use crate::tool::NodeLanguage;
 use probe_core::{async_trait, download_from_url, Downloadable, Probe, ProbeError, Resolvable};
 use std::env::consts;
 use std::path::PathBuf;
+use std::str::FromStr;
 
+#[cfg(target_os = "macos")]
 pub fn get_archive_file_path(version: &str) -> Result<String, ProbeError> {
-    let platform;
+    let arch = NodeArch::from_str(consts::ARCH)?;
 
-    if consts::OS == "linux" {
-        platform = "linux"
-    } else if consts::OS == "windows" {
-        platform = "win";
-    } else if consts::OS == "macos" {
-        platform = "darwin"
-    } else {
-        return Err(ProbeError::UnsupportedPlatform(
-            "Node.js".into(),
-            consts::OS.to_string(),
-        ));
-    }
-
-    let arch;
-
-    if consts::ARCH == "x86" {
-        arch = "x86"
-    } else if consts::ARCH == "x86_64" {
-        arch = "x64"
-    } else if consts::ARCH == "arm" || consts::ARCH == "aarch64" {
-        arch = "arm64"
-    // } else if consts::ARCH == "powerpc64" {
-    //     arch = "ppc64le"
-    // } else if consts::ARCH == "s390x" {
-    //     arch = "s390x"
-    } else {
+    if !matches!(NodeArch::X64 | NodeArch::Arm64) {
         return Err(ProbeError::UnsupportedArchitecture(
             "Node.js".into(),
-            consts::ARCH.to_string(),
+            arch.to_string(),
         ));
     }
 
-    Ok(format!("node-v{version}-{platform}-{arch}"))
+    Ok(format!("node-v{version}-darwin-{arch}"))
+}
+
+#[cfg(target_os = "linux")]
+pub fn get_archive_file_path(version: &str) -> Result<String, ProbeError> {
+    let arch = NodeArch::from_str(consts::ARCH)?;
+
+    if !matches!(
+        NodeArch::X64 | NodeArch::Arm64 | NodeArch::Armv7l | NodeArch::Ppc64le | NodeArch::S390x
+    ) {
+        return Err(ProbeError::UnsupportedArchitecture(
+            "Node.js".into(),
+            arch.to_string(),
+        ));
+    }
+
+    Ok(format!("node-v{version}-linux-{arch}"))
+}
+
+#[cfg(target_os = "windows")]
+pub fn get_archive_file_path(version: &str) -> Result<String, ProbeError> {
+    let arch = NodeArch::from_str(consts::ARCH)?;
+
+    if !matches!(NodeArch::X64 | NodeArch::X86) {
+        return Err(ProbeError::UnsupportedArchitecture(
+            "Node.js".into(),
+            arch.to_string(),
+        ));
+    }
+
+    Ok(format!("node-v{version}-win-{arch}"))
 }
 
 pub fn get_archive_file(version: &str) -> Result<String, ProbeError> {

@@ -31,14 +31,14 @@ impl<'tool> Resolvable<'tool, Probe> for NodeLanguage<'tool> {
     }
 
     async fn resolve_version(&self, initial_version: &str) -> Result<String, ProbeError> {
-        let mut possible_version = None;
+        let mut candidate = None;
         let mut initial_version = initial_version.to_lowercase();
         let manifest: Vec<NodeDistVersion> =
             load_versions_manifest("https://nodejs.org/dist/index.json").await?;
 
         // Latest version is always at the top
         if initial_version == "node" || initial_version == "latest" {
-            possible_version = Some(&manifest[0].version);
+            candidate = Some(&manifest[0].version);
 
         // Stable version is the first with an LTS
         } else if initial_version == "stable"
@@ -47,7 +47,7 @@ impl<'tool> Resolvable<'tool, Probe> for NodeLanguage<'tool> {
         {
             for dist in &manifest {
                 if let NodeLTS::Name(_) = &dist.lts {
-                    possible_version = Some(&dist.version);
+                    candidate = Some(&dist.version);
                     break;
                 }
             }
@@ -59,7 +59,7 @@ impl<'tool> Resolvable<'tool, Probe> for NodeLanguage<'tool> {
             for dist in &manifest {
                 if let NodeLTS::Name(lts) = &dist.lts {
                     if lts.to_lowercase() == lts_name.to_lowercase() {
-                        possible_version = Some(&dist.version);
+                        candidate = Some(&dist.version);
                         break;
                     }
                 }
@@ -73,16 +73,16 @@ impl<'tool> Resolvable<'tool, Probe> for NodeLanguage<'tool> {
 
             for dist in &manifest {
                 if dist.version.starts_with(&initial_version) {
-                    possible_version = Some(&dist.version);
+                    candidate = Some(&dist.version);
                     break;
                 }
             }
         }
 
-        let Some(possible_version) = possible_version else {
+        let Some(candidate) = candidate else {
             return Err(ProbeError::VersionResolveFailed(initial_version))
         };
 
-        Ok(parse_version(possible_version)?.to_string())
+        Ok(parse_version(candidate)?.to_string())
     }
 }

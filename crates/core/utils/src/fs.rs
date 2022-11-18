@@ -20,7 +20,6 @@ pub async fn copy_file<S: AsRef<Path>, D: AsRef<Path>>(from: S, to: D) -> Result
     Ok(())
 }
 
-// Sync is much faster than async here because of recursion!
 #[async_recursion]
 pub async fn copy_dir_all<T: AsRef<Path> + Send>(
     from_root: T,

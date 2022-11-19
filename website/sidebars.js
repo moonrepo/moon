@@ -145,6 +145,7 @@ const sidebars = {
 		'guides/remote-cache',
 		'guides/root-project',
 		'guides/sharing-config',
+		'guides/typescript-project-refs',
 		'guides/webhooks',
 		{
 			type: 'category',

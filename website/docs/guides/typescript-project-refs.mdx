@@ -1,0 +1,282 @@
+---
+title: TypeScript project references
+toc_max_heading_level: 6
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+asdsds
+
+## Why use project references?
+
+- incremental compile
+- boundaries
+- only run on out of date projects
+
+## Configuration
+
+The most complicated part of integrating TypeScript in a monorepo is proper configuration setup.
+Based on our extensive experience, we suggest the following architecture as a base!
+
+### Root-level
+
+In a polyrepo, the root `tsconfig.json` is typically the only configuration file, as it defines
+common compiler options, and includes files to typecheck. In a monorepo, these responsibilites are
+now split across multiple configuration files.
+
+#### `tsconfig.json`
+
+To start, the root `tsconfig.json` file is nothing more than a list of _all_ projects in the
+monorepo, with each project being an individual entry in the `references` field. Each entry must
+contain a `path` field with a relative file system path to the project root (that contains their
+config).
+
+We also _do not_ define compiler options in this file, as project-level configuration files would
+_not_ be able to extend this file, as it would trigger a circular reference. Instead, we define
+common compiler options in a root [`tsconfig.options.json`](#tsconfigoptionsjson) file, that this
+file also `extends` from.
+
+In the end, this file should only contain 3 fields: `extends`, `files` (an empty list), and
+`references`. This abides the
+[official guidance around structure](https://www.typescriptlang.org/docs/handbook/project-references.html#overall-structure).
+
+```json file="tsconfig.json"
+{
+  "extends": "./tsconfig.options.json",
+  "files": [],
+  "references": [
+    {
+      "path": "apps/foo"
+    },
+    {
+      "path": "packages/bar"
+    }
+    // ... more
+  ]
+}
+```
+
+> When using moon, the
+> [`typescript.syncProjectReferences`](../config/workspace#syncprojectreferences) setting will keep
+> this `references` list automatically in sync, and the name of the file can be customized with
+> [`typescript.rootConfigFileName`](../config/workspace#rootconfigfilename).
+
+#### `tsconfig.options.json`
+
+This file will contain common compiler options that will be inherited by _all_ projects in the
+monorepo. For project references to work correctly, the following settings _must_ be enabled at the
+root, and typically should not be disabled in each project.
+
+- `composite` - Enables project references and informs the TypeScript program where to find
+  referenced outputs.
+- `declaration` - Project references rely on the compiled declarations (`.d.ts`) of external
+  projects. If declarations do not exist, TypeScript will generate them on demand.
+- `declarationMap` - Generate sourcemaps for declarations, so that language server integrations in
+  editors like "Go to" resolve correctly.
+- `emitDeclarationOnly` - Project references only require declarations, so avoid compiling to
+  JavaScript.
+- `incremental` - Enables incremental compilation, greatly improving performance.
+- `noEmitOnError` - If the typechecker fails, avoid generating invalid or partial declarations.
+- `skipLibCheck` - Avoids eager loading and analyzing all declarations, greatly improving
+  performance.
+
+```json file="tsconfig.options.json"
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "incremental": true,
+    "noEmitOnError": true,
+    "skipLibCheck": true
+    // ... others
+  }
+}
+```
+
+> When using moon, the name of the file can be customized with
+> [`typescript.rootOptionsConfigFileName`](../config/workspace#rootoptionsconfigfilename).
+
+##### ECMAScript interoperability
+
+ECMAScript modules (ESM) have been around for quite a while now, but the default TypeScript settings
+are not configured for them. We suggest the following compiler options if you want proper ESM
+support with interoperability with the ecosystem.
+
+```json file="tsconfig.options.json"
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "target": "esnext"
+    // ... others
+  }
+}
+```
+
+#### `.gitignore`
+
+Project references unfortunately generate _a ton_ of artifacts that typically shouldn't be committed
+to the repository (but could be if you so choose). We suggest ignoring the following:
+
+```shell title=".gitignore"
+# The `outDir` for declarations
+dts/
+# Build cache manifests
+*.tsbuildinfo
+```
+
+### Project-level
+
+Each project that contains TypeScript files and will utilize the typechecker _must_ contain a
+`tsconfig.json` in the project root, typically as a sibling to `package.json`.
+
+#### `tsconfig.json`
+
+A `tsconfig.json` in the root of a project (application or package) is required, as it informs
+TypeScript that this is a project, and that it can be referenced by other projects. In its simplest
+form, this file should extend the root [`tsconfig.options.json`](#tsconfigoptionsjson) to inherit
+common compiler options, define its own compiler options (below), define includes/excludes, and any
+references.
+
+> When using moon, the name of the file can be customized with
+> [`typescript.projectConfigFileName`](../config/workspace#projectconfigfilename).
+
+<Tabs
+  groupId="project-type"
+  defaultValue="app"
+  values={[
+    { label: 'Applications', value: 'app' },
+    { label: 'Packages', value: 'package' },
+  ]}
+>
+<TabItem value="app">
+
+For applications, declaration emitting can be disabled, since external projects _should not_ be
+importing files from an application. If this use case ever arises, move those files into a package.
+
+```json title="apps/foo/tsconfig.json"
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": false,
+    "noEmit": true
+  },
+  "include": [],
+  "references": []
+}
+```
+
+</TabItem>
+<TabItem value="package">
+
+For packages, we must define the location in which to generate declarations. These are the
+declarations that external projects would reference. This location is typically
+[gitignored](#gitignore)!
+
+```json title="packages/bar/tsconfig.json"
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "outDir": "./dts"
+  },
+  "include": [],
+  "references": []
+}
+```
+
+</TabItem>
+</Tabs>
+
+> When using moon, the `outDir` can automatically be re-routed to a shared cache using
+> [`typescript.routeOutDirToCache`](../config/workspace#routeoutdirtocache), to avoid littering the
+> repository with compilation artifacts.
+
+##### Includes and excludes
+
+Based on experience, we suggest defining `include` instead of `exclude`, as managing a whitelist of
+typecheckable files is much easier. When dealing with excludes, there are far too many
+possibilities. To start, you have `node_modules`, and for applications maybe `dist`, `build`,
+`.next`, or another application specific folder, and then for packages you may have `lib`, `cjs`,
+`esm`, etc. It becomes very... tedious.
+
+The other benefit of using `include` is that it forces TypeScript to only load _what's necessary_,
+instead of eager loading everything into memory, and for typechecking files that aren't part of
+source, like configuration.
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "include": ["src/**/*", "tests/**/*", "*.js", "*.ts"]
+}
+```
+
+##### Depending on other projects
+
+When a project depends on another project (by importing code from it), either using relative paths,
+[path aliases](#using-paths-aliases), or its `package.json` name, it must be declared as a
+reference. If not declared, TypeScript will error with a message about importing outside the project
+boundary.
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "references": [
+    {
+      "path": "../foo"
+    },
+    {
+      "path": "../bar"
+    },
+    {
+      "path": "../../baz"
+    }
+  ]
+}
+```
+
+> When using moon, the
+> [`typescript.syncProjectReferences`](../config/workspace#syncprojectreferences) setting will keep
+> this `references` list automatically in sync.
+
+#### `tsconfig.*.json`
+
+TODO
+
+## Running the typechecker
+
+Now that our configuration is place, we can run the typechecker, or attempt to at least! This can be
+done with the `tsc --build` command, which acts as a
+[build orchestrator](https://www.typescriptlang.org/docs/handbook/project-references.html#build-mode-for-typescript).
+We also suggest passing `--verbose` for insights into what projects are compiling, and which are
+out-of-date.
+
+### On all projects
+
+From the root of the repository, run `tsc --build --verbose` to typecheck _all_ projects, as defined
+in [tsconfig.json](#tsconfigjson). TypeScript will generate a directed acyclic graph (DAG) and
+compile projects _in order_ so that dependencies and references are resolved correctly.
+
+### On an individual project
+
+To only typecheck a single project (and its dependencies), there are 2 approaches. The first is to
+run from the root, and pass a relative path to the project, such as
+`tsc --build --verbose packages/foo`. The second is to change the working directory to the project,
+and run from there, such as `cd packages/foo && tsc --build --verbose`.
+
+Both approaches are viable, and either or may be used based on your tooling, build system, task
+runner, so on and so forth.
+
+## Using `paths` aliases
+
+## Sharing types
+
+## Supporting `package.json` exports
+
+## ESLint integration

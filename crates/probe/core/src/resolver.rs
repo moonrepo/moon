@@ -18,6 +18,19 @@ pub trait Resolvable<'tool>: Send + Sync {
     ) -> Result<String, ProbeError>;
 }
 
+// Aliases are words that map to version. For example, "latest" -> "1.2.3".
+pub fn is_version_alias(value: &str) -> bool {
+    value.chars().all(|c| char::is_ascii_alphanumeric(&c))
+}
+
+pub fn remove_v_prefix(value: &str) -> String {
+    if value.starts_with('v') || value.starts_with('V') {
+        return value[1..].to_owned();
+    }
+
+    value.to_owned()
+}
+
 pub async fn load_versions_manifest<T, U>(url: U) -> Result<T, ProbeError>
 where
     T: DeserializeOwned,

@@ -30,6 +30,9 @@ pub enum ProbeError {
     #[error("Unable to install {0}, unsupported platform {1}.")]
     UnsupportedPlatform(String, String),
 
+    #[error("Version alias {0} could not be found in the manifest.")]
+    VersionUnknownAlias(String),
+
     #[error("Failed to parse version {0}. {1}")]
     VersionParseFailed(String, String),
 

@@ -1,8 +1,11 @@
+mod depman;
 mod download;
 mod install;
 mod platform;
 mod resolve;
 mod verify;
+
+pub use depman::*;
 
 use probe_core::{Probe, Tool};
 use std::{marker::PhantomData, path::PathBuf};

@@ -2,7 +2,9 @@
 
 use crate::NodeLanguage;
 use log::debug;
-use probe_core::{async_trait, load_versions_manifest, parse_version, ProbeError, Resolvable};
+use probe_core::{
+    async_trait, is_version_alias, load_versions_manifest, parse_version, ProbeError, Resolvable,
+};
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -77,6 +79,25 @@ impl<'tool> Resolvable<'tool> for NodeLanguage<'tool> {
                         break;
                     }
                 }
+            }
+
+            if candidate.is_none() {
+                return Err(ProbeError::VersionUnknownAlias(initial_version));
+            }
+
+            // Find the first version with a matching alias
+        } else if is_version_alias(&initial_version) {
+            for dist in &manifest {
+                if let NodeLTS::Name(lts) = &dist.lts {
+                    if lts.to_lowercase() == initial_version.to_lowercase() {
+                        candidate = Some(&dist.version);
+                        break;
+                    }
+                }
+            }
+
+            if candidate.is_none() {
+                return Err(ProbeError::VersionUnknownAlias(initial_version));
             }
 
             // An explicit version? Support optional minor and patch

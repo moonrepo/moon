@@ -24,6 +24,7 @@ answers many of these questions, but it basically boils down to the following:
   Perfect for reducing CI and local development times.
 - It supports _incremental compilation_, so only out-of-date or affected projects are processed. The
   more TypeScript's cache is warmed, the faster it will be.
+- It simulates how types work in the Node.js package ecosystem.
 
 :::success
 
@@ -112,6 +113,10 @@ root, and typically should not be disabled in each project.
 - `noEmitOnError` - If the typechecker fails, avoid generating invalid or partial declarations.
 - `skipLibCheck` - Avoids eager loading and analyzing all declarations, greatly improving
   performance.
+
+For convenience, we provide the
+[`tsconfig-moon`](https://github.com/moonrepo/dev/tree/master/packages/tsconfig) package, which
+defines common compiler options and may be used here.
 
 ```json file="tsconfig.options.json"
 {
@@ -323,9 +328,9 @@ forcing the source root to `src` using the `rootDir` compiler option.
 However, there is a giant caveat with this approach! Because TypeScript utilizes Node.js's module
 resolution, it will reference the declarations defined by the `package.json` `types` or
 [`exports`](#supporting-packagejson-exports) fields, instead of the `outDir` compiler option, and
-the other `tsconfig.json` _does not generate_ these files will exist. This results in TypeScript
+the other `tsconfig.json` _does not guarantee_ these files will exist. This results in TypeScript
 failing to find the appropriate types! To solve this, add the `tsconfig.build.json` as a project
-reference to `tsconfig.json`!
+reference to `tsconfig.json`.
 
 ```json title="<project>/tsconfig.json"
 {
@@ -378,6 +383,13 @@ and run from there, such as `cd packages/foo && tsc --build --verbose`.
 Both approaches are viable, and either or may be used based on your tooling, build system, task
 runner, so on and so forth. This is the approach moon suggests with its
 [`typecheck` task](./examples/typescript).
+
+### On affected projects
+
+In CI environments, it's nice to _only run_ the typechecker on affected projects — projects that
+have changed files. While this isn't entirely possible with `tsc`, it is possible with moon! Head
+over to the
+[official docs for more information](https://moonrepo.dev/docs/run-task#running-based-on-affected-files-only).
 
 ## Using `paths` aliases
 
@@ -492,6 +504,48 @@ some of these types.
 }
 ```
 
+> In the future, moon will provide a setting to automate this workflow!
+
 ## Supporting `package.json` exports
 
+In Node.js v12, they introduced a new field to `package.json` called `exports` that aims to solve
+the shortcomings of the `main` field. The `exports` field is very complicated, and instead of
+repeating all of its implementation details, we suggest reading
+[the official Node.js docs on this topic](https://nodejs.org/api/packages.html#package-entry-points).
+
+With that being said, TypeScript completely ignored the `exports` field until
+[v4.7](https://devblogs.microsoft.com/typescript/announcing-typescript-4-7/#esm-nodejs), and
+respecting `exports` is _still ignored unless_ the `moduleResolution` compiler option is set to
+"nodenext" or "node16". If `moduleResolution` is set to "node", then your integration is resolving
+based on the `main` and `types` field, which are basically "legacy".
+
+:::warning
+
+Enabling `package.json` imports/exports resolution is very complicated, and may be very tedious,
+especially considering the state of the npm ecosystem. Proceed with caution!
+
+:::
+
+### State of the npm ecosystem
+
+As mentioned above, the npm ecosystem (as of November 2022) is in a very fragile state in regards to
+imports/exports. Based on our experience attempting to utilize them in a monorepo, we ran into an
+array of problems, some of which are:
+
+- Published packages are simply utilizing imports/exports incorrectly. The semantics around cjs/esm
+  are very strict, and they may be configured wrong. This is exacerbated by the new `type` field.
+- The `exports` field _overrides_ the `main` and `types` fields. If `exports` exists without type
+  declarations, but the `types` field exists, the `types` entry point is completely ignored,
+  resulting in TypeScript failures.
+
+With that being said, there are ways around this and moving forward is possible, if you dare!
+
+### Enabling imports/exports resolution
+
+### Resolving issues
+
 ## ESLint integration
+
+## Editor integration
+
+### VS Code

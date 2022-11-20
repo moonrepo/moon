@@ -1,13 +1,15 @@
 {
   "extends": "../../tsconfig.options.json",
   "compilerOptions": {
-    "outDir": "../../.moon/cache/types/packages/runtime",
-    "rootDir": "."
+    "outDir": "../../.moon/cache/types/packages/runtime"
   },
   "include": [
     "src/**/*"
   ],
   "references": [
+    {
+      "path": "./tsconfig.build.json"
+    },
     {
       "path": "../types"
     }

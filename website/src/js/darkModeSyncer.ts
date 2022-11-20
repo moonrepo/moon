@@ -6,7 +6,7 @@
 // This is necessary since it gets executed on the server???
 if (typeof document !== 'undefined') {
 	const html = document.documentElement;
-	const app = document.querySelector('#__docusaurus');
+	const app = document.querySelector('#__docusaurus')!;
 
 	// We can't set the class on `html` or `body` as Docusaurus rewrites the classes
 	// eslint-disable-next-line no-inner-declarations
@@ -23,6 +23,7 @@ if (typeof document !== 'undefined') {
 	window.history.pushState = new Proxy(window.history.pushState, {
 		apply: (target, thisArg, argArray) => {
 			toggle();
+			// @ts-expect-error Ignore arg types
 			target.apply(thisArg, argArray);
 		},
 	});
@@ -30,6 +31,7 @@ if (typeof document !== 'undefined') {
 	window.history.replaceState = new Proxy(window.history.replaceState, {
 		apply: (target, thisArg, argArray) => {
 			toggle();
+			// @ts-expect-error Ignore arg types
 			target.apply(thisArg, argArray);
 		},
 	});
@@ -47,3 +49,5 @@ if (typeof document !== 'undefined') {
 		attributes: true,
 	});
 }
+
+export {};

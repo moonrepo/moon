@@ -26,6 +26,14 @@ answers many of these questions, but it basically boils down to the following:
   more TypeScript's cache is warmed, the faster it will be.
 - It simulates how types work in the Node.js package ecosystem.
 
+This all sounds amazing, but there's got to be some downsides right? Unfortunately, there is:
+
+- Project references require generating declarations to resolve type information correctly. This
+  results in a lot of compilation artifacts littered throughout the repository. There
+  [are ways](#gitignore) [around this](../config/workspace#routeoutdirtocache).
+- This approach is a bit involved and may require some cognitive overhead based on your current
+  level of TypeScript tooling knowledge.
+
 :::success
 
 If you'd like a real-world repository to reference, our
@@ -587,8 +595,83 @@ of inputs, we suggest using [Packemon](https://packemon.dev/)!
 
 ### Resolving issues
 
+There's only one way to resolve issues around incorrectly published `exports`, and that is package
+patching, either with the [Yarn patching feature](https://yarnpkg.com/features/protocols/#patch),
+[pnpm's patching feature](https://pnpm.io/cli/patch), or the
+[`patch-package` package](https://www.npmjs.com/package/patch-package). With patching, you can:
+
+- Inject the `types` condition/field if it's missing.
+- Re-structure the `exports` mapping if it's incorrect.
+- Fix incorrect entry point paths.
+- And even fix invalid TypeScript declarations or JavaScript code!
+
+```diff title="package.json"
+{
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+-    ".": "./lib/index.js"
++    ".": {
++      "types": "./lib/index.d.ts",
++      "node": "./lib/index.js"
++    }
+  }
+}
+```
+
+:::info
+
+More often than not, the owners of these packages may be unaware that their `exports` mapping is
+incorrect! So be a good member of the community and report an issue or even submit a pull request!
+
+:::
+
 ## ESLint integration
 
 ## Editor integration
 
 ### VS Code
+
+## FAQ
+
+### I still have questions, where can I ask them?
+
+We'd love to answer your questions and help anyway that we can. Feel free to...
+
+- Join the [moonrepo discord](https://discord.gg/qCh9MEynv2) and post your question in the
+  `#typescript` channel.
+- Ping me, [Miles Johnson](https://twitter.com/mileswjohnson), on Twitter. I'll try my best to
+  respond to every tweet.
+
+### What about not using project references and only using source files?
+
+A popular alternative to project references is to simply use the source files as-is, by updating the
+`main` and `types` entry fields within each `package.json` to point to the original TypeScript
+files. This approach is also known as "internal packages".
+
+```json title="package.json"
+{
+  // ...
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx"
+}
+```
+
+While this _works_, there are some downsides to this approach.
+
+- You'll lose all the benefits of TypeScript's incremental caching and compilation. TypeScript will
+  consistently load, parse, and evaluate these source files every time. This is especially true for
+  CI environments.
+- It does not work with the new TypeScript `.mts` file extension, unless the consuming app/package
+  is also a module.
+- It breaks consistency. Consistency with the npm ecosystem, and consistency with how packaging and
+  TypeScript was designed to work. If all packages are internal, then great, but if you have some
+  packages that are published, you now have 2 distinct patterns for "using packages" instead of 1.
+
+With that being said, theres a 3rd alternative that may be the best of both worlds, using project
+references _and_ source files,
+[by using `paths` aliases](#importing-source-files-from-local-packages).
+
+All in all, this is a viable approach if you're comfortable with the downsides listed above. Use the
+pattern that works best for your repository, team, or company!

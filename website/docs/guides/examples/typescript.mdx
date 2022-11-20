@@ -9,8 +9,8 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 <HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/project.yml#L95" />
 
 In this guide, you'll learn how to integrate [TypeScript](https://eslint.org/) into moon. We'll be
-using [project references](https://www.typescriptlang.org/docs/handbook/project-references.html), as
-it ensures that only affected projects are built, and not the entire repository.
+using [project references](../typescript-project-refs), as it ensures that only affected projects
+are built, and not the entire repository.
 
 Begin by installing `typescript` and any pre-configured tsconfig packages in your root. We suggest
 using the same version across the entire repository.
@@ -110,21 +110,14 @@ Every project will require a `tsconfig.json`, as TypeScript itself requires it. 
   "extends": "../../tsconfig.options.json",
   "compilerOptions": {
     // Declarations are written here
-    "outDir": "dts",
-    // Typecheck the entire project
-    "rootDir": "."
+    "outDir": "dts"
   },
-  // Exclude build folders
-  "exclude": ["dts"],
-  // Include all files in the project
-  "include": ["**/*"],
-  // Reference project dependencies
+  // Include files in the project
+  "include": ["src/**/*", "tests/**/*"],
+  // Depends on other projects
   "references": []
 }
 ```
-
-Be sure to exclude all build and output folders (`dts`, `lib`, `esm`, `dist`, etc), so that
-TypeScript doesn't inadvertently include them in the typechecker.
 
 > The [`typescript.projectConfigFileName`](../../config/workspace#projectconfigfilename) setting can
 > be used to change the project-level config name.

@@ -542,6 +542,49 @@ With that being said, there are ways around this and moving forward is possible,
 
 ### Enabling imports/exports resolution
 
+To start, set the `moduleResolution` compiler option to "nodenext" in the
+[`tsconfig.options.json`](#tsconfigoptionsjson) file.
+
+```json file="tsconfig.options.json"
+{
+  "compilerOptions": {
+    // ...
+    "moduleResolution": "nodenext"
+  }
+}
+```
+
+Next, [run the typechecker from the root](#on-all-projects) against all projects. This will help
+uncover all potential issues with the dependencies you're using or the current configuration
+architecture. If no errors are found, well _lucky you_, otherwise jump to the next section for more
+information on [resolving them](#resolving-issues).
+
+If you're trying to use `exports` in your packages, ensure that the `types` condition is set, and
+it's the first condition in the mapping! We also suggest including `main` and the top-level `types`
+for tooling that do not support `exports` yet.
+
+```json title="package.json"
+{
+  // ...
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./lib/index.d.ts",
+      "node": "./lib/index.js"
+    }
+  }
+}
+```
+
+:::info
+
+Managing `exports` is non-trivial. If you'd prefer them to be automatically generated based on a set
+of inputs, we suggest using [Packemon](https://packemon.dev/)!
+
+:::
+
 ### Resolving issues
 
 ## ESLint integration

@@ -3,6 +3,7 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
 import Icon from '../../ui/iconography/Icon';
+import DocLink from '../../ui/typography/Link';
 import HeroTerminal from './HeroTerminal';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -29,7 +30,14 @@ export default function Hero() {
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base">
-						Supports JavaScript, TypeScript, Bash, and Batch.
+						Supports JavaScript, TypeScript, Bash, Batch,{' '}
+						<DocLink
+							href="/docs/faq#will-moon-support-other-languages-besides-javascript"
+							variant="muted"
+						>
+							and more
+						</DocLink>
+						.
 					</p>
 
 					<div className="mt-3 flex justify-center lg:justify-start">

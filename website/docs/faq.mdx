@@ -25,11 +25,10 @@ acronym, as it embraces what moon is trying to solve:
 ### Will moon support other languages besides JavaScript?
 
 Yes! Although we're focusing right now on JavaScript (and TypeScript, Node.js), we've designed moon
-to be language agnostic and easily pluggable in the future. If we're to guess which language would
-be next, it would most likely be Ruby to support React Native based applications.
+to be language agnostic and easily pluggable in the future.
 
 With that being said, for languages not supported in our toolchain, you can still execute them
-within at task by setting the [`platform` to "system"](./config/project#platform).
+within a task by setting the [`platform` to "system"](#can-we-run-other-languages).
 
 ### Will moon support continuous deployment?
 
@@ -170,8 +169,8 @@ However, because these languages are not supported directly within our toolchain
 receive the benefits of the toolchain. Some of which are:
 
 - Automatic installation of the language. System tasks expect the command to already exist in the
-  environment, which requires the user to manually install.
-- Consistent language version across all machines.
+  environment, which requires the user to manually install them.
+- Consistent language and dependency manager versions across all machines.
 - Built-in cpu and heap profiling (language specific).
 - Automatic dependency installs when the lockfile changes.
 - And many more.

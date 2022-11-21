@@ -4,10 +4,25 @@
         <title>moon Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moon Blog</description>
-        <lastBuildDate>Mon, 14 Nov 2022 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 21 Nov 2022 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[Integrating TypeScript in a monorepo]]></title>
+            <link>https://moonrepo.dev/blog/typescript-monorepo</link>
+            <guid>typescript-monorepo</guid>
+            <pubDate>Mon, 21 Nov 2022 00:00:00 GMT</pubDate>
+            <description><![CDATA[A common question in the JavaScript ecosystem is how to integrate TypeScript in a monorepo. This is]]></description>
+            <content:encoded><![CDATA[<p>A common question in the JavaScript ecosystem is how to integrate TypeScript in a monorepo. This is
+a fair question, as there's no in-depth source of truth, or one perfect way of doing it. However, we
+took it upon ourselves to answer this question!</p><p>Based on our experience scaling and managing frontend repositories in open source and large
+companies like Airbnb and Coinbase, we're happy to
+<a href="/docs/guides/javascript/typescript-project-refs">announce an in-depth guide on using TypeScript project references in a monorepo</a>!</p><p>We hope you find this guide useful, and if you have any questions, feel free to discuss them in our
+<a href="https://discord.gg/qCh9MEynv2" target="_blank" rel="noopener noreferrer">Discord community</a>!</p>]]></content:encoded>
+            <category>typescript</category>
+            <category>monorepo</category>
+        </item>
         <item>
             <title><![CDATA[v0.19 - Remote caching beta, affected files, and graph optimization]]></title>
             <link>https://moonrepo.dev/blog/v0.19</link>
@@ -60,7 +75,7 @@ which wasn't always ideal.</p><p>To improve upon this, you can now define a map 
 configurations over these last 18 releases, the initialization flow has fallen quite behind. We felt
 it was the perfect time to modernize this command a bit.</p><p>On top of automatically detecting settings from the environment, the command will also now prompt
 you with additional questions while configuring Node.js or TypeScript. Here's an example of this
-flow:</p><div style="padding-bottom:1rem;padding-top:1rem;text-align:center"><img src="/assets/images/init-flow-2a3ba1d56ee42c65dabf1f219d732e98.png" width="80%" alt=""></div><p>Furthermore, the command also supports enabling a new tool (appending configuration to
+flow:</p><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/init-flow-2a3ba1d56ee42c65dabf1f219d732e98.png" width="80%" alt="" class="inline-block"></div><p>Furthermore, the command also supports enabling a new tool (appending configuration to
 <code>.moon/workspace.yml</code>) into an <em>existing</em> moon repository, by running <code>moon init --tool &lt;name&gt;</code>.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="customize-node-execution-arguments">Customize <code>node</code> execution arguments<a class="hash-link" href="#customize-node-execution-arguments" title="Direct link to heading">​</a></h2><p>moon manages the Node.js binary in our toolchain, and runs all Node.js based tasks using this
 binary, instead of relying on the binary found in the developer's environment. Because of this, how
 <code>node</code> is executed is abstracted away from end users.</p><p>What if you wanted to use an <a href="https://nodejs.org/api/esm.html#loaders" target="_blank" rel="noopener noreferrer">experimental loader</a> and
@@ -116,7 +131,7 @@ full list of changes.</p><ul><li>Increased runtime performance and reduced memor
             <description><![CDATA[We're very excited to announce the initial release of our Visual Studio Code extension!]]></description>
             <content:encoded><![CDATA[<p>We're very excited to announce the initial release of our Visual Studio Code extension!</p><p>If you're a huge VS Code fan like us, you most likely use extensions in your everyday workflow. We
 want to enhance this experience by providing a fully integrated and interactive moon console! Here's
-a preview of what it looks like:</p><div style="padding-bottom:1rem;padding-top:1rem;text-align:center"><img src="/assets/images/projects-view-675ba8c24ec1896093663c29966b5e50.png" width="40%" alt=""></div><p>Excited?? Want to learn more? Check out the official
+a preview of what it looks like:</p><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/projects-view-675ba8c24ec1896093663c29966b5e50.png" width="40%" alt="" class="inline-block"></div><p>Excited?? Want to learn more? Check out the official
 <a href="https://marketplace.visualstudio.com/items?itemName=moonrepo.moon-console" target="_blank" rel="noopener noreferrer">moonrepo.moon-console</a>
 marketplace page, or read the <a href="/docs/editors/vscode">official documentation</a>. This is only the
 first iteration of the extension. Expect more advanced features in the future, like...</p><ul><li>Schema validation for configuration files</li><li>Autocompletion for configuration files</li><li>Automatic running/building of projects in the background</li><li>File type association</li><li>Integrated language server</li><li>And much more!</li></ul>]]></content:encoded>
@@ -227,7 +242,7 @@ dependencies automatically!</p><p>We still suggest using explicit dependencies, 
 adoption and migration purposes.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="report-ci-runs-on-pull-requests">Report CI runs on pull requests<a class="hash-link" href="#report-ci-runs-on-pull-requests" title="Direct link to heading">​</a></h2><p>We're fans of continuous and easily accessible feedback, and as such, have released a new GitHub
 action, <a href="https://github.com/marketplace/actions/moon-ci-run-reports" target="_blank" rel="noopener noreferrer"><code>moonrepo/run-report-action</code></a>,
 which reports the results of <a href="/docs/commands/ci"><code>moon ci</code></a> as a pull request comment. The report
-looks something like the following:</p><div style="padding-bottom:1rem;padding-top:1rem;text-align:center"><img src="/assets/images/run-report-41cffa17cd530ab8cca5cef47b38dcfd.png" width="60%" alt=""></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" href="#other-changes" title="Direct link to heading">​</a></h2><p>View the
+looks something like the following:</p><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/run-report-41cffa17cd530ab8cca5cef47b38dcfd.png" width="60%" alt="" class="inline-block"></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" href="#other-changes" title="Direct link to heading">​</a></h2><p>View the
 <a href="https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.14.0" target="_blank" rel="noopener noreferrer">official release</a> for a
 full list of changes.</p><ul><li>When running in a Docker container, caching is disabled in an effort to greatly reduce the size of
 the image.</li><li>Updated <code>moon setup</code> to also install Node.js dependencies.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.15 release!</p><ul><li>Major Docker workflow improvements!</li><li>Frontmatter configuration within template files.</li></ul>]]></content:encoded>

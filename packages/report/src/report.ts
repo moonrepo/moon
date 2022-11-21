@@ -21,9 +21,8 @@ export function sortReport(report: RunReport, sortBy: 'label' | 'time', sortDir:
 				return isAsc ? al.localeCompare(dl) : dl.localeCompare(al);
 			}
 
-			default: {
+			default:
 				throw new Error(`Unknown sort by "${sortBy}".`);
-			}
 		}
 	});
 }

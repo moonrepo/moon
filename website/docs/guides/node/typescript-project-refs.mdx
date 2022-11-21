@@ -673,6 +673,17 @@ We'd love to answer your questions and help anyway that we can. Feel free to...
 - Ping me, [Miles Johnson](https://twitter.com/mileswjohnson), on Twitter. I'll try my best to
   respond to every tweet.
 
+### Do I have to use project references?
+
+Short answer, no. If you have less than say 10 projects, references may be overkill. If your
+repository is primarily an application, but then has a handful of shared npm packages, references
+may also be unncessary here. In the end, it really depends on how many projects exist in the
+monorepo, and what your team/company is comfortable with.
+
+However, we do suggest using project references for very large monorepos (think 100s of projects),
+or repositories with a large number of contributors, or if you merely want to reduce CI typechecking
+times.
+
 ### What about not using project references and only using source files?
 
 A popular alternative to project references is to simply use the source files as-is, by updating the

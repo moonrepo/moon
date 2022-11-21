@@ -153,7 +153,7 @@ const sidebars = {
 		},
 		{
 			type: 'category',
-			label: 'Node.js',
+			label: 'JavaScript',
 			collapsed: false,
 			items: [
 				'guides/node/typescript-project-refs',

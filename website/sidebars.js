@@ -156,7 +156,7 @@ const sidebars = {
 			label: 'JavaScript',
 			collapsed: false,
 			items: [
-				'guides/node/typescript-project-refs',
+				'guides/javascript/typescript-project-refs',
 				{
 					type: 'category',
 					label: 'Examples',

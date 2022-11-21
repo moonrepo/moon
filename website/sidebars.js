@@ -181,7 +181,7 @@ const sidebars = {
 						type: 'generated-index',
 						title: 'Node.js examples',
 						slug: '/guides/node/examples',
-						keywords: ['node', 'guides', 'examples', 'tools'],
+						keywords: ['node', 'javascript', 'typescript', 'guides', 'examples', 'tools'],
 					},
 				},
 			],

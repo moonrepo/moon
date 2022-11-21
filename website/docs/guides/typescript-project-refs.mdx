@@ -623,15 +623,104 @@ patching, either with the [Yarn patching feature](https://yarnpkg.com/features/p
 :::info
 
 More often than not, the owners of these packages may be unaware that their `exports` mapping is
-incorrect! So be a good member of the community and report an issue or even submit a pull request!
+incorrect. Why not be a good member of the community and report an issue or even submit a pull
+request?
 
 :::
 
 ## ESLint integration
 
+### Disabling problematic rules
+
+A handful of ESLint rules are not compatible with the TypeScript plugin, or they cause serious
+performance degradation, and should be disabled entirely. According to the
+[official typescript-eslint.io documentation](https://typescript-eslint.io/docs/linting/troubleshooting#eslint-plugin-import),
+most of these rules come from the `eslint-plugin-import` plugin.
+
+```js title=".eslintrc.js"
+module.exports = {
+  // ...
+  rules: {
+    'import/default': 'off',
+    'import/named': 'off',
+    'import/namespace': 'off',
+    'import/no-cycle': 'off',
+    'import/no-deprecated': 'off',
+    'import/no-named-as-default': 'off',
+    'import/no-named-as-default-member': 'off',
+    'import/no-unused-modules': 'off',
+  },
+};
+```
+
+### Running from the command line
+
+### Running within editors
+
 ## Editor integration
 
+Unfortunately, we only have experience with VS Code. If you prefer another editor and have guidance
+you'd like to share with the community, feel free to submit a pull request and we'll include it
+below!
+
 ### VS Code
+
+[VS Code](https://code.visualstudio.com/) has built-in first-class support for TypeScript and
+project references, and should "just work" without any configuration. However, we do have a few
+settings suggestions:
+
+```json title=".vscode/settings.json"
+{
+  // Ensure that TypeScript is using the version from `typescript` in `node_modules`.
+  // Relying on the built-in VSC version may result in unexpected TypeScript failures.
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
+```
+
+#### ESLint
+
+Use the
+[dbaeumer.vscode-eslint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+extension. Too avoid poor performance, _do not_ use ESLint for formatting code (via the
+`eslint-plugin-prettier` plugin or something similar), and _only_ use it for linting. The difference
+in speed is comparable to 100ms vs 2000ms.
+
+```json title=".vscode/settings.json"
+{
+  // Automatically run all linting fixes on save as a concurrent code action,
+  // and avoid formatting with ESLint. Use another formatter, like Prettier.
+  "editor.codeActionsOnSave": ["source.fixAll.eslint"],
+  "eslint.format.enable": false,
+
+  // If linting is *too slow* while typing, uncomment the following line to
+  // only run the linter on save only.
+  // "editor.run": "onSave",
+
+  // Your package manager of choice.
+  "eslint.packageManager": "yarn",
+
+  // Use the newer and more performant `ESLint` class implementation.
+  "eslint.useESLintClass": true,
+
+  // List of directories that that linter should operate on.
+  "eslint.workingDirectories": [{ "pattern": "apps/*" }, { "pattern": "packages/*" }]
+}
+```
+
+#### Prettier
+
+Use the
+[esbenp.prettier-vscode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+extension.
+
+```json title=".vscode/settings.json"
+{
+  // Use Prettier as the default formatter for all file types. Types not
+  // supported by Prettier can be overriden using bracket syntax, or ignore files.
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true
+}
+```
 
 ## FAQ
 

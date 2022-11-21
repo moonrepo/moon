@@ -1,14 +1,28 @@
 {
-  "extends": "@tsconfig/docusaurus/tsconfig.json",
+  "extends": "../tsconfig.options.json",
+  "compilerOptions": {
+    "outDir": "../.moon/cache/types/website",
+    "types": [
+      "node",
+      "@docusaurus/module-type-aliases",
+      "@docusaurus/theme-classic"
+    ],
+    "baseUrl": ".",
+    "jsx": "react",
+    "lib": [
+      "dom"
+    ],
+    "paths": {
+      "@site/*": [
+        "./*"
+      ]
+    }
+  },
   "include": [
     ".eslintrc.js",
     "*.config.js",
     "src/**/*"
   ],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "outDir": "../.moon/cache/types/website"
-  },
   "references": [
     {
       "path": "../packages/runtime"

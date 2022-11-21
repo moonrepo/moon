@@ -17,7 +17,7 @@ export interface TypographyProps {
 	/**
 	 * String of text to display.
 	 */
-	children: NonNullable<React.ReactNode>;
+	children: React.ReactNode;
 	/**
 	 * Customize how the text will overflow its current container.
 	 * @default wrap

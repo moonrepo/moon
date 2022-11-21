@@ -64,7 +64,7 @@ function Line({ type, time, message }: LineProps) {
 }
 
 export default function HeroTerminal() {
-	const terminal = useRef<HTMLUListElement>();
+	const terminal = useRef<HTMLUListElement>(null);
 	const [typingIndex, setTypingIndex] = useState(0);
 	const [targetIndex, setTargetIndex] = useState(-1);
 	const [lines, setLines] = useState<LineProps[]>([]);

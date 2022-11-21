@@ -1,0 +1,15 @@
+releases:
+  '@moonrepo/cli': patch
+  '@moonrepo/core-linux-arm64-gnu': patch
+  '@moonrepo/core-linux-arm64-musl': patch
+  '@moonrepo/core-linux-x64-gnu': patch
+  '@moonrepo/core-linux-x64-musl': patch
+  '@moonrepo/core-macos-arm64': patch
+  '@moonrepo/core-macos-x64': patch
+  '@moonrepo/core-windows-x64-msvc': patch
+  '@moonrepo/report': patch
+  '@moonrepo/runtime': patch
+  '@moonrepo/types': patch
+
+declined:
+  - 'website'

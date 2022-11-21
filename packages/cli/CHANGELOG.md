@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler
+  options.
+
 ## 0.19.1
 
 #### 🚀 Updates

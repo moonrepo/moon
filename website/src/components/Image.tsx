@@ -18,8 +18,8 @@ export default function Image({
 	padding = '1rem',
 }: ImageProps) {
 	return (
-		<div style={{ paddingBottom: padding, paddingTop: padding, textAlign: align }}>
-			<img src={src.default} width={width} alt={alt} title={title} />
+		<div style={{ marginBottom: padding, marginTop: padding, textAlign: align }}>
+			<img src={src.default} width={width} alt={alt} title={title} className="inline-block" />
 		</div>
 	);
 }

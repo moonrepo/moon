@@ -1,6 +1,3 @@
 {
-  "extends": "tsconfig-moon/tsconfig.projects.json",
-  "compilerOptions": {
-    "incremental": true
-  }
+  "extends": "tsconfig-moon/tsconfig.projects.json"
 }

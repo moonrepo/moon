@@ -6,7 +6,12 @@ import Link from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
 import ContactForm from './ContactForm';
 
-export default function FooterLayout({ style, links, logo, copyright }) {
+export interface FooterLayoutProps {
+	copyright: NonNullable<React.ReactNode>;
+	links: React.ReactNode;
+}
+
+export default function FooterLayout({ links, copyright }: FooterLayoutProps) {
 	return (
 		<footer className="bg-gray-100 dark:bg-slate-600" aria-labelledby="footer-heading">
 			<h2 id="footer-heading" className="sr-only">

@@ -149,6 +149,10 @@ blockquote {
 	margin-top: var(--moon-padding-1);
 }
 
+.menu__list hr {
+	margin: 0;
+}
+
 @media (min-width: 997px) {
 	html .menu {
 		padding: var(--moon-padding-1_5);

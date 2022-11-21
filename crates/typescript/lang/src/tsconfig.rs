@@ -344,7 +344,13 @@ pub struct CompilerOptions {
     pub module: Option<Module>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub module_detection: Option<ModuleDetection>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub module_resolution: Option<ModuleResolution>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub module_suffixes: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub new_line: Option<String>,
@@ -596,6 +602,33 @@ impl<'de> Deserialize<'de> for Module {
             "SYSTEM" => Module::System,
             "UMD" => Module::Umd,
             other => Module::Other(other.to_string()),
+        };
+
+        Ok(r)
+    }
+}
+
+// https://www.typescriptlang.org/tsconfig#moduleDetection
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ModuleDetection {
+    Auto,
+    Legacy,
+    Force,
+}
+
+impl<'de> Deserialize<'de> for ModuleDetection {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let s = s.to_uppercase();
+
+        let r = match s.as_str() {
+            "LEGACY" => ModuleDetection::Legacy,
+            "FORCE" => ModuleDetection::Force,
+            _ => ModuleDetection::Auto,
         };
 
         Ok(r)

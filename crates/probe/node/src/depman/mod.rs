@@ -1,5 +1,5 @@
-// mod download;
-// mod install;
+mod download;
+mod install;
 // mod platform;
 mod resolve;
 // mod verify;
@@ -47,6 +47,12 @@ impl<'tool> NodeDependencyManager<'tool> {
             version: version.to_owned(),
             data: PhantomData,
         }
+    }
+
+    pub fn get_dist(&self) -> &NDMVersionDist {
+        self.dist
+            .as_ref()
+            .expect("Distribution info not defined for node dependency manager!")
     }
 }
 

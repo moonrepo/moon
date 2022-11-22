@@ -11,21 +11,21 @@ use std::collections::HashMap;
 
 #[derive(Deserialize)]
 struct NDMVersionDistSignature {
-    keyid: String,
-    sig: String,
+    pub keyid: String,
+    pub sig: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NDMVersionDist {
-    file_count: usize,
-    integrity: String,
-    shasum: String,
+    pub file_count: usize,
+    pub integrity: String,
+    pub shasum: String,
     #[serde(rename = "npm-signature")]
-    signature: String,
-    signatures: Vec<NDMVersionDistSignature>,
-    tarball: String,
-    unpacked_size: usize,
+    pub signature: String,
+    pub signatures: Vec<NDMVersionDistSignature>,
+    pub tarball: String,
+    pub unpacked_size: usize,
 }
 
 #[derive(Deserialize)]

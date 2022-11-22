@@ -47,7 +47,7 @@ pub async fn dep_graph(
             server.server_addr()
         );
         for req in server.incoming_requests() {
-            respond_to_request(req, &mut tera, &graph_info)?;
+            respond_to_request(req, &mut tera, &graph_info, "Dependency".to_owned())?;
         }
     }
 

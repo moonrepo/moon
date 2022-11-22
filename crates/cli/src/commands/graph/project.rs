@@ -31,7 +31,7 @@ pub async fn project_graph(
             server.server_addr()
         );
         for req in server.incoming_requests() {
-            respond_to_request(req, &mut tera, &graph_info)?;
+            respond_to_request(req, &mut tera, &graph_info, "Project".to_owned())?;
         }
     }
     Ok(())

@@ -8,7 +8,8 @@
 	</head>
 	<body>
 		<script>
-			window.GRAPH_DATA = {{ graph_data | json_encode() | safe  }};
+			window.GRAPH_DATA = '{{ graph_data | safe  }}';
+			window.PAGE_TITLE = '{{ page_title }}';
 		</script>
 		<div id="app"></div>
 	</body>

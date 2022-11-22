@@ -16,6 +16,8 @@ const INDEX_HTML: &str = include_str!("graph.html.tera");
 
 #[derive(Debug, Serialize)]
 pub struct RenderContext {
+    pub page_title: String,
+
     pub graph_data: String,
 
     pub js_url: String,
@@ -78,6 +80,7 @@ pub fn respond_to_request(
     req: Request,
     tera: &mut Tera,
     graph: &GraphInfoDto,
+    page_title: String,
 ) -> Result<(), AnyError> {
     let response = match req.url() {
         "/graph-data" => {
@@ -96,7 +99,11 @@ pub fn respond_to_request(
                 false => get_js_url(true),
             };
             js_url.push_str("/assets/index.js");
-            let context = RenderContext { graph_data, js_url };
+            let context = RenderContext {
+                page_title,
+                graph_data,
+                js_url,
+            };
             let info = tera
                 .render_str(INDEX_HTML, &Context::from_serialize(&context)?)
                 .unwrap();

@@ -68,7 +68,7 @@ impl<'a> TargetRunner<'a> {
 
     /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
     /// so that subsequent builds are faster, and any local outputs
-    /// can be rehydrated easily.
+    /// can be hydrated easily.
     pub async fn archive_outputs(&self) -> Result<(), RunnerError> {
         let hash = &self.cache.hash;
 

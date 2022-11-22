@@ -7,7 +7,7 @@ fn loads_all_files() {
     let fixture = create_sandbox("generator");
     let differ = TreeDiffer::load(fixture.path(), &string_vec!["templates"]).unwrap();
 
-    assert_eq!(differ.files.len(), 100);
+    assert_eq!(differ.files.len(), 18);
 }
 
 #[test]

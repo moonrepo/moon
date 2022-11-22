@@ -80,7 +80,7 @@ impl<'a> TargetRunner<'a> {
         for (i, output) in self.task.output_paths.iter().enumerate() {
             if !output.exists() {
                 return Err(RunnerError::Task(TaskError::MissingOutput(
-                    self.task.target.clone(),
+                    self.task.target.id.clone(),
                     self.task.outputs.get(i).unwrap().to_owned(),
                 )));
             }
@@ -305,7 +305,7 @@ impl<'a> TargetRunner<'a> {
             "MOON_PROJECT_SOURCE".to_owned(),
             self.project.source.clone(),
         );
-        env_vars.insert("MOON_TARGET".to_owned(), self.task.target.clone());
+        env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.clone());
         env_vars.insert(
             "MOON_TOOLCHAIN_DIR".to_owned(),
             path::to_string(&self.workspace.toolchain.dir)?,
@@ -361,7 +361,7 @@ impl<'a> TargetRunner<'a> {
 
         context
             .target_hashes
-            .insert(self.task.target.clone(), hash.clone());
+            .insert(self.task.target.id.clone(), hash.clone());
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
@@ -430,7 +430,6 @@ impl<'a> TargetRunner<'a> {
     }
 
     /// Verify that all task outputs exist for the current target.
-    /// TODO: We dont verify contents, should we?
     pub fn has_outputs(&self) -> bool {
         self.task.output_paths.iter().all(|p| p.exists())
     }
@@ -446,7 +445,7 @@ impl<'a> TargetRunner<'a> {
         let mut attempt_index = 1;
         let mut attempts = vec![];
         let primary_longest_width = context.primary_targets.iter().map(|t| t.len()).max();
-        let is_primary = context.primary_targets.contains(&self.task.target);
+        let is_primary = context.primary_targets.contains(&self.task.target.id);
         let is_real_ci = is_ci() && !is_test_env();
         let output;
 
@@ -460,7 +459,7 @@ impl<'a> TargetRunner<'a> {
 
         // Transitive targets may run concurrently, so differentiate them with a prefix.
         let stream_prefix = if is_real_ci || !is_primary || context.primary_targets.len() > 1 {
-            Some(&self.task.target)
+            Some(&self.task.target.id)
         } else {
             None
         };
@@ -747,9 +746,9 @@ pub async fn run_target(
     context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<Emitter>>,
-    target_id: &str,
+    target: &Target,
 ) -> Result<ActionStatus, RunnerError> {
-    let (project_id, task_id) = Target::parse(target_id)?.ids()?;
+    let (project_id, task_id) = target.ids()?;
     let workspace = workspace.read().await;
     let emitter = emitter.read().await;
     let project = workspace.projects.load(&project_id)?;

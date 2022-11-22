@@ -79,7 +79,7 @@ impl TargetHasher {
         self.args = task.args.clone();
         self.env_vars.extend(task.env.clone());
         self.outputs = task.outputs.clone();
-        self.target = task.target.clone();
+        self.target = task.target.id.clone();
 
         // Sort vectors to be deterministic
         self.args.sort();
@@ -97,8 +97,8 @@ impl TargetHasher {
     pub fn hash_task_deps(&mut self, task: &Task, hashes: &FxHashMap<String, String>) {
         for dep in &task.deps {
             self.deps.insert(
-                dep.to_owned(),
-                match hashes.get(dep) {
+                dep.id.to_owned(),
+                match hashes.get(&dep.id) {
                     Some(hash) => hash.to_owned(),
                     None => String::new(),
                 },

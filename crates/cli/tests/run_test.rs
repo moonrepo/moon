@@ -11,9 +11,9 @@ use std::fs;
 use std::path::Path;
 use utils::get_path_safe_output;
 
-async fn extract_hash_from_run(fixture: &Path, target: &str) -> String {
+async fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
     let engine = CacheEngine::load(fixture).await.unwrap();
-    let cache = engine.cache_run_target_state(target).await.unwrap();
+    let cache = engine.cache_run_target_state(target_id).await.unwrap();
 
     cache.hash
 }

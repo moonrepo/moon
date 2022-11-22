@@ -35,7 +35,7 @@ mod from_config {
 
         assert_eq!(task.inputs, string_vec!["**/*"]);
         assert_eq!(task.log_target, "moon:project:foo:test");
-        assert_eq!(task.target, "foo:test");
+        assert_eq!(task.target, Target::new("foo", "test").unwrap());
         assert_eq!(
             task.options,
             TaskOptions {

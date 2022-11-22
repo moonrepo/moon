@@ -430,7 +430,6 @@ impl<'a> TargetRunner<'a> {
     }
 
     /// Verify that all task outputs exist for the current target.
-    /// TODO: We dont verify contents, should we?
     pub fn has_outputs(&self) -> bool {
         self.task.output_paths.iter().all(|p| p.exists())
     }
@@ -747,9 +746,9 @@ pub async fn run_target(
     context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<Emitter>>,
-    target_id: &str,
+    target: &Target,
 ) -> Result<ActionStatus, RunnerError> {
-    let (project_id, task_id) = Target::parse(target_id)?.ids()?;
+    let (project_id, task_id) = target.ids()?;
     let workspace = workspace.read().await;
     let emitter = emitter.read().await;
     let project = workspace.projects.load(&project_id)?;

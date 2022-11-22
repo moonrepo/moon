@@ -316,7 +316,7 @@ impl DepGraph {
                 target: LOG_TARGET,
                 "Adding dependencies {} for target {}",
                 map_list(&task.deps, |f| color::symbol(f)),
-                color::target(&target),
+                color::target(target),
             );
 
             for dep_index in
@@ -340,7 +340,7 @@ impl DepGraph {
         let mut previous_target_index = None;
 
         for dep_target in &task.deps {
-            let (_, dep_indexes) = self.run_target(&dep_target, project_graph, touched_files)?;
+            let (_, dep_indexes) = self.run_target(dep_target, project_graph, touched_files)?;
 
             for dep_index in dep_indexes {
                 // When parallel, parent depends on child

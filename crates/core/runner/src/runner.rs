@@ -116,7 +116,7 @@ async fn run_action(
                 .await?;
 
             let run_result =
-                actions::run_target(action, context, workspace, Arc::clone(&emitter), target_id)
+                actions::run_target(action, context, workspace, Arc::clone(&emitter), &target)
                     .await;
 
             local_emitter

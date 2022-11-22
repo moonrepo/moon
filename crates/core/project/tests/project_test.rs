@@ -464,10 +464,15 @@ mod tasks {
         // Expanded
         let implicit_deps = string_vec!["id:build", "project:task"];
 
-        build.deps.extend(implicit_deps.clone());
-        std.deps.extend(implicit_deps.clone());
-        test.deps.extend(implicit_deps.clone());
-        lint.deps.extend(implicit_deps);
+        build
+            .deps
+            .extend(Task::create_dep_targets(&implicit_deps).unwrap());
+        std.deps
+            .extend(Task::create_dep_targets(&implicit_deps).unwrap());
+        test.deps
+            .extend(Task::create_dep_targets(&implicit_deps).unwrap());
+        lint.deps
+            .extend(Task::create_dep_targets(&implicit_deps).unwrap());
 
         assert_eq!(project.get_task("build").unwrap().deps, build.deps);
         assert_eq!(project.get_task("standard").unwrap().deps, std.deps);
@@ -500,7 +505,9 @@ mod tasks {
         .unwrap();
 
         // Expanded
-        build.deps.extend(string_vec!["id:build"]);
+        build
+            .deps
+            .extend(Task::create_dep_targets(&string_vec!["id:build"]).unwrap());
 
         assert_eq!(project.get_task("build").unwrap().deps, build.deps);
     }
@@ -910,7 +917,7 @@ mod tasks {
 
             assert_eq!(
                 project.tasks.get("lint").unwrap().deps,
-                string_vec!["id:clean", "id:build"]
+                Task::create_dep_targets(&string_vec!["id:clean", "id:build"]).unwrap()
             );
         }
 
@@ -925,7 +932,7 @@ mod tasks {
 
             assert_eq!(
                 project.tasks.get("lint").unwrap().deps,
-                string_vec!["id:clean", "id:build"]
+                Task::create_dep_targets(&string_vec!["id:clean", "id:build"]).unwrap()
             );
         }
 
@@ -940,7 +947,7 @@ mod tasks {
 
             assert_eq!(
                 project.tasks.get("lint").unwrap().deps,
-                string_vec!["id:build"]
+                Task::create_dep_targets(&string_vec!["id:build"]).unwrap()
             );
         }
 
@@ -955,7 +962,8 @@ mod tasks {
 
             assert_eq!(
                 project.tasks.get("build").unwrap().deps,
-                string_vec!["bar:build", "baz:build", "foo:build"]
+                Task::create_dep_targets(&string_vec!["bar:build", "baz:build", "foo:build"])
+                    .unwrap()
             );
         }
 
@@ -970,7 +978,8 @@ mod tasks {
 
             assert_eq!(
                 project.tasks.get("build").unwrap().deps,
-                string_vec!["foo:build", "bar:build", "baz:build"]
+                Task::create_dep_targets(&string_vec!["foo:build", "bar:build", "baz:build"])
+                    .unwrap()
             );
         }
 
@@ -1278,7 +1287,8 @@ mod tasks {
 
             assert_eq!(
                 task.deps,
-                string_vec!["id:test", "example:build", "project:task"]
+                Task::create_dep_targets(&string_vec!["id:test", "example:build", "project:task"])
+                    .unwrap()
             );
         }
 

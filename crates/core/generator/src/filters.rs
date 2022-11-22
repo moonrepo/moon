@@ -2,9 +2,13 @@
 #![allow(clippy::disallowed_types)]
 
 use convert_case::{Case, Casing};
+use moon_utils::path;
 use serde_json::value::{to_value, Value};
 use std::collections::HashMap;
-use tera::{try_get_value, Result};
+use std::path::PathBuf;
+use tera::{try_get_value, Error, Result};
+
+// STRINGS
 
 fn to_case(case_fn: &str, case_type: Case, value: &Value) -> Result<Value> {
     let s = try_get_value!(case_fn, "value", String, value);
@@ -42,4 +46,36 @@ pub fn lower_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
 
 pub fn upper_case(value: &Value, _: &HashMap<String, Value>) -> Result<Value> {
     to_case("upper_case", Case::Upper, value)
+}
+
+// PATHS
+
+pub fn path_join(value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
+    let base = try_get_value!("path_join", "value", PathBuf, value);
+
+    let part = match args.get("part") {
+        Some(val) => try_get_value!("path_join", "part", String, val),
+        None => return Err(Error::msg("Expected a `part` for `path_join`.")),
+    };
+
+    let full = path::to_virtual_string(path::normalize(base.join(part)))
+        .map_err(|e| Error::msg(e.to_string()))?;
+
+    Ok(to_value(full).unwrap())
+}
+
+pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
+    let base = try_get_value!("path_relative", "value", PathBuf, value);
+
+    let to = match args.get("to") {
+        Some(val) => try_get_value!("path_relative", "to", String, val),
+        None => return Err(Error::msg("Expected a `to` for `path_relative`.")),
+    };
+
+    let full = path::to_virtual_string(path::normalize(
+        path::relative_from(&base, to).unwrap_or(base),
+    ))
+    .map_err(|e| Error::msg(e.to_string()))?;
+
+    Ok(to_value(full).unwrap())
 }

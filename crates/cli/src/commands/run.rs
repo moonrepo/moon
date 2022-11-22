@@ -52,7 +52,7 @@ pub async fn run(
         dep_graph.run_targets_by_id(target_ids, &workspace.projects, &touched_files)?;
 
     if primary_targets.is_empty() {
-        let targets_list = map_list(target_ids, |id| color::target(id));
+        let targets_list = map_list(&primary_targets, |id| color::target(id));
 
         if options.affected {
             if matches!(options.status, TouchedStatus::All) {

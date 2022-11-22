@@ -28,19 +28,19 @@ pub struct ActionContext {
 }
 
 impl ActionContext {
-    pub fn should_inherit_args(&self, target: &str) -> bool {
+    pub fn should_inherit_args(&self, target_id: &str) -> bool {
         if self.passthrough_args.is_empty() {
             return false;
         }
 
         // project:task == project:task
-        if self.primary_targets.contains(target) {
+        if self.primary_targets.contains(target_id) {
             return true;
         }
 
         // :task == project:task
         for initial_target in &self.initial_targets {
-            if target.ends_with(initial_target) {
+            if target_id.ends_with(initial_target) {
                 return true;
             }
         }

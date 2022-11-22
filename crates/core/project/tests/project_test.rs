@@ -289,7 +289,7 @@ mod tasks {
 
         task.log_target = format!("moon:project:{}", target);
         task.id = parts.next().unwrap().to_string();
-        task.target = target;
+        task.target = Target::parse(&target).unwrap();
 
         Ok(task)
     }
@@ -1472,7 +1472,7 @@ mod workspace {
                 create_expanded_task(&workspace_root, &workspace_root.join("rename-merge"), None)
                     .unwrap();
             task.id = "foo".to_owned();
-            task.target = "id:foo".to_owned();
+            task.target = Target::new("id", "foo").unwrap();
             task.command = "a".to_owned();
             task.args.push("renamed-and-merge-foo".to_owned());
             task.log_target = "moon:project:id:foo".to_owned();

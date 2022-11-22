@@ -59,11 +59,16 @@ impl Subscriber for LocalCacheSubscriber {
                 cache,
                 hash,
                 project,
+                task,
                 ..
             } => {
                 let archive_path = workspace.cache.get_hash_archive_path(hash);
 
-                if is_readable() && cache.hydrate_outputs(&archive_path, &project.root).await? {
+                if is_readable()
+                    && cache
+                        .hydrate_outputs(&archive_path, &project.root, &task.outputs)
+                        .await?
+                {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));
                 }
             }

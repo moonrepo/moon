@@ -153,18 +153,21 @@ pub async fn read_dir<T: AsRef<Path>>(path: T) -> Result<Vec<fs::DirEntry>, Moon
     Ok(results)
 }
 
-#[async_recursion]
-pub async fn read_dir_all<T: AsRef<Path> + Send>(path: T) -> Result<Vec<fs::DirEntry>, MoonError> {
+// Sync is almost 5x faster than async here!
+#[inline]
+pub fn read_dir_all<T: AsRef<Path> + Send>(path: T) -> Result<Vec<std::fs::DirEntry>, MoonError> {
     let path = path.as_ref();
     let handle_error = |e| map_io_to_fs_error(e, path.to_path_buf());
 
-    let mut entries = fs::read_dir(path).await.map_err(handle_error)?;
+    let entries = std::fs::read_dir(path).map_err(handle_error)?;
     let mut results = vec![];
 
-    while let Some(entry) = entries.next_entry().await.map_err(handle_error)? {
-        if let Ok(file_type) = entry.file_type().await {
+    for entry in entries {
+        let entry = entry?;
+
+        if let Ok(file_type) = entry.file_type() {
             if file_type.is_dir() {
-                results.extend(read_dir_all(&entry.path()).await?);
+                results.extend(read_dir_all(&entry.path())?);
             } else {
                 results.push(entry);
             }

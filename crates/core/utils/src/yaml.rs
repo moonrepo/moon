@@ -57,14 +57,14 @@ pub fn write_with_config<P: AsRef<Path>>(path: P, yaml: YamlValue) -> Result<(),
     // a double space (the default). Can be customized with `.editorconfig`.
     if editor_config.indent != "  " {
         data = data
-            .split("\n")
+            .split('\n')
             .map(|line| {
                 if !line.starts_with("  ") {
                     return line.to_string();
                 }
 
                 LINE_WS_START
-                    .replace_all(&line, |caps: &regex::Captures| {
+                    .replace_all(line, |caps: &regex::Captures| {
                         editor_config
                             .indent
                             .repeat(caps.get(1).unwrap().as_str().len() / 2)

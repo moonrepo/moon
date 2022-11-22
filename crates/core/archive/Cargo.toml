@@ -3,6 +3,13 @@ name = "moon_archive"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+bench = false
+
+[[bench]]
+name = "tar_benchmark"
+harness = false
+
 [dependencies]
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
@@ -11,4 +18,11 @@ flate2 = "1.0.24"
 rustc-hash = { workspace = true }
 tar = "0.4.38"
 thiserror = { workspace = true }
+tokio = { workspace = true }
 zip = "0.6.3"
+
+[dev-dependencies]
+assert_fs = "1.0.9"
+criterion = { workspace = true }
+fake = "2.5.0"
+rand = "0.8.5"

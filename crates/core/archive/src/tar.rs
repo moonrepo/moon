@@ -1,5 +1,6 @@
 use crate::errors::ArchiveError;
 use crate::helpers::{ensure_dir, prepend_name};
+use crate::tree_differ::TreeDiffer;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -177,6 +178,66 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 
         entry.unpack(&output_path)?;
     }
+
+    Ok(())
+}
+
+#[track_caller]
+pub async fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
+    differ: &mut TreeDiffer,
+    input_file: I,
+    output_dir: O,
+    remove_prefix: Option<&str>,
+) -> Result<(), ArchiveError> {
+    let input_file = input_file.as_ref();
+    let output_dir = output_dir.as_ref();
+
+    debug!(
+        target: LOG_TARGET,
+        "Unpacking tar archive {} to {}",
+        color::path(input_file),
+        color::path(output_dir),
+    );
+
+    ensure_dir(output_dir)?;
+
+    // Open .tar.gz file
+    let tar_gz =
+        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+
+    // Decompress to .tar
+    let tar = GzDecoder::new(tar_gz);
+
+    // Unpack the archive into the output dir
+    let mut archive = Archive::new(tar);
+
+    for entry_result in archive.entries()? {
+        let mut entry = entry_result?;
+        let mut path: PathBuf = entry.path()?.into_owned();
+
+        // Remove the prefix
+        if let Some(prefix) = remove_prefix {
+            if path.starts_with(prefix) {
+                path = path.strip_prefix(prefix).unwrap().to_owned();
+            }
+        }
+
+        let output_path = output_dir.join(path);
+
+        // Create parent dirs
+        if let Some(parent_dir) = output_path.parent() {
+            ensure_dir(parent_dir)?;
+        }
+
+        // Unpack the file if different than destination
+        if differ.should_write_source(entry.size(), &mut entry, &output_path)? {
+            entry.unpack(&output_path)?;
+        }
+
+        differ.untrack_file(&output_path);
+    }
+
+    differ.remove_stale_tracked_files();
 
     Ok(())
 }

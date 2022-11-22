@@ -181,6 +181,7 @@ impl TryFrom<String> for Target {
     }
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<String> for Target {
     fn into(self) -> String {
         self.id

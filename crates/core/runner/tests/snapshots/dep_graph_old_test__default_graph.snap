@@ -1,8 +1,0 @@
----
-source: crates/core/runner/tests/dep_graph_old_test.rs
-assertion_line: 119
-expression: graph.to_dot()
----
-digraph {
-}
-

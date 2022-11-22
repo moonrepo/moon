@@ -413,6 +413,7 @@ const taskRunnerRows: Comparison[] = [
 	{
 		feature: 'Remote / cloud caching and syncing',
 		support: {
+			moon: [PARTIALLY_SUPPORTED, 'in beta (paid)'],
 			nx: [SUPPORTED, 'with Nx cloud (paid)'],
 			turborepo: [SUPPORTED, 'requires a Vercel account (free)'],
 		},
@@ -457,7 +458,7 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Updates/merges with existing files',
 		support: {
-			// moon: [PARTIALLY_SUPPORTED, 'JSON only'],
+			moon: [PARTIALLY_SUPPORTED, 'JSON/YAML only'],
 			nx: [SUPPORTED, 'using JavaScript'],
 		},
 	},

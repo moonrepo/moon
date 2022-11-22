@@ -10,7 +10,7 @@ use std::{
 pub struct TreeDiffer {
     /// A mapping of all files in the destination directory
     /// to their current file sizes.
-    files: FxHashMap<PathBuf, u64>,
+    pub files: FxHashMap<PathBuf, u64>,
 }
 
 impl TreeDiffer {
@@ -51,13 +51,13 @@ impl TreeDiffer {
     }
 
     /// Compare 2 files byte by byte and return true if both files are equal.
-    pub fn are_files_equal<T: Read>(
+    pub fn are_files_equal<S: Read, D: Read>(
         &self,
-        source: &mut T,
-        dest_path: &Path,
+        source: &mut S,
+        dest: &mut D,
     ) -> Result<bool, MoonError> {
         let mut areader = BufReader::new(source);
-        let mut breader = BufReader::new(File::open(dest_path)?);
+        let mut breader = BufReader::new(dest);
         let mut abuf = [0; 512];
         let mut bbuf = [0; 512];
 
@@ -79,12 +79,10 @@ impl TreeDiffer {
     /// Remove all files in the destination directory that have not been
     /// overwritten with a source file, or are the same size as a source file.
     /// We can assume these are stale artifacts that should no longer exist!
-    pub async fn remove_stale_tracked_files(&mut self) -> Result<(), MoonError> {
+    pub fn remove_stale_tracked_files(&mut self) {
         for (file, _) in self.files.drain() {
-            fs::remove(file).await?;
+            let _ = std::fs::remove_file(file);
         }
-
-        Ok(())
     }
 
     /// Determine whether the source should be written to the destination.
@@ -111,7 +109,9 @@ impl TreeDiffer {
         }
 
         // If the file sizes are the same, compare byte ranges to determine a difference
-        Ok(!self.are_files_equal(source, dest_path)?)
+        let mut dest = File::open(dest_path)?;
+
+        Ok(!self.are_files_equal(source, &mut dest)?)
     }
 
     /// Untrack a destination file from the internal registry.

@@ -237,7 +237,7 @@ pub async fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
         differ.untrack_file(&output_path);
     }
 
-    differ.remove_stale_tracked_files().await?;
+    differ.remove_stale_tracked_files();
 
     Ok(())
 }

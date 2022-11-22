@@ -9,6 +9,7 @@ Some description of the template and its files.
 
 
 created --> ./test/file.ts
+created --> ./test/file.txt
 created --> ./test/folder/nested-file.ts
 
 

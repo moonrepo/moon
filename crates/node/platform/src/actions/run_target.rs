@@ -36,14 +36,14 @@ fn create_node_options(
     }
 
     if let Some(profile) = &context.profile {
-        let prof_dir = workspace.cache.get_target_dir(&task.target.id);
+        let prof_dir = workspace.cache.get_target_dir(&task.target);
 
         match profile {
             ProfileType::Cpu => {
                 trace!(
                     target: LOG_TARGET,
                     "Writing CPU profile for {} to {}",
-                    color::target(&task.target.id),
+                    color::target(&task.target),
                     color::path(&prof_dir)
                 );
 
@@ -59,7 +59,7 @@ fn create_node_options(
                 trace!(
                     target: LOG_TARGET,
                     "Writing heap profile for {} to {}",
-                    color::target(&task.target.id),
+                    color::target(&task.target),
                     color::path(&prof_dir)
                 );
 

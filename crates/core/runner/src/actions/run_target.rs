@@ -56,10 +56,7 @@ impl<'a> TargetRunner<'a> {
         task: &'a Task,
     ) -> Result<TargetRunner<'a>, MoonError> {
         Ok(TargetRunner {
-            cache: workspace
-                .cache
-                .cache_run_target_state(&task.target.id)
-                .await?,
+            cache: workspace.cache.cache_run_target_state(&task.target).await?,
             emitter,
             project,
             stderr: Term::buffered_stderr(),
@@ -170,7 +167,7 @@ impl<'a> TargetRunner<'a> {
         hasher.hash_task(task);
         hasher.hash_task_deps(task, &context.target_hashes);
 
-        if context.should_inherit_args(&task.target.id) {
+        if context.should_inherit_args(&task.target) {
             hasher.hash_args(&context.passthrough_args);
         }
 
@@ -252,7 +249,7 @@ impl<'a> TargetRunner<'a> {
             .no_error_on_failure();
 
         // Passthrough args
-        if context.should_inherit_args(&self.task.target.id) {
+        if context.should_inherit_args(&self.task.target) {
             command.args(&context.passthrough_args);
         }
 
@@ -633,7 +630,7 @@ impl<'a> TargetRunner<'a> {
         let mut args = vec![];
         args.extend(&task.args);
 
-        if context.should_inherit_args(&task.target.id) {
+        if context.should_inherit_args(&task.target) {
             args.extend(&context.passthrough_args);
         }
 

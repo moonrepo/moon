@@ -77,10 +77,11 @@ impl CacheEngine {
         .await
     }
 
-    pub async fn cache_run_target_state(
+    pub async fn cache_run_target_state<T: AsRef<str>>(
         &self,
-        target_id: &str,
+        target_id: T,
     ) -> Result<RunTargetState, MoonError> {
+        let target_id = target_id.as_ref();
         let mut item =
             RunTargetState::load(self.get_target_dir(target_id).join("lastRun.json"), 0).await?;
 
@@ -189,7 +190,7 @@ impl CacheEngine {
         self.hashes_dir.join(format!("{}.json", hash))
     }
 
-    pub fn get_target_dir(&self, target_id: &str) -> PathBuf {
-        self.states_dir.join(target_id.replace(':', "/"))
+    pub fn get_target_dir<T: AsRef<str>>(&self, target_id: T) -> PathBuf {
+        self.states_dir.join(target_id.as_ref().replace(':', "/"))
     }
 }

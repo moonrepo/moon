@@ -97,8 +97,8 @@ impl TargetHasher {
     pub fn hash_task_deps(&mut self, task: &Task, hashes: &FxHashMap<String, String>) {
         for dep in &task.deps {
             self.deps.insert(
-                dep.to_owned(),
-                match hashes.get(dep) {
+                dep.id.to_owned(),
+                match hashes.get(&dep.id) {
                     Some(hash) => hash.to_owned(),
                     None => String::new(),
                 },

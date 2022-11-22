@@ -28,10 +28,12 @@ pub struct ActionContext {
 }
 
 impl ActionContext {
-    pub fn should_inherit_args(&self, target_id: &str) -> bool {
+    pub fn should_inherit_args<T: AsRef<str>>(&self, target_id: T) -> bool {
         if self.passthrough_args.is_empty() {
             return false;
         }
+
+        let target_id = target_id.as_ref();
 
         // project:task == project:task
         if self.primary_targets.contains(target_id) {

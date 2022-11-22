@@ -387,7 +387,7 @@ impl Project {
             }
 
             // Inherit implicits before resolving
-            task.deps.extend(implicit_deps.iter().cloned());
+            task.deps.extend(Task::create_dep_targets(implicit_deps)?);
             task.inputs.extend(implicit_inputs.iter().cloned());
 
             // Resolve in order!

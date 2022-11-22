@@ -996,6 +996,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
+name = "fake"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d68f517805463f3a896a9d29c1d6ff09d3579ded64a7201b4069f8f9c0d52fd"
+dependencies = [
+ "rand 0.8.5",
+]
+
+[[package]]
 name = "fastrand"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1808,13 +1817,18 @@ dependencies = [
 name = "moon_archive"
 version = "0.1.0"
 dependencies = [
+ "assert_fs",
+ "criterion",
+ "fake",
  "flate2",
  "moon_error",
  "moon_logger",
  "moon_utils",
+ "rand 0.8.5",
  "rustc-hash",
  "tar",
  "thiserror",
+ "tokio",
  "zip",
 ]
 

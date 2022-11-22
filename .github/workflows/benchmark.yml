@@ -44,7 +44,7 @@ jobs:
           command: bench
           # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline head-sha
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark --bench tar_benchmark -- --save-baseline head-sha
 
       # Run on base branch to get a baseline
       - name: Checkout base branch
@@ -58,7 +58,7 @@ jobs:
           command: bench
           # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark -- --save-baseline base-sha
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark --bench tar_benchmark -- --save-baseline base-sha
 
       # Compare diffs
       - name: Install critcmp

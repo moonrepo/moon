@@ -9,6 +9,7 @@ Some description of the template and its files.
 
 
 replaced -> ./test/file.ts
+replaced -> ./test/file.txt
 replaced -> ./test/folder/nested-file.ts
 
 

@@ -14,7 +14,7 @@ use moon_task::{Target, Task, TaskError};
 use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
 use moon_utils::{
-    fs, is_ci, is_test_env, path,
+    is_ci, is_test_env, path,
     process::{self, format_running_command, output_to_string, Command, Output},
     time,
 };
@@ -68,7 +68,7 @@ impl<'a> TargetRunner<'a> {
 
     /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
     /// so that subsequent builds are faster, and any local outputs
-    /// can be rehydrated easily.
+    /// can be hydrated easily.
     pub async fn archive_outputs(&self) -> Result<(), RunnerError> {
         let hash = &self.cache.hash;
 
@@ -119,11 +119,6 @@ impl<'a> TargetRunner<'a> {
 
         if hash.is_empty() {
             return Ok(());
-        }
-
-        // Remove previous outputs so we avoid stale artifacts
-        for output in &self.task.output_paths {
-            fs::remove(output).await?;
         }
 
         // Hydrate outputs from the cache

@@ -1,0 +1,26 @@
+---
+slug: v0.20
+title: v0.20 - ???
+authors: [milesj]
+tags: [hydration]
+# image: ./img/v0.19.png
+---
+
+TODO
+
+<!--truncate-->
+
+# Increased output hydration by 8-10x
+
+In moon, hydration is the concept of unpacking an existing hashed artifact into a
+[task's outputs](../docs/config/project#outputs) during a cache hit. In our previous implementation,
+we would delete all existing outputs before unpacking the archive to ensure a clean slate and to
+avoid stale files. While this worked, it wasn't the most performant, taking about 280ms for 1,000
+files (which is still reasonably fast!).
+
+In our new implementation, we now utilize a smart file tree diffing algorithm that will only unpack
+files _with different content_, and will automatically remove stale files in the process. This has
+resulted in a 10x performance increase, taking about 30ms! Multiply this by many projects, the
+results should be very apparent.
+
+We hope you enjoy this improvement, as it's the first of many to come!

@@ -26,7 +26,7 @@ fn create_node_options(
     let mut options = string_vec![
         // "--inspect", // Enable node inspector
         "--title",
-        &task.target,
+        &task.target.id,
     ];
 
     if let Some(node_config) = &workspace.config.node {

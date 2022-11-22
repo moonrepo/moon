@@ -3,12 +3,12 @@ use predicates::prelude::*;
 use serial_test::serial;
 use std::path::Path;
 
-fn setup_toolchain(path: &Path, target: &str) {
-    if target.is_empty() {
+fn setup_toolchain(path: &Path, target_id: &str) {
+    if target_id.is_empty() {
         create_moon_command(path).args(["setup"]).assert().success();
     } else {
         create_moon_command(path)
-            .args(["run", target])
+            .args(["run", target_id])
             .assert()
             .success();
     }

@@ -26,7 +26,7 @@ fn create_node_options(
     let mut options = string_vec![
         // "--inspect", // Enable node inspector
         "--title",
-        &task.target,
+        &task.target.id,
     ];
 
     if let Some(node_config) = &workspace.config.node {
@@ -36,14 +36,14 @@ fn create_node_options(
     }
 
     if let Some(profile) = &context.profile {
-        let prof_dir = workspace.cache.get_target_dir(&task.target);
+        let prof_dir = workspace.cache.get_target_dir(&task.target.id);
 
         match profile {
             ProfileType::Cpu => {
                 trace!(
                     target: LOG_TARGET,
                     "Writing CPU profile for {} to {}",
-                    color::target(&task.target),
+                    color::target(&task.target.id),
                     color::path(&prof_dir)
                 );
 
@@ -59,7 +59,7 @@ fn create_node_options(
                 trace!(
                     target: LOG_TARGET,
                     "Writing heap profile for {} to {}",
-                    color::target(&task.target),
+                    color::target(&task.target.id),
                     color::path(&prof_dir)
                 );
 

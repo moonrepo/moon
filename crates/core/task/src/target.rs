@@ -1,6 +1,7 @@
 use crate::errors::TargetError;
 use moon_config::{ProjectID, TargetID, TaskID};
 use moon_utils::regex::TARGET_PATTERN;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 // use std::fmt;
 
@@ -38,7 +39,8 @@ pub enum TargetProjectScope {
 //     }
 // }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[serde(try_from = "String", into = "String")]
 pub struct Target {
     pub id: String,
 
@@ -136,9 +138,26 @@ impl Target {
     }
 }
 
+impl Default for Target {
+    fn default() -> Self {
+        Target {
+            id: "~:unknown".into(),
+            project: TargetProjectScope::OwnSelf,
+            project_id: None,
+            task_id: "unknown".into(),
+        }
+    }
+}
+
 impl AsRef<Target> for Target {
     fn as_ref(&self) -> &Target {
         self
+    }
+}
+
+impl AsRef<str> for Target {
+    fn as_ref(&self) -> &str {
+        &self.id
     }
 }
 
@@ -151,6 +170,20 @@ impl PartialOrd for Target {
 impl Ord for Target {
     fn cmp(&self, other: &Self) -> Ordering {
         self.id.cmp(&other.id)
+    }
+}
+
+impl TryFrom<String> for Target {
+    type Error = TargetError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Target::parse(&value)
+    }
+}
+
+impl Into<String> for Target {
+    fn into(self) -> String {
+        self.id
     }
 }
 

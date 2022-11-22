@@ -1,6 +1,5 @@
 use crate::errors::TokenError;
 use crate::file_group::FileGroup;
-use crate::target::Target;
 use crate::task::Task;
 use moon_config::{FileGlob, ProjectConfig};
 use moon_logger::{color, warn};
@@ -267,7 +266,7 @@ impl<'a> TokenResolver<'a> {
         let token = matches.get(0).unwrap().as_str(); // $var
         let var = matches.get(1).unwrap().as_str(); // var
 
-        let (project_id, task_id) = Target::parse(&task.target)?.ids()?;
+        let (project_id, task_id) = task.target.ids()?;
         let workspace_root = self.data.workspace_root;
         let project_root = self.data.project_root;
         let project_config = self.data.project_config;
@@ -278,7 +277,7 @@ impl<'a> TokenResolver<'a> {
             "projectRoot" => path::to_string(project_root)?,
             "projectSource" => path::to_string(project_root.strip_prefix(workspace_root).unwrap())?,
             "projectType" => project_config.type_of.to_string(),
-            "target" => task.target.clone(),
+            "target" => task.target.id.clone(),
             "task" => task_id,
             "taskPlatform" => task.platform.to_string(),
             "taskType" => task.type_of.to_string(),

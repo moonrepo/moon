@@ -56,7 +56,10 @@ impl<'a> TargetRunner<'a> {
         task: &'a Task,
     ) -> Result<TargetRunner<'a>, MoonError> {
         Ok(TargetRunner {
-            cache: workspace.cache.cache_run_target_state(&task.target).await?,
+            cache: workspace
+                .cache
+                .cache_run_target_state(&task.target.id)
+                .await?,
             emitter,
             project,
             stderr: Term::buffered_stderr(),
@@ -80,7 +83,7 @@ impl<'a> TargetRunner<'a> {
         for (i, output) in self.task.output_paths.iter().enumerate() {
             if !output.exists() {
                 return Err(RunnerError::Task(TaskError::MissingOutput(
-                    self.task.target.clone(),
+                    self.task.target.id.clone(),
                     self.task.outputs.get(i).unwrap().to_owned(),
                 )));
             }
@@ -167,7 +170,7 @@ impl<'a> TargetRunner<'a> {
         hasher.hash_task(task);
         hasher.hash_task_deps(task, &context.target_hashes);
 
-        if context.should_inherit_args(&task.target) {
+        if context.should_inherit_args(&task.target.id) {
             hasher.hash_args(&context.passthrough_args);
         }
 
@@ -249,7 +252,7 @@ impl<'a> TargetRunner<'a> {
             .no_error_on_failure();
 
         // Passthrough args
-        if context.should_inherit_args(&self.task.target) {
+        if context.should_inherit_args(&self.task.target.id) {
             command.args(&context.passthrough_args);
         }
 
@@ -305,7 +308,7 @@ impl<'a> TargetRunner<'a> {
             "MOON_PROJECT_SOURCE".to_owned(),
             self.project.source.clone(),
         );
-        env_vars.insert("MOON_TARGET".to_owned(), self.task.target.clone());
+        env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.clone());
         env_vars.insert(
             "MOON_TOOLCHAIN_DIR".to_owned(),
             path::to_string(&self.workspace.toolchain.dir)?,
@@ -361,7 +364,7 @@ impl<'a> TargetRunner<'a> {
 
         context
             .target_hashes
-            .insert(self.task.target.clone(), hash.clone());
+            .insert(self.task.target.id.clone(), hash.clone());
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
@@ -446,7 +449,7 @@ impl<'a> TargetRunner<'a> {
         let mut attempt_index = 1;
         let mut attempts = vec![];
         let primary_longest_width = context.primary_targets.iter().map(|t| t.len()).max();
-        let is_primary = context.primary_targets.contains(&self.task.target);
+        let is_primary = context.primary_targets.contains(&self.task.target.id);
         let is_real_ci = is_ci() && !is_test_env();
         let output;
 
@@ -460,7 +463,7 @@ impl<'a> TargetRunner<'a> {
 
         // Transitive targets may run concurrently, so differentiate them with a prefix.
         let stream_prefix = if is_real_ci || !is_primary || context.primary_targets.len() > 1 {
-            Some(&self.task.target)
+            Some(&self.task.target.id)
         } else {
             None
         };
@@ -630,7 +633,7 @@ impl<'a> TargetRunner<'a> {
         let mut args = vec![];
         args.extend(&task.args);
 
-        if context.should_inherit_args(&task.target) {
+        if context.should_inherit_args(&task.target.id) {
             args.extend(&context.passthrough_args);
         }
 

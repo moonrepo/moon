@@ -239,6 +239,7 @@ impl DepGraph {
                         .load(project_id)?
                         .get_task(&target.task_id)?
                         .target
+                        .id
                         .clone(),
                 );
             }

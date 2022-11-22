@@ -60,7 +60,7 @@ impl DepGraph {
         task: Option<&Task>,
     ) -> (Runtime, Runtime) {
         let key = match task {
-            Some(task) => task.target.clone(),
+            Some(task) => task.target.id.clone(),
             None => project.id.clone(),
         };
 

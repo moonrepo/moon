@@ -180,6 +180,8 @@ pub struct Task {
 
     pub deps: Vec<TargetID>,
 
+    pub dep_targets: Vec<Target>,
+
     pub env: EnvVars,
 
     pub id: String,
@@ -203,7 +205,7 @@ pub struct Task {
 
     pub platform: PlatformType,
 
-    pub target: TargetID,
+    pub target: Target,
 
     #[serde(rename = "type")]
     pub type_of: TaskType,
@@ -226,10 +228,18 @@ impl Task {
             cloned_config.local || command == "dev" || command == "serve" || command == "start";
         let log_target = format!("moon:project:{}", target.id);
 
+        debug!(
+            target: &log_target,
+            "Creating task {} with command {}",
+            color::target(&target.id),
+            color::shell(&command)
+        );
+
         let task = Task {
             args,
             command,
             deps: cloned_config.deps.unwrap_or_default(),
+            dep_targets: vec![],
             env: cloned_config.env.unwrap_or_default(),
             id: target.task_id.clone(),
             inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
@@ -259,16 +269,9 @@ impl Task {
             outputs: cloned_config.outputs.unwrap_or_default(),
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
-            target: target.id.clone(),
+            target,
             type_of: TaskType::Test,
         };
-
-        debug!(
-            target: &task.log_target,
-            "Creating task {} with command {}",
-            color::target(&target.id),
-            color::shell(&task.command)
-        );
 
         Ok(task)
     }
@@ -409,12 +412,12 @@ impl Task {
             return Ok(());
         }
 
-        let mut deps: Vec<String> = vec![];
+        let mut dep_targets: Vec<Target> = vec![];
 
         // Dont use a `HashSet` as we want to preserve order
-        let mut push_dep = |dep: String| {
-            if !deps.contains(&dep) {
-                deps.push(dep);
+        let mut push_target = |dep: Target| {
+            if !dep_targets.contains(&dep) {
+                dep_targets.push(dep);
             }
         };
 
@@ -429,16 +432,16 @@ impl Task {
                 // ^:task
                 TargetProjectScope::Deps => {
                     for dep_id in depends_on {
-                        push_dep(Target::format(dep_id, &target.task_id)?);
+                        push_target(Target::new(dep_id, &target.task_id)?);
                     }
                 }
                 // ~:task
                 TargetProjectScope::OwnSelf => {
-                    push_dep(Target::format(owner_id, &target.task_id)?);
+                    push_target(Target::new(owner_id, &target.task_id)?);
                 }
                 // project:task
                 TargetProjectScope::Id(_) => {
-                    push_dep(dep.clone());
+                    push_target(target);
                 }
                 _ => {
                     target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
@@ -446,7 +449,7 @@ impl Task {
             };
         }
 
-        self.deps = deps;
+        self.dep_targets = dep_targets;
 
         Ok(())
     }
@@ -521,7 +524,7 @@ impl Task {
             if let Some(glob) = globs.get(0) {
                 return Err(TaskError::NoOutputGlob(
                     glob.to_owned(),
-                    self.target.clone(),
+                    self.target.id.clone(),
                 ));
             }
         }

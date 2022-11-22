@@ -273,16 +273,6 @@ impl Task {
         Ok(task)
     }
 
-    pub fn create_dep_targets(deps: &[String]) -> Result<Vec<Target>, TargetError> {
-        let mut targets = vec![];
-
-        for dep in deps {
-            targets.push(Target::parse(dep)?);
-        }
-
-        Ok(targets)
-    }
-
     pub fn to_config(&self) -> TaskConfig {
         let mut command = vec![self.command.clone()];
         command.extend(self.args.clone());
@@ -316,6 +306,20 @@ impl Task {
         }
 
         config
+    }
+
+    pub fn create_dep_targets(deps: &[String]) -> Result<Vec<Target>, TargetError> {
+        let mut targets = vec![];
+
+        for dep in deps {
+            targets.push(if dep.contains(':') {
+                Target::parse(dep)?
+            } else {
+                Target::new_self(dep)?
+            });
+        }
+
+        Ok(targets)
     }
 
     /// Create a globset of all input globs to match with.

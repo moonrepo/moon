@@ -7,7 +7,7 @@ use moon_config::{
 };
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{color, debug, trace};
-use moon_utils::{fs, path, regex};
+use moon_utils::{fs, json, path, regex, yaml};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
@@ -20,6 +20,7 @@ const LOG_TARGET: &str = "moon:generator:template";
 #[derive(Debug, Eq, PartialEq)]
 pub enum FileState {
     Create,
+    Merge,
     Replace,
     Skip,
 }
@@ -35,7 +36,7 @@ pub struct TemplateFile {
     /// Absolute path to destination.
     pub dest_path: PathBuf,
 
-    /// Relative path from templates dir. Also acts as the engine name.
+    /// Relative path from templates dir. Also acts as the Tera engine name.
     pub name: String,
 
     /// Absolute path to source (in templates dir).
@@ -55,6 +56,24 @@ impl TemplateFile {
             source_path,
             state: FileState::Create,
         }
+    }
+
+    pub fn is_mergeable<'l>(&self) -> Option<&'l str> {
+        let mut ext = &self.name;
+
+        if let Some(cfg) = &self.config {
+            if let Some(to) = &cfg.to {
+                ext = to;
+            }
+        }
+
+        if ext.ends_with("json") {
+            return Some("json");
+        } else if ext.ends_with("yaml") || ext.ends_with("yml") {
+            return Some("yaml");
+        }
+
+        None
     }
 
     pub fn is_forced(&self) -> bool {
@@ -108,7 +127,7 @@ impl TemplateFile {
     }
 
     pub fn should_write(&self) -> bool {
-        matches!(self.state, FileState::Create) || matches!(self.state, FileState::Replace)
+        !matches!(self.state, FileState::Skip)
     }
 }
 
@@ -252,6 +271,14 @@ impl Template {
     /// Write the template file to the defined destination path.
     pub async fn write_file(&self, file: &TemplateFile) -> Result<(), GeneratorError> {
         match file.state {
+            FileState::Merge => {
+                trace!(
+                    target: LOG_TARGET,
+                    "Merging template file {} with {}",
+                    color::file(&file.name),
+                    color::path(&file.dest_path)
+                );
+            }
             FileState::Replace => {
                 trace!(
                     target: LOG_TARGET,
@@ -271,7 +298,26 @@ impl Template {
         }
 
         fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
-        fs::write(&file.dest_path, &file.content).await?;
+
+        if matches!(file.state, FileState::Merge) {
+            match file.is_mergeable() {
+                Some("json") => {
+                    let prev: json::JsonValue = json::read(&file.dest_path)?;
+                    let next: json::JsonValue = json::read(&file.source_path)?;
+
+                    json::write(&file.dest_path, &json::merge(&prev, &next), true)?;
+                }
+                Some("yaml") => {
+                    let prev: yaml::YamlValue = yaml::read(&file.dest_path)?;
+                    let next: yaml::YamlValue = yaml::read(&file.source_path)?;
+
+                    yaml::write(&file.dest_path, &yaml::merge(&prev, &next))?;
+                }
+                _ => {}
+            }
+        } else {
+            fs::write(&file.dest_path, &file.content).await?;
+        }
 
         Ok(())
     }

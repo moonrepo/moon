@@ -14,9 +14,9 @@ lazy_static! {
 }
 
 #[inline]
-pub fn merge(prev: &Yaml, next: &Yaml) -> Yaml {
+pub fn merge(prev: &YamlValue, next: &YamlValue) -> YamlValue {
     match (prev, next) {
-        (Yaml::Hash(prev_object), Yaml::Hash(next_object)) => {
+        (YamlValue::Mapping(prev_object), YamlValue::Mapping(next_object)) => {
             let mut object = prev_object.clone();
 
             for (key, value) in next_object.iter() {
@@ -27,7 +27,7 @@ pub fn merge(prev: &Yaml, next: &Yaml) -> Yaml {
                 }
             }
 
-            Yaml::Hash(object)
+            YamlValue::Mapping(object)
         }
         _ => next.to_owned(),
     }

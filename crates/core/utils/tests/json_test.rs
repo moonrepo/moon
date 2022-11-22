@@ -8,53 +8,53 @@ use std::path::Path;
 
 mod merge {
     use super::*;
-    use ::json::object;
+    use moon_utils::json::json as object;
 
     #[test]
     pub fn merges_fields() {
-        let prev = object! {
-            base: null,
-            str: "abc",
-            num: 123,
-            bool: true,
-            arr: [1, 2, 3],
-            obj: {
-                key: 123,
-                nested: {
-                    key2: "abc",
+        let prev = object!({
+            "base": null,
+            "str": "abc",
+            "num": 123,
+            "bool": true,
+            "arr": [1, 2, 3],
+            "obj": {
+                "key": 123,
+                "nested": {
+                    "key2": "abc",
                 },
             },
-        };
-        let next = object! {
-            base: {},
-            str: "xyz",
-            arr: [1, 2, 3, 4, 5, 6],
-            obj: {
-                key: null,
-                sub: {
-                    key3: false
+        });
+        let next = object!({
+            "base": {},
+            "str": "xyz",
+            "arr": [1, 2, 3, 4, 5, 6],
+            "obj": {
+                "key": null,
+                "sub": {
+                    "key3": false
                 }
             },
-        };
+        });
 
         assert_eq!(
             json::merge(&prev, &next),
-            object! {
-                base: {},
-                str: "xyz",
-                num: 123,
-                bool: true,
-                arr: [1, 2, 3, 4, 5, 6],
-                obj: {
-                    key: null,
-                    nested: {
-                        key2: "abc",
+            object!({
+                "base": {},
+                "str": "xyz",
+                "num": 123,
+                "bool": true,
+                "arr": [1, 2, 3, 4, 5, 6],
+                "obj": {
+                    "key": null,
+                    "nested": {
+                        "key2": "abc",
                     },
-                    sub: {
-                        key3: false
+                    "sub": {
+                        "key3": false
                     }
                 },
-            }
+            })
         );
     }
 }

@@ -38,9 +38,9 @@ pub fn merge(prev: &JsonValue, next: &JsonValue) -> JsonValue {
 
             for (key, value) in next_object.iter() {
                 if let Some(prev_value) = prev_object.get(key) {
-                    object.insert(key, merge(prev_value, value));
+                    object.insert(key.to_owned(), merge(prev_value, value));
                 } else {
-                    object.insert(key, value.to_owned());
+                    object.insert(key.to_owned(), value.to_owned());
                 }
             }
 

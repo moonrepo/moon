@@ -302,16 +302,16 @@ impl Template {
         if matches!(file.state, FileState::Merge) {
             match file.is_mergeable() {
                 Some("json") => {
-                    let prev = json::read_raw(&file.dest_path)?;
-                    let next = json::read_raw(&file.source_path)?;
+                    let prev: json::JsonValue = json::read(&file.dest_path)?;
+                    let next: json::JsonValue = json::read(&file.source_path)?;
 
-                    json::write_raw(&file.dest_path, json::merge(&prev, &next), true)?;
+                    json::write(&file.dest_path, &json::merge(&prev, &next), true)?;
                 }
                 Some("yaml") => {
-                    let prev = yaml::read_raw(&file.dest_path)?;
-                    let next = yaml::read_raw(&file.source_path)?;
+                    let prev: yaml::YamlValue = yaml::read(&file.dest_path)?;
+                    let next: yaml::YamlValue = yaml::read(&file.source_path)?;
 
-                    yaml::write_raw(&file.dest_path, yaml::merge(&prev, &next))?;
+                    yaml::write(&file.dest_path, &yaml::merge(&prev, &next))?;
                 }
                 _ => {}
             }

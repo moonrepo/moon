@@ -1,5 +1,5 @@
 use crate::actions;
-use crate::dep_graph_new::DepGraph;
+use crate::dep_graph::DepGraph;
 use crate::errors::{DepGraphError, RunnerError};
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
@@ -12,6 +12,7 @@ use moon_logger::{color, debug, error, trace};
 use moon_node_platform::actions as node_actions;
 use moon_notifier::WebhooksSubscriber;
 use moon_platform::Runtime;
+use moon_task::Target;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
@@ -108,18 +109,20 @@ async fn run_action(
 
         // Run a task within a project
         ActionNode::RunTarget(target_id) => {
+            let target = Target::parse(target_id)?;
+
             local_emitter
-                .emit(Event::TargetRunning { target: target_id })
+                .emit(Event::TargetRunning { target: &target })
                 .await?;
 
             let run_result =
-                actions::run_target(action, context, workspace, Arc::clone(&emitter), target_id)
+                actions::run_target(action, context, workspace, Arc::clone(&emitter), &target)
                     .await;
 
             local_emitter
                 .emit(Event::TargetRan {
                     error: extract_run_error(&run_result),
-                    target: target_id,
+                    target: &target,
                 })
                 .await?;
 

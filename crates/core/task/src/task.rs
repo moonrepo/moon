@@ -3,7 +3,7 @@ use crate::target::{Target, TargetProjectScope};
 use crate::token::{ResolverData, TokenResolver};
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
-    FileGlob, FilePath, InputValue, PlatformType, ProjectID, TargetID, TaskCommandArgs, TaskConfig,
+    FileGlob, FilePath, InputValue, PlatformType, ProjectID, TaskCommandArgs, TaskConfig,
     TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_logger::{color, debug, trace, Logable};
@@ -178,7 +178,7 @@ pub struct Task {
 
     pub command: String,
 
-    pub deps: Vec<TargetID>,
+    pub deps: Vec<Target>,
 
     pub env: EnvVars,
 
@@ -203,7 +203,7 @@ pub struct Task {
 
     pub platform: PlatformType,
 
-    pub target: TargetID,
+    pub target: Target,
 
     #[serde(rename = "type")]
     pub type_of: TaskType,
@@ -226,10 +226,17 @@ impl Task {
             cloned_config.local || command == "dev" || command == "serve" || command == "start";
         let log_target = format!("moon:project:{}", target.id);
 
+        debug!(
+            target: &log_target,
+            "Creating task {} with command {}",
+            color::target(&target.id),
+            color::shell(&command)
+        );
+
         let task = Task {
             args,
             command,
-            deps: cloned_config.deps.unwrap_or_default(),
+            deps: Task::create_dep_targets(&cloned_config.deps.unwrap_or_default())?,
             env: cloned_config.env.unwrap_or_default(),
             id: target.task_id.clone(),
             inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
@@ -259,16 +266,9 @@ impl Task {
             outputs: cloned_config.outputs.unwrap_or_default(),
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
-            target: target.id.clone(),
+            target,
             type_of: TaskType::Test,
         };
-
-        debug!(
-            target: &task.log_target,
-            "Creating task {} with command {}",
-            color::target(&target.id),
-            color::shell(&task.command)
-        );
 
         Ok(task)
     }
@@ -284,7 +284,7 @@ impl Task {
         };
 
         if !self.deps.is_empty() {
-            config.deps = Some(self.deps.clone());
+            config.deps = Some(self.deps.iter().map(|d| d.id.clone()).collect());
         }
 
         if !self.env.is_empty() {
@@ -306,6 +306,20 @@ impl Task {
         }
 
         config
+    }
+
+    pub fn create_dep_targets(deps: &[String]) -> Result<Vec<Target>, TargetError> {
+        let mut targets = vec![];
+
+        for dep in deps {
+            targets.push(if dep.contains(':') {
+                Target::parse(dep)?
+            } else {
+                Target::new_self(dep)?
+            });
+        }
+
+        Ok(targets)
     }
 
     /// Create a globset of all input globs to match with.
@@ -409,36 +423,30 @@ impl Task {
             return Ok(());
         }
 
-        let mut deps: Vec<String> = vec![];
+        let mut dep_targets: Vec<Target> = vec![];
 
         // Dont use a `HashSet` as we want to preserve order
-        let mut push_dep = |dep: String| {
-            if !deps.contains(&dep) {
-                deps.push(dep);
+        let mut push_target = |dep: Target| {
+            if !dep_targets.contains(&dep) {
+                dep_targets.push(dep);
             }
         };
 
-        for dep in &self.deps {
-            let target = if dep.contains(':') {
-                Target::parse(dep)?
-            } else {
-                Target::new_self(dep)?
-            };
-
+        for target in &self.deps {
             match &target.project {
                 // ^:task
                 TargetProjectScope::Deps => {
                     for dep_id in depends_on {
-                        push_dep(Target::format(dep_id, &target.task_id)?);
+                        push_target(Target::new(dep_id, &target.task_id)?);
                     }
                 }
                 // ~:task
                 TargetProjectScope::OwnSelf => {
-                    push_dep(Target::format(owner_id, &target.task_id)?);
+                    push_target(Target::new(owner_id, &target.task_id)?);
                 }
                 // project:task
                 TargetProjectScope::Id(_) => {
-                    push_dep(dep.clone());
+                    push_target(target.clone());
                 }
                 _ => {
                     target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
@@ -446,7 +454,7 @@ impl Task {
             };
         }
 
-        self.deps = deps;
+        self.deps = dep_targets;
 
         Ok(())
     }
@@ -521,7 +529,7 @@ impl Task {
             if let Some(glob) = globs.get(0) {
                 return Err(TaskError::NoOutputGlob(
                     glob.to_owned(),
-                    self.target.clone(),
+                    self.target.id.clone(),
                 ));
             }
         }
@@ -632,11 +640,15 @@ impl Task {
         }
 
         if !args.is_empty() {
-            self.args = self.merge_string_vec(&self.args, &args, &self.options.merge_args);
+            self.args = self.merge_vec(&self.args, &args, &self.options.merge_args);
         }
 
         if let Some(deps) = &config.deps {
-            self.deps = self.merge_string_vec(&self.deps, deps, &self.options.merge_deps);
+            self.deps = self.merge_vec::<Target>(
+                &self.deps,
+                &Task::create_dep_targets(deps)?,
+                &self.options.merge_deps,
+            );
         }
 
         if let Some(env) = &config.env {
@@ -644,12 +656,11 @@ impl Task {
         }
 
         if let Some(inputs) = &config.inputs {
-            self.inputs = self.merge_string_vec(&self.inputs, inputs, &self.options.merge_inputs);
+            self.inputs = self.merge_vec(&self.inputs, inputs, &self.options.merge_inputs);
         }
 
         if let Some(outputs) = &config.outputs {
-            self.outputs =
-                self.merge_string_vec(&self.outputs, outputs, &self.options.merge_outputs);
+            self.outputs = self.merge_vec(&self.outputs, outputs, &self.options.merge_outputs);
         }
 
         Ok(())
@@ -680,16 +691,11 @@ impl Task {
         }
     }
 
-    fn merge_string_vec(
-        &self,
-        base: &[String],
-        next: &[String],
-        strategy: &TaskMergeStrategy,
-    ) -> Vec<String> {
-        let mut list: Vec<String> = vec![];
+    fn merge_vec<T: Clone>(&self, base: &[T], next: &[T], strategy: &TaskMergeStrategy) -> Vec<T> {
+        let mut list: Vec<T> = vec![];
 
-        // This is easier than .extend() as we need to clone the inner string
-        let mut merge = |inner_list: &[String]| {
+        // This is easier than .extend() as we need to clone the inner value
+        let mut merge = |inner_list: &[T]| {
             for item in inner_list {
                 list.push(item.clone());
             }

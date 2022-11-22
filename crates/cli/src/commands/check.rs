@@ -31,6 +31,7 @@ pub async fn check(
             "Running for specific projects: {}",
             project_ids.join(", ")
         );
+
         for id in project_ids {
             projects.push(workspace.projects.load(id)?);
         }
@@ -42,7 +43,7 @@ pub async fn check(
     for project in projects {
         for task in project.tasks.values() {
             if task.is_build_type() || task.is_test_type() {
-                targets.push(task.target.clone());
+                targets.push(task.target.id.clone());
             }
         }
     }

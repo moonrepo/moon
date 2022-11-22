@@ -2,7 +2,7 @@ use moon_action::{Action, ActionNode};
 use moon_cache::RunTargetState;
 use moon_platform::Runtime;
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Target, Task};
 use serde::Serialize;
 use std::{path::PathBuf, time::Duration};
 
@@ -60,18 +60,18 @@ pub enum Event<'e> {
 
     // Running targets
     TargetRunning {
-        target: &'e str,
+        target: &'e Target,
     },
     TargetRan {
         error: Option<String>,
-        target: &'e str,
+        target: &'e Target,
     },
     TargetOutputArchiving {
         #[serde(skip)]
         cache: &'e RunTargetState,
         hash: &'e str,
         project: &'e Project,
-        target: &'e str,
+        target: &'e Target,
         task: &'e Task,
     },
     #[serde(rename_all = "camelCase")]
@@ -79,7 +79,7 @@ pub enum Event<'e> {
         archive_path: PathBuf,
         hash: &'e str,
         project: &'e Project,
-        target: &'e str,
+        target: &'e Target,
         task: &'e Task,
     },
     TargetOutputHydrating {
@@ -87,7 +87,7 @@ pub enum Event<'e> {
         cache: &'e RunTargetState,
         hash: &'e str,
         project: &'e Project,
-        target: &'e str,
+        target: &'e Target,
         task: &'e Task,
     },
     #[serde(rename_all = "camelCase")]
@@ -95,12 +95,12 @@ pub enum Event<'e> {
         archive_path: PathBuf,
         hash: &'e str,
         project: &'e Project,
-        target: &'e str,
+        target: &'e Target,
         task: &'e Task,
     },
     TargetOutputCacheCheck {
         hash: &'e str,
-        target: &'e str,
+        target: &'e Target,
     },
 
     // Installing a tool

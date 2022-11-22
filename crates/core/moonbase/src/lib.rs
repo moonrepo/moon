@@ -136,7 +136,7 @@ pub async fn upload_artifact(
     auth_token: String,
     repository_id: i32,
     hash: String,
-    target: String,
+    target_id: String,
     path: PathBuf,
 ) -> Result<Artifact, MoonbaseError> {
     let file = fs::File::open(&path)
@@ -154,7 +154,7 @@ pub async fn upload_artifact(
 
     let form = Form::new()
         .text("repository", repository_id.to_string())
-        .text("target", target.to_owned())
+        .text("target", target_id.to_owned())
         .part(
             "file",
             Part::stream(Body::wrap_stream(file_stream))

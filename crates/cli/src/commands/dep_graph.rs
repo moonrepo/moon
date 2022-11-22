@@ -20,8 +20,8 @@ pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::er
     // Show all targets and actions
     } else {
         for project_id in projects.ids() {
-            for task_id in projects.load(&project_id)?.tasks.keys() {
-                graph.run_target(&Target::new(&project_id, task_id)?, &projects, &None)?;
+            for task in projects.load(&project_id)?.tasks.values() {
+                graph.run_target(&task.target, &projects, &None)?;
             }
         }
     }

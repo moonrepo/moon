@@ -74,7 +74,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
                     let auth_token = moonbase.auth_token.to_owned();
                     let repo_id = moonbase.repository_id;
                     let hash = (*hash).to_owned();
-                    let target = (*target).to_owned();
+                    let target = target.id.to_owned();
                     let archive_path = archive_path.to_owned();
 
                     // Run this in the background so we don't slow down the runner

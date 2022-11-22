@@ -80,18 +80,16 @@ fn gather_runnable_targets(
     for project_id in workspace.projects.ids() {
         let project = workspace.projects.load(&project_id)?;
 
-        for (task_id, task) in &project.tasks {
-            let target = Target::new(&project.id, task_id)?;
-
+        for task in project.tasks.values() {
             if task.should_run_in_ci() {
                 if task.is_affected(touched_files)? {
-                    targets.push(target);
+                    targets.push(task.target.clone());
                 }
             } else {
                 debug!(
                     target: LOG_TARGET,
                     "Not running target {} because it either has no `outputs` or `runInCI` is false",
-                    color::target(&target.id),
+                    color::target(&task.target.id),
                 );
             }
         }

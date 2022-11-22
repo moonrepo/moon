@@ -182,15 +182,17 @@ we also provide the following custom filters:
 
 ```twig
 {{ some_path | path_join(part = "another/folder") }}
+{{ some_path | path_relative(from = other_path) }}
+{{ some_path | path_relative(to = other_path) }}
 ```
 
 #### Variables
 
 The following variables are always available within a template:
 
-- `cwd` - Current working directory.
-- `dest_absolute` - Absolute path to the destination folder.
-- `dest_relative` - Relative path to the destination folder from the working directory.
+- `dest_abs_dir` - Absolute path to the destination folder.
+- `dest_rel_dir` - Relative path to the destination folder from the working directory.
+- `working_dir` - Current working directory.
 - `workspace_root` - The moon workspace root.
 
 ## Generating code from a template

@@ -67,15 +67,25 @@ pub fn path_join(value: &Value, args: &HashMap<String, Value>) -> Result<Value> 
 pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
     let base = try_get_value!("path_relative", "value", PathBuf, value);
 
-    let to = match args.get("to") {
-        Some(val) => try_get_value!("path_relative", "to", String, val),
-        None => return Err(Error::msg("Expected a `to` for `path_relative`.")),
+    if args.get("to").is_none() && args.get("from").is_none() {
+        return Err(Error::msg("Expected a `to` or `from` for `path_relative`."));
+    }
+
+    let rel_to = match args.get("to") {
+        Some(val) => path::relative_from(try_get_value!("path_relative", "to", String, val), &base),
+        None => None,
     };
 
-    let full = path::to_virtual_string(path::normalize(
-        path::relative_from(&base, to).unwrap_or(base),
-    ))
-    .map_err(|e| Error::msg(e.to_string()))?;
+    let rel_from = match args.get("from") {
+        Some(val) => {
+            path::relative_from(&base, try_get_value!("path_relative", "from", String, val))
+        }
+        None => None,
+    };
+
+    let rel = rel_to.unwrap_or(rel_from.unwrap_or(base));
+    let full =
+        path::to_virtual_string(path::normalize(rel)).map_err(|e| Error::msg(e.to_string()))?;
 
     Ok(to_value(full).unwrap())
 }

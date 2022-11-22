@@ -372,9 +372,9 @@ pub async fn generate(
 
     // Gather variables and build context
     let mut context = gather_variables(&template, &theme, &options)?;
-    context.insert("cwd", &cwd);
-    context.insert("dest_absolute", &dest);
-    context.insert("dest_relative", &relative_dest);
+    context.insert("dest_abs_dir", &dest);
+    context.insert("dest_rel_dir", &relative_dest);
+    context.insert("working_dir", &cwd);
     context.insert("workspace_root", &workspace.root);
 
     // Load template files and determine when to overwrite

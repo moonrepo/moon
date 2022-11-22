@@ -221,6 +221,10 @@ impl Template {
 
         // Do a second pass and render the content
         for file in &mut files {
+            // if let Err(e) = self.engine.render(&file.name, context) {
+            //     dbg!(e);
+            // }
+
             file.set_content(self.engine.render(&file.name, context)?, dest)?;
         }
 

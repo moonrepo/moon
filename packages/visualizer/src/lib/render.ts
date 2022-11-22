@@ -17,6 +17,13 @@ export const render = (element: HTMLElement, data: GraphInfo) => {
 		layout: { name: 'dagre' },
 		style: [
 			{
+				selector: 'edges',
+				style: {
+					"curve-style": "straight",
+					"target-arrow-shape": 'vee'
+				}
+			},
+			{
 				selector: 'node',
 				style: {
 					label: 'data(label)',

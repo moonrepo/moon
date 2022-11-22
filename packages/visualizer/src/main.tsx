@@ -5,6 +5,7 @@ import { App } from './app';
 declare global {
 	interface Window {
 		GRAPH_DATA: string;
+		PAGE_TITLE: string;
 	}
 }
 

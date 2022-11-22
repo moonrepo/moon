@@ -1,5 +1,8 @@
 import cytoscape from "cytoscape";
+import dagre from 'cytoscape-dagre';
 import { GraphInfo } from "./types";
+
+cytoscape.use(dagre);
 
 export const render = (element: HTMLElement, data: GraphInfo) => {
 	const nodes = data.nodes.map((n) => ({
@@ -8,10 +11,20 @@ export const render = (element: HTMLElement, data: GraphInfo) => {
 	const edges = data.edges.map((e) => ({
 		data: { id: e.id.toString(), source: e.source.toString(), target: e.target.toString() },
 	}));
-	const cy = cytoscape({
+	return cytoscape({
 		container: element,
 		elements: { edges, nodes },
-		style: [{ selector: 'node', style: { label: 'data(label)' } }],
+		layout: { name: 'dagre' },
+		style: [
+			{
+				selector: 'node',
+				style: {
+					label: 'data(label)',
+					shape: 'round-rectangle',
+					"text-halign": 'center',
+					"text-valign": 'center',
+				}
+			}
+		],
 	});
-	return cy;
 };

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'preact/compat';
+import { useEffect, useRef } from 'preact/hooks';
 import { render } from '../lib/render';
 import type { GraphInfo } from '../lib/types';
 
@@ -13,10 +13,5 @@ export const Graph = () => {
 
 	useEffect(() => void drawGraph(), []);
 
-	return (
-		<>
-			<h2>Graph Test</h2>
-			<div ref={graphRef} style={{ height: '80vh', width: '100%' }} />
-		</>
-	);
+	return <div ref={graphRef} style={{ height: '80vh', width: '100%' }} />;
 };

@@ -6,6 +6,8 @@
 
 - Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler
   options.
+- Updated pnpm to no longer run `pnpm prune` while deduping dependencies, as it produces unexpected
+  results.
 
 ##### Runner
 

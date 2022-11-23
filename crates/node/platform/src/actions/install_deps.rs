@@ -212,7 +212,7 @@ pub async fn install_deps(
             };
 
             if let Some(dedupe_command) = dedupe_command {
-                debug!(target: LOG_TARGET, "Dedupeing dependencies");
+                debug!(target: LOG_TARGET, "Deduping dependencies");
 
                 println!("{}", label_checkpoint(dedupe_command, Checkpoint::Pass));
 
@@ -221,7 +221,7 @@ pub async fn install_deps(
             } else {
                 debug!(
                     target: LOG_TARGET,
-                    "Not dedupeing dependencies, not available for current package manager"
+                    "Skipping deduping dependencies, not available for current package manager"
                 );
             }
         }

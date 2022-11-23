@@ -18,6 +18,7 @@ impl Default for PipelineOutput {
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub enum PipelineProvider {
     AppVeyor,
+    AwsCodebuild,
     Bitbucket,
     Buildkite,
     CircleCI,
@@ -26,6 +27,7 @@ pub enum PipelineProvider {
     Drone,
     GithubActions,
     Gitlab,
+    GoogleCloudBuild,
     Semaphore,
     TravisCI,
     #[default]

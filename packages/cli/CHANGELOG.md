@@ -11,6 +11,11 @@
 
 - Implemented a new file tree diffing algorithm that speeds up task output hydration by 10x.
 
+##### Generator
+
+- Added `path_join` and `path_relative` template filters.
+- Added pre-defined template variables for the working dir, destination, and workspace root.
+
 #### 🐞 Fixes
 
 - When writing JSON files, it will now respect the `indent_style = tab` setting in the closest

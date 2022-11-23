@@ -10,7 +10,7 @@ TODO
 
 <!--truncate-->
 
-# Increased output hydration by 8-10x
+## Increased output hydration by 8-10x
 
 In moon, hydration is the concept of unpacking an existing hashed artifact into a
 [task's outputs](../docs/config/project#outputs) during a cache hit. In our previous implementation,
@@ -24,3 +24,33 @@ resulted in a 10x performance increase, taking about 30ms! Multiply this by many
 results should be very apparent.
 
 We hope you enjoy this improvement, as it's the first of many to come!
+
+## Path handling in generator templates
+
+Our code generation is powered by [Tera](https://tera.netlify.app/docs/#built-ins), a templating
+engine with a ton of built-in utilities. However, it does not provide utilities for file paths, and
+as such, we now provide `path_join` and `path_relative` filters.
+
+```twig
+{{ some_path | path_relative(from = workspace_root) }}
+```
+
+We also now inject variables for the working directory, destination, and workspace root. This will
+help with custom paths, especially within frontmatter!
+[View the codegen docs for more information](../docs/guides/codegen#variables).
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.20.0) for a
+full list of changes.
+
+- Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler
+  options.
+- YAML files will now respect the closest `.editorconfig` file.
+
+## What's next?
+
+Expect the following in the v0.21 release!
+
+- ???

@@ -171,6 +171,8 @@ impl Template {
         engine.register_filter("upper_case", filters::upper_case);
         engine.register_filter("upper_kebab_case", filters::upper_kebab_case);
         engine.register_filter("upper_snake_case", filters::upper_snake_case);
+        engine.register_filter("path_join", filters::path_join);
+        engine.register_filter("path_relative", filters::path_relative);
 
         Ok(Template {
             config,
@@ -219,6 +221,10 @@ impl Template {
 
         // Do a second pass and render the content
         for file in &mut files {
+            // if let Err(e) = self.engine.render(&file.name, context) {
+            //     dbg!(e);
+            // }
+
             file.set_content(self.engine.render(&file.name, context)?, dest)?;
         }
 

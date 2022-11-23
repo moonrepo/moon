@@ -1,11 +1,12 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 1063
+assertion_line: 978
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ nodeNameScope:standard
 name-only
+▪▪▪▪ nodeNameScope:standard (100ms, b35c4e51)
 
 Tasks: 1 completed
  Time: 100ms

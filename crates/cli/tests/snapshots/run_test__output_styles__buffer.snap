@@ -1,11 +1,11 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 968
+assertion_line: 737
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:buffer
-▪▪▪▪ outputStyles:buffer (100ms)
+▪▪▪▪ outputStyles:buffer (100ms, ea259d36)
 stdout
 
 ▪▪▪▪ outputStyles:bufferPrimary (no op)

@@ -4,6 +4,7 @@ expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ windows:bat
 stdout
+▪▪▪▪ windows:bat (100ms, 7fdc9d49)
 
 Tasks: 1 completed
  Time: 100ms

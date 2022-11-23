@@ -83,7 +83,7 @@ pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Val
         None => None,
     };
 
-    let rel = rel_to.unwrap_or(rel_from.unwrap_or(base));
+    let rel = rel_to.unwrap_or_else(|| rel_from.unwrap_or(base));
     let full =
         path::to_virtual_string(path::normalize(rel)).map_err(|e| Error::msg(e.to_string()))?;
 

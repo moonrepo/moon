@@ -6,6 +6,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ npm install
 ▪▪▪▪ node:npm
 8.19.2
+▪▪▪▪ node:npm (100ms, b4fe9744)
 
 Tasks: 1 completed
  Time: 100ms

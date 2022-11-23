@@ -5,6 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ unix:passthroughArgs
 Args: -aBc --opt value --optCamel=value foo 'bar baz' --opt-kebab 123
+▪▪▪▪ unix:passthroughArgs (100ms, eddf58f9)
 
 Tasks: 1 completed
  Time: 100ms

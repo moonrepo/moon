@@ -14,7 +14,7 @@ impl VcsLoader {
     ) -> Result<Box<dyn Vcs + Send + Sync>, VcsError> {
         let vcs_config = &workspace_config.vcs;
 
-        Ok(match &vcs_config.manager {
+        Ok(match vcs_config.manager {
             VcsManager::Svn => Box::new(Svn::load(vcs_config, working_dir)),
             _ => Box::new(Git::load(vcs_config, working_dir)?),
         })

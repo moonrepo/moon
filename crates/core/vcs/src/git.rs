@@ -51,13 +51,14 @@ impl Git {
 
     async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<String> {
         let mut args = string_vec!["merge-base", head];
+        let mut candidates = string_vec![base.to_owned()];
+
+        for remote in &self.config.remote_candidates {
+            candidates.push(format!("{}/{}", remote, base));
+        }
 
         // To start, we need to find a working base origin
-        for candidate in [
-            base.to_owned(),
-            format!("origin/{}", base),
-            format!("upstream/{}", base),
-        ] {
+        for candidate in candidates {
             if self
                 .run_command(
                     &mut self.create_command(vec!["merge-base", &candidate, head]),

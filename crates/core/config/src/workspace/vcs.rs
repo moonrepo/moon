@@ -1,3 +1,4 @@
+use moon_utils::string_vec;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum::Display;
@@ -18,16 +19,19 @@ pub enum VcsManager {
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct VcsConfig {
+    pub default_branch: String,
+
     pub manager: VcsManager,
 
-    pub default_branch: String,
+    pub remote_candidates: Vec<String>,
 }
 
 impl Default for VcsConfig {
     fn default() -> Self {
         VcsConfig {
+            default_branch: "master".into(),
             manager: VcsManager::default(),
-            default_branch: String::from("master"),
+            remote_candidates: string_vec!["origin", "upstream"],
         }
     }
 }

@@ -4,7 +4,7 @@ mod loader;
 mod svn;
 mod vcs;
 
-use moon_config::VcsManager;
+use moon_config::{VcsConfig, VcsManager};
 use std::path::Path;
 
 pub use errors::VcsError;
@@ -20,14 +20,18 @@ pub async fn detect_vcs(
     if dest_dir.join(".git").exists() {
         return Ok((
             VcsManager::Git,
-            Git::load("master", dest_dir)?.get_local_branch().await?,
+            Git::load(&VcsConfig::default(), dest_dir)?
+                .get_local_branch()
+                .await?,
         ));
     }
 
     if dest_dir.join(".svn").exists() {
         return Ok((
             VcsManager::Svn,
-            Svn::load("trunk", dest_dir).get_local_branch().await?,
+            Svn::load(&VcsConfig::default(), dest_dir)
+                .get_local_branch()
+                .await?,
         ));
     }
 

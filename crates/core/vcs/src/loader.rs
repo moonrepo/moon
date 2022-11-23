@@ -13,12 +13,10 @@ impl VcsLoader {
         workspace_config: &WorkspaceConfig,
     ) -> Result<Box<dyn Vcs + Send + Sync>, VcsError> {
         let vcs_config = &workspace_config.vcs;
-        let manager = &vcs_config.manager;
-        let default_branch = &vcs_config.default_branch;
 
-        Ok(match manager {
-            VcsManager::Svn => Box::new(Svn::load(default_branch, working_dir)),
-            _ => Box::new(Git::load(default_branch, working_dir)?),
+        Ok(match &vcs_config.manager {
+            VcsManager::Svn => Box::new(Svn::load(vcs_config, working_dir)),
+            _ => Box::new(Git::load(vcs_config, working_dir)?),
         })
     }
 }

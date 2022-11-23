@@ -1,17 +1,18 @@
 use crate::actions;
 use crate::dep_graph::DepGraph;
 use crate::errors::{DepGraphError, RunnerError};
+use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
 use console::Term;
-use moon_action::{Action, ActionContext, ActionNode, ActionStatus};
-use moon_cache::RunReport;
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_emitter::{Emitter, Event};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
 use moon_node_platform::actions as node_actions;
 use moon_notifier::WebhooksSubscriber;
 use moon_platform::Runtime;
+use moon_runner_context::RunnerContext;
 use moon_task::Target;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
@@ -35,7 +36,7 @@ fn extract_run_error<T>(result: &Result<T, RunnerError>) -> Option<String> {
 async fn run_action(
     node: &ActionNode,
     action: &mut Action,
-    context: Arc<RwLock<ActionContext>>,
+    context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<Emitter>>,
 ) -> Result<(), RunnerError> {
@@ -257,7 +258,7 @@ impl Runner {
     pub async fn run(
         &mut self,
         graph: DepGraph,
-        context: Option<ActionContext>,
+        context: Option<RunnerContext>,
     ) -> Result<ActionResults, RunnerError> {
         let start = Instant::now();
         let node_count = graph.graph.node_count();
@@ -612,7 +613,7 @@ impl Runner {
     async fn create_run_report(
         &self,
         actions: &ActionResults,
-        context: Arc<RwLock<ActionContext>>,
+        context: Arc<RwLock<RunnerContext>>,
     ) -> Result<(), RunnerError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;

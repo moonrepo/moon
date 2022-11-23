@@ -1,8 +1,9 @@
-use moon_action::{Action, ActionContext, ActionStatus};
+use moon_action::{Action, ActionStatus};
 use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
 use moon_logger::{color, debug};
 use moon_node_lang::{PackageJson, NPM};
 use moon_project::Project;
+use moon_runner_context::RunnerContext;
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::{is_ci, json, path, semver, string_vec};
@@ -75,7 +76,7 @@ fn sync_root_tsconfig(
 
 pub async fn sync_project(
     _action: &mut Action,
-    _context: Arc<RwLock<ActionContext>>,
+    _context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
     project: &Project,
 ) -> Result<ActionStatus, WorkspaceError> {

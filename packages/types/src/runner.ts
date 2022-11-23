@@ -30,7 +30,7 @@ export interface Action {
 	status: ActionStatus;
 }
 
-export interface ActionContext {
+export interface RunnerContext {
 	initialTargets: string[];
 	passthroughArgs: string[];
 	primaryTargets: string[];
@@ -41,7 +41,7 @@ export interface ActionContext {
 
 export interface RunReport {
 	actions: Action[];
-	context: ActionContext;
+	context: RunnerContext;
 	duration: Duration;
 	estimatedSavings: Duration | null;
 	projectedDuration: Duration;

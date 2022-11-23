@@ -1,6 +1,7 @@
 mod actions;
 mod dep_graph;
 mod errors;
+mod run_report;
 mod runner;
 mod subscribers;
 

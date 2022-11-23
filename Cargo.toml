@@ -11,6 +11,7 @@ default-members = ["crates/cli"]
 
 [workspace.dependencies]
 cached = "0.40.0"
+clap = "4.0.23"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
 reqwest = "0.11.12"
 rustc-hash = "1.1.0"

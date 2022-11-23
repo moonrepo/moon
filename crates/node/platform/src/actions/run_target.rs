@@ -1,5 +1,4 @@
 use crate::hasher::NodeTargetHasher;
-use moon_action::{ActionContext, ProfileType};
 use moon_config::{HasherOptimization, NodePackageManager};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
@@ -8,6 +7,7 @@ use moon_node_lang::{
     PackageJson,
 };
 use moon_project::Project;
+use moon_runner_context::{ProfileType, RunnerContext};
 use moon_task::Task;
 use moon_toolchain::{get_path_env_var, Executable};
 use moon_typescript_lang::TsConfigJson;
@@ -19,7 +19,7 @@ use rustc_hash::FxHashMap;
 const LOG_TARGET: &str = "moon:node-platform:run-target";
 
 fn create_node_options(
-    context: &ActionContext,
+    context: &RunnerContext,
     workspace: &Workspace,
     task: &Task,
 ) -> Result<Vec<String>, MoonError> {
@@ -87,7 +87,7 @@ fn create_node_options(
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
 pub async fn create_target_command(
-    context: &ActionContext,
+    context: &RunnerContext,
     workspace: &Workspace,
     project: &Project,
     task: &Task,

@@ -3,10 +3,33 @@ source: crates/cli/tests/generate_test.rs
 assertion_line: 209
 expression: "fs::read_to_string(fixture.path().join(\"./test/filters.txt\")).unwrap()"
 ---
+STRINGS:
+
 camel_case = someRandomValue
 kebab_case = some-random-value
 pascal_case = SomeRandomValue
 snake_case = some_random_value
 upper_kebab_case = SOME-RANDOM-VALUE
 upper_snake_case = SOME_RANDOM_VALUE
+
+PATHS:
+
+path_join = some/dir/another/dir
+path_join_with_var = test/another/dir
+
+RELATIVE PATHS:
+
+to_up = ../../../../foo/bar
+to_down = ../../foo/bar
+to_down_norel = ../../foo/bar
+
+from_up = some/dir
+from_down = ../dir
+from_down_norel = ../../some/dir
+
+
+rel_vars1 = ..
+rel_vars2 = sub
+rel_vars3 = sub
+rel_vars4 = ..
 

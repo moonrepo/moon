@@ -1,5 +1,6 @@
 mod api;
 mod appveyor;
+mod aws_codebuild;
 mod bitbucket;
 mod buildkite;
 mod circleci;
@@ -8,6 +9,7 @@ mod codeship;
 mod drone;
 mod github;
 mod gitlab;
+mod google_cloud_build;
 mod semaphore;
 mod travisci;
 
@@ -17,6 +19,10 @@ use std::env;
 pub fn detect_pipeline_provider() -> PipelineProvider {
     if env::var("APPVEYOR").is_ok() {
         return PipelineProvider::AppVeyor;
+    }
+
+    if env::var("CODEBUILD_BUILD_ARN").is_ok() {
+        return PipelineProvider::AwsCodebuild;
     }
 
     if env::var("BITBUCKET_WORKSPACE").is_ok() {
@@ -53,6 +59,10 @@ pub fn detect_pipeline_provider() -> PipelineProvider {
         return PipelineProvider::Gitlab;
     }
 
+    if env::var("GOOGLE_CLOUD_BUILD").is_ok() || env::var("BUILD_OUTPUT").is_ok() {
+        return PipelineProvider::GoogleCloudBuild;
+    }
+
     if env::var("SEMAPHORE").is_ok() {
         return PipelineProvider::Semaphore;
     }
@@ -71,6 +81,7 @@ pub fn get_pipeline_environment() -> Option<PipelineEnvironment> {
 
     let environment = match detect_pipeline_provider() {
         PipelineProvider::AppVeyor => appveyor::create_environment(),
+        PipelineProvider::AwsCodebuild => aws_codebuild::create_environment(),
         PipelineProvider::Bitbucket => bitbucket::create_environment(),
         PipelineProvider::Buildkite => buildkite::create_environment(),
         PipelineProvider::CircleCI => circleci::create_environment(),
@@ -79,6 +90,7 @@ pub fn get_pipeline_environment() -> Option<PipelineEnvironment> {
         PipelineProvider::Drone => drone::create_environment(),
         PipelineProvider::GithubActions => github::create_environment(),
         PipelineProvider::Gitlab => gitlab::create_environment(),
+        PipelineProvider::GoogleCloudBuild => google_cloud_build::create_environment(),
         PipelineProvider::Semaphore => semaphore::create_environment(),
         PipelineProvider::TravisCI => travisci::create_environment(),
         PipelineProvider::Unknown => {

@@ -6,12 +6,12 @@
 
 - Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler
   options.
-- Updated pnpm to no longer run `pnpm prune` while deduping dependencies, as it produces unexpected
-  results.
+- Added Google Cloud Build and AWS CodeBuild to the list of CI providers to detect. results.
 
 ##### Runner
 
 - Implemented a new file tree diffing algorithm that speeds up task output hydration by 10x.
+- Updated pnpm to no longer run `pnpm prune` while deduping dependencies, as it produces unexpected
 
 ##### Generator
 

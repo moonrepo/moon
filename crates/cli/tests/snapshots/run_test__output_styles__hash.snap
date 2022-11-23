@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:hash
-▪▪▪▪ outputStyles:hash (100ms)
+▪▪▪▪ outputStyles:hash (100ms, ea259d36)
 ▪▪▪▪ outputStyles:hashPrimary (no op)
 
 Tasks: 2 completed

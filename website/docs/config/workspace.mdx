@@ -669,27 +669,40 @@ Configures the version control system to utilize within the workspace (and repos
 required for determining touched (added, modified, etc) files, calculating file hashes, computing
 affected files, and much more.
 
+### `defaultBranch`
+
+<HeadingApiLink to="/api/types/interface/VcsConfig#defaultBranch" />
+
+Defines the default branch in the repository for comparing differences against. For git, this is
+typically "master" (default) or "main". For svn, this should always be "trunk".
+
+```yaml title=".moon/workspace.yml" {2}
+vcs:
+  defaultBranch: 'master'
+```
+
 ### `manager`
 
 <HeadingApiLink to="/api/types/interface/VcsConfig#manager" />
 
 Defines the VCS tool/binary that is being used for managing the repository. Accepts "git" (default)
-or "svn" (experimental).
+or "svn" (experimental, in development).
 
 ```yaml title=".moon/workspace.yml" {2}
 vcs:
   manager: 'git'
 ```
 
-### `defaultBranch`
+### `remoteCandidates` <VersionLabel version="0.20" />
 
-<HeadingApiLink to="/api/types/interface/VcsConfig#defaultBranch" />
+<HeadingApiLink to="/api/types/interface/VcsConfig#remoteCandidates" />
 
-Defines the default upstream branch (master/main/trunk) in the repository for comparing differences
-against. For git, this is typically "master" (default) or "main", and must include the remote prefix
-(before /). For svn, this should always be "trunk".
+(Git only) Defines a list of remote candidates to query agaist to determine merge bases. Defaults to
+"origin" and "upstream".
 
-```yaml title=".moon/workspace.yml" {2}
+```yaml title=".moon/workspace.yml" {2-4}
 vcs:
-  defaultBranch: 'master'
+  remoteCandidates:
+    - 'origin'
+    - 'upstream'
 ```

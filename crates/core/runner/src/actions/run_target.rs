@@ -472,13 +472,15 @@ impl<'a> TargetRunner<'a> {
             let mut attempt = Attempt::new(attempt_index);
 
             self.print_target_label(
+                Checkpoint::Start,
+                // NOTE: Old streaming output format. Revisit or remove?
                 // Mark primary streamed output as passed, since it may stay open forever,
                 // or it may use ANSI escape codes to alter the terminal!
-                if is_primary && should_stream_output {
-                    Checkpoint::Pass
-                } else {
-                    Checkpoint::Start
-                },
+                // if is_primary && should_stream_output {
+                //     Checkpoint::Pass
+                // } else {
+                //     Checkpoint::Start
+                // },
                 &attempt,
                 attempt_total,
             )?;
@@ -685,13 +687,13 @@ impl<'a> TargetRunner<'a> {
             comments.push(format!("{}/{}", attempt.index, attempt_total));
         }
 
-        dbg!(&attempt);
-
         if let Some(duration) = attempt.duration {
             comments.push(time::elapsed(duration));
         }
 
-        comments.push(self.get_short_hash().to_owned());
+        if attempt.finished_at.is_some() {
+            comments.push(self.get_short_hash().to_owned());
+        }
 
         self.print_checkpoint(checkpoint, &comments)?;
 
@@ -734,22 +736,33 @@ impl<'a> TargetRunner<'a> {
         attempt_total: u8,
         output: &Output,
     ) -> Result<(), MoonError> {
-        // Transitive target finished streaming, so display the success checkpoint
-        if let Some(TaskOutputStyle::Stream) = self.task.options.output_style {
-            self.print_target_label(
-                if output.status.success() {
-                    Checkpoint::Pass
-                } else {
-                    Checkpoint::Fail
-                },
-                attempt,
-                attempt_total,
-            )?;
+        self.print_target_label(
+            if output.status.success() {
+                Checkpoint::Pass
+            } else {
+                Checkpoint::Fail
+            },
+            attempt,
+            attempt_total,
+        )?;
 
-            // Otherwise the primary target failed for some reason
-        } else if !output.status.success() {
-            self.print_target_label(Checkpoint::Fail, attempt, attempt_total)?;
-        }
+        // NOTE: Old streaming output format. Revisit or remove?
+        // // Transitive target finished streaming, so display the success checkpoint
+        // if let Some(TaskOutputStyle::Stream) = self.task.options.output_style {
+        //     self.print_target_label(
+        //         if output.status.success() {
+        //             Checkpoint::Pass
+        //         } else {
+        //             Checkpoint::Fail
+        //         },
+        //         attempt,
+        //         attempt_total,
+        //     )?;
+
+        //     // Otherwise the primary target failed for some reason
+        // } else if !output.status.success() {
+        //     self.print_target_label(Checkpoint::Fail, attempt, attempt_total)?;
+        // }
 
         self.flush_output()?;
 

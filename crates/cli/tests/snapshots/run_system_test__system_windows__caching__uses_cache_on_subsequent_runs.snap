@@ -3,6 +3,7 @@ source: crates/cli/tests/run_system_test.rs
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ windows:outputs
+▪▪▪▪ windows:outputs (100ms, 1cfe7c3f)
 
 Tasks: 1 completed
  Time: 100ms

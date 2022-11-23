@@ -6,6 +6,7 @@ expression: get_assert_output(&assert)
 MOON_FOO=abc
 MOON_BAR=123
 MOON_BAZ=true
+▪▪▪▪ windows:envVars (100ms, ec1222fb)
 
 Tasks: 1 completed
  Time: 100ms

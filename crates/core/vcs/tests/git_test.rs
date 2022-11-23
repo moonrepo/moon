@@ -1,3 +1,4 @@
+use moon_config::{VcsConfig, VcsManager};
 use moon_utils::{
     string_vec,
     test::{create_sandbox_with_git, run_git_command},
@@ -6,10 +7,18 @@ use moon_vcs::{Git, Vcs};
 use std::collections::BTreeMap;
 use std::fs;
 
+fn create_config(branch: &str) -> VcsConfig {
+    VcsConfig {
+        default_branch: branch.to_owned(),
+        manager: VcsManager::Git,
+        ..VcsConfig::default()
+    }
+}
+
 #[tokio::test]
 async fn returns_local_branch() {
     let fixture = create_sandbox_with_git("vcs");
-    let git = Git::load("default", fixture.path()).unwrap();
+    let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
     assert_eq!(git.get_local_branch().await.unwrap(), "master");
     assert_ne!(git.get_local_branch_revision().await.unwrap(), "");
@@ -21,7 +30,7 @@ mod file_hashing {
     #[tokio::test]
     async fn hashes_a_list_of_files() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         assert_eq!(
             git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"])
@@ -46,7 +55,7 @@ mod file_hashing {
 
         fs::write(fixture.path().join(".gitignore"), "existing.txt").unwrap();
 
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         assert_eq!(
             git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"])
@@ -62,7 +71,7 @@ mod file_hashing {
     #[tokio::test]
     async fn hashes_an_entire_folder() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         assert_eq!(
             git.get_file_tree_hashes(".").await.unwrap(),
@@ -94,7 +103,7 @@ mod file_hashing {
     #[tokio::test]
     async fn filters_ignored_files() {
         let fixture = create_sandbox_with_git("ignore");
-        let git = Git::load("master", fixture.path()).unwrap();
+        let git = Git::load(&create_config("master"), fixture.path()).unwrap();
 
         assert_eq!(
             git.get_file_hashes(&string_vec!["foo", "bar", "dir/baz", "dir/qux"])
@@ -116,7 +125,7 @@ mod file_hashing {
     #[tokio::test]
     async fn filters_ignored_files_tree() {
         let fixture = create_sandbox_with_git("ignore");
-        let git = Git::load("master", fixture.path()).unwrap();
+        let git = Git::load(&create_config("master"), fixture.path()).unwrap();
 
         assert_eq!(
             git.get_file_tree_hashes(".").await.unwrap(),
@@ -150,7 +159,7 @@ mod touched_files {
     #[tokio::test]
     async fn returns_defaults_when_nothing() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         assert_eq!(
             git.get_touched_files().await.unwrap(),
@@ -161,7 +170,7 @@ mod touched_files {
     #[tokio::test]
     async fn handles_untracked() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         fs::write(fixture.path().join("added.txt"), "").unwrap();
 
@@ -178,7 +187,7 @@ mod touched_files {
     #[tokio::test]
     async fn handles_added() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         fs::write(fixture.path().join("added.txt"), "").unwrap();
 
@@ -200,7 +209,7 @@ mod touched_files {
     #[tokio::test]
     async fn handles_deleted() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         fs::remove_file(fixture.path().join("delete-me.txt")).unwrap();
 
@@ -218,7 +227,7 @@ mod touched_files {
     #[tokio::test]
     async fn handles_modified() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         fs::write(fixture.path().join("existing.txt"), "modified").unwrap();
 
@@ -236,7 +245,7 @@ mod touched_files {
     #[tokio::test]
     async fn handles_renamed() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         fs::rename(
             fixture.path().join("rename-me.txt"),
@@ -265,7 +274,7 @@ mod touched_files_via_diff {
     #[tokio::test]
     async fn returns_defaults_when_nothing() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         run_git_command(fixture.path(), |cmd| {
             cmd.args(["checkout", "-b", "current"]);
@@ -282,7 +291,7 @@ mod touched_files_via_diff {
     #[tokio::test]
     async fn handles_untracked() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         run_git_command(fixture.path(), |cmd| {
             cmd.args(["checkout", "-b", "current"]);
@@ -302,7 +311,7 @@ mod touched_files_via_diff {
     #[tokio::test]
     async fn handles_added() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         run_git_command(fixture.path(), |cmd| {
             cmd.args(["checkout", "-b", "current"]);
@@ -330,7 +339,7 @@ mod touched_files_via_diff {
     #[tokio::test]
     async fn handles_deleted() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         run_git_command(fixture.path(), |cmd| {
             cmd.args(["checkout", "-b", "current"]);
@@ -354,7 +363,7 @@ mod touched_files_via_diff {
     #[tokio::test]
     async fn handles_modified() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         run_git_command(fixture.path(), |cmd| {
             cmd.args(["checkout", "-b", "current"]);
@@ -378,7 +387,7 @@ mod touched_files_via_diff {
     #[tokio::test]
     async fn handles_renamed() {
         let fixture = create_sandbox_with_git("vcs");
-        let git = Git::load("default", fixture.path()).unwrap();
+        let git = Git::load(&create_config("default"), fixture.path()).unwrap();
 
         run_git_command(fixture.path(), |cmd| {
             cmd.args(["checkout", "-b", "current"]);

@@ -1,6 +1,7 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use cached::{CachedAsync, TimedCache};
+use moon_config::VcsConfig;
 use moon_error::MoonError;
 use moon_utils::fs;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
@@ -17,12 +18,12 @@ use tokio::sync::RwLock;
 
 pub struct Svn {
     cache: Arc<RwLock<TimedCache<String, String>>>,
-    default_branch: String,
+    config: VcsConfig,
     root: PathBuf,
 }
 
 impl Svn {
-    pub fn load(default_branch: &str, working_dir: &Path) -> Self {
+    pub fn load(config: &VcsConfig, working_dir: &Path) -> Self {
         let root = match fs::find_upwards(".svn", working_dir) {
             Some(dir) => dir.parent().unwrap().to_path_buf(),
             None => working_dir.to_path_buf(),
@@ -30,7 +31,7 @@ impl Svn {
 
         Svn {
             cache: Arc::new(RwLock::new(TimedCache::with_lifespan(15))),
-            default_branch: String::from(default_branch),
+            config: config.to_owned(),
             root,
         }
     }
@@ -159,7 +160,7 @@ impl Vcs for Svn {
 
             return Ok(String::from(
                 caps.get(1)
-                    .map_or(self.default_branch.as_str(), |m| m.as_str()),
+                    .map_or(self.config.default_branch.as_str(), |m| m.as_str()),
             ));
         }
 
@@ -171,7 +172,7 @@ impl Vcs for Svn {
     }
 
     fn get_default_branch(&self) -> &str {
-        &self.default_branch
+        &self.config.default_branch
     }
 
     async fn get_default_branch_revision(&self) -> VcsResult<String> {
@@ -268,7 +269,7 @@ impl Vcs for Svn {
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {
-        self.default_branch == branch
+        self.config.default_branch == branch
     }
 
     fn is_enabled(&self) -> bool {

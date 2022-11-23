@@ -62,8 +62,9 @@ export interface TypeScriptConfig {
 }
 
 export interface VcsConfig {
-	manager: 'git' | 'svn';
 	defaultBranch: string;
+	manager: 'git' | 'svn';
+	remoteCandidates: string[];
 }
 
 export interface WorkspaceConfig {

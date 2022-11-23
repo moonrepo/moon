@@ -1,12 +1,13 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 101
+assertion_line: 102
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ unix:envVars
 MOON_FOO=abc
 MOON_BAR=123
 MOON_BAZ=true
+▪▪▪▪ unix:envVars (100ms, 85a0de57)
 
 Tasks: 1 completed
  Time: 100ms

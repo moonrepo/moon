@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 217
+assertion_line: 216
 expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ npm install
@@ -16,6 +16,7 @@ MOON_TARGET=node:envVarsMoon
 MOON_TOOLCHAIN_DIR=~/.moon
 MOON_WORKING_DIR=<WORKSPACE>
 MOON_WORKSPACE_ROOT=<WORKSPACE>
+▪▪▪▪ node:envVarsMoon (100ms, 0f1107c7)
 
 Tasks: 1 completed
  Time: 100ms

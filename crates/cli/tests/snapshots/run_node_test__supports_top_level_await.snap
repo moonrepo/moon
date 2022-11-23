@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 67
+assertion_line: 66
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
@@ -8,6 +8,7 @@ expression: get_assert_output(&assert)
 before
 awaiting
 after
+▪▪▪▪ node:topLevelAwait (100ms, 3162f273)
 
 Tasks: 1 completed
  Time: 100ms

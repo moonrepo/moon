@@ -1,11 +1,12 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 55
+assertion_line: 54
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:mjs
 stdout
+▪▪▪▪ node:mjs (100ms, 6c4b3619)
 
 Tasks: 1 completed
  Time: 100ms

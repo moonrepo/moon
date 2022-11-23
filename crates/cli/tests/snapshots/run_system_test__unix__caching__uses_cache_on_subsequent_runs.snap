@@ -1,9 +1,10 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 203
+assertion_line: 185
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ unix:outputs
+▪▪▪▪ unix:outputs (100ms, 5800dc32)
 
 Tasks: 1 completed
  Time: 100ms

@@ -136,6 +136,18 @@ impl Target {
 
         Ok((project_id.clone(), self.task_id.clone()))
     }
+
+    pub fn is_all_task(&self, task_id: &str) -> bool {
+        if matches!(&self.project, TargetProjectScope::All) {
+            return if task_id.starts_with(':') {
+                self.task_id == task_id[1..]
+            } else {
+                self.task_id == task_id
+            };
+        }
+
+        false
+    }
 }
 
 impl Default for Target {
@@ -349,5 +361,24 @@ mod tests {
                 // task: TargetTask::Id("build".to_owned())
             }
         );
+    }
+
+    #[test]
+    fn matches_all() {
+        let all = Target::parse(":lint").unwrap();
+
+        assert!(all.is_all_task("lint"));
+        assert!(all.is_all_task(":lint"));
+        assert!(!all.is_all_task("build"));
+        assert!(!all.is_all_task(":build"));
+        assert!(!all.is_all_task("foo:lint"));
+
+        let full = Target::parse("foo:lint").unwrap();
+
+        assert!(!full.is_all_task("lint"));
+        assert!(!full.is_all_task(":lint"));
+        assert!(!full.is_all_task("build"));
+        assert!(!full.is_all_task(":build"));
+        assert!(!full.is_all_task("foo:lint"));
     }
 }

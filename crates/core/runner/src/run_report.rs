@@ -1,4 +1,5 @@
-use moon_action::{Action, ActionContext};
+use moon_action::Action;
+use moon_runner_context::RunnerContext;
 use serde::Serialize;
 use std::time::Duration;
 
@@ -7,7 +8,7 @@ use std::time::Duration;
 pub struct RunReport<'a> {
     pub actions: &'a Vec<Action>,
 
-    pub context: &'a ActionContext,
+    pub context: &'a RunnerContext,
 
     /// How long the runner took to execute all actions.
     pub duration: Duration,
@@ -20,7 +21,7 @@ pub struct RunReport<'a> {
 }
 
 impl<'a> RunReport<'a> {
-    pub fn new(actions: &'a Vec<Action>, context: &'a ActionContext, duration: Duration) -> Self {
+    pub fn new(actions: &'a Vec<Action>, context: &'a RunnerContext, duration: Duration) -> Self {
         let mut projected_duration = Duration::new(0, 0);
 
         for action in actions {

@@ -354,4 +354,19 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn matches_all() {
+        let all = Target::parse(":lint").unwrap();
+
+        assert!(all.is_all_task(":lint"));
+        assert!(!all.is_all_task(":build"));
+        assert!(!all.is_all_task("foo:lint"));
+
+        let full = Target::parse("foo:lint").unwrap();
+
+        assert!(!full.is_all_task(":lint"));
+        assert!(!full.is_all_task(":build"));
+        assert!(!full.is_all_task("foo:lint"));
+    }
 }

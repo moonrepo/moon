@@ -9,6 +9,9 @@
 
 ##### Runner
 
+- Updated the terminal output to include a shortened version of each task hash.
+- Reworked the terminal output when running multiple tasks in parallel, or for long-running
+  processes.
 - Implemented a new file tree diffing algorithm that speeds up task output hydration by 10x.
 
 ##### Generator

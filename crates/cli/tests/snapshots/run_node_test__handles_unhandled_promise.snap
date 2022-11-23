@@ -1,12 +1,12 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 152
+assertion_line: 151
 expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:unhandledPromise
 stdout
-▪▪▪▪ node:unhandledPromise (100ms)
+▪▪▪▪ node:unhandledPromise (100ms, 986c5de4)
 stderr
 node:internal/process/promises:246
           triggerUncaughtException(err, true /* fromPromise */);

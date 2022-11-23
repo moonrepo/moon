@@ -1,11 +1,12 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 229
+assertion_line: 228
 expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:runFromProject
 <WORKSPACE>/base
+▪▪▪▪ node:runFromProject (100ms, 2494e06c)
 
 Tasks: 1 completed
  Time: 100ms

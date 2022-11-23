@@ -570,12 +570,13 @@ impl<'a> TargetRunner<'a> {
         checkpoint: Checkpoint,
         comments: &[T],
     ) -> Result<(), MoonError> {
-        self.stdout.write_line(&format!(
-            "{} {}",
-            label_checkpoint(&self.task.target, checkpoint),
-            if comments.is_empty() {
-                String::new()
-            } else {
+        if comments.is_empty() {
+            self.stdout
+                .write_line(&label_checkpoint(&self.task.target, checkpoint))?;
+        } else {
+            self.stdout.write_line(&format!(
+                "{} {}",
+                label_checkpoint(&self.task.target, checkpoint),
                 color::muted(format!(
                     "({})",
                     comments
@@ -584,8 +585,8 @@ impl<'a> TargetRunner<'a> {
                         .collect::<Vec<_>>()
                         .join(", ")
                 ))
-            }
-        ))?;
+            ))?;
+        }
 
         Ok(())
     }

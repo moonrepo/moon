@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 205
+assertion_line: 204
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
@@ -8,6 +8,7 @@ expression: get_assert_output(&assert)
 MOON_FOO=abc
 MOON_BAR=123
 MOON_BAZ=true
+▪▪▪▪ node:envVars (100ms, 0e07df64)
 
 Tasks: 1 completed
  Time: 100ms

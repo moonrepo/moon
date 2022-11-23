@@ -372,7 +372,7 @@ pub async fn generate(
 
     // Gather variables and build context
     let mut context = gather_variables(&template, &theme, &options)?;
-    context.insert("dest_abs_dir", &dest);
+    context.insert("dest_dir", &dest);
     context.insert("dest_rel_dir", &relative_dest);
     context.insert("working_dir", &cwd);
     context.insert("workspace_root", &workspace.root);

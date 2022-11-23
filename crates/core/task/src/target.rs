@@ -138,7 +138,15 @@ impl Target {
     }
 
     pub fn is_all_task(&self, task_id: &str) -> bool {
-        matches!(&self.project, TargetProjectScope::All) && self.task_id == task_id
+        if matches!(&self.project, TargetProjectScope::All) {
+            return if task_id.starts_with(':') {
+                self.task_id == task_id[1..]
+            } else {
+                self.task_id == task_id
+            };
+        }
+
+        false
     }
 }
 
@@ -359,13 +367,17 @@ mod tests {
     fn matches_all() {
         let all = Target::parse(":lint").unwrap();
 
+        assert!(all.is_all_task("lint"));
         assert!(all.is_all_task(":lint"));
+        assert!(!all.is_all_task("build"));
         assert!(!all.is_all_task(":build"));
         assert!(!all.is_all_task("foo:lint"));
 
         let full = Target::parse("foo:lint").unwrap();
 
+        assert!(!full.is_all_task("lint"));
         assert!(!full.is_all_task(":lint"));
+        assert!(!full.is_all_task("build"));
         assert!(!full.is_all_task(":build"));
         assert!(!full.is_all_task("foo:lint"));
     }

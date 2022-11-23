@@ -13,7 +13,6 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
-# moon_action = { path = "../core/action" }
 moon_config = { path = "../core/config" }
 moon_constants = { path = "../core/constants" }
 moon_error = { path = "../core/error" }
@@ -36,7 +35,7 @@ moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../core/vcs" }
 moon_workspace = { path = "../core/workspace" }
 async-recursion = "1.0.0"
-clap = { version = "4.0.23", features = ["derive", "env", "wrap_help"] }
+clap = { workspace = true, features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.3.0"
 console = "0.15.2"
 console-subscriber = "0.1.8"

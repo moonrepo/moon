@@ -26,6 +26,7 @@ pub enum PipelineProvider {
     Drone,
     GithubActions,
     Gitlab,
+    GoogleCloudBuild,
     Semaphore,
     TravisCI,
     #[default]

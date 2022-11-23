@@ -449,8 +449,8 @@ impl<'a> TargetRunner<'a> {
         let attempt_total = self.task.options.retry_count + 1;
         let mut attempt_index = 1;
         let mut attempts = vec![];
-        let primary_longest_width = context.primary_targets.iter().map(|t| t.len()).max();
-        let is_primary = context.primary_targets.contains(&self.task.target.id);
+        let primary_longest_width = context.primary_targets.iter().map(|t| t.id.len()).max();
+        let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
         let output;
 

@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# moon_platform = { path = "../platform" }
-# moon_utils = { path = "../utils" }
+moon_task = { path = "../task" }
 clap = { version = "4.0.23", features = ["derive"] }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

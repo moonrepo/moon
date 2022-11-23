@@ -2176,6 +2176,7 @@ name = "moon_runner_context"
 version = "0.1.0"
 dependencies = [
  "clap 4.0.23",
+ "moon_task",
  "rustc-hash",
  "serde",
 ]

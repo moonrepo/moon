@@ -136,6 +136,10 @@ impl Target {
 
         Ok((project_id.clone(), self.task_id.clone()))
     }
+
+    pub fn is_all_task(&self, task_id: &str) -> bool {
+        matches!(&self.project, TargetProjectScope::All) && self.task_id == task_id
+    }
 }
 
 impl Default for Target {

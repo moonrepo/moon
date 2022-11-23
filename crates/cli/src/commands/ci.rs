@@ -2,11 +2,11 @@ use crate::enums::TouchedStatus;
 use crate::helpers::load_workspace;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
-use moon_action::ActionContext;
 use moon_logger::{color, debug};
 use moon_pipeline_provider::{get_pipeline_output, PipelineOutput};
 use moon_project::ProjectError;
 use moon_runner::{DepGraph, DepGraphError, Runner};
+use moon_runner_context::RunnerContext;
 use moon_task::{Target, TouchedFilePaths};
 use moon_terminal::safe_exit;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -199,9 +199,9 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
         .generate_report("ciReport.json")
         .run(
             dep_graph,
-            Some(ActionContext {
+            Some(RunnerContext {
                 touched_files,
-                ..ActionContext::default()
+                ..RunnerContext::default()
             }),
         )
         .await?;

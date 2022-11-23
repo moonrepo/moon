@@ -1,9 +1,9 @@
 use crate::enums::TouchedStatus;
 use crate::helpers::load_workspace;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
-use moon_action::{ActionContext, ProfileType};
 use moon_logger::{color, map_list};
 use moon_runner::{DepGraph, Runner};
+use moon_runner_context::{ProfileType, RunnerContext};
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::string::ToString;
@@ -81,7 +81,7 @@ pub async fn run(
     }
 
     // Process all tasks in the graph
-    let context = ActionContext {
+    let context = RunnerContext {
         affected: options.affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         passthrough_args: options.passthrough,

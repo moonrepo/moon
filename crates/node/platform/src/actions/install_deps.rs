@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionContext, ActionStatus};
+use moon_action::{Action, ActionStatus};
 use moon_config::NodePackageManager;
 use moon_error::map_io_to_fs_error;
 use moon_error::MoonError;
@@ -7,6 +7,7 @@ use moon_logger::{color, debug, warn};
 use moon_node_lang::{PackageJson, NODE, NPM};
 use moon_platform::Runtime;
 use moon_project::Project;
+use moon_runner_context::RunnerContext;
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_toolchain::tools::node::NodeTool;
 use moon_utils::{fs, is_ci, is_offline, time};
@@ -96,7 +97,7 @@ async fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), Mo
 
 pub async fn install_deps(
     _action: &mut Action,
-    context: Arc<RwLock<ActionContext>>,
+    context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
     project: Option<&Project>,

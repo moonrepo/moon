@@ -1806,10 +1806,8 @@ dependencies = [
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
- "clap 4.0.23",
  "moon_platform",
  "moon_utils",
- "rustc-hash",
  "serde",
 ]
 
@@ -1838,7 +1836,6 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "filetime",
- "moon_action",
  "moon_archive",
  "moon_constants",
  "moon_error",
@@ -1867,7 +1864,6 @@ dependencies = [
  "insta",
  "itertools",
  "mimalloc",
- "moon_action",
  "moon_archive",
  "moon_cache",
  "moon_config",
@@ -1883,6 +1879,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_runner",
+ "moon_runner_context",
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
@@ -2051,6 +2048,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
+ "moon_runner_context",
  "moon_task",
  "moon_terminal",
  "moon_toolchain",
@@ -2157,6 +2155,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
+ "moon_runner_context",
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
@@ -2170,6 +2169,15 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "moon_runner_context"
+version = "0.1.0"
+dependencies = [
+ "clap 4.0.23",
+ "rustc-hash",
+ "serde",
 ]
 
 [[package]]

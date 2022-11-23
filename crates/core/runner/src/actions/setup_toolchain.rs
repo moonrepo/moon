@@ -1,6 +1,7 @@
-use moon_action::{Action, ActionContext, ActionStatus};
+use moon_action::{Action, ActionStatus};
 use moon_logger::debug;
 use moon_platform::Runtime;
+use moon_runner_context::RunnerContext;
 use moon_toolchain::tools::node::NodeTool;
 use moon_utils::time;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -12,7 +13,7 @@ const HOUR_MILLIS: u128 = 36000;
 
 pub async fn setup_toolchain(
     _action: &mut Action,
-    _context: Arc<RwLock<ActionContext>>,
+    _context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
 ) -> Result<ActionStatus, WorkspaceError> {

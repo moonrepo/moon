@@ -1,6 +1,6 @@
 use crate::RunnerError;
 use console::Term;
-use moon_action::{Action, ActionContext, ActionStatus, Attempt};
+use moon_action::{Action, ActionStatus, Attempt};
 use moon_cache::RunTargetState;
 use moon_config::{PlatformType, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
@@ -9,6 +9,7 @@ use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};
 use moon_node_platform::actions as node_actions;
 use moon_project::Project;
+use moon_runner_context::RunnerContext;
 use moon_system_platform::actions as system_actions;
 use moon_task::{Target, Task, TaskError};
 use moon_terminal::label_checkpoint;
@@ -154,7 +155,7 @@ impl<'a> TargetRunner<'a> {
     /// Primarily includes task information.
     pub async fn create_common_hasher(
         &self,
-        context: &ActionContext,
+        context: &RunnerContext,
     ) -> Result<TargetHasher, RunnerError> {
         let vcs = &self.workspace.vcs;
         let task = &self.task;
@@ -218,7 +219,7 @@ impl<'a> TargetRunner<'a> {
         Ok(hasher)
     }
 
-    pub async fn create_command(&self, context: &ActionContext) -> Result<Command, RunnerError> {
+    pub async fn create_command(&self, context: &RunnerContext) -> Result<Command, RunnerError> {
         let workspace = &self.workspace;
         let project = &self.project;
         let task = &self.task;
@@ -350,7 +351,7 @@ impl<'a> TargetRunner<'a> {
     /// of the target and project, determine the hydration strategy as well.
     pub async fn is_cached(
         &mut self,
-        context: &mut ActionContext,
+        context: &mut RunnerContext,
         common_hasher: impl Hasher + Serialize,
         platform_hasher: impl Hasher + Serialize,
     ) -> Result<Option<HydrateFrom>, MoonError> {
@@ -442,7 +443,7 @@ impl<'a> TargetRunner<'a> {
     /// and `retry_count` is greater than 0, attempt the process again in case it passes.
     pub async fn run_command(
         &mut self,
-        context: &ActionContext,
+        context: &RunnerContext,
         command: &mut Command,
     ) -> Result<Vec<Attempt>, RunnerError> {
         let attempt_total = self.task.options.retry_count + 1;
@@ -642,7 +643,7 @@ impl<'a> TargetRunner<'a> {
         Ok(())
     }
 
-    pub fn print_target_command(&self, context: &ActionContext) -> Result<(), MoonError> {
+    pub fn print_target_command(&self, context: &RunnerContext) -> Result<(), MoonError> {
         if !self.workspace.config.runner.log_running_command {
             return Ok(());
         }
@@ -773,7 +774,7 @@ impl<'a> TargetRunner<'a> {
 
 pub async fn run_target(
     action: &mut Action,
-    context: Arc<RwLock<ActionContext>>,
+    context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
     emitter: Arc<RwLock<Emitter>>,
     target: &Target,

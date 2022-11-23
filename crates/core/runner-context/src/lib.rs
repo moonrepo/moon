@@ -11,7 +11,7 @@ pub enum ProfileType {
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ActionContext {
+pub struct RunnerContext {
     pub affected: bool,
 
     pub initial_targets: FxHashSet<String>,
@@ -27,7 +27,7 @@ pub struct ActionContext {
     pub touched_files: FxHashSet<PathBuf>,
 }
 
-impl ActionContext {
+impl RunnerContext {
     pub fn should_inherit_args<T: AsRef<str>>(&self, target_id: T) -> bool {
         if self.passthrough_args.is_empty() {
             return false;

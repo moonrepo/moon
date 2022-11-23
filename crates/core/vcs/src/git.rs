@@ -465,7 +465,7 @@ impl Vcs for Git {
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {
-        let default_branch = self.config.default_branch;
+        let default_branch = &self.config.default_branch;
 
         if default_branch == branch {
             return true;

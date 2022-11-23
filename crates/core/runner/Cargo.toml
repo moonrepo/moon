@@ -29,6 +29,7 @@ moon_platform = { path = "../platform" }
 moon_node_platform = { path = "../../node/platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
+moon_runner_context = { path = "../runner-context" }
 moon_system_platform = { path = "../../system/platform" }
 moon_task = { path = "../task" }
 moon_terminal = { path = "../terminal" }

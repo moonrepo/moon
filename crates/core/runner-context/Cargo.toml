@@ -1,0 +1,10 @@
+[package]
+name = "moon_runner_context"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_task = { path = "../task" }
+clap = { workspace = true, features = ["derive"] }
+rustc-hash = { workspace = true }
+serde = { workspace = true }

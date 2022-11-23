@@ -1,20 +1,20 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 149
+assertion_line: 150
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ unix:retryCount
 stdout
-▪▪▪▪ unix:retryCount (100ms)
+▪▪▪▪ unix:retryCount (100ms, 358363d9)
 ▪▪▪▪ unix:retryCount (2/4)
 stdout
-▪▪▪▪ unix:retryCount (2/4, 100ms)
+▪▪▪▪ unix:retryCount (2/4, 100ms, 358363d9)
 ▪▪▪▪ unix:retryCount (3/4)
 stdout
-▪▪▪▪ unix:retryCount (3/4, 100ms)
+▪▪▪▪ unix:retryCount (3/4, 100ms, 358363d9)
 ▪▪▪▪ unix:retryCount (4/4)
 stdout
-▪▪▪▪ unix:retryCount (4/4, 100ms)
+▪▪▪▪ unix:retryCount (4/4, 100ms, 358363d9)
 stderr
 stderr
 stderr

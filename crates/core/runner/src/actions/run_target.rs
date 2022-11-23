@@ -334,6 +334,10 @@ impl<'a> TargetRunner<'a> {
         Ok(env_vars)
     }
 
+    pub fn get_short_hash(&self) -> &str {
+        &self.cache.hash[0..8]
+    }
+
     pub fn flush_output(&self) -> Result<(), MoonError> {
         self.stdout.flush()?;
         self.stderr.flush()?;
@@ -468,13 +472,15 @@ impl<'a> TargetRunner<'a> {
             let mut attempt = Attempt::new(attempt_index);
 
             self.print_target_label(
+                Checkpoint::Start,
+                // NOTE: Old streaming output format. Revisit or remove?
                 // Mark primary streamed output as passed, since it may stay open forever,
                 // or it may use ANSI escape codes to alter the terminal!
-                if is_primary && should_stream_output {
-                    Checkpoint::Pass
-                } else {
-                    Checkpoint::Start
-                },
+                // if is_primary && should_stream_output {
+                //     Checkpoint::Pass
+                // } else {
+                //     Checkpoint::Start
+                // },
                 &attempt,
                 attempt_total,
             )?;
@@ -559,12 +565,28 @@ impl<'a> TargetRunner<'a> {
         Ok(())
     }
 
-    pub fn print_checkpoint(&self, checkpoint: Checkpoint, comment: &str) -> Result<(), MoonError> {
-        self.stdout.write_line(&format!(
-            "{} {}",
-            label_checkpoint(&self.task.target, checkpoint),
-            color::muted(comment)
-        ))?;
+    pub fn print_checkpoint<T: AsRef<str>>(
+        &self,
+        checkpoint: Checkpoint,
+        comments: &[T],
+    ) -> Result<(), MoonError> {
+        if comments.is_empty() {
+            self.stdout
+                .write_line(&label_checkpoint(&self.task.target, checkpoint))?;
+        } else {
+            self.stdout.write_line(&format!(
+                "{} {}",
+                label_checkpoint(&self.task.target, checkpoint),
+                color::muted(format!(
+                    "({})",
+                    comments
+                        .iter()
+                        .map(|c| c.as_ref())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ))
+            ))?;
+        }
 
         Ok(())
     }
@@ -660,7 +682,6 @@ impl<'a> TargetRunner<'a> {
         attempt: &Attempt,
         attempt_total: u8,
     ) -> Result<(), MoonError> {
-        let mut label = label_checkpoint(&self.task.target, checkpoint);
         let mut comments = vec![];
 
         if attempt.index > 1 {
@@ -671,13 +692,11 @@ impl<'a> TargetRunner<'a> {
             comments.push(time::elapsed(duration));
         }
 
-        if !comments.is_empty() {
-            let metadata = color::muted(format!("({})", comments.join(", ")));
+        if attempt.finished_at.is_some() {
+            comments.push(self.get_short_hash().to_owned());
+        }
 
-            label = format!("{} {}", label, metadata);
-        };
-
-        self.stdout.write_line(&label)?;
+        self.print_checkpoint(checkpoint, &comments)?;
 
         Ok(())
     }
@@ -718,22 +737,33 @@ impl<'a> TargetRunner<'a> {
         attempt_total: u8,
         output: &Output,
     ) -> Result<(), MoonError> {
-        // Transitive target finished streaming, so display the success checkpoint
-        if let Some(TaskOutputStyle::Stream) = self.task.options.output_style {
-            self.print_target_label(
-                if output.status.success() {
-                    Checkpoint::Pass
-                } else {
-                    Checkpoint::Fail
-                },
-                attempt,
-                attempt_total,
-            )?;
+        self.print_target_label(
+            if output.status.success() {
+                Checkpoint::Pass
+            } else {
+                Checkpoint::Fail
+            },
+            attempt,
+            attempt_total,
+        )?;
 
-            // Otherwise the primary target failed for some reason
-        } else if !output.status.success() {
-            self.print_target_label(Checkpoint::Fail, attempt, attempt_total)?;
-        }
+        // NOTE: Old streaming output format. Revisit or remove?
+        // // Transitive target finished streaming, so display the success checkpoint
+        // if let Some(TaskOutputStyle::Stream) = self.task.options.output_style {
+        //     self.print_target_label(
+        //         if output.status.success() {
+        //             Checkpoint::Pass
+        //         } else {
+        //             Checkpoint::Fail
+        //         },
+        //         attempt,
+        //         attempt_total,
+        //     )?;
+
+        //     // Otherwise the primary target failed for some reason
+        // } else if !output.status.success() {
+        //     self.print_target_label(Checkpoint::Fail, attempt, attempt_total)?;
+        // }
 
         self.flush_output()?;
 
@@ -769,7 +799,7 @@ pub async fn run_target(
             color::id(&task.target),
         );
 
-        runner.print_checkpoint(Checkpoint::Pass, "(no op)")?;
+        runner.print_checkpoint(Checkpoint::Pass, &["no op"])?;
         runner.flush_output()?;
 
         return Ok(ActionStatus::Passed);
@@ -825,11 +855,14 @@ pub async fn run_target(
 
             runner.print_checkpoint(
                 Checkpoint::Pass,
-                match cache_location {
-                    HydrateFrom::LocalCache => "(cached)",
-                    HydrateFrom::RemoteCache => "(cached from remote)",
-                    HydrateFrom::PreviousOutput => "(cached from previous build)",
-                },
+                &[
+                    match cache_location {
+                        HydrateFrom::LocalCache => "cached",
+                        HydrateFrom::RemoteCache => "cached from remote",
+                        HydrateFrom::PreviousOutput => "cached from previous run",
+                    },
+                    runner.get_short_hash(),
+                ],
             )?;
 
             runner.print_cache_item().await?;

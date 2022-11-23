@@ -1,10 +1,11 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 56
+assertion_line: 57
 expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ unix:exitZero
 stdout
+▪▪▪▪ unix:exitZero (100ms, e8623f25)
 
 Tasks: 1 completed
  Time: 100ms

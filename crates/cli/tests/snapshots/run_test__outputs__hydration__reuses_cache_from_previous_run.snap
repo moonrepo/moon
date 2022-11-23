@@ -1,10 +1,11 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 802
+assertion_line: 571
 expression: get_assert_output(&assert1)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputs:generateFileAndFolder
+▪▪▪▪ outputs:generateFileAndFolder (100ms, 9dad3fc2)
 
 Tasks: 1 completed
  Time: 100ms

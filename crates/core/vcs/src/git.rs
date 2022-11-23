@@ -3,6 +3,7 @@ use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use cached::{CachedAsync, TimedCache};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use moon_config::VcsConfig;
 use moon_error::MoonError;
 use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use moon_utils::{fs, string_vec};
@@ -15,13 +16,13 @@ use tokio::sync::RwLock;
 
 pub struct Git {
     cache: Arc<RwLock<TimedCache<String, String>>>,
-    default_branch: String,
+    config: VcsConfig,
     ignore: Option<Gitignore>,
     root: PathBuf,
 }
 
 impl Git {
-    pub fn load(default_branch: &str, working_dir: &Path) -> VcsResult<Self> {
+    pub fn load(config: &VcsConfig, working_dir: &Path) -> VcsResult<Self> {
         let root = match fs::find_upwards(".git", working_dir) {
             Some(dir) => dir.parent().unwrap().to_path_buf(),
             None => working_dir.to_path_buf(),
@@ -42,7 +43,7 @@ impl Git {
 
         Ok(Git {
             cache: Arc::new(RwLock::new(TimedCache::with_lifespan(15))),
-            default_branch: default_branch.to_owned(),
+            config: config.to_owned(),
             ignore,
             root,
         })
@@ -50,13 +51,14 @@ impl Git {
 
     async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<String> {
         let mut args = string_vec!["merge-base", head];
+        let mut candidates = string_vec![base.to_owned()];
+
+        for remote in &self.config.remote_candidates {
+            candidates.push(format!("{}/{}", remote, base));
+        }
 
         // To start, we need to find a working base origin
-        for candidate in [
-            base.to_owned(),
-            format!("origin/{}", base),
-            format!("upstream/{}", base),
-        ] {
+        for candidate in candidates {
             if self
                 .run_command(
                     &mut self.create_command(vec!["merge-base", &candidate, head]),
@@ -155,12 +157,12 @@ impl Vcs for Git {
     }
 
     fn get_default_branch(&self) -> &str {
-        &self.default_branch
+        &self.config.default_branch
     }
 
     async fn get_default_branch_revision(&self) -> VcsResult<String> {
         self.run_command(
-            &mut self.create_command(vec!["rev-parse", &self.default_branch]),
+            &mut self.create_command(vec!["rev-parse", &self.config.default_branch]),
             true,
         )
         .await
@@ -464,12 +466,14 @@ impl Vcs for Git {
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {
-        if self.default_branch == branch {
+        let default_branch = &self.config.default_branch;
+
+        if default_branch == branch {
             return true;
         }
 
-        if self.default_branch.contains('/') {
-            return self.default_branch.ends_with(&format!("/{}", branch));
+        if default_branch.contains('/') {
+            return default_branch.ends_with(&format!("/{}", branch));
         }
 
         false

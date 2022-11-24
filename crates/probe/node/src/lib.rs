@@ -17,11 +17,11 @@ pub struct NodeLanguage {
 }
 
 impl NodeLanguage {
-    pub fn new(probe: &Probe) -> Self {
+    pub fn new(probe: &Probe, version: Option<&str>) -> Self {
         NodeLanguage {
             install_dir: probe.tools_dir.join("node"),
             temp_dir: probe.temp_dir.join("node"),
-            version: "latest".into(),
+            version: version.unwrap_or("latest").into(),
         }
     }
 }

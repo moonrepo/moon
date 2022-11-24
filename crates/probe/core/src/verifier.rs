@@ -18,7 +18,7 @@ pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
         &self,
         to_file: &Path,
         from_url: Option<&str>,
-    ) -> Result<(), ProbeError>;
+    ) -> Result<bool, ProbeError>;
 
     /// Verify the downloaded file using the checksum strategy for the tool.
     /// Common strategies are SHA256 and MD5.

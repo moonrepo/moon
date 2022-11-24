@@ -19,11 +19,11 @@ impl Verifiable<'_> for NodeLanguage {
         &self,
         to_file: &Path,
         from_url: Option<&str>,
-    ) -> Result<(), ProbeError> {
+    ) -> Result<bool, ProbeError> {
         if to_file.exists() {
             debug!(target: "probe:node:verify", "Already downloaded checksum, continuing");
 
-            return Ok(());
+            return Ok(false);
         }
 
         let version = self.get_resolved_version();
@@ -38,7 +38,7 @@ impl Verifiable<'_> for NodeLanguage {
 
         debug!(target: "probe:node:verify", "Successfully downloaded");
 
-        Ok(())
+        Ok(true)
     }
 
     async fn verify_checksum(

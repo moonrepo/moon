@@ -1,7 +1,7 @@
-use std::path::Path;
-
-use probe_core::{Downloadable, Probe, Resolvable, Verifiable};
+use probe_core::{Downloadable, Installable, Probe, Resolvable, Verifiable};
 use probe_node::NodeLanguage;
+use std::fs;
+use std::path::Path;
 
 fn create_probe(dir: &Path) -> Probe {
     Probe {
@@ -52,6 +52,50 @@ mod downloader {
 
         assert!(tool.download(&to_file, None).await.unwrap());
         assert!(!tool.download(&to_file, None).await.unwrap());
+    }
+}
+
+mod installer {
+    use super::*;
+
+    #[tokio::test]
+    async fn sets_dir_to_tools() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let probe = create_probe(fixture.path());
+        let tool = NodeLanguage::new(&probe, Some("18.0.0"));
+
+        assert_eq!(
+            tool.get_install_dir().unwrap(),
+            probe.tools_dir.join("node").join("18.0.0")
+        );
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InstallMissingDownload(\"Node.js\")")]
+    async fn errors_for_missing_download() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let tool = NodeLanguage::new(&create_probe(fixture.path()), Some("18.0.0"));
+
+        let dir = tool.get_install_dir().unwrap();
+
+        tool.install(&dir, &tool.get_download_path().unwrap())
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn doesnt_install_if_dir_exists() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let tool = NodeLanguage::new(&create_probe(fixture.path()), Some("18.0.0"));
+
+        let dir = tool.get_install_dir().unwrap();
+
+        fs::create_dir_all(&dir).unwrap();
+
+        assert!(!tool
+            .install(&dir, &tool.get_download_path().unwrap())
+            .await
+            .unwrap());
     }
 }
 

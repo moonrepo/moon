@@ -15,7 +15,7 @@ pub trait Installable<'tool>: Send + Sync {
 
     /// Run any installation steps after downloading and verifying the tool.
     /// This is typically unzipping an archive, and running any installers/binaries.
-    async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<(), ProbeError>;
+    async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProbeError>;
 }
 
 pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(

@@ -12,11 +12,11 @@ pub enum ProbeError {
     #[error("HTTP failure for {0}. {1}")]
     Http(String, String),
 
+    #[error("Unable to install {0}, download file is missing.")]
+    InstallMissingDownload(String),
+
     #[error("Internet connection required, unable to download and install tools.")]
     InternetConnectionRequired,
-
-    #[error("Checksum has failed for {0}, which was verified using {1}.")]
-    InvalidChecksum(PathBuf, PathBuf),
 
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,
@@ -29,6 +29,9 @@ pub enum ProbeError {
 
     #[error("Unable to install {0}, unsupported platform {1}.")]
     UnsupportedPlatform(String, String),
+
+    #[error("Checksum has failed for {0}, which was verified using {1}.")]
+    VerifyInvalidChecksum(PathBuf, PathBuf),
 
     #[error("Version alias {0} could not be found in the manifest.")]
     VersionUnknownAlias(String),

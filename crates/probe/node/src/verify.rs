@@ -72,7 +72,7 @@ impl Verifiable<'_> for NodeLanguage {
             }
         }
 
-        Err(ProbeError::InvalidChecksum(
+        Err(ProbeError::VerifyInvalidChecksum(
             download_file.to_path_buf(),
             checksum_file.to_path_buf(),
         ))

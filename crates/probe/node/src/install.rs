@@ -10,11 +10,15 @@ impl Installable<'_> for NodeLanguage {
         Ok(self.install_dir.join(self.get_resolved_version()))
     }
 
-    async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<(), ProbeError> {
+    async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProbeError> {
         if install_dir.exists() {
             debug!(target: "probe:node:install", "Already installed, continuing");
 
-            return Ok(());
+            return Ok(false);
+        }
+
+        if !download_path.exists() {
+            return Err(ProbeError::InstallMissingDownload("Node.js".into()));
         }
 
         let prefix = get_archive_file_path(self.get_resolved_version())?;
@@ -34,6 +38,6 @@ impl Installable<'_> for NodeLanguage {
 
         debug!(target: "probe:node:install", "Successfully installed");
 
-        Ok(())
+        Ok(true)
     }
 }

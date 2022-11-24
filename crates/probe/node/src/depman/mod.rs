@@ -1,8 +1,7 @@
 mod download;
 mod install;
-// mod platform;
 mod resolve;
-// mod verify;
+mod verify;
 
 use probe_core::{Describable, Probe, Tool};
 use resolve::NDMVersionDist;

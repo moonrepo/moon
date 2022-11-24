@@ -2,18 +2,18 @@ use crate::depman::NodeDependencyManager;
 use log::debug;
 use probe_core::{
     async_trait, is_version_alias, load_versions_manifest, parse_version, remove_v_prefix,
-    ProbeError, Resolvable,
+    Describable, ProbeError, Resolvable,
 };
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct NDMVersionDistSignature {
     pub keyid: String,
     pub sig: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NDMVersionDist {
     pub file_count: usize,
@@ -51,7 +51,7 @@ impl Resolvable<'_> for NodeDependencyManager {
         initial_version: &str,
         manifest_url: Option<&str>,
     ) -> Result<String, ProbeError> {
-        let mut candidate = None;
+        let candidate;
         let mut initial_version = remove_v_prefix(initial_version);
 
         debug!(
@@ -72,7 +72,7 @@ impl Resolvable<'_> for NodeDependencyManager {
         // Aliases map to dist tags
         if is_version_alias(&initial_version) {
             initial_version = match manifest.dist_tags.get(&initial_version) {
-                Some(version) => version,
+                Some(version) => version.to_owned(),
                 None => {
                     return Err(ProbeError::VersionUnknownAlias(initial_version));
                 }
@@ -85,7 +85,7 @@ impl Resolvable<'_> for NodeDependencyManager {
             None => return Err(ProbeError::VersionResolveFailed(initial_version)),
         };
 
-        let version = parse_version(candidate)?.to_string();
+        let version = parse_version(candidate.unwrap())?.to_string();
 
         debug!(target: self.get_log_target(), "Resolved to {}", version);
 

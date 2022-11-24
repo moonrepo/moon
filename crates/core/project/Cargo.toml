@@ -10,6 +10,7 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
+dotenvy = "0.15.6"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 strum = { version = "0.24.1", features = ["derive"] }

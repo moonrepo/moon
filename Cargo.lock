@@ -2100,6 +2100,7 @@ dependencies = [
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
+ "dotenvy",
  "moon_config",
  "moon_constants",
  "moon_error",
@@ -2200,7 +2201,6 @@ name = "moon_task"
 version = "0.1.0"
 dependencies = [
  "common-path",
- "dotenvy",
  "moon_config",
  "moon_error",
  "moon_logger",

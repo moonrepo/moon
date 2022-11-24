@@ -1,6 +1,7 @@
 mod errors;
 mod helpers;
 mod project;
+mod task_expander;
 
 pub use errors::ProjectError;
 pub use helpers::*;

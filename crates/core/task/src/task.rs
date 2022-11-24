@@ -414,11 +414,7 @@ impl Task {
     }
 
     /// Expand the deps list and resolve parent/self scopes.
-    pub fn expand_deps(
-        &mut self,
-        owner_id: &str,
-        depends_on: &FxHashMap<String, Project>,
-    ) -> Result<(), TaskError> {
+    pub fn expand_deps(&mut self, owner_id: &str, depends_on: &[String]) -> Result<(), TaskError> {
         if self.deps.is_empty() {
             return Ok(());
         }
@@ -455,34 +451,6 @@ impl Task {
         }
 
         self.deps = dep_targets;
-
-        Ok(())
-    }
-
-    /// Expand environment variables by loading a `.env` file if configured.
-    pub fn expand_env(&mut self, data: &ResolverData) -> Result<(), TaskError> {
-        if let Some(env_file) = &self.options.env_file {
-            let env_path = data.project_root.join(env_file);
-            let error_handler =
-                |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
-
-            // The `.env` file may not have been committed, so avoid crashing in CI
-            if is_ci() && !env_path.exists() {
-                debug!(
-                    target: self.get_log_target(),
-                    "The `envFile` option is enabled but no `.env` file exists in CI, skipping as this may be intentional",
-                );
-
-                return Ok(());
-            }
-
-            for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
-                let (key, value) = entry.map_err(error_handler)?;
-
-                // Vars defined in `env` take precedence over those in the env file
-                self.env.entry(key).or_insert(value);
-            }
-        }
 
         Ok(())
     }

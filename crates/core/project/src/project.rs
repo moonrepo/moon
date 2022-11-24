@@ -1,4 +1,5 @@
 use crate::errors::ProjectError;
+use crate::task_expander::TaskExpander;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
     FilePath, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID,
@@ -379,6 +380,7 @@ impl Project {
     ) -> Result<(), ProjectError> {
         let resolver_data =
             ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
+        let task_expander = TaskExpander::new(self);
         let depends_on = self.get_dependency_ids();
 
         for task in self.tasks.values_mut() {
@@ -393,8 +395,8 @@ impl Project {
                 .extend(runner_config.implicit_inputs.iter().cloned());
 
             // Resolve in order!
-            task.expand_env(&resolver_data)?;
-            task.expand_deps(&self.id, depends_on_projects)?;
+            task_expander.expand_env(task)?;
+            // task.expand_deps(&self.id, depends_on_projects)?;
             task.expand_inputs(TokenResolver::for_inputs(&resolver_data))?;
             task.expand_outputs(TokenResolver::for_outputs(&resolver_data))?;
 

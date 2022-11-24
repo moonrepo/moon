@@ -417,7 +417,7 @@ impl Task {
     pub fn expand_deps(
         &mut self,
         owner_id: &str,
-        depends_on: &[ProjectID],
+        depends_on: &FxHashMap<String, Project>,
     ) -> Result<(), TaskError> {
         if self.deps.is_empty() {
             return Ok(());

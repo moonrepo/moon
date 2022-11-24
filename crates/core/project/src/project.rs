@@ -2,7 +2,7 @@ use crate::errors::ProjectError;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
     FilePath, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID,
-    ProjectLanguage, ProjectType, TaskConfig, TaskID,
+    ProjectLanguage, ProjectType, RunnerConfig, TaskConfig, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
@@ -374,8 +374,8 @@ impl Project {
     pub fn expand_tasks(
         &mut self,
         workspace_root: &Path,
-        implicit_deps: &[String],
-        implicit_inputs: &[String],
+        runner_config: &RunnerConfig,
+        depends_on_projects: &FxHashMap<String, Project>,
     ) -> Result<(), ProjectError> {
         let resolver_data =
             ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
@@ -387,12 +387,14 @@ impl Project {
             }
 
             // Inherit implicits before resolving
-            task.deps.extend(Task::create_dep_targets(implicit_deps)?);
-            task.inputs.extend(implicit_inputs.iter().cloned());
+            task.deps
+                .extend(Task::create_dep_targets(&runner_config.implicit_deps)?);
+            task.inputs
+                .extend(runner_config.implicit_inputs.iter().cloned());
 
             // Resolve in order!
             task.expand_env(&resolver_data)?;
-            task.expand_deps(&self.id, &depends_on)?;
+            task.expand_deps(&self.id, depends_on_projects)?;
             task.expand_inputs(TokenResolver::for_inputs(&resolver_data))?;
             task.expand_outputs(TokenResolver::for_outputs(&resolver_data))?;
 

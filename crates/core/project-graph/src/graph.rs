@@ -389,13 +389,6 @@ impl ProjectGraph {
             }
         }
 
-        // Expand all tasks for the project (this must happen last)
-        project.expand_tasks(
-            &self.workspace_root,
-            &self.workspace_config.runner.implicit_deps,
-            &self.workspace_config.runner.implicit_inputs,
-        )?;
-
         Ok(project)
     }
 
@@ -443,26 +436,37 @@ impl ProjectGraph {
             return Err(ProjectError::UnconfiguredID(id));
         };
 
-        let project = self.create_project(&id, source)?;
+        let mut project = self.create_project(&id, source)?;
+        let mut depends_indexes = vec![];
+        let mut depends_projects = FxHashMap::default();
         let depends_on = project.get_dependency_ids();
 
-        // Insert the project into the graph
-        let node_index = graph.add_node(project);
-        graph.add_edge(NodeIndex::new(0), node_index, ());
-        indices.insert(id.to_owned(), node_index);
-
+        // Create dependent projects
         if !depends_on.is_empty() {
             trace!(
                 target: LOG_TARGET,
                 "Adding dependencies {} to project {}",
                 map_list(&depends_on, |d| color::symbol(d)),
-                color::id(id),
+                color::id(&id),
             );
 
             for dep_id in depends_on {
-                let dep_index = self.internal_load(dep_id.as_str(), indices, graph)?;
-                graph.add_edge(node_index, dep_index, ());
+                depends_indexes.push(self.internal_load(&dep_id, indices, graph)?);
+                depends_projects.insert(dep_id.clone(), self.load(&dep_id));
             }
+        }
+
+        // Expand all tasks for the project after dependencies have been loaded
+        project.expand_tasks(&self.workspace_root, &self.workspace_config.runner)?;
+
+        // Insert the project into the graph after loading has finished
+        let node_index = graph.add_node(project);
+
+        graph.add_edge(NodeIndex::new(0), node_index, ());
+        indices.insert(id.to_owned(), node_index);
+
+        for dep_index in depends_indexes {
+            graph.add_edge(node_index, dep_index, ());
         }
 
         Ok(node_index)

@@ -1,5 +1,5 @@
 use crate::errors::{TargetError, TaskError};
-use crate::target::{Target, TargetProjectScope};
+use crate::target::Target;
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
     FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
@@ -348,48 +348,6 @@ impl Task {
         } else {
             self.type_of = TaskType::Test;
         }
-    }
-
-    /// Expand the deps list and resolve parent/self scopes.
-    pub fn expand_deps(&mut self, owner_id: &str, depends_on: &[String]) -> Result<(), TaskError> {
-        if self.deps.is_empty() {
-            return Ok(());
-        }
-
-        let mut dep_targets: Vec<Target> = vec![];
-
-        // Dont use a `HashSet` as we want to preserve order
-        let mut push_target = |dep: Target| {
-            if !dep_targets.contains(&dep) {
-                dep_targets.push(dep);
-            }
-        };
-
-        for target in &self.deps {
-            match &target.project {
-                // ^:task
-                TargetProjectScope::Deps => {
-                    for dep_id in depends_on {
-                        push_target(Target::new(dep_id, &target.task_id)?);
-                    }
-                }
-                // ~:task
-                TargetProjectScope::OwnSelf => {
-                    push_target(Target::new(owner_id, &target.task_id)?);
-                }
-                // project:task
-                TargetProjectScope::Id(_) => {
-                    push_target(target.clone());
-                }
-                _ => {
-                    target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
-                }
-            };
-        }
-
-        self.deps = dep_targets;
-
-        Ok(())
     }
 
     /// Return a list of affected files filtered down from the provided touched files list.

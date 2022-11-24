@@ -452,12 +452,16 @@ impl ProjectGraph {
 
             for dep_id in depends_on {
                 depends_indexes.push(self.internal_load(&dep_id, indices, graph)?);
-                depends_projects.insert(dep_id.clone(), self.load(&dep_id));
+                depends_projects.insert(dep_id.clone(), self.load(&dep_id)?);
             }
         }
 
         // Expand all tasks for the project after dependencies have been loaded
-        project.expand_tasks(&self.workspace_root, &self.workspace_config.runner)?;
+        project.expand_tasks(
+            &self.workspace_root,
+            &self.workspace_config.runner,
+            &depends_projects,
+        )?;
 
         // Insert the project into the graph after loading has finished
         let node_index = graph.add_node(project);

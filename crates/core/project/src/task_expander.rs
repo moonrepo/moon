@@ -1,7 +1,10 @@
-use moon_config::{PlatformType, TaskConfig};
+use moon_config::ProjectID;
 use moon_logger::{debug, Logable};
-use moon_task::{ResolverData, Task, TaskError, TokenResolver};
+use moon_task::{
+    ResolverData, Target, TargetError, TargetProjectScope, Task, TaskError, TokenResolver,
+};
 use moon_utils::{glob, is_ci, path, regex::ENV_VAR};
+use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 
 use crate::Project;
@@ -13,24 +16,6 @@ pub struct TaskExpander<'data> {
 impl<'data> TaskExpander<'data> {
     pub fn new(data: &'data ResolverData) -> Self {
         TaskExpander { data }
-    }
-
-    pub fn expand(&self, project: &mut Project, task: &mut Task) -> Result<(), TaskError> {
-        if matches!(task.platform, PlatformType::Unknown) {
-            task.platform = TaskConfig::detect_platform(&project.config, &task.command);
-        }
-
-        // Resolve in this order!
-        self.expand_env(task)?;
-        // task.expand_deps(&self.id, depends_on_projects)?;
-        self.expand_inputs(task)?;
-        self.expand_outputs(task)?;
-        self.expand_args(task)?;
-
-        // Finalize!
-        task.determine_type();
-
-        Ok(())
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.
@@ -94,6 +79,55 @@ impl<'data> TaskExpander<'data> {
         }
 
         task.args = args;
+
+        Ok(())
+    }
+
+    /// Expand the deps list and resolve parent/self scopes.
+    pub fn expand_deps(
+        &self,
+        task: &mut Task,
+        owner_id: &str,
+        depends_on: &FxHashMap<ProjectID, Project>,
+    ) -> Result<(), TaskError> {
+        if task.deps.is_empty() {
+            return Ok(());
+        }
+
+        let mut dep_targets: Vec<Target> = vec![];
+
+        // Dont use a `HashSet` as we want to preserve order
+        let mut push_target = |dep: Target| {
+            if !dep_targets.contains(&dep) {
+                dep_targets.push(dep);
+            }
+        };
+
+        for target in &task.deps {
+            match &target.project {
+                // ^:task
+                TargetProjectScope::Deps => {
+                    for (dep_id, dep_project) in depends_on {
+                        if dep_project.tasks.contains_key(&target.task_id) {
+                            push_target(Target::new(dep_id, &target.task_id)?);
+                        }
+                    }
+                }
+                // ~:task
+                TargetProjectScope::OwnSelf => {
+                    push_target(Target::new(owner_id, &target.task_id)?);
+                }
+                // project:task
+                TargetProjectScope::Id(_) => {
+                    push_target(target.clone());
+                }
+                _ => {
+                    target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
+                }
+            };
+        }
+
+        task.deps = dep_targets;
 
         Ok(())
     }

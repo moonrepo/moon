@@ -7,7 +7,7 @@ use moon_config::{
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
-use moon_task::{FileGroup, ResolverData, Target, Task, TokenResolver, TouchedFilePaths};
+use moon_task::{FileGroup, ResolverData, Target, Task, TouchedFilePaths};
 use moon_utils::path;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
@@ -376,7 +376,7 @@ impl Project {
         &mut self,
         workspace_root: &Path,
         runner_config: &RunnerConfig,
-        depends_on_projects: &FxHashMap<String, Project>,
+        depends_on: &FxHashMap<ProjectID, Project>,
     ) -> Result<(), ProjectError> {
         let resolver_data =
             ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
@@ -391,7 +391,7 @@ impl Project {
 
             // Resolve in this order!
             task_expander.expand_env(task)?;
-            // task.expand_deps(&self.id, depends_on_projects)?;
+            task_expander.expand_deps(task, &self.id, depends_on)?;
             task_expander.expand_inputs(task)?;
             task_expander.expand_outputs(task)?;
             task_expander.expand_args(task)?;

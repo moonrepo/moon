@@ -1,4 +1,4 @@
-use probe_core::{Downloadable, Installable, Probe, Resolvable, Tool, Verifiable};
+use probe_core::{Downloadable, Executable, Installable, Probe, Resolvable, Tool, Verifiable};
 use probe_node::NodeLanguage;
 use std::fs;
 use std::path::Path;
@@ -18,9 +18,21 @@ async fn downloads_verifies_installs_tool() {
 
     tool.setup("18.0.0").await.unwrap();
 
-    assert!(tool.get_download_path().unwrap().exists());
-    assert!(tool.get_checksum_path().unwrap().exists());
+    assert!(!tool.get_download_path().unwrap().exists());
+    assert!(!tool.get_checksum_path().unwrap().exists());
     assert!(tool.get_install_dir().unwrap().exists());
+
+    if cfg!(windows) {
+        assert_eq!(
+            tool.get_bin_path(),
+            &probe.tools_dir.join("node/18.0.0/node.exe")
+        );
+    } else {
+        assert_eq!(
+            tool.get_bin_path(),
+            &probe.tools_dir.join("node/18.0.0/bin/node")
+        );
+    }
 }
 
 mod downloader {

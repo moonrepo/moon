@@ -1,4 +1,4 @@
-use probe_core::{Downloadable, Probe, Resolvable};
+use probe_core::{Downloadable, Executable, Installable, Probe, Resolvable, Tool, Verifiable};
 use probe_node::{NodeDependencyManager, NodeDependencyManagerType};
 use std::path::Path;
 
@@ -7,6 +7,83 @@ fn create_probe(dir: &Path) -> Probe {
         temp_dir: dir.join("temp"),
         tools_dir: dir.join("tools"),
     }
+}
+
+#[tokio::test]
+async fn downloads_verifies_installs_npm() {
+    let fixture = assert_fs::TempDir::new().unwrap();
+    let probe = create_probe(fixture.path());
+    let mut tool =
+        NodeDependencyManager::new(&probe, NodeDependencyManagerType::Npm, Some("9.0.0"));
+
+    tool.setup("9.0.0").await.unwrap();
+
+    assert!(!tool.get_download_path().unwrap().exists());
+    assert!(!tool.get_checksum_path().unwrap().exists());
+    assert!(tool.get_install_dir().unwrap().exists());
+
+    assert_eq!(
+        tool.get_bin_path(),
+        &probe.tools_dir.join("npm/9.0.0/bin/npm-cli.js")
+    );
+}
+
+#[tokio::test]
+async fn downloads_verifies_installs_pnpm() {
+    let fixture = assert_fs::TempDir::new().unwrap();
+    let probe = create_probe(fixture.path());
+    let mut tool =
+        NodeDependencyManager::new(&probe, NodeDependencyManagerType::Pnpm, Some("7.0.0"));
+
+    tool.setup("7.0.0").await.unwrap();
+
+    assert!(!tool.get_download_path().unwrap().exists());
+    assert!(!tool.get_checksum_path().unwrap().exists());
+    assert!(tool.get_install_dir().unwrap().exists());
+
+    assert_eq!(
+        tool.get_bin_path(),
+        &probe.tools_dir.join("pnpm/7.0.0/bin/pnpm.cjs")
+    );
+}
+
+#[tokio::test]
+async fn downloads_verifies_installs_yarn_classic() {
+    let fixture = assert_fs::TempDir::new().unwrap();
+    let probe = create_probe(fixture.path());
+    let mut tool =
+        NodeDependencyManager::new(&probe, NodeDependencyManagerType::Yarn, Some("1.22.0"));
+
+    tool.setup("1.22.0").await.unwrap();
+
+    assert!(!tool.get_download_path().unwrap().exists());
+    assert!(!tool.get_checksum_path().unwrap().exists());
+    assert!(tool.get_install_dir().unwrap().exists());
+
+    assert_eq!(
+        tool.get_bin_path(),
+        &probe.tools_dir.join("yarn/1.22.0/bin/yarn.js")
+    );
+}
+
+#[tokio::test]
+async fn downloads_verifies_installs_yarn_berry() {
+    let fixture = assert_fs::TempDir::new().unwrap();
+    let probe = create_probe(fixture.path());
+    let mut tool =
+        NodeDependencyManager::new(&probe, NodeDependencyManagerType::Yarn, Some("3.0.0"));
+
+    tool.setup("3.0.0").await.unwrap();
+
+    assert!(!tool.get_download_path().unwrap().exists());
+    assert!(!tool.get_checksum_path().unwrap().exists());
+    assert!(tool.get_install_dir().unwrap().exists());
+
+    assert_eq!(tool.get_resolved_version(), "1.22.19");
+    assert_eq!(
+        tool.get_bin_path(),
+        &probe.tools_dir.join("yarn/1.22.19/bin/yarn.js")
+    );
 }
 
 mod downloader {

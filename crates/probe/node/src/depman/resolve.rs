@@ -1,4 +1,4 @@
-use crate::depman::NodeDependencyManager;
+use crate::depman::{NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
 use probe_core::{
     async_trait, is_version_alias, load_versions_manifest, parse_version, remove_v_prefix,
@@ -50,6 +50,22 @@ impl Resolvable<'_> for NodeDependencyManager {
         manifest_url: Option<&str>,
     ) -> Result<String, ProbeError> {
         let mut initial_version = remove_v_prefix(initial_version);
+
+        // Yarn is installed through npm, but only v1 exists in the npm registry,
+        // even if a consumer is using Yarn 2/3. https://www.npmjs.com/package/yarn
+        // Yarn >= 2 work differently than normal packages, as their runtime code
+        // is stored *within* the repository, and the v1 package detects it.
+        // Because of this, we need to always install the v1 package!
+        if matches!(&self.type_of, NodeDependencyManagerType::Yarn)
+            && !initial_version.starts_with('1')
+        {
+            debug!(
+                target: self.get_log_target(),
+                "Found Yarn v2+, installing latest v1 from registry for compatibility"
+            );
+
+            initial_version = "latest".to_owned();
+        }
 
         debug!(
             target: self.get_log_target(),

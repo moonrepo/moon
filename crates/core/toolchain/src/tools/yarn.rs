@@ -6,7 +6,7 @@ use moon_config::YarnConfig;
 use moon_lang::LockfileDependencyVersions;
 use moon_node_lang::{yarn, YARN};
 use moon_utils::process::Command;
-use moon_utils::{fs, is_ci};
+use moon_utils::{fs, get_workspace_root, is_ci};
 use probe_core::{Executable, Probe, Resolvable, Tool};
 use probe_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
@@ -87,7 +87,7 @@ impl DependencyManager<NodeTool> for YarnTool {
             if working_dir.join(self.get_lock_filename()).exists() {
                 node.exec_package(
                     "yarn-deduplicate",
-                    vec!["yarn-deduplicate", YARN.lock_filename],
+                    &["yarn-deduplicate", YARN.lock_filename],
                     working_dir,
                 )
                 .await?;

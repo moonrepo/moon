@@ -1,10 +1,16 @@
+use std::path::Path;
+
+use crate::get_path_env_var;
 use crate::tools::npm::NpmTool;
 use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
-use probe_core::{Probe, Resolvable, Tool};
+use moon_node_lang::node;
+use moon_utils::fs;
+use moon_utils::process::Command;
+use probe_core::{Installable, Probe, Resolvable, Tool};
 use probe_node::NodeLanguage;
 
 #[derive(Debug)]
@@ -43,6 +49,40 @@ impl NodeTool {
         };
 
         Ok(node)
+    }
+
+    pub async fn exec_package(
+        &self,
+        package: &str,
+        args: &[&str],
+        working_dir: &Path,
+    ) -> Result<(), ToolchainError> {
+        let mut exec_args = vec!["--silent", "--package", package, "--"];
+        let install_dir = self.tool.get_install_dir()?;
+
+        exec_args.extend(args);
+
+        let npx_path = node::find_package_manager_bin(&install_dir, "npx");
+
+        Command::new(&npx_path)
+            .args(exec_args)
+            .cwd(working_dir)
+            .env("PATH", get_path_env_var(&install_dir))
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
+    }
+
+    pub fn find_package_bin(
+        &self,
+        starting_dir: &Path,
+        bin_name: &str,
+    ) -> Result<node::BinFile, ToolchainError> {
+        match node::find_package_bin(starting_dir, bin_name)? {
+            Some(bin) => Ok(bin),
+            None => Err(ToolchainError::MissingNodeModuleBin(bin_name.to_owned())),
+        }
     }
 
     /// Return the `npm` package manager.
@@ -93,13 +133,31 @@ impl RuntimeTool for NodeTool {
     }
 
     async fn setup(&mut self) -> Result<u8, ToolchainError> {
-        let mut count = 0;
+        let mut installed = 0;
 
         if !self.tool.is_setup()? && self.tool.setup(&self.config.version).await? {
-            count += 1;
+            installed += 1;
         }
 
-        Ok(count)
+        if self.npm.is_some() {
+            let mut npm = self.npm.take().unwrap();
+            installed += npm.setup().await?;
+            self.npm = Some(npm);
+        }
+
+        if self.pnpm.is_some() {
+            let mut pnpm = self.pnpm.take().unwrap();
+            installed += pnpm.setup().await?;
+            self.pnpm = Some(pnpm);
+        }
+
+        if self.yarn.is_some() {
+            let mut yarn = self.yarn.take().unwrap();
+            installed += yarn.setup().await?;
+            self.yarn = Some(yarn);
+        }
+
+        Ok(installed)
     }
 
     async fn teardown(&mut self) -> Result<(), ToolchainError> {

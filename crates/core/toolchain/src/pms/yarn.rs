@@ -1,7 +1,7 @@
 use crate::errors::ToolchainError;
 use crate::helpers::{download_file_from_url, unpack};
 use crate::tools::node::NodeTool;
-use crate::traits::{Executable, Installable, Lifecycle, PackageManager};
+use crate::traits::{DependencyManager, Executable, Installable, Lifecycle};
 use crate::{get_path_env_var, ToolchainPaths};
 use async_trait::async_trait;
 use moon_config::YarnConfig;
@@ -190,7 +190,7 @@ impl Executable<NodeTool> for YarnTool {
 }
 
 #[async_trait]
-impl PackageManager<NodeTool> for YarnTool {
+impl DependencyManager<NodeTool> for YarnTool {
     fn create_command(&self, node: &NodeTool) -> Command {
         let bin_path = self.get_bin_path();
 

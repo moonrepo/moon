@@ -1,6 +1,7 @@
 use moon_archive::ArchiveError;
 use moon_error::MoonError;
 use moon_lang::LangError;
+use probe_core::ProbeError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -34,4 +35,7 @@ pub enum ToolchainError {
 
     #[error("HTTP: {0}")]
     HTTP(#[from] reqwest::Error),
+
+    #[error(transparent)]
+    Probe(#[from] ProbeError),
 }

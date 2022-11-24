@@ -13,6 +13,8 @@ moon_logger = { path = "../logger" }
 moon_node_lang = { path = "../../node/lang" }
 moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
+probe_core = { path = "../../probe/core" }
+probe_node = { path = "../../probe/node" }
 async-trait = "0.1.58"
 reqwest = { workspace = true, features = ["native-tls-vendored"] }
 sha2 = "0.10.6"

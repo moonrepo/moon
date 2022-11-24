@@ -62,7 +62,7 @@ pub fn get_archive_file(version: &str) -> Result<String, ProbeError> {
 }
 
 #[async_trait]
-impl<'tool> Downloadable<'tool> for NodeLanguage<'tool> {
+impl Downloadable<'_> for NodeLanguage {
     fn get_download_path(&self) -> Result<PathBuf, ProbeError> {
         Ok(self
             .temp_dir

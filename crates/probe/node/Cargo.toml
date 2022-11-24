@@ -7,3 +7,7 @@ edition = "2021"
 probe_core = { path = "../core" }
 log = "0.4.17"
 serde = { workspace = true }
+
+[dev-dependencies]
+assert_fs = "1.0.9"
+tokio = { workspace = true }

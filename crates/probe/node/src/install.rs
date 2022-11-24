@@ -5,7 +5,7 @@ use probe_core::{async_trait, untar, unzip, Installable, ProbeError, Resolvable}
 use std::path::{Path, PathBuf};
 
 #[async_trait]
-impl<'tool> Installable<'tool> for NodeLanguage<'tool> {
+impl Installable<'_> for NodeLanguage {
     fn get_install_dir(&self) -> Result<PathBuf, ProbeError> {
         Ok(self.install_dir.join(self.get_resolved_version()))
     }

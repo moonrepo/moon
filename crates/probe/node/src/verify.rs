@@ -8,7 +8,7 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
 #[async_trait]
-impl<'tool> Verifiable<'tool> for NodeLanguage<'tool> {
+impl Verifiable<'_> for NodeLanguage {
     fn get_checksum_path(&self) -> Result<PathBuf, ProbeError> {
         Ok(self
             .temp_dir

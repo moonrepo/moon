@@ -6,7 +6,6 @@ use probe_core::{
     async_trait, is_version_alias, load_versions_manifest, parse_version, ProbeError, Resolvable,
 };
 use serde::Deserialize;
-use std::collections::HashMap;
 
 #[derive(Deserialize)]
 #[serde(untagged)]
@@ -16,20 +15,13 @@ enum NodeLTS {
 }
 
 #[derive(Deserialize)]
-#[allow(dead_code)]
 struct NodeDistVersion {
-    date: String,
-    files: Vec<String>,
     lts: NodeLTS,
-    npm: String,
-    security: bool,
     version: String, // Starts with v
-    #[serde(flatten)]
-    versions: HashMap<String, String>,
 }
 
 #[async_trait]
-impl<'tool> Resolvable<'tool> for NodeLanguage<'tool> {
+impl Resolvable<'_> for NodeLanguage {
     fn get_resolved_version(&self) -> &str {
         &self.version
     }

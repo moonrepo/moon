@@ -2882,9 +2882,11 @@ dependencies = [
 name = "probe_node"
 version = "0.1.0"
 dependencies = [
+ "assert_fs",
  "log",
  "probe_core",
  "serde",
+ "tokio",
 ]
 
 [[package]]

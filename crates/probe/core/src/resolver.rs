@@ -23,6 +23,14 @@ pub fn is_version_alias(value: &str) -> bool {
     value.chars().all(|c| char::is_ascii_alphanumeric(&c))
 }
 
+pub fn add_v_prefix(value: &str) -> String {
+    if value.starts_with('v') || value.starts_with('V') {
+        return value.to_lowercase();
+    }
+
+    format!("v{}", value)
+}
+
 pub fn remove_v_prefix(value: &str) -> String {
     if value.starts_with('v') || value.starts_with('V') {
         return value[1..].to_owned();

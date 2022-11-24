@@ -1,4 +1,4 @@
-mod depman;
+pub mod depman;
 pub mod download;
 mod install;
 mod platform;

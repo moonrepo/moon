@@ -228,7 +228,7 @@ mod resolver {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "VersionResolveFailed(\"v99.99.99\")")]
+    #[should_panic(expected = "VersionResolveFailed(\"99.99.99\")")]
     async fn errors_invalid_version() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeLanguage::new(&create_probe(fixture.path()), None);

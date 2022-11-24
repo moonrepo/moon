@@ -7,23 +7,21 @@ use probe_core::{
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
 
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Default, Deserialize)]
 pub struct NDMVersionDistSignature {
     pub keyid: String,
     pub sig: String,
 }
 
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NDMVersionDist {
-    pub file_count: usize,
     pub integrity: String,
     pub shasum: String,
     #[serde(rename = "npm-signature")]
-    pub signature: String,
+    pub signature: Option<String>,
     pub signatures: Vec<NDMVersionDistSignature>,
     pub tarball: String,
-    pub unpacked_size: usize,
 }
 
 #[derive(Deserialize)]

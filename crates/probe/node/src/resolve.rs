@@ -3,8 +3,8 @@
 use crate::NodeLanguage;
 use log::debug;
 use probe_core::{
-    async_trait, is_version_alias, load_versions_manifest, parse_version, Describable, ProbeError,
-    Resolvable,
+    add_v_prefix, async_trait, is_version_alias, load_versions_manifest, parse_version,
+    Describable, ProbeError, Resolvable,
 };
 use serde::Deserialize;
 
@@ -33,7 +33,7 @@ impl Resolvable<'_> for NodeLanguage {
         manifest_url: Option<&str>,
     ) -> Result<String, ProbeError> {
         let mut candidate = None;
-        let mut initial_version = initial_version.to_lowercase();
+        let initial_version = initial_version.to_lowercase();
 
         debug!(
             target: self.get_log_target(),
@@ -95,12 +95,8 @@ impl Resolvable<'_> for NodeLanguage {
 
             // An explicit version? Support optional minor and patch
         } else {
-            if !initial_version.starts_with('v') {
-                initial_version = format!("v{}", initial_version)
-            };
-
             for dist in &manifest {
-                if dist.version.starts_with(&initial_version) {
+                if dist.version.starts_with(&add_v_prefix(&initial_version)) {
                     candidate = Some(&dist.version);
                     break;
                 }

@@ -1,5 +1,6 @@
 use moon_error::MoonError;
 use moon_lang::LangError;
+use moon_platform::Runtime;
 use probe_core::ProbeError;
 use thiserror::Error;
 
@@ -13,6 +14,9 @@ pub enum ToolchainError {
 
     #[error("{0} has not been configured or installed, unable to proceed.")]
     MissingTool(String),
+
+    #[error("Unsupported toolchain runtime {0}.")]
+    UnsupportedRuntime(Runtime),
 
     #[error("This functionality requires workspace tools. Install it with <shell>yarn plugin import workspace-tools</shell>.")]
     RequiresYarnWorkspacesPlugin,

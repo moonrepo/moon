@@ -1,13 +1,12 @@
 use crate::get_path_env_var;
 use crate::tools::node::NodeTool;
 use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
-use async_trait::async_trait;
 use moon_config::NpmConfig;
 use moon_lang::LockfileDependencyVersions;
 use moon_node_lang::{npm, NPM};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
-use probe_core::{Executable, Probe, Resolvable, Tool};
+use probe_core::{async_trait, Executable, Probe, Resolvable, Tool};
 use probe_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;

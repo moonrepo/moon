@@ -14,12 +14,5 @@ moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
 probe_core = { path = "../../probe/core" }
 probe_node = { path = "../../probe/node" }
-async-trait = "0.1.58"
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
-
-[dev-dependencies]
-assert_fs = "1.0.9"
-mockito = "0.31.0"
-predicates = "2.1.3"
-tokio = { workspace = true, features = ["test-util"] }

@@ -1,7 +1,7 @@
 use crate::errors::ToolchainError;
-use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_utils::process::Command;
+use probe_core::async_trait;
 use std::path::Path;
 
 #[async_trait]

@@ -3,11 +3,10 @@ use crate::tools::npm::NpmTool;
 use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
-use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_node_lang::node;
 use moon_utils::process::Command;
-use probe_core::{Installable, Probe, Resolvable, Tool};
+use probe_core::{async_trait, Installable, Probe, Resolvable, Tool};
 use probe_node::NodeLanguage;
 use std::path::Path;
 

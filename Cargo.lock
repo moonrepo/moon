@@ -536,17 +536,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aaa6b4b263a5d737e9bf6b7c09b72c41a5480aec4d7219af827f6564e950b6a5"
 
 [[package]]
-name = "colored"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3616f750b84d8f0de8a58bda93e08e2a81ad3f523089b05f1dffecab48c6cbd"
-dependencies = [
- "atty",
- "lazy_static",
- "winapi",
-]
-
-[[package]]
 name = "common-path"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1826,24 +1815,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mockito"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "401edc088069634afaa5f4a29617b36dba683c0c16fe4435a86debad23fa2f1a"
-dependencies = [
- "assert-json-diff",
- "colored",
- "httparse",
- "lazy_static",
- "log",
- "rand 0.8.5",
- "regex",
- "serde_json",
- "serde_urlencoded",
- "similar",
-]
-
-[[package]]
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
@@ -2267,9 +2238,6 @@ dependencies = [
 name = "moon_toolchain"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
- "async-trait",
- "mockito",
  "moon_config",
  "moon_constants",
  "moon_error",
@@ -2278,12 +2246,10 @@ dependencies = [
  "moon_node_lang",
  "moon_platform",
  "moon_utils",
- "predicates",
  "probe_core",
  "probe_node",
  "rustc-hash",
  "thiserror",
- "tokio",
 ]
 
 [[package]]

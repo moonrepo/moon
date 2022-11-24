@@ -23,7 +23,7 @@ impl<T: RuntimeTool> ToolManager<T> {
     pub fn get_for_runtime(&self, runtime: &Runtime) -> Result<&T, ToolchainError> {
         match &runtime {
             Runtime::Node(version) => self.get_for_version(&version.0),
-            _ => panic!("Unsupported toolchain runtime."),
+            _ => Err(ToolchainError::UnsupportedRuntime(runtime.to_owned())),
         }
     }
 

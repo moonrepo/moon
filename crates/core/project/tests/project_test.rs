@@ -1,7 +1,7 @@
 use moon_config::{
     GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectLanguage,
-    ProjectMetadataConfig, ProjectType, TargetID, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskOptionsConfig,
+    ProjectMetadataConfig, ProjectType, RunnerConfig, TargetID, TaskCommandArgs, TaskConfig,
+    TaskMergeStrategy, TaskOptionsConfig,
 };
 use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
@@ -35,7 +35,13 @@ fn create_expanded_project(
 ) -> Project {
     let mut project = Project::new(id, source, workspace_root, config).unwrap();
 
-    project.expand_tasks(workspace_root, &[], &[]).unwrap();
+    project
+        .expand_tasks(
+            workspace_root,
+            &RunnerConfig::default(),
+            &FxHashMap::default(),
+        )
+        .unwrap();
 
     project
 }
@@ -432,8 +438,11 @@ mod tasks {
         project
             .expand_tasks(
                 &workspace_root,
-                &string_vec!["~:build", "project:task"],
-                &[],
+                &RunnerConfig {
+                    implicit_deps: string_vec!["~:build", "project:task"],
+                    ..RunnerConfig::default()
+                },
+                &FxHashMap::default(),
             )
             .unwrap();
 
@@ -495,7 +504,14 @@ mod tasks {
         .unwrap();
 
         project
-            .expand_tasks(&workspace_root, &string_vec!["build"], &[])
+            .expand_tasks(
+                &workspace_root,
+                &RunnerConfig {
+                    implicit_deps: string_vec!["build"],
+                    ..RunnerConfig::default()
+                },
+                &FxHashMap::default(),
+            )
             .unwrap();
 
         let mut build = Task::from_config(
@@ -528,7 +544,14 @@ mod tasks {
         .unwrap();
 
         project
-            .expand_tasks(&workspace_root, &[], &implicit_inputs)
+            .expand_tasks(
+                &workspace_root,
+                &RunnerConfig {
+                    implicit_inputs: implicit_inputs.clone(),
+                    ..RunnerConfig::default()
+                },
+                &FxHashMap::default(),
+            )
             .unwrap();
 
         let mut build = Task::from_config(
@@ -1278,8 +1301,11 @@ mod tasks {
             project
                 .expand_tasks(
                     &workspace_root,
-                    &string_vec!["^:build", "project:task"],
-                    &[],
+                    &RunnerConfig {
+                        implicit_deps: string_vec!["^:build", "project:task"],
+                        ..RunnerConfig::default()
+                    },
+                    &FxHashMap::default(),
                 )
                 .unwrap();
 
@@ -1319,11 +1345,14 @@ mod tasks {
             project
                 .expand_tasks(
                     &workspace_root,
-                    &[],
-                    &[
-                        "/.moon/$taskPlatform-$projectType.yml".to_owned(),
-                        "*.yml".to_owned(),
-                    ],
+                    &RunnerConfig {
+                        implicit_inputs: string_vec![
+                            "/.moon/$taskPlatform-$projectType.yml".to_owned(),
+                            "*.yml".to_owned(),
+                        ],
+                        ..RunnerConfig::default()
+                    },
+                    &FxHashMap::default(),
                 )
                 .unwrap();
 

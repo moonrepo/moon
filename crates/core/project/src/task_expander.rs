@@ -24,7 +24,7 @@ impl<'data> TaskExpander<'data> {
             return Ok(());
         }
 
-        let token_resolver = TokenResolver::for_args(&self.data);
+        let token_resolver = TokenResolver::for_args(self.data);
         let mut args: Vec<String> = vec![];
 
         // When running within a project:
@@ -166,7 +166,7 @@ impl<'data> TaskExpander<'data> {
             return Ok(());
         }
 
-        let token_resolver = TokenResolver::for_inputs(&self.data);
+        let token_resolver = TokenResolver::for_inputs(self.data);
         let inputs_without_vars = task
             .inputs
             .clone()
@@ -195,7 +195,7 @@ impl<'data> TaskExpander<'data> {
             return Ok(());
         }
 
-        let token_resolver = TokenResolver::for_outputs(&self.data);
+        let token_resolver = TokenResolver::for_outputs(self.data);
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
         task.output_paths.extend(paths);

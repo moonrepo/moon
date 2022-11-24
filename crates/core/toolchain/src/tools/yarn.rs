@@ -4,10 +4,11 @@ use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use async_trait::async_trait;
 use moon_config::YarnConfig;
 use moon_lang::LockfileDependencyVersions;
+use moon_logger::{color, debug};
 use moon_node_lang::{yarn, YARN};
 use moon_utils::process::Command;
 use moon_utils::{fs, get_workspace_root, is_ci};
-use probe_core::{Executable, Probe, Resolvable, Tool};
+use probe_core::{Describable, Executable, Probe, Resolvable, Tool};
 use probe_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -35,8 +36,42 @@ impl YarnTool {
         })
     }
 
-    fn is_v1(&self) -> bool {
+    pub fn is_v1(&self) -> bool {
         self.config.version.starts_with('1')
+    }
+
+    pub async fn set_version(&mut self, node: &NodeTool) -> Result<(), ToolchainError> {
+        if self.is_v1() {
+            return Ok(());
+        }
+
+        let yarn_bin = get_workspace_root()
+            .join(".yarn/releases")
+            .join(format!("yarn-{}.cjs", self.config.version));
+
+        if !yarn_bin.exists() {
+            debug!(
+                target: self.tool.get_log_target(),
+                "Updating yarn version with {}",
+                color::shell(format!("yarn set version {}", self.config.version))
+            );
+
+            self.create_command(node)
+                .args(["set", "version", &self.config.version])
+                .exec_capture_output()
+                .await?;
+
+            if let Some(plugins) = &self.config.plugins {
+                for plugin in plugins {
+                    self.create_command(node)
+                        .args(["plugin", "import", plugin])
+                        .exec_capture_output()
+                        .await?;
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 

@@ -1,5 +1,4 @@
 use crate::errors::ToolchainError;
-use crate::helpers::LOG_TARGET;
 use crate::manager::ToolManager;
 use crate::tools::node::NodeTool;
 use moon_config::WorkspaceConfig;
@@ -36,7 +35,7 @@ impl Toolchain {
         let dir = base_dir.as_ref().join(CONFIG_DIRNAME);
 
         debug!(
-            target: LOG_TARGET,
+            target: "moon:toolchain",
             "Creating toolchain at {}",
             color::path(&dir)
         );
@@ -62,7 +61,7 @@ impl Toolchain {
     /// Uninstall all tools from the toolchain, and delete any temporary files.
     pub async fn teardown(&mut self) -> Result<(), ToolchainError> {
         debug!(
-            target: LOG_TARGET,
+            target: "moon:toolchain",
             "Tearing down toolchain, uninstalling tools",
         );
 

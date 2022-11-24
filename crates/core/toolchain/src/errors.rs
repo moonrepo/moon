@@ -1,4 +1,3 @@
-use moon_archive::ArchiveError;
 use moon_error::MoonError;
 use moon_lang::LangError;
 use probe_core::ProbeError;
@@ -6,12 +5,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolchainError {
-    #[error("Failed to download tool from <url>{0}</url> <muted>({1})</muted>")]
-    DownloadFailed(String, String),
-
-    #[error("Internet connection required, unable to download and install tools.")]
-    InternetConnectionRequired,
-
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,
 
@@ -25,16 +18,10 @@ pub enum ToolchainError {
     RequiresYarnWorkspacesPlugin,
 
     #[error(transparent)]
-    Archive(#[from] ArchiveError),
-
-    #[error(transparent)]
     Lang(#[from] LangError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),
-
-    #[error("HTTP: {0}")]
-    HTTP(#[from] reqwest::Error),
 
     #[error(transparent)]
     Probe(#[from] ProbeError),

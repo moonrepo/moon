@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use crate::get_path_env_var;
 use crate::tools::npm::NpmTool;
 use crate::tools::pnpm::PnpmTool;
@@ -8,10 +6,10 @@ use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_node_lang::node;
-use moon_utils::fs;
 use moon_utils::process::Command;
 use probe_core::{Installable, Probe, Resolvable, Tool};
 use probe_node::NodeLanguage;
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct NodeTool {

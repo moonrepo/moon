@@ -2270,7 +2270,6 @@ dependencies = [
  "assert_fs",
  "async-trait",
  "mockito",
- "moon_archive",
  "moon_config",
  "moon_constants",
  "moon_error",
@@ -2282,9 +2281,7 @@ dependencies = [
  "predicates",
  "probe_core",
  "probe_node",
- "reqwest",
  "rustc-hash",
- "sha2",
  "thiserror",
  "tokio",
 ]

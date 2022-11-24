@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_archive = { path = "../archive" }
 moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
@@ -16,8 +15,6 @@ moon_utils = { path = "../utils" }
 probe_core = { path = "../../probe/core" }
 probe_node = { path = "../../probe/node" }
 async-trait = "0.1.58"
-reqwest = { workspace = true, features = ["native-tls-vendored"] }
-sha2 = "0.10.6"
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 

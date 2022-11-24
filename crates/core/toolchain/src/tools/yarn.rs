@@ -84,10 +84,22 @@ impl RuntimeTool for YarnTool {
         self.tool.get_resolved_version()
     }
 
-    async fn setup(&mut self) -> Result<u8, ToolchainError> {
+    async fn setup(
+        &mut self,
+        last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, ToolchainError> {
         let mut count = 0;
 
-        if !self.tool.is_setup()? && self.tool.setup(&self.config.version).await? {
+        if self.tool.is_setup()? {
+            return Ok(count);
+        } else if let Some(last) = last_versions.get("yarn") {
+            if last == &self.config.version {
+                return Ok(count);
+            }
+        }
+
+        if self.tool.setup(&self.config.version).await? {
+            last_versions.insert("yarn".into(), self.get_version().to_owned());
             count += 1;
         }
 

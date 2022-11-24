@@ -60,9 +60,13 @@ impl<T: RuntimeTool> ToolManager<T> {
         self.cache.insert(tool.get_version().to_owned(), tool);
     }
 
-    pub async fn setup(&mut self, version: &str) -> Result<u8, ToolchainError> {
+    pub async fn setup(
+        &mut self,
+        version: &str,
+        last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, ToolchainError> {
         match self.cache.get_mut(version) {
-            Some(cache) => cache.setup().await,
+            Some(cache) => cache.setup(last_versions).await,
             None => Err(ToolchainError::MissingTool(self.runtime.to_string())),
         }
     }

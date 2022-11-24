@@ -2,6 +2,7 @@ use crate::errors::ToolchainError;
 use moon_lang::LockfileDependencyVersions;
 use moon_utils::process::Command;
 use probe_core::async_trait;
+use rustc_hash::FxHashMap;
 use std::path::Path;
 
 #[async_trait]
@@ -14,7 +15,10 @@ pub trait RuntimeTool: Send + Sync {
 
     /// Setup the tool by downloading and installing it.
     /// Return a count of how many sub-tools were installed.
-    async fn setup(&mut self) -> Result<u8, ToolchainError> {
+    async fn setup(
+        &mut self,
+        _last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, ToolchainError> {
         Ok(0)
     }
 

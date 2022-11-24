@@ -8,6 +8,7 @@ use moon_node_lang::node;
 use moon_utils::process::Command;
 use probe_core::{async_trait, Executable, Installable, Probe, Resolvable, Tool};
 use probe_node::NodeLanguage;
+use rustc_hash::FxHashMap;
 use std::path::Path;
 
 #[derive(Debug)]
@@ -133,29 +134,34 @@ impl RuntimeTool for NodeTool {
         self.tool.get_resolved_version()
     }
 
-    async fn setup(&mut self) -> Result<u8, ToolchainError> {
+    async fn setup(
+        &mut self,
+        last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, ToolchainError> {
         let mut installed = 0;
 
-        if !self.tool.is_setup()? && self.tool.setup(&self.config.version).await? {
-            installed += 1;
+        if !self.tool.is_setup()? {
+            let setup = match last_versions.get("node") {
+                Some(last) => &self.config.version != last,
+                None => true,
+            };
+
+            if setup && self.tool.setup(&self.config.version).await? {
+                last_versions.insert("node".into(), self.get_version().to_owned());
+                installed += 1;
+            }
         }
 
-        if self.npm.is_some() {
-            let mut npm = self.npm.take().unwrap();
-            installed += npm.setup().await?;
-            self.npm = Some(npm);
+        if let Some(npm) = &mut self.npm {
+            installed += npm.setup(last_versions).await?;
         }
 
-        if self.pnpm.is_some() {
-            let mut pnpm = self.pnpm.take().unwrap();
-            installed += pnpm.setup().await?;
-            self.pnpm = Some(pnpm);
+        if let Some(pnpm) = &mut self.pnpm {
+            installed += pnpm.setup(last_versions).await?;
         }
 
-        if self.yarn.is_some() {
-            let mut yarn = self.yarn.take().unwrap();
-            installed += yarn.setup().await?;
-            self.yarn = Some(yarn);
+        if let Some(yarn) = &mut self.yarn {
+            installed += yarn.setup(last_versions).await?;
         }
 
         Ok(installed)

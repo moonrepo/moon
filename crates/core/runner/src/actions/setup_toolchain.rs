@@ -48,9 +48,7 @@ pub async fn setup_toolchain(
                 );
             }
 
-            cache.last_version = version.0.clone();
-
-            node.setup(&version.0).await?
+            node.setup(&version.0, &mut cache.last_versions).await?
         }
         _ => 0,
     };

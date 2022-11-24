@@ -1,6 +1,7 @@
+use crate::tools::npm::NpmTool;
 use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use async_trait::async_trait;
-use moon_config::NodeConfig;
+use moon_config::{NodeConfig, NodePackageManager};
 use probe_core::{Probe, Resolvable, Tool};
 use probe_node::NodeLanguage;
 
@@ -8,9 +9,9 @@ use probe_node::NodeLanguage;
 pub struct NodeTool {
     pub config: NodeConfig,
 
-    tool: NodeLanguage,
-    // npm: Option<NpmTool>,
+    pub tool: NodeLanguage,
 
+    npm: Option<NpmTool>,
     // pnpm: Option<PnpmTool>,
 
     // yarn: Option<YarnTool>,
@@ -21,19 +22,21 @@ impl NodeTool {
         let mut node = NodeTool {
             config: config.to_owned(),
             tool: NodeLanguage::new(probe, Some(&config.version)),
+            npm: None,
         };
 
-        // match config.package_manager {
-        //     NodePackageManager::Npm => {
-        //         node.npm = Some(NpmTool::new(paths, &config.npm)?);
-        //     }
-        //     NodePackageManager::Pnpm => {
-        //         node.pnpm = Some(PnpmTool::new(paths, &config.pnpm)?);
-        //     }
-        //     NodePackageManager::Yarn => {
-        //         node.yarn = Some(YarnTool::new(paths, &config.yarn)?);
-        //     }
-        // };
+        match config.package_manager {
+            NodePackageManager::Npm => {
+                node.npm = Some(NpmTool::new(probe, &config.npm)?);
+            }
+            // NodePackageManager::Pnpm => {
+            //     node.pnpm = Some(PnpmTool::new(paths, &config.pnpm)?);
+            // }
+            // NodePackageManager::Yarn => {
+            //     node.yarn = Some(YarnTool::new(paths, &config.yarn)?);
+            // }
+            _ => {}
+        };
 
         Ok(node)
     }

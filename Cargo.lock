@@ -2883,10 +2883,12 @@ name = "probe_node"
 version = "0.1.0"
 dependencies = [
  "assert_fs",
+ "clean-path",
  "log",
  "probe_core",
  "rustc-hash",
  "serde",
+ "serde_json",
  "tokio",
 ]
 

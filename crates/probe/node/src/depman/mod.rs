@@ -1,4 +1,5 @@
 mod download;
+mod execute;
 mod install;
 mod resolve;
 mod verify;
@@ -24,6 +25,7 @@ impl NodeDependencyManagerType {
 }
 
 pub struct NodeDependencyManager {
+    pub bin_path: Option<PathBuf>,
     pub dist: Option<NDMVersionDist>,
     pub install_dir: PathBuf,
     pub log_target: String,
@@ -37,6 +39,7 @@ impl NodeDependencyManager {
         let package_name = type_of.get_package_name();
 
         NodeDependencyManager {
+            bin_path: None,
             dist: None,
             install_dir: probe.tools_dir.join(&package_name),
             log_target: format!("probe:tool:{}", &package_name),

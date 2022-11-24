@@ -49,7 +49,6 @@ impl Resolvable<'_> for NodeDependencyManager {
         initial_version: &str,
         manifest_url: Option<&str>,
     ) -> Result<String, ProbeError> {
-        let candidate;
         let mut initial_version = remove_v_prefix(initial_version);
 
         debug!(
@@ -78,7 +77,7 @@ impl Resolvable<'_> for NodeDependencyManager {
         }
 
         // Infer the possible candidate from the versions map
-        candidate = match manifest.versions.get(&initial_version) {
+        let candidate = match manifest.versions.get(&initial_version) {
             Some(version) => Some(&version.version),
             None => return Err(ProbeError::VersionResolveFailed(initial_version)),
         };

@@ -6,6 +6,9 @@ pub enum ProbeError {
     #[error("Failed to download tool from {0}. {1}")]
     DownloadFailed(String, String),
 
+    #[error("Unable to find an executable binary for {0}, expected file {1} does not exist.")]
+    ExecuteMissingBin(String, PathBuf),
+
     #[error("File system failure for {0}. {1}")]
     Fs(PathBuf, String),
 
@@ -17,6 +20,9 @@ pub enum ProbeError {
 
     #[error("Internet connection required, unable to download and install tools.")]
     InternetConnectionRequired,
+
+    #[error("JSON failure for {0}. {1}")]
+    Json(PathBuf, String),
 
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,

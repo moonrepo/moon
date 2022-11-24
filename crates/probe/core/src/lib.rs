@@ -1,6 +1,7 @@
 mod describer;
 mod downloader;
 mod errors;
+mod executor;
 mod installer;
 mod resolver;
 mod verifier;
@@ -9,6 +10,7 @@ pub use async_trait::async_trait;
 pub use describer::*;
 pub use downloader::*;
 pub use errors::*;
+pub use executor::*;
 pub use installer::*;
 pub use lenient_semver::Version;
 pub use resolver::*;
@@ -30,12 +32,13 @@ pub trait Tool<'tool>:
     + Downloadable<'tool>
     + Verifiable<'tool>
     + Installable<'tool>
+    + Executable<'tool>
 {
     async fn before_setup(&mut self) -> Result<(), ProbeError> {
         Ok(())
     }
 
-    async fn setup(&mut self, initial_version: &str) -> Result<(), ProbeError> {
+    async fn setup(&mut self, initial_version: &str) -> Result<bool, ProbeError> {
         // Resolve a semantic version
         self.resolve_version(initial_version, None).await?;
 
@@ -52,13 +55,14 @@ pub trait Tool<'tool>:
 
         // Install the tool
         let install_dir = self.get_install_dir()?;
+        let installed = self.install(&install_dir, &download_path).await?;
 
-        self.install(&install_dir, &download_path).await?;
+        self.find_bin_path().await?;
 
         // Cleanup temp files
         self.cleanup().await?;
 
-        Ok(())
+        Ok(installed)
     }
 
     async fn after_setup(&mut self) -> Result<(), ProbeError> {
@@ -86,6 +90,13 @@ pub trait Tool<'tool>:
 
     async fn teardown(&mut self) -> Result<(), ProbeError> {
         self.cleanup().await?;
+
+        let install_dir = self.get_install_dir()?;
+
+        if install_dir.exists() {
+            fs::remove_dir_all(&install_dir)
+                .map_err(|e| ProbeError::Fs(install_dir, e.to_string()))?;
+        }
 
         Ok(())
     }

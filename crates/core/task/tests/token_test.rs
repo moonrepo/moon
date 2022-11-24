@@ -1,9 +1,12 @@
+mod utils;
+
 use moon_config::{ProjectConfig, ProjectLanguage, ProjectType, TaskConfig};
-use moon_task::test::{create_expanded_task, create_file_groups, create_initial_task};
+use moon_task::test::{create_file_groups, create_initial_task};
 use moon_task::{ResolverData, TokenResolver};
 use moon_utils::test::get_fixtures_dir;
 use moon_utils::{glob, string_vec};
 use std::path::PathBuf;
+use utils::create_expanded_task;
 
 fn get_workspace_root() -> PathBuf {
     get_fixtures_dir("base")

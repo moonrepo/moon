@@ -1,10 +1,12 @@
+mod utils;
+
 use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
-use moon_task::test::create_expanded_task;
 use moon_task::{Target, Task, TaskOptions};
 use moon_utils::test::{create_sandbox, get_fixtures_dir};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
+use utils::create_expanded_task;
 
 #[test]
 #[should_panic(expected = "NoOutputGlob")]
@@ -24,9 +26,8 @@ fn errors_for_output_glob() {
 }
 
 mod from_config {
-    use moon_config::{TaskMergeStrategy, TaskOutputStyle};
-
     use super::*;
+    use moon_config::{TaskMergeStrategy, TaskOutputStyle};
 
     #[test]
     fn sets_defaults() {

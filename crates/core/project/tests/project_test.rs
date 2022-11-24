@@ -3,7 +3,11 @@ use moon_config::{
     ProjectMetadataConfig, ProjectType, RunnerConfig, TargetID, TaskCommandArgs, TaskConfig,
     TaskMergeStrategy, TaskOptionsConfig,
 };
-use moon_project::{Project, ProjectError};
+use moon_project::{Project, ProjectError, TaskExpander};
+use moon_task::{
+    test::{create_file_groups, create_initial_task},
+    ResolverData,
+};
 use moon_task::{EnvVars, FileGroup, Target, Task};
 use moon_utils::string_vec;
 use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
@@ -38,12 +42,45 @@ fn create_expanded_project(
     project
         .expand_tasks(
             workspace_root,
-            &RunnerConfig::default(),
+            &RunnerConfig {
+                implicit_deps: vec![],
+                implicit_inputs: vec![],
+                ..RunnerConfig::default()
+            },
             &FxHashMap::default(),
         )
         .unwrap();
 
     project
+}
+
+fn create_expanded_task(
+    target: TargetID,
+    config: TaskConfig,
+    workspace_root: &Path,
+    project_source: &str,
+) -> Result<Task, ProjectError> {
+    let project_root = workspace_root.join(project_source);
+    let mut task = create_initial_task(Some(config));
+    let file_groups = create_file_groups();
+    let project_config = ProjectConfig::new(&project_root);
+    let metadata = ResolverData::new(&file_groups, workspace_root, &project_root, &project_config);
+    let task_expander = TaskExpander::new(&metadata);
+
+    task_expander.expand_env(&mut task)?;
+    task_expander.expand_deps(&mut task, "project", &FxHashMap::default())?;
+    task_expander.expand_inputs(&mut task)?;
+    task_expander.expand_outputs(&mut task)?;
+    task_expander.expand_args(&mut task)?;
+
+    let mut parts = target.split(':');
+    parts.next();
+
+    task.log_target = format!("moon:project:{}", target);
+    task.id = parts.next().unwrap().to_string();
+    task.target = Target::parse(&target).unwrap();
+
+    Ok(task)
 }
 
 #[test]
@@ -225,9 +262,7 @@ fn overrides_global_file_groups() {
 
 mod tasks {
     use super::*;
-    use moon_task::test::{
-        create_expanded_task as create_expanded_task_internal, create_file_groups_config,
-    };
+    use moon_task::test::create_file_groups_config;
     use moon_utils::glob;
     use pretty_assertions::assert_eq;
 
@@ -278,26 +313,6 @@ mod tasks {
             ("GLOBAL".to_owned(), "1".to_owned()),
             ("KEY".to_owned(), "a".to_owned()),
         ])
-    }
-
-    fn create_expanded_task(
-        target: TargetID,
-        config: TaskConfig,
-        workspace_root: &Path,
-        project_source: &str,
-    ) -> Result<Task, ProjectError> {
-        let project_root = workspace_root.join(project_source);
-        let mut task =
-            create_expanded_task_internal(workspace_root, &project_root, Some(config)).unwrap();
-
-        let mut parts = target.split(':');
-        parts.next();
-
-        task.log_target = format!("moon:project:{}", target);
-        task.id = parts.next().unwrap().to_string();
-        task.target = Target::parse(&target).unwrap();
-
-        Ok(task)
     }
 
     #[test]
@@ -1303,6 +1318,7 @@ mod tasks {
                     &workspace_root,
                     &RunnerConfig {
                         implicit_deps: string_vec!["^:build", "project:task"],
+                        implicit_inputs: string_vec![],
                         ..RunnerConfig::default()
                     },
                     &FxHashMap::default(),
@@ -1313,8 +1329,10 @@ mod tasks {
 
             assert_eq!(
                 task.deps,
-                Task::create_dep_targets(&string_vec!["id:test", "example:build", "project:task"])
-                    .unwrap()
+                Task::create_dep_targets(&string_vec!["id:test", "project:task"]).unwrap(),
+                // TODO make dep projects
+                // Task::create_dep_targets(&string_vec!["id:test", "example:build", "project:task"])
+                //     .unwrap()
             );
         }
 
@@ -1381,7 +1399,6 @@ mod tasks {
 
 mod workspace {
     use super::*;
-    use moon_task::test::create_expanded_task;
 
     mod inherited_tasks {
         use super::*;
@@ -1507,9 +1524,13 @@ mod workspace {
                 &mock_global_project_config(),
             );
 
-            let mut task =
-                create_expanded_task(&workspace_root, &workspace_root.join("rename-merge"), None)
-                    .unwrap();
+            let mut task = create_expanded_task(
+                "id:foo".into(),
+                TaskConfig::default(),
+                &workspace_root,
+                "rename-merge",
+            )
+            .unwrap();
             task.id = "foo".to_owned();
             task.target = Target::new("id", "foo").unwrap();
             task.command = "a".to_owned();

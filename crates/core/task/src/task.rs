@@ -1,13 +1,12 @@
 use crate::errors::{TargetError, TaskError};
 use crate::target::{Target, TargetProjectScope};
-use crate::token::{ResolverData, TokenResolver};
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
-    FileGlob, FilePath, InputValue, PlatformType, ProjectID, TaskCommandArgs, TaskConfig,
-    TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig, TaskOutputStyle,
+    FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
+    TaskOptionEnvFile, TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_logger::{color, debug, trace, Logable};
-use moon_utils::{glob, is_ci, path, regex::ENV_VAR, string_vec};
+use moon_utils::{glob, string_vec};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -233,7 +232,7 @@ impl Task {
             color::shell(&command)
         );
 
-        let task = Task {
+        let mut task = Task {
             args,
             command,
             deps: Task::create_dep_targets(&cloned_config.deps.unwrap_or_default())?,
@@ -269,6 +268,8 @@ impl Task {
             target,
             type_of: TaskType::Test,
         };
+
+        task.determine_type();
 
         Ok(task)
     }
@@ -349,70 +350,6 @@ impl Task {
         }
     }
 
-    /// Expand the args list to resolve tokens, relative to the project root.
-    pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), TaskError> {
-        if self.args.is_empty() {
-            return Ok(());
-        }
-
-        let mut args: Vec<String> = vec![];
-
-        // When running within a project:
-        //  - Project paths are relative and start with "./"
-        //  - Workspace paths are relative up to the root
-        // When running from the workspace:
-        //  - All paths are absolute
-        let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, TaskError> {
-            let arg = if !self.options.run_from_workspace_root
-                && path.starts_with(token_resolver.data.workspace_root)
-            {
-                let rel_path = path::to_string(
-                    path::relative_from(&path, token_resolver.data.project_root).unwrap(),
-                )?;
-
-                if rel_path.starts_with("..") {
-                    rel_path
-                } else {
-                    format!(".{}{}", std::path::MAIN_SEPARATOR, rel_path)
-                }
-            } else {
-                path::to_string(path)?
-            };
-
-            // Annoying, but we need to force forward slashes,
-            // and remove drive/UNC prefixes...
-            if cfg!(windows) && is_glob {
-                return Ok(glob::remove_drive_prefix(path::standardize_separators(arg)));
-            }
-
-            Ok(arg)
-        };
-
-        // We cant use `TokenResolver.resolve` as args are a mix of strings,
-        // strings with tokens, and file paths when tokens are resolved.
-        for arg in &self.args {
-            if token_resolver.has_token_func(arg) {
-                let (paths, globs) = token_resolver.resolve_func(arg, self)?;
-
-                for path in paths {
-                    args.push(handle_path(path, false)?);
-                }
-
-                for glob in globs {
-                    args.push(handle_path(PathBuf::from(glob), true)?);
-                }
-            } else if token_resolver.has_token_var(arg) {
-                args.push(token_resolver.resolve_vars(arg, self)?);
-            } else {
-                args.push(arg.clone());
-            }
-        }
-
-        self.args = args;
-
-        Ok(())
-    }
-
     /// Expand the deps list and resolve parent/self scopes.
     pub fn expand_deps(&mut self, owner_id: &str, depends_on: &[String]) -> Result<(), TaskError> {
         if self.deps.is_empty() {
@@ -451,56 +388,6 @@ impl Task {
         }
 
         self.deps = dep_targets;
-
-        Ok(())
-    }
-
-    /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_inputs(&mut self, token_resolver: TokenResolver) -> Result<(), TaskError> {
-        if self.inputs.is_empty() {
-            return Ok(());
-        }
-
-        let inputs_without_vars = self
-            .inputs
-            .clone()
-            .into_iter()
-            .filter(|i| {
-                if ENV_VAR.is_match(i) {
-                    self.input_vars.insert(i[1..].to_owned());
-                    false
-                } else {
-                    true
-                }
-            })
-            .collect::<Vec<String>>();
-
-        let (paths, globs) = token_resolver.resolve(&inputs_without_vars, self)?;
-
-        self.input_paths.extend(paths);
-        self.input_globs.extend(globs);
-
-        Ok(())
-    }
-
-    /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_outputs(&mut self, token_resolver: TokenResolver) -> Result<(), TaskError> {
-        if self.outputs.is_empty() {
-            return Ok(());
-        }
-
-        let (paths, globs) = token_resolver.resolve(&self.outputs, self)?;
-
-        self.output_paths.extend(paths);
-
-        if !globs.is_empty() {
-            if let Some(glob) = globs.get(0) {
-                return Err(TaskError::NoOutputGlob(
-                    glob.to_owned(),
-                    self.target.id.clone(),
-                ));
-            }
-        }
 
         Ok(())
     }
@@ -630,6 +517,8 @@ impl Task {
         if let Some(outputs) = &config.outputs {
             self.outputs = self.merge_vec(&self.outputs, outputs, &self.options.merge_outputs);
         }
+
+        self.determine_type();
 
         Ok(())
     }

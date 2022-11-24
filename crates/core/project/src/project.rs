@@ -380,31 +380,25 @@ impl Project {
     ) -> Result<(), ProjectError> {
         let resolver_data =
             ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
-        let task_expander = TaskExpander::new(self);
-        let depends_on = self.get_dependency_ids();
+        let task_expander = TaskExpander::new(&resolver_data);
 
         for task in self.tasks.values_mut() {
-            if matches!(task.platform, PlatformType::Unknown) {
-                task.platform = TaskConfig::detect_platform(&self.config, &task.command);
-            }
-
             // Inherit implicits before resolving
             task.deps
                 .extend(Task::create_dep_targets(&runner_config.implicit_deps)?);
             task.inputs
                 .extend(runner_config.implicit_inputs.iter().cloned());
 
-            // Resolve in order!
+            // Resolve in this order!
             task_expander.expand_env(task)?;
             // task.expand_deps(&self.id, depends_on_projects)?;
-            task.expand_inputs(TokenResolver::for_inputs(&resolver_data))?;
-            task.expand_outputs(TokenResolver::for_outputs(&resolver_data))?;
+            task_expander.expand_inputs(task)?;
+            task_expander.expand_outputs(task)?;
+            task_expander.expand_args(task)?;
 
-            // Must be last as it references inputs/outputs
-            task.expand_args(TokenResolver::for_args(&resolver_data))?;
-
-            // Finalize!
-            task.determine_type();
+            if matches!(task.platform, PlatformType::Unknown) {
+                task.platform = TaskConfig::detect_platform(&self.config, &task.command);
+            }
         }
 
         Ok(())

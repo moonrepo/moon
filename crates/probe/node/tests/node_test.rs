@@ -1,4 +1,4 @@
-use probe_core::{Downloadable, Installable, Probe, Resolvable, Verifiable};
+use probe_core::{Downloadable, Installable, Probe, Resolvable, Tool, Verifiable};
 use probe_node::NodeLanguage;
 use std::fs;
 use std::path::Path;
@@ -8,6 +8,19 @@ fn create_probe(dir: &Path) -> Probe {
         temp_dir: dir.join("temp"),
         tools_dir: dir.join("tools"),
     }
+}
+
+#[tokio::test]
+async fn downloads_verifies_installs_tool() {
+    let fixture = assert_fs::TempDir::new().unwrap();
+    let probe = create_probe(fixture.path());
+    let mut tool = NodeLanguage::new(&probe, Some("18.0.0"));
+
+    tool.setup("18.0.0").await.unwrap();
+
+    assert!(tool.get_download_path().unwrap().exists());
+    assert!(tool.get_checksum_path().unwrap().exists());
+    assert!(tool.get_install_dir().unwrap().exists());
 }
 
 mod downloader {

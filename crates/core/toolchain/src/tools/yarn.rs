@@ -91,8 +91,12 @@ impl RuntimeTool for YarnTool {
         let mut count = 0;
 
         if self.tool.is_setup().await? {
+            debug!(target: self.tool.get_log_target(), "yarn has already been setup");
+
             return Ok(count);
-        } else if let Some(last) = last_versions.get("yarn") {
+        }
+
+        if let Some(last) = last_versions.get("yarn") {
             if last == &self.config.version {
                 return Ok(count);
             }

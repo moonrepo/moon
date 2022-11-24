@@ -31,12 +31,12 @@ pub trait RuntimeTool: Send + Sync {
 #[async_trait]
 pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
     /// Create a command to run that wraps the binary.
-    fn create_command(&self, parent: &T) -> Result<Command, ToolchainError>;
+    fn create_command(&self, tool: &T) -> Result<Command, ToolchainError>;
 
     /// Dedupe dependencies after they have been installed.
     async fn dedupe_dependencies(
         &self,
-        parent: &T,
+        tool: &T,
         working_dir: &Path,
         log: bool,
     ) -> Result<(), ToolchainError>;
@@ -57,7 +57,7 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
     /// Install dependencies for a defined manifest.
     async fn install_dependencies(
         &self,
-        parent: &T,
+        tool: &T,
         working_dir: &Path,
         log: bool,
     ) -> Result<(), ToolchainError>;
@@ -65,7 +65,7 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
     /// Install dependencies for a single package in the workspace.
     async fn install_focused_dependencies(
         &self,
-        parent: &T,
+        tool: &T,
         packages: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError>;

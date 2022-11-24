@@ -3,10 +3,11 @@ use crate::tools::node::NodeTool;
 use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use moon_config::NpmConfig;
 use moon_lang::LockfileDependencyVersions;
+use moon_logger::debug;
 use moon_node_lang::{npm, NPM};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
-use probe_core::{async_trait, Executable, Probe, Resolvable, Tool};
+use probe_core::{async_trait, Describable, Executable, Probe, Resolvable, Tool};
 use probe_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -49,8 +50,12 @@ impl RuntimeTool for NpmTool {
         let mut count = 0;
 
         if self.tool.is_setup().await? {
+            debug!(target: self.tool.get_log_target(), "npm has already been setup");
+
             return Ok(count);
-        } else if let Some(last) = last_versions.get("npm") {
+        }
+
+        if let Some(last) = last_versions.get("npm") {
             if last == &self.config.version {
                 return Ok(count);
             }

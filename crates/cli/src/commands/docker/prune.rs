@@ -3,6 +3,7 @@ use crate::helpers::load_workspace;
 use futures::future::try_join_all;
 use moon_config::ProjectLanguage;
 use moon_node_lang::{PackageJson, NODE};
+use moon_runner::Runner;
 use moon_terminal::safe_exit;
 use moon_utils::{fs, json};
 use moon_workspace::Workspace;
@@ -11,6 +12,8 @@ pub async fn prune_node(
     workspace: &Workspace,
     manifest: &DockerManifest,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    dbg!("PRUNE NODE", manifest);
+
     let toolchain = &workspace.toolchain;
     let mut package_names = vec![];
 
@@ -66,6 +69,8 @@ pub async fn prune() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Unable to prune, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?");
         safe_exit(1);
     }
+
+    Runner::setup_toolchain(&workspace).await?;
 
     let manifest: DockerManifest = json::read(manifest_path)?;
     let mut is_using_node = false;

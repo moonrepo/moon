@@ -4,9 +4,10 @@ use crate::tools::pnpm::PnpmTool;
 use crate::tools::yarn::YarnTool;
 use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use moon_config::{NodeConfig, NodePackageManager};
+use moon_logger::debug;
 use moon_node_lang::node;
 use moon_utils::process::Command;
-use probe_core::{async_trait, Executable, Installable, Probe, Resolvable, Tool};
+use probe_core::{async_trait, Describable, Executable, Installable, Probe, Resolvable, Tool};
 use probe_node::NodeLanguage;
 use rustc_hash::FxHashMap;
 use std::path::Path;
@@ -140,7 +141,9 @@ impl RuntimeTool for NodeTool {
     ) -> Result<u8, ToolchainError> {
         let mut installed = 0;
 
-        if !self.tool.is_setup().await? {
+        if self.tool.is_setup().await? {
+            debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
+        } else {
             let setup = match last_versions.get("node") {
                 Some(last) => &self.config.version != last,
                 None => true,
@@ -160,8 +163,11 @@ impl RuntimeTool for NodeTool {
             installed += pnpm.setup(last_versions).await?;
         }
 
-        if let Some(yarn) = &mut self.yarn {
+        if self.yarn.is_some() {
+            let mut yarn = self.yarn.take().unwrap();
             installed += yarn.setup(last_versions).await?;
+            yarn.set_version(&self).await?;
+            self.yarn = Some(yarn);
         }
 
         Ok(installed)

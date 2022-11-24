@@ -1,16 +1,14 @@
-#![allow(clippy::disallowed_types)]
-
 use crate::depman::NodeDependencyManager;
 use log::debug;
 use probe_core::{
     async_trait, is_version_alias, load_versions_manifest, parse_version, remove_v_prefix,
     ProbeError, Resolvable,
 };
+use rustc_hash::FxHashMap;
 use serde::Deserialize;
-use std::collections::HashMap;
 
 #[derive(Deserialize)]
-struct NDMVersionDistSignature {
+pub struct NDMVersionDistSignature {
     pub keyid: String,
     pub sig: String,
 }
@@ -32,19 +30,18 @@ pub struct NDMVersionDist {
 #[serde(rename_all = "camelCase")]
 struct NDMVersion {
     dist: NDMVersionDist,
-    git_head: String,
     version: String, // No v prefix
 }
 
 #[derive(Deserialize)]
 struct NDMManifest {
     #[serde(rename = "dist-tags")]
-    dist_tags: HashMap<String, String>,
-    versions: HashMap<String, NDMVersion>,
+    dist_tags: FxHashMap<String, String>,
+    versions: FxHashMap<String, NDMVersion>,
 }
 
 #[async_trait]
-impl<'tool> Resolvable<'tool> for NodeDependencyManager<'tool> {
+impl Resolvable<'_> for NodeDependencyManager {
     fn get_resolved_version(&self) -> &str {
         &self.version
     }
@@ -58,7 +55,7 @@ impl<'tool> Resolvable<'tool> for NodeDependencyManager<'tool> {
         let mut initial_version = remove_v_prefix(initial_version);
 
         debug!(
-            target:self.get_log_target(),
+            target: self.get_log_target(),
             "Resolving a semantic version for {}",
             initial_version,
         );

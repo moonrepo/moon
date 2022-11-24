@@ -1,11 +1,11 @@
-// mod depman;
+mod depman;
 pub mod download;
 mod install;
 mod platform;
 mod resolve;
 mod verify;
 
-// pub use depman::*;
+pub use depman::*;
 
 use probe_core::{Describable, Probe, Tool};
 use std::path::PathBuf;

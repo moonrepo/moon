@@ -4,9 +4,9 @@ mod install;
 mod resolve;
 // mod verify;
 
-use probe_core::{Probe, Tool};
+use probe_core::{Describable, Probe, Tool};
 use resolve::NDMVersionDist;
-use std::{marker::PhantomData, path::PathBuf};
+use std::path::PathBuf;
 
 pub enum NodeDependencyManagerType {
     Npm,
@@ -24,28 +24,26 @@ impl NodeDependencyManagerType {
     }
 }
 
-pub struct NodeDependencyManager<'tool> {
+pub struct NodeDependencyManager {
     pub dist: Option<NDMVersionDist>,
     pub install_dir: PathBuf,
+    pub log_target: String,
     pub temp_dir: PathBuf,
     pub type_of: NodeDependencyManagerType,
     pub version: String,
-
-    #[allow(dead_code)]
-    data: PhantomData<&'tool ()>,
 }
 
-impl<'tool> NodeDependencyManager<'tool> {
-    pub fn new(probe: &Probe, type_of: NodeDependencyManagerType, version: &str) -> Self {
+impl NodeDependencyManager {
+    pub fn new(probe: &Probe, type_of: NodeDependencyManagerType, version: Option<&str>) -> Self {
         let package_name = type_of.get_package_name();
 
         NodeDependencyManager {
             dist: None,
             install_dir: probe.tools_dir.join(&package_name),
+            log_target: format!("probe:tool:{}", &package_name),
             temp_dir: probe.temp_dir.join(&package_name),
             type_of,
-            version: version.to_owned(),
-            data: PhantomData,
+            version: version.unwrap_or("latest").into(),
         }
     }
 
@@ -56,4 +54,14 @@ impl<'tool> NodeDependencyManager<'tool> {
     }
 }
 
-impl<'tool> Tool<'tool> for NodeDependencyManager<'tool> {}
+impl Describable<'_> for NodeDependencyManager {
+    fn get_log_target(&self) -> &str {
+        &self.log_target
+    }
+
+    fn get_name(&self) -> String {
+        self.type_of.get_package_name()
+    }
+}
+
+impl Tool<'_> for NodeDependencyManager {}

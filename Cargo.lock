@@ -2885,6 +2885,7 @@ dependencies = [
  "assert_fs",
  "log",
  "probe_core",
+ "rustc-hash",
  "serde",
  "tokio",
 ]

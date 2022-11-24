@@ -1,125 +1,67 @@
-use crate::errors::ToolchainError;
-use crate::helpers::{download_file_from_url, unpack};
+use crate::get_path_env_var;
 use crate::tools::node::NodeTool;
-use crate::traits::{DependencyManager, Executable, Installable, Lifecycle};
-use crate::{get_path_env_var, ToolchainPaths};
+use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use async_trait::async_trait;
 use moon_config::PnpmConfig;
 use moon_lang::LockfileDependencyVersions;
-use moon_logger::{debug, Logable};
-use moon_node_lang::{node, pnpm, PNPM};
+use moon_node_lang::{pnpm, PNPM};
 use moon_utils::process::Command;
-use moon_utils::{fs, is_ci, path};
+use moon_utils::{fs, is_ci};
+use probe_core::{Executable, Probe, Resolvable, Tool};
+use probe_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct PnpmTool {
-    bin_path: PathBuf,
-
     pub config: PnpmConfig,
 
-    download_path: PathBuf,
-
-    install_dir: PathBuf,
-
-    log_target: String,
+    tool: NodeDependencyManager,
 }
 
 impl PnpmTool {
-    pub fn new(
-        paths: &ToolchainPaths,
-        config: &Option<PnpmConfig>,
-    ) -> Result<PnpmTool, ToolchainError> {
-        let config = config.to_owned().unwrap_or_default();
-        let install_dir = paths.tools.join("pnpm").join(&config.version);
-
+    pub fn new(probe: &Probe, config: &PnpmConfig) -> Result<PnpmTool, ToolchainError> {
         Ok(PnpmTool {
-            bin_path: install_dir.join("bin/pnpm.cjs"),
-            download_path: paths
-                .temp
-                .join("pnpm")
-                .join(node::get_package_download_file("pnpm", &config.version)),
-            install_dir,
-            log_target: String::from("moon:toolchain:pnpm"),
-            config,
+            config: config.to_owned(),
+            tool: NodeDependencyManager::new(
+                probe,
+                probe_node::NodeDependencyManagerType::Pnpm,
+                Some(&config.version),
+            ),
         })
     }
 }
 
-impl Logable for PnpmTool {
-    fn get_log_target(&self) -> &str {
-        &self.log_target
-    }
-}
-
-impl Lifecycle<NodeTool> for PnpmTool {}
-
 #[async_trait]
-impl Installable<NodeTool> for PnpmTool {
-    fn get_install_dir(&self) -> Result<&PathBuf, ToolchainError> {
-        Ok(&self.install_dir)
+impl RuntimeTool for PnpmTool {
+    fn get_version(&self) -> &str {
+        self.tool.get_resolved_version()
     }
 
-    async fn is_installed(
-        &self,
-        _node: &NodeTool,
-        _check_version: bool,
-    ) -> Result<bool, ToolchainError> {
-        Ok(self.bin_path.exists())
-    }
+    async fn setup(&mut self) -> Result<u8, ToolchainError> {
+        let mut count = 0;
 
-    async fn install(&self, _node: &NodeTool) -> Result<(), ToolchainError> {
-        debug!(
-            target: self.get_log_target(),
-            "Installing pnpm v{}", self.config.version
-        );
-
-        if !self.download_path.exists() {
-            download_file_from_url(
-                node::get_npm_registry_url(
-                    "pnpm",
-                    node::get_package_download_file("pnpm", &self.config.version),
-                ),
-                &self.download_path,
-            )
-            .await?;
+        if !self.tool.is_setup()? && self.tool.setup(&self.config.version).await? {
+            count += 1;
         }
 
-        unpack(&self.download_path, &self.install_dir, "package").await?;
+        Ok(count)
+    }
+
+    async fn teardown(&mut self) -> Result<(), ToolchainError> {
+        self.tool.teardown().await?;
 
         Ok(())
-    }
-}
-
-#[async_trait]
-impl Executable<NodeTool> for PnpmTool {
-    async fn find_bin_path(&mut self, _node: &NodeTool) -> Result<(), ToolchainError> {
-        let install_dir = self.get_install_dir()?;
-
-        if let Some(bin_path) = node::extract_bin_path_from_package(install_dir, "pnpm")? {
-            self.bin_path = path::normalize(install_dir.join(bin_path))
-        }
-
-        Ok(())
-    }
-
-    fn get_bin_path(&self) -> &PathBuf {
-        &self.bin_path
-    }
-
-    fn is_executable(&self) -> bool {
-        self.bin_path.exists()
     }
 }
 
 #[async_trait]
 impl DependencyManager<NodeTool> for PnpmTool {
     fn create_command(&self, node: &NodeTool) -> Command {
-        let bin_path = self.get_bin_path();
+        let bin_path = self.tool.get_bin_path();
 
-        let mut cmd = Command::new(node.get_bin_path());
+        let mut cmd = Command::new(node.tool.get_bin_path());
         cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
         cmd.arg(bin_path);
         cmd

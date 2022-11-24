@@ -1,4 +1,5 @@
 use crate::tools::npm::NpmTool;
+use crate::tools::pnpm::PnpmTool;
 use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use async_trait::async_trait;
 use moon_config::{NodeConfig, NodePackageManager};
@@ -12,8 +13,8 @@ pub struct NodeTool {
     pub tool: NodeLanguage,
 
     npm: Option<NpmTool>,
-    // pnpm: Option<PnpmTool>,
 
+    pnpm: Option<PnpmTool>,
     // yarn: Option<YarnTool>,
 }
 
@@ -23,15 +24,16 @@ impl NodeTool {
             config: config.to_owned(),
             tool: NodeLanguage::new(probe, Some(&config.version)),
             npm: None,
+            pnpm: None,
         };
 
         match config.package_manager {
             NodePackageManager::Npm => {
                 node.npm = Some(NpmTool::new(probe, &config.npm)?);
             }
-            // NodePackageManager::Pnpm => {
-            //     node.pnpm = Some(PnpmTool::new(paths, &config.pnpm)?);
-            // }
+            NodePackageManager::Pnpm => {
+                node.pnpm = Some(PnpmTool::new(probe, &config.pnpm)?);
+            }
             // NodePackageManager::Yarn => {
             //     node.yarn = Some(YarnTool::new(paths, &config.yarn)?);
             // }

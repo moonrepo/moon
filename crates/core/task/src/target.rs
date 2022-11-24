@@ -139,8 +139,8 @@ impl Target {
 
     pub fn is_all_task(&self, task_id: &str) -> bool {
         if matches!(&self.project, TargetProjectScope::All) {
-            return if task_id.starts_with(':') {
-                self.task_id == task_id[1..]
+            return if let Some(id) = task_id.strip_prefix(':') {
+                self.task_id == id
             } else {
                 self.task_id == task_id
             };

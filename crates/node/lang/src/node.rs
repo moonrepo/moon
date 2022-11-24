@@ -1,13 +1,12 @@
-use crate::package::{PackageJson, PackageWorkspaces, StringOrObject};
+use crate::package::{PackageJson, PackageWorkspaces};
 use crate::pnpm::workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
 use lazy_static::lazy_static;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_lang::LangError;
 use moon_utils::path;
 use regex::Regex;
-use std::env::{self, consts};
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -28,29 +27,6 @@ pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
         Ok(old_value) => format!("{}{}{}", value, delimiter, old_value),
         Err(_) => value.to_owned(),
     }
-}
-
-pub fn extract_bin_path_from_package(
-    package_root: &Path,
-    bin_name: &str,
-) -> Result<Option<String>, MoonError> {
-    let mut bin_path = None;
-
-    if let Some(package_json) = PackageJson::read(package_root)? {
-        match &package_json.bin {
-            Some(StringOrObject::String(bin)) => {
-                bin_path = Some(bin.to_owned());
-            }
-            Some(StringOrObject::Object(bins)) => {
-                if let Some(bin) = bins.get(bin_name) {
-                    bin_path = Some(bin.to_owned());
-                }
-            }
-            _ => {}
-        }
-    }
-
-    Ok(bin_path)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -109,21 +85,6 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> Result<BinFile, M
 }
 
 #[inline]
-pub fn find_package<P: AsRef<Path>>(starting_dir: P, package_name: &str) -> Option<PathBuf> {
-    let starting_dir = starting_dir.as_ref();
-    let pkg_path = starting_dir.join(NODE.vendor_dir).join(package_name);
-
-    if pkg_path.exists() {
-        return Some(pkg_path);
-    }
-
-    match starting_dir.parent() {
-        Some(dir) => find_package(dir, package_name),
-        None => None,
-    }
-}
-
-#[inline]
 #[track_caller]
 pub fn find_package_bin<P: AsRef<Path>, B: AsRef<str>>(
     starting_dir: P,
@@ -166,109 +127,6 @@ pub fn get_bin_name_suffix<T: AsRef<str>>(name: T, windows_ext: &str, flat: bool
     } else {
         format!("bin/{}", name)
     }
-}
-
-#[inline]
-pub fn get_download_file_ext() -> &'static str {
-    if consts::OS == "windows" {
-        "zip"
-    } else {
-        "tar.gz"
-    }
-}
-
-#[inline]
-pub fn get_download_file_name<T: AsRef<str>>(version: T) -> Result<String, LangError> {
-    let platform;
-
-    if consts::OS == "linux" {
-        platform = "linux"
-    } else if consts::OS == "windows" {
-        platform = "win";
-    } else if consts::OS == "macos" {
-        platform = "darwin"
-    } else {
-        return Err(LangError::UnsupportedPlatform(
-            consts::OS.to_string(),
-            String::from("Node.js"),
-        ));
-    }
-
-    let arch;
-
-    if consts::ARCH == "x86" {
-        arch = "x86"
-    } else if consts::ARCH == "x86_64" {
-        arch = "x64"
-    } else if consts::ARCH == "arm" || consts::ARCH == "aarch64" {
-        arch = "arm64"
-    // } else if consts::ARCH == "powerpc64" {
-    //     arch = "ppc64le"
-    // } else if consts::ARCH == "s390x" {
-    //     arch = "s390x"
-    } else {
-        return Err(LangError::UnsupportedArchitecture(
-            consts::ARCH.to_string(),
-            String::from("Node.js"),
-        ));
-    }
-
-    Ok(format!(
-        "node-v{version}-{platform}-{arch}",
-        version = version.as_ref(),
-        platform = platform,
-        arch = arch,
-    ))
-}
-
-#[inline]
-pub fn get_download_file<T: AsRef<str>>(version: T) -> Result<String, LangError> {
-    Ok(format!(
-        "{}.{}",
-        get_download_file_name(version)?,
-        get_download_file_ext()
-    ))
-}
-
-#[inline]
-pub fn get_package_download_file<A, B>(package: A, version: B) -> String
-where
-    A: AsRef<str>,
-    B: AsRef<str>,
-{
-    format!(
-        "{package}-{version}.tgz",
-        package = package.as_ref(),
-        version = version.as_ref(),
-    )
-}
-
-#[inline]
-pub fn get_nodejs_url<A, B, C>(version: A, host: B, path: C) -> String
-where
-    A: AsRef<str>,
-    B: AsRef<str>,
-    C: AsRef<str>,
-{
-    format!(
-        "{host}/dist/v{version}/{path}",
-        host = host.as_ref(),
-        version = version.as_ref(),
-        path = path.as_ref(),
-    )
-}
-
-#[inline]
-pub fn get_npm_registry_url<A, B>(package: A, path: B) -> String
-where
-    A: AsRef<str>,
-    B: AsRef<str>,
-{
-    format!(
-        "https://registry.npmjs.org/{package}/-/{path}",
-        package = package.as_ref(),
-        path = path.as_ref(),
-    )
 }
 
 /// Extract the list of `workspaces` globs from the root `package.json`,
@@ -709,51 +567,6 @@ exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
         #[cfg(not(windows))]
         fn returns_flat_bin() {
             assert_eq!(get_bin_name_suffix("foo", "ext", true), "foo".to_owned());
-        }
-    }
-
-    mod find_package {
-        use super::*;
-
-        #[test]
-        fn returns_path_with_package_scope() {
-            let sandbox = create_node_modules_sandbox();
-            let path = find_package(sandbox.path(), "@scope/pkg-foo");
-
-            assert_eq!(
-                path.unwrap(),
-                sandbox.path().join("node_modules").join("@scope/pkg-foo")
-            );
-        }
-
-        #[test]
-        fn returns_path_without_package_scope() {
-            let sandbox = create_node_modules_sandbox();
-            let path = find_package(sandbox.path(), "pkg-bar");
-
-            assert_eq!(
-                path.unwrap(),
-                sandbox.path().join("node_modules").join("pkg-bar")
-            );
-        }
-
-        #[test]
-        fn returns_path_from_nested_file() {
-            let sandbox = create_node_modules_sandbox();
-            let path = find_package(&sandbox.path().join("nested"), "@scope/pkg-foo");
-
-            assert_eq!(
-                path.unwrap(),
-                sandbox.path().join("node_modules").join("@scope/pkg-foo")
-            );
-        }
-
-        #[test]
-        fn returns_none_for_missing() {
-            let sandbox = create_node_modules_sandbox();
-            let path = find_package(sandbox.path(), "unknown-pkg");
-
-            assert_eq!(path, None);
         }
     }
 

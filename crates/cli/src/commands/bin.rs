@@ -1,7 +1,7 @@
 use crate::helpers::load_workspace;
 use clap::ValueEnum;
 use moon_terminal::safe_exit;
-use moon_toolchain::{Executable, Installable};
+use moon_toolchain::RuntimeTool;
 
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]
@@ -17,7 +17,7 @@ enum BinExitCodes {
     NotInstalled = 2,
 }
 
-async fn is_installed<T: Send + Sync>(tool: &dyn Installable<T>, parent: &T) {
+async fn is_installed(tool: &dyn RuntimeTool) {
     let installed = tool.is_installed(parent, true).await;
 
     if installed.is_err() || !installed.unwrap() {
@@ -29,7 +29,7 @@ fn not_configured() -> ! {
     safe_exit(BinExitCodes::NotConfigured as i32);
 }
 
-fn log_bin_path<T: Send + Sync>(tool: &dyn Executable<T>) {
+fn log_bin_path(tool: &dyn RuntimeTool) {
     println!("{}", tool.get_bin_path().display());
 }
 
@@ -41,7 +41,7 @@ pub async fn bin(tool_type: &BinTool) -> Result<(), Box<dyn std::error::Error>> 
         BinTool::Node => {
             let node = toolchain.node.get()?;
 
-            is_installed(node, &()).await;
+            is_installed(node).await;
             log_bin_path(node);
         }
         BinTool::Npm | BinTool::Pnpm | BinTool::Yarn => {
@@ -50,21 +50,21 @@ pub async fn bin(tool_type: &BinTool) -> Result<(), Box<dyn std::error::Error>> 
             match tool_type {
                 BinTool::Npm => match node.get_npm() {
                     Ok(npm) => {
-                        is_installed(npm, node).await;
+                        is_installed(npm).await;
                         log_bin_path(npm);
                     }
                     Err(_) => not_configured(),
                 },
                 BinTool::Pnpm => match node.get_pnpm() {
                     Ok(pnpm) => {
-                        is_installed(pnpm, node).await;
+                        is_installed(pnpm).await;
                         log_bin_path(pnpm);
                     }
                     Err(_) => not_configured(),
                 },
                 BinTool::Yarn => match node.get_yarn() {
                     Ok(yarn) => {
-                        is_installed(yarn, node).await;
+                        is_installed(yarn).await;
                         log_bin_path(yarn);
                     }
                     Err(_) => not_configured(),

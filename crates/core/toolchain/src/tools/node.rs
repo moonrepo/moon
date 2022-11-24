@@ -6,7 +6,7 @@ use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_node_lang::node;
 use moon_utils::process::Command;
-use probe_core::{async_trait, Installable, Probe, Resolvable, Tool};
+use probe_core::{async_trait, Executable, Installable, Probe, Resolvable, Tool};
 use probe_node::NodeLanguage;
 use std::path::Path;
 
@@ -14,7 +14,7 @@ use std::path::Path;
 pub struct NodeTool {
     pub config: NodeConfig,
 
-    pub tool: NodeLanguage,
+    tool: NodeLanguage,
 
     npm: Option<NpmTool>,
 
@@ -125,6 +125,10 @@ impl NodeTool {
 
 #[async_trait]
 impl RuntimeTool for NodeTool {
+    fn get_bin_path(&self) -> &Path {
+        self.tool.get_bin_path()
+    }
+
     fn get_version(&self) -> &str {
         self.tool.get_resolved_version()
     }

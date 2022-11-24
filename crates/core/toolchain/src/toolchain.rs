@@ -42,12 +42,12 @@ impl Toolchain {
 
         fs::create_dir_all(&dir).await?;
 
-        let probe = Probe::new(&dir);
         let mut toolchain = Toolchain {
             dir,
             // Tools
             node: ToolManager::new(Runtime::Node(Version::default())),
         };
+        let probe = toolchain.get_paths();
 
         if let Some(node_config) = &workspace_config.node {
             toolchain
@@ -56,6 +56,10 @@ impl Toolchain {
         }
 
         Ok(toolchain)
+    }
+
+    pub fn get_paths(&self) -> Probe {
+        Probe::new(&self.dir)
     }
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.

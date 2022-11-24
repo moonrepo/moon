@@ -9,6 +9,8 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ToolState {
+    pub last_version: String,
+
     pub last_version_check_time: u128,
 
     #[serde(skip)]

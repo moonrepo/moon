@@ -37,6 +37,10 @@ impl PnpmTool {
 
 #[async_trait]
 impl RuntimeTool for PnpmTool {
+    fn get_bin_path(&self) -> &Path {
+        self.tool.get_bin_path()
+    }
+
     fn get_version(&self) -> &str {
         self.tool.get_resolved_version()
     }
@@ -61,9 +65,9 @@ impl RuntimeTool for PnpmTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for PnpmTool {
     fn create_command(&self, node: &NodeTool) -> Command {
-        let bin_path = self.tool.get_bin_path();
+        let bin_path = self.get_bin_path();
 
-        let mut cmd = Command::new(node.tool.get_bin_path());
+        let mut cmd = Command::new(node.get_bin_path());
         cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
         cmd.arg(bin_path);
         cmd

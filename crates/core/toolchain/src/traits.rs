@@ -6,6 +6,9 @@ use std::path::Path;
 
 #[async_trait]
 pub trait RuntimeTool: Send + Sync {
+    /// Return an absolute path to the tool's binary.
+    fn get_bin_path(&self) -> &Path;
+
     /// Return the resolved version of the current tool.
     fn get_version(&self) -> &str;
 

@@ -9,7 +9,6 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:setup-toolchain";
-const HOUR_MILLIS: u128 = 36000;
 
 pub async fn setup_toolchain(
     _action: &mut Action,
@@ -31,13 +30,6 @@ pub async fn setup_toolchain(
     let mut cache = workspace.cache.cache_tool_state(runtime).await?;
     let toolchain_paths = workspace.toolchain.get_paths();
 
-    // Only check the versions every 12 hours, as checking every
-    // run has considerable overhead spawning all the child processes.
-    // Revisit the threshold if need be.
-    let now = time::now_millis();
-    let check_versions = cache.last_version_check_time == 0
-        || (cache.last_version_check_time + HOUR_MILLIS * 12) <= now;
-
     // Install and setup the specific tool + version in the toolchain!
     let installed = match runtime {
         Runtime::Node(version) => {
@@ -56,16 +48,17 @@ pub async fn setup_toolchain(
                 );
             }
 
-            node.setup(&version.0, check_versions).await?
+            cache.last_version = version.0.clone();
+
+            node.setup(&version.0).await?
         }
         _ => 0,
     };
 
     // Update the cache with the timestamp
-    if check_versions {
-        cache.last_version_check_time = now;
-        cache.save().await?;
-    }
+
+    cache.last_version_check_time = time::now_millis();
+    cache.save().await?;
 
     Ok(if installed > 0 {
         ActionStatus::Passed

@@ -177,7 +177,7 @@ mod resolver {
     }
 
     #[tokio::test]
-    async fn resolve_lts() {
+    async fn resolve_alias() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeLanguage::new(&create_probe(fixture.path()), None);
 
@@ -207,6 +207,33 @@ mod resolver {
             tool.resolve_version("v18.0.0", None).await.unwrap(),
             "18.0.0"
         );
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "VersionUnknownAlias(\"lts-unknown\")")]
+    async fn errors_invalid_lts() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let mut tool = NodeLanguage::new(&create_probe(fixture.path()), None);
+
+        tool.resolve_version("lts-unknown", None).await.unwrap();
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "VersionUnknownAlias(\"unknown\")")]
+    async fn errors_invalid_alias() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let mut tool = NodeLanguage::new(&create_probe(fixture.path()), None);
+
+        tool.resolve_version("unknown", None).await.unwrap();
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "VersionResolveFailed(\"v99.99.99\")")]
+    async fn errors_invalid_version() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let mut tool = NodeLanguage::new(&create_probe(fixture.path()), None);
+
+        tool.resolve_version("99.99.99", None).await.unwrap();
     }
 }
 
@@ -247,5 +274,22 @@ mod verifier {
 
         assert!(tool.download_checksum(&to_file, None).await.unwrap());
         assert!(!tool.download_checksum(&to_file, None).await.unwrap());
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "VerifyInvalidChecksum")]
+    async fn errors_for_checksum_mismatch() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let tool = NodeLanguage::new(&create_probe(fixture.path()), Some("18.0.0"));
+        let dl_path = tool.get_download_path().unwrap();
+        let cs_path = tool.get_checksum_path().unwrap();
+
+        tool.download(&dl_path, None).await.unwrap();
+        tool.download_checksum(&cs_path, None).await.unwrap();
+
+        // Empty the checksum file
+        fs::write(&cs_path, "").unwrap();
+
+        tool.verify_checksum(&cs_path, &dl_path).await.unwrap();
     }
 }

@@ -5,7 +5,6 @@ use moon_lang::{config_cache, LockfileDependencyVersions};
 use moon_utils::json::read as read_json;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::path::{Path, PathBuf};
 
 config_cache!(PackageLock, NPM.lock_filename, read_json);
@@ -19,22 +18,13 @@ pub struct PackageLockDependency {
     pub requires: Option<FxHashMap<String, String>>,
     pub resolved: Option<String>,
     pub version: String,
-
-    #[serde(flatten)]
-    pub unknown: FxHashMap<String, Value>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageLock {
-    pub lockfile_version: Value,
     pub name: String,
     pub dependencies: Option<FxHashMap<String, PackageLockDependency>>,
-    pub packages: Option<FxHashMap<String, Value>>,
-    pub requires: Option<bool>,
-
-    #[serde(flatten)]
-    pub unknown: FxHashMap<String, Value>,
 
     #[serde(skip)]
     pub path: PathBuf,
@@ -79,7 +69,6 @@ mod tests {
     use assert_fs::prelude::*;
     use moon_utils::string_vec;
     use pretty_assertions::assert_eq;
-    use serde_json::Number;
 
     #[test]
     fn parses_lockfile() {
@@ -120,9 +109,7 @@ mod tests {
         assert_eq!(
             lockfile,
             PackageLock {
-                lockfile_version: Value::Number(Number::from(2)),
                 name: "moon-examples".into(),
-                requires: Some(true),
                 dependencies: Some(FxHashMap::from_iter([(
                     "@babel/helper-function-name".to_owned(),
                     PackageLockDependency {

@@ -8,14 +8,14 @@ pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn get_bin_name_suffix<T: AsRef<str>>(name: T) -> String {
+pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
     format!("bin/{}", name.as_ref())
 }
 
 #[async_trait]
 impl Executable<'_> for NodeLanguage {
     async fn find_bin_path(&mut self) -> Result<(), ProbeError> {
-        let bin_path = self.get_install_dir()?.join(get_bin_name_suffix("node"));
+        let bin_path = self.get_install_dir()?.join(get_bin_name("node"));
 
         if bin_path.exists() {
             self.bin_path = Some(bin_path);

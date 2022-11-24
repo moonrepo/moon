@@ -15,7 +15,7 @@ impl Downloadable<'_> for NodeDependencyManager {
 
     async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProbeError> {
         if to_file.exists() {
-            debug!(target: self.get_log_target(), "Already downloaded, continuing");
+            debug!(target: self.get_log_target(), "Dependency manager already downloaded, continuing");
 
             return Ok(false);
         }
@@ -39,7 +39,7 @@ impl Downloadable<'_> for NodeDependencyManager {
 
         download_from_url(&from_url, &to_file).await?;
 
-        debug!(target: self.get_log_target(), "Successfully downloaded");
+        debug!(target: self.get_log_target(), "Successfully downloaded dependency manager");
 
         Ok(true)
     }

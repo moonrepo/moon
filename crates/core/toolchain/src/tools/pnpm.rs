@@ -51,7 +51,7 @@ impl RuntimeTool for PnpmTool {
     ) -> Result<u8, ToolchainError> {
         let mut count = 0;
 
-        if self.tool.is_setup()? {
+        if self.tool.is_setup().await? {
             return Ok(count);
         } else if let Some(last) = last_versions.get("pnpm") {
             if last == &self.config.version {
@@ -60,7 +60,7 @@ impl RuntimeTool for PnpmTool {
         }
 
         if self.tool.setup(&self.config.version).await? {
-            last_versions.insert("pnpm".into(), self.get_version().to_owned());
+            last_versions.insert("pnpm".into(), self.config.version.clone());
             count += 1;
         }
 

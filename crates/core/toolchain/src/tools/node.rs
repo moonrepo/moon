@@ -140,14 +140,14 @@ impl RuntimeTool for NodeTool {
     ) -> Result<u8, ToolchainError> {
         let mut installed = 0;
 
-        if !self.tool.is_setup()? {
+        if !self.tool.is_setup().await? {
             let setup = match last_versions.get("node") {
                 Some(last) => &self.config.version != last,
                 None => true,
             };
 
             if setup && self.tool.setup(&self.config.version).await? {
-                last_versions.insert("node".into(), self.get_version().to_owned());
+                last_versions.insert("node".into(), self.config.version.clone());
                 installed += 1;
             }
         }

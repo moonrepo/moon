@@ -1,14 +1,15 @@
 use crate::{RuntimeTool, ToolchainError};
 use moon_platform::{Runtime, Version};
 use rustc_hash::FxHashMap;
+use std::fmt::Debug;
 
 #[derive(Debug)]
-pub struct ToolManager<T: RuntimeTool> {
+pub struct ToolManager<T: RuntimeTool + Debug> {
     cache: FxHashMap<String, T>,
     runtime: Runtime, // Default workspace version
 }
 
-impl<T: RuntimeTool> ToolManager<T> {
+impl<T: RuntimeTool + Debug> ToolManager<T> {
     pub fn new(runtime: Runtime) -> Self {
         ToolManager {
             cache: FxHashMap::default(),

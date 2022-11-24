@@ -68,17 +68,19 @@ pub trait Tool<'tool>:
 
         self.find_bin_path().await?;
 
-        // Cleanup temp files
-        self.cleanup().await?;
-
         Ok(installed)
     }
 
-    fn is_setup(&self) -> Result<bool, ProbeError> {
+    async fn is_setup(&mut self) -> Result<bool, ProbeError> {
         let install_dir = self.get_install_dir()?;
 
         if install_dir.exists() {
-            return Ok(self.get_bin_path()?.exists());
+            self.find_bin_path().await?;
+
+            return Ok(match self.get_bin_path() {
+                Ok(bin) => bin.exists(),
+                Err(_) => false,
+            });
         }
 
         Ok(false)

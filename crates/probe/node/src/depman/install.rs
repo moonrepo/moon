@@ -1,7 +1,7 @@
 use crate::download::get_archive_file_path;
 use crate::{depman::NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
-use probe_core::{async_trait, untar, unzip, Installable, ProbeError, Resolvable};
+use probe_core::{async_trait, untar, unzip, Describable, Installable, ProbeError, Resolvable};
 use std::path::{Path, PathBuf};
 
 #[async_trait]
@@ -12,7 +12,7 @@ impl<'tool> Installable<'tool> for NodeDependencyManager<'tool> {
 
     async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<(), ProbeError> {
         if install_dir.exists() {
-            debug!(target: "probe:node:install", "Already installed, continuing");
+            debug!(target: self.get_log_target(), "Already installed, continuing");
 
             return Ok(());
         }
@@ -25,7 +25,7 @@ impl<'tool> Installable<'tool> for NodeDependencyManager<'tool> {
         };
 
         debug!(
-            target: "probe:node:install",
+            target: self.get_log_target(),
             "Attempting to install from {} to {}",
             download_path.to_string_lossy(),
             install_dir.to_string_lossy(),
@@ -33,7 +33,7 @@ impl<'tool> Installable<'tool> for NodeDependencyManager<'tool> {
 
         untar(download_path, install_dir, Some(&prefix))?;
 
-        debug!(target: "probe:node:install", "Successfully installed");
+        debug!(target: self.get_log_target(), "Successfully installed");
 
         Ok(())
     }

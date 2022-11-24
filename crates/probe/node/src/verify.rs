@@ -1,7 +1,8 @@
 use crate::NodeLanguage;
 use log::debug;
 use probe_core::{
-    async_trait, download_from_url, get_sha256_hash_of_file, ProbeError, Resolvable, Verifiable,
+    async_trait, download_from_url, get_sha256_hash_of_file, Describable, ProbeError, Resolvable,
+    Verifiable,
 };
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -21,7 +22,7 @@ impl Verifiable<'_> for NodeLanguage {
         from_url: Option<&str>,
     ) -> Result<bool, ProbeError> {
         if to_file.exists() {
-            debug!(target: "probe:node:verify", "Already downloaded checksum, continuing");
+            debug!(target: self.get_log_target(), "Already downloaded checksum, continuing");
 
             return Ok(false);
         }
@@ -32,11 +33,11 @@ impl Verifiable<'_> for NodeLanguage {
             None => format!("https://nodejs.org/dist/v{}/SHASUMS256.txt", version),
         };
 
-        debug!(target: "probe:node:verify", "Attempting to download from {}", from_url);
+        debug!(target: self.get_log_target(), "Attempting to download from {}", from_url);
 
         download_from_url(&from_url, &to_file).await?;
 
-        debug!(target: "probe:node:verify", "Successfully downloaded");
+        debug!(target: self.get_log_target(), "Successfully downloaded");
 
         Ok(true)
     }
@@ -47,7 +48,7 @@ impl Verifiable<'_> for NodeLanguage {
         download_file: &Path,
     ) -> Result<bool, ProbeError> {
         debug!(
-            target: "probe:node:verify",
+            target: self.get_log_target(),
             "Verifiying checksum of downloaded file {} using {}",
             download_file.to_string_lossy(),
             checksum_file.to_string_lossy(),
@@ -66,7 +67,7 @@ impl Verifiable<'_> for NodeLanguage {
         for line in BufReader::new(file).lines().flatten() {
             // <checksum>  node-v<version>-<os>-<arch>.tar.gz
             if line.starts_with(&checksum) && line.ends_with(file_name) {
-                debug!(target: "probe:node:verify", "Successfully verified, checksum matches");
+                debug!(target: self.get_log_target(), "Successfully verified, checksum matches");
 
                 return Ok(true);
             }

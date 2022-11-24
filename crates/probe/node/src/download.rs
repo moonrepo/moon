@@ -1,7 +1,9 @@
 use crate::platform::NodeArch;
 use crate::NodeLanguage;
 use log::debug;
-use probe_core::{async_trait, download_from_url, Downloadable, ProbeError, Resolvable};
+use probe_core::{
+    async_trait, download_from_url, Describable, Downloadable, ProbeError, Resolvable,
+};
 use std::env::consts;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -71,7 +73,7 @@ impl Downloadable<'_> for NodeLanguage {
 
     async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProbeError> {
         if to_file.exists() {
-            debug!(target: "probe:node:download", "Already downloaded, continuing");
+            debug!(target: self.get_log_target(), "Already downloaded, continuing");
 
             return Ok(false);
         }
@@ -88,11 +90,11 @@ impl Downloadable<'_> for NodeLanguage {
             }
         };
 
-        debug!(target: "probe:node:download", "Attempting to download from {}", from_url);
+        debug!(target: self.get_log_target(), "Attempting to download from {}", from_url);
 
         download_from_url(&from_url, &to_file).await?;
 
-        debug!(target: "probe:node:download", "Successfully downloaded");
+        debug!(target: self.get_log_target(), "Successfully downloaded");
 
         Ok(true)
     }

@@ -1,7 +1,7 @@
 use crate::download::get_archive_file_path;
 use crate::NodeLanguage;
 use log::debug;
-use probe_core::{async_trait, untar, unzip, Installable, ProbeError, Resolvable};
+use probe_core::{async_trait, untar, unzip, Describable, Installable, ProbeError, Resolvable};
 use std::path::{Path, PathBuf};
 
 #[async_trait]
@@ -12,19 +12,19 @@ impl Installable<'_> for NodeLanguage {
 
     async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProbeError> {
         if install_dir.exists() {
-            debug!(target: "probe:node:install", "Already installed, continuing");
+            debug!(target: self.get_log_target(), "Already installed, continuing");
 
             return Ok(false);
         }
 
         if !download_path.exists() {
-            return Err(ProbeError::InstallMissingDownload("Node.js".into()));
+            return Err(ProbeError::InstallMissingDownload(self.get_name()));
         }
 
         let prefix = get_archive_file_path(self.get_resolved_version())?;
 
         debug!(
-            target: "probe:node:install",
+            target: self.get_log_target(),
             "Attempting to install from {} to {}",
             download_path.to_string_lossy(),
             install_dir.to_string_lossy(),
@@ -36,7 +36,7 @@ impl Installable<'_> for NodeLanguage {
             untar(download_path, install_dir, Some(&prefix))?;
         }
 
-        debug!(target: "probe:node:install", "Successfully installed");
+        debug!(target: self.get_log_target(), "Successfully installed");
 
         Ok(true)
     }

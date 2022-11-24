@@ -58,7 +58,7 @@ impl<'tool> Resolvable<'tool> for NodeDependencyManager<'tool> {
         let mut initial_version = remove_v_prefix(initial_version);
 
         debug!(
-            target: "probe:node-dep-man:resolve",
+            target:self.get_log_target(),
             "Resolving a semantic version for {}",
             initial_version,
         );
@@ -90,7 +90,7 @@ impl<'tool> Resolvable<'tool> for NodeDependencyManager<'tool> {
 
         let version = parse_version(candidate)?.to_string();
 
-        debug!(target: "probe:node-depman:resolver", "Resolved to {}", version);
+        debug!(target: self.get_log_target(), "Resolved to {}", version);
 
         self.version = version.clone();
 

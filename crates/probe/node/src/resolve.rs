@@ -3,7 +3,8 @@
 use crate::NodeLanguage;
 use log::debug;
 use probe_core::{
-    async_trait, is_version_alias, load_versions_manifest, parse_version, ProbeError, Resolvable,
+    async_trait, is_version_alias, load_versions_manifest, parse_version, Describable, ProbeError,
+    Resolvable,
 };
 use serde::Deserialize;
 
@@ -35,7 +36,7 @@ impl Resolvable<'_> for NodeLanguage {
         let mut initial_version = initial_version.to_lowercase();
 
         debug!(
-            target: "probe:node:resolve",
+            target: self.get_log_target(),
             "Resolving a semantic version for {}",
             initial_version,
         );
@@ -112,7 +113,7 @@ impl Resolvable<'_> for NodeLanguage {
 
         let version = parse_version(candidate)?.to_string();
 
-        debug!(target: "probe:node:resolver", "Resolved to {}", version);
+        debug!(target: self.get_log_target(), "Resolved to {}", version);
 
         self.version = version.clone();
 

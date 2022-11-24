@@ -11,19 +11,13 @@ fn create_probe(dir: &Path) -> Probe {
 
 mod downloader {
     use super::*;
-    use probe_node::depman::resolve::NDMVersionDist;
 
     #[tokio::test]
     async fn sets_path_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let probe = create_probe(fixture.path());
-        let mut tool =
+        let tool =
             NodeDependencyManager::new(&probe, NodeDependencyManagerType::Npm, Some("9.0.0"));
-
-        tool.dist = Some(NDMVersionDist {
-            tarball: "https://registry.npmjs.org/npm/-/npm-9.0.0.tgz".into(),
-            ..NDMVersionDist::default()
-        });
 
         assert_eq!(
             tool.get_download_path().unwrap(),
@@ -34,16 +28,11 @@ mod downloader {
     #[tokio::test]
     async fn downloads_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeDependencyManager::new(
+        let tool = NodeDependencyManager::new(
             &create_probe(fixture.path()),
             NodeDependencyManagerType::Npm,
             Some("9.0.0"),
         );
-
-        tool.dist = Some(NDMVersionDist {
-            tarball: "https://registry.npmjs.org/npm/-/npm-9.0.0.tgz".into(),
-            ..NDMVersionDist::default()
-        });
 
         let to_file = tool.get_download_path().unwrap();
 
@@ -57,16 +46,11 @@ mod downloader {
     #[tokio::test]
     async fn doesnt_download_if_file_exists() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeDependencyManager::new(
+        let tool = NodeDependencyManager::new(
             &create_probe(fixture.path()),
             NodeDependencyManagerType::Npm,
             Some("9.0.0"),
         );
-
-        tool.dist = Some(NDMVersionDist {
-            tarball: "https://registry.npmjs.org/npm/-/npm-9.0.0.tgz".into(),
-            ..NDMVersionDist::default()
-        });
 
         let to_file = tool.get_download_path().unwrap();
 

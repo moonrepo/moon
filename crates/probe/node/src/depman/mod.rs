@@ -1,6 +1,6 @@
 mod download;
 mod install;
-pub mod resolve;
+mod resolve;
 mod verify;
 
 use probe_core::{Describable, Probe, Tool};

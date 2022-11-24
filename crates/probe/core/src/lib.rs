@@ -12,6 +12,7 @@ pub use errors::*;
 pub use installer::*;
 pub use lenient_semver::Version;
 pub use resolver::*;
+use std::fs;
 use std::path::PathBuf;
 pub use verifier::*;
 
@@ -35,8 +36,6 @@ pub trait Tool<'tool>:
     }
 
     async fn setup(&mut self, initial_version: &str) -> Result<(), ProbeError> {
-        self.before_setup().await?;
-
         // Resolve a semantic version
         self.resolve_version(initial_version, None).await?;
 
@@ -56,12 +55,42 @@ pub trait Tool<'tool>:
 
         self.install(&install_dir, &download_path).await?;
 
-        self.after_setup().await?;
+        // Cleanup temp files
+        self.cleanup().await?;
 
         Ok(())
     }
 
     async fn after_setup(&mut self) -> Result<(), ProbeError> {
+        Ok(())
+    }
+
+    async fn cleanup(&mut self) -> Result<(), ProbeError> {
+        let download_path = self.get_download_path()?;
+        let checksum_path = self.get_checksum_path()?;
+
+        if download_path.exists() {
+            let _ = fs::remove_file(download_path);
+        }
+
+        if checksum_path.exists() {
+            let _ = fs::remove_file(checksum_path);
+        }
+
+        Ok(())
+    }
+
+    async fn before_teardown(&mut self) -> Result<(), ProbeError> {
+        Ok(())
+    }
+
+    async fn teardown(&mut self) -> Result<(), ProbeError> {
+        self.cleanup().await?;
+
+        Ok(())
+    }
+
+    async fn after_teardown(&mut self) -> Result<(), ProbeError> {
         Ok(())
     }
 }

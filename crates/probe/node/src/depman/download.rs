@@ -20,7 +20,20 @@ impl Downloadable<'_> for NodeDependencyManager {
             return Ok(false);
         }
 
-        let from_url = from_url.unwrap_or(&self.get_dist().tarball);
+        let from_url = match from_url {
+            Some(url) => url.to_owned(),
+            None => {
+                if self.dist.is_some() {
+                    self.get_dist().tarball.clone()
+                } else {
+                    format!(
+                        "https://registry.npmjs.org/npm/-/{}-{}.tgz",
+                        self.type_of.get_package_name(),
+                        self.get_resolved_version()
+                    )
+                }
+            }
+        };
 
         debug!(target: self.get_log_target(), "Attempting to download from {}", from_url);
 

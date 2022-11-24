@@ -7,7 +7,7 @@ pub enum ProbeError {
     DownloadFailed(String, String),
 
     #[error("File system failure for {0}. {1}")]
-    FileSystem(PathBuf, String),
+    Fs(PathBuf, String),
 
     #[error("HTTP failure for {0}. {1}")]
     Http(String, String),

@@ -31,7 +31,7 @@ pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
 
 pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProbeError> {
     let path = path.as_ref();
-    let handle_error = |e: io::Error| ProbeError::FileSystem(path.to_path_buf(), e.to_string());
+    let handle_error = |e: io::Error| ProbeError::Fs(path.to_path_buf(), e.to_string());
 
     trace!(
         target: "probe:verifier",

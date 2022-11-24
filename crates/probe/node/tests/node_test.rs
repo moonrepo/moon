@@ -1,12 +1,60 @@
 use std::path::Path;
 
-use probe_core::{Probe, Resolvable};
+use probe_core::{Downloadable, Probe, Resolvable};
 use probe_node::NodeLanguage;
 
 fn create_probe(dir: &Path) -> Probe {
     Probe {
         temp_dir: dir.join("temp"),
         tools_dir: dir.join("tools"),
+    }
+}
+
+mod downloader {
+    use super::*;
+    use probe_node::download::get_archive_file;
+
+    #[tokio::test]
+    async fn sets_path_to_temp() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let probe = create_probe(fixture.path());
+        let mut tool = NodeLanguage::new(&probe);
+        tool.version = "18.0.0".into();
+
+        assert_eq!(
+            tool.get_download_path().unwrap(),
+            probe
+                .temp_dir
+                .join("node")
+                .join(get_archive_file("18.0.0").unwrap())
+        );
+    }
+
+    #[tokio::test]
+    async fn downloads_to_temp() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let mut tool = NodeLanguage::new(&create_probe(fixture.path()));
+        tool.version = "18.0.0".into();
+
+        let to_file = tool.get_download_path().unwrap();
+
+        assert!(!to_file.exists());
+
+        tool.download(&to_file, None).await.unwrap();
+
+        assert!(to_file.exists());
+    }
+
+    #[tokio::test]
+    async fn doesnt_download_if_file_exists() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let mut tool = NodeLanguage::new(&create_probe(fixture.path()));
+        tool.version = "18.0.0".into();
+
+        let to_file = tool.get_download_path().unwrap();
+
+        assert!(tool.download(&to_file, None).await.unwrap());
+        assert!(!tool.download(&to_file, None).await.unwrap());
     }
 }
 

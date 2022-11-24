@@ -69,11 +69,11 @@ impl Downloadable<'_> for NodeLanguage {
             .join(get_archive_file(self.get_resolved_version())?))
     }
 
-    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<(), ProbeError> {
+    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProbeError> {
         if to_file.exists() {
             debug!(target: "probe:node:download", "Already downloaded, continuing");
 
-            return Ok(());
+            return Ok(false);
         }
 
         let version = self.get_resolved_version();
@@ -94,6 +94,6 @@ impl Downloadable<'_> for NodeLanguage {
 
         debug!(target: "probe:node:download", "Successfully downloaded");
 
-        Ok(())
+        Ok(true)
     }
 }

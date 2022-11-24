@@ -17,7 +17,7 @@ pub trait Downloadable<'tool>: Send + Sync + Resolvable<'tool> {
     /// into the ~/.probe/temp folder and return an absolute file path.
     /// A custom URL that points to the downloadable archive can be
     /// provided as the 2nd argument.
-    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<(), ProbeError>;
+    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProbeError>;
 }
 
 pub async fn download_from_url<U, F>(url: U, dest_file: F) -> Result<(), ProbeError>
@@ -27,8 +27,7 @@ where
 {
     let url = url.as_ref();
     let dest_file = dest_file.as_ref();
-    let handle_io_error =
-        |e: io::Error| ProbeError::FileSystem(dest_file.to_path_buf(), e.to_string());
+    let handle_io_error = |e: io::Error| ProbeError::Fs(dest_file.to_path_buf(), e.to_string());
     let handle_http_error = |e: reqwest::Error| ProbeError::Http(url.to_owned(), e.to_string());
 
     trace!(

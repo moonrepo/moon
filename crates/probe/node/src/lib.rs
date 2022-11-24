@@ -1,5 +1,5 @@
 // mod depman;
-mod download;
+pub mod download;
 mod install;
 mod platform;
 mod resolve;

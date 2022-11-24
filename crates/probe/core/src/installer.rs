@@ -25,10 +25,9 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 ) -> Result<(), ProbeError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
-    let handle_input_error =
-        |e: io::Error| ProbeError::FileSystem(input_file.to_path_buf(), e.to_string());
+    let handle_input_error = |e: io::Error| ProbeError::Fs(input_file.to_path_buf(), e.to_string());
     let handle_output_error =
-        |e: io::Error| ProbeError::FileSystem(output_dir.to_path_buf(), e.to_string());
+        |e: io::Error| ProbeError::Fs(output_dir.to_path_buf(), e.to_string());
 
     trace!(
         target: "probe:installer",
@@ -66,12 +65,12 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
         // Create parent dirs
         if let Some(parent_dir) = output_path.parent() {
             fs::create_dir_all(parent_dir)
-                .map_err(|e| ProbeError::FileSystem(parent_dir.to_path_buf(), e.to_string()))?;
+                .map_err(|e| ProbeError::Fs(parent_dir.to_path_buf(), e.to_string()))?;
         }
 
         entry
             .unpack(&output_path)
-            .map_err(|e| ProbeError::FileSystem(output_path.to_path_buf(), e.to_string()))?;
+            .map_err(|e| ProbeError::Fs(output_path.to_path_buf(), e.to_string()))?;
     }
 
     Ok(())
@@ -84,10 +83,9 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 ) -> Result<(), ProbeError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
-    let handle_input_error =
-        |e: io::Error| ProbeError::FileSystem(input_file.to_path_buf(), e.to_string());
+    let handle_input_error = |e: io::Error| ProbeError::Fs(input_file.to_path_buf(), e.to_string());
     let handle_output_error =
-        |e: io::Error| ProbeError::FileSystem(output_dir.to_path_buf(), e.to_string());
+        |e: io::Error| ProbeError::Fs(output_dir.to_path_buf(), e.to_string());
 
     trace!(
         target: "probe:installer",
@@ -122,13 +120,12 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         }
 
         let output_path = output_dir.join(&path);
-        let handle_error =
-            |e: io::Error| ProbeError::FileSystem(output_path.to_path_buf(), e.to_string());
+        let handle_error = |e: io::Error| ProbeError::Fs(output_path.to_path_buf(), e.to_string());
 
         // Create parent dirs
         if let Some(parent_dir) = &output_path.parent() {
             fs::create_dir_all(parent_dir)
-                .map_err(|e| ProbeError::FileSystem(parent_dir.to_path_buf(), e.to_string()))?;
+                .map_err(|e| ProbeError::Fs(parent_dir.to_path_buf(), e.to_string()))?;
         }
 
         // If a folder, create the dir

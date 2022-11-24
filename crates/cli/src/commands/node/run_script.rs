@@ -8,7 +8,7 @@ pub async fn run_script(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let node = workspace.toolchain.node.get()?;
-    let mut command = node.get_package_manager().create_command(node);
+    let mut command = node.get_package_manager().create_command(node)?;
 
     command.arg("run").arg(name);
 

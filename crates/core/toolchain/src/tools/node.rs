@@ -125,8 +125,8 @@ impl NodeTool {
 
 #[async_trait]
 impl RuntimeTool for NodeTool {
-    fn get_bin_path(&self) -> &Path {
-        self.tool.get_bin_path()
+    fn get_bin_path(&self) -> Result<&Path, ToolchainError> {
+        Ok(self.tool.get_bin_path()?)
     }
 
     fn get_version(&self) -> &str {

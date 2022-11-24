@@ -24,12 +24,12 @@ async fn downloads_verifies_installs_tool() {
 
     if cfg!(windows) {
         assert_eq!(
-            tool.get_bin_path(),
+            tool.get_bin_path().unwrap(),
             &probe.tools_dir.join("node/18.0.0/node.exe")
         );
     } else {
         assert_eq!(
-            tool.get_bin_path(),
+            tool.get_bin_path().unwrap(),
             &probe.tools_dir.join("node/18.0.0/bin/node")
         );
     }

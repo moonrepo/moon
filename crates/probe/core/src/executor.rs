@@ -1,6 +1,5 @@
-use std::path::PathBuf;
-
 use crate::errors::ProbeError;
+use std::path::Path;
 
 #[async_trait::async_trait]
 pub trait Executable<'tool>: Send + Sync {
@@ -11,5 +10,5 @@ pub trait Executable<'tool>: Send + Sync {
     }
 
     /// Returns an absolute file path to the executable binary for the tool.
-    fn get_bin_path(&self) -> &PathBuf;
+    fn get_bin_path(&self) -> Result<&Path, ProbeError>;
 }

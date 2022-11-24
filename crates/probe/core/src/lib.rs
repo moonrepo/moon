@@ -78,7 +78,7 @@ pub trait Tool<'tool>:
         let install_dir = self.get_install_dir()?;
 
         if install_dir.exists() {
-            return Ok(self.get_bin_path().exists());
+            return Ok(self.get_bin_path()?.exists());
         }
 
         Ok(false)

@@ -37,8 +37,8 @@ impl PnpmTool {
 
 #[async_trait]
 impl RuntimeTool for PnpmTool {
-    fn get_bin_path(&self) -> &Path {
-        self.tool.get_bin_path()
+    fn get_bin_path(&self) -> Result<&Path, ToolchainError> {
+        Ok(self.tool.get_bin_path()?)
     }
 
     fn get_version(&self) -> &str {
@@ -64,13 +64,14 @@ impl RuntimeTool for PnpmTool {
 
 #[async_trait]
 impl DependencyManager<NodeTool> for PnpmTool {
-    fn create_command(&self, node: &NodeTool) -> Command {
-        let bin_path = self.get_bin_path();
+    fn create_command(&self, node: &NodeTool) -> Result<Command, ToolchainError> {
+        let bin_path = self.get_bin_path()?;
 
-        let mut cmd = Command::new(node.get_bin_path());
+        let mut cmd = Command::new(node.get_bin_path()?);
         cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
         cmd.arg(bin_path);
-        cmd
+
+        Ok(cmd)
     }
 
     async fn dedupe_dependencies(
@@ -127,7 +128,7 @@ impl DependencyManager<NodeTool> for PnpmTool {
             }
         }
 
-        let mut cmd = self.create_command(node);
+        let mut cmd = self.create_command(node)?;
 
         cmd.args(args).cwd(working_dir).log_running_command(log);
 
@@ -146,7 +147,7 @@ impl DependencyManager<NodeTool> for PnpmTool {
         packages: &[String],
         production_only: bool,
     ) -> Result<(), ToolchainError> {
-        let mut cmd = self.create_command(node);
+        let mut cmd = self.create_command(node)?;
         cmd.arg("install");
 
         if production_only {

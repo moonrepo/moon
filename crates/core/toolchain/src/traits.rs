@@ -7,7 +7,7 @@ use std::path::Path;
 #[async_trait]
 pub trait RuntimeTool: Send + Sync {
     /// Return an absolute path to the tool's binary.
-    fn get_bin_path(&self) -> &Path;
+    fn get_bin_path(&self) -> Result<&Path, ToolchainError>;
 
     /// Return the resolved version of the current tool.
     fn get_version(&self) -> &str;
@@ -27,7 +27,7 @@ pub trait RuntimeTool: Send + Sync {
 #[async_trait]
 pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
     /// Create a command to run that wraps the binary.
-    fn create_command(&self, parent: &T) -> Command;
+    fn create_command(&self, parent: &T) -> Result<Command, ToolchainError>;
 
     /// Dedupe dependencies after they have been installed.
     async fn dedupe_dependencies(

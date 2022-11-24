@@ -251,6 +251,7 @@ mod cache_tool_state {
         assert_eq!(
             item,
             ToolState {
+                last_version: "".into(),
                 last_version_check_time: 123,
                 path: dir.path().join(".moon/cache/states/toolNode-1.2.3.json")
             }
@@ -277,6 +278,7 @@ mod cache_tool_state {
         assert_eq!(
             item,
             ToolState {
+                last_version: "".into(),
                 last_version_check_time: 123,
                 path: dir.path().join(".moon/cache/states/toolNode-4.5.6.json")
             }

@@ -8,6 +8,7 @@ use probe_core::{Describable, Probe, Tool};
 use resolve::NDMVersionDist;
 use std::path::PathBuf;
 
+#[derive(Debug)]
 pub enum NodeDependencyManagerType {
     Npm,
     Pnpm,
@@ -24,6 +25,7 @@ impl NodeDependencyManagerType {
     }
 }
 
+#[derive(Debug)]
 pub struct NodeDependencyManager {
     pub bin_path: Option<PathBuf>,
     pub dist: Option<NDMVersionDist>,

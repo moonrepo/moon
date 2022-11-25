@@ -8,7 +8,7 @@ use moon_node_lang::{PackageJson, NODE, NPM};
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner_context::RunnerContext;
-use moon_terminal::{label_checkpoint, Checkpoint};
+use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_toolchain::tools::node::NodeTool;
 use moon_utils::{fs, is_ci, is_offline, time};
 use moon_workspace::{Workspace, WorkspaceError};
@@ -198,7 +198,7 @@ pub async fn install_deps(
                 NodePackageManager::Yarn => "yarn install",
             };
 
-            println!("{}", label_checkpoint(install_command, Checkpoint::Pass));
+            print_checkpoint(install_command, Checkpoint::Setup);
 
             pm.install_dependencies(node, &working_dir, should_log_command)
                 .await?;
@@ -215,7 +215,7 @@ pub async fn install_deps(
             if let Some(dedupe_command) = dedupe_command {
                 debug!(target: LOG_TARGET, "Deduping dependencies");
 
-                println!("{}", label_checkpoint(dedupe_command, Checkpoint::Pass));
+                print_checkpoint(dedupe_command, Checkpoint::Setup);
 
                 pm.dedupe_dependencies(node, &working_dir, should_log_command)
                     .await?;

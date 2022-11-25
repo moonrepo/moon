@@ -10,6 +10,11 @@
   options.
 - Added Google Cloud Build and AWS CodeBuild to the list of CI providers to detect. results.
 
+##### Toolchain
+
+- Implemented a new toolchain, that is more efficient and performant.
+- Will now long to the terminal when node, npm, etc, are being installed for the first time.
+
 ##### Runner
 
 - Updated the terminal output to include a shortened version of each task hash.

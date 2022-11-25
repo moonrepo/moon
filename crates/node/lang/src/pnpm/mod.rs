@@ -31,9 +31,6 @@ pub struct PnpmLockPackage {
     pub requires_build: Option<bool>,
     pub transitive_peer_dependencies: Option<Vec<String>>,
     pub resolution: PnpmLockResolution,
-
-    #[serde(flatten)]
-    pub unknown: FxHashMap<String, Value>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -49,8 +46,7 @@ pub struct PnpmLock {
     pub lockfile_version: Value,
     pub importers: FxHashMap<String, Value>,
     pub packages: FxHashMap<String, PnpmLockPackage>,
-    #[serde(flatten)]
-    pub unknown: FxHashMap<String, Value>,
+
     #[serde(skip)]
     pub path: PathBuf,
 }

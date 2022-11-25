@@ -3,7 +3,7 @@ use clean_path::Clean;
 use probe_core::{async_trait, Describable, Executable, Installable, ProbeError};
 use serde_json::Value;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn extract_bin_from_package_json(
     package_path: PathBuf,
@@ -61,9 +61,10 @@ impl Executable<'_> for NodeDependencyManager {
         ));
     }
 
-    fn get_bin_path(&self) -> &PathBuf {
-        self.bin_path
-            .as_ref()
-            .expect("Missing Node.js dependency manager bin path.")
+    fn get_bin_path(&self) -> Result<&Path, ProbeError> {
+        match self.bin_path.as_ref() {
+            Some(bin) => Ok(bin),
+            None => Err(ProbeError::MissingTool(self.get_name())),
+        }
     }
 }

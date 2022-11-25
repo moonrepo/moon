@@ -1,6 +1,6 @@
 use crate::NodeLanguage;
 use probe_core::{async_trait, Describable, Executable, Installable, ProbeError};
-use std::path::PathBuf;
+use std::path::Path;
 
 #[cfg(target_os = "windows")]
 pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
@@ -26,7 +26,10 @@ impl Executable<'_> for NodeLanguage {
         Ok(())
     }
 
-    fn get_bin_path(&self) -> &PathBuf {
-        self.bin_path.as_ref().expect("Missing Node.js bin path.")
+    fn get_bin_path(&self) -> Result<&Path, ProbeError> {
+        match self.bin_path.as_ref() {
+            Some(bin) => Ok(bin),
+            None => Err(ProbeError::MissingTool(self.get_name())),
+        }
     }
 }

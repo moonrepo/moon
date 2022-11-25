@@ -10,6 +10,7 @@ pub use depman::*;
 use probe_core::{Describable, Probe, Tool};
 use std::path::PathBuf;
 
+#[derive(Debug)]
 pub struct NodeLanguage {
     pub bin_path: Option<PathBuf>,
     pub install_dir: PathBuf,

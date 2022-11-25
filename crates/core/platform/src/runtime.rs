@@ -1,12 +1,18 @@
 use serde::Serialize;
 use std::fmt::{self, Debug};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct Version(pub String, pub bool);
 
 impl Version {
     pub fn is_override(&self) -> bool {
         self.1
+    }
+}
+
+impl Default for Version {
+    fn default() -> Self {
+        Version("latest".into(), false)
     }
 }
 

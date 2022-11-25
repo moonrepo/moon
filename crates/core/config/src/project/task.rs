@@ -8,7 +8,7 @@ use moon_utils::regex::{ENV_VAR, NODE_COMMAND, UNIX_SYSTEM_COMMAND, WINDOWS_SYST
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use strum::Display;
+use strum::{Display, EnumIter};
 use validator::{Validate, ValidationError};
 
 // These structs utilize optional fields so that we can handle merging effectively,
@@ -48,7 +48,17 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 }
 
 #[derive(
-    Clone, Debug, Default, Deserialize, Display, Eq, Hash, JsonSchema, PartialEq, Serialize,
+    Clone,
+    Debug,
+    Default,
+    Deserialize,
+    Display,
+    Eq,
+    EnumIter,
+    Hash,
+    JsonSchema,
+    PartialEq,
+    Serialize,
 )]
 #[serde(rename_all = "lowercase")]
 pub enum PlatformType {

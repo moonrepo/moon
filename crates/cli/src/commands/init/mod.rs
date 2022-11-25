@@ -5,8 +5,14 @@ use crate::helpers::AnyError;
 use clap::ValueEnum;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
-use moon_config::{load_global_project_config_template, load_workspace_config_template};
-use moon_constants::{CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_config::{
+    load_global_project_config_template, load_toolchain_config_template,
+    load_workspace_config_template,
+};
+use moon_constants::{
+    CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_TOOLCHAIN_FILENAME,
+    CONFIG_WORKSPACE_FILENAME,
+};
 use moon_logger::color;
 use moon_node_lang::NPM;
 use moon_terminal::{create_theme, safe_exit};
@@ -28,7 +34,11 @@ pub enum InitTool {
     TypeScript,
 }
 
-fn render_template(context: &Context) -> Result<String, Error> {
+fn render_toolchain_template(context: &Context) -> Result<String, Error> {
+    Tera::one_off(load_toolchain_config_template(), context, false)
+}
+
+fn render_workspace_template(context: &Context) -> Result<String, Error> {
     Tera::one_off(load_workspace_config_template(), context, false)
 }
 
@@ -148,7 +158,7 @@ pub async fn init(
     context.insert("vcs_default_branch", &vcs.1);
 
     // Initialize all tools
-    let mut workspace_config = VecDeque::new();
+    let mut toolchain_configs = VecDeque::new();
 
     if options.yes
         || dest_dir.join(NPM.manifest_filename).exists()
@@ -156,7 +166,7 @@ pub async fn init(
             .with_prompt("Initialize Node.js?")
             .interact()?
     {
-        workspace_config
+        toolchain_configs
             .push_back(init_node(&dest_dir, &options, &theme, Some(&mut context)).await?);
 
         if options.yes
@@ -165,20 +175,26 @@ pub async fn init(
                 .with_prompt("Initialize TypeScript?")
                 .interact()?
         {
-            workspace_config.push_back(init_typescript(&dest_dir, &options, &theme).await?);
+            toolchain_configs.push_back(init_typescript(&dest_dir, &options, &theme).await?);
         }
     }
 
-    workspace_config.push_front(render_template(&context)?);
+    toolchain_configs.push_front(render_toolchain_template(&context)?);
 
     // Create config files
     fs::write(
-        &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
-        workspace_config
+        &moon_dir.join(CONFIG_TOOLCHAIN_FILENAME),
+        toolchain_configs
             .into_iter()
             .map(|c| c.trim().to_owned())
             .collect::<Vec<String>>()
             .join("\n\n"),
+    )
+    .await?;
+
+    fs::write(
+        &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
+        render_workspace_template(&context)?,
     )
     .await?;
 

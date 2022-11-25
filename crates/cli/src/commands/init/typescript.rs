@@ -2,14 +2,14 @@ use super::InitOptions;
 use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
-use moon_config::load_workspace_typescript_config_template;
+use moon_config::load_toolchain_typescript_config_template;
 use moon_terminal::label_header;
 use moon_typescript_lang::TsConfigJson;
 use std::path::Path;
 use tera::{Context, Error, Tera};
 
 fn render_template(context: Context) -> Result<String, Error> {
-    Tera::one_off(load_workspace_typescript_config_template(), &context, false)
+    Tera::one_off(load_toolchain_typescript_config_template(), &context, false)
 }
 
 pub async fn init_typescript(

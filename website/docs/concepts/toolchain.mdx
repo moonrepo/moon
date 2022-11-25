@@ -3,9 +3,9 @@ title: Toolchain
 ---
 
 The toolchain is an internal layer for downloading, installing, and managing tools (languages,
-libraries, and binaries) that are required at runtime. We embrace this approach over relying on
-these tools "existing" in the current environment, as it ensures the following across any
-environment or machine:
+dependency managers, libraries, and binaries) that are required at runtime. We embrace this approach
+over relying on these tools "existing" in the current environment, as it ensures the following
+across any environment or machine:
 
 - The version and enabled features of a tool are identical.
 - Tools are isolated and unaffected by external sources.
@@ -55,7 +55,7 @@ The `npm` binary comes pre-installed with Node.js, and will _always exist_, rega
 [`node.packageManager`](../config/workspace#packagemanager) setting.
 
 - Configured with: [`node.npm`](../config/workspace#npm-pnpm-yarn)
-- Installed to: `~/.moon/tools/node/x.x.x/bin/npm` (and `npx`)
+- Installed to: `~/.moon/tools/npm/x.x.x`
 
 #### pnpm
 
@@ -64,7 +64,7 @@ be enabled when [`node.packageManager`](../config/workspace#packagemanager) is s
 binary will be installed as a toolchain global npm dependency.
 
 - Configured with: [`node.pnpm`](../config/workspace#npm-pnpm-yarn)
-- Installed to: `~/.moon/tools/node/x.x.x/bin/pnpm`
+- Installed to: `~/.moon/tools/pnpm/x.x.x`
 
 #### yarn
 
@@ -73,6 +73,6 @@ will be enabled when [`node.packageManager`](../config/workspace#packagemanager)
 The binary will be installed as a toolchain global npm dependency.
 
 - Configured with: [`node.yarn`](../config/workspace#npm-pnpm-yarn)
-- Installed to: `~/.moon/tools/node/x.x.x/bin/yarn`
+- Installed to: `~/.moon/tools/yarn/x.x.x`
 
 > Supports v1 and v2/v3 (only `node-modules` linker mode currently).

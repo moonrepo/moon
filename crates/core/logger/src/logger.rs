@@ -23,7 +23,9 @@ impl Logger {
         }
 
         let mut dispatcher = Dispatch::new()
-            .filter(|metadata| metadata.target().starts_with("moon"))
+            .filter(|metadata| {
+                metadata.target().starts_with("moon") || metadata.target().starts_with("probe")
+            })
             .level(level)
             // Terminal logger
             .chain(

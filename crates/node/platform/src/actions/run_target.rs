@@ -9,7 +9,7 @@ use moon_node_lang::{
 use moon_project::Project;
 use moon_runner_context::{ProfileType, RunnerContext};
 use moon_task::Task;
-use moon_toolchain::{get_path_env_var, Executable};
+use moon_toolchain::{get_path_env_var, RuntimeTool};
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
@@ -101,7 +101,7 @@ pub async fn create_target_command(
         }
     }
 
-    let mut cmd = node.get_bin_path().clone();
+    let mut cmd = node.get_bin_path()?.to_owned();
     let mut args = vec![];
 
     match task.command.as_str() {
@@ -109,13 +109,13 @@ pub async fn create_target_command(
             args.extend(create_node_options(context, workspace, task)?);
         }
         "npm" => {
-            args.push(path::to_string(node.get_npm()?.get_bin_path().clone())?);
+            args.push(path::to_string(node.get_npm()?.get_bin_path()?)?);
         }
         "pnpm" => {
-            args.push(path::to_string(node.get_pnpm()?.get_bin_path().clone())?);
+            args.push(path::to_string(node.get_pnpm()?.get_bin_path()?)?);
         }
         "yarn" => {
-            args.push(path::to_string(node.get_yarn()?.get_bin_path().clone())?);
+            args.push(path::to_string(node.get_yarn()?.get_bin_path()?)?);
         }
         bin => {
             match node.find_package_bin(&project.root, bin)? {
@@ -139,7 +139,7 @@ pub async fn create_target_command(
 
     command.args(&args).args(&task.args).envs(&task.env).env(
         "PATH",
-        get_path_env_var(node.get_bin_path().parent().unwrap()),
+        get_path_env_var(node.get_bin_path()?.parent().unwrap()),
     );
 
     // This functionality mimics what pnpm's "node_modules/.bin" binaries do

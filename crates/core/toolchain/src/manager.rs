@@ -1,14 +1,15 @@
-use crate::{Tool, ToolchainError};
+use crate::{RuntimeTool, ToolchainError};
 use moon_platform::{Runtime, Version};
 use rustc_hash::FxHashMap;
+use std::fmt::Debug;
 
 #[derive(Debug)]
-pub struct ToolManager<T: Tool> {
+pub struct ToolManager<T: RuntimeTool + Debug> {
     cache: FxHashMap<String, T>,
     runtime: Runtime, // Default workspace version
 }
 
-impl<T: Tool> ToolManager<T> {
+impl<T: RuntimeTool + Debug> ToolManager<T> {
     pub fn new(runtime: Runtime) -> Self {
         ToolManager {
             cache: FxHashMap::default(),
@@ -23,7 +24,7 @@ impl<T: Tool> ToolManager<T> {
     pub fn get_for_runtime(&self, runtime: &Runtime) -> Result<&T, ToolchainError> {
         match &runtime {
             Runtime::Node(version) => self.get_for_version(&version.0),
-            _ => panic!("Unsupported toolchain runtime."),
+            _ => Err(ToolchainError::UnsupportedRuntime(runtime.to_owned())),
         }
     }
 
@@ -49,7 +50,7 @@ impl<T: Tool> ToolManager<T> {
             #[allow(clippy::single_match)]
             match &mut self.runtime {
                 Runtime::Node(ref mut version) => {
-                    *version = Version(tool.get_version(), false);
+                    *version = Version(tool.get_version().to_owned(), false);
                 }
                 _ => {
                     // Ignore
@@ -57,23 +58,23 @@ impl<T: Tool> ToolManager<T> {
             };
         }
 
-        self.cache.insert(tool.get_version(), tool);
+        self.cache.insert(tool.get_version().to_owned(), tool);
     }
 
     pub async fn setup(
         &mut self,
         version: &str,
-        check_versions: bool,
+        last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolchainError> {
         match self.cache.get_mut(version) {
-            Some(cache) => cache.run_setup(check_versions).await,
+            Some(cache) => cache.setup(last_versions).await,
             None => Err(ToolchainError::MissingTool(self.runtime.to_string())),
         }
     }
 
     pub async fn teardown(&mut self, version: &str) -> Result<(), ToolchainError> {
         if let Some(mut tool) = self.cache.remove(version) {
-            tool.run_teardown().await?;
+            tool.teardown().await?;
         }
 
         Ok(())
@@ -81,7 +82,7 @@ impl<T: Tool> ToolManager<T> {
 
     pub async fn teardown_all(&mut self) -> Result<(), ToolchainError> {
         for (_, mut tool) in self.cache.drain() {
-            tool.run_teardown().await?;
+            tool.teardown().await?;
         }
 
         Ok(())

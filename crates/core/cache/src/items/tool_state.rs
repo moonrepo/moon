@@ -3,12 +3,15 @@ use crate::helpers::{is_readable, is_writable};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_utils::{fs, json, time};
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ToolState {
+    pub last_versions: FxHashMap<String, String>,
+
     pub last_version_check_time: u128,
 
     #[serde(skip)]

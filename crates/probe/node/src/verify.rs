@@ -22,7 +22,7 @@ impl Verifiable<'_> for NodeLanguage {
         from_url: Option<&str>,
     ) -> Result<bool, ProbeError> {
         if to_file.exists() {
-            debug!(target: self.get_log_target(), "Already downloaded checksum, continuing");
+            debug!(target: self.get_log_target(), "Checksum already downloaded, continuing");
 
             return Ok(false);
         }
@@ -33,11 +33,11 @@ impl Verifiable<'_> for NodeLanguage {
             None => format!("https://nodejs.org/dist/v{}/SHASUMS256.txt", version),
         };
 
-        debug!(target: self.get_log_target(), "Attempting to download from {}", from_url);
+        debug!(target: self.get_log_target(), "Attempting to download checksum from {}", from_url);
 
         download_from_url(&from_url, &to_file).await?;
 
-        debug!(target: self.get_log_target(), "Successfully downloaded");
+        debug!(target: self.get_log_target(), "Successfully downloaded checksum");
 
         Ok(true)
     }

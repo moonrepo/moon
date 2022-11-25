@@ -2,6 +2,7 @@ mod errors;
 mod helpers;
 mod project;
 mod template;
+mod toolchain;
 mod types;
 mod validators;
 mod workspace;
@@ -11,6 +12,7 @@ pub use errors::{
 };
 pub use project::*;
 pub use template::*;
+pub use toolchain::*;
 pub use types::*;
 pub use validator::ValidationErrors;
 pub use workspace::*;

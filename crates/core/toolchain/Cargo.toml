@@ -11,6 +11,7 @@ moon_lang = { path = "../lang" }
 moon_logger = { path = "../logger" }
 moon_node_lang = { path = "../../node/lang" }
 moon_platform = { path = "../platform" }
+moon_terminal = { path = "../terminal" }
 moon_utils = { path = "../utils" }
 probe_core = { path = "../../probe/core" }
 probe_node = { path = "../../probe/node" }

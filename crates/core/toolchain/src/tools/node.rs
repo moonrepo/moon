@@ -6,6 +6,7 @@ use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_logger::debug;
 use moon_node_lang::node;
+use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::process::Command;
 use probe_core::{async_trait, Describable, Executable, Installable, Probe, Resolvable, Tool};
 use probe_node::NodeLanguage;
@@ -149,9 +150,16 @@ impl RuntimeTool for NodeTool {
                 None => true,
             };
 
-            if setup && self.tool.setup(&self.config.version).await? {
-                last_versions.insert("node".into(), self.config.version.clone());
-                installed += 1;
+            if setup {
+                print_checkpoint(
+                    format!("installing node v{}", self.config.version),
+                    Checkpoint::Setup,
+                );
+
+                if self.tool.setup(&self.config.version).await? {
+                    last_versions.insert("node".into(), self.config.version.clone());
+                    installed += 1;
+                }
             }
         }
 

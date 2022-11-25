@@ -5,6 +5,7 @@ use moon_utils::is_test_env;
 
 pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     let done = create_progress_bar("Downloading and installing tools...");
+
     let workspace = load_workspace().await?;
     let mut dep_graph = DepGraph::default();
 
@@ -18,8 +19,7 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let mut runner = Runner::new(workspace);
-    runner.run(dep_graph, None).await?;
+    Runner::new(workspace).run(dep_graph, None).await?;
 
     done("Setup complete", true);
 

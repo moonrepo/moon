@@ -5,6 +5,7 @@ use moon_config::PnpmConfig;
 use moon_lang::LockfileDependencyVersions;
 use moon_logger::debug;
 use moon_node_lang::{pnpm, PNPM};
+use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
 use probe_core::{async_trait, Describable, Executable, Probe, Resolvable, Tool};
@@ -63,6 +64,11 @@ impl RuntimeTool for PnpmTool {
                 return Ok(count);
             }
         }
+
+        print_checkpoint(
+            format!("installing pnpm v{}", self.config.version),
+            Checkpoint::Setup,
+        );
 
         if self.tool.setup(&self.config.version).await? {
             last_versions.insert("pnpm".into(), self.config.version.clone());

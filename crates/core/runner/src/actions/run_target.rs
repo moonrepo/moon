@@ -473,7 +473,7 @@ impl<'a> TargetRunner<'a> {
             let mut attempt = Attempt::new(attempt_index);
 
             self.print_target_label(
-                Checkpoint::Start,
+                Checkpoint::RunStart,
                 // NOTE: Old streaming output format. Revisit or remove?
                 // Mark primary streamed output as passed, since it may stay open forever,
                 // or it may use ANSI escape codes to alter the terminal!
@@ -712,9 +712,9 @@ impl<'a> TargetRunner<'a> {
     ) -> Result<(), MoonError> {
         self.print_target_label(
             if output.status.success() {
-                Checkpoint::Pass
+                Checkpoint::RunPassed
             } else {
-                Checkpoint::Fail
+                Checkpoint::RunFailed
             },
             attempt,
             attempt_total,
@@ -740,9 +740,9 @@ impl<'a> TargetRunner<'a> {
     ) -> Result<(), MoonError> {
         self.print_target_label(
             if output.status.success() {
-                Checkpoint::Pass
+                Checkpoint::RunPassed
             } else {
-                Checkpoint::Fail
+                Checkpoint::RunFailed
             },
             attempt,
             attempt_total,
@@ -800,7 +800,7 @@ pub async fn run_target(
             color::id(&task.target),
         );
 
-        runner.print_checkpoint(Checkpoint::Pass, &["no op"])?;
+        runner.print_checkpoint(Checkpoint::RunPassed, &["no op"])?;
         runner.flush_output()?;
 
         return Ok(ActionStatus::Passed);
@@ -855,7 +855,7 @@ pub async fn run_target(
             }
 
             runner.print_checkpoint(
-                Checkpoint::Pass,
+                Checkpoint::RunPassed,
                 &[
                     match cache_location {
                         HydrateFrom::LocalCache => "cached",

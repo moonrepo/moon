@@ -10,6 +10,19 @@ TODO
 
 <!--truncate-->
 
+## Toolchain next steps
+
+We're really proud of our toolchain, as it avoids an array problems that developers deal with on a
+day to day basis, primarily around running tasks using the wrong version of Node.js or their chosen
+package manager. While we're in the process of supporting additional languages, starting with Deno,
+we had an idea... Since this is basically a better "version manager for tools", why not extract this
+out into something else?
+
+And that's what we plan to do! Before we do so, we've had to make some architectural changes, many
+of which have landed in this release. During this process, we were able to implement an even better
+toolchain, polish many of the edge cases, and improve performance! Stay tuned for more information
+on this new tool!
+
 ## Increased output hydration by 8-10x
 
 In moon, hydration is the concept of unpacking an existing hashed artifact into a

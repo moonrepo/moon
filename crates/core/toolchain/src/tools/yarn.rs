@@ -5,6 +5,7 @@ use moon_config::YarnConfig;
 use moon_lang::LockfileDependencyVersions;
 use moon_logger::{color, debug};
 use moon_node_lang::{yarn, YARN};
+use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::process::Command;
 use moon_utils::{fs, get_workspace_root, is_ci};
 use probe_core::{async_trait, Describable, Executable, Probe, Resolvable, Tool};
@@ -101,6 +102,11 @@ impl RuntimeTool for YarnTool {
                 return Ok(count);
             }
         }
+
+        print_checkpoint(
+            format!("installing yarn v{}", self.config.version),
+            Checkpoint::Setup,
+        );
 
         if self.tool.setup(&self.config.version).await? {
             last_versions.insert("yarn".into(), self.config.version.clone());

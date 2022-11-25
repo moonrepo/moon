@@ -2245,6 +2245,7 @@ dependencies = [
  "moon_logger",
  "moon_node_lang",
  "moon_platform",
+ "moon_terminal",
  "moon_utils",
  "probe_core",
  "probe_node",

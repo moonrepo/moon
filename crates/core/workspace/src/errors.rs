@@ -24,6 +24,13 @@ pub enum WorkspaceError {
     #[error(
         "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
         constants::CONFIG_DIRNAME,
+        constants::CONFIG_TOOLCHAIN_FILENAME
+    )]
+    InvalidToolchainConfigFile(String),
+
+    #[error(
+        "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
+        constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     InvalidWorkspaceConfigFile(String),

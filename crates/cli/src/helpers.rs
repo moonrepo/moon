@@ -22,7 +22,7 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
         .projects
         .register_platform(Box::new(SystemPlatform::default()))?;
 
-    if workspace.config.node.is_some() {
+    if workspace.toolchain.config.node.is_some() {
         workspace
             .projects
             .register_platform(Box::new(NodePlatform::default()))?;
@@ -43,7 +43,7 @@ pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError
     for platform in PlatformType::iter() {
         match platform {
             PlatformType::Node => {
-                if let Some(node_config) = &workspace.config.node {
+                if let Some(node_config) = &workspace.toolchain.config.node {
                     workspace
                         .toolchain
                         .node

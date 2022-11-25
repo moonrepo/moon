@@ -29,7 +29,7 @@ fn create_node_options(
         &task.target.id,
     ];
 
-    if let Some(node_config) = &workspace.config.node {
+    if let Some(node_config) = &workspace.toolchain.config.node {
         if !node_config.bin_exec_args.is_empty() {
             options.extend(node_config.bin_exec_args.to_owned());
         }
@@ -185,7 +185,7 @@ pub async fn create_target_hasher(
         hasher.hash_package_json(&package, &resolved_dependencies);
     }
 
-    if let Some(typescript_config) = &workspace.config.typescript {
+    if let Some(typescript_config) = &workspace.toolchain.config.typescript {
         if let Some(root_tsconfig) =
             TsConfigJson::read_with_name(&workspace.root, &typescript_config.root_config_file_name)?
         {

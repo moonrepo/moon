@@ -80,11 +80,11 @@ impl DepGraph {
             if is_match {
                 project_runtime = platform.get_runtime_from_config(
                     Some(&project.config),
-                    &project_graph.workspace_config,
+                    &project_graph.toolchain_config,
                 );
 
                 workspace_runtime =
-                    platform.get_runtime_from_config(None, &project_graph.workspace_config);
+                    platform.get_runtime_from_config(None, &project_graph.toolchain_config);
 
                 break;
             }
@@ -117,7 +117,7 @@ impl DepGraph {
                 &project.id,
                 &project.root,
                 &project_graph.workspace_root,
-                &project_graph.workspace_config,
+                &project_graph.toolchain_config,
             )? {
                 installs_in_project = true;
             }

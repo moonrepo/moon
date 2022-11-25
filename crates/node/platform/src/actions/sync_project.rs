@@ -155,7 +155,7 @@ pub async fn sync_project(
             }
         }
 
-        if let Some(typescript_config) = &workspace.config.typescript {
+        if let Some(typescript_config) = &workspace.toolchain.config.typescript {
             // Update `references` within this project's `tsconfig.json`.
             // Only add if the dependent project has a `tsconfig.json`,
             // and this `tsconfig.json` has not already declared the dep.
@@ -249,7 +249,7 @@ pub async fn sync_project(
         })?;
     }
 
-    if let Some(typescript_config) = &workspace.config.typescript {
+    if let Some(typescript_config) = &workspace.toolchain.config.typescript {
         // Auto-create a `tsconfig.json` if configured and applicable
         if is_project_typescript_enabled
             && typescript_config.sync_project_references

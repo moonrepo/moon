@@ -190,7 +190,14 @@ impl Workspace {
         // Setup components
         let cache = CacheEngine::load(&root_dir).await?;
         let toolchain = Toolchain::load(&toolchain_config).await?;
-        let projects = ProjectGraph::generate(&root_dir, &config, project_config, &cache).await?;
+        let projects = ProjectGraph::generate(
+            &root_dir,
+            &config,
+            &toolchain_config,
+            project_config,
+            &cache,
+        )
+        .await?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {

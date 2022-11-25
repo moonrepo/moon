@@ -11,7 +11,7 @@ impl Installable<'_> for NodeDependencyManager {
 
     async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProbeError> {
         if install_dir.exists() {
-            debug!(target: self.get_log_target(), "Already installed, continuing");
+            debug!(target: self.get_log_target(), "Dependency manager already installed, continuing");
 
             return Ok(false);
         }
@@ -25,14 +25,14 @@ impl Installable<'_> for NodeDependencyManager {
 
         debug!(
             target: self.get_log_target(),
-            "Attempting to install from {} to {}",
+            "Attempting to install {} to {}",
             download_path.to_string_lossy(),
             install_dir.to_string_lossy(),
         );
 
         untar(download_path, install_dir, Some(&prefix))?;
 
-        debug!(target: self.get_log_target(), "Successfully installed");
+        debug!(target: self.get_log_target(), "Successfully installed dependency manager");
 
         Ok(true)
     }

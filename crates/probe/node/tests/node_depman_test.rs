@@ -23,7 +23,7 @@ async fn downloads_verifies_installs_npm() {
     assert!(tool.get_install_dir().unwrap().exists());
 
     assert_eq!(
-        tool.get_bin_path(),
+        tool.get_bin_path().unwrap(),
         &probe.tools_dir.join("npm/9.0.0/bin/npm-cli.js")
     );
 }
@@ -42,7 +42,7 @@ async fn downloads_verifies_installs_pnpm() {
     assert!(tool.get_install_dir().unwrap().exists());
 
     assert_eq!(
-        tool.get_bin_path(),
+        tool.get_bin_path().unwrap(),
         &probe.tools_dir.join("pnpm/7.0.0/bin/pnpm.cjs")
     );
 }
@@ -61,7 +61,7 @@ async fn downloads_verifies_installs_yarn_classic() {
     assert!(tool.get_install_dir().unwrap().exists());
 
     assert_eq!(
-        tool.get_bin_path(),
+        tool.get_bin_path().unwrap(),
         &probe.tools_dir.join("yarn/1.22.0/bin/yarn.js")
     );
 }
@@ -81,7 +81,7 @@ async fn downloads_verifies_installs_yarn_berry() {
 
     assert_eq!(tool.get_resolved_version(), "1.22.19");
     assert_eq!(
-        tool.get_bin_path(),
+        tool.get_bin_path().unwrap(),
         &probe.tools_dir.join("yarn/1.22.19/bin/yarn.js")
     );
 }

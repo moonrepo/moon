@@ -15,12 +15,21 @@ pub use installer::*;
 pub use lenient_semver::Version;
 pub use resolver::*;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 pub use verifier::*;
 
 pub struct Probe {
     pub temp_dir: PathBuf,
     pub tools_dir: PathBuf,
+}
+
+impl Probe {
+    pub fn new(root: &Path) -> Self {
+        Probe {
+            temp_dir: root.join("temp"),
+            tools_dir: root.join("tools"),
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -59,10 +68,22 @@ pub trait Tool<'tool>:
 
         self.find_bin_path().await?;
 
-        // Cleanup temp files
-        self.cleanup().await?;
-
         Ok(installed)
+    }
+
+    async fn is_setup(&mut self) -> Result<bool, ProbeError> {
+        let install_dir = self.get_install_dir()?;
+
+        if install_dir.exists() {
+            self.find_bin_path().await?;
+
+            return Ok(match self.get_bin_path() {
+                Ok(bin) => bin.exists(),
+                Err(_) => false,
+            });
+        }
+
+        Ok(false)
     }
 
     async fn after_setup(&mut self) -> Result<(), ProbeError> {

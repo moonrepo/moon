@@ -17,10 +17,11 @@ pub async fn load_lockfile_dependencies(
         .map_err(|e| MoonError::Generic(format!("Failed to parse lockfile: {}", e)))?;
 
     for entry in entries {
+        // All workspace dependencies have empty integrities, so we will skip them
         if entry.integrity.is_empty() {
-            // all workspace dependencies have empty integrities, so we will skip them
             continue;
         }
+
         let dep = deps.entry(entry.name.to_owned()).or_default();
         dep.push(entry.integrity.to_owned());
     }

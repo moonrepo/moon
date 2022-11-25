@@ -152,10 +152,6 @@ pub struct PackageJson {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolutions: Option<DepsSet>,
 
-    // Unknown fields
-    #[serde(flatten)]
-    pub unknown_fields: BTreeMap<String, JsonValue>,
-
     // Non-standard
     #[serde(skip)]
     pub dirty: bool,

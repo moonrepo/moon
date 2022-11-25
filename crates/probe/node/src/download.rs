@@ -73,7 +73,7 @@ impl Downloadable<'_> for NodeLanguage {
 
     async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProbeError> {
         if to_file.exists() {
-            debug!(target: self.get_log_target(), "Already downloaded, continuing");
+            debug!(target: self.get_log_target(), "Tool already downloaded, continuing");
 
             return Ok(false);
         }
@@ -90,11 +90,11 @@ impl Downloadable<'_> for NodeLanguage {
             }
         };
 
-        debug!(target: self.get_log_target(), "Attempting to download from {}", from_url);
+        debug!(target: self.get_log_target(), "Attempting to download tool from {}", from_url);
 
         download_from_url(&from_url, &to_file).await?;
 
-        debug!(target: self.get_log_target(), "Successfully downloaded");
+        debug!(target: self.get_log_target(), "Successfully downloaded tool");
 
         Ok(true)
     }

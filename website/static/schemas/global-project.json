@@ -55,6 +55,7 @@
       "type": "object",
       "properties": {
         "args": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskCommandArgs"
@@ -65,6 +66,7 @@
           ]
         },
         "command": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskCommandArgs"
@@ -75,6 +77,7 @@
           ]
         },
         "deps": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -84,6 +87,7 @@
           }
         },
         "env": {
+          "default": null,
           "type": [
             "object",
             "null"
@@ -93,6 +97,7 @@
           }
         },
         "inputs": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -102,12 +107,33 @@
           }
         },
         "local": {
+          "default": false,
           "type": "boolean"
         },
         "options": {
-          "$ref": "#/definitions/TaskOptionsConfig"
+          "default": {
+            "affectedFiles": null,
+            "cache": null,
+            "envFile": null,
+            "mergeArgs": null,
+            "mergeDeps": null,
+            "mergeEnv": null,
+            "mergeInputs": null,
+            "mergeOutputs": null,
+            "outputStyle": null,
+            "retryCount": null,
+            "runDepsInParallel": null,
+            "runInCI": null,
+            "runFromWorkspaceRoot": null
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/TaskOptionsConfig"
+            }
+          ]
         },
         "outputs": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -116,8 +142,13 @@
             "type": "string"
           }
         },
-        "type": {
-          "$ref": "#/definitions/PlatformType"
+        "platform": {
+          "default": "unknown",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PlatformType"
+            }
+          ]
         }
       }
     },
@@ -142,13 +173,22 @@
     "TaskOptionsConfig": {
       "type": "object",
       "properties": {
+        "affectedFiles": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "cache": {
+          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "envFile": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
@@ -159,6 +199,7 @@
           ]
         },
         "mergeArgs": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -169,6 +210,7 @@
           ]
         },
         "mergeDeps": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -179,6 +221,7 @@
           ]
         },
         "mergeEnv": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -189,6 +232,7 @@
           ]
         },
         "mergeInputs": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -199,6 +243,7 @@
           ]
         },
         "mergeOutputs": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -209,6 +254,7 @@
           ]
         },
         "outputStyle": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOutputStyle"
@@ -219,6 +265,7 @@
           ]
         },
         "retryCount": {
+          "default": null,
           "type": [
             "integer",
             "null"
@@ -227,18 +274,21 @@
           "minimum": 0.0
         },
         "runDepsInParallel": {
+          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "runFromWorkspaceRoot": {
+          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "runInCI": {
+          "default": null,
           "type": [
             "boolean",
             "null"

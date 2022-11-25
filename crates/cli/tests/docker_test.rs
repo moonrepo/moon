@@ -238,9 +238,6 @@ mod prune_node {
 
         write_manifest(fixture.path(), "other");
 
-        // Need to install deps
-        create_moon_command(fixture.path()).arg("setup").assert();
-
         create_moon_command(fixture.path())
             .arg("docker")
             .arg("prune")
@@ -266,17 +263,10 @@ mod prune_node {
 
         write_manifest(fixture.path(), "other");
 
-        // Need to install deps
-        let assert = create_moon_command(fixture.path()).arg("setup").assert();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
-
-        let assert = create_moon_command(fixture.path())
+        create_moon_command(fixture.path())
             .arg("docker")
             .arg("prune")
             .assert();
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         // should exist
         assert!(fixture.path().join("other/node_modules/solid-js").exists());
@@ -295,9 +285,6 @@ mod prune_node {
         let fixture = create_sandbox("node-yarn");
 
         write_manifest(fixture.path(), "other");
-
-        // Need to install deps
-        create_moon_command(fixture.path()).arg("setup").assert();
 
         create_moon_command(fixture.path())
             .arg("docker")
@@ -321,9 +308,6 @@ mod prune_node {
         let fixture = create_sandbox("node-yarn1");
 
         write_manifest(fixture.path(), "other");
-
-        // Need to install deps
-        create_moon_command(fixture.path()).arg("setup").assert();
 
         create_moon_command(fixture.path())
             .arg("docker")

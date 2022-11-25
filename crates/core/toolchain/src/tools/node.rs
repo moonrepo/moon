@@ -165,8 +165,10 @@ impl RuntimeTool for NodeTool {
 
         if self.yarn.is_some() {
             let mut yarn = self.yarn.take().unwrap();
+
             installed += yarn.setup(last_versions).await?;
-            yarn.set_version(&self).await?;
+            yarn.set_version(self).await?;
+
             self.yarn = Some(yarn);
         }
 

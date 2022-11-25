@@ -11,7 +11,7 @@ use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
 use moon_node_platform::actions as node_actions;
 use moon_notifier::WebhooksSubscriber;
-use moon_platform::{Runtime, Version};
+use moon_platform::Runtime;
 use moon_runner_context::RunnerContext;
 use moon_task::Target;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
@@ -234,27 +234,6 @@ impl Runner {
             report_name: None,
             workspace: Arc::new(RwLock::new(workspace)),
         }
-    }
-
-    // Some operations only require the toolchain to exist and be setup,
-    // so we provide this one-off static method to handle that use case.
-    pub async fn setup_toolchain(workspace: Workspace) -> Result<bool, RunnerError> {
-        let mut dep_graph = DepGraph::default();
-
-        if let Some(node) = &workspace.config.node {
-            let runtime = Runtime::Node(Version(node.version.to_owned(), false));
-
-            if is_test_env() {
-                dep_graph.setup_tool(&runtime);
-            } else {
-                dep_graph.install_workspace_deps(&runtime);
-            }
-        }
-
-        let mut runner = Runner::new(workspace);
-        runner.run(dep_graph, None).await?;
-
-        Ok(!runner.has_failed())
     }
 
     pub fn bail_on_error(&mut self) -> &mut Self {

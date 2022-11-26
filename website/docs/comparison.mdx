@@ -33,7 +33,7 @@ centric build systems do not, such as...
 - **[Integrated toolchain](./concepts/toolchain)** - moon manages its own version of programming
   languages and dependency managers behind the scenes, so that every task is executed with the
   _exact same version_, across _all machines_.
-- **[Task inheritance](./concepts/task#configuration)** - Instead of defining the same tasks (lint,
+- **[Task inheritance](./concepts/task#inheritance)** - Instead of defining the same tasks (lint,
   test, etc) over and over again for _every_ project in the monorepo, moon supports a task
   inheritance model where it only needs to be defined once at the top-level. Projects can then merge
   with, exclude, or override if need be.
@@ -176,7 +176,7 @@ We also plan to support additional languages as first-class citizens within our 
 
 1. Turborepo remote caching is powered by Vercel. moon provides its own paid service.
 
-2. moon projects may be run commands for any language, but not all languages are supported in the
+2. moon projects may run commands for any language, but not all languages are supported in the
    toolchain.
 
 </small>
@@ -188,7 +188,7 @@ versioning and publishing (and still does), but it offered a very rudimentary bu
 Lerna was able to run scripts in parallel, it wasn't the most efficient, as it did not support
 caching, hashing, or performant scheduling.
 
-However, the reason Lerna is not compared in-depth, is that Lerna was unowned and maintained for
+However, the reason Lerna is not compared in-depth, is that Lerna was unowned and unmaintained for
 quite some time, and has recently fallen under the Nx umbrella. Lerna is basically Nx lite now.
 
 ## Comparison tables

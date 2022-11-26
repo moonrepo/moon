@@ -22,7 +22,7 @@ const workspaceRows: Comparison[] = [
 		support: {
 			moon: 'Rust',
 			nx: 'Node.js',
-			turborepo: 'Go',
+			turborepo: 'Go (being rewritten in Rust)',
 		},
 	},
 	{
@@ -34,7 +34,7 @@ const workspaceRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'Projects configured in',
+		feature: 'Project list configured in',
 		support: {
 			moon: '`.moon/workspace.yml`',
 			nx: '`workspace.json`',
@@ -78,7 +78,7 @@ const workspaceRows: Comparison[] = [
 	{
 		feature: 'Integrates with a version control system',
 		support: {
-			moon: [SUPPORTED, 'git', PARTIALLY_SUPPORTED, 'svn'],
+			moon: [SUPPORTED, 'git', PARTIALLY_SUPPORTED, 'svn (in dev)'],
 			nx: [SUPPORTED, 'git'],
 			turborepo: [SUPPORTED, 'git'],
 		},
@@ -208,9 +208,9 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Run multiple tasks with',
 		support: {
-			moon: '`moon run :task` or `moon run a:task b:task ...` or `moon check`',
+			moon: '`moon run :task` or `moon run a:task b:task` or `moon check`',
 			nx: '`nx run-many --target=target`',
-			turborepo: '`turbo run task`',
+			turborepo: '`turbo run task` or `turbo run a b c`',
 		},
 	},
 	{
@@ -255,6 +255,14 @@ const tasksRows: Comparison[] = [
 			moon: [SUPPORTED, 'via `deps`'],
 			nx: [SUPPORTED, 'via `dependsOn`'],
 			turborepo: [SUPPORTED, 'via `dependsOn`'],
+		},
+	},
+	{
+		feature: 'Can depend on arbitrary or unrelated tasks',
+		support: {
+			moon: SUPPORTED,
+			nx: [NOT_SUPPORTED, 'dependent projects only'],
+			turborepo: [NOT_SUPPORTED, 'dependent projects only'],
 		},
 	},
 	{

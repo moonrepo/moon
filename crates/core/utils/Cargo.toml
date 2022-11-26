@@ -33,4 +33,4 @@ tokio = { workspace = true }
 wax = "0.5.0"
 
 [dev-dependencies]
-insta = "1.21.0"
+insta = { workspace = true }

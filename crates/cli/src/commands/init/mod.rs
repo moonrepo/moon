@@ -235,7 +235,7 @@ mod tests {
     fn renders_default() {
         let context = create_default_context();
 
-        assert_snapshot!(render_template(&context).unwrap());
+        assert_snapshot!(render_workspace_template(&context).unwrap());
     }
 
     #[test]
@@ -243,7 +243,7 @@ mod tests {
         let mut context = create_default_context();
         context.insert("project_globs", &vec!["apps/*", "packages/*"]);
 
-        assert_snapshot!(render_template(&context).unwrap());
+        assert_snapshot!(render_workspace_template(&context).unwrap());
     }
 
     #[test]
@@ -251,7 +251,7 @@ mod tests {
         let mut context = create_default_context();
         context.insert("projects", &BTreeMap::from([("example", "apps/example")]));
 
-        assert_snapshot!(render_template(&context).unwrap());
+        assert_snapshot!(render_workspace_template(&context).unwrap());
     }
 
     #[test]
@@ -260,7 +260,7 @@ mod tests {
         context.insert("vcs_manager", &"git");
         context.insert("vcs_default_branch", &"main");
 
-        assert_snapshot!(render_template(&context).unwrap());
+        assert_snapshot!(render_workspace_template(&context).unwrap());
     }
 
     #[test]
@@ -269,6 +269,6 @@ mod tests {
         context.insert("vcs_manager", &"svn");
         context.insert("vcs_default_branch", &"trunk");
 
-        assert_snapshot!(render_template(&context).unwrap());
+        assert_snapshot!(render_workspace_template(&context).unwrap());
     }
 }

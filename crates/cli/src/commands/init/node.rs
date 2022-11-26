@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use tera::{Context, Error, Tera};
 
-fn render_template(context: Context) -> Result<String, Error> {
+pub fn render_template(context: Context) -> Result<String, Error> {
     Tera::one_off(load_toolchain_node_config_template(), &context, false)
 }
 

@@ -1,0 +1,11 @@
+extends: '../shared-toolchain.yml'
+
+node:
+  # Use a unique version as to not collide with other tests because of corepack
+  version: '16.4.0'
+  packageManager: 'yarn'
+  yarn:
+    version: '3.0.0'
+    plugins:
+      - 'workspace-tools'
+  addEnginesConstraint: false

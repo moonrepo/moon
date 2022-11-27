@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:bufferFailureFail
-▪▪▪▪ outputStyles:bufferFailureFail (100ms, fbc4c2e9)
+▪▪▪▪ outputStyles:bufferFailureFail (100ms)
 stdout
 
 stderr

@@ -1,0 +1,457 @@
+---
+title: .moon/toolchain.yml
+toc_max_heading_level: 6
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.20" />
+
+The `.moon/toolchain.yml` file configures the toolchain and the workspace development environment.
+
+## `extends`
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#extends" />
+
+Defines an external `.moon/toolchain.yml` to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+
+```yaml title=".moon/toolchain.yml" {1}
+extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/toolchain.yml'
+```
+
+:::caution
+
+Settings will be merged recursively for blocks, with values defined in the local configuration
+taking precedence over those defined in the extended configuration.
+
+:::
+
+## `node`
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#node" />
+
+Defines the Node.js version and package manager to install within the toolchain, as moon _does not_
+use a Node.js binary found on the local machine. Managing the Node.js version within the toolchain
+ensures a deterministic environment across any machine (whether a developer, CI, or production
+machine).
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#version" />
+
+Defines the explicit Node.js version to use. We require an explicit and semantic major, minor, and
+patch version, to ensure the same environment is used across every machine. Ranges are _not_
+supported.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  version: '16.13.0'
+```
+
+> Version can be overridden with the `MOON_NODE_VERSION` environment variable.
+
+### `packageManager`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#packageManager" />
+
+Defines which package manager to utilize. Supports `npm` (default), `pnpm`, or `yarn`.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  packageManager: 'yarn'
+```
+
+### `npm`, `pnpm`, `yarn`
+
+<HeadingApiLink to="/api/types/interface/NodePackageManagerConfig" />
+
+Optional fields for defining package manager specific configuration. The chosen setting is dependent
+on the value of [`node.packageManager`](#packagemanager). If these settings _are not defined_, the
+latest version of the active package manager will be used (when applicable).
+
+#### `version`
+
+<HeadingApiLink to="/api/types/interface/NodePackageManagerConfig#version" />
+
+The `version` setting defines the explicit package manager version to use. We require an explicit
+major, minor, and patch version, to ensure the same environment is used across every machine.
+
+```yaml title=".moon/toolchain.yml" {4}
+node:
+  packageManager: 'yarn'
+  yarn:
+    version: '3.1.0'
+```
+
+> Version can be overridden with the `MOON_NPM_VERSION`, `MOON_PNPM_VERSION`, or `MOON_YARN_VERSION`
+> environment variables.
+
+### `yarn`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#yarn" />
+
+#### `plugins`
+
+<HeadingApiLink to="/api/types/interface/YarnConfig#plugins" />
+
+A list of plugins that will automatically be imported using `yarn plugin import` (Yarn 2+ only). For
+performance reasons, plugins will only be imported when the Yarn version changes.
+
+```yaml title=".moon/toolchain.yml" {4}
+node:
+  packageManager: 'yarn'
+  yarn:
+    version: '3.1.0'
+    plugins:
+      - 'interactive-tools'
+      - 'workspace-tools'
+```
+
+### `addEnginesConstraint`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#addEnginesConstraint" />
+
+Injects the currently configured [Node.js version](#version) as an `engines` constraint to the root
+`package.json` field. Defaults to `true`.
+
+```yaml
+node:
+  addEnginesConstraint: true
+```
+
+For example, say our Node.js version is "16.15.0", and when we execute a run process through the
+`moon` binary, it will update the root `package.json` with the below. We pin a fixed version to
+ensure other Node.js processes outside of our toolchain are utilizing the same version.
+
+```json title="package.json"
+{
+  // ...
+  "engines": {
+    "node": "16.15.0"
+  }
+}
+```
+
+### `aliasPackageNames`<VersionLabel version="0.10" />
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#aliasPackageNames" />
+
+When enabled, will assign [aliases](../concepts/project#aliases) to configured [projects](#projects)
+based on the `name` field in the project's `package.json`. Aliases can be used as a substitute for
+project names, allowing for the familiar package name to be used within
+[targets](../concepts/target) or configuration.
+
+This setting accepts one of the following values, which determines how to parse and assign the
+alias.
+
+- `name-and-scope` - Will use the package name as-is, including any scope. For example,
+  `@scope/example` or `example`.
+- `name-only` - Will only use the name and disregard any scope. For example, `@scope/example` will
+  become `example`.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  aliasPackageNames: 'name-only'
+```
+
+### `binExecArgs`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#binExecArgs" />
+
+Additional [command line arguments](https://nodejs.org/api/cli.html) to pass to the `node` binary
+when it's being executed by running a target. This will apply arguments to _all Node.js based_
+targets, and cannot be changed on a per target basis.
+
+```yaml title=".moon/toolchain.yml" {2-5}
+node:
+  binExecArgs:
+    - '--preserve-symlinks'
+    - '--loader'
+    - '@boost/module/loader'
+```
+
+### `dedupeOnLockfileChange`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#dedupeOnLockfileChange" />
+
+Will dedupe dependencies after they have been installed, added, removing, or changed in any way, in
+an effort to keep the workspace tree as clean and lean as possible. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  dedupeOnLockfileChange: true
+```
+
+### `dependencyVersionFormat`<VersionLabel version="0.9" />
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#dependencyVersionFormat" />
+
+When [syncing project dependencies](#syncprojectworkspacedependencies), customize the format that
+will be used for the dependency version range. The following formats are supported (but use the one
+most applicable to your chosen package manager):
+
+- `file` - Uses `file:../relative/path` and copies package contents.
+- `link` - Uses `link:../relative/path` and symlinks package contents.
+- `star` - Uses an explicit `*`.
+- `version` - Uses the explicit version from the dependent project's `package.json`, e.g., "1.2.3".
+- `version-caret` - Uses the version from the dependent project's `package.json` as a caret range,
+  e.g., "^1.2.3".
+- `version-tilde` - Uses the version from the dependent project's `package.json` as a tilde range,
+  e.g., "~1.2.3".
+- `workspace` (default) - Uses `workspace:*`, which resolves to "1.2.3". Requires package
+  workspaces.
+- `workspace-caret` - Uses `workspace:^`, which resolves to "^1.2.3". Requires package workspaces.
+- `workspace-tilde` - Uses `workspace:~`, which resolves to "~1.2.3". Requires package workspaces.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  dependencyVersionFormat: 'link'
+```
+
+> This setting does not apply to peer dependencies, as they will always use a format of
+> `^<major>.0.0`.
+
+### `inferTasksFromScripts`<VersionLabel version="0.8" />
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#inferTasksFromScripts" />
+
+Will infer and automatically create [tasks](../concepts/task) from `package.json` scripts. Defaults
+to `false`.
+
+This requires the [project's language](./project#language) to be "javascript" or "typescript", a
+`package.json` to exist in the project, and will take the following into account:
+
+- Script names will be converted to kebab-case, and will become the task ID.
+- Pre, post, and life cycle hooks are ignored.
+- Tasks defined in `.moon/project.yml` or `moon.yml` take precedence over scripts of the same name.
+
+To verify inferred tasks, run [`moon project <id>`](../commands/project) (pass `--json` to view raw
+config and options). Tasks that are inferred will have their command and args set to
+`moon node run-script`.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  inferTasksFromScripts: true
+```
+
+:::caution
+
+This implementation shares functionality with
+[`moon migrate from-package-json`](../commands/migrate/from-package-json), and will attempt to
+determine environment variables, outputs, CI options, and more! Be aware of these when utilizing
+this feature, especially in regards to `runInCI`, as it may be inaccurate!
+
+:::
+
+### `syncProjectWorkspaceDependencies`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#syncProjectWorkspaceDependencies" />
+
+Will sync a project's [`dependsOn`](./project#dependson) setting as normal dependencies within the
+project's `package.json`. If a dependent project does not have a `package.json`, or if a dependency
+of the same name has an explicit version already defined, the sync will be skipped. Defaults to
+`true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  syncProjectWorkspaceDependencies: true
+```
+
+A quick example on how this works. Given the following `dependsOn`:
+
+```yaml title="moon.yml"
+dependsOn:
+  - 'designSystem'
+  - 'reactHooks'
+```
+
+Would result in the following `dependencies` within a project's `package.json`. The version format
+can be customized with [`node.dependencyVersionFormat`](#dependencyversionformat).
+
+```json title="package.json"
+{
+  // ...
+  "dependencies": {
+    "@company/design-system": "workspace:*",
+    "@company/react-hooks": "workspace:*"
+    // ...
+  }
+}
+```
+
+### `syncVersionManagerConfig`
+
+<HeadingApiLink to="/api/types/interface/NodeConfig#syncVersionManagerConfig" />
+
+Will sync the currently configured [Node.js version](#version) to a 3rd-party version manager's
+config/rc file. Supports "nodenv" (syncs to `.node-version`), "nvm" (syncs to `.nvmrc`), or none
+(default).
+
+```yaml title=".moon/toolchain.yml" {2}
+node:
+  syncVersionManagerConfig: 'nvm'
+```
+
+This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
+the same version, which is a very common practice when managing dependencies.
+
+## `typescript`<VersionLabel updated version="0.12" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#typescript" />
+
+Dictates how moon interacts with and utilizes TypeScript within the workspace. This field is
+optional and is undefined by default. Define it to enable TypeScript support.
+
+### `createMissingConfig`<VersionLabel version="0.6" />
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#createMissingConfig" />
+
+When [syncing project references](#syncprojectreferences) and a depended on project _does not_ have
+a `tsconfig.json`, automatically create one. Defaults to `true`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  createMissingConfig: true
+```
+
+### `projectConfigFileName`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#projectConfigFileName" />
+
+Defines the file name of the `tsconfig.json` found in the project root. We utilize this setting when
+syncing project references between projects. Defaults to `tsconfig.json`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  projectConfigFileName: 'tsconfig.build.json'
+```
+
+### `rootConfigFileName`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#rootConfigFileName" />
+
+Defines the file name of the `tsconfig.json` found in the workspace root. We utilize this setting
+when syncing projects as references. Defaults to `tsconfig.json`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  rootConfigFileName: 'tsconfig.projects.json'
+```
+
+### `rootOptionsConfigFileName`<VersionLabel version="0.6" />
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#rootOptionsConfigFileName" />
+
+Defines the file name of the config file found in the workspace root that houses shared compiler
+options. Defaults to `tsconfig.options.json`. This setting is used in the following scenarios:
+
+- When [creating a `tsconfig.json` for a project](#), sets the `extends` field to this value.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  rootOptionsConfigFileName: 'tsconfig.base.json'
+```
+
+### `routeOutDirToCache`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#routeOutDirToCache" />
+
+Updates the `outDir` compiler option in each project's [`tsconfig.json`](#projectConfigFileName) to
+route to moon's cache folder. This is useful when using project references and wanting to keep all
+the compiled `.d.ts` files _out_ of the project folder. Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  routeOutDirToCache: true
+```
+
+As a demonstration, if we had an npm package located at "packages/components", the `outDir` compiler
+option will be re-routed to the following when syncing.
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "outDir": "../../.moon/cache/types/packages/components"
+  }
+}
+```
+
+### `syncProjectReferences`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#syncProjectReferences" />
+
+Will sync a project's [dependencies](../concepts/project#dependencies) (when applicable) as project
+references within that project's `tsconfig.json`, and the workspace root `tsconfig.json`. Defaults
+to `true` when the parent `typescript` setting is defined, otherwise `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  syncProjectReferences: true
+```
+
+A quick example on how this works. Given the following `dependsOn`:
+
+```yaml title="moon.yml"
+dependsOn:
+  - 'designSystem'
+  - 'reactHooks'
+```
+
+Would result in the following `references` within both `tsconfig.json`s.
+
+```json title="tsconfig.json"
+{
+  // ...
+  "references": [
+    // ...
+    { "path": "../../design-system" },
+    { "path": "../../react-hooks" }
+  ]
+}
+```
+
+### `syncProjectReferencesToPaths`
+
+<HeadingApiLink to="/api/types/interface/TypeScriptConfig#syncProjectReferencesToPaths" />
+
+Will sync a project's [`tsconfig.json`](#projectConfigFileName) project references to the `paths`
+compiler option, using the referenced project's `package.json` name. This is useful for mapping
+import aliases to their source code. Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+typescript:
+  syncProjectReferencesToPaths: true
+```
+
+As a demonstration, if we had a reference to a shared npm package with the name `@brand/components`,
+the `paths` compiler option would be updated to the following when syncing. The index file may exist
+in a `src` folder, or the root of the package.
+
+```json title="<project>/tsconfig.json"
+{
+  // ...
+  "compilerOptions": {
+    // ...
+    "paths": {
+      "@brand/components": ["../shared/components/src/index.ts"],
+      "@brand/components/*": ["../shared/components/src/*"]
+    }
+  },
+  "references": [
+    {
+      "path": "../shared/components"
+    }
+  ]
+}
+```
+
+> This setting runs _after_ [`syncProjectReferences`](#syncprojectreferences) and will inherit any
+> synced references from that setting.

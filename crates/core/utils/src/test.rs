@@ -36,7 +36,10 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> assert_fs::TempDir {
         .unwrap();
 
     temp_dir
-        .copy_from(get_fixtures_root(), &["shared-workspace.yml"])
+        .copy_from(
+            get_fixtures_root(),
+            &["shared-toolchain.yml", "shared-workspace.yml"],
+        )
         .unwrap();
 
     temp_dir

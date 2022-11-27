@@ -6,7 +6,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ npm install
 ▪▪▪▪ node:processExitNonZero
 stdout
-▪▪▪▪ node:processExitNonZero (100ms, 2ab13a98)
+▪▪▪▪ node:processExitNonZero (100ms)
 stderr
 
  ERROR  Process ~/.moon/tools/node/16.1.0/bin/node failed with a 1 exit code.

@@ -4,11 +4,11 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ windows:exitZero
 stdout
-▪▪▪▪ windows:exitZero (100ms, f7be3f01)
+▪▪▪▪ windows:exitZero (100ms)
 
 Tasks: 1 completed
  Time: 100ms
 
-stderr 
+stderr
 
 

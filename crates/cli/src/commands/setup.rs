@@ -9,7 +9,7 @@ pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
     let workspace = load_workspace().await?;
     let mut dep_graph = DepGraph::default();
 
-    if let Some(node) = &workspace.config.node {
+    if let Some(node) = &workspace.toolchain.config.node {
         let runtime = Runtime::Node(Version(node.version.to_owned(), false));
 
         if is_test_env() {

@@ -6,7 +6,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ npm install
 ▪▪▪▪ node:standard
 stdout
-▪▪▪▪ node:standard (100ms, 97fe34a8)
+▪▪▪▪ node:standard (100ms)
 
 Tasks: 1 completed
  Time: 100ms

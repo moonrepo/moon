@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ unix:bash
 stdout
-▪▪▪▪ unix:bash (100ms, dbbe50f6)
+▪▪▪▪ unix:bash (100ms)
 
 Tasks: 1 completed
  Time: 100ms

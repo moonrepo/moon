@@ -4,7 +4,7 @@ mod runtime;
 
 use moon_config::{
     DependencyConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
-    TasksConfigsMap, WorkspaceConfig,
+    TasksConfigsMap, ToolchainConfig,
 };
 use moon_error::MoonError;
 pub use runtime::{Runtime, Version};
@@ -21,7 +21,7 @@ pub trait Platform: Debug + Send + Sync {
     fn get_runtime_from_config(
         &self,
         project_config: Option<&ProjectConfig>,
-        workspace_config: &WorkspaceConfig,
+        toolchain_config: &ToolchainConfig,
     ) -> Option<Runtime>;
 
     /// Determine if the provided project is within the platform's package manager
@@ -31,7 +31,7 @@ pub trait Platform: Debug + Send + Sync {
         project_id: &str,
         project_root: &Path,
         workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
+        toolchain_config: &ToolchainConfig,
     ) -> Result<bool, MoonError> {
         Ok(true)
     }
@@ -41,7 +41,7 @@ pub trait Platform: Debug + Send + Sync {
     fn load_project_graph_aliases(
         &mut self,
         workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
+        toolchain_config: &ToolchainConfig,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
@@ -68,7 +68,7 @@ pub trait Platform: Debug + Send + Sync {
         project_root: &Path,
         project_config: &ProjectConfig,
         workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
+        toolchain_config: &ToolchainConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
         Ok(BTreeMap::new())
     }

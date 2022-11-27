@@ -2,9 +2,3 @@ extends: '../shared-workspace.yml'
 
 projects:
   - '*'
-
-typescript:
-  createMissingConfig: true
-  routeOutDirToCache: false
-  syncProjectReferences: true
-  syncProjectReferencesToPaths: false

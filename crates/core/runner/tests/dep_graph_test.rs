@@ -1,6 +1,8 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, NodeConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{
+    GlobalProjectConfig, NodeConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+};
 use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
 use moon_project_graph::ProjectGraph;
@@ -34,17 +36,21 @@ async fn create_project_graph() -> (ProjectGraph, TempDir) {
             ("tasks".to_owned(), "tasks".to_owned()),
             ("platforms".to_owned(), "platforms".to_owned()),
         ])),
+        ..WorkspaceConfig::default()
+    };
+    let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
             // Consistent snapshots
             version: "16.0.0".into(),
             ..NodeConfig::default()
         }),
-        ..WorkspaceConfig::default()
+        ..ToolchainConfig::default()
     };
 
     let mut graph = ProjectGraph::generate(
         workspace_root,
         &workspace_config,
+        &toolchain_config,
         GlobalProjectConfig::default(),
         &CacheEngine::load(workspace_root).await.unwrap(),
     )
@@ -75,12 +81,15 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("noTasks".to_owned(), "no-tasks".to_owned()),
         ])),
+        ..WorkspaceConfig::default()
+    };
+    let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
             // Consistent snapshots
             version: "16.0.0".into(),
             ..NodeConfig::default()
         }),
-        ..WorkspaceConfig::default()
+        ..ToolchainConfig::default()
     };
     let global_config = GlobalProjectConfig {
         file_groups: FxHashMap::from_iter([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
@@ -90,6 +99,7 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
     let mut graph = ProjectGraph::generate(
         workspace_root,
         &workspace_config,
+        &toolchain_config,
         global_config,
         &CacheEngine::load(workspace_root).await.unwrap(),
     )

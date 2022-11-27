@@ -2,7 +2,7 @@ pub mod actions;
 mod hasher;
 
 pub use hasher::SystemTargetHasher;
-use moon_config::{PlatformType, ProjectConfig, WorkspaceConfig};
+use moon_config::{PlatformType, ProjectConfig, ToolchainConfig};
 use moon_platform::{Platform, Runtime};
 
 #[derive(Debug, Default)]
@@ -16,7 +16,7 @@ impl Platform for SystemPlatform {
     fn get_runtime_from_config(
         &self,
         _project_config: Option<&ProjectConfig>,
-        _workspace_config: &WorkspaceConfig,
+        _toolchain_config: &ToolchainConfig,
     ) -> Option<Runtime> {
         Some(Runtime::System)
     }

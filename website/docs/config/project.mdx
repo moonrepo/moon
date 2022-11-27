@@ -625,9 +625,42 @@ tasks:
 > This field exists because of our [toolchain](../concepts/toolchain), and moon ensuring the correct
 > command is ran.
 
-## Workspace overrides
+## Overrides
 
-Dictates how a project interacts with settings defined at the workspace-level.
+Dictates how a project interacts with settings defined at the top-level.
+
+## `toolchain`
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#toolchain" />
+
+### `node`<VersionLabel version="0.16" />
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#node" />
+
+Configures Node.js for this project and overrides the top-level [`node`](./toolchain#node) setting.
+Currently, only the Node.js version can be overridden per-project, not the package manager.
+
+#### `version`
+
+Defines the explicit Node.js version to use when _running tasks_ for this project.
+
+```yaml title="moon.yml" {2,3}
+toolchain:
+  node:
+    version: '12.12.0'
+```
+
+### `typescript`<VersionLabel version="0.12" />
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#typescript" />
+
+Enables or disables [TypeScript support](./toolchain#typescript) for this project. Currently
+controls project reference syncing and `tsconfig.json` creation. Defaults to `true`.
+
+```yaml title="moon.yml" {2}
+toolchain:
+  typescript: false
+```
 
 ## `workspace`
 
@@ -693,32 +726,3 @@ workspace:
 ```
 
 > Renaming occurs after inclusion and exclusion.
-
-### `node`<VersionLabel version="0.16" />
-
-<HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#node" />
-
-Configures Node.js for this project and overrides the workspace-level [`node`](./workspace#node)
-setting. Currently, only the Node.js version can be overridden per-project, not the package manager.
-
-#### `version`
-
-Defines the explicit Node.js version to use when _running tasks_ for this project.
-
-```yaml title="moon.yml" {2}
-workspace:
-  node:
-    version: '12.12.0'
-```
-
-### `typescript`<VersionLabel version="0.12" />
-
-<HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#typescript" />
-
-Enables or disables [TypeScript support](./workspace#typescript) for this project. Currently
-controls project reference syncing and `tsconfig.json` creation. Defaults to `true`.
-
-```yaml title="moon.yml" {2}
-workspace:
-  typescript: false
-```

@@ -1,10 +1,10 @@
 [package]
-name = "probe_node"
+name = "proto_node"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-probe_core = { path = "../core" }
+proto_core = { path = "../core" }
 clean-path = "0.2.1"
 log = "0.4.17"
 rustc-hash = { workspace = true }

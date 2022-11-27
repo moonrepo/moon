@@ -4,7 +4,7 @@ mod install;
 mod resolve;
 mod verify;
 
-use probe_core::{Describable, Probe, Tool};
+use proto_core::{Describable, Probe, Tool};
 use resolve::NDMVersionDist;
 use std::path::PathBuf;
 
@@ -37,15 +37,15 @@ pub struct NodeDependencyManager {
 }
 
 impl NodeDependencyManager {
-    pub fn new(probe: &Probe, type_of: NodeDependencyManagerType, version: Option<&str>) -> Self {
+    pub fn new(proto: &Probe, type_of: NodeDependencyManagerType, version: Option<&str>) -> Self {
         let package_name = type_of.get_package_name();
 
         NodeDependencyManager {
             bin_path: None,
             dist: None,
-            install_dir: probe.tools_dir.join(&package_name),
-            log_target: format!("probe:tool:{}", &package_name),
-            temp_dir: probe.temp_dir.join(&package_name),
+            install_dir: proto.tools_dir.join(&package_name),
+            log_target: format!("proto:tool:{}", &package_name),
+            temp_dir: proto.temp_dir.join(&package_name),
             type_of,
             version: version.unwrap_or("latest").into(),
         }

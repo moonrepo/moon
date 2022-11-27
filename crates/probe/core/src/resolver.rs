@@ -48,7 +48,7 @@ where
     let handle_error = |e: reqwest::Error| ProbeError::Http(url.to_owned(), e.to_string());
 
     trace!(
-        target: "probe:resolver",
+        target: "proto:resolver",
         "Loading versions manifest from {}",
         url
     );

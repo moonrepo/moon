@@ -1,6 +1,6 @@
 use crate::{depman::NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
-use probe_core::{async_trait, untar, Describable, Installable, ProbeError, Resolvable};
+use proto_core::{async_trait, untar, Describable, Installable, ProbeError, Resolvable};
 use std::path::{Path, PathBuf};
 
 #[async_trait]

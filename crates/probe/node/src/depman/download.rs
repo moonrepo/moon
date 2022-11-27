@@ -1,6 +1,6 @@
 use crate::depman::NodeDependencyManager;
 use log::debug;
-use probe_core::{
+use proto_core::{
     async_trait, download_from_url, Describable, Downloadable, ProbeError, Resolvable,
 };
 use std::path::{Path, PathBuf};

@@ -34,7 +34,7 @@ pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProbeE
     let handle_error = |e: io::Error| ProbeError::Fs(path.to_path_buf(), e.to_string());
 
     trace!(
-        target: "probe:verifier",
+        target: "proto:verifier",
         "Calculating SHA256 checksum for file {}",
         path.to_string_lossy()
     );
@@ -47,7 +47,7 @@ pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProbeE
     let hash = format!("{:x}", sha.finalize());
 
     trace!(
-        target: "probe:verifier",
+        target: "proto:verifier",
         "Calculated hash {}",
         hash
     );

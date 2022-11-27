@@ -10,7 +10,7 @@ use zip::ZipArchive;
 #[async_trait::async_trait]
 pub trait Installable<'tool>: Send + Sync {
     /// Returns an absolute file path to the directory containing the installed tool.
-    /// This is typically ~/.probe/tools/<tool>/<version>.
+    /// This is typically ~/.proto/tools/<tool>/<version>.
     fn get_install_dir(&self) -> Result<PathBuf, ProbeError>;
 
     /// Run any installation steps after downloading and verifying the tool.
@@ -30,7 +30,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
         |e: io::Error| ProbeError::Fs(output_dir.to_path_buf(), e.to_string());
 
     trace!(
-        target: "probe:installer",
+        target: "proto:installer",
         "Unpacking tar archive {} to {}",
         input_file.to_string_lossy(),
         output_dir.to_string_lossy(),
@@ -88,7 +88,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         |e: io::Error| ProbeError::Fs(output_dir.to_path_buf(), e.to_string());
 
     trace!(
-        target: "probe:installer",
+        target: "proto:installer",
         "Unzipping zip archive {} to {}",
         input_file.to_string_lossy(),
         output_dir.to_string_lossy(),

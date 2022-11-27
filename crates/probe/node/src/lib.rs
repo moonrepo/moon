@@ -7,7 +7,7 @@ mod resolve;
 mod verify;
 
 pub use depman::*;
-use probe_core::{Describable, Probe, Tool};
+use proto_core::{Describable, Probe, Tool};
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -20,12 +20,12 @@ pub struct NodeLanguage {
 }
 
 impl NodeLanguage {
-    pub fn new(probe: &Probe, version: Option<&str>) -> Self {
+    pub fn new(proto: &Probe, version: Option<&str>) -> Self {
         NodeLanguage {
             bin_path: None,
-            install_dir: probe.tools_dir.join("node"),
-            log_target: "probe:tool:node".into(),
-            temp_dir: probe.temp_dir.join("node"),
+            install_dir: proto.tools_dir.join("node"),
+            log_target: "proto:tool:node".into(),
+            temp_dir: proto.temp_dir.join("node"),
             version: version.unwrap_or("latest").into(),
         }
     }

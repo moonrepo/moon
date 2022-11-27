@@ -1,4 +1,4 @@
-use probe_core::ProbeError;
+use proto_core::ProbeError;
 use std::fmt;
 
 pub enum NodeArch {

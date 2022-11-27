@@ -1,5 +1,5 @@
 use crate::NodeLanguage;
-use probe_core::{async_trait, Describable, Executable, Installable, ProbeError};
+use proto_core::{async_trait, Describable, Executable, Installable, ProbeError};
 use std::path::Path;
 
 #[cfg(target_os = "windows")]

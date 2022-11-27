@@ -1,7 +1,7 @@
 use crate::platform::NodeArch;
 use crate::NodeLanguage;
 use log::debug;
-use probe_core::{
+use proto_core::{
     async_trait, download_from_url, Describable, Downloadable, ProbeError, Resolvable,
 };
 use std::env::consts;

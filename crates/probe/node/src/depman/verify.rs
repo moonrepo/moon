@@ -1,5 +1,5 @@
 use crate::depman::NodeDependencyManager;
-use probe_core::{async_trait, ProbeError, Resolvable, Verifiable};
+use proto_core::{async_trait, ProbeError, Resolvable, Verifiable};
 use std::path::{Path, PathBuf};
 
 // TODO: implement PGP/ECDSA signature verify

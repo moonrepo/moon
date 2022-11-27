@@ -1,7 +1,7 @@
 use crate::download::get_archive_file_path;
 use crate::NodeLanguage;
 use log::debug;
-use probe_core::{async_trait, untar, unzip, Describable, Installable, ProbeError, Resolvable};
+use proto_core::{async_trait, untar, unzip, Describable, Installable, ProbeError, Resolvable};
 use std::path::{Path, PathBuf};
 
 #[async_trait]

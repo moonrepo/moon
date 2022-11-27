@@ -1,7 +1,7 @@
 use moon_error::MoonError;
 use moon_lang::LangError;
 use moon_platform::Runtime;
-use probe_core::ProbeError;
+use proto_core::ProbeError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

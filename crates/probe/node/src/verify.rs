@@ -1,6 +1,6 @@
 use crate::NodeLanguage;
 use log::debug;
-use probe_core::{
+use proto_core::{
     async_trait, download_from_url, get_sha256_hash_of_file, Describable, ProbeError, Resolvable,
     Verifiable,
 };

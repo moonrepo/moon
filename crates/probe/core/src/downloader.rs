@@ -10,11 +10,11 @@ use tokio::fs;
 pub trait Downloadable<'tool>: Send + Sync + Resolvable<'tool> {
     /// Returns an absolute file path to the downloaded file.
     /// This may not exist, as the path is composed ahead of time.
-    /// This is typically ~/.probe/temp/<file>.
+    /// This is typically ~/.proto/temp/<file>.
     fn get_download_path(&self) -> Result<PathBuf, ProbeError>;
 
     /// Download the tool (as an archive) from its distribution registry
-    /// into the ~/.probe/temp folder and return an absolute file path.
+    /// into the ~/.proto/temp folder and return an absolute file path.
     /// A custom URL that points to the downloadable archive can be
     /// provided as the 2nd argument.
     async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProbeError>;
@@ -31,7 +31,7 @@ where
     let handle_http_error = |e: reqwest::Error| ProbeError::Http(url.to_owned(), e.to_string());
 
     trace!(
-        target: "probe:downloader",
+        target: "proto:downloader",
         "Downloading {} from {}",
         dest_file.to_string_lossy(),
         url

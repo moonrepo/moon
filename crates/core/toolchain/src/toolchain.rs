@@ -6,7 +6,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug};
 use moon_platform::{Runtime, Version};
 use moon_utils::{fs, path};
-use probe_core::Probe;
+use proto_core::Probe;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -47,12 +47,12 @@ impl Toolchain {
             // Tools
             node: ToolManager::new(Runtime::Node(Version::default())),
         };
-        let probe = toolchain.get_paths();
+        let proto = toolchain.get_paths();
 
         if let Some(node_config) = &workspace_config.node {
             toolchain
                 .node
-                .register(NodeTool::new(&probe, node_config)?, true);
+                .register(NodeTool::new(&proto, node_config)?, true);
         }
 
         Ok(toolchain)

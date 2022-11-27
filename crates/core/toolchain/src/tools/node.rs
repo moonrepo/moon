@@ -8,8 +8,8 @@ use moon_logger::debug;
 use moon_node_lang::node;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::process::Command;
-use probe_core::{async_trait, Describable, Executable, Installable, Probe, Resolvable, Tool};
-use probe_node::NodeLanguage;
+use proto_core::{async_trait, Describable, Executable, Installable, Probe, Resolvable, Tool};
+use proto_node::NodeLanguage;
 use rustc_hash::FxHashMap;
 use std::path::Path;
 
@@ -27,10 +27,10 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(probe: &Probe, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
+    pub fn new(proto: &Probe, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
         let mut node = NodeTool {
             config: config.to_owned(),
-            tool: NodeLanguage::new(probe, Some(&config.version)),
+            tool: NodeLanguage::new(proto, Some(&config.version)),
             npm: None,
             pnpm: None,
             yarn: None,
@@ -38,13 +38,13 @@ impl NodeTool {
 
         match config.package_manager {
             NodePackageManager::Npm => {
-                node.npm = Some(NpmTool::new(probe, &config.npm)?);
+                node.npm = Some(NpmTool::new(proto, &config.npm)?);
             }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(probe, &config.pnpm)?);
+                node.pnpm = Some(PnpmTool::new(proto, &config.pnpm)?);
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(probe, &config.yarn)?);
+                node.yarn = Some(YarnTool::new(proto, &config.yarn)?);
             }
         };
 

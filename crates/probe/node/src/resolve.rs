@@ -2,7 +2,7 @@
 
 use crate::NodeLanguage;
 use log::debug;
-use probe_core::{
+use proto_core::{
     add_v_prefix, async_trait, is_version_alias, load_versions_manifest, parse_version,
     Describable, ProbeError, Resolvable,
 };

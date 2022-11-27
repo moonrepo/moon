@@ -1,6 +1,6 @@
 use crate::depman::NodeDependencyManager;
 use clean_path::Clean;
-use probe_core::{async_trait, Describable, Executable, Installable, ProbeError};
+use proto_core::{async_trait, Describable, Executable, Installable, ProbeError};
 use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};

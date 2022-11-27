@@ -1,6 +1,6 @@
 use crate::depman::{NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
-use probe_core::{
+use proto_core::{
     async_trait, is_version_alias, load_versions_manifest, parse_version, remove_v_prefix,
     Describable, ProbeError, Resolvable,
 };

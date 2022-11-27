@@ -6,7 +6,7 @@ members = [
 	"crates/node/*",
 	"crates/system/*",
 	"crates/typescript/*",
-	"crates/probe/*",
+	"crates/proto/*",
 ]
 default-members = ["crates/cli"]
 

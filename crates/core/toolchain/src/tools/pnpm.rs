@@ -8,8 +8,8 @@ use moon_node_lang::{pnpm, PNPM};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
-use probe_core::{async_trait, Describable, Executable, Probe, Resolvable, Tool};
-use probe_node::NodeDependencyManager;
+use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool};
+use proto_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::path::Path;
@@ -22,12 +22,12 @@ pub struct PnpmTool {
 }
 
 impl PnpmTool {
-    pub fn new(probe: &Probe, config: &Option<PnpmConfig>) -> Result<PnpmTool, ToolchainError> {
+    pub fn new(proto: &Proto, config: &Option<PnpmConfig>) -> Result<PnpmTool, ToolchainError> {
         Ok(PnpmTool {
             config: config.to_owned().unwrap_or_default(),
             tool: NodeDependencyManager::new(
-                probe,
-                probe_node::NodeDependencyManagerType::Pnpm,
+                proto,
+                proto_node::NodeDependencyManagerType::Pnpm,
                 match &config {
                     Some(cfg) => Some(&cfg.version),
                     None => None,

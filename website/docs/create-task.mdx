@@ -139,7 +139,7 @@ expecting some repository state or artifact to exist, can be achieved with the
 [`deps`](./config/project#deps) setting, which requires a list of [targets](./concepts/target):
 
 - `<project>:<task>` - Full canonical target.
-- `~:<task>` - A task within the current project.
+- `~:<task>` or `<task>` - A task within the current project.
 - `^:<task>` - A task from all [depended on projects](./concepts/project#dependencies).
 
 ```yaml

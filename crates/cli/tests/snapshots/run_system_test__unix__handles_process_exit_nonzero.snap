@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ unix:exitNonZero
 stdout
-▪▪▪▪ unix:exitNonZero (100ms, 358363d9)
+▪▪▪▪ unix:exitNonZero (100ms)
 stderr
 
  ERROR  Process bash failed with a 1 exit code.

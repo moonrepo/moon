@@ -9,7 +9,7 @@ mod init_node {
     fn infers_version_from_nvm() {
         let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
-        let workspace_config = root.join(".moon").join("workspace.yml");
+        let config = root.join(".moon").join("toolchain.yml");
 
         fs::write(&root.join(".nvmrc"), "1.2.3").unwrap();
 
@@ -19,7 +19,7 @@ mod init_node {
             .arg(root)
             .assert();
 
-        let content = fs::read_to_string(workspace_config).unwrap();
+        let content = fs::read_to_string(config).unwrap();
 
         assert!(predicate::str::contains("version: '1.2.3'").eval(&content));
     }
@@ -28,7 +28,7 @@ mod init_node {
     fn infers_version_from_nodenv() {
         let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
-        let workspace_config = root.join(".moon").join("workspace.yml");
+        let config = root.join(".moon").join("toolchain.yml");
 
         fs::write(&root.join(".node-version"), "1.2.3").unwrap();
 
@@ -38,7 +38,7 @@ mod init_node {
             .arg(root)
             .assert();
 
-        let content = fs::read_to_string(workspace_config).unwrap();
+        let content = fs::read_to_string(config).unwrap();
 
         assert!(predicate::str::contains("version: '1.2.3'").eval(&content));
     }
@@ -47,7 +47,7 @@ mod init_node {
     fn infers_globs_from_workspaces() {
         let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
-        let workspace_config = root.join(".moon").join("workspace.yml");
+        let config = root.join(".moon").join("workspace.yml");
 
         fs::create_dir_all(root.join("packages").join("foo")).unwrap();
         fs::write(&root.join("packages").join("foo").join("README"), "Hello").unwrap();
@@ -67,7 +67,7 @@ mod init_node {
             .arg(root)
             .assert();
 
-        let content = fs::read_to_string(workspace_config).unwrap();
+        let content = fs::read_to_string(config).unwrap();
 
         assert!(predicate::str::contains("projects:\n  - 'app'").eval(&content));
     }
@@ -76,7 +76,7 @@ mod init_node {
     fn infers_globs_from_workspaces_expanded() {
         let fixture = create_sandbox("init-sandbox");
         let root = fixture.path();
-        let workspace_config = root.join(".moon").join("workspace.yml");
+        let config = root.join(".moon").join("workspace.yml");
 
         fs::create_dir_all(root.join("packages").join("bar")).unwrap();
         fs::write(&root.join("packages").join("bar").join("README"), "Hello").unwrap();
@@ -96,7 +96,7 @@ mod init_node {
             .arg(root)
             .assert();
 
-        let content = fs::read_to_string(workspace_config).unwrap();
+        let content = fs::read_to_string(config).unwrap();
 
         assert!(predicate::str::contains("projects:\n  - 'app'").eval(&content));
     }
@@ -108,7 +108,7 @@ mod init_node {
         fn infers_npm() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
-            let workspace_config = root.join(".moon").join("workspace.yml");
+            let config = root.join(".moon").join("toolchain.yml");
 
             fs::write(&root.join("package-lock.json"), "").unwrap();
 
@@ -118,7 +118,7 @@ mod init_node {
                 .arg(root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
+            let content = fs::read_to_string(config).unwrap();
 
             assert!(predicate::str::contains("packageManager: 'npm'").eval(&content));
         }
@@ -127,7 +127,7 @@ mod init_node {
         fn infers_npm_from_package() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
-            let workspace_config = root.join(".moon").join("workspace.yml");
+            let config = root.join(".moon").join("toolchain.yml");
 
             fs::write(
                 &root.join("package.json"),
@@ -141,7 +141,7 @@ mod init_node {
                 .arg(root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
+            let content = fs::read_to_string(config).unwrap();
 
             assert!(predicate::str::contains("packageManager: 'npm'").eval(&content));
             assert!(predicate::str::contains("npm:\n    version: '4.5.6'").eval(&content));
@@ -151,7 +151,7 @@ mod init_node {
         fn infers_pnpm() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
-            let workspace_config = root.join(".moon").join("workspace.yml");
+            let config = root.join(".moon").join("toolchain.yml");
 
             fs::write(&root.join("pnpm-lock.yaml"), "").unwrap();
 
@@ -161,7 +161,7 @@ mod init_node {
                 .arg(root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
+            let content = fs::read_to_string(config).unwrap();
 
             assert!(predicate::str::contains("packageManager: 'pnpm'").eval(&content));
         }
@@ -170,7 +170,7 @@ mod init_node {
         fn infers_pnpm_from_package() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
-            let workspace_config = root.join(".moon").join("workspace.yml");
+            let config = root.join(".moon").join("toolchain.yml");
 
             fs::write(
                 &root.join("package.json"),
@@ -184,7 +184,7 @@ mod init_node {
                 .arg(root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
+            let content = fs::read_to_string(config).unwrap();
 
             assert!(predicate::str::contains("packageManager: 'pnpm'").eval(&content));
             assert!(predicate::str::contains("pnpm:\n    version: '4.5.6'").eval(&content));
@@ -194,7 +194,7 @@ mod init_node {
         fn infers_yarn() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
-            let workspace_config = root.join(".moon").join("workspace.yml");
+            let config = root.join(".moon").join("toolchain.yml");
 
             fs::write(&root.join("yarn.lock"), "").unwrap();
 
@@ -204,7 +204,7 @@ mod init_node {
                 .arg(root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
+            let content = fs::read_to_string(config).unwrap();
 
             assert!(predicate::str::contains("packageManager: 'yarn'").eval(&content));
         }
@@ -213,7 +213,7 @@ mod init_node {
         fn infers_yarn_from_package() {
             let fixture = create_sandbox("init-sandbox");
             let root = fixture.path();
-            let workspace_config = root.join(".moon").join("workspace.yml");
+            let config = root.join(".moon").join("toolchain.yml");
 
             fs::write(
                 &root.join("package.json"),
@@ -227,7 +227,7 @@ mod init_node {
                 .arg(root)
                 .assert();
 
-            let content = fs::read_to_string(workspace_config).unwrap();
+            let content = fs::read_to_string(config).unwrap();
 
             assert!(predicate::str::contains("packageManager: 'yarn'").eval(&content));
             assert!(predicate::str::contains("yarn:\n    version: '4.5.6'").eval(&content));

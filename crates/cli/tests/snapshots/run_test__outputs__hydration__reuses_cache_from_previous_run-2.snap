@@ -3,7 +3,7 @@ source: crates/cli/tests/run_test.rs
 assertion_line: 572
 expression: get_assert_output(&assert2)
 ---
-▪▪▪▪ outputs:generateFileAndFolder (cached from previous run, 9dad3fc2)
+▪▪▪▪ outputs:generateFileAndFolder (cached from previous run, d1594c00)
 
 Tasks: 1 completed (1 cached)
  Time: 100ms ❯❯❯❯ to the moon

@@ -1,8 +1,5 @@
 extends: '../shared-workspace.yml'
 
-node:
-  aliasPackageNames: 'name-and-scope'
-
 projects:
   noLang: no-lang
   node: node

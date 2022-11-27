@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/moon.yml
       - .moon/workspace.yml
+      - .moon/toolchain.yml
       - .moon/project.yml
       - crates/**
       - packages/**
@@ -39,7 +40,7 @@ jobs:
           path: ~/.moon/tools
           key:
             ${{ runner.os }}-moon-node@${{ matrix.node-version }}-${{
-            hashFiles('.moon/workspace.yml') }}
+            hashFiles('.moon/toolchain.yml') }}
           restore-keys: ${{ runner.os }}-moon-node@${{ matrix.node-version }}-
       - uses: actions-rs/toolchain@v1
         with:

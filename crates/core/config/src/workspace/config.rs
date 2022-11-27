@@ -6,10 +6,8 @@ use crate::types::{FileGlob, FilePath};
 use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
 use crate::workspace::generator::GeneratorConfig;
 use crate::workspace::hasher::HasherConfig;
-use crate::workspace::node::NodeConfig;
 use crate::workspace::notifier::NotifierConfig;
 use crate::workspace::runner::RunnerConfig;
-use crate::workspace::typescript::TypeScriptConfig;
 use crate::workspace::vcs::VcsConfig;
 use crate::ConfigError;
 use figment::{
@@ -19,7 +17,6 @@ use figment::{
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError};
 
@@ -84,9 +81,6 @@ pub struct WorkspaceConfig {
     pub hasher: HasherConfig,
 
     #[validate]
-    pub node: Option<NodeConfig>,
-
-    #[validate]
     pub notifier: NotifierConfig,
 
     #[validate(custom = "validate_projects")]
@@ -94,9 +88,6 @@ pub struct WorkspaceConfig {
 
     #[validate]
     pub runner: RunnerConfig,
-
-    #[validate]
-    pub typescript: Option<TypeScriptConfig>,
 
     #[validate]
     pub vcs: VcsConfig,
@@ -118,29 +109,6 @@ impl WorkspaceConfig {
 
         let mut config = WorkspaceConfig::load_config(figment.select(profile_name))?;
         config.extends = None;
-
-        if let Some(node_config) = &mut config.node {
-            // Versions from env vars should take precedence
-            if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
-                node_config.version = node_version;
-            }
-
-            if let Ok(npm_version) = env::var("MOON_NPM_VERSION") {
-                node_config.npm.version = npm_version;
-            }
-
-            if let Ok(pnpm_version) = env::var("MOON_PNPM_VERSION") {
-                if let Some(pnpm_config) = &mut node_config.pnpm {
-                    pnpm_config.version = pnpm_version;
-                }
-            }
-
-            if let Ok(yarn_version) = env::var("MOON_YARN_VERSION") {
-                if let Some(yarn_config) = &mut node_config.yarn {
-                    yarn_config.version = yarn_version;
-                }
-            }
-        }
 
         Ok(config)
     }

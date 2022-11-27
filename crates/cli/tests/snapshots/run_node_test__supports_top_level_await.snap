@@ -8,7 +8,7 @@ expression: get_assert_output(&assert)
 before
 awaiting
 after
-▪▪▪▪ node:topLevelAwait (100ms, 3162f273)
+▪▪▪▪ node:topLevelAwait (100ms)
 
 Tasks: 1 completed
  Time: 100ms

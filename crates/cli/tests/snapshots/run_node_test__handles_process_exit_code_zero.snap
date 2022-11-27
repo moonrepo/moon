@@ -7,7 +7,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ node:exitCodeZero
 stdout
 This should appear!
-▪▪▪▪ node:exitCodeZero (100ms, e009ce4e)
+▪▪▪▪ node:exitCodeZero (100ms)
 
 Tasks: 1 completed
  Time: 100ms

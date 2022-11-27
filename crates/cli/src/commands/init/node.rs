@@ -4,7 +4,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use moon_config::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
-    load_workspace_node_config_template,
+    load_toolchain_node_config_template,
 };
 use moon_lang::{is_using_package_manager, is_using_version_manager};
 use moon_logger::color;
@@ -18,8 +18,8 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use tera::{Context, Error, Tera};
 
-fn render_template(context: Context) -> Result<String, Error> {
-    Tera::one_off(load_workspace_node_config_template(), &context, false)
+pub fn render_template(context: Context) -> Result<String, Error> {
+    Tera::one_off(load_toolchain_node_config_template(), &context, false)
 }
 
 /// Detect the Node.js version from local configuration files,

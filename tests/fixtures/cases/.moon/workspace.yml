@@ -21,10 +21,3 @@ projects:
 
   # Runner
   passthroughArgs: 'passthrough-args'
-
-# Put at the bottom so we can append settings to test
-node:
-  version: '16.0.0'
-  addEnginesConstraint: false
-  dedupeOnLockfileChange: false
-  syncProjectWorkspaceDependencies: false

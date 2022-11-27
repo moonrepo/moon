@@ -5,7 +5,7 @@ pub mod task;
 pub use hasher::NodeTargetHasher;
 use moon_config::{
     DependencyConfig, DependencyScope, NodeProjectAliasFormat, PlatformType, ProjectConfig,
-    ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, WorkspaceConfig,
+    ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, ToolchainConfig,
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
@@ -57,17 +57,17 @@ impl Platform for NodePlatform {
     fn get_runtime_from_config(
         &self,
         project_config: Option<&ProjectConfig>,
-        workspace_config: &WorkspaceConfig,
+        toolchain_config: &ToolchainConfig,
     ) -> Option<Runtime> {
         if let Some(config) = &project_config {
-            if let Some(node_config) = &config.workspace.node {
+            if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
                     return Some(Runtime::Node(Version(version.to_owned(), true)));
                 }
             }
         }
 
-        if let Some(node_config) = &workspace_config.node {
+        if let Some(node_config) = &toolchain_config.node {
             return Some(Runtime::Node(Version(
                 node_config.version.to_owned(),
                 false,
@@ -82,7 +82,7 @@ impl Platform for NodePlatform {
         project_id: &str,
         project_root: &Path,
         workspace_root: &Path,
-        _workspace_config: &WorkspaceConfig,
+        _toolchain_config: &ToolchainConfig,
     ) -> Result<bool, MoonError> {
         let mut in_workspace = false;
 
@@ -112,14 +112,14 @@ impl Platform for NodePlatform {
     fn load_project_graph_aliases(
         &mut self,
         workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
+        toolchain_config: &ToolchainConfig,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
         let mut map_aliases = false;
         let mut alias_format = NodeProjectAliasFormat::NameAndScope;
 
-        if let Some(node_config) = &workspace_config.node {
+        if let Some(node_config) = &toolchain_config.node {
             if let Some(custom_format) = &node_config.alias_package_names {
                 map_aliases = true;
                 alias_format = custom_format.clone();
@@ -234,11 +234,11 @@ impl Platform for NodePlatform {
         project_root: &Path,
         _project_config: &ProjectConfig,
         _workspace_root: &Path,
-        workspace_config: &WorkspaceConfig,
+        toolchain_config: &ToolchainConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
         let mut tasks = BTreeMap::new();
 
-        if let Some(node_config) = &workspace_config.node {
+        if let Some(node_config) = &toolchain_config.node {
             if !node_config.infer_tasks_from_scripts {
                 return Ok(tasks);
             }

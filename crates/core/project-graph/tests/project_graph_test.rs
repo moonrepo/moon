@@ -1,7 +1,8 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, WorkspaceConfig, WorkspaceProjects,
+    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, ToolchainConfig, WorkspaceConfig,
+    WorkspaceProjects,
 };
 use moon_project_graph::ProjectGraph;
 use moon_utils::string_vec;
@@ -12,10 +13,6 @@ use std::fs;
 async fn get_aliases_graph() -> ProjectGraph {
     let workspace_root = get_fixtures_dir("project-graph/aliases");
     let workspace_config = WorkspaceConfig {
-        node: Some(NodeConfig {
-            alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
-            ..NodeConfig::default()
-        }),
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("explicit".to_owned(), "explicit".to_owned()),
             (
@@ -30,10 +27,18 @@ async fn get_aliases_graph() -> ProjectGraph {
         ])),
         ..WorkspaceConfig::default()
     };
+    let toolchain_config = ToolchainConfig {
+        node: Some(NodeConfig {
+            alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
+            ..NodeConfig::default()
+        }),
+        ..ToolchainConfig::default()
+    };
 
     ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
+        &toolchain_config,
         GlobalProjectConfig::default(),
         &CacheEngine::load(&workspace_root).await.unwrap(),
     )
@@ -56,6 +61,7 @@ async fn get_dependencies_graph() -> ProjectGraph {
     ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
+        &ToolchainConfig::default(),
         GlobalProjectConfig::default(),
         &CacheEngine::load(&workspace_root).await.unwrap(),
     )
@@ -78,6 +84,7 @@ async fn get_dependents_graph() -> ProjectGraph {
     ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
+        &ToolchainConfig::default(),
         GlobalProjectConfig::default(),
         &CacheEngine::load(&workspace_root).await.unwrap(),
     )
@@ -117,6 +124,7 @@ projects:
     let graph = ProjectGraph::generate(
         fixture.path(),
         &workspace_config,
+        &ToolchainConfig::default(),
         GlobalProjectConfig::default(),
         &CacheEngine::load(fixture.path()).await.unwrap(),
     )
@@ -155,6 +163,7 @@ mod globs {
         let graph = ProjectGraph::generate(
             fixture.path(),
             &workspace_config,
+            &ToolchainConfig::default(),
             GlobalProjectConfig::default(),
             &CacheEngine::load(fixture.path()).await.unwrap(),
         )
@@ -195,6 +204,7 @@ mod globs {
         let graph = ProjectGraph::generate(
             fixture.path(),
             &workspace_config,
+            &ToolchainConfig::default(),
             GlobalProjectConfig::default(),
             &CacheEngine::load(fixture.path()).await.unwrap(),
         )

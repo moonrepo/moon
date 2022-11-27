@@ -1,7 +1,7 @@
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig,
-    WorkspaceProjects,
+    GlobalProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, ToolchainConfig,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
@@ -108,6 +108,10 @@ pub struct ProjectGraph {
     /// Is the `projects` setting in `.moon/workspace.yml`.
     pub projects_map: ProjectsSourcesMap,
 
+    /// The toolchain configuration. Necessary for project variants.
+    /// Is loaded from `.moon/toolchain.yml`.
+    pub toolchain_config: ToolchainConfig,
+
     /// The workspace configuration. Necessary for project variants.
     /// Is loaded from `.moon/workspace.yml`.
     pub workspace_config: WorkspaceConfig,
@@ -122,7 +126,7 @@ impl Platformable for ProjectGraph {
 
         platform.load_project_graph_aliases(
             &self.workspace_root,
-            &self.workspace_config,
+            &self.toolchain_config,
             &self.projects_map,
             &mut self.aliases_map,
         )?;
@@ -137,6 +141,7 @@ impl ProjectGraph {
     pub async fn generate(
         workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
+        toolchain_config: &ToolchainConfig,
         global_config: GlobalProjectConfig,
         cache: &CacheEngine,
     ) -> Result<ProjectGraph, ProjectError> {
@@ -157,7 +162,8 @@ impl ProjectGraph {
             indices: Arc::new(RwLock::new(FxHashMap::default())),
             platforms: PlatformManager::default(),
             projects_map: load_projects_from_cache(workspace_root, workspace_config, cache).await?,
-            workspace_config: workspace_config.clone(),
+            toolchain_config: toolchain_config.to_owned(),
+            workspace_config: workspace_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
         })
     }
@@ -377,7 +383,7 @@ impl ProjectGraph {
                 &project.root,
                 &project.config,
                 &self.workspace_root,
-                &self.workspace_config,
+                &self.toolchain_config,
             )? {
                 // Inferred tasks should not override explicit tasks
                 #[allow(clippy::map_entry)]

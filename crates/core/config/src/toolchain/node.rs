@@ -10,7 +10,6 @@ pub fn default_node_version() -> String {
 }
 
 pub fn default_npm_version() -> String {
-    // Use the version bundled with node by default
     env::var("MOON_NPM_VERSION").unwrap_or_else(|_| NPM.default_version.to_string())
 }
 

@@ -6,7 +6,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ npm install
 ▪▪▪▪ node:passthroughArgs
 Args: -aBc --opt value --optCamel=value foo 'bar baz' --opt-kebab 123
-▪▪▪▪ node:passthroughArgs (100ms, 34fdffbb)
+▪▪▪▪ node:passthroughArgs (100ms)
 
 Tasks: 1 completed
  Time: 100ms

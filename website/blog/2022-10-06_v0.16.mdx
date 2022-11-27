@@ -1,6 +1,6 @@
 ---
 slug: v0.16
-title: v0.16 - Per-project tool versions and TypeScript improvements
+title: moon v0.16 - Per-project tool versions and TypeScript improvements
 authors: [milesj]
 tags: [toolchain, runner, generator, typescript, node]
 image: ./img/v0.16.png
@@ -66,7 +66,7 @@ unfortunate as each project folder is now littered with the declaration outputs,
 gitignored.
 
 To improve this experience, we're introducing a new setting
-[`typescript.routeOutDirToCache`](../docs/config/workspace#routeoutdirtocache), that will update the
+[`typescript.routeOutDirToCache`](../docs/config/toolchain#routeoutdirtocache), that will update the
 `outDir` compiler option of _all_ projects to route to moon's cache directory (which should already
 be gitignored). This will standardize the use of project references for the entire repository.
 
@@ -89,9 +89,9 @@ For example, a project at "packages/components" will route to the following outp
 ### Mapping project references as `paths`
 
 moon automatically keeps TypeScript project references in sync with the
-[`typescript.syncProjectReferences`](../docs/config/workspace#syncprojectreferences) setting, which
+[`typescript.syncProjectReferences`](../docs/config/toolchain#syncprojectreferences) setting, which
 is great, but we can take it further. With the new
-[`typescript.syncProjectReferencesToPaths`](../docs/config/workspace#syncprojectreferencestopaths)
+[`typescript.syncProjectReferencesToPaths`](../docs/config/toolchain#syncprojectreferencestopaths)
 setting, project references (either synced or explicitly defined) will _also_ be mapped to the
 `paths` compiler option, automating the list of import aliases.
 

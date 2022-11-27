@@ -1,0 +1,17 @@
+$schema: '../website/static/schemas/toolchain.json'
+
+node:
+  version: '16.18.0'
+  packageManager: 'yarn'
+  yarn:
+    version: '3.2.3'
+    plugins:
+      - 'interactive-tools'
+      - 'version'
+      - 'workspace-tools'
+  addEnginesConstraint: false
+  inferTasksFromScripts: false
+
+typescript:
+  routeOutDirToCache: true
+  syncProjectReferences: true

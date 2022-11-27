@@ -16,7 +16,7 @@ MOON_TARGET=node:envVarsMoon
 MOON_TOOLCHAIN_DIR=~/.moon
 MOON_WORKING_DIR=<WORKSPACE>
 MOON_WORKSPACE_ROOT=<WORKSPACE>
-▪▪▪▪ node:envVarsMoon (100ms, 0f1107c7)
+▪▪▪▪ node:envVarsMoon (100ms)
 
 Tasks: 1 completed
  Time: 100ms

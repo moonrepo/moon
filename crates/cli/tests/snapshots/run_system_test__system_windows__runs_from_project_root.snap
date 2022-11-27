@@ -4,7 +4,7 @@ expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ windows:runFromProject
 <WORKSPACE>\windows
-▪▪▪▪ windows:runFromProject (100ms, 555c7a85)
+▪▪▪▪ windows:runFromProject (100ms)
 
 Tasks: 1 completed
  Time: 100ms

@@ -6,7 +6,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ base:runFromWorkspace
 echo 'from workspace' (in workspace)
 from workspace
-▪▪▪▪ base:runFromWorkspace (100ms, 33ec20af)
+▪▪▪▪ base:runFromWorkspace (100ms)
 
 Tasks: 1 completed
  Time: 100ms

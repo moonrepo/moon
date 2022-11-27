@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:none
-▪▪▪▪ outputStyles:none (100ms, ea259d36)
+▪▪▪▪ outputStyles:none (100ms)
 ▪▪▪▪ outputStyles:nonePrimary (no op)
 
 Tasks: 2 completed

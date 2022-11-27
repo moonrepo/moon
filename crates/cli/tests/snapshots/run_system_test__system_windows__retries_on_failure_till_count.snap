@@ -4,20 +4,20 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ windows:retryCount
 stdout
-▪▪▪▪ windows:retryCount (100ms, e899844e)
+▪▪▪▪ windows:retryCount (100ms)
 ▪▪▪▪ windows:retryCount (2/4)
 stdout
-▪▪▪▪ windows:retryCount (2/4, 100ms, e899844e)
+▪▪▪▪ windows:retryCount (2/4, 100ms)
 ▪▪▪▪ windows:retryCount (3/4)
 stdout
-▪▪▪▪ windows:retryCount (3/4, 100ms, e899844e)
+▪▪▪▪ windows:retryCount (3/4, 100ms)
 ▪▪▪▪ windows:retryCount (4/4)
 stdout
-▪▪▪▪ windows:retryCount (4/4, 100ms, e899844e)
-stderr 
-stderr 
-stderr 
-stderr 
+▪▪▪▪ windows:retryCount (4/4, 100ms)
+stderr
+stderr
+stderr
+stderr
 
  ERROR  Process cmd.exe failed with a 1 exit code.
 

@@ -5,7 +5,7 @@ expression: "get_path_safe_output(&assert, fixture.path())"
 ▪▪▪▪ windows:envVarsMoon
 MOON_TARGET=windows:envVarsMoon
 MOON_PROJECT_ID=windows
-▪▪▪▪ windows:envVarsMoon (100ms, 6a0e36a6)
+▪▪▪▪ windows:envVarsMoon (100ms)
 
 Tasks: 1 completed
  Time: 100ms

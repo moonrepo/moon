@@ -693,7 +693,9 @@ impl<'a> TargetRunner<'a> {
             comments.push(time::elapsed(duration));
         }
 
-        if attempt.finished_at.is_some() {
+        // Do not include the hash while testing, as the hash
+        // constantly changes and breaks our local snapshots
+        if !is_test_env() && attempt.finished_at.is_some() {
             comments.push(self.get_short_hash().to_owned());
         }
 

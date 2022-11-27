@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ unix:echo
 hello
-▪▪▪▪ unix:echo (100ms, 36613733)
+▪▪▪▪ unix:echo (100ms)
 
 Tasks: 1 completed
  Time: 100ms

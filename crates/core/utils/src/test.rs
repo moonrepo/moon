@@ -42,15 +42,6 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> assert_fs::TempDir {
         )
         .unwrap();
 
-    let toolchain = temp_dir.child(".moon/toolchain.yml");
-
-    if !toolchain.exists() {
-        toolchain.touch().unwrap();
-        toolchain
-            .write_str("extends: '../shared-toolchain.yml'")
-            .unwrap();
-    }
-
     temp_dir
 }
 

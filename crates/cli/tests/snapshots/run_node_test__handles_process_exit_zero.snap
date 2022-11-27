@@ -6,7 +6,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ npm install
 ▪▪▪▪ node:processExitZero
 stdout
-▪▪▪▪ node:processExitZero (100ms, 8d69257d)
+▪▪▪▪ node:processExitZero (100ms)
 
 Tasks: 1 completed
  Time: 100ms

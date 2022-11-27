@@ -186,7 +186,7 @@ mod scaffold_sources {
     fn can_include_more_files() {
         let fixture = create_sandbox_with_git("cases");
 
-        let assert = create_moon_command(fixture.path())
+        create_moon_command(fixture.path())
             .arg("docker")
             .arg("scaffold")
             .arg("base")
@@ -198,8 +198,6 @@ mod scaffold_sources {
             .assert();
 
         let docker = fixture.join(".moon/docker/sources");
-
-        moon_utils::test::debug_sandbox(&fixture, &assert);
 
         assert!(docker.join("base").exists());
         assert!(docker.join("outputs/generate.js").exists());

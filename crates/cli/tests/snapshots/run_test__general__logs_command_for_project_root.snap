@@ -6,7 +6,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ base:runFromProject
 echo 'from project' (in ./base)
 from project
-▪▪▪▪ base:runFromProject (100ms, e04dffaf)
+▪▪▪▪ base:runFromProject (100ms)
 
 Tasks: 1 completed
  Time: 100ms

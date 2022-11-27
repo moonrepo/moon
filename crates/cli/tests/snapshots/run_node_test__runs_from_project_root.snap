@@ -6,7 +6,7 @@ expression: "get_path_safe_output(&assert, fixture.path())"
 ▪▪▪▪ npm install
 ▪▪▪▪ node:runFromProject
 <WORKSPACE>/base
-▪▪▪▪ node:runFromProject (100ms, 2494e06c)
+▪▪▪▪ node:runFromProject (100ms)
 
 Tasks: 1 completed
  Time: 100ms

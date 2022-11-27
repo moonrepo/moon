@@ -4,7 +4,7 @@ use insta::assert_snapshot;
 use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_assert_output};
 use predicates::prelude::*;
 use std::fs::read_to_string;
-use utils::{append_workspace_config, get_path_safe_output, update_workspace_config};
+use utils::{append_toolchain_config, get_path_safe_output, update_toolchain_config};
 
 #[test]
 fn runs_package_managers() {
@@ -177,7 +177,7 @@ fn passes_args_through() {
 fn passes_args_to_the_node_bin() {
     let fixture = create_sandbox_with_git("node");
 
-    append_workspace_config(
+    append_toolchain_config(
         fixture.path(),
         "  binExecArgs:\n    - '--preserve-symlinks'\n",
     );
@@ -361,7 +361,7 @@ mod engines {
     fn adds_engines_constraint() {
         let fixture = create_sandbox_with_git("node");
 
-        update_workspace_config(
+        update_toolchain_config(
             fixture.path(),
             "addEnginesConstraint: false",
             "addEnginesConstraint: true",
@@ -379,7 +379,7 @@ mod engines {
     fn doesnt_add_engines_constraint() {
         let fixture = create_sandbox_with_git("node");
 
-        append_workspace_config(fixture.path(), r#"  addEnginesConstraint: false"#);
+        append_toolchain_config(fixture.path(), r#"  addEnginesConstraint: false"#);
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -410,7 +410,7 @@ mod version_manager {
     fn adds_nvmrc_file() {
         let fixture = create_sandbox_with_git("node");
 
-        append_workspace_config(fixture.path(), r#"  syncVersionManagerConfig: nvm"#);
+        append_toolchain_config(fixture.path(), r#"  syncVersionManagerConfig: nvm"#);
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -429,7 +429,7 @@ mod version_manager {
     fn adds_nodenv_file() {
         let fixture = create_sandbox_with_git("node");
 
-        append_workspace_config(fixture.path(), r#"  syncVersionManagerConfig: nodenv"#);
+        append_toolchain_config(fixture.path(), r#"  syncVersionManagerConfig: nodenv"#);
 
         create_moon_command(fixture.path())
             .arg("run")
@@ -448,7 +448,7 @@ mod version_manager {
     fn errors_for_invalid_value() {
         let fixture = create_sandbox_with_git("node");
 
-        append_workspace_config(fixture.path(), r#"  syncVersionManagerConfig: invalid"#);
+        append_toolchain_config(fixture.path(), r#"  syncVersionManagerConfig: invalid"#);
 
         let assert = create_moon_command(fixture.path())
             .arg("run")
@@ -470,13 +470,13 @@ mod sync_depends_on {
     fn test_depends_on_format(format: &str) {
         let fixture = create_sandbox_with_git("node");
 
-        update_workspace_config(
+        update_toolchain_config(
             fixture.path(),
             "syncProjectWorkspaceDependencies: false",
             "syncProjectWorkspaceDependencies: true",
         );
 
-        append_workspace_config(
+        append_toolchain_config(
             fixture.path(),
             &format!("  dependencyVersionFormat: {}", format),
         );
@@ -542,7 +542,7 @@ mod sync_depends_on {
     fn syncs_depends_on_with_scopes() {
         let fixture = create_sandbox_with_git("node");
 
-        update_workspace_config(
+        update_toolchain_config(
             fixture.path(),
             "syncProjectWorkspaceDependencies: false",
             "syncProjectWorkspaceDependencies: true",
@@ -1047,7 +1047,7 @@ mod typescript {
     fn doesnt_create_missing_tsconfig_if_setting_off() {
         let fixture = create_sandbox_with_git("typescript");
 
-        update_workspace_config(
+        update_toolchain_config(
             fixture.path(),
             "createMissingConfig: true",
             "createMissingConfig: false",
@@ -1067,7 +1067,7 @@ mod typescript {
     fn doesnt_create_missing_tsconfig_if_syncing_off() {
         let fixture = create_sandbox_with_git("typescript");
 
-        update_workspace_config(
+        update_toolchain_config(
             fixture.path(),
             "syncProjectReferences: true",
             "syncProjectReferences: false",
@@ -1141,7 +1141,7 @@ mod typescript {
         fn routes_to_cache() {
             let fixture = create_sandbox_with_git("typescript");
 
-            update_workspace_config(
+            update_toolchain_config(
                 fixture.path(),
                 "routeOutDirToCache: false",
                 "routeOutDirToCache: true",
@@ -1161,7 +1161,7 @@ mod typescript {
         fn routes_to_cache_when_no_compiler_options() {
             let fixture = create_sandbox_with_git("typescript");
 
-            update_workspace_config(
+            update_toolchain_config(
                 fixture.path(),
                 "routeOutDirToCache: false",
                 "routeOutDirToCache: true",
@@ -1202,7 +1202,7 @@ mod typescript {
         fn maps_paths() {
             let fixture = create_sandbox_with_git("typescript");
 
-            update_workspace_config(
+            update_toolchain_config(
                 fixture.path(),
                 "syncProjectReferencesToPaths: false",
                 "syncProjectReferencesToPaths: true",
@@ -1222,13 +1222,13 @@ mod typescript {
         fn doesnt_map_paths_if_no_refs() {
             let fixture = create_sandbox_with_git("typescript");
 
-            update_workspace_config(
+            update_toolchain_config(
                 fixture.path(),
                 "syncProjectReferences: true",
                 "syncProjectReferences: false",
             );
 
-            update_workspace_config(
+            update_toolchain_config(
                 fixture.path(),
                 "syncProjectReferencesToPaths: false",
                 "syncProjectReferencesToPaths: true",
@@ -1269,7 +1269,7 @@ mod workspace_overrides {
     fn can_override_version() {
         let fixture = create_sandbox_with_git("node");
 
-        update_workspace_config(
+        update_toolchain_config(
             fixture.path(),
             "dedupeOnLockfileChange: true",
             "dedupeOnLockfileChange: false",

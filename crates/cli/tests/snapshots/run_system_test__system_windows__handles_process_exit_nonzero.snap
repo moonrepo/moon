@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ▪▪▪▪ windows:exitNonZero
 stdout
 ▪▪▪▪ windows:exitNonZero (100ms)
-stderr
+stderr 
 
  ERROR  Process cmd.exe failed with a 1 exit code.
 

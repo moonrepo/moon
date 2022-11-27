@@ -14,10 +14,10 @@ stdout
 ▪▪▪▪ windows:retryCount (4/4)
 stdout
 ▪▪▪▪ windows:retryCount (4/4, 100ms)
-stderr
-stderr
-stderr
-stderr
+stderr 
+stderr 
+stderr 
+stderr 
 
  ERROR  Process cmd.exe failed with a 1 exit code.
 

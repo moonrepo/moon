@@ -571,13 +571,14 @@ impl<'a> TargetRunner<'a> {
         checkpoint: Checkpoint,
         comments: &[T],
     ) -> Result<(), MoonError> {
+        let label = label_checkpoint(&self.task.target, checkpoint);
+
         if comments.is_empty() {
-            self.stdout
-                .write_line(&label_checkpoint(&self.task.target, checkpoint))?;
+            self.stdout.write_line(&label)?;
         } else {
             self.stdout.write_line(&format!(
                 "{} {}",
-                label_checkpoint(&self.task.target, checkpoint),
+                label,
                 color::muted(format!(
                     "({})",
                     comments

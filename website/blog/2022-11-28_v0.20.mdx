@@ -1,22 +1,67 @@
 ---
 slug: v0.20
-title: v0.20 - ???
+title: moon v0.20 - Future proofing and toolchain/hydration improvements
 authors: [milesj]
-tags: [hydration]
-# image: ./img/v0.19.png
+tags: [hydration, toolchain, generator]
+# image: ./img/v0.20.png
 ---
 
-TODO
+With this release, we've focused heavily on future proofing our toolchain, and how it integrates
+with moon. We've also landed a handful of quality of life improvements.
 
 <!--truncate-->
 
-## Toolchain next steps
+## Breaking changes
+
+To start, we have a few breaking changes this release to be aware of!
+
+### Moved toolchain settings
+
+The [`.moon/workspace.yml`](../docs/config/workspace) config file was getting rather bloated and
+complicated, as it contained the projects list, settings for each toolchain language, and each
+supported service (runner, generator, etc). Furthermore, this file will keep getting larger with
+each new language and service we support.
+
+To future proof moon, and to land as many breaking changes before an official v1, we've decided to
+move toolchain specific settings into a new file, [`.moon/toolchain.yml`](../docs/config/toolchain).
+This new file will house all language and dependency manager specific settings.
+
+To migrate, move the `node` and `typescript` settings from `.moon/workspace.yml` to
+`.moon/toolchain.yml`.
+
+```yaml title=".moon/toolchain.yml"
+node:
+  # ...
+
+typescript:
+  # ...
+```
+
+### Moved project-level overrides
+
+Continuing with the changes above, we've also moved the `workspace.node` and `workspace.typescript`
+from [`moon.yml`](../docs/config/project) into a new parent field, `toolchain`. We think this makes
+more sense.
+
+```yaml title="moon.yml"
+# Before
+workspace:
+  node:
+    version: '...'
+
+# After
+toolchain:
+  node:
+    version: '...'
+```
+
+## Future of the toolchain
 
 We're really proud of our toolchain, as it avoids an array problems that developers deal with on a
 day to day basis, primarily around running tasks using the wrong version of Node.js or their chosen
-package manager. While we're in the process of supporting additional languages, starting with Deno,
-we had an idea... Since this is basically a better "version manager for tools", why not extract this
-out into something else?
+package manager. While we're in the process of supporting additional languages, starting with
+[Deno](https://deno.land/), we had an idea... Since this is basically a better "version manager for
+tools", why not extract this out into something else?
 
 And that's what we plan to do! Before we do so, we've had to make some architectural changes, many
 of which have landed in this release. During this process, we were able to implement an even better
@@ -58,12 +103,17 @@ View the
 [official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.20.0) for a
 full list of changes.
 
+- Added `vcs.remoteCandidates` to `.moon/workspace.yml` to customize the remotes for git to query
+  against.
 - Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler
   options.
 - YAML files will now respect the closest `.editorconfig` file.
+- Refactored terminal output for bette readability.
 
 ## What's next?
 
 Expect the following in the v0.21 release!
 
-- ???
+- An interactive dependency and project graph visualizer.
+- A more performant project graph.
+- More quality of life improvements for affected files.

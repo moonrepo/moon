@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Moved the `node` and `typescript` settings from `.moon/workspace.yml` to a new config,
+  `.moon/toolchain.yml`.
+- Moved the `workspace.node` and `workspace.typescript` settings in `moon.yml` to `toolchain.node`
+  and `toolchain.typescript`.
+
 #### 🚀 Updates
 
 - Added `vcs.remoteCandidates` to `.moon/workspace.yml` to customize the remotes for git to query
@@ -13,7 +20,7 @@
 ##### Toolchain
 
 - Implemented a new toolchain, that is more efficient and performant.
-- Will now long to the terminal when node, npm, etc, are being installed for the first time.
+- Will now log to the terminal when node, npm, etc, are being installed for the first time.
 
 ##### Runner
 
@@ -22,6 +29,7 @@
   processes.
 - Implemented a new file tree diffing algorithm that speeds up task output hydration by 10x.
 - Updated pnpm to no longer run `pnpm prune` while deduping dependencies, as it produces unexpected
+  results.
 
 ##### Generator
 

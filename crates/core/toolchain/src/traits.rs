@@ -1,7 +1,7 @@
 use crate::errors::ToolchainError;
 use moon_lang::LockfileDependencyVersions;
 use moon_utils::process::Command;
-use probe_core::async_trait;
+use proto_core::async_trait;
 use rustc_hash::FxHashMap;
 use std::path::Path;
 

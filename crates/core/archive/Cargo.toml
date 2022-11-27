@@ -14,7 +14,7 @@ harness = false
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-flate2 = "1.0.24"
+flate2 = "1.0.25"
 rustc-hash = { workspace = true }
 tar = "0.4.38"
 thiserror = { workspace = true }

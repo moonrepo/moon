@@ -34,6 +34,7 @@
   `.editorconfig`.
 - When writing YAML files, indentation and formatting will be inferred from the closest
   `.editorconfig` as best as possible.
+- Fixed an issue where parsing `yarn.lock` would panic on certain Windows machines.
 
 #### ⚙️ Internal
 

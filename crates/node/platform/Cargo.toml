@@ -28,5 +28,5 @@ tokio = { workspace = true }
 [dev-dependencies]
 moon_cache = { path = "../../core/cache" }
 moon_project_graph = { path = "../../core/project-graph" }
-insta = "1.21.0"
+insta = { workspace = true }
 pretty_assertions = "1.3.0"

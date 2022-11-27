@@ -1,4 +1,4 @@
-use crate::errors::ProbeError;
+use crate::errors::ProtoError;
 use lenient_semver::Version;
 use log::trace;
 use serde::de::DeserializeOwned;
@@ -15,7 +15,7 @@ pub trait Resolvable<'tool>: Send + Sync {
         &mut self,
         initial_version: &str,
         manifest_url: Option<&str>,
-    ) -> Result<String, ProbeError>;
+    ) -> Result<String, ProtoError>;
 }
 
 // Aliases are words that map to version. For example, "latest" -> "1.2.3".
@@ -39,13 +39,13 @@ pub fn remove_v_prefix(value: &str) -> String {
     value.to_owned()
 }
 
-pub async fn load_versions_manifest<T, U>(url: U) -> Result<T, ProbeError>
+pub async fn load_versions_manifest<T, U>(url: U) -> Result<T, ProtoError>
 where
     T: DeserializeOwned,
     U: AsRef<str>,
 {
     let url = url.as_ref();
-    let handle_error = |e: reqwest::Error| ProbeError::Http(url.to_owned(), e.to_string());
+    let handle_error = |e: reqwest::Error| ProtoError::Http(url.to_owned(), e.to_string());
 
     trace!(
         target: "proto:resolver",
@@ -57,12 +57,12 @@ where
     let content = response.text().await.map_err(handle_error)?;
 
     let manifest: T = serde_json::from_str(&content)
-        .map_err(|e| ProbeError::Http(url.to_owned(), e.to_string()))?;
+        .map_err(|e| ProtoError::Http(url.to_owned(), e.to_string()))?;
 
     Ok(manifest)
 }
 
-pub fn parse_version(version: &str) -> Result<Version, ProbeError> {
+pub fn parse_version(version: &str) -> Result<Version, ProtoError> {
     Version::parse(version)
-        .map_err(|e| ProbeError::VersionParseFailed(version.to_owned(), e.to_string()))
+        .map_err(|e| ProtoError::VersionParseFailed(version.to_owned(), e.to_string()))
 }

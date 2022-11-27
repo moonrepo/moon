@@ -1,5 +1,5 @@
 use crate::downloader::Downloadable;
-use crate::errors::ProbeError;
+use crate::errors::ProtoError;
 use log::trace;
 use sha2::{Digest, Sha256};
 use std::fs::File;
@@ -11,14 +11,14 @@ pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
     /// Returns an absolute file path to the checksum file.
     /// This may not exist, as the path is composed ahead of time.
     /// This is typically ~/.prove/temp/<file>.
-    fn get_checksum_path(&self) -> Result<PathBuf, ProbeError>;
+    fn get_checksum_path(&self) -> Result<PathBuf, ProtoError>;
 
     /// If applicable, download all files necessary for verifying checksums.
     async fn download_checksum(
         &self,
         to_file: &Path,
         from_url: Option<&str>,
-    ) -> Result<bool, ProbeError>;
+    ) -> Result<bool, ProtoError>;
 
     /// Verify the downloaded file using the checksum strategy for the tool.
     /// Common strategies are SHA256 and MD5.
@@ -26,12 +26,12 @@ pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
         &self,
         checksum_file: &Path,
         download_file: &Path,
-    ) -> Result<bool, ProbeError>;
+    ) -> Result<bool, ProtoError>;
 }
 
-pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProbeError> {
+pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProtoError> {
     let path = path.as_ref();
-    let handle_error = |e: io::Error| ProbeError::Fs(path.to_path_buf(), e.to_string());
+    let handle_error = |e: io::Error| ProtoError::Fs(path.to_path_buf(), e.to_string());
 
     trace!(
         target: "proto:verifier",

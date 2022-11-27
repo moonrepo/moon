@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum ProbeError {
+pub enum ProtoError {
     #[error("Failed to download tool from {0}. {1}")]
     DownloadFailed(String, String),
 

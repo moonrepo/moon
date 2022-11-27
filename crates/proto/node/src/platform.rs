@@ -1,4 +1,4 @@
-use proto_core::ProbeError;
+use proto_core::ProtoError;
 use std::fmt;
 
 pub enum NodeArch {
@@ -12,7 +12,7 @@ pub enum NodeArch {
 }
 
 impl std::str::FromStr for NodeArch {
-    type Err = ProbeError;
+    type Err = ProtoError;
 
     fn from_str(s: &str) -> Result<NodeArch, Self::Err> {
         match s {
@@ -23,7 +23,7 @@ impl std::str::FromStr for NodeArch {
             "s390x" => Ok(NodeArch::S390x),
             "x86_64" => Ok(NodeArch::X64),
             "x86" => Ok(NodeArch::X86),
-            unknown => Err(ProbeError::UnsupportedArchitecture(
+            unknown => Err(ProtoError::UnsupportedArchitecture(
                 "Node.js".into(),
                 unknown.to_owned(),
             )),

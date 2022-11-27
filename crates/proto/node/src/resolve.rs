@@ -4,7 +4,7 @@ use crate::NodeLanguage;
 use log::debug;
 use proto_core::{
     add_v_prefix, async_trait, is_version_alias, load_versions_manifest, parse_version,
-    Describable, ProbeError, Resolvable,
+    Describable, ProtoError, Resolvable,
 };
 use serde::Deserialize;
 
@@ -31,7 +31,7 @@ impl Resolvable<'_> for NodeLanguage {
         &mut self,
         initial_version: &str,
         manifest_url: Option<&str>,
-    ) -> Result<String, ProbeError> {
+    ) -> Result<String, ProtoError> {
         let mut candidate = None;
         let initial_version = initial_version.to_lowercase();
 
@@ -75,7 +75,7 @@ impl Resolvable<'_> for NodeLanguage {
             }
 
             if candidate.is_none() {
-                return Err(ProbeError::VersionUnknownAlias(initial_version));
+                return Err(ProtoError::VersionUnknownAlias(initial_version));
             }
 
             // Find the first version with a matching alias
@@ -90,7 +90,7 @@ impl Resolvable<'_> for NodeLanguage {
             }
 
             if candidate.is_none() {
-                return Err(ProbeError::VersionUnknownAlias(initial_version));
+                return Err(ProtoError::VersionUnknownAlias(initial_version));
             }
 
             // An explicit version? Support optional minor and patch
@@ -104,7 +104,7 @@ impl Resolvable<'_> for NodeLanguage {
         }
 
         let Some(candidate) = candidate else {
-            return Err(ProbeError::VersionResolveFailed(initial_version))
+            return Err(ProtoError::VersionResolveFailed(initial_version))
         };
 
         let version = parse_version(candidate)?.to_string();

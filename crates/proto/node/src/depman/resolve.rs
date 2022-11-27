@@ -2,7 +2,7 @@ use crate::depman::{NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
 use proto_core::{
     async_trait, is_version_alias, load_versions_manifest, parse_version, remove_v_prefix,
-    Describable, ProbeError, Resolvable,
+    Describable, ProtoError, Resolvable,
 };
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
@@ -48,7 +48,7 @@ impl Resolvable<'_> for NodeDependencyManager {
         &mut self,
         initial_version: &str,
         manifest_url: Option<&str>,
-    ) -> Result<String, ProbeError> {
+    ) -> Result<String, ProtoError> {
         let mut initial_version = remove_v_prefix(initial_version);
 
         // Yarn is installed through npm, but only v1 exists in the npm registry,
@@ -87,7 +87,7 @@ impl Resolvable<'_> for NodeDependencyManager {
             initial_version = match manifest.dist_tags.get(&initial_version) {
                 Some(version) => version.to_owned(),
                 None => {
-                    return Err(ProbeError::VersionUnknownAlias(initial_version));
+                    return Err(ProtoError::VersionUnknownAlias(initial_version));
                 }
             };
         }
@@ -95,7 +95,7 @@ impl Resolvable<'_> for NodeDependencyManager {
         // Infer the possible candidate from the versions map
         let candidate = match manifest.versions.get(&initial_version) {
             Some(version) => Some(&version.version),
-            None => return Err(ProbeError::VersionResolveFailed(initial_version)),
+            None => return Err(ProtoError::VersionResolveFailed(initial_version)),
         };
 
         let version = parse_version(candidate.unwrap())?.to_string();

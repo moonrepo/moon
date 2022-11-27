@@ -43,11 +43,11 @@ pub trait Tool<'tool>:
     + Installable<'tool>
     + Executable<'tool>
 {
-    async fn before_setup(&mut self) -> Result<(), ProbeError> {
+    async fn before_setup(&mut self) -> Result<(), ProtoError> {
         Ok(())
     }
 
-    async fn setup(&mut self, initial_version: &str) -> Result<bool, ProbeError> {
+    async fn setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
         // Resolve a semantic version
         self.resolve_version(initial_version, None).await?;
 
@@ -71,7 +71,7 @@ pub trait Tool<'tool>:
         Ok(installed)
     }
 
-    async fn is_setup(&mut self) -> Result<bool, ProbeError> {
+    async fn is_setup(&mut self) -> Result<bool, ProtoError> {
         let install_dir = self.get_install_dir()?;
 
         if install_dir.exists() {
@@ -86,11 +86,11 @@ pub trait Tool<'tool>:
         Ok(false)
     }
 
-    async fn after_setup(&mut self) -> Result<(), ProbeError> {
+    async fn after_setup(&mut self) -> Result<(), ProtoError> {
         Ok(())
     }
 
-    async fn cleanup(&mut self) -> Result<(), ProbeError> {
+    async fn cleanup(&mut self) -> Result<(), ProtoError> {
         let download_path = self.get_download_path()?;
         let checksum_path = self.get_checksum_path()?;
 
@@ -105,24 +105,24 @@ pub trait Tool<'tool>:
         Ok(())
     }
 
-    async fn before_teardown(&mut self) -> Result<(), ProbeError> {
+    async fn before_teardown(&mut self) -> Result<(), ProtoError> {
         Ok(())
     }
 
-    async fn teardown(&mut self) -> Result<(), ProbeError> {
+    async fn teardown(&mut self) -> Result<(), ProtoError> {
         self.cleanup().await?;
 
         let install_dir = self.get_install_dir()?;
 
         if install_dir.exists() {
             fs::remove_dir_all(&install_dir)
-                .map_err(|e| ProbeError::Fs(install_dir, e.to_string()))?;
+                .map_err(|e| ProtoError::Fs(install_dir, e.to_string()))?;
         }
 
         Ok(())
     }
 
-    async fn after_teardown(&mut self) -> Result<(), ProbeError> {
+    async fn after_teardown(&mut self) -> Result<(), ProtoError> {
         Ok(())
     }
 }

@@ -1,19 +1,19 @@
 use crate::depman::NodeDependencyManager;
 use log::debug;
 use proto_core::{
-    async_trait, download_from_url, Describable, Downloadable, ProbeError, Resolvable,
+    async_trait, download_from_url, Describable, Downloadable, ProtoError, Resolvable,
 };
 use std::path::{Path, PathBuf};
 
 #[async_trait]
 impl Downloadable<'_> for NodeDependencyManager {
-    fn get_download_path(&self) -> Result<PathBuf, ProbeError> {
+    fn get_download_path(&self) -> Result<PathBuf, ProtoError> {
         Ok(self
             .temp_dir
             .join(format!("{}.tgz", self.get_resolved_version())))
     }
 
-    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProbeError> {
+    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProtoError> {
         if to_file.exists() {
             debug!(target: self.get_log_target(), "Dependency manager already downloaded, continuing");
 

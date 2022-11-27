@@ -1,16 +1,16 @@
 use crate::download::get_archive_file_path;
 use crate::NodeLanguage;
 use log::debug;
-use proto_core::{async_trait, untar, unzip, Describable, Installable, ProbeError, Resolvable};
+use proto_core::{async_trait, untar, unzip, Describable, Installable, ProtoError, Resolvable};
 use std::path::{Path, PathBuf};
 
 #[async_trait]
 impl Installable<'_> for NodeLanguage {
-    fn get_install_dir(&self) -> Result<PathBuf, ProbeError> {
+    fn get_install_dir(&self) -> Result<PathBuf, ProtoError> {
         Ok(self.install_dir.join(self.get_resolved_version()))
     }
 
-    async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProbeError> {
+    async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProtoError> {
         if install_dir.exists() {
             debug!(target: self.get_log_target(), "Tool already installed, continuing");
 
@@ -18,7 +18,7 @@ impl Installable<'_> for NodeLanguage {
         }
 
         if !download_path.exists() {
-            return Err(ProbeError::InstallMissingDownload(self.get_name()));
+            return Err(ProtoError::InstallMissingDownload(self.get_name()));
         }
 
         let prefix = get_archive_file_path(self.get_resolved_version())?;

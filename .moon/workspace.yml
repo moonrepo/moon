@@ -20,3 +20,7 @@ runner:
 
 vcs:
   defaultBranch: 'master'
+
+# TEMP, remove after 0.20 lands
+node:
+  version: '16.18.0'

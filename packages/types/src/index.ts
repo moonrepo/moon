@@ -4,5 +4,5 @@ export * from './project';
 export * from './project-config';
 export * from './runner';
 export * from './template-config';
-export * from './workspace-config';
 export * from './toolchain-config';
+export * from './workspace-config';

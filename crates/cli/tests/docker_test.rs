@@ -52,6 +52,7 @@ mod scaffold_workspace {
         let docker = fixture.join(".moon/docker/workspace");
 
         assert!(docker.join(".moon/project.yml").exists());
+        assert!(docker.join(".moon/toolchain.yml").exists());
         assert!(docker.join(".moon/workspace.yml").exists());
     }
 

@@ -1,5 +1,5 @@
 import type { Nullable, Platform } from './common';
-import type { NodeConfig } from './workspace-config';
+import type { NodeConfig } from './toolchain-config';
 
 export type DependencyScope = 'development' | 'peer' | 'production';
 

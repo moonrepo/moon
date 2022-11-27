@@ -235,11 +235,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:asDep").await,
-            "2c655fda2dd842343586fb5c198cc84459ed21d87d50b81e4ecd02f91b2c8446"
+            "92c5b8c6dceccedc0547032c9eeb5be64d225545ac679c6b1bb7d41baf892d77"
         );
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
-            "5f32c1e7aafd85e784875857367364efc915ce1839de714a382939b4e593a3d5"
+            "3d4fef133338cff776bd701538bf4861c92dce2e1f1282feb35d42a1b13c4b3b"
         );
     }
 
@@ -254,11 +254,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:asDep").await,
-            "2c655fda2dd842343586fb5c198cc84459ed21d87d50b81e4ecd02f91b2c8446"
+            "92c5b8c6dceccedc0547032c9eeb5be64d225545ac679c6b1bb7d41baf892d77"
         );
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
-            "5f32c1e7aafd85e784875857367364efc915ce1839de714a382939b4e593a3d5"
+            "3d4fef133338cff776bd701538bf4861c92dce2e1f1282feb35d42a1b13c4b3b"
         );
 
         // Create an `inputs` file for `outputs:asDep`
@@ -271,11 +271,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:asDep").await,
-            "3bcf1687a1902d93a0416382873f91f0562e8b5a2a9a3514b42b46aa84fb2395"
+            "296411f059717096bc78f8bd1a5f33019de11bd57480c900d9d3a25ea5441ca1"
         );
         assert_eq!(
             extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
-            "3128ee3c3a3081a3f5faed6386caae78e1c9078d32fb48273018787434f2a578"
+            "b7af1e952f2146ce128b74809598233fdc17cc0dadd3e863edaf1cb8c69f019b"
         );
     }
 }

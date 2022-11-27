@@ -209,8 +209,9 @@ $ moon init
 
 When executed, the following operations will be applied.
 
-- Creates a `.moon` folder with associated [`.moon/workspace.yml`](./config/workspace) and
-  [`.moon/project.yml`](./config/global-project) configuration files.
+- Creates a `.moon` folder with associated [`.moon/workspace.yml`](./config/workspace),
+  [`.moon/toolchain.yml`](./config/toolchain), and [`.moon/project.yml`](./config/global-project)
+  configuration files.
 - Appends necessary ignore patterns to the relative `.gitignore`.
 - Infers the Node.js version from any `.nvmrc` or `.node-version` file.
 - Infers the package manager based on any existing config and lock files.

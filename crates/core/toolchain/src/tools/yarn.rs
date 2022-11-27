@@ -8,7 +8,7 @@ use moon_node_lang::{yarn, YARN};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::process::Command;
 use moon_utils::{fs, get_workspace_root, is_ci};
-use proto_core::{async_trait, Describable, Executable, Probe, Resolvable, Tool};
+use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool};
 use proto_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -22,7 +22,7 @@ pub struct YarnTool {
 }
 
 impl YarnTool {
-    pub fn new(proto: &Probe, config: &Option<YarnConfig>) -> Result<YarnTool, ToolchainError> {
+    pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> Result<YarnTool, ToolchainError> {
         Ok(YarnTool {
             config: config.to_owned().unwrap_or_default(),
             tool: NodeDependencyManager::new(

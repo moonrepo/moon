@@ -1,10 +1,10 @@
-use proto_core::{Downloadable, Executable, Installable, Probe, Resolvable, Tool, Verifiable};
+use proto_core::{Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable};
 use proto_node::NodeLanguage;
 use std::fs;
 use std::path::Path;
 
-fn create_proto(dir: &Path) -> Probe {
-    Probe {
+fn create_proto(dir: &Path) -> Proto {
+    Proto {
         temp_dir: dir.join("temp"),
         tools_dir: dir.join("tools"),
     }

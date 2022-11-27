@@ -18,14 +18,14 @@ use std::fs;
 use std::path::{Path, PathBuf};
 pub use verifier::*;
 
-pub struct Probe {
+pub struct Proto {
     pub temp_dir: PathBuf,
     pub tools_dir: PathBuf,
 }
 
-impl Probe {
+impl Proto {
     pub fn new(root: &Path) -> Self {
-        Probe {
+        Proto {
             temp_dir: root.join("temp"),
             tools_dir: root.join("tools"),
         }

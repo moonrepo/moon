@@ -8,7 +8,7 @@ use moon_node_lang::{npm, NPM};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
-use proto_core::{async_trait, Describable, Executable, Probe, Resolvable, Tool};
+use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool};
 use proto_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -22,7 +22,7 @@ pub struct NpmTool {
 }
 
 impl NpmTool {
-    pub fn new(proto: &Probe, config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
+    pub fn new(proto: &Proto, config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
         Ok(NpmTool {
             config: config.to_owned(),
             tool: NodeDependencyManager::new(

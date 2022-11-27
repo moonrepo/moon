@@ -8,7 +8,7 @@ use moon_logger::debug;
 use moon_node_lang::node;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_utils::process::Command;
-use proto_core::{async_trait, Describable, Executable, Installable, Probe, Resolvable, Tool};
+use proto_core::{async_trait, Describable, Executable, Installable, Proto, Resolvable, Tool};
 use proto_node::NodeLanguage;
 use rustc_hash::FxHashMap;
 use std::path::Path;
@@ -27,7 +27,7 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(proto: &Probe, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
+    pub fn new(proto: &Proto, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
         let mut node = NodeTool {
             config: config.to_owned(),
             tool: NodeLanguage::new(proto, Some(&config.version)),

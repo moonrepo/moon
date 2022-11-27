@@ -28,5 +28,5 @@ pub enum ToolchainError {
     Moon(#[from] MoonError),
 
     #[error(transparent)]
-    Probe(#[from] ProtoError),
+    Proto(#[from] ProtoError),
 }

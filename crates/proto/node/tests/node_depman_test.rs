@@ -1,9 +1,9 @@
-use proto_core::{Downloadable, Executable, Installable, Probe, Resolvable, Tool, Verifiable};
+use proto_core::{Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable};
 use proto_node::{NodeDependencyManager, NodeDependencyManagerType};
 use std::path::Path;
 
-fn create_proto(dir: &Path) -> Probe {
-    Probe {
+fn create_proto(dir: &Path) -> Proto {
+    Proto {
         temp_dir: dir.join("temp"),
         tools_dir: dir.join("tools"),
     }

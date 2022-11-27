@@ -6,7 +6,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug};
 use moon_platform::{Runtime, Version};
 use moon_utils::{fs, path};
-use proto_core::Probe;
+use proto_core::Proto;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -58,8 +58,8 @@ impl Toolchain {
         Ok(toolchain)
     }
 
-    pub fn get_paths(&self) -> Probe {
-        Probe::new(&self.dir)
+    pub fn get_paths(&self) -> Proto {
+        Proto::new(&self.dir)
     }
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.

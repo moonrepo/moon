@@ -53,7 +53,12 @@ export interface ProjectMetadataConfig {
 	channel: string;
 }
 
-export type ProjectWorkspaceNodeConfig = Nullable<Pick<NodeConfig, 'version'>>;
+export type ProjectToolchainNodeConfig = Nullable<Pick<NodeConfig, 'version'>>;
+
+export interface ProjectToolchainConfig {
+	node: ProjectToolchainNodeConfig | null;
+	typescript: boolean;
+}
 
 export interface ProjectWorkspaceConfig {
 	inheritedTasks: {
@@ -61,8 +66,6 @@ export interface ProjectWorkspaceConfig {
 		include: string[] | null;
 		rename: Record<string, string> | null;
 	};
-	node: ProjectWorkspaceNodeConfig | null;
-	typescript: boolean;
 }
 
 export interface ProjectConfig {
@@ -71,6 +74,7 @@ export interface ProjectConfig {
 	language: ProjectLanguage;
 	project: ProjectMetadataConfig | null;
 	tasks: Record<string, TaskConfig>;
+	toolchain: ProjectToolchainConfig;
 	type: ProjectType;
 	workspace: ProjectWorkspaceConfig;
 }

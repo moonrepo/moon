@@ -60,7 +60,7 @@ impl Platform for NodePlatform {
         toolchain_config: &ToolchainConfig,
     ) -> Option<Runtime> {
         if let Some(config) = &project_config {
-            if let Some(node_config) = &config.workspace.node {
+            if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
                     return Some(Runtime::Node(Version(version.to_owned(), true)));
                 }

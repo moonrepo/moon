@@ -95,7 +95,7 @@ pub async fn create_target_command(
     let mut node = workspace.toolchain.node.get()?;
 
     // If a version override exists, use it for the cmmand
-    if let Some(node_config) = &project.config.workspace.node {
+    if let Some(node_config) = &project.config.toolchain.node {
         if let Some(version_override) = &node_config.version {
             node = workspace.toolchain.node.get_for_version(version_override)?;
         }

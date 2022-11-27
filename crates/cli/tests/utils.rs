@@ -17,12 +17,22 @@ pub fn append_workspace_config(root: &Path, yaml: &str) {
     writeln!(file, "{}", yaml).unwrap();
 }
 
-pub fn update_workspace_config(dir: &Path, old: &str, new: &str) {
-    let mut config = fs::read_to_string(dir.join(".moon/workspace.yml")).unwrap();
+pub fn append_toolchain_config(root: &Path, yaml: &str) {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(root.join(".moon/toolchain.yml"))
+        .unwrap();
+
+    writeln!(file, "{}", yaml).unwrap();
+}
+
+pub fn update_toolchain_config(dir: &Path, old: &str, new: &str) {
+    let mut config = fs::read_to_string(dir.join(".moon/toolchain.yml")).unwrap();
 
     config = config.replace(old, new);
 
-    fs::write(dir.join(".moon/workspace.yml"), config).unwrap();
+    fs::write(dir.join(".moon/toolchain.yml"), config).unwrap();
 }
 
 pub fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &Path) -> String {

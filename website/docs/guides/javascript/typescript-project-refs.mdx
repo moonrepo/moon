@@ -31,7 +31,7 @@ This all sounds amazing but there's got to be some downsides right? Unfortunatel
 
 - Project references require generating declarations to resolve type information correctly. This
   results in a lot of compilation artifacts littered throughout the repository. There
-  [are ways](#gitignore) [around this](../../config/workspace#routeoutdirtocache).
+  [are ways](#gitignore) [around this](../../config/toolchain#routeoutdirtocache).
 - This approach is a bit involved and may require some cognitive overhead based on your current
   level of TypeScript tooling knowledge.
 
@@ -103,9 +103,9 @@ In the end, this file should only contain 3 fields: `extends`, `files` (an empty
 ```
 
 > When using moon, the
-> [`typescript.syncProjectReferences`](../../config/workspace#syncprojectreferences) setting will
+> [`typescript.syncProjectReferences`](../../config/toolchain#syncprojectreferences) setting will
 > keep this `references` list automatically in sync, and the name of the file can be customized with
-> [`typescript.rootConfigFileName`](../../config/workspace#rootconfigfilename).
+> [`typescript.rootConfigFileName`](../../config/toolchain#rootconfigfilename).
 
 #### `tsconfig.options.json`
 
@@ -146,7 +146,7 @@ defines common compiler options and may be used here.
 ```
 
 > When using moon, the name of the file can be customized with
-> [`typescript.rootOptionsConfigFileName`](../../config/workspace#rootoptionsconfigfilename).
+> [`typescript.rootOptionsConfigFileName`](../../config/toolchain#rootoptionsconfigfilename).
 
 ##### ECMAScript interoperability
 
@@ -195,7 +195,7 @@ common compiler options, define its own compiler options (below), define include
 necessary references.
 
 > When using moon, the name of the file can be customized with
-> [`typescript.projectConfigFileName`](../../config/workspace#projectconfigfilename).
+> [`typescript.projectConfigFileName`](../../config/toolchain#projectconfigfilename).
 
 <Tabs
   groupId="project-type"
@@ -244,7 +244,7 @@ declarations that external projects would reference. This location is typically
 </Tabs>
 
 > When using moon, the `outDir` can automatically be re-routed to a shared cache using
-> [`typescript.routeOutDirToCache`](../../config/workspace#routeoutdirtocache), to avoid littering
+> [`typescript.routeOutDirToCache`](../../config/toolchain#routeoutdirtocache), to avoid littering
 > the repository with compilation artifacts.
 
 ##### Includes and excludes
@@ -291,7 +291,7 @@ boundary.
 ```
 
 > When using moon, the
-> [`typescript.syncProjectReferences`](../../config/workspace#syncprojectreferences) setting will
+> [`typescript.syncProjectReferences`](../../config/toolchain#syncprojectreferences) setting will
 > keep this `references` list automatically in sync.
 
 #### `tsconfig.*.json`
@@ -491,7 +491,7 @@ defining a `paths` alias that maps the `package.json` name to its source files, 
 ```
 
 > When using moon, the
-> [`typescript.syncProjectReferencesToPaths`](../../config/workspace#syncprojectreferencestopaths)
+> [`typescript.syncProjectReferencesToPaths`](../../config/toolchain#syncprojectreferencestopaths)
 > setting will automatically create `paths` based on the local references.
 
 ## Sharing and augmenting types

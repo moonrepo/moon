@@ -1,7 +1,7 @@
 use crate::errors::ToolchainError;
 use crate::manager::ToolManager;
 use crate::tools::node::NodeTool;
-use moon_config::WorkspaceConfig;
+use moon_config::ToolchainConfig;
 use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug};
 use moon_platform::{Runtime, Version};
@@ -11,26 +11,28 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct Toolchain {
+    pub config: ToolchainConfig,
+
     /// The directory where toolchain artifacts are stored.
     /// This is typically ~/.moon.
     pub dir: PathBuf,
 
-    /// Node.js!
+    /// Tools:
     pub node: ToolManager<NodeTool>,
 }
 
 impl Toolchain {
-    pub async fn load(workspace_config: &WorkspaceConfig) -> Result<Toolchain, ToolchainError> {
+    pub async fn load(config: &ToolchainConfig) -> Result<Toolchain, ToolchainError> {
         Toolchain::load_from(
             path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
-            workspace_config,
+            config,
         )
         .await
     }
 
     pub async fn load_from<P: AsRef<Path>>(
         base_dir: P,
-        workspace_config: &WorkspaceConfig,
+        config: &ToolchainConfig,
     ) -> Result<Toolchain, ToolchainError> {
         let dir = base_dir.as_ref().join(CONFIG_DIRNAME);
 
@@ -43,13 +45,14 @@ impl Toolchain {
         fs::create_dir_all(&dir).await?;
 
         let mut toolchain = Toolchain {
+            config: config.to_owned(),
             dir,
             // Tools
             node: ToolManager::new(Runtime::Node(Version::default())),
         };
         let proto = toolchain.get_paths();
 
-        if let Some(node_config) = &workspace_config.node {
+        if let Some(node_config) = &config.node {
             toolchain
                 .node
                 .register(NodeTool::new(&proto, node_config)?, true);

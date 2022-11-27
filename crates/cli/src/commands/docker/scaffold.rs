@@ -62,7 +62,7 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
         for lang in ProjectLanguage::iter() {
             match lang {
                 ProjectLanguage::JavaScript => {
-                    if workspace.config.node.is_some() {
+                    if workspace.toolchain.config.node.is_some() {
                         files.push(NPM.manifest_filename.to_owned());
 
                         for ext in NODE.file_exts {
@@ -71,7 +71,7 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
                     }
                 }
                 ProjectLanguage::TypeScript => {
-                    if let Some(typescript_config) = &workspace.config.typescript {
+                    if let Some(typescript_config) = &workspace.toolchain.config.typescript {
                         files.push(typescript_config.project_config_file_name.to_owned());
                     }
                 }
@@ -93,7 +93,7 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
     for lang in ProjectLanguage::iter() {
         match lang {
             ProjectLanguage::JavaScript => {
-                if let Some(node_config) = &workspace.config.node {
+                if let Some(node_config) = &workspace.toolchain.config.node {
                     let package_manager = match &node_config.package_manager {
                         NodePackageManager::Npm => NPM,
                         NodePackageManager::Pnpm => PNPM,
@@ -106,7 +106,7 @@ async fn scaffold_workspace(workspace: &Workspace, docker_root: &Path) -> Result
                 }
             }
             ProjectLanguage::TypeScript => {
-                if let Some(typescript_config) = &workspace.config.typescript {
+                if let Some(typescript_config) = &workspace.toolchain.config.typescript {
                     files.push(&typescript_config.root_config_file_name);
                     files.push(&typescript_config.root_options_config_file_name);
                 }

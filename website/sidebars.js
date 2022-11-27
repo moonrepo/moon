@@ -43,7 +43,13 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Config files',
-			items: ['config/workspace', 'config/global-project', 'config/project', 'config/template'],
+			items: [
+				'config/workspace',
+				'config/toolchain',
+				'config/global-project',
+				'config/project',
+				'config/template',
+			],
 			link: {
 				type: 'generated-index',
 				title: 'Config files',

@@ -3,10 +3,5 @@ extends: './base-0.yml'
 runner:
   logRunningCommand: true
 
-node:
-  packageManager: 'yarn'
-  yarn:
-    version: '3.0.0'
-
 vcs:
   manager: 'svn'

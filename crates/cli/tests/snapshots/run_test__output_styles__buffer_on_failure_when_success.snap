@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:bufferFailurePass
-▪▪▪▪ outputStyles:bufferFailurePass (100ms, ea259d36)
+▪▪▪▪ outputStyles:bufferFailurePass (100ms)
 ▪▪▪▪ outputStyles:bufferFailurePassPrimary (no op)
 
 Tasks: 2 completed

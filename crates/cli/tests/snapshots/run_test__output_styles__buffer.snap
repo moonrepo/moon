@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:buffer
-▪▪▪▪ outputStyles:buffer (100ms, ea259d36)
+▪▪▪▪ outputStyles:buffer (100ms)
 stdout
 
 ▪▪▪▪ outputStyles:bufferPrimary (no op)

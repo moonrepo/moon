@@ -1,7 +1,8 @@
 use insta::assert_snapshot;
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, WorkspaceConfig, WorkspaceProjects,
+    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, ToolchainConfig, WorkspaceConfig,
+    WorkspaceProjects,
 };
 use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
@@ -17,13 +18,17 @@ async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
             ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
             ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),
         ])),
-        node: Some(node_config),
         ..WorkspaceConfig::default()
+    };
+    let toolchain_config = ToolchainConfig {
+        node: Some(node_config),
+        ..ToolchainConfig::default()
     };
 
     let mut graph = ProjectGraph::generate(
         &workspace_root,
         &workspace_config,
+        &toolchain_config,
         GlobalProjectConfig::default(),
         &CacheEngine::load(&workspace_root).await.unwrap(),
     )

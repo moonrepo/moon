@@ -14,14 +14,3 @@ projects:
   depsD: 'deps-d'
   dependsOn: 'depends-on'
   dependsOnScopes: 'depends-on-scopes'
-
-typescript:
-  syncProjectReferences: false
-
-# Put at the bottom so we can append settings to test
-node:
-  # Use a unique version as to not collide with other tests
-  version: '16.1.0'
-  addEnginesConstraint: false
-  dedupeOnLockfileChange: false
-  syncProjectWorkspaceDependencies: false

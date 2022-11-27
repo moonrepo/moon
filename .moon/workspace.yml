@@ -1,28 +1,12 @@
 # Trigger CI: 7
 
-$schema: '../schemas/workspace.json'
+$schema: '../website/static/schemas/workspace.json'
 
 projects:
   - 'packages/*'
   - '!packages/cli'
   - '!packages/core-*'
   - 'website'
-
-node:
-  version: '16.18.0'
-  packageManager: 'yarn'
-  yarn:
-    version: '3.2.3'
-    plugins:
-      - 'interactive-tools'
-      - 'version'
-      - 'workspace-tools'
-  addEnginesConstraint: false
-  inferTasksFromScripts: false
-
-typescript:
-  routeOutDirToCache: true
-  syncProjectReferences: true
 
 generator:
   templates:
@@ -36,3 +20,7 @@ runner:
 
 vcs:
   defaultBranch: 'master'
+
+# TEMP, remove after 0.20 lands
+node:
+  version: '16.18.0'

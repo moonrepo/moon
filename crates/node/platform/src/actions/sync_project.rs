@@ -83,7 +83,7 @@ pub async fn sync_project(
     let mut mutated_files = false;
     let workspace = workspace.read().await;
     let node = workspace.toolchain.node.get()?;
-    let is_project_typescript_enabled = project.config.workspace.typescript;
+    let is_project_typescript_enabled = project.config.toolchain.typescript;
 
     // Sync each dependency to `tsconfig.json` and `package.json`
     let mut package_prod_deps: BTreeMap<String, String> = BTreeMap::new();
@@ -96,7 +96,7 @@ pub async fn sync_project(
         let dep_project = workspace.projects.load(dep_id)?;
         let dep_relative_path =
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default();
-        let is_dep_typescript_enabled = dep_project.config.workspace.typescript;
+        let is_dep_typescript_enabled = dep_project.config.toolchain.typescript;
 
         // Update dependencies within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
@@ -155,7 +155,7 @@ pub async fn sync_project(
             }
         }
 
-        if let Some(typescript_config) = &workspace.config.typescript {
+        if let Some(typescript_config) = &workspace.toolchain.config.typescript {
             // Update `references` within this project's `tsconfig.json`.
             // Only add if the dependent project has a `tsconfig.json`,
             // and this `tsconfig.json` has not already declared the dep.
@@ -249,7 +249,7 @@ pub async fn sync_project(
         })?;
     }
 
-    if let Some(typescript_config) = &workspace.config.typescript {
+    if let Some(typescript_config) = &workspace.toolchain.config.typescript {
         // Auto-create a `tsconfig.json` if configured and applicable
         if is_project_typescript_enabled
             && typescript_config.sync_project_references

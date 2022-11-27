@@ -1,7 +1,8 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, GlobalProjectConfig, WorkspaceConfig,
+    format_error_line, format_figment_errors, ConfigError, GlobalProjectConfig, ToolchainConfig,
+    WorkspaceConfig,
 };
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
@@ -60,6 +61,39 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
     match GlobalProjectConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(
+            if let ConfigError::FailedValidation(valids) = errors {
+                format_figment_errors(valids)
+            } else {
+                format_error_line(errors.to_string())
+            },
+        )),
+    }
+}
+
+// .moon/toolchain.yml
+fn load_toolchain_config(root_dir: &Path) -> Result<ToolchainConfig, WorkspaceError> {
+    let config_path = root_dir
+        .join(constants::CONFIG_DIRNAME)
+        .join(constants::CONFIG_TOOLCHAIN_FILENAME);
+
+    trace!(
+        target: LOG_TARGET,
+        "Loading {} from {}",
+        color::file(&format!(
+            "{}/{}",
+            constants::CONFIG_DIRNAME,
+            constants::CONFIG_TOOLCHAIN_FILENAME,
+        )),
+        color::path(root_dir)
+    );
+
+    if !config_path.exists() {
+        return Ok(ToolchainConfig::default());
+    }
+
+    match ToolchainConfig::load(config_path) {
+        Ok(cfg) => Ok(cfg),
+        Err(errors) => Err(WorkspaceError::InvalidToolchainConfigFile(
             if let ConfigError::FailedValidation(valids) = errors {
                 format_figment_errors(valids)
             } else {
@@ -150,12 +184,20 @@ impl Workspace {
 
         // Load configs
         let config = load_workspace_config(&root_dir)?;
+        let toolchain_config = load_toolchain_config(&root_dir)?;
         let project_config = load_global_project_config(&root_dir)?;
 
         // Setup components
         let cache = CacheEngine::load(&root_dir).await?;
-        let toolchain = Toolchain::load(&config).await?;
-        let projects = ProjectGraph::generate(&root_dir, &config, project_config, &cache).await?;
+        let toolchain = Toolchain::load(&toolchain_config).await?;
+        let projects = ProjectGraph::generate(
+            &root_dir,
+            &config,
+            &toolchain_config,
+            project_config,
+            &cache,
+        )
+        .await?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {

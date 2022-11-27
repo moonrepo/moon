@@ -8,7 +8,7 @@ use crate::project::task::TaskConfig;
 use crate::project::workspace::ProjectWorkspaceConfig;
 use crate::types::{FileGroups, ProjectID};
 use crate::validators::validate_id;
-use crate::PlatformType;
+use crate::{PlatformType, ProjectToolchainConfig};
 use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
@@ -148,6 +148,9 @@ pub struct ProjectConfig {
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: BTreeMap<String, TaskConfig>,
+
+    #[validate]
+    pub toolchain: ProjectToolchainConfig,
 
     #[serde(rename = "type")]
     pub type_of: ProjectType,

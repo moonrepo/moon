@@ -1,0 +1,9 @@
+extends: '../shared-toolchain.yml'
+
+node:
+  # Use a unique version as to not collide with other tests
+  version: '16.1.0'
+  packageManager: 'npm'
+  npm:
+    version: '8.0.0'
+  addEnginesConstraint: false

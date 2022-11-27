@@ -6,7 +6,7 @@ expression: "get_path_safe_output(&assert, fixture.path())"
 ▪▪▪▪ npm install
 ▪▪▪▪ node:unhandledPromise
 stdout
-▪▪▪▪ node:unhandledPromise (100ms, 986c5de4)
+▪▪▪▪ node:unhandledPromise (100ms)
 stderr
 node:internal/process/promises:246
           triggerUncaughtException(err, true /* fromPromise */);

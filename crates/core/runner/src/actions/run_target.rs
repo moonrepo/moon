@@ -571,13 +571,14 @@ impl<'a> TargetRunner<'a> {
         checkpoint: Checkpoint,
         comments: &[T],
     ) -> Result<(), MoonError> {
+        let label = label_checkpoint(&self.task.target, checkpoint);
+
         if comments.is_empty() {
-            self.stdout
-                .write_line(&label_checkpoint(&self.task.target, checkpoint))?;
+            self.stdout.write_line(&label)?;
         } else {
             self.stdout.write_line(&format!(
                 "{} {}",
-                label_checkpoint(&self.task.target, checkpoint),
+                label,
                 color::muted(format!(
                     "({})",
                     comments
@@ -693,7 +694,9 @@ impl<'a> TargetRunner<'a> {
             comments.push(time::elapsed(duration));
         }
 
-        if attempt.finished_at.is_some() {
+        // Do not include the hash while testing, as the hash
+        // constantly changes and breaks our local snapshots
+        if !is_test_env() && attempt.finished_at.is_some() {
             comments.push(self.get_short_hash().to_owned());
         }
 

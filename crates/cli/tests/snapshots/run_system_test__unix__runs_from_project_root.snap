@@ -5,7 +5,7 @@ expression: "get_path_safe_output(&assert, fixture.path())"
 ---
 ▪▪▪▪ unix:runFromProject
 <WORKSPACE>/unix
-▪▪▪▪ unix:runFromProject (100ms, a541e2ee)
+▪▪▪▪ unix:runFromProject (100ms)
 
 Tasks: 1 completed
  Time: 100ms

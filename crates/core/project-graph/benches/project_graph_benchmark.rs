@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project_graph::ProjectGraph;
 use moon_utils::test::get_fixtures_dir;
 use rustc_hash::FxHashMap;
@@ -23,6 +23,7 @@ pub fn load_benchmark(c: &mut Criterion) {
         let graph = ProjectGraph::generate(
             &workspace_root,
             &workspace_config,
+            &ToolchainConfig::default(),
             GlobalProjectConfig::default(),
             &cache,
         )
@@ -49,6 +50,7 @@ pub fn load_all_benchmark(c: &mut Criterion) {
                 let graph = ProjectGraph::generate(
                     &workspace_root,
                     &workspace_config,
+                    &ToolchainConfig::default(),
                     GlobalProjectConfig::default(),
                     &cache,
                 )

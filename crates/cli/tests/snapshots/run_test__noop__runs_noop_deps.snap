@@ -5,7 +5,7 @@ expression: get_assert_output(&assert)
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputs:generateFile
-▪▪▪▪ outputs:generateFile (100ms, 49164410)
+▪▪▪▪ outputs:generateFile (100ms)
 ▪▪▪▪ noop:noopWithDeps (no op)
 
 Tasks: 2 completed

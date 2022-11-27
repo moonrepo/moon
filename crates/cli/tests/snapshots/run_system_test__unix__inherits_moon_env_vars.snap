@@ -15,7 +15,7 @@ MOON_TARGET=unix:envVarsMoon
 MOON_TOOLCHAIN_DIR=~/.moon
 MOON_WORKING_DIR=<WORKSPACE>
 MOON_WORKSPACE_ROOT=<WORKSPACE>
-▪▪▪▪ unix:envVarsMoon (100ms, f8755824)
+▪▪▪▪ unix:envVarsMoon (100ms)
 
 Tasks: 1 completed
  Time: 100ms

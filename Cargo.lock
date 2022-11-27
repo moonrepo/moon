@@ -2248,8 +2248,8 @@ dependencies = [
  "moon_platform",
  "moon_terminal",
  "moon_utils",
- "probe_core",
- "probe_node",
+ "proto_core",
+ "proto_node",
  "rustc-hash",
  "thiserror",
 ]
@@ -2828,38 +2828,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "probe_core"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "flate2",
- "lenient_semver",
- "log",
- "reqwest",
- "serde",
- "serde_json",
- "sha2",
- "tar",
- "thiserror",
- "tokio",
- "zip",
-]
-
-[[package]]
-name = "probe_node"
-version = "0.1.0"
-dependencies = [
- "assert_fs",
- "clean-path",
- "log",
- "probe_core",
- "rustc-hash",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "proc-macro-error"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2923,6 +2891,38 @@ checksum = "4dfaa718ad76a44b3415e6c4d53b17c8f99160dcb3a99b10470fce8ad43f6e3e"
 dependencies = [
  "bytes",
  "prost",
+]
+
+[[package]]
+name = "proto_core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "flate2",
+ "lenient_semver",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "thiserror",
+ "tokio",
+ "zip",
+]
+
+[[package]]
+name = "proto_node"
+version = "0.1.0"
+dependencies = [
+ "assert_fs",
+ "clean-path",
+ "log",
+ "proto_core",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

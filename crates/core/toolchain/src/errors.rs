@@ -1,7 +1,7 @@
 use moon_error::MoonError;
 use moon_lang::LangError;
 use moon_platform::Runtime;
-use probe_core::ProbeError;
+use proto_core::ProtoError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -28,5 +28,5 @@ pub enum ToolchainError {
     Moon(#[from] MoonError),
 
     #[error(transparent)]
-    Probe(#[from] ProbeError),
+    Proto(#[from] ProtoError),
 }

@@ -1847,13 +1847,13 @@ dependencies = [
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "filetime",
  "moon_archive",
  "moon_constants",
  "moon_error",
  "moon_logger",
  "moon_platform",
+ "moon_test_utils",
  "moon_utils",
  "rustc-hash",
  "serde",

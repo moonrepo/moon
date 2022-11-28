@@ -116,8 +116,12 @@ impl Sandbox {
     }
 }
 
+pub fn create_temp_dir() -> TempDir {
+    TempDir::new().unwrap()
+}
+
 pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = create_temp_dir();
 
     temp_dir
         .copy_from(get_fixtures_dir(fixture), &["**/*"])

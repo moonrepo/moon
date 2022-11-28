@@ -1,4 +1,3 @@
-use insta::assert_snapshot;
 use moon_cache::CacheEngine;
 use moon_config::{
     GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, ToolchainConfig, WorkspaceConfig,
@@ -7,11 +6,10 @@ use moon_config::{
 use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
 use moon_project_graph::ProjectGraph;
-use moon_utils::test::get_fixtures_dir;
+use moon_test_utils::{assert_snapshot, create_sandbox_with_config, Sandbox};
 use rustc_hash::FxHashMap;
 
-async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
-    let workspace_root = get_fixtures_dir("project-graph/aliases");
+async fn get_aliases_graph(node_config: NodeConfig) -> (ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("noLang".to_owned(), "no-lang".to_owned()),
@@ -25,12 +23,19 @@ async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
         ..ToolchainConfig::default()
     };
 
+    let sandbox = create_sandbox_with_config(
+        "project-graph/aliases",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        None,
+    );
+
     let mut graph = ProjectGraph::generate(
-        &workspace_root,
+        sandbox.path(),
         &workspace_config,
         &toolchain_config,
         GlobalProjectConfig::default(),
-        &CacheEngine::load(&workspace_root).await.unwrap(),
+        &CacheEngine::load(sandbox.path()).await.unwrap(),
     )
     .await
     .unwrap();
@@ -39,12 +44,12 @@ async fn get_aliases_graph(node_config: NodeConfig) -> ProjectGraph {
         .register_platform(Box::new(NodePlatform::default()))
         .unwrap();
 
-    graph
+    (graph, sandbox)
 }
 
 #[tokio::test]
 async fn loads_node_aliases_name_only() {
-    let graph = get_aliases_graph(NodeConfig {
+    let (graph, _sandbox) = get_aliases_graph(NodeConfig {
         alias_package_names: Some(NodeProjectAliasFormat::NameOnly),
         ..NodeConfig::default()
     })
@@ -61,7 +66,7 @@ async fn loads_node_aliases_name_only() {
 
 #[tokio::test]
 async fn loads_node_aliases_name_scopes() {
-    let graph = get_aliases_graph(NodeConfig {
+    let (graph, _sandbox) = get_aliases_graph(NodeConfig {
         alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
         ..NodeConfig::default()
     })
@@ -78,7 +83,7 @@ async fn loads_node_aliases_name_scopes() {
 
 #[tokio::test]
 async fn returns_project_using_alias() {
-    let graph = get_aliases_graph(NodeConfig {
+    let (graph, _sandbox) = get_aliases_graph(NodeConfig {
         alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
         ..NodeConfig::default()
     })
@@ -92,7 +97,7 @@ async fn returns_project_using_alias() {
 
 #[tokio::test]
 async fn graph_uses_id_for_nodes() {
-    let graph = get_aliases_graph(NodeConfig {
+    let (graph, _sandbox) = get_aliases_graph(NodeConfig {
         alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
         ..NodeConfig::default()
     })

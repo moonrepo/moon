@@ -2023,13 +2023,13 @@ dependencies = [
 name = "moon_node_lang"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "cached",
  "content_inspector",
  "lazy_static",
  "moon_error",
  "moon_lang",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
  "pretty_assertions",
  "regex",
@@ -2048,7 +2048,6 @@ dependencies = [
 name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
- "insta",
  "lazy_static",
  "moon_action",
  "moon_cache",
@@ -2064,6 +2063,7 @@ dependencies = [
  "moon_runner_context",
  "moon_task",
  "moon_terminal",
+ "moon_test_utils",
  "moon_toolchain",
  "moon_typescript_lang",
  "moon_utils",
@@ -2275,6 +2275,7 @@ dependencies = [
  "moon_error",
  "moon_lang",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
  "serde",
  "serde_json",

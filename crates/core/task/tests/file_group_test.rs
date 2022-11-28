@@ -1,5 +1,5 @@
 use moon_task::FileGroup;
-use moon_test_utils::get_fixtures_dir;
+use moon_test_utils::get_fixtures_path;
 use moon_utils::{glob, string_vec};
 use std::path::PathBuf;
 
@@ -21,7 +21,7 @@ mod all {
 
     #[test]
     fn returns_all() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let file_group = FileGroup::new(
             "id",
@@ -50,7 +50,7 @@ mod dirs {
 
     #[test]
     fn returns_all_dirs() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let file_group = FileGroup::new("id", string_vec!["**/*"]);
 
@@ -62,7 +62,7 @@ mod dirs {
 
     #[test]
     fn doesnt_return_files() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let file_group = FileGroup::new("id", string_vec!["file.ts"]);
         let result: Vec<PathBuf> = vec![];
@@ -79,7 +79,7 @@ mod files {
 
     #[test]
     fn returns_all_files() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let file_group = FileGroup::new(
             "id",
@@ -111,7 +111,7 @@ mod files {
 
     #[test]
     fn doesnt_return_dirs() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let file_group = FileGroup::new("id", string_vec!["dir"]);
         let result: Vec<PathBuf> = vec![];
@@ -128,7 +128,7 @@ mod globs {
 
     #[test]
     fn returns_only_globs() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let file_group =
             FileGroup::new("id", string_vec!["**/*", "*.rs", "file.ts", "dir", "/*.js"]);
@@ -149,7 +149,7 @@ mod root {
 
     #[test]
     fn returns_lowest_dir() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let file_group = FileGroup::new("id", string_vec!["**/*"]);
 
@@ -161,7 +161,7 @@ mod root {
 
     #[test]
     fn returns_root_when_many() {
-        let workspace_root = get_fixtures_dir("projects");
+        let workspace_root = get_fixtures_path("projects");
         let file_group = FileGroup::new("id", string_vec!["**/*"]);
 
         assert_eq!(file_group.root(&workspace_root).unwrap(), workspace_root);
@@ -169,7 +169,7 @@ mod root {
 
     #[test]
     fn returns_root_when_no_dirs() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let file_group = FileGroup::new("id", string_vec![]);
 

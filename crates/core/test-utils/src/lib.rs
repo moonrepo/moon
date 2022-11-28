@@ -16,6 +16,15 @@ pub fn get_fixtures_root() -> PathBuf {
     root.clean()
 }
 
-pub fn get_fixtures_dir<T: AsRef<str>>(name: T) -> PathBuf {
-    get_fixtures_root().join(name.as_ref())
+pub fn get_fixtures_path<T: AsRef<str>>(name: T) -> PathBuf {
+    let path = get_fixtures_root().join(name.as_ref());
+
+    if !path.exists() {
+        panic!(
+            "{}",
+            format!("Fixture {} does no exist.", path.to_string_lossy())
+        );
+    }
+
+    path
 }

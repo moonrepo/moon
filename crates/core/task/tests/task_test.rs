@@ -1,7 +1,7 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
 use moon_task::test::create_expanded_task;
 use moon_task::{Target, Task, TaskOptions};
-use moon_test_utils::{create_sandbox, get_fixtures_dir};
+use moon_test_utils::{create_sandbox, get_fixtures_path};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
@@ -9,7 +9,7 @@ use std::env;
 #[test]
 #[should_panic(expected = "NoOutputGlob")]
 fn errors_for_output_glob() {
-    let workspace_root = get_fixtures_dir("projects");
+    let workspace_root = get_fixtures_path("projects");
     let project_root = workspace_root.join("basic");
 
     create_expanded_task(
@@ -344,7 +344,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_var_truthy() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -365,7 +365,7 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_var_missing() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -382,7 +382,7 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_var_empty() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -403,7 +403,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_matches_file() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -423,7 +423,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_matches_glob() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -443,7 +443,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_when_referencing_root_files() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -463,7 +463,7 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_outside_project() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -483,7 +483,7 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_no_match() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -652,7 +652,7 @@ mod expand_inputs {
 
     #[test]
     fn filters_into_correct_types() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,

@@ -1,11 +1,11 @@
 use crate::cli::{
     create_moon_command, get_assert_stderr_output, get_assert_stdout_output, output_to_string,
 };
-use crate::get_fixtures_dir;
+use crate::get_fixtures_path;
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::prelude::*;
-use assert_fs::TempDir;
+pub use assert_fs::TempDir;
 use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig};
 use std::path::Path;
 use std::process::Command as StdCommand;
@@ -124,7 +124,7 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
     let temp_dir = create_temp_dir();
 
     temp_dir
-        .copy_from(get_fixtures_dir(fixture), &["**/*"])
+        .copy_from(get_fixtures_path(fixture), &["**/*"])
         .unwrap();
 
     Sandbox {

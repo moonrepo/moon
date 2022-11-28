@@ -7,7 +7,7 @@ use moon_test_utils::{
 fn unknown_project() {
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -27,7 +27,7 @@ fn unknown_project() {
 fn empty_config() {
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -45,7 +45,7 @@ fn empty_config() {
 fn no_config() {
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -64,7 +64,7 @@ fn basic_config() {
     // with dependsOn and fileGroups
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -83,7 +83,7 @@ fn advanced_config() {
     // with project metadata
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -102,7 +102,7 @@ fn depends_on_paths() {
     // shows dependsOn paths when they exist
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -120,7 +120,7 @@ fn depends_on_paths() {
 fn with_tasks() {
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -138,7 +138,7 @@ fn with_tasks() {
 fn root_level() {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),

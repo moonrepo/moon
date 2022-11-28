@@ -19,7 +19,7 @@ fn sets_up_and_tears_down() {
 
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),

@@ -33,7 +33,7 @@ async fn sends_webhooks() {
         .mount(&server)
         .await;
 
-    let mut sandbox = sandbox(server.uri());
+    let sandbox = sandbox(server.uri());
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");
@@ -53,7 +53,7 @@ async fn sends_webhooks_for_cache_events() {
         .mount(&server)
         .await;
 
-    let mut sandbox = sandbox(server.uri());
+    let sandbox = sandbox(server.uri());
 
     sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");
@@ -78,7 +78,7 @@ async fn doesnt_send_webhooks_if_first_fails() {
         .mount(&server)
         .await;
 
-    let mut sandbox = sandbox(server.uri());
+    let sandbox = sandbox(server.uri());
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");
@@ -97,7 +97,7 @@ async fn all_webhooks_have_same_uuid() {
         .mount(&server)
         .await;
 
-    let mut sandbox = sandbox(server.uri());
+    let sandbox = sandbox(server.uri());
 
     sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");

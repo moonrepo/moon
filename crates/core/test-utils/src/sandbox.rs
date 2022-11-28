@@ -11,7 +11,7 @@ use std::path::Path;
 use std::process::Command as StdCommand;
 
 pub struct Sandbox {
-    command: Option<Command>,
+    // command: Option<Command>,
     pub fixture: TempDir,
 }
 
@@ -97,7 +97,7 @@ impl Sandbox {
         self
     }
 
-    pub fn run_moon<C>(&mut self, handler: C) -> Assert
+    pub fn run_moon<C>(&self, handler: C) -> Assert
     where
         C: FnOnce(&mut Command),
     {
@@ -105,11 +105,9 @@ impl Sandbox {
 
         handler(&mut cmd);
 
-        let assert = cmd.assert();
+        // self.command = Some(cmd);
 
-        self.command = Some(cmd);
-
-        assert
+        cmd.assert()
     }
 }
 
@@ -125,7 +123,7 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
         .unwrap();
 
     Sandbox {
-        command: None,
+        // command: None,
         fixture: temp_dir,
     }
 }

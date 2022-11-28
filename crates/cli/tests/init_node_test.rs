@@ -7,7 +7,7 @@ mod init_node {
 
     #[test]
     fn infers_version_from_nvm() {
-        let mut sandbox = create_sandbox("init-sandbox");
+        let sandbox = create_sandbox("init-sandbox");
         let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("toolchain.yml");
 
@@ -24,7 +24,7 @@ mod init_node {
 
     #[test]
     fn infers_version_from_nodenv() {
-        let mut sandbox = create_sandbox("init-sandbox");
+        let sandbox = create_sandbox("init-sandbox");
         let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("toolchain.yml");
 
@@ -41,7 +41,7 @@ mod init_node {
 
     #[test]
     fn infers_globs_from_workspaces() {
-        let mut sandbox = create_sandbox("init-sandbox");
+        let sandbox = create_sandbox("init-sandbox");
         let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("workspace.yml");
 
@@ -68,7 +68,7 @@ mod init_node {
 
     #[test]
     fn infers_globs_from_workspaces_expanded() {
-        let mut sandbox = create_sandbox("init-sandbox");
+        let sandbox = create_sandbox("init-sandbox");
         let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("workspace.yml");
 
@@ -98,7 +98,7 @@ mod init_node {
 
         #[test]
         fn infers_npm() {
-            let mut sandbox = create_sandbox("init-sandbox");
+            let sandbox = create_sandbox("init-sandbox");
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
@@ -115,7 +115,7 @@ mod init_node {
 
         #[test]
         fn infers_npm_from_package() {
-            let mut sandbox = create_sandbox("init-sandbox");
+            let sandbox = create_sandbox("init-sandbox");
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
@@ -137,7 +137,7 @@ mod init_node {
 
         #[test]
         fn infers_pnpm() {
-            let mut sandbox = create_sandbox("init-sandbox");
+            let sandbox = create_sandbox("init-sandbox");
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
@@ -154,7 +154,7 @@ mod init_node {
 
         #[test]
         fn infers_pnpm_from_package() {
-            let mut sandbox = create_sandbox("init-sandbox");
+            let sandbox = create_sandbox("init-sandbox");
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
@@ -176,7 +176,7 @@ mod init_node {
 
         #[test]
         fn infers_yarn() {
-            let mut sandbox = create_sandbox("init-sandbox");
+            let sandbox = create_sandbox("init-sandbox");
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
@@ -193,7 +193,7 @@ mod init_node {
 
         #[test]
         fn infers_yarn_from_package() {
-            let mut sandbox = create_sandbox("init-sandbox");
+            let sandbox = create_sandbox("init-sandbox");
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 

@@ -4,7 +4,7 @@ use predicates::prelude::*;
 #[test]
 fn runs_tasks_in_project() {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -26,7 +26,7 @@ fn runs_tasks_in_project() {
 #[test]
 fn runs_tasks_in_project_using_cwd() {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -49,7 +49,7 @@ fn runs_tasks_in_project_using_cwd() {
 #[test]
 fn runs_tasks_from_multiple_project() {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -75,7 +75,7 @@ fn runs_tasks_from_multiple_project() {
 #[test]
 fn runs_for_all_projects_even_when_not_in_root_dir() {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -93,7 +93,7 @@ fn runs_for_all_projects_even_when_not_in_root_dir() {
 #[test]
 fn runs_on_all_projects_from_root_directory() {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -113,7 +113,7 @@ mod reports {
     #[test]
     fn does_not_create_a_report_by_default() {
         let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "cases",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -130,7 +130,7 @@ mod reports {
     #[test]
     fn creates_report_when_option_passed() {
         let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "cases",
             Some(&workspace_config),
             Some(&toolchain_config),

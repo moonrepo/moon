@@ -8,7 +8,7 @@ mod from_package_json {
 
     #[test]
     fn dirty_repository_raises_an_error() {
-        let mut sandbox = create_sandbox("migrate");
+        let sandbox = create_sandbox("migrate");
         sandbox.enable_git();
 
         // create a new file at sandbox path to simulate a dirty repository
@@ -27,7 +27,7 @@ mod from_package_json {
 
     #[test]
     fn converts_scripts() {
-        let mut sandbox = create_sandbox("migrate");
+        let sandbox = create_sandbox("migrate");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.args([
@@ -52,7 +52,7 @@ mod from_package_json {
 
     #[test]
     fn links_depends_on() {
-        let mut sandbox = create_sandbox("migrate");
+        let sandbox = create_sandbox("migrate");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.args([

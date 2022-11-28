@@ -13,7 +13,7 @@ mod run_script {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("npm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -35,7 +35,7 @@ mod run_script {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("npm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -57,7 +57,7 @@ mod run_script {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("npm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -77,7 +77,7 @@ mod run_script {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("npm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -98,7 +98,7 @@ mod run_script {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("pnpm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-pnpm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -118,7 +118,7 @@ mod run_script {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("yarn");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-yarn",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -138,7 +138,7 @@ mod run_script {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("yarn1");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-yarn1",
             Some(&workspace_config),
             Some(&toolchain_config),

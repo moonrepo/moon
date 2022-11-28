@@ -5,7 +5,7 @@ use std::fs;
 
 #[test]
 fn creates_files_in_dest() {
-    let mut sandbox = create_sandbox("init-sandbox");
+    let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
     let workspace_config = root.join(".moon").join(CONFIG_WORKSPACE_FILENAME);
     let project_config = root.join(".moon").join(CONFIG_GLOBAL_PROJECT_FILENAME);
@@ -30,7 +30,7 @@ fn creates_files_in_dest() {
 
 #[test]
 fn creates_workspace_config_from_template() {
-    let mut sandbox = create_sandbox("init-sandbox");
+    let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
     let workspace_config = root.join(".moon").join("workspace.yml");
 
@@ -46,7 +46,7 @@ fn creates_workspace_config_from_template() {
 
 #[test]
 fn creates_project_config_from_template() {
-    let mut sandbox = create_sandbox("init-sandbox");
+    let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
     let project_config = root
         .join(".moon")
@@ -64,7 +64,7 @@ fn creates_project_config_from_template() {
 
 #[test]
 fn creates_gitignore_file() {
-    let mut sandbox = create_sandbox("init-sandbox");
+    let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
     let gitignore = root.join(".gitignore");
 
@@ -80,7 +80,7 @@ fn creates_gitignore_file() {
 
 #[test]
 fn appends_existing_gitignore_file() {
-    let mut sandbox = create_sandbox("init-sandbox");
+    let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
     let gitignore = root.join(".gitignore");
 
@@ -98,7 +98,7 @@ fn appends_existing_gitignore_file() {
 
 #[test]
 fn does_overwrite_existing_config_if_force_passed() {
-    let mut sandbox = create_sandbox("init-sandbox");
+    let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
 
     sandbox.run_moon(|cmd| {
@@ -120,7 +120,7 @@ mod vcs {
 
     #[test]
     fn detects_git() {
-        let mut sandbox = create_sandbox("init-sandbox");
+        let sandbox = create_sandbox("init-sandbox");
         sandbox.enable_git();
 
         let root = sandbox.path().to_path_buf();

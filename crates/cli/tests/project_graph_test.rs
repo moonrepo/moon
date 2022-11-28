@@ -5,7 +5,7 @@ use moon_test_utils::{
 
 #[test]
 fn no_projects() {
-    let mut sandbox = create_sandbox("base");
+    let sandbox = create_sandbox("base");
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("project-graph");
@@ -18,7 +18,7 @@ fn no_projects() {
 fn many_projects() {
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -36,7 +36,7 @@ fn many_projects() {
 fn single_project_with_dependencies() {
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -54,7 +54,7 @@ fn single_project_with_dependencies() {
 fn single_project_no_dependencies() {
     let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -76,7 +76,7 @@ mod aliases {
         let (workspace_config, toolchain_config, projects_config) =
             get_project_graph_aliases_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -95,7 +95,7 @@ mod aliases {
         let (workspace_config, toolchain_config, projects_config) =
             get_project_graph_aliases_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -114,7 +114,7 @@ mod aliases {
         let (workspace_config, toolchain_config, projects_config) =
             get_project_graph_aliases_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),

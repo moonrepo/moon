@@ -300,3 +300,16 @@ pub fn get_node_depman_fixture_configs(
 
     (workspace_config, toolchain_config, projects_config)
 }
+
+pub fn get_typescript_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+    let (mut workspace_config, mut toolchain_config, projects_config) = get_node_fixture_configs();
+
+    workspace_config.projects = WorkspaceProjects::Globs(vec!["*".into()]);
+
+    if let Some(ts_config) = &mut toolchain_config.typescript {
+        ts_config.create_missing_config = true;
+        ts_config.sync_project_references = true;
+    }
+
+    (workspace_config, toolchain_config, projects_config)
+}

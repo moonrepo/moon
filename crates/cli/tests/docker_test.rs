@@ -26,7 +26,7 @@ mod scaffold_workspace {
     fn copies_all_manifests() {
         let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -49,7 +49,7 @@ mod scaffold_workspace {
     fn copies_moon_configs() {
         let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -71,7 +71,7 @@ mod scaffold_workspace {
     fn copies_node_postinstalls() {
         let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -93,7 +93,7 @@ mod scaffold_workspace {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("npm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -114,7 +114,7 @@ mod scaffold_workspace {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("pnpm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-pnpm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -136,7 +136,7 @@ mod scaffold_workspace {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("yarn");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-yarn",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -158,7 +158,7 @@ mod scaffold_workspace {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("yarn1");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-yarn1",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -182,7 +182,7 @@ mod scaffold_sources {
     fn copies_project_and_deps() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -209,7 +209,7 @@ mod scaffold_sources {
     fn copies_multiple_projects() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -236,7 +236,7 @@ mod scaffold_sources {
     fn can_include_more_files() {
         let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "cases",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -272,7 +272,7 @@ mod prune {
     fn errors_missing_manifest() {
         let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -298,7 +298,7 @@ mod prune_node {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("npm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -330,7 +330,7 @@ mod prune_node {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("pnpm");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-pnpm",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -360,7 +360,7 @@ mod prune_node {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("yarn");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-yarn",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -390,7 +390,7 @@ mod prune_node {
         let (workspace_config, toolchain_config, projects_config) =
             get_node_depman_fixture_configs("yarn1");
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "node-yarn1",
             Some(&workspace_config),
             Some(&toolchain_config),

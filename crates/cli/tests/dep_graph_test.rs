@@ -8,7 +8,7 @@ use moon_test_utils::{
 fn all_by_default() {
     let (workspace_config, toolchain_config, projects_config) = get_tasks_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "tasks",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -29,7 +29,7 @@ fn all_by_default() {
 fn focused_by_target() {
     let (workspace_config, toolchain_config, projects_config) = get_tasks_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "tasks",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -47,7 +47,7 @@ fn focused_by_target() {
 fn includes_dependencies_when_focused() {
     let (workspace_config, toolchain_config, projects_config) = get_tasks_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "tasks",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -65,7 +65,7 @@ fn includes_dependencies_when_focused() {
 fn includes_dependents_when_focused() {
     let (workspace_config, toolchain_config, projects_config) = get_tasks_fixture_configs();
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "tasks",
         Some(&workspace_config),
         Some(&toolchain_config),
@@ -87,7 +87,7 @@ mod aliases {
         let (workspace_config, toolchain_config, projects_config) =
             get_project_graph_aliases_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -106,7 +106,7 @@ mod aliases {
         let (workspace_config, toolchain_config, projects_config) =
             get_project_graph_aliases_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),

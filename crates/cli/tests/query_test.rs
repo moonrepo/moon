@@ -38,7 +38,7 @@ mod projects {
     fn returns_all_by_default() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -75,7 +75,7 @@ mod projects {
     fn can_filter_by_affected() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -100,7 +100,7 @@ mod projects {
     fn can_filter_by_affected_via_stdin() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -136,7 +136,7 @@ mod projects {
     fn can_filter_by_id() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -158,7 +158,7 @@ mod projects {
     fn can_filter_by_source() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -182,7 +182,7 @@ mod projects {
     fn can_filter_by_tasks() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -204,7 +204,7 @@ mod projects {
     fn can_filter_by_language() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -228,7 +228,7 @@ mod projects {
     fn can_filter_by_type() {
         let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
@@ -254,7 +254,7 @@ mod touched_files {
     fn can_change_options() {
         let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
-        let mut sandbox = create_sandbox_with_config(
+        let sandbox = create_sandbox_with_config(
             "cases",
             Some(&workspace_config),
             Some(&toolchain_config),

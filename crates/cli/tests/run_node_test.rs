@@ -1,91 +1,161 @@
 mod utils;
 
-use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_assert_output};
+use moon_config::{NodeConfig, TypeScriptConfig};
+use moon_test_utils::{
+    assert_snapshot, create_sandbox_with_config, get_assert_output,
+    get_node_depman_fixture_configs, get_node_fixture_configs, get_typescript_fixture_configs,
+    Sandbox,
+};
+use moon_utils::string_vec;
 use predicates::prelude::*;
 use std::fs::read_to_string;
-use utils::{append_toolchain_config, get_path_safe_output, update_toolchain_config};
+use utils::get_path_safe_output;
+
+fn node_sandbox() -> Sandbox {
+    let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "node",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
+
+fn node_sandbox_with_config<C>(callback: C) -> Sandbox
+where
+    C: FnOnce(&mut NodeConfig),
+{
+    let (workspace_config, mut toolchain_config, projects_config) = get_node_fixture_configs();
+
+    if let Some(node_config) = &mut toolchain_config.node {
+        callback(node_config);
+    }
+
+    let sandbox = create_sandbox_with_config(
+        "node",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
+
+fn depman_sandbox(depman: &str) -> Sandbox {
+    let (workspace_config, toolchain_config, projects_config) =
+        get_node_depman_fixture_configs(depman);
+
+    let sandbox = create_sandbox_with_config(
+        format!("node-{}", depman),
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
+
+fn typescript_sandbox<C>(callback: C) -> Sandbox
+where
+    C: FnOnce(&mut TypeScriptConfig),
+{
+    let (workspace_config, mut toolchain_config, projects_config) =
+        get_typescript_fixture_configs();
+
+    if let Some(ts_config) = &mut toolchain_config.typescript {
+        callback(ts_config);
+    }
+
+    let sandbox = create_sandbox_with_config(
+        "typescript",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
 
 #[test]
 fn runs_package_managers() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:npm")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:npm");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn runs_standard_script() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:standard")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:standard");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn runs_cjs_files() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:cjs")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:cjs");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn runs_mjs_files() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:mjs")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:mjs");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn supports_top_level_await() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:topLevelAwait")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:topLevelAwait");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn handles_process_exit_zero() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:processExitZero")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:processExitZero");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn handles_process_exit_nonzero() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:processExitNonZero")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:processExitNonZero");
+    });
 
     if cfg!(windows) {
         assert.code(1);
@@ -96,24 +166,22 @@ fn handles_process_exit_nonzero() {
 
 #[test]
 fn handles_process_exit_code_zero() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:exitCodeZero")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:exitCodeZero");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn handles_process_exit_code_nonzero() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:exitCodeNonZero")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:exitCodeNonZero");
+    });
 
     if cfg!(windows) {
         assert.code(1);
@@ -124,12 +192,12 @@ fn handles_process_exit_code_nonzero() {
 
 #[test]
 fn handles_throw_error() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:throwError")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:throwError");
+    });
+
     let output = get_assert_output(&assert);
 
     // Output contains file paths that we cant snapshot
@@ -138,116 +206,108 @@ fn handles_throw_error() {
 
 #[test]
 fn handles_unhandled_promise() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:unhandledPromise")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:unhandledPromise");
+    });
 
     if cfg!(windows) {
         assert.code(1);
     } else {
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
     }
 }
 
 #[test]
 fn passes_args_through() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:passthroughArgs")
-        .arg("--")
-        .arg("-aBc")
-        .arg("--opt")
-        .arg("value")
-        .arg("--optCamel=value")
-        .arg("foo")
-        .arg("'bar baz'")
-        .arg("--opt-kebab")
-        .arg("123")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run")
+            .arg("node:passthroughArgs")
+            .arg("--")
+            .arg("-aBc")
+            .arg("--opt")
+            .arg("value")
+            .arg("--optCamel=value")
+            .arg("foo")
+            .arg("'bar baz'")
+            .arg("--opt-kebab")
+            .arg("123");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn passes_args_to_the_node_bin() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox_with_config(|cfg| {
+        cfg.bin_exec_args = string_vec!["--preserve-symlinks"];
+    });
 
-    append_toolchain_config(
-        fixture.path(),
-        "  binExecArgs:\n    - '--preserve-symlinks'\n",
-    );
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run")
+            .arg("node:binExecArgs")
+            .arg("--")
+            .arg("--extraArg");
+    });
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:binExecArgs")
-        .arg("--")
-        .arg("--extraArg")
-        .assert();
-
-    assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
 }
 
 #[test]
 fn sets_env_vars() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:envVars")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:envVars");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn inherits_moon_env_vars() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:envVarsMoon")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:envVarsMoon");
+    });
 
-    assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
 }
 
 #[test]
 fn runs_from_project_root() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:runFromProject")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:runFromProject");
+    });
 
-    assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
 }
 
 #[test]
 fn runs_from_workspace_root() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:runFromWorkspace")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:runFromWorkspace");
+    });
 
-    assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+    assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
 }
 
 #[test]
 fn retries_on_failure_till_count() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:retryCount")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:retryCount");
+    });
+
     let output = get_assert_output(&assert);
 
     assert!(predicate::str::contains("Process ~/.moon/tools/node/16.1.0").eval(&output));
@@ -255,13 +315,11 @@ fn retries_on_failure_till_count() {
 
 #[test]
 fn can_run_many_targets() {
-    let fixture = create_sandbox_with_git("node");
+    let sandbox = node_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:cjs")
-        .arg("node:mjs")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:cjs").arg("node:mjs");
+    });
 
     let output = get_assert_output(&assert);
 
@@ -276,18 +334,19 @@ mod install_deps {
 
     #[test]
     fn installs_on_first_run() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        assert!(!fixture.path().join("node_modules").exists());
+        assert!(!sandbox.path().join("node_modules").exists());
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("node:standard")
+                .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT");
+        });
+
         let output = get_assert_output(&assert);
 
-        assert!(fixture.path().join("node_modules").exists());
+        assert!(sandbox.path().join("node_modules").exists());
 
         assert!(predicate::str::contains("added").eval(&output));
         assert!(predicate::str::contains("packages").eval(&output));
@@ -295,23 +354,25 @@ mod install_deps {
 
     #[test]
     fn doesnt_reinstall_on_second_run() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("node:standard")
+                .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT");
+        });
+
         let output1 = get_assert_output(&assert);
 
         assert!(predicate::str::contains("added").eval(&output1));
         assert!(predicate::str::contains("packages").eval(&output1));
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("node:standard")
+                .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT");
+        });
+
         let output2 = get_assert_output(&assert);
 
         assert!(!predicate::str::contains("added").eval(&output2));
@@ -320,14 +381,13 @@ mod install_deps {
 
     #[test]
     fn creates_tool_state_cache() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("node:standard");
+        });
 
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/states/toolNode-16.1.0.json")
             .exists());
@@ -335,22 +395,32 @@ mod install_deps {
 
     #[test]
     fn installs_deps_into_each_project_when_not_using_workspaces() {
-        let fixture = create_sandbox_with_git("node-non-workspaces");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_typescript_fixture_configs();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("foo:noop")
-            .arg("bar:noop")
-            .arg("baz:noop")
-            .assert();
+        let sandbox = create_sandbox_with_config(
+            "node-non-workspaces",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
+
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("foo:noop")
+                .arg("bar:noop")
+                .arg("baz:noop");
+        });
 
         assert!(predicate::str::contains("npm install")
             .count(3)
             .eval(&get_assert_output(&assert)));
 
-        assert!(fixture.path().join("foo/package-lock.json").exists());
-        assert!(fixture.path().join("bar/package-lock.json").exists());
-        assert!(fixture.path().join("baz/package-lock.json").exists());
+        assert!(sandbox.path().join("foo/package-lock.json").exists());
+        assert!(sandbox.path().join("bar/package-lock.json").exists());
+        assert!(sandbox.path().join("baz/package-lock.json").exists());
     }
 }
 
@@ -359,34 +429,28 @@ mod engines {
 
     #[test]
     fn adds_engines_constraint() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox_with_config(|cfg| {
+            cfg.add_engines_constraint = true;
+        });
 
-        update_toolchain_config(
-            fixture.path(),
-            "addEnginesConstraint: false",
-            "addEnginesConstraint: true",
-        );
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("node:standard");
+        });
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        assert_snapshot!(read_to_string(fixture.path().join("package.json")).unwrap());
+        assert_snapshot!(read_to_string(sandbox.path().join("package.json")).unwrap());
     }
 
     #[test]
     fn doesnt_add_engines_constraint() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox_with_config(|cfg| {
+            cfg.add_engines_constraint = false;
+        });
 
-        append_toolchain_config(fixture.path(), r#"  addEnginesConstraint: false"#);
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("node:standard");
+        });
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        assert_snapshot!(read_to_string(fixture.path().join("package.json")).unwrap());
+        assert_snapshot!(read_to_string(sandbox.path().join("package.json")).unwrap());
     }
 }
 
@@ -395,167 +459,132 @@ mod version_manager {
 
     #[test]
     fn adds_no_file_by_default() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("node:standard");
+        });
 
-        assert!(!fixture.path().join(".nvmrc").exists());
-        assert!(!fixture.path().join(".node-version").exists());
+        assert!(!sandbox.path().join(".nvmrc").exists());
+        assert!(!sandbox.path().join(".node-version").exists());
     }
 
     #[test]
     fn adds_nvmrc_file() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox_with_config(|cfg| {
+            cfg.sync_version_manager_config = Some(moon_config::NodeVersionManager::Nvm);
+        });
 
-        append_toolchain_config(fixture.path(), r#"  syncVersionManagerConfig: nvm"#);
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("node:standard");
+        });
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        assert!(fixture.path().join(".nvmrc").exists());
+        assert!(sandbox.path().join(".nvmrc").exists());
 
         assert_eq!(
-            read_to_string(fixture.path().join(".nvmrc")).unwrap(),
+            read_to_string(sandbox.path().join(".nvmrc")).unwrap(),
             "16.1.0"
         );
     }
 
     #[test]
     fn adds_nodenv_file() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox_with_config(|cfg| {
+            cfg.sync_version_manager_config = Some(moon_config::NodeVersionManager::Nodenv);
+        });
 
-        append_toolchain_config(fixture.path(), r#"  syncVersionManagerConfig: nodenv"#);
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("node:standard");
+        });
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        assert!(fixture.path().join(".node-version").exists());
+        assert!(sandbox.path().join(".node-version").exists());
 
         assert_eq!(
-            read_to_string(fixture.path().join(".node-version")).unwrap(),
+            read_to_string(sandbox.path().join(".node-version")).unwrap(),
             "16.1.0"
         );
-    }
-
-    #[test]
-    fn errors_for_invalid_value() {
-        let fixture = create_sandbox_with_git("node");
-
-        append_toolchain_config(fixture.path(), r#"  syncVersionManagerConfig: invalid"#);
-
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:standard")
-            .assert();
-
-        let output = get_assert_output(&assert);
-
-        assert!(predicate::str::contains(
-            "unknown variant: found `invalid`, expected ``nodenv` or `nvm``"
-        )
-        .eval(&output));
     }
 }
 
 mod sync_depends_on {
     use super::*;
+    use moon_config::NodeVersionFormat;
 
-    fn test_depends_on_format(format: &str) {
-        let fixture = create_sandbox_with_git("node");
+    fn test_depends_on_format(format: NodeVersionFormat) {
+        let sandbox = node_sandbox_with_config(|cfg| {
+            cfg.sync_project_workspace_dependencies = true;
+            cfg.dependency_version_format = format.clone();
+        });
 
-        update_toolchain_config(
-            fixture.path(),
-            "syncProjectWorkspaceDependencies: false",
-            "syncProjectWorkspaceDependencies: true",
-        );
-
-        append_toolchain_config(
-            fixture.path(),
-            &format!("  dependencyVersionFormat: {}", format),
-        );
-
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("dependsOn:standard")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("dependsOn:standard");
+        });
 
         // deps-c does not have a `package.json` on purpose
         assert_snapshot!(
-            format!("format_{}", format),
-            read_to_string(fixture.path().join("depends-on/package.json")).unwrap()
+            format!("format_{:?}", format),
+            read_to_string(sandbox.path().join("depends-on/package.json")).unwrap()
         );
     }
 
     #[test]
     fn syncs_as_file_dependency() {
-        test_depends_on_format("file");
+        test_depends_on_format(NodeVersionFormat::File);
     }
 
     #[test]
     fn syncs_as_link_dependency() {
-        test_depends_on_format("link");
+        test_depends_on_format(NodeVersionFormat::Link);
     }
 
     #[test]
     fn syncs_as_star_dependency() {
-        test_depends_on_format("star");
+        test_depends_on_format(NodeVersionFormat::Star);
     }
 
     #[test]
     fn syncs_as_version_dependency() {
-        test_depends_on_format("version");
+        test_depends_on_format(NodeVersionFormat::Version);
     }
 
     #[test]
     fn syncs_as_version_caret_dependency() {
-        test_depends_on_format("version-caret");
+        test_depends_on_format(NodeVersionFormat::VersionCaret);
     }
 
     #[test]
     fn syncs_as_version_tilde_dependency() {
-        test_depends_on_format("version-tilde");
+        test_depends_on_format(NodeVersionFormat::VersionTilde);
     }
 
     #[test]
     fn syncs_as_workspace_dependency() {
-        test_depends_on_format("workspace");
+        test_depends_on_format(NodeVersionFormat::Workspace);
     }
 
     #[test]
     fn syncs_as_workspace_caret_dependency() {
-        test_depends_on_format("workspace-caret");
+        test_depends_on_format(NodeVersionFormat::WorkspaceCaret);
     }
 
     #[test]
     fn syncs_as_workspace_tilde_dependency() {
-        test_depends_on_format("workspace-tilde");
+        test_depends_on_format(NodeVersionFormat::WorkspaceTilde);
     }
 
     #[test]
     fn syncs_depends_on_with_scopes() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox_with_config(|cfg| {
+            cfg.sync_project_workspace_dependencies = true;
+        });
 
-        update_toolchain_config(
-            fixture.path(),
-            "syncProjectWorkspaceDependencies: false",
-            "syncProjectWorkspaceDependencies: true",
-        );
-
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("dependsOnScopes:standard")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("dependsOnScopes:standard");
+        });
 
         // deps-c does not have a `package.json` on purpose
         assert_snapshot!(
-            read_to_string(fixture.path().join("depends-on-scopes/package.json")).unwrap()
+            read_to_string(sandbox.path().join("depends-on-scopes/package.json")).unwrap()
         );
     }
 }
@@ -565,36 +594,33 @@ mod npm {
 
     #[test]
     fn installs_correct_version() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let sandbox = depman_sandbox("npm");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("npm:version")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("npm:version");
+        });
 
         assert!(predicate::str::contains("8.0.0").eval(&get_assert_output(&assert)));
     }
 
     #[test]
     fn can_install_a_dep() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let sandbox = depman_sandbox("npm");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("npm:installDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("npm:installDep");
+        });
 
         assert.success();
     }
 
     #[test]
     fn can_run_a_script() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let sandbox = depman_sandbox("npm");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("npm:runScript")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("npm:runScript");
+        });
 
         assert!(predicate::str::contains("test").eval(&get_assert_output(&assert)));
 
@@ -603,12 +629,11 @@ mod npm {
 
     #[test]
     fn can_run_a_deps_bin() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let sandbox = depman_sandbox("npm");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("npm:runDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("npm:runDep");
+        });
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
@@ -620,25 +645,25 @@ mod npm {
 
     #[test]
     fn installs_deps_in_non_workspace_project() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let sandbox = depman_sandbox("npm");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("notInWorkspace:noop")
-            // Run other package so we can see both working
-            .arg("npm:noop")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("notInWorkspace:noop")
+                // Run other package so we can see both working
+                .arg("npm:noop");
+        });
 
         assert!(predicate::str::contains("npm install")
             .count(2)
             .eval(&get_assert_output(&assert)));
 
-        assert!(fixture.path().join("package-lock.json").exists());
-        assert!(fixture
+        assert!(sandbox.path().join("package-lock.json").exists());
+        assert!(sandbox
             .path()
             .join("not-in-workspace/package-lock.json")
             .exists());
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join("not-in-workspace/node_modules")
             .exists());
@@ -653,36 +678,33 @@ mod pnpm {
 
     #[test]
     fn installs_correct_version() {
-        let fixture = create_sandbox_with_git("node-pnpm");
+        let sandbox = depman_sandbox("pnpm");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("pnpm:version")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("pnpm:version");
+        });
 
         assert!(predicate::str::contains("7.5.0").eval(&get_assert_output(&assert)));
     }
 
     #[test]
     fn can_install_a_dep() {
-        let fixture = create_sandbox_with_git("node-pnpm");
+        let sandbox = depman_sandbox("pnpm");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("pnpm:installDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("pnpm:installDep");
+        });
 
         assert.success();
     }
 
     #[test]
     fn can_run_a_script() {
-        let fixture = create_sandbox_with_git("node-pnpm");
+        let sandbox = depman_sandbox("pnpm");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("pnpm:runScript")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("pnpm:runScript");
+        });
 
         assert!(predicate::str::contains("lint").eval(&get_assert_output(&assert)));
 
@@ -691,14 +713,13 @@ mod pnpm {
 
     #[test]
     fn can_run_a_deps_bin_isolated() {
-        let fixture = create_sandbox_with_git("node-pnpm");
+        let sandbox = depman_sandbox("pnpm");
 
-        fs::write(fixture.path().join(".npmrc"), "node-linker=isolated").unwrap();
+        fs::write(sandbox.path().join(".npmrc"), "node-linker=isolated").unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("pnpm:runDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("pnpm:runDep");
+        });
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
@@ -710,14 +731,13 @@ mod pnpm {
 
     #[test]
     fn can_run_a_deps_bin_hoisted() {
-        let fixture = create_sandbox_with_git("node-pnpm");
+        let sandbox = depman_sandbox("pnpm");
 
-        fs::write(fixture.path().join(".npmrc"), "node-linker=hoisted").unwrap();
+        fs::write(sandbox.path().join(".npmrc"), "node-linker=hoisted").unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("pnpm:runDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("pnpm:runDep");
+        });
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
@@ -730,9 +750,9 @@ mod pnpm {
     // NOTE: pnpm does not support nested lockfiles.
     // #[test]
     // fn installs_deps_in_non_workspace_project() {
-    //     let fixture = create_sandbox_with_git("node-pnpm");
+    //     let sandbox = depman_sandbox("pnpm");
 
-    //     let assert = create_moon_command(fixture.path())
+    //     let assert = create_moon_command(sandbox.path())
     //         .arg("run")
     //         .arg("notInWorkspace:noop")
     //         // Run other package so we can see both working
@@ -741,12 +761,12 @@ mod pnpm {
 
     //     assert_snapshot!(get_assert_output(&assert));
 
-    //     assert!(fixture.path().join("pnpm-lock.yaml").exists());
-    //     assert!(fixture
+    //     assert!(sandbox.path().join("pnpm-lock.yaml").exists());
+    //     assert!(sandbox
     //         .path()
     //         .join("not-in-workspace/pnpm-lock.yaml")
     //         .exists());
-    //     assert!(fixture
+    //     assert!(sandbox
     //         .path()
     //         .join("not-in-workspace/node_modules")
     //         .exists());
@@ -760,36 +780,33 @@ mod yarn1 {
 
     #[test]
     fn installs_correct_version() {
-        let fixture = create_sandbox_with_git("node-yarn1");
+        let sandbox = depman_sandbox("yarn1");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("yarn:version")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn1:version");
+        });
 
         assert!(predicate::str::contains("1.22.0").eval(&get_assert_output(&assert)));
     }
 
     #[test]
     fn can_install_a_dep() {
-        let fixture = create_sandbox_with_git("node-yarn1");
+        let sandbox = depman_sandbox("yarn1");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("yarn:installDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn1:installDep");
+        });
 
         assert.success();
     }
 
     #[test]
     fn can_run_a_script() {
-        let fixture = create_sandbox_with_git("node-yarn1");
+        let sandbox = depman_sandbox("yarn1");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("yarn:runScript")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn1:runScript");
+        });
 
         assert!(predicate::str::contains("build").eval(&get_assert_output(&assert)));
 
@@ -798,12 +815,11 @@ mod yarn1 {
 
     #[test]
     fn can_run_a_deps_bin() {
-        let fixture = create_sandbox_with_git("node-yarn1");
+        let sandbox = depman_sandbox("yarn1");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("yarn:runDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn1:runDep");
+        });
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
@@ -815,22 +831,22 @@ mod yarn1 {
 
     #[test]
     fn installs_deps_in_non_workspace_project() {
-        let fixture = create_sandbox_with_git("node-yarn1");
+        let sandbox = depman_sandbox("yarn1");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("notInWorkspace:noop")
-            // Run other package so we can see both working
-            .arg("yarn:noop")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("notInWorkspace:noop")
+                // Run other package so we can see both working
+                .arg("yarn1:noop");
+        });
 
         assert!(predicate::str::contains("yarn install")
             .count(2)
             .eval(&get_assert_output(&assert)));
 
-        assert!(fixture.path().join("yarn.lock").exists());
-        assert!(fixture.path().join("not-in-workspace/yarn.lock").exists());
-        assert!(fixture
+        assert!(sandbox.path().join("yarn.lock").exists());
+        assert!(sandbox.path().join("not-in-workspace/yarn.lock").exists());
+        assert!(sandbox
             .path()
             .join("not-in-workspace/node_modules")
             .exists());
@@ -844,36 +860,33 @@ mod yarn {
 
     #[test]
     fn installs_correct_version() {
-        let fixture = create_sandbox_with_git("node-yarn");
+        let sandbox = depman_sandbox("yarn");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("yarn:version")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn:version");
+        });
 
         assert!(predicate::str::contains("3.0.0").eval(&get_assert_output(&assert)));
     }
 
     #[test]
     fn can_install_a_dep() {
-        let fixture = create_sandbox_with_git("node-yarn");
+        let sandbox = depman_sandbox("yarn");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("yarn:installDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn:installDep");
+        });
 
         assert.success();
     }
 
     #[test]
     fn can_run_a_script() {
-        let fixture = create_sandbox_with_git("node-yarn");
+        let sandbox = depman_sandbox("yarn");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("yarn:runScript")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn:runScript");
+        });
 
         assert!(predicate::str::contains("build").eval(&get_assert_output(&assert)));
 
@@ -882,12 +895,11 @@ mod yarn {
 
     #[test]
     fn can_run_a_deps_bin() {
-        let fixture = create_sandbox_with_git("node-yarn");
+        let sandbox = depman_sandbox("yarn");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("yarn:runDep")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("yarn:runDep");
+        });
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
@@ -899,22 +911,22 @@ mod yarn {
 
     #[test]
     fn installs_deps_in_non_workspace_project() {
-        let fixture = create_sandbox_with_git("node-yarn");
+        let sandbox = depman_sandbox("yarn");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("notInWorkspace:noop")
-            // Run other package so we can see both working
-            .arg("yarn:noop")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("notInWorkspace:noop")
+                // Run other package so we can see both working
+                .arg("yarn:noop");
+        });
 
         assert!(predicate::str::contains("yarn install")
             .count(2)
             .eval(&get_assert_output(&assert)));
 
-        assert!(fixture.path().join("yarn.lock").exists());
-        assert!(fixture.path().join("not-in-workspace/yarn.lock").exists());
-        assert!(fixture
+        assert!(sandbox.path().join("yarn.lock").exists());
+        assert!(sandbox.path().join("not-in-workspace/yarn.lock").exists());
+        assert!(sandbox
             .path()
             .join("not-in-workspace/node_modules")
             .exists());
@@ -928,16 +940,16 @@ mod profile {
 
     #[test]
     fn record_a_cpu_profile() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("--profile")
-            .arg("cpu")
-            .arg("node:standard")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("--profile")
+                .arg("cpu")
+                .arg("node:standard");
+        });
 
-        let profile = fixture
+        let profile = sandbox
             .path()
             .join(".moon/cache/states/node/standard/snapshot.cpuprofile");
 
@@ -946,16 +958,16 @@ mod profile {
 
     #[test]
     fn record_a_heap_profile() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("--profile")
-            .arg("heap")
-            .arg("node:standard")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("--profile")
+                .arg("heap")
+                .arg("node:standard");
+        });
 
-        let profile = fixture
+        let profile = sandbox
             .path()
             .join(".moon/cache/states/node/standard/snapshot.heapprofile");
 
@@ -965,15 +977,23 @@ mod profile {
 
 mod aliases {
     use super::*;
+    use moon_test_utils::get_project_graph_aliases_fixture_configs;
 
     #[test]
     fn runs_via_package_name() {
-        let fixture = create_sandbox_with_git("project-graph/aliases");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_project_graph_aliases_fixture_configs();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("@scope/pkg-foo:standard")
-            .assert();
+        let sandbox = create_sandbox_with_config(
+            "project-graph/aliases",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("@scope/pkg-foo:standard");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
@@ -985,15 +1005,14 @@ mod non_js_bins {
 
     #[test]
     fn works_with_esbuild() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("esbuild:build")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("esbuild:build");
+        });
 
         assert_eq!(
-            fs::read_to_string(fixture.path().join("esbuild/output.js")).unwrap(),
+            fs::read_to_string(sandbox.path().join("esbuild/output.js")).unwrap(),
             "(() => {\n  // input.js\n  var ESBUILD = \"esbuild\";\n})();\n"
         );
 
@@ -1002,15 +1021,14 @@ mod non_js_bins {
 
     #[test]
     fn works_with_swc() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("swc:build")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("swc:build");
+        });
 
         assert_eq!(
-            fs::read_to_string(fixture.path().join("swc/output.js")).unwrap(),
+            fs::read_to_string(sandbox.path().join("swc/output.js")).unwrap(),
             "export var SWC = \"swc\";\n\n\n//# sourceMappingURL=output.js.map"
         );
 
@@ -1023,92 +1041,85 @@ mod typescript {
 
     #[test]
     fn creates_missing_tsconfig() {
-        let fixture = create_sandbox_with_git("typescript");
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.create_missing_config = true;
+        });
 
-        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+        assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("create-config:test")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("create-config:noop");
+        });
 
-        assert!(fixture.path().join("create-config/tsconfig.json").exists());
+        assert!(sandbox.path().join("create-config/tsconfig.json").exists());
 
         // root
-        assert_snapshot!(read_to_string(fixture.path().join("tsconfig.json")).unwrap());
+        assert_snapshot!(read_to_string(sandbox.path().join("tsconfig.json")).unwrap());
 
         // project
         assert_snapshot!(
-            read_to_string(fixture.path().join("create-config/tsconfig.json")).unwrap()
+            read_to_string(sandbox.path().join("create-config/tsconfig.json")).unwrap()
         );
     }
 
     #[test]
     fn doesnt_create_missing_tsconfig_if_setting_off() {
-        let fixture = create_sandbox_with_git("typescript");
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.create_missing_config = false;
+        });
 
-        update_toolchain_config(
-            fixture.path(),
-            "createMissingConfig: true",
-            "createMissingConfig: false",
-        );
+        assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
 
-        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("create-config:noop");
+        });
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("create-config:test")
-            .assert();
-
-        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+        assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
     }
 
     #[test]
     fn doesnt_create_missing_tsconfig_if_syncing_off() {
-        let fixture = create_sandbox_with_git("typescript");
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.create_missing_config = true;
+            cfg.sync_project_references = false;
+        });
 
-        update_toolchain_config(
-            fixture.path(),
-            "syncProjectReferences: true",
-            "syncProjectReferences: false",
-        );
+        assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
 
-        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("create-config:noop");
+        });
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("create-config:test")
-            .assert();
-
-        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+        assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
     }
 
     #[test]
     fn doesnt_create_missing_tsconfig_if_project_disabled() {
-        let fixture = create_sandbox_with_git("typescript");
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.create_missing_config = true;
+            cfg.sync_project_references = true;
+        });
 
-        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+        assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("create-config-disabled:test")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("create-config-disabled:noop");
+        });
 
-        assert!(!fixture.path().join("create-config/tsconfig.json").exists());
+        assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
     }
 
     #[test]
     fn syncs_ref_to_root_config() {
-        let fixture = create_sandbox_with_git("typescript");
+        let sandbox = typescript_sandbox(|_| {});
 
-        let initial_root = read_to_string(fixture.path().join("tsconfig.json")).unwrap();
+        let initial_root = read_to_string(sandbox.path().join("tsconfig.json")).unwrap();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("create-config:test")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("create-config:noop");
+        });
 
-        let synced_root = read_to_string(fixture.path().join("tsconfig.json")).unwrap();
+        let synced_root = read_to_string(sandbox.path().join("tsconfig.json")).unwrap();
 
         assert_ne!(initial_root, synced_root);
         assert_snapshot!(synced_root);
@@ -1116,21 +1127,20 @@ mod typescript {
 
     #[test]
     fn syncs_depends_on_as_refs() {
-        let fixture = create_sandbox_with_git("typescript");
+        let sandbox = typescript_sandbox(|_| {});
 
-        assert!(!fixture
+        assert!(!sandbox
             .path()
             .join("syncs-deps-refs/tsconfig.json")
             .exists());
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("syncs-deps-refs:test")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("syncs-deps-refs:noop");
+        });
 
         // should not have `deps-no-config-disabled` or `deps-with-config-disabled`
         assert_snapshot!(
-            read_to_string(fixture.path().join("syncs-deps-refs/tsconfig.json")).unwrap()
+            read_to_string(sandbox.path().join("syncs-deps-refs/tsconfig.json")).unwrap()
         );
     }
 
@@ -1139,41 +1149,31 @@ mod typescript {
 
         #[test]
         fn routes_to_cache() {
-            let fixture = create_sandbox_with_git("typescript");
+            let sandbox = typescript_sandbox(|cfg| {
+                cfg.route_out_dir_to_cache = true;
+            });
 
-            update_toolchain_config(
-                fixture.path(),
-                "routeOutDirToCache: false",
-                "routeOutDirToCache: true",
-            );
-
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("out-dir-routing:test")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("out-dir-routing:noop");
+            });
 
             assert_snapshot!(
-                read_to_string(fixture.path().join("out-dir-routing/tsconfig.json")).unwrap()
+                read_to_string(sandbox.path().join("out-dir-routing/tsconfig.json")).unwrap()
             );
         }
 
         #[test]
         fn routes_to_cache_when_no_compiler_options() {
-            let fixture = create_sandbox_with_git("typescript");
+            let sandbox = typescript_sandbox(|cfg| {
+                cfg.route_out_dir_to_cache = true;
+            });
 
-            update_toolchain_config(
-                fixture.path(),
-                "routeOutDirToCache: false",
-                "routeOutDirToCache: true",
-            );
-
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("out-dir-routing-no-options:test")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("out-dir-routing-no-options:noop");
+            });
 
             assert_snapshot!(read_to_string(
-                fixture
+                sandbox
                     .path()
                     .join("out-dir-routing-no-options/tsconfig.json")
             )
@@ -1182,15 +1182,16 @@ mod typescript {
 
         #[test]
         fn doesnt_route_to_cache_if_disabled() {
-            let fixture = create_sandbox_with_git("typescript");
+            let sandbox = typescript_sandbox(|cfg| {
+                cfg.route_out_dir_to_cache = false;
+            });
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("out-dir-routing:test")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("out-dir-routing:noop");
+            });
 
             assert_snapshot!(
-                read_to_string(fixture.path().join("out-dir-routing/tsconfig.json")).unwrap()
+                read_to_string(sandbox.path().join("out-dir-routing/tsconfig.json")).unwrap()
             );
         }
     }
@@ -1200,63 +1201,49 @@ mod typescript {
 
         #[test]
         fn maps_paths() {
-            let fixture = create_sandbox_with_git("typescript");
+            let sandbox = typescript_sandbox(|cfg| {
+                cfg.sync_project_references_to_paths = true;
+            });
 
-            update_toolchain_config(
-                fixture.path(),
-                "syncProjectReferencesToPaths: false",
-                "syncProjectReferencesToPaths: true",
-            );
-
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("syncs-paths-refs:test")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("syncs-paths-refs:noop");
+            });
 
             assert_snapshot!(
-                read_to_string(fixture.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
+                read_to_string(sandbox.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
             );
         }
 
         #[test]
         fn doesnt_map_paths_if_no_refs() {
-            let fixture = create_sandbox_with_git("typescript");
+            let sandbox = typescript_sandbox(|cfg| {
+                cfg.sync_project_references = false;
+                cfg.sync_project_references_to_paths = true;
+            });
 
-            update_toolchain_config(
-                fixture.path(),
-                "syncProjectReferences: true",
-                "syncProjectReferences: false",
-            );
+            std::fs::remove_file(sandbox.path().join("syncs-paths-refs/moon.yml")).unwrap();
 
-            update_toolchain_config(
-                fixture.path(),
-                "syncProjectReferencesToPaths: false",
-                "syncProjectReferencesToPaths: true",
-            );
-
-            std::fs::remove_file(fixture.path().join("syncs-paths-refs/moon.yml")).unwrap();
-
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("syncs-paths-refs:test")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("syncs-paths-refs:noop");
+            });
 
             assert_snapshot!(
-                read_to_string(fixture.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
+                read_to_string(sandbox.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
             );
         }
 
         #[test]
         fn doesnt_map_paths_if_disabled() {
-            let fixture = create_sandbox_with_git("typescript");
+            let sandbox = typescript_sandbox(|cfg| {
+                cfg.sync_project_references_to_paths = false;
+            });
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("syncs-paths-refs:test")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("syncs-paths-refs:noop");
+            });
 
             assert_snapshot!(
-                read_to_string(fixture.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
+                read_to_string(sandbox.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
             );
         }
     }
@@ -1267,19 +1254,15 @@ mod workspace_overrides {
 
     #[test]
     fn can_override_version() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox_with_config(|cfg| {
+            cfg.dedupe_on_lockfile_change = false;
+        });
 
-        update_toolchain_config(
-            fixture.path(),
-            "dedupeOnLockfileChange: true",
-            "dedupeOnLockfileChange: false",
-        );
-
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:version")
-            .arg("versionOverride:version")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("node:version")
+                .arg("versionOverride:version");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -1296,12 +1279,12 @@ mod affected_files {
 
     #[test]
     fn uses_dot_when_not_affected() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:affectedFiles")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("node:affectedFiles");
+        });
+
         let output = get_assert_output(&assert);
 
         assert!(predicate::str::contains("Args: .\n").eval(&output));
@@ -1309,16 +1292,15 @@ mod affected_files {
 
     #[test]
     fn uses_rel_paths_when_affected() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        fs::write(fixture.path().join("base/input1.js"), "").unwrap();
-        fs::write(fixture.path().join("base/input2.js"), "").unwrap();
+        fs::write(sandbox.path().join("base/input1.js"), "").unwrap();
+        fs::write(sandbox.path().join("base/input2.js"), "").unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:affectedFiles")
-            .arg("--affected")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("node:affectedFiles").arg("--affected");
+        });
+
         let output = get_assert_output(&assert);
 
         if cfg!(windows) {
@@ -1330,16 +1312,17 @@ mod affected_files {
 
     #[test]
     fn sets_env_var() {
-        let fixture = create_sandbox_with_git("node");
+        let sandbox = node_sandbox();
 
-        fs::write(fixture.path().join("base/input1.js"), "").unwrap();
-        fs::write(fixture.path().join("base/input2.js"), "").unwrap();
+        fs::write(sandbox.path().join("base/input1.js"), "").unwrap();
+        fs::write(sandbox.path().join("base/input2.js"), "").unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("node:affectedFilesEnvVar")
-            .arg("--affected")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("node:affectedFilesEnvVar")
+                .arg("--affected");
+        });
+
         let output = get_assert_output(&assert);
 
         assert!(

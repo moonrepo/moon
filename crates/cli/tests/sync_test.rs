@@ -14,7 +14,7 @@ fn syncs_all_projects() {
         ..WorkspaceConfig::default()
     };
 
-    let mut sandbox = create_sandbox_with_config(
+    let sandbox = create_sandbox_with_config(
         "project-graph/dependencies",
         Some(&workspace_config),
         None,

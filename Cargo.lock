@@ -2322,6 +2322,7 @@ dependencies = [
  "ignore",
  "moon_config",
  "moon_error",
+ "moon_test_utils",
  "moon_utils",
  "regex",
  "rustc-hash",

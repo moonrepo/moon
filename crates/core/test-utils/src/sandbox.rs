@@ -21,14 +21,16 @@ impl Sandbox {
         self.fixture.path()
     }
 
-    pub fn create_file<T: AsRef<str>>(&self, name: &str, content: T) {
+    pub fn create_file<T: AsRef<str>>(&self, name: &str, content: T) -> &Self {
         self.fixture
             .child(name)
             .write_str(content.as_ref())
             .unwrap();
+
+        self
     }
 
-    pub fn debug(&self) {
+    pub fn debug(&self) -> &Self {
         let assert = self.assert
             .as_ref()
             .expect("Debugging the sandbox requires a `moon` command to be ran with `run_moon()`. If you only want to debug files, use `debug_files()` instead.");
@@ -42,13 +44,17 @@ impl Sandbox {
         println!("stdout:\n{}\n", get_assert_stdout_output(assert));
         println!("stderr:\n{}\n", get_assert_stderr_output(assert));
         println!("status: {:#?}", assert.get_output().status);
+
+        self
     }
 
-    pub fn debug_files(&self) {
+    pub fn debug_files(&self) -> &Self {
         debug_sandbox_files(self.path());
+
+        self
     }
 
-    pub fn enable_git(&self) {
+    pub fn enable_git(&self) -> &Self {
         if !self.path().join(".gitignore").exists() {
             self.create_file(".gitignore", "node_modules");
         }
@@ -71,9 +77,11 @@ impl Sandbox {
                 .env("GIT_COMMITTER_NAME", "moon tests")
                 .env("GIT_COMMITTER_EMAIL", "fakeemail@moonrepo.dev");
         });
+
+        self
     }
 
-    pub fn run_git<C>(&self, handler: C)
+    pub fn run_git<C>(&self, handler: C) -> &Self
     where
         C: FnOnce(&mut StdCommand),
     {
@@ -90,9 +98,11 @@ impl Sandbox {
             println!("{}", output_to_string(&out.stdout));
             eprintln!("{}", output_to_string(&out.stderr));
         }
+
+        self
     }
 
-    pub fn run_moon<C>(&mut self, handler: C)
+    pub fn run_moon<C>(&mut self, handler: C) -> &Self
     where
         C: FnOnce(&mut Command),
     {
@@ -102,6 +112,7 @@ impl Sandbox {
 
         self.assert = Some(cmd.assert());
         self.command = Some(cmd);
+        self
     }
 }
 

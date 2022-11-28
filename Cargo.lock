@@ -2242,6 +2242,8 @@ dependencies = [
  "assert_cmd",
  "assert_fs",
  "clean-path",
+ "moon_config",
+ "serde_yaml",
 ]
 
 [[package]]

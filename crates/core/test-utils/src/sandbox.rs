@@ -6,22 +6,26 @@ use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 use assert_fs::TempDir;
+use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig};
 use std::path::Path;
 use std::process::Command as StdCommand;
 
 pub struct Sandbox {
-    pub assert: Option<Assert>,
-    pub cmd: Option<Command>,
-    pub inner: TempDir,
+    assert: Option<Assert>,
+    command: Option<Command>,
+    pub fixture: TempDir,
 }
 
 impl Sandbox {
     pub fn path(&self) -> &Path {
-        self.inner.path()
+        self.fixture.path()
     }
 
     pub fn create_file<T: AsRef<str>>(&self, name: &str, content: T) {
-        self.inner.child(name).write_str(content.as_ref()).unwrap();
+        self.fixture
+            .child(name)
+            .write_str(content.as_ref())
+            .unwrap();
     }
 
     pub fn debug(&self) {
@@ -97,7 +101,7 @@ impl Sandbox {
         handler(&mut cmd);
 
         self.assert = Some(cmd.assert());
-        self.cmd = Some(cmd);
+        self.command = Some(cmd);
     }
 }
 
@@ -110,9 +114,34 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
 
     Sandbox {
         assert: None,
-        cmd: None,
-        inner: temp_dir,
+        command: None,
+        fixture: temp_dir,
     }
+}
+
+pub fn create_sandbox_with_config<T: AsRef<str>>(
+    fixture: T,
+    workspace_config: Option<WorkspaceConfig>,
+    toolchain_config: Option<ToolchainConfig>,
+    projects_config: Option<GlobalProjectConfig>,
+) -> Sandbox {
+    let sandbox = create_sandbox(fixture);
+
+    sandbox.create_file(
+        ".moon/workspace.yml",
+        serde_yaml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
+    );
+
+    sandbox.create_file(
+        ".moon/toolchain.yml",
+        serde_yaml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
+    );
+
+    if let Some(config) = projects_config {
+        sandbox.create_file(".moon/project.yml", serde_yaml::to_string(&config).unwrap());
+    }
+
+    sandbox
 }
 
 fn debug_sandbox_files(dir: &Path) {

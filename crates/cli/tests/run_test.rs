@@ -841,7 +841,6 @@ mod reports {
 
 mod affected {
     use super::*;
-    use moon_utils::test::run_git_command;
 
     #[test]
     fn doesnt_run_if_not_affected() {
@@ -926,7 +925,7 @@ mod affected {
 
         fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
 
-        run_git_command(sandbox.path(), |cmd| {
+        sandbox.run_git(|cmd| {
             cmd.args(["add", "files/other.txt"]);
         });
 

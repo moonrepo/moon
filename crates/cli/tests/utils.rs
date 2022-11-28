@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use moon_utils::path::replace_home_dir;
-use moon_utils::test::{get_assert_output, replace_fixtures_dir};
+use moon_test_utils::get_assert_output;
+use moon_utils::path;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -35,8 +35,18 @@ pub fn update_toolchain_config(dir: &Path, old: &str, new: &str) {
     fs::write(dir.join(".moon/toolchain.yml"), config).unwrap();
 }
 
+pub fn replace_fixtures_dir<T: AsRef<str>, P: AsRef<Path>>(value: T, dir: P) -> String {
+    let dir_str = dir.as_ref().to_str().unwrap();
+
+    // Replace both forward and backward slashes
+    value
+        .as_ref()
+        .replace(dir_str, "<WORKSPACE>")
+        .replace(&path::standardize_separators(dir_str), "<WORKSPACE>")
+}
+
 pub fn get_path_safe_output(assert: &assert_cmd::assert::Assert, fixtures_dir: &Path) -> String {
-    let result = replace_home_dir(replace_fixtures_dir(
+    let result = path::replace_home_dir(replace_fixtures_dir(
         get_assert_output(assert),
         fixtures_dir,
     ));

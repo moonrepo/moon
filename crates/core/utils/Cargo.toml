@@ -33,4 +33,4 @@ tokio = { workspace = true }
 wax = "0.5.0"
 
 [dev-dependencies]
-insta = { workspace = true }
+moon_test_utils = { path = "../test-utils" }

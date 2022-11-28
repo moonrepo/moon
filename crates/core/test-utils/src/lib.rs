@@ -2,6 +2,7 @@ mod cli;
 mod sandbox;
 
 pub use cli::*;
+pub use insta::*;
 pub use sandbox::*;
 
 use clean_path::Clean;

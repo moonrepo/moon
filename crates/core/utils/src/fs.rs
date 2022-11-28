@@ -291,7 +291,7 @@ pub async fn write<T: AsRef<Path>>(path: T, data: impl AsRef<[u8]>) -> Result<()
 pub mod temp {
     use super::*;
     use moon_constants::CONFIG_DIRNAME;
-    use std::fs; // TEMPORARILY sync
+    use std::fs;
 
     pub fn get_dir() -> PathBuf {
         crate::get_workspace_root()

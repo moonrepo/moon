@@ -2133,7 +2133,6 @@ name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "insta",
  "moon_cache",
  "moon_config",
  "moon_error",
@@ -2142,6 +2141,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_task",
+ "moon_test_utils",
  "moon_utils",
  "petgraph",
  "rustc-hash",

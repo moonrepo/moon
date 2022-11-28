@@ -1,6 +1,6 @@
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_generator::{Template, TemplateContext, TemplateFile};
-use moon_utils::test::get_fixtures_dir;
+use moon_test_utils::get_fixtures_path;
 use std::path::PathBuf;
 
 fn create_template_file() -> TemplateFile {
@@ -10,7 +10,7 @@ fn create_template_file() -> TemplateFile {
 fn create_template() -> Template {
     Template::new(
         "standard".into(),
-        get_fixtures_dir("generator").join("templates/standard"),
+        get_fixtures_path("generator/templates/standard"),
     )
     .unwrap()
 }
@@ -31,7 +31,7 @@ mod load_files {
         let mut template = create_template();
 
         template
-            .load_files(&get_fixtures_dir("generator"), &create_context())
+            .load_files(&get_fixtures_path("generator"), &create_context())
             .await
             .unwrap();
 

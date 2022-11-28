@@ -9,4 +9,5 @@ assert_cmd = "2.0.6"
 assert_fs = "1.0.9"
 clean-path = "0.2.1"
 insta = { workspace = true }
+rustc-hash = { workspace = true }
 serde_yaml = { workspace = true }

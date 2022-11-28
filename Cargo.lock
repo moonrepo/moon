@@ -1953,6 +1953,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_task",
+ "moon_test_utils",
  "moon_utils",
  "moon_workspace",
  "serde",
@@ -2245,6 +2246,7 @@ dependencies = [
  "clean-path",
  "insta",
  "moon_config",
+ "rustc-hash",
  "serde_yaml",
 ]
 

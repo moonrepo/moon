@@ -1,9 +1,11 @@
 mod cli;
+mod configs;
 mod sandbox;
 
 pub use assert_cmd;
 pub use assert_fs;
 pub use cli::*;
+pub use configs::*;
 pub use insta::*;
 pub use sandbox::*;
 

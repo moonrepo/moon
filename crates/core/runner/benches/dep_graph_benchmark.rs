@@ -1,13 +1,13 @@
 mod utils;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use moon_utils::test::get_fixtures_dir;
+use moon_test_utils::get_fixtures_path;
 use moon_workspace::Workspace;
 
 pub fn load_benchmark(c: &mut Criterion) {
     c.bench_function("dep_graph_load", |b| {
         b.iter(|| async {
-            let workspace = Workspace::load_from(get_fixtures_dir("cases"))
+            let workspace = Workspace::load_from(get_fixtures_path("cases"))
                 .await
                 .unwrap();
 
@@ -19,7 +19,7 @@ pub fn load_benchmark(c: &mut Criterion) {
 pub fn load_with_platforms_benchmark(c: &mut Criterion) {
     c.bench_function("dep_graph_load_with_platforms", |b| {
         b.iter(|| async {
-            let mut workspace = Workspace::load_from(get_fixtures_dir("cases"))
+            let mut workspace = Workspace::load_from(get_fixtures_path("cases"))
                 .await
                 .unwrap();
 

@@ -1,48 +1,69 @@
-use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command, create_sandbox, get_assert_output};
+use moon_test_utils::{
+    assert_snapshot, create_sandbox, create_sandbox_with_config, get_assert_output,
+    get_project_graph_aliases_fixture_configs, get_projects_fixture_configs,
+};
 
 #[test]
 fn no_projects() {
-    let fixture = create_sandbox("base");
+    let mut sandbox = create_sandbox("base");
 
-    let assert = create_moon_command(fixture.path())
-        .arg("project-graph")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("project-graph");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn many_projects() {
-    let fixture = create_sandbox("projects");
+    let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("project-graph")
-        .assert();
+    let mut sandbox = create_sandbox_with_config(
+        "projects",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("project-graph");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn single_project_with_dependencies() {
-    let fixture = create_sandbox("projects");
+    let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("project-graph")
-        .arg("foo")
-        .assert();
+    let mut sandbox = create_sandbox_with_config(
+        "projects",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("project-graph").arg("foo");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn single_project_no_dependencies() {
-    let fixture = create_sandbox("projects");
+    let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("project-graph")
-        .arg("baz")
-        .assert();
+    let mut sandbox = create_sandbox_with_config(
+        "projects",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("project-graph").arg("baz");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
@@ -52,35 +73,57 @@ mod aliases {
 
     #[test]
     fn uses_ids_in_graph() {
-        let fixture = create_sandbox("project-graph/aliases");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_project_graph_aliases_fixture_configs();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("project-graph")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "project-graph/aliases",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("project-graph");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn can_focus_using_an_alias() {
-        let fixture = create_sandbox("project-graph/aliases");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_project_graph_aliases_fixture_configs();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("project-graph")
-            .arg("@scope/pkg-foo")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "project-graph/aliases",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("project-graph").arg("@scope/pkg-foo");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn resolves_aliases_in_depends_on() {
-        let fixture = create_sandbox("project-graph/aliases");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_project_graph_aliases_fixture_configs();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("project-graph")
-            .arg("noLang")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "project-graph/aliases",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("project-graph").arg("noLang");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }

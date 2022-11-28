@@ -1918,11 +1918,11 @@ dependencies = [
 name = "moon_config"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "figment",
  "moon_constants",
  "moon_error",
  "moon_node_lang",
+ "moon_test_utils",
  "moon_utils",
  "pretty_assertions",
  "reqwest",

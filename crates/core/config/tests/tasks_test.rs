@@ -2,8 +2,7 @@ use figment::{
     providers::{Format, YamlExtended},
     Figment,
 };
-use moon_config::map_validation_errors_to_figment_errors;
-use moon_config::{TaskCommandArgs, TaskConfig};
+use moon_config::{map_validation_errors_to_figment_errors, TaskCommandArgs, TaskConfig};
 use moon_utils::string_vec;
 use std::path::PathBuf;
 use validator::Validate;

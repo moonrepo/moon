@@ -17,18 +17,10 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
     pub rename: Option<FxHashMap<TaskID, TaskID>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
     #[validate]
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
-}
-
-impl Default for ProjectWorkspaceConfig {
-    fn default() -> Self {
-        ProjectWorkspaceConfig {
-            inherited_tasks: ProjectWorkspaceInheritedTasksConfig::default(),
-        }
-    }
 }

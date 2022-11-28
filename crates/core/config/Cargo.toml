@@ -29,6 +29,6 @@ thiserror = { workspace = true }
 validator = { version = "0.16.0", features = ["derive"] }
 
 [dev-dependencies]
-assert_fs = "1.0.9"
+moon_test_utils = { path = "../test-utils" }
 pretty_assertions = "1.3.0"
-tokio = { workspace = true, features = ["test-util"] }
+tokio = { workspace = true }

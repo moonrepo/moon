@@ -4,4 +4,4 @@ mod sync_project;
 
 pub use install_deps::install_deps;
 pub use run_target::*;
-pub use sync_project::sync_project;
+pub use sync_project::*;

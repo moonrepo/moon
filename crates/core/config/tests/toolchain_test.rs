@@ -1,6 +1,6 @@
 use moon_config::{ConfigError, NodeConfig, ToolchainConfig};
 use moon_constants::CONFIG_WORKSPACE_FILENAME;
-use moon_utils::test::get_fixtures_dir;
+use moon_test_utils::get_fixtures_path;
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<ToolchainConfig, figment::Error> {
@@ -43,7 +43,7 @@ mod extends {
 
     #[test]
     fn recursive_merges() {
-        let fixture = get_fixtures_dir("config-extends/workspace");
+        let fixture = get_fixtures_path("config-extends/workspace");
         let config = ToolchainConfig::load(fixture.join("base-2.yml")).unwrap();
 
         assert_eq!(
@@ -67,7 +67,7 @@ mod extends {
 
     #[test]
     fn recursive_merges_typescript() {
-        let fixture = get_fixtures_dir("config-extends/workspace");
+        let fixture = get_fixtures_path("config-extends/workspace");
         let config = ToolchainConfig::load(fixture.join("typescript-2.yml")).unwrap();
 
         assert_eq!(

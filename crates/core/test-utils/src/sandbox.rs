@@ -147,7 +147,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
         serde_yaml::to_string(
             &workspace_config
                 .map(|c| c.to_owned())
-                .unwrap_or_else(|| WorkspaceConfig::default()),
+                .unwrap_or_else(WorkspaceConfig::default),
         )
         .unwrap(),
     );
@@ -157,7 +157,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
         serde_yaml::to_string(
             &toolchain_config
                 .map(|c| c.to_owned())
-                .unwrap_or_else(|| ToolchainConfig::default()),
+                .unwrap_or_else(ToolchainConfig::default),
         )
         .unwrap(),
     );

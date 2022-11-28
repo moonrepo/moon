@@ -18,7 +18,7 @@ const LOG_TARGET: &str = "moon:node-platform:sync-project";
 
 // Automatically create missing config files when we are syncing project references.
 #[track_caller]
-async fn create_missing_tsconfig(
+pub async fn create_missing_tsconfig(
     project: &Project,
     typescript_config: &TypeScriptConfig,
     workspace_root: &Path,

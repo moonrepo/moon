@@ -1,0 +1,9 @@
+[package]
+name = "moon_test_utils"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+assert_cmd = "2.0.6"
+assert_fs = "1.0.9"
+clean-path = "0.2.1"

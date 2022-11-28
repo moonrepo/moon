@@ -2236,6 +2236,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_test_utils"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "assert_fs",
+ "clean-path",
+]
+
+[[package]]
 name = "moon_toolchain"
 version = "0.1.0"
 dependencies = [

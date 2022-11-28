@@ -1,6 +1,6 @@
+use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 use moon_utils::is_ci;
 use moon_utils::path::get_home_dir;
-use moon_utils::test::{create_moon_command, create_sandbox};
 
 #[test]
 fn sets_up_and_tears_down() {
@@ -17,21 +17,26 @@ fn sets_up_and_tears_down() {
 
     assert!(!node_dir.exists());
 
-    let fixture = create_sandbox("cases");
+    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
-    let setup = create_moon_command(fixture.path())
-        .arg("setup")
-        .env("MOON_NODE_VERSION", node_version)
-        .assert();
+    let mut sandbox = create_sandbox_with_config(
+        "cases",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    let setup = sandbox.run_moon(|cmd| {
+        cmd.arg("setup").env("MOON_NODE_VERSION", node_version);
+    });
 
     setup.success().code(0);
 
     assert!(node_dir.exists());
 
-    let teardown = create_moon_command(fixture.path())
-        .arg("teardown")
-        .env("MOON_NODE_VERSION", node_version)
-        .assert();
+    let teardown = sandbox.run_moon(|cmd| {
+        cmd.arg("teardown").env("MOON_NODE_VERSION", node_version);
+    });
 
     teardown.success().code(0);
 

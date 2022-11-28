@@ -1,15 +1,30 @@
-mod utils;
-
+use moon_config::NotifierConfig;
 use moon_notifier::WebhookPayload;
-use moon_utils::test::{create_moon_command, create_sandbox_with_git};
-use utils::append_workspace_config;
+use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs, Sandbox};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
+
+fn sandbox(uri: String) -> Sandbox {
+    let (mut workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+
+    workspace_config.notifier = NotifierConfig {
+        webhook_url: Some(format!("{}/webhook", uri)),
+    };
+
+    let sandbox = create_sandbox_with_config(
+        "node",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
 
 #[tokio::test]
 async fn sends_webhooks() {
     let server = MockServer::start().await;
-    let fixture = create_sandbox_with_git("node");
 
     Mock::given(method("POST"))
         .and(path("/webhook"))
@@ -18,21 +33,18 @@ async fn sends_webhooks() {
         .mount(&server)
         .await;
 
-    append_workspace_config(
-        fixture.path(),
-        &format!("notifier:\n  webhookUrl: '{}/webhook'", server.uri()),
-    );
+    let mut sandbox = sandbox(server.uri());
 
-    create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:cjs")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:cjs");
+    });
+
+    assert.success();
 }
 
 #[tokio::test]
 async fn sends_webhooks_for_cache_events() {
     let server = MockServer::start().await;
-    let fixture = create_sandbox_with_git("node");
 
     Mock::given(method("POST"))
         .and(path("/webhook"))
@@ -41,27 +53,23 @@ async fn sends_webhooks_for_cache_events() {
         .mount(&server)
         .await;
 
-    append_workspace_config(
-        fixture.path(),
-        &format!("notifier:\n  webhookUrl: '{}/webhook'", server.uri()),
-    );
+    let mut sandbox = sandbox(server.uri());
 
-    create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:cjs")
-        .assert();
+    sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:cjs");
+    });
 
     // Run again to hit the cache
-    create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:cjs")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:cjs");
+    });
+
+    assert.success();
 }
 
 #[tokio::test]
 async fn doesnt_send_webhooks_if_first_fails() {
     let server = MockServer::start().await;
-    let fixture = create_sandbox_with_git("node");
 
     Mock::given(method("POST"))
         .and(path("/webhook"))
@@ -70,21 +78,18 @@ async fn doesnt_send_webhooks_if_first_fails() {
         .mount(&server)
         .await;
 
-    append_workspace_config(
-        fixture.path(),
-        &format!("notifier:\n  webhookUrl: '{}/webhook'", server.uri()),
-    );
+    let mut sandbox = sandbox(server.uri());
 
-    create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:cjs")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:cjs");
+    });
+
+    assert.failure();
 }
 
 #[tokio::test]
 async fn all_webhooks_have_same_uuid() {
     let server = MockServer::start().await;
-    let fixture = create_sandbox_with_git("node");
 
     Mock::given(method("POST"))
         .and(path("/webhook"))
@@ -92,15 +97,11 @@ async fn all_webhooks_have_same_uuid() {
         .mount(&server)
         .await;
 
-    append_workspace_config(
-        fixture.path(),
-        &format!("notifier:\n  webhookUrl: '{}/webhook'", server.uri()),
-    );
+    let mut sandbox = sandbox(server.uri());
 
-    create_moon_command(fixture.path())
-        .arg("run")
-        .arg("node:cjs")
-        .assert();
+    sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:cjs");
+    });
 
     let received_requests = server.received_requests().await.unwrap();
     let mut uuid = None;

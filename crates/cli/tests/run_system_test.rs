@@ -1,9 +1,25 @@
 mod utils;
 
-use insta::assert_snapshot;
-use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_assert_output};
+use moon_config::{WorkspaceConfig, WorkspaceProjects};
+use moon_test_utils::{assert_snapshot, create_sandbox_with_config, get_assert_output, Sandbox};
 use predicates::prelude::*;
+use rustc_hash::FxHashMap;
 use utils::get_path_safe_output;
+
+fn system_sandbox() -> Sandbox {
+    let workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+            ("unix".to_owned(), "unix".to_owned()),
+            ("windows".to_owned(), "windows".to_owned()),
+        ])),
+        ..WorkspaceConfig::default()
+    };
+
+    let sandbox = create_sandbox_with_config("system", Some(&workspace_config), None, None);
+
+    sandbox.enable_git();
+    sandbox
+}
 
 #[cfg(not(windows))]
 mod unix {
@@ -11,155 +27,145 @@ mod unix {
 
     #[test]
     fn handles_echo() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:echo")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:echo");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn handles_ls() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:ls")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:ls");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn runs_bash_script() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:bash")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:bash");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn handles_process_exit_zero() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:exitZero")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:exitZero");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn handles_process_exit_nonzero() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:exitNonZero")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:exitNonZero");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn passes_args_through() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:passthroughArgs")
-            .arg("--")
-            .arg("-aBc")
-            .arg("--opt")
-            .arg("value")
-            .arg("--optCamel=value")
-            .arg("foo")
-            .arg("'bar baz'")
-            .arg("--opt-kebab")
-            .arg("123")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("unix:passthroughArgs")
+                .arg("--")
+                .arg("-aBc")
+                .arg("--opt")
+                .arg("value")
+                .arg("--optCamel=value")
+                .arg("foo")
+                .arg("'bar baz'")
+                .arg("--opt-kebab")
+                .arg("123");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn sets_env_vars() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:envVars")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:envVars");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn inherits_moon_env_vars() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:envVarsMoon")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:envVarsMoon");
+        });
 
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
     }
 
     #[test]
     fn runs_from_project_root() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:runFromProject")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:runFromProject");
+        });
 
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
     }
 
     #[test]
     fn runs_from_workspace_root() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:runFromWorkspace")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:runFromWorkspace");
+        });
 
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
     }
 
     #[test]
     fn retries_on_failure_till_count() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:retryCount")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:retryCount");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn can_run_many_targets() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("unix:foo")
-            .arg("unix:bar")
-            .arg("unix:baz")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("unix:foo")
+                .arg("unix:bar")
+                .arg("unix:baz");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -175,33 +181,30 @@ mod unix {
 
         #[test]
         fn uses_cache_on_subsequent_runs() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("unix:outputs")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("unix:outputs");
+            });
 
             assert_snapshot!(get_assert_output(&assert));
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("unix:outputs")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("unix:outputs");
+            });
 
             assert_snapshot!(get_assert_output(&assert));
         }
 
         #[test]
         fn creates_runfile() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("unix:outputs")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("unix:outputs");
+            });
 
-            assert!(fixture
+            assert!(sandbox
                 .path()
                 .join(".moon/cache/states/unix/runfile.json")
                 .exists());
@@ -209,14 +212,13 @@ mod unix {
 
         #[tokio::test]
         async fn creates_run_state_cache() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("unix:outputs")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("unix:outputs");
+            });
 
-            let cache_path = fixture
+            let cache_path = sandbox
                 .path()
                 .join(".moon/cache/states/unix/outputs/lastRun.json");
 
@@ -225,22 +227,22 @@ mod unix {
             let state = RunTargetState::load(cache_path, 0).await.unwrap();
 
             assert_snapshot!(fs::read_to_string(
-                fixture
+                sandbox
                     .path()
                     .join(format!(".moon/cache/hashes/{}.json", state.hash))
             )
             .unwrap());
 
-            assert!(fixture
+            assert!(sandbox
                 .path()
                 .join(".moon/cache/outputs")
                 .join(format!("{}.tar.gz", state.hash))
                 .exists());
-            assert!(fixture
+            assert!(sandbox
                 .path()
                 .join(".moon/cache/states/unix/outputs/stdout.log")
                 .exists());
-            assert!(fixture
+            assert!(sandbox
                 .path()
                 .join(".moon/cache/states/unix/outputs/stderr.log")
                 .exists());
@@ -253,12 +255,11 @@ mod unix {
 
         #[test]
         fn uses_dot_when_not_affected() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("unix:affectedFiles")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("unix:affectedFiles");
+            });
             let output = get_assert_output(&assert);
 
             assert!(predicate::str::contains("Args: .\n").eval(&output));
@@ -266,16 +267,14 @@ mod unix {
 
         #[test]
         fn uses_rel_paths_when_affected() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            fs::write(fixture.path().join("unix/input1.txt"), "").unwrap();
-            fs::write(fixture.path().join("unix/input2.txt"), "").unwrap();
+            fs::write(sandbox.path().join("unix/input1.txt"), "").unwrap();
+            fs::write(sandbox.path().join("unix/input2.txt"), "").unwrap();
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("unix:affectedFiles")
-                .arg("--affected")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("unix:affectedFiles").arg("--affected");
+            });
             let output = get_assert_output(&assert);
 
             assert!(predicate::str::contains("Args: ./input1.txt ./input2.txt").eval(&output));
@@ -283,16 +282,16 @@ mod unix {
 
         #[test]
         fn sets_env_var() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            fs::write(fixture.path().join("unix/input1.txt"), "").unwrap();
-            fs::write(fixture.path().join("unix/input2.txt"), "").unwrap();
+            fs::write(sandbox.path().join("unix/input1.txt"), "").unwrap();
+            fs::write(sandbox.path().join("unix/input2.txt"), "").unwrap();
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("unix:affectedFilesEnvVar")
-                .arg("--affected")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run")
+                    .arg("unix:affectedFilesEnvVar")
+                    .arg("--affected");
+            });
             let output = get_assert_output(&assert);
 
             assert!(
@@ -309,131 +308,123 @@ mod system_windows {
 
     #[test]
     fn runs_bat_script() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:bat")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:bat");
+        });
 
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
     }
 
     #[test]
     fn handles_process_exit_zero() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:exitZero")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:exitZero");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn handles_process_exit_nonzero() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:exitNonZero")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:exitNonZero");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn passes_args_through() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:passthroughArgs")
-            .arg("--")
-            .arg("-aBc")
-            .arg("--opt")
-            .arg("value")
-            .arg("--optCamel=value")
-            .arg("foo")
-            .arg("'bar baz'")
-            .arg("--opt-kebab")
-            .arg("123")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("windows:passthroughArgs")
+                .arg("--")
+                .arg("-aBc")
+                .arg("--opt")
+                .arg("value")
+                .arg("--optCamel=value")
+                .arg("foo")
+                .arg("'bar baz'")
+                .arg("--opt-kebab")
+                .arg("123");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn sets_env_vars() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:envVars")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:envVars");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn inherits_moon_env_vars() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:envVarsMoon")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:envVarsMoon");
+        });
 
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
     }
 
     #[test]
     fn runs_from_project_root() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:runFromProject")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:runFromProject");
+        });
 
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
     }
 
     #[test]
     fn runs_from_workspace_root() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:runFromWorkspace")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:runFromWorkspace");
+        });
 
-        assert_snapshot!(get_path_safe_output(&assert, fixture.path()));
+        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
     }
 
     #[test]
     fn retries_on_failure_till_count() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:retryCount")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("windows:retryCount");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn can_run_many_targets() {
-        let fixture = create_sandbox_with_git("system");
+        let sandbox = system_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("windows:foo")
-            .arg("windows:bar")
-            .arg("windows:baz")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("windows:foo")
+                .arg("windows:bar")
+                .arg("windows:baz");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -449,33 +440,30 @@ mod system_windows {
 
         #[test]
         fn uses_cache_on_subsequent_runs() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("windows:outputs")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("windows:outputs");
+            });
 
             assert_snapshot!(get_assert_output(&assert));
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("windows:outputs")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("windows:outputs");
+            });
 
             assert_snapshot!(get_assert_output(&assert));
         }
 
         #[test]
         fn creates_runfile() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("windows:outputs")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("windows:outputs");
+            });
 
-            assert!(fixture
+            assert!(sandbox
                 .path()
                 .join(".moon/cache/states/windows/runfile.json")
                 .exists());
@@ -483,14 +471,13 @@ mod system_windows {
 
         #[tokio::test]
         async fn creates_run_state_cache() {
-            let fixture = create_sandbox_with_git("system");
+            let sandbox = system_sandbox();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("windows:outputs")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("windows:outputs");
+            });
 
-            let cache_path = fixture
+            let cache_path = sandbox
                 .path()
                 .join(".moon/cache/states/windows/outputs/lastRun.json");
 
@@ -499,22 +486,22 @@ mod system_windows {
             let state = RunTargetState::load(cache_path, 0).await.unwrap();
 
             assert_snapshot!(fs::read_to_string(
-                fixture
+                sandbox
                     .path()
                     .join(format!(".moon/cache/hashes/{}.json", state.hash))
             )
             .unwrap());
 
-            assert!(fixture
+            assert!(sandbox
                 .path()
                 .join(".moon/cache/outputs")
                 .join(format!("{}.tar.gz", state.hash))
                 .exists());
-            assert!(fixture
+            assert!(sandbox
                 .path()
                 .join(".moon/cache/states/windows/outputs/stdout.log")
                 .exists());
-            assert!(fixture
+            assert!(sandbox
                 .path()
                 .join(".moon/cache/states/windows/outputs/stderr.log")
                 .exists());

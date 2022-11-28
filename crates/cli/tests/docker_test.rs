@@ -1,6 +1,7 @@
 use moon_cli::commands::docker::DockerManifest;
-use moon_utils::test::{
-    create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
+use moon_test_utils::{
+    create_sandbox_with_config, get_assert_output, get_cases_fixture_configs,
+    get_node_depman_fixture_configs, get_node_fixture_configs, get_projects_fixture_configs,
 };
 use predicates::prelude::*;
 use rustc_hash::FxHashSet;
@@ -23,15 +24,20 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_all_manifests() {
-        let fixture = create_sandbox_with_git("node");
+        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("esbuild")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "node",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/workspace");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("esbuild");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join("esbuild/package.json").exists());
         assert!(docker.join("lifecycles/package.json").exists());
@@ -41,15 +47,20 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_moon_configs() {
-        let fixture = create_sandbox_with_git("node");
+        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("lifecycles")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "node",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/workspace");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("lifecycles");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join(".moon/project.yml").exists());
         assert!(docker.join(".moon/toolchain.yml").exists());
@@ -58,15 +69,20 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_node_postinstalls() {
-        let fixture = create_sandbox_with_git("node");
+        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("lifecycles")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "node",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/workspace");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("lifecycles");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join("lifecycles/package.json").exists());
         assert!(docker.join("lifecycles/postinstall.mjs").exists());
@@ -74,30 +90,42 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_npm_files() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("npm");
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("npm")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "node-npm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/workspace");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("npm");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join("package-lock.json").exists());
     }
 
     #[test]
     fn copies_pnpm_files() {
-        let fixture = create_sandbox_with_git("node-pnpm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("pnpm");
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("pnpm")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "node-pnpm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/workspace");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("pnpm");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join("pnpm-lock.yaml").exists());
         assert!(docker.join("pnpm-workspace.yaml").exists());
@@ -105,15 +133,21 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_yarn_files() {
-        let fixture = create_sandbox_with_git("node-yarn");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("yarn");
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("yarn")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "node-yarn",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/workspace");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("yarn");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join(".yarnrc.yml").exists());
         assert!(docker.join("yarn.lock").exists());
@@ -121,15 +155,21 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_yarn1_files() {
-        let fixture = create_sandbox_with_git("node-yarn1");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("yarn1");
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("yarn")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "node-yarn1",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/workspace");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("yarn1");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join("yarn.lock").exists());
     }
@@ -140,15 +180,20 @@ mod scaffold_sources {
 
     #[test]
     fn copies_project_and_deps() {
-        let fixture = create_sandbox_with_git("projects");
+        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("basic")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "projects",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/sources");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("basic");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/sources");
 
         assert!(docker.join("basic/file.ts").exists());
         assert!(docker.join("no-config/empty").exists());
@@ -162,16 +207,20 @@ mod scaffold_sources {
 
     #[test]
     fn copies_multiple_projects() {
-        let fixture = create_sandbox_with_git("projects");
+        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("js")
-            .arg("bar")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "projects",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/sources");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("js").arg("bar");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/sources");
 
         assert!(docker.join("langs/js").exists());
         assert!(docker.join("deps/bar").exists());
@@ -185,20 +234,27 @@ mod scaffold_sources {
 
     #[test]
     fn can_include_more_files() {
-        let fixture = create_sandbox_with_git("cases");
+        let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("scaffold")
-            .arg("base")
-            // Janky but works
-            .arg("--include")
-            .arg("outputs/generate.js")
-            .arg("--include")
-            .arg("passthrough-args/*.sh")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "cases",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let docker = fixture.join(".moon/docker/sources");
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker")
+                .arg("scaffold")
+                .arg("base")
+                // Janky but works
+                .arg("--include")
+                .arg("outputs/generate.js")
+                .arg("--include")
+                .arg("passthrough-args/*.sh");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/sources");
 
         assert!(docker.join("base").exists());
         assert!(docker.join("outputs/generate.js").exists());
@@ -214,12 +270,18 @@ mod prune {
 
     #[test]
     fn errors_missing_manifest() {
-        let fixture = create_sandbox("node");
+        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("prune")
-            .assert();
+        let mut sandbox = create_sandbox_with_config(
+            "node",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("prune");
+        });
 
         assert!(
             predicate::str::contains("Unable to prune, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?")
@@ -233,97 +295,125 @@ mod prune_node {
 
     #[test]
     fn focuses_for_npm() {
-        let fixture = create_sandbox("node-npm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("npm");
 
-        write_manifest(fixture.path(), "other");
+        let mut sandbox = create_sandbox_with_config(
+            "node-npm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("prune")
-            .assert();
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("prune");
+        });
 
         // should exist
-        assert!(fixture.path().join("node_modules/solid-js").exists());
+        assert!(sandbox.path().join("node_modules/solid-js").exists());
 
         // should not exist
-        assert!(!fixture.path().join("npm/node_modules").exists());
-        assert!(!fixture
+        assert!(!sandbox.path().join("npm/node_modules").exists());
+        assert!(!sandbox
             .path()
             .join("node_modules/babel-preset-solid")
             .exists());
 
         // npm installs prod deps for unfocused
-        // assert!(!fixture.path().join("node_modules/react").exists());
+        // assert!(!sandbox.path().join("node_modules/react").exists());
     }
 
     #[test]
     fn focuses_for_pnpm() {
-        let fixture = create_sandbox("node-pnpm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("pnpm");
 
-        write_manifest(fixture.path(), "other");
+        let mut sandbox = create_sandbox_with_config(
+            "node-pnpm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("prune")
-            .assert();
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("prune");
+        });
 
         // should exist
-        assert!(fixture.path().join("other/node_modules/solid-js").exists());
+        assert!(sandbox.path().join("other/node_modules/solid-js").exists());
 
         // should not exist
-        assert!(!fixture.path().join("pnpm/node_modules").exists());
-        assert!(!fixture
+        assert!(!sandbox.path().join("pnpm/node_modules").exists());
+        assert!(!sandbox
             .path()
             .join("node_modules/babel-preset-solid")
             .exists());
-        assert!(!fixture.path().join("node_modules/react").exists());
+        assert!(!sandbox.path().join("node_modules/react").exists());
     }
 
     #[test]
     fn focuses_for_yarn() {
-        let fixture = create_sandbox("node-yarn");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("yarn");
 
-        write_manifest(fixture.path(), "other");
+        let mut sandbox = create_sandbox_with_config(
+            "node-yarn",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("prune")
-            .assert();
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("prune");
+        });
 
         // should exist
-        assert!(fixture.path().join("node_modules/solid-js").exists());
+        assert!(sandbox.path().join("node_modules/solid-js").exists());
 
         // should not exist
-        assert!(!fixture.path().join("npm/node_modules").exists());
-        assert!(!fixture
+        assert!(!sandbox.path().join("npm/node_modules").exists());
+        assert!(!sandbox
             .path()
             .join("node_modules/babel-preset-solid")
             .exists());
-        assert!(!fixture.path().join("node_modules/react").exists());
+        assert!(!sandbox.path().join("node_modules/react").exists());
     }
 
     #[test]
     fn focuses_for_yarn1() {
-        let fixture = create_sandbox("node-yarn1");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("yarn1");
 
-        write_manifest(fixture.path(), "other");
+        let mut sandbox = create_sandbox_with_config(
+            "node-yarn1",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        create_moon_command(fixture.path())
-            .arg("docker")
-            .arg("prune")
-            .assert();
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("prune");
+        });
 
         // should exist
-        assert!(fixture.path().join("node_modules/solid-js").exists());
+        assert!(sandbox.path().join("node_modules/solid-js").exists());
 
         // should not exist
-        assert!(!fixture.path().join("yarn/node_modules").exists());
-        assert!(!fixture
+        assert!(!sandbox.path().join("yarn/node_modules").exists());
+        assert!(!sandbox
             .path()
             .join("node_modules/babel-preset-solid")
             .exists());
 
         // yarn 1 does not support focusing
-        // assert!(!fixture.path().join("node_modules/react").exists());
+        // assert!(!sandbox.path().join("node_modules/react").exists());
     }
 }

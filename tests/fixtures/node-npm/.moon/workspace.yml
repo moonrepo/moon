@@ -1,6 +1,0 @@
-extends: '../shared-workspace.yml'
-
-projects:
-  npm: base
-  other: other
-  notInWorkspace: not-in-workspace

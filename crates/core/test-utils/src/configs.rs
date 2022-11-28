@@ -1,6 +1,7 @@
 use moon_config::{
-    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, TaskCommandArgs, TaskConfig,
-    ToolchainConfig, TypeScriptConfig, WorkspaceConfig, WorkspaceProjects,
+    GlobalProjectConfig, NodeConfig, NodePackageManager, NodeProjectAliasFormat, NpmConfig,
+    PnpmConfig, TaskCommandArgs, TaskConfig, ToolchainConfig, TypeScriptConfig, WorkspaceConfig,
+    WorkspaceProjects, YarnConfig,
 };
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -68,22 +69,23 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
     (workspace_config, toolchain_config, projects_config)
 }
 
-pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("node".to_owned(), "base".to_owned()),
-            ("lifecycles".to_owned(), "lifecycles".to_owned()),
-            ("versionOverride".to_owned(), "version-override".to_owned()),
-            // Binaries
-            ("esbuild".to_owned(), "esbuild".to_owned()),
-            ("swc".to_owned(), "swc".to_owned()),
-            // Project/task deps
-            ("depsA".to_owned(), "deps-a".to_owned()),
-            ("depsB".to_owned(), "deps-b".to_owned()),
-            ("depsC".to_owned(), "deps-c".to_owned()),
-            ("depsD".to_owned(), "deps-d".to_owned()),
-            ("dependsOn".to_owned(), "depends-on".to_owned()),
-            ("dependsOnScopes".to_owned(), "depends-on-scopes".to_owned()),
+            ("advanced".to_owned(), "advanced".to_owned()),
+            ("basic".to_owned(), "basic".to_owned()),
+            ("emptyConfig".to_owned(), "empty-config".to_owned()),
+            ("noConfig".to_owned(), "no-config".to_owned()),
+            ("tasks".to_owned(), "tasks".to_owned()),
+            // Deps
+            ("foo".to_owned(), "deps/foo".to_owned()),
+            ("bar".to_owned(), "deps/bar".to_owned()),
+            ("baz".to_owned(), "deps/baz".to_owned()),
+            // Langs
+            ("js".to_owned(), "langs/js".to_owned()),
+            ("ts".to_owned(), "langs/ts".to_owned()),
+            ("bash".to_owned(), "langs/bash".to_owned()),
+            ("platforms".to_owned(), "platforms".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -91,13 +93,13 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalPr
     let toolchain_config = get_default_toolchain();
 
     let projects_config = GlobalProjectConfig {
-        tasks: BTreeMap::from_iter([(
-            "version".to_owned(),
-            TaskConfig {
-                command: Some(TaskCommandArgs::String("node --version".into())),
-                ..TaskConfig::default()
-            },
-        )]),
+        file_groups: FxHashMap::from_iter([
+            (
+                "sources".into(),
+                vec!["src/**/*".into(), "types/**/*".into()],
+            ),
+            ("tests".into(), vec!["tests/**/*".into()]),
+        ]),
         ..GlobalProjectConfig::default()
     };
 
@@ -202,6 +204,99 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
         ]),
         ..GlobalProjectConfig::default()
     };
+
+    (workspace_config, toolchain_config, projects_config)
+}
+
+// NODE.JS
+
+pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+    let workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+            ("node".to_owned(), "base".to_owned()),
+            ("lifecycles".to_owned(), "lifecycles".to_owned()),
+            ("versionOverride".to_owned(), "version-override".to_owned()),
+            // Binaries
+            ("esbuild".to_owned(), "esbuild".to_owned()),
+            ("swc".to_owned(), "swc".to_owned()),
+            // Project/task deps
+            ("depsA".to_owned(), "deps-a".to_owned()),
+            ("depsB".to_owned(), "deps-b".to_owned()),
+            ("depsC".to_owned(), "deps-c".to_owned()),
+            ("depsD".to_owned(), "deps-d".to_owned()),
+            ("dependsOn".to_owned(), "depends-on".to_owned()),
+            ("dependsOnScopes".to_owned(), "depends-on-scopes".to_owned()),
+        ])),
+        ..WorkspaceConfig::default()
+    };
+
+    let toolchain_config = get_default_toolchain();
+
+    let projects_config = GlobalProjectConfig {
+        tasks: BTreeMap::from_iter([
+            (
+                "version".to_owned(),
+                TaskConfig {
+                    command: Some(TaskCommandArgs::String("node --version".into())),
+                    ..TaskConfig::default()
+                },
+            ),
+            (
+                "noop".to_owned(),
+                TaskConfig {
+                    command: Some(TaskCommandArgs::String("noop".into())),
+                    ..TaskConfig::default()
+                },
+            ),
+        ]),
+        ..GlobalProjectConfig::default()
+    };
+
+    (workspace_config, toolchain_config, projects_config)
+}
+
+pub fn get_node_depman_fixture_configs(
+    depman: &str,
+) -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+    let (mut workspace_config, mut toolchain_config, projects_config) = get_node_fixture_configs();
+
+    workspace_config.projects = WorkspaceProjects::Sources(FxHashMap::from_iter([
+        (depman.to_owned(), "base".to_owned()),
+        ("other".to_owned(), "other".to_owned()),
+        ("notInWorkspace".to_owned(), "not-in-workspace".to_owned()),
+    ]));
+
+    if let Some(node_config) = &mut toolchain_config.node {
+        match depman {
+            "npm" => {
+                node_config.package_manager = NodePackageManager::Npm;
+                node_config.npm = NpmConfig {
+                    version: "8.0.0".into(),
+                };
+            }
+            "pnpm" => {
+                node_config.package_manager = NodePackageManager::Pnpm;
+                node_config.pnpm = Some(PnpmConfig {
+                    version: "7.5.0".into(),
+                });
+            }
+            "yarn" => {
+                node_config.package_manager = NodePackageManager::Yarn;
+                node_config.yarn = Some(YarnConfig {
+                    version: "3.0.0".into(),
+                    plugins: Some(vec!["workspace-tools".into()]),
+                });
+            }
+            "yarn1" => {
+                node_config.package_manager = NodePackageManager::Yarn;
+                node_config.yarn = Some(YarnConfig {
+                    version: "1.22.0".into(),
+                    plugins: None,
+                });
+            }
+            _ => {}
+        }
+    }
 
     (workspace_config, toolchain_config, projects_config)
 }

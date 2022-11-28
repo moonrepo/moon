@@ -1,16 +1,16 @@
 // Allow `temp_dir` so that files arent removed when dropping scope
 #![allow(unused_variables)]
 
-use assert_fs::TempDir;
 use criterion::{criterion_group, criterion_main, Criterion};
 use fake::{Fake, Faker};
 use moon_archive::{tar, untar, untar_with_diff, TreeDiffer};
+use moon_test_utils::{assert_fs::TempDir, create_temp_dir};
 use moon_utils::string_vec;
 use std::fs;
 use std::path::PathBuf;
 
 fn create_tree() -> (TempDir, PathBuf, PathBuf, Vec<String>) {
-    let temp_dir = TempDir::new().unwrap();
+    let temp_dir = create_temp_dir();
     let sources_dir = temp_dir.path().join("sources");
     let archive_file = temp_dir.path().join("archive.tar.gz");
     let dirs = string_vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'];

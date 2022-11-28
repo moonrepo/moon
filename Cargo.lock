@@ -1828,12 +1828,12 @@ dependencies = [
 name = "moon_archive"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "criterion",
  "fake",
  "flate2",
  "moon_error",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
  "rand 0.8.5",
  "rustc-hash",

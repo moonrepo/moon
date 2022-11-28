@@ -2119,6 +2119,7 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_task",
+ "moon_test_utils",
  "moon_utils",
  "pretty_assertions",
  "rustc-hash",

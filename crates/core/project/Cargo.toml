@@ -16,4 +16,5 @@ strum = { version = "0.24.1", features = ["derive"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+moon_test_utils = { path = "../test-utils" }
 pretty_assertions = "1.3.0"

@@ -5,8 +5,8 @@ use moon_config::{
 };
 use moon_project::{Project, ProjectError};
 use moon_task::{EnvVars, FileGroup, Target, Task};
+use moon_test_utils::{get_fixtures_path, get_fixtures_root};
 use moon_utils::string_vec;
-use moon_utils::test::{get_fixtures_dir, get_fixtures_root};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -34,9 +34,7 @@ fn create_expanded_project(
     config: &GlobalProjectConfig,
 ) -> Project {
     let mut project = Project::new(id, source, workspace_root, config).unwrap();
-
     project.expand_tasks(workspace_root, &[], &[]).unwrap();
-
     project
 }
 
@@ -911,7 +909,7 @@ mod tasks {
             let project = create_expanded_project(
                 "id",
                 "self",
-                &get_fixtures_dir("task-deps"),
+                &get_fixtures_path("task-deps"),
                 &mock_global_project_config(),
             );
 
@@ -926,7 +924,7 @@ mod tasks {
             let project = create_expanded_project(
                 "id",
                 "self-no-prefix",
-                &get_fixtures_dir("task-deps"),
+                &get_fixtures_path("task-deps"),
                 &mock_global_project_config(),
             );
 
@@ -941,7 +939,7 @@ mod tasks {
             let project = create_expanded_project(
                 "id",
                 "self-dupes",
-                &get_fixtures_dir("task-deps"),
+                &get_fixtures_path("task-deps"),
                 &mock_global_project_config(),
             );
 
@@ -956,7 +954,7 @@ mod tasks {
             let project = create_expanded_project(
                 "id",
                 "deps",
-                &get_fixtures_dir("task-deps"),
+                &get_fixtures_path("task-deps"),
                 &mock_global_project_config(),
             );
 
@@ -972,7 +970,7 @@ mod tasks {
             let project = create_expanded_project(
                 "id",
                 "deps-dupes",
-                &get_fixtures_dir("task-deps"),
+                &get_fixtures_path("task-deps"),
                 &mock_global_project_config(),
             );
 
@@ -989,7 +987,7 @@ mod tasks {
             create_expanded_project(
                 "id",
                 "all",
-                &get_fixtures_dir("task-deps"),
+                &get_fixtures_path("task-deps"),
                 &mock_global_project_config(),
             );
         }
@@ -1191,7 +1189,7 @@ mod tasks {
 
         #[test]
         fn expands_inputs() {
-            let workspace_root = get_fixtures_dir("base");
+            let workspace_root = get_fixtures_path("base");
             let project_root = workspace_root.join("files-and-dirs");
             let project = create_expanded_project(
                 "id",
@@ -1249,7 +1247,7 @@ mod tasks {
 
         #[test]
         fn expands_implicit_deps() {
-            let workspace_root = get_fixtures_dir("base");
+            let workspace_root = get_fixtures_path("base");
             let mut project = Project::new(
                 "id",
                 "files-and-dirs",
@@ -1294,7 +1292,7 @@ mod tasks {
 
         #[test]
         fn expands_implicit_inputs() {
-            let workspace_root = get_fixtures_dir("base");
+            let workspace_root = get_fixtures_path("base");
             let project_root = workspace_root.join("files-and-dirs");
             let mut project = Project::new(
                 "id",
@@ -1398,7 +1396,7 @@ mod workspace {
             let project = create_expanded_project(
                 "id",
                 "include",
-                &get_fixtures_dir("task-inheritance"),
+                &get_fixtures_path("task-inheritance"),
                 &mock_global_project_config(),
             );
 
@@ -1410,7 +1408,7 @@ mod workspace {
             let project = create_expanded_project(
                 "id",
                 "include-none",
-                &get_fixtures_dir("task-inheritance"),
+                &get_fixtures_path("task-inheritance"),
                 &mock_global_project_config(),
             );
 
@@ -1422,7 +1420,7 @@ mod workspace {
             let project = create_expanded_project(
                 "id",
                 "exclude",
-                &get_fixtures_dir("task-inheritance"),
+                &get_fixtures_path("task-inheritance"),
                 &mock_global_project_config(),
             );
 
@@ -1434,7 +1432,7 @@ mod workspace {
             let project = create_expanded_project(
                 "id",
                 "exclude-all",
-                &get_fixtures_dir("task-inheritance"),
+                &get_fixtures_path("task-inheritance"),
                 &mock_global_project_config(),
             );
 
@@ -1446,7 +1444,7 @@ mod workspace {
             let project = create_expanded_project(
                 "id",
                 "exclude-none",
-                &get_fixtures_dir("task-inheritance"),
+                &get_fixtures_path("task-inheritance"),
                 &mock_global_project_config(),
             );
 
@@ -1458,7 +1456,7 @@ mod workspace {
             let project = create_expanded_project(
                 "id",
                 "rename",
-                &get_fixtures_dir("task-inheritance"),
+                &get_fixtures_path("task-inheritance"),
                 &mock_global_project_config(),
             );
 
@@ -1470,7 +1468,7 @@ mod workspace {
 
         #[test]
         fn rename_merge() {
-            let workspace_root = get_fixtures_dir("task-inheritance");
+            let workspace_root = get_fixtures_path("task-inheritance");
             let project = create_expanded_project(
                 "id",
                 "rename-merge",
@@ -1497,7 +1495,7 @@ mod workspace {
             let project = create_expanded_project(
                 "id",
                 "include-exclude",
-                &get_fixtures_dir("task-inheritance"),
+                &get_fixtures_path("task-inheritance"),
                 &mock_global_project_config(),
             );
 
@@ -1509,7 +1507,7 @@ mod workspace {
             let project = create_expanded_project(
                 "id",
                 "include-exclude-rename",
-                &get_fixtures_dir("task-inheritance"),
+                &get_fixtures_path("task-inheritance"),
                 &mock_global_project_config(),
             );
 
